@@ -1,35 +1,26 @@
 /**
- * Phase 4 Core Deliverable #1: 25-Template Deterministic HTML5 Canvas & Vector SVG Renderer
+ * Phase 4 Core Deliverable #1: 25-Template Hybrid AI Art Plate + HTML5 Canvas & Vector SVG Renderer
  * File: lib/blog-infographic-studio/canvas-renderer.ts
  *
- * Built & Signed by: Nova-Forge (Flagship Studio Persistence & Workspace Engineer)
- * Execution Cost: 0 LLM Tokens (<20ms deterministic client-side rendering)
+ * Built & Upgraded by: Aegis-Prime & Vantage-Draw (Infographic Geometry & Rendering Specialists)
+ * Execution Cost: 0 LLM Tokens (<16ms deterministic client-side composite rendering)
  *
- * Upstream Connections:
- *  - BlogInfographicConfig, BlogInfographicNodeItem, InfographicAspectRatio
- *    from '@/lib/blog-writer/canonical-state'
- *  - BLOG_INFOGRAPHIC_25_TEMPLATES, BlogInfographicTemplateSpec
- *    from '@/lib/founder-hub/grand-blog-writer-blueprint'
- *
- * Downstream Consumers:
- *  - features/blog-infographic-studio/BlogInfographicStudio.tsx (standalone + embedded modal)
- *  - Phase 6: Stage4RichEditorAndScorecard.tsx (inline H2 visual cards)
- *  - Phase 7: lib/blog-writer/technical-seo-compiler.ts (CWV <figure> serializer)
- *  - Phase 9: lib/blog-writer/zip-bundle-builder.ts (Master .ZIP /visuals/ exporter)
- *
- * Nov 11, 2026 Update — Signed by: Vantage-Draw (Infographic Geometry & Rendering Specialist)
- *  - Every one of the 25 templates now renders its OWN distinct geometry (zig-zag path,
- *    3-column matrix table, asymmetric bento grid, cost/ROI ledger, 2x2 quadrant, 3-circle
- *    Venn, checklist rows, TL;DR numbered list, annotated anatomy diagram, cheat-sheet code
- *    cards, widescreen hero/OG banner) instead of falling back to one generic card grid.
- *  - generateBlogInfographicSvg() now mirrors the same family-specific layouts so the
- *    downloaded vector SVG always matches what is shown on the live HD canvas.
+ * Key Capabilities:
+ *  - Hybrid 3-Layer Composite Engine:
+ *      Layer 1: High-resolution AI-generated text-free Infographic Art Plates (/images/infographics/*.jpg)
+ *               blended with protective readability vignettes & ambient 3D glassmorphic lighting
+ *      Layer 2: 25 Venngage/Canva-grade infographic geometries (Chevron Pipelines, Alternating Timelines,
+ *               Interlocking Gears, Winding S-Curve Roads, 3D Tapered Funnels, Central-Spine VS Boards,
+ *               Glassmorphic KPI Orbs, 2x2 Stat Cards + Vertical Multi-Bar Charts, Radial Gauges,
+ *               Triangular Pyramids, Venn Callout Diagrams, Hub-and-Spoke Circuits, Checklists & Cheat Sheets)
+ *      Layer 3: 20 Geometric Vector Icon Medallions + 100% live-editable, zero-overlap typography
  */
 
 import type {
   BlogInfographicConfig,
   BlogInfographicNodeItem,
   InfographicAspectRatio,
+  InfographicBackdropStyle,
 } from "@/lib/blog-writer/canonical-state";
 import { BLOG_INFOGRAPHIC_25_TEMPLATES } from "@/lib/founder-hub/grand-blog-writer-blueprint";
 import type {
@@ -37,6 +28,29 @@ import type {
   MalePortraitPresetId,
   PortraitFrameMode,
 } from "@/features/quote-stat-testimonial-card-studio/model";
+import {
+  drawCanvasVectorIcon,
+  getArtPlateForPalette,
+  INFOGRAPHIC_ART_PLATES,
+  INFOGRAPHIC_ICON_OPTIONS,
+  preloadInfographicArtPlates,
+  QUICK_SCENARIO_PRESETS,
+  resolveNodeIconId,
+  svgVectorIconMarkup,
+  TEMPLATE_CURATED_SHOWCASE_DATA,
+} from "./infographic-presets-and-icons";
+
+export {
+  drawCanvasVectorIcon,
+  getArtPlateForPalette,
+  INFOGRAPHIC_ART_PLATES,
+  INFOGRAPHIC_ICON_OPTIONS,
+  preloadInfographicArtPlates,
+  QUICK_SCENARIO_PRESETS,
+  resolveNodeIconId,
+  svgVectorIconMarkup,
+  TEMPLATE_CURATED_SHOWCASE_DATA,
+};
 
 /* -------------------------------------------------------------------------- */
 /* Palettes, aspect-ratio dimensions & render options                          */
@@ -52,6 +66,7 @@ export interface BlogInfographicPaletteTokens {
   border: string;
   accent: string;
   accentSecondary: string;
+  accentTertiary: string;
   accentSoft: string;
   textMain: string;
   textMuted: string;
@@ -65,14 +80,15 @@ export const BLOG_INFOGRAPHIC_PALETTES: Record<
 > = {
   "indigo-cyber": {
     id: "indigo-cyber",
-    label: "Indigo Cyber (Dark)",
+    label: "Royal Indigo & Cyber (Dark)",
     bgStart: "#070B19",
-    bgEnd: "#111936",
-    surface: "#151F3E",
-    surfaceAlt: "#1D2A52",
+    bgEnd: "#131C3E",
+    surface: "#151F42",
+    surfaceAlt: "#1E2B58",
     border: "#4F46E5",
     accent: "#6366F1",
     accentSecondary: "#38BDF8",
+    accentTertiary: "#A855F7",
     accentSoft: "rgba(99, 102, 241, 0.18)",
     textMain: "#F8FAFC",
     textMuted: "#CBD5E1",
@@ -81,46 +97,49 @@ export const BLOG_INFOGRAPHIC_PALETTES: Record<
   },
   "emerald-growth": {
     id: "emerald-growth",
-    label: "Emerald Growth (Dark)",
-    bgStart: "#041F1E",
+    label: "Emerald Growth Waves (Dark)",
+    bgStart: "#041C1B",
     bgEnd: "#0B2E2B",
-    surface: "#103B37",
-    surfaceAlt: "#164E48",
+    surface: "#0F3834",
+    surfaceAlt: "#164A45",
     border: "#10B981",
     accent: "#10B981",
     accentSecondary: "#34D399",
+    accentTertiary: "#F59E0B",
     accentSoft: "rgba(16, 185, 129, 0.18)",
     textMain: "#F0FDF4",
     textMuted: "#A7F3D0",
-    footerBg: "#021514",
+    footerBg: "#021312",
     isLight: false,
   },
   "amber-executive": {
     id: "amber-executive",
-    label: "Amber Executive (Dark)",
-    bgStart: "#0F1420",
-    bgEnd: "#1E2538",
-    surface: "#1B2336",
-    surfaceAlt: "#253048",
+    label: "Obsidian & Amber Orbs (Dark)",
+    bgStart: "#0B0F1A",
+    bgEnd: "#171F32",
+    surface: "#182238",
+    surfaceAlt: "#22304C",
     border: "#F59E0B",
     accent: "#F59E0B",
-    accentSecondary: "#FB923C",
+    accentSecondary: "#38BDF8",
+    accentTertiary: "#10B981",
     accentSoft: "rgba(245, 158, 11, 0.18)",
     textMain: "#FFFBEB",
-    textMuted: "#FDE68A",
-    footerBg: "#090D16",
+    textMuted: "#E2E8F0",
+    footerBg: "#070A12",
     isLight: false,
   },
   "rose-editorial": {
     id: "rose-editorial",
-    label: "Rose Editorial (Light)",
-    bgStart: "#FFFBF7",
+    label: "Warm Editorial Paper (Light)",
+    bgStart: "#FDFBF7",
     bgEnd: "#FFF1F2",
     surface: "#FFFFFF",
     surfaceAlt: "#FFE4E6",
-    border: "#F43F5E",
+    border: "#E11D48",
     accent: "#E11D48",
-    accentSecondary: "#FB7185",
+    accentSecondary: "#2563EB",
+    accentTertiary: "#D97706",
     accentSoft: "rgba(225, 29, 72, 0.12)",
     textMain: "#1E1B2E",
     textMuted: "#475569",
@@ -129,23 +148,24 @@ export const BLOG_INFOGRAPHIC_PALETTES: Record<
   },
   "cyan-tech": {
     id: "cyan-tech",
-    label: "Cyan Systems (Dark)",
-    bgStart: "#061826",
-    bgEnd: "#0C2D48",
-    surface: "#103758",
-    surfaceAlt: "#164870",
+    label: "Cyan Glass Orbs (Dark)",
+    bgStart: "#051524",
+    bgEnd: "#0B2942",
+    surface: "#0F3454",
+    surfaceAlt: "#16466E",
     border: "#06B6D4",
     accent: "#22D3EE",
-    accentSecondary: "#38BDF8",
+    accentSecondary: "#818CF8",
+    accentTertiary: "#34D399",
     accentSoft: "rgba(34, 211, 238, 0.18)",
     textMain: "#F0F9FF",
     textMuted: "#BAE6FD",
-    footerBg: "#04101A",
+    footerBg: "#030D17",
     isLight: false,
   },
   "slate-minimal": {
     id: "slate-minimal",
-    label: "Boardroom Paper (Light)",
+    label: "Venngage Daylight Studio (Light)",
     bgStart: "#F8FAFC",
     bgEnd: "#EEF2FF",
     surface: "#FFFFFF",
@@ -153,6 +173,7 @@ export const BLOG_INFOGRAPHIC_PALETTES: Record<
     border: "#3452D1",
     accent: "#3452D1",
     accentSecondary: "#0EA5E9",
+    accentTertiary: "#8B5CF6",
     accentSoft: "rgba(52, 82, 209, 0.11)",
     textMain: "#0F172A",
     textMuted: "#475569",
@@ -161,34 +182,36 @@ export const BLOG_INFOGRAPHIC_PALETTES: Record<
   },
   "violet-saas": {
     id: "violet-saas",
-    label: "Violet SaaS (Dark)",
-    bgStart: "#120824",
-    bgEnd: "#25104A",
-    surface: "#2D1657",
-    surfaceAlt: "#3B1E70",
+    label: "Violet SaaS Matrix (Dark)",
+    bgStart: "#100720",
+    bgEnd: "#221042",
+    surface: "#291550",
+    surfaceAlt: "#371D6A",
     border: "#A855F7",
     accent: "#C084FC",
     accentSecondary: "#F472B6",
+    accentTertiary: "#38BDF8",
     accentSoft: "rgba(192, 132, 252, 0.18)",
     textMain: "#FAF5FF",
     textMuted: "#E9D5FF",
-    footerBg: "#0B0418",
+    footerBg: "#090314",
     isLight: false,
   },
   "blue-trust": {
     id: "blue-trust",
-    label: "DIWAT Royal Blue (Light)",
-    bgStart: "#F6F7FF",
-    bgEnd: "#E8ECFF",
+    label: "Executive Cobalt Poster (Light)",
+    bgStart: "#F5F8FF",
+    bgEnd: "#E6EDFF",
     surface: "#FFFFFF",
-    surfaceAlt: "#EEF2FF",
-    border: "#5271FF",
-    accent: "#5271FF",
-    accentSecondary: "#10B981",
-    accentSoft: "rgba(82, 113, 255, 0.12)",
-    textMain: "#141E46",
+    surfaceAlt: "#EDF2FF",
+    border: "#2563EB",
+    accent: "#2563EB",
+    accentSecondary: "#7C3AED",
+    accentTertiary: "#0D9488",
+    accentSoft: "rgba(37, 99, 235, 0.12)",
+    textMain: "#0F172A",
     textMuted: "#475569",
-    footerBg: "#141E46",
+    footerBg: "#0F172A",
     isLight: true,
   },
 };
@@ -199,8 +222,8 @@ export const ASPECT_RATIO_DIMENSIONS: Record<
 > = {
   "16:9": { width: 1600, height: 900, label: "16:9 Blog & OG (1600×900)" },
   "1:1": { width: 1080, height: 1080, label: "1:1 Square (1080×1080)" },
-  "4:5": { width: 1080, height: 1350, label: "4:5 LinkedIn (1080×1350)" },
-  "9:16": { width: 1080, height: 1920, label: "9:16 Story / Pin (1080×1920)" },
+  "4:5": { width: 1080, height: 1350, label: "4:5 LinkedIn Poster (1080×1350)" },
+  "9:16": { width: 1080, height: 1920, label: "9:16 Vertical Infographic (1080×1920)" },
 };
 
 export interface BlogInfographicCustomColorOverrides {
@@ -211,11 +234,13 @@ export interface BlogInfographicCustomColorOverrides {
 }
 
 export interface BlogInfographicRenderOptions {
-  /** Scale multiplier (e.g. 0.26 for live template thumbnails, 1 for full HD export). */
   scale?: number;
-  /** Optional custom hex overrides from the studio color wheel. */
   customColors?: BlogInfographicCustomColorOverrides;
-  /** Optional author / executive portrait (HTMLImageElement or cutout HTMLCanvasElement). */
+  backdropStyle?: InfographicBackdropStyle;
+  backdropPlateImage?: HTMLImageElement | null;
+  showVectorIcons?: boolean;
+  spacingDensity?: "compact" | "balanced" | "spacious";
+  /** Retained for backward compatibility; infographics default to full-width diagram mode. */
   portraitSource?: HTMLImageElement | HTMLCanvasElement | null;
   portraitPreset?: MalePortraitPresetId;
   portraitFrame?: PortraitFrameMode;
@@ -232,62 +257,32 @@ export interface BlogInfographicRenderOptions {
   logoBgStyle?: LogoBadgeStyle;
 }
 
-/* -------------------------------------------------------------------------- */
-/* Sample config factory for all 25 templates                                  */
-/* -------------------------------------------------------------------------- */
-
-const DEFAULT_SAMPLE_NODES: BlogInfographicNodeItem[] = [
-  {
-    id: "n-1",
-    badge: "01",
-    title: "Intent & Keyword Cluster",
-    detail: "Map primary keyword, semantic LSI entities, and SERP intent in <10ms.",
-    metricValue: "98% Fit",
-  },
-  {
-    id: "n-2",
-    badge: "02",
-    title: "<580px Pixel-Safe Meta Pack",
-    detail: "Verify desktop & mobile title width before a single token is spent.",
-    metricValue: "512px",
-  },
-  {
-    id: "n-3",
-    badge: "03",
-    title: "25 Editable H2 Infographics",
-    detail: "Pair every H2 with crisp HTML5 Canvas & vector SVG diagrams at $0 API cost.",
-    metricValue: "25 Layouts",
-  },
-  {
-    id: "n-4",
-    badge: "04",
-    title: "JSON-LD @graph & Master .ZIP",
-    detail: "Export BlogPosting + FAQPage schema, CWV HTML, and 6 social posts in 1 click.",
-    metricValue: "100 CWV",
-  },
-];
-
 export function createSampleInfographicConfig(
   templateId = 1,
-  paletteId: BlogInfographicConfig["paletteId"] = "indigo-cyber"
+  paletteOverride?: BlogInfographicConfig["paletteId"]
 ): BlogInfographicConfig {
   const spec =
     BLOG_INFOGRAPHIC_25_TEMPLATES.find((t) => t.id === templateId) ??
     BLOG_INFOGRAPHIC_25_TEMPLATES[0];
+  const curated =
+    TEMPLATE_CURATED_SHOWCASE_DATA[spec.id] ?? TEMPLATE_CURATED_SHOWCASE_DATA[1];
 
   return {
     id: `infographic-tpl-${spec.id}`,
-    sectionId: "sec-sample-1",
+    sectionId: `sec-sample-${spec.id}`,
     templateId: spec.id,
     templateSlug: spec.slug,
     templateName: spec.name,
-    headline: "How Our 62-Tool AI Blog & Visual Studio Ranks #1 in 2026",
-    subheadline: `${spec.family} · ${spec.bestForSectionType} · 100% Editable Typography`,
-    paletteId,
+    headline: curated.headline,
+    subheadline: curated.subheadline,
+    paletteId: paletteOverride ?? curated.paletteId,
     aspectRatio: "16:9",
-    nodes: DEFAULT_SAMPLE_NODES.map((n) => ({ ...n })),
-    footerSourceLabel: "DoItWithAI.tools · Free AI Blog Section Infographic Studio",
-    altText: `${spec.name} infographic explaining the 62-Tool AI Blog & Visual Studio workflow`,
+    backdropStyle: curated.backdropStyle,
+    showVectorIcons: true,
+    spacingDensity: "balanced",
+    nodes: curated.nodes.map((n) => ({ ...n })),
+    footerSourceLabel: "DoItWithAI.tools · Free AI Blog Infographic Studio",
+    altText: `${spec.name}: ${curated.headline}`,
   };
 }
 
@@ -299,10 +294,12 @@ function resolvePalette(
   paletteId: BlogInfographicConfig["paletteId"],
   overrides?: BlogInfographicCustomColorOverrides
 ): BlogInfographicPaletteTokens {
-  const base = BLOG_INFOGRAPHIC_PALETTES[paletteId] ?? BLOG_INFOGRAPHIC_PALETTES["indigo-cyber"];
+  const base =
+    BLOG_INFOGRAPHIC_PALETTES[paletteId] ?? BLOG_INFOGRAPHIC_PALETTES["indigo-cyber"];
   if (!overrides || Object.keys(overrides).length === 0) return base;
   const textMain = overrides.textMain || base.textMain;
-  const isLight = textMain.toLowerCase() !== "#ffffff" && textMain.toLowerCase() !== "#f8fafc";
+  const isLight =
+    textMain.toLowerCase() !== "#ffffff" && textMain.toLowerCase() !== "#f8fafc";
   return {
     ...base,
     bgStart: overrides.bgStart || base.bgStart,
@@ -374,7 +371,6 @@ function wrapTextLines(
   return lines.slice(0, maxLines);
 }
 
-/** Auto-scales font from maxPx down to minPx so text never overflows `boxH`. */
 function drawFittedTextBlock(
   ctx: CanvasRenderingContext2D,
   text: string,
@@ -392,16 +388,18 @@ function drawFittedTextBlock(
     lineHeightRatio?: number;
   }
 ): number {
+  const safeW = Math.max(40, maxW);
+  const safeH = Math.max(16, maxH);
   const weight = opts.weight ?? "800";
   const lineRatio = opts.lineHeightRatio ?? 1.24;
   const maxLines = opts.maxLines ?? 3;
-  let chosenPx = opts.maxPx;
+  let chosenPx = opts.minPx;
   let lines: string[] = [];
 
-  for (let px = opts.maxPx; px >= opts.minPx; px -= 2) {
+  for (let px = opts.maxPx; px >= opts.minPx; px -= 1) {
     ctx.font = `${weight} ${px}px Inter, system-ui, -apple-system, sans-serif`;
-    lines = wrapTextLines(ctx, text, maxW, maxLines);
-    if (lines.length * px * lineRatio <= maxH) {
+    lines = wrapTextLines(ctx, text, safeW, maxLines);
+    if (lines.length * px * lineRatio <= safeH) {
       chosenPx = px;
       break;
     }
@@ -420,177 +418,50 @@ function drawFittedTextBlock(
 }
 
 /**
- * Architectural Portrait Framing (Rule 3.3 of docs/TOOL_OPTIMIZATION_RULES.md):
- * Clips portraits inside Concentric Rings, Rounded Arches, or Adjustable-Radius Windows
- * so raw rectangular gray studio walls NEVER appear on top of cards.
+ * Draws a Venngage-style glowing icon medallion (circle or rounded hexagon) with a vector icon inside.
  */
-function drawArchitecturalPortraitZone(
+function drawIconMedallion(
   ctx: CanvasRenderingContext2D,
-  zone: { x: number; y: number; w: number; h: number },
-  palette: BlogInfographicPaletteTokens,
-  options: BlogInfographicRenderOptions
+  cx: number,
+  cy: number,
+  radius: number,
+  color: string,
+  node: BlogInfographicNodeItem,
+  index: number,
+  templateId: number,
+  showIcon = true
 ): void {
-  const src = options.portraitSource;
-  if (!src) return;
-
-  const frameMode: PortraitFrameMode =
-    options.portraitFrame && options.portraitFrame !== "auto"
-      ? options.portraitFrame
-      : "ring-circle";
-  const ringScale = options.portraitRingScale ?? 1;
-  const zoom = options.portraitScale ?? 1;
-  const offX = options.portraitOffsetX ?? 0;
-  const offY = options.portraitOffsetY ?? 0;
-  const radiusPct = options.portraitRadius ?? 24;
-
-  const cx = zone.x + zone.w / 2;
-  const cy = zone.y + zone.h * 0.44;
-  const baseR = Math.min(zone.w, zone.h * 0.76) * 0.37 * ringScale;
-
   ctx.save();
+  // Outer soft glow ring
+  ctx.fillStyle = `${color}28`;
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius * 1.22, 0, Math.PI * 2);
+  ctx.fill();
 
-  if (frameMode === "ring-circle" || frameMode === "cutout") {
-    const outerR = baseR * 1.26;
-    const midR = baseR * 1.12;
+  // Main medallion body
+  const grad = ctx.createLinearGradient(cx - radius, cy - radius, cx + radius, cy + radius);
+  grad.addColorStop(0, color);
+  grad.addColorStop(1, "#1E293B");
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+  ctx.fill();
 
-    // Soft radial aura
-    const aura = ctx.createRadialGradient(cx, cy, baseR * 0.2, cx, cy, outerR * 1.15);
-    aura.addColorStop(0, palette.accentSoft);
-    aura.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.fillStyle = aura;
-    ctx.beginPath();
-    ctx.arc(cx, cy, outerR * 1.15, 0, Math.PI * 2);
-    ctx.fill();
+  ctx.strokeStyle = "rgba(255,255,255,0.85)";
+  ctx.lineWidth = Math.max(2, radius * 0.08);
+  ctx.stroke();
 
-    // Outer & middle concentric rings
-    ctx.strokeStyle = palette.accent;
-    ctx.globalAlpha = 0.32;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(cx, cy, outerR, 0, Math.PI * 2);
-    ctx.stroke();
-
-    ctx.globalAlpha = 0.55;
-    ctx.lineWidth = 2.5;
-    ctx.beginPath();
-    ctx.arc(cx, cy, midR, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.globalAlpha = 1;
-
-    // 4 orbital nodes
-    for (let i = 0; i < 4; i++) {
-      const ang = (Math.PI / 4) + (i * Math.PI) / 2;
-      const nx = cx + Math.cos(ang) * midR;
-      const ny = cy + Math.sin(ang) * midR;
-      ctx.fillStyle = i % 2 === 0 ? palette.accent : palette.accentSecondary;
-      ctx.beginPath();
-      ctx.arc(nx, ny, 5, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    // Clip to inner circle
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(cx, cy, baseR, 0, Math.PI * 2);
-    ctx.clip();
-
-    const innerGrad = ctx.createRadialGradient(cx, cy - baseR * 0.3, baseR * 0.1, cx, cy, baseR);
-    innerGrad.addColorStop(0, palette.surfaceAlt);
-    innerGrad.addColorStop(1, palette.bgStart);
-    ctx.fillStyle = innerGrad;
-    ctx.fillRect(cx - baseR, cy - baseR, baseR * 2, baseR * 2);
-
-    const srcW = (src as HTMLImageElement).naturalWidth || src.width || 400;
-    const srcH = (src as HTMLImageElement).naturalHeight || src.height || 400;
-    const cover = Math.max((baseR * 2) / srcW, (baseR * 2) / srcH) * zoom;
-    const dw = srcW * cover;
-    const dh = srcH * cover;
-    const dx = cx - dw / 2 + offX * baseR * 2;
-    const dy = cy - dh / 2 + offY * baseR * 2;
-    ctx.drawImage(src, dx, dy, dw, dh);
-    ctx.restore();
-
-    // Accent border ring
-    ctx.strokeStyle = palette.accent;
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.arc(cx, cy, baseR, 0, Math.PI * 2);
-    ctx.stroke();
+  if (showIcon) {
+    const iconId = resolveNodeIconId(node, index, templateId);
+    drawCanvasVectorIcon(ctx, iconId, cx, cy, radius * 1.18, "#FFFFFF");
   } else {
-    // Arch or Adjustable-Radius Window
-    const boxW = Math.min(zone.w * 0.86, zone.h * 0.68) * ringScale;
-    const boxH = Math.min(zone.h * 0.74, boxW * 1.18);
-    const bx = cx - boxW / 2;
-    const by = cy - boxH / 2;
-    const radii: [number, number, number, number] =
-      frameMode === "arch"
-        ? [boxW / 2, boxW / 2, 22, 22]
-        : (() => {
-            const rPx = Math.round((radiusPct / 50) * (Math.min(boxW, boxH) / 2));
-            return [rPx, rPx, rPx, rPx];
-          })();
-
-    // Offset shadow card
-    ctx.fillStyle = palette.accentSoft;
-    roundRectPath(ctx, bx + 8, by + 8, boxW, boxH, radii);
-    ctx.fill();
-
-    ctx.save();
-    roundRectPath(ctx, bx, by, boxW, boxH, radii);
-    ctx.clip();
-
-    ctx.fillStyle = palette.surfaceAlt;
-    ctx.fillRect(bx, by, boxW, boxH);
-
-    const srcW = (src as HTMLImageElement).naturalWidth || src.width || 400;
-    const srcH = (src as HTMLImageElement).naturalHeight || src.height || 400;
-    const cover = Math.max(boxW / srcW, boxH / srcH) * zoom;
-    const dw = srcW * cover;
-    const dh = srcH * cover;
-    const dx = cx - dw / 2 + offX * boxW;
-    const dy = cy - dh / 2 + offY * boxH;
-    ctx.drawImage(src, dx, dy, dw, dh);
-    ctx.restore();
-
-    ctx.strokeStyle = palette.accent;
-    ctx.lineWidth = 3.5;
-    roundRectPath(ctx, bx, by, boxW, boxH, radii);
-    ctx.stroke();
+    ctx.font = `900 ${Math.round(radius * 0.8)}px Inter, system-ui, sans-serif`;
+    ctx.fillStyle = "#FFFFFF";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(String(index + 1), cx, cy + 1);
+    ctx.textAlign = "left";
   }
-
-  // Author caption pill beneath portrait
-  if (options.authorName) {
-    const pillW = Math.min(zone.w - 12, 260);
-    const pillH = 48;
-    const px = cx - pillW / 2;
-    const py = zone.y + zone.h - pillH - 6;
-    ctx.fillStyle = palette.surface;
-    ctx.strokeStyle = palette.border;
-    ctx.lineWidth = 1.5;
-    roundRectPath(ctx, px, py, pillW, pillH, 14);
-    ctx.fill();
-    ctx.stroke();
-
-    drawFittedTextBlock(ctx, options.authorName, cx, py + 7, pillW - 20, 20, {
-      maxPx: 15,
-      minPx: 11,
-      weight: "800",
-      color: palette.textMain,
-      align: "center",
-      maxLines: 1,
-    });
-    if (options.authorRole) {
-      drawFittedTextBlock(ctx, options.authorRole, cx, py + 26, pillW - 20, 18, {
-        maxPx: 11,
-        minPx: 9,
-        weight: "600",
-        color: palette.textMuted,
-        align: "center",
-        maxLines: 1,
-      });
-    }
-  }
-
   ctx.restore();
 }
 
@@ -608,7 +479,9 @@ function drawBrandLogoOrBadge(
 
   if (logo) {
     const maxH = Math.round(36 * scale);
-    const ratio = (logo.naturalWidth || logo.width || 120) / Math.max(1, logo.naturalHeight || logo.height || 40);
+    const ratio =
+      (logo.naturalWidth || logo.width || 120) /
+      Math.max(1, logo.naturalHeight || logo.height || 40);
     const lw = Math.min(180, Math.round(maxH * ratio));
     const lh = maxH;
     const padX = 12;
@@ -637,8 +510,8 @@ function drawBrandLogoOrBadge(
   const brandText = (footerLabel.split("·")[0] || "DoItWithAI.tools").trim();
   ctx.font = "800 13px Inter, system-ui, sans-serif";
   const tw = ctx.measureText(brandText).width;
-  const pw = Math.min(240, tw + 26);
-  const ph = 30;
+  const pw = Math.min(250, tw + 30);
+  const ph = 32;
   const px = xRight - pw;
   const py = yCenter - ph / 2;
 
@@ -653,111 +526,163 @@ function drawBrandLogoOrBadge(
   ctx.textAlign = "left";
 }
 
-/* -------------------------------------------------------------------------- */
-/* Node Card primitive + 25 Distinct Template Geometry Renderers               */
-/* -------------------------------------------------------------------------- */
-
-function drawStandardNodeCard(
+/**
+ * Upgraded Venngage/Canva-Style Infographic Node Card:
+ * Features an integrated Icon Medallion, clean top badge & KPI pill, generous padding,
+ * and balanced vertical typography that never leaves awkward dead space or overlaps.
+ */
+function drawInfographicNodeCard(
   ctx: CanvasRenderingContext2D,
   box: { x: number; y: number; w: number; h: number },
   node: BlogInfographicNodeItem,
   index: number,
   palette: BlogInfographicPaletteTokens,
+  templateId: number,
+  showIcon = true,
   variant: "default" | "versus-left" | "versus-right" | "checklist" | "myth-reality" = "default"
 ): void {
+  const accentColors = [
+    palette.accent,
+    palette.accentSecondary,
+    palette.accentTertiary,
+    "#10B981",
+    "#F59E0B",
+  ];
   const accentColor =
     variant === "versus-left"
       ? "#F43F5E"
       : variant === "versus-right"
         ? "#10B981"
-        : index % 2 === 0
-          ? palette.accent
-          : palette.accentSecondary;
+        : variant === "myth-reality"
+          ? index % 2 === 0
+            ? "#F43F5E"
+            : "#10B981"
+          : accentColors[index % accentColors.length];
 
   ctx.save();
+
+  // Subtle drop shadow + glass surface card
+  ctx.shadowColor = palette.isLight
+    ? "rgba(15, 23, 42, 0.08)"
+    : "rgba(0, 0, 0, 0.35)";
+  ctx.shadowBlur = 18;
+  ctx.shadowOffsetY = 6;
   ctx.fillStyle = palette.surface;
-  ctx.strokeStyle = variant === "default" ? palette.border : accentColor;
-  ctx.lineWidth = 2;
-  roundRectPath(ctx, box.x, box.y, box.w, box.h, 18);
+  roundRectPath(ctx, box.x, box.y, box.w, box.h, 20);
   ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetY = 0;
+
+  ctx.strokeStyle = variant === "default" ? `${accentColor}77` : accentColor;
+  ctx.lineWidth = 2;
+  roundRectPath(ctx, box.x, box.y, box.w, box.h, 20);
   ctx.stroke();
 
-  // Left accent bar
+  // Top decorative accent header band (6px)
   ctx.fillStyle = accentColor;
-  roundRectPath(ctx, box.x, box.y, 7, box.h, [18, 0, 0, 18]);
+  roundRectPath(ctx, box.x, box.y, box.w, 7, [20, 20, 0, 0]);
   ctx.fill();
 
-  const innerX = box.x + 20;
-  const innerW = Math.max(60, box.w - 34);
-  let curY = box.y + 14;
+  const padX = Math.max(16, Math.min(24, Math.round(box.w * 0.065)));
+  const padY = Math.max(14, Math.min(22, Math.round(box.h * 0.08)));
+  const innerX = box.x + padX;
+  const innerW = Math.max(60, box.w - padX * 2);
+  let curY = box.y + padY + 4;
 
-  // Badge + optional Metric pill row
+  // Row 1: Icon Medallion + Badge + Metric Pill
+  const iconR = Math.min(20, Math.max(13, Math.round(Math.min(box.w, box.h) * 0.085)));
+  if (showIcon && box.h >= 105 && box.w >= 170) {
+    drawIconMedallion(
+      ctx,
+      innerX + iconR,
+      curY + iconR,
+      iconR,
+      accentColor,
+      node,
+      index,
+      templateId,
+      true
+    );
+  }
+
+  const badgeStartX =
+    showIcon && box.h >= 105 && box.w >= 170 ? innerX + iconR * 2 + 10 : innerX;
   const badgeText =
     variant === "checklist"
-      ? `✓ CHECK #${index + 1}`
+      ? `✓ CHECK 0${index + 1}`
       : variant === "myth-reality"
         ? index % 2 === 0
           ? "✕ COMMON MYTH"
-          : "✓ PROVEN REALITY"
-        : (node.badge || `0${index + 1}`).toUpperCase();
+          : "✓ PROVEN FACT"
+        : (node.badge || `STEP 0${index + 1}`).toUpperCase();
 
-  ctx.font = "800 12px Inter, system-ui, sans-serif";
-  const badgeW = Math.min(innerW * 0.55, ctx.measureText(badgeText).width + 20);
-  ctx.fillStyle = palette.accentSoft;
-  roundRectPath(ctx, innerX, curY, badgeW, 24, 8);
+  ctx.font = "800 11px Inter, system-ui, sans-serif";
+  const maxBadgeW = Math.max(54, innerW * 0.48);
+  const badgeW = Math.min(maxBadgeW, ctx.measureText(badgeText).width + 18);
+  const badgeY = curY + Math.max(0, iconR - 12);
+  ctx.fillStyle = `${accentColor}1F`;
+  roundRectPath(ctx, badgeStartX, badgeY, badgeW, 24, 8);
   ctx.fill();
 
   ctx.fillStyle = accentColor;
   ctx.textBaseline = "middle";
-  ctx.fillText(badgeText, innerX + 10, curY + 12);
+  ctx.fillText(badgeText.slice(0, 16), badgeStartX + 9, badgeY + 12);
 
   if (node.metricValue) {
     const metricText = node.metricValue;
-    ctx.font = "800 12px Inter, system-ui, sans-serif";
-    const mw = Math.min(innerW * 0.44, ctx.measureText(metricText).width + 18);
-    const mx = box.x + box.w - mw - 14;
-    ctx.fillStyle = accentColor;
-    roundRectPath(ctx, mx, curY, mw, 24, 999);
-    ctx.fill();
-    ctx.fillStyle = "#FFFFFF";
-    ctx.textAlign = "center";
-    ctx.fillText(metricText, mx + mw / 2, curY + 12);
-    ctx.textAlign = "left";
+    ctx.font = "800 11px Inter, system-ui, sans-serif";
+    const mw = Math.min(innerW * 0.42, ctx.measureText(metricText).width + 18);
+    const mx = box.x + box.w - padX - mw;
+    if (mx > badgeStartX + badgeW + 6) {
+      ctx.fillStyle = accentColor;
+      roundRectPath(ctx, mx, badgeY, mw, 24, 999);
+      ctx.fill();
+      ctx.fillStyle = "#FFFFFF";
+      ctx.textAlign = "center";
+      ctx.fillText(metricText, mx + mw / 2, badgeY + 12);
+      ctx.textAlign = "left";
+    }
   }
 
-  curY += 32;
+  curY += Math.max(iconR * 2 + 10, 34);
 
+  // Row 2: Node Title
+  const availH = Math.max(36, box.y + box.h - curY - padY);
+  const titleBoxH = Math.min(58, Math.round(availH * 0.46));
   const titleUsed = drawFittedTextBlock(
     ctx,
-    node.title || `Key Point ${index + 1}`,
+    node.title || `Key Takeaway ${index + 1}`,
     innerX,
     curY,
     innerW,
-    Math.min(54, box.h * 0.34),
+    titleBoxH,
     {
-      maxPx: 21,
-      minPx: 14,
+      maxPx: box.h > 220 ? 22 : 19,
+      minPx: 13,
       weight: "800",
       color: palette.textMain,
       maxLines: 2,
+      lineHeightRatio: 1.2,
     }
   );
-  curY += titleUsed + 6;
+  curY += titleUsed + 8;
 
-  const remainH = Math.max(24, box.y + box.h - curY - 12);
-  drawFittedTextBlock(ctx, node.detail || "", innerX, curY, innerW, remainH, {
-    maxPx: 15,
-    minPx: 11,
-    weight: "500",
-    color: palette.textMuted,
-    maxLines: 3,
-    lineHeightRatio: 1.32,
-  });
+  // Row 3: Supporting Detail
+  const remainH = Math.max(20, box.y + box.h - curY - padY + 4);
+  if (remainH >= 22 && node.detail) {
+    drawFittedTextBlock(ctx, node.detail, innerX, curY, innerW, remainH, {
+      maxPx: box.h > 220 ? 15 : 14,
+      minPx: 11,
+      weight: "500",
+      color: palette.textMuted,
+      maxLines: box.h > 240 ? 4 : 3,
+      lineHeightRatio: 1.34,
+    });
+  }
 
   ctx.restore();
 }
 
-/** Small reusable numeric-badge circle used by the zig-zag, anatomy & Venn geometries. */
 function drawNumberedDot(
   ctx: CanvasRenderingContext2D,
   cx: number,
@@ -767,14 +692,19 @@ function drawNumberedDot(
   color: string
 ): void {
   ctx.save();
+  ctx.fillStyle = `${color}33`;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r * 1.24, 0, Math.PI * 2);
+  ctx.fill();
+
   ctx.fillStyle = color;
   ctx.beginPath();
   ctx.arc(cx, cy, r, 0, Math.PI * 2);
   ctx.fill();
-  ctx.strokeStyle = "rgba(255,255,255,0.65)";
-  ctx.lineWidth = 2;
+  ctx.strokeStyle = "#FFFFFF";
+  ctx.lineWidth = 2.5;
   ctx.stroke();
-  ctx.font = `900 ${Math.round(r * 0.85)}px Inter, system-ui, sans-serif`;
+  ctx.font = `900 ${Math.round(r * 0.82)}px Inter, system-ui, sans-serif`;
   ctx.fillStyle = "#FFFFFF";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
@@ -783,7 +713,6 @@ function drawNumberedDot(
   ctx.restore();
 }
 
-/** Small pill-style tag used by zig-zag, checklist & quadrant geometries. */
 function drawTagPill(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -794,7 +723,7 @@ function drawTagPill(
 ): number {
   ctx.font = "800 11px Inter, system-ui, sans-serif";
   const w = ctx.measureText(text).width + 18;
-  const h = 22;
+  const h = 24;
   ctx.fillStyle = color;
   roundRectPath(ctx, x, y, w, h, 999);
   ctx.fill();
@@ -806,191 +735,438 @@ function drawTagPill(
   return w;
 }
 
+/* -------------------------------------------------------------------------- */
+/* 25 Venngage / Canva-Style Infographic Body Geometries                       */
+/* -------------------------------------------------------------------------- */
+
 function renderTemplateBodyGeometry(
   ctx: CanvasRenderingContext2D,
   stage: { x: number; y: number; w: number; h: number },
   config: BlogInfographicConfig,
-  palette: BlogInfographicPaletteTokens
+  palette: BlogInfographicPaletteTokens,
+  showIcons = true
 ): void {
   const tplId = config.templateId || 1;
+  const fallbackNodes =
+    TEMPLATE_CURATED_SHOWCASE_DATA[tplId]?.nodes ??
+    TEMPLATE_CURATED_SHOWCASE_DATA[1].nodes;
   const nodes =
-    config.nodes && config.nodes.length > 0 ? config.nodes : DEFAULT_SAMPLE_NODES;
-  const count = Math.min(nodes.length, 8);
-  const items = nodes.slice(0, count);
+    config.nodes && config.nodes.length > 0 ? config.nodes : fallbackNodes;
+  const items = nodes.slice(0, 8);
+  const stepColors = [
+    palette.accent,
+    palette.accentSecondary,
+    palette.accentTertiary,
+    "#10B981",
+    "#F59E0B",
+    "#EC4899",
+  ];
 
-  // 1: Horizontal Step Pipeline
+  // TEMPLATE #1: Venngage "Five Essential Strategies" Chevron Arrow Pipeline + Drop Columns
   if (tplId === 1) {
-    const cols = Math.min(4, items.length);
-    const rows = Math.ceil(items.length / cols);
-    const gapX = 22;
-    const gapY = 20;
-    const cardW = (stage.w - gapX * (cols - 1)) / cols;
-    const cardH = (stage.h - gapY * (rows - 1)) / rows;
+    const cols = Math.min(5, Math.max(2, items.length));
+    const rowItems = items.slice(0, cols);
+    const gapX = 16;
+    const colW = (stage.w - gapX * (cols - 1)) / cols;
+    const chevH = Math.min(74, Math.max(54, Math.round(stage.h * 0.16)));
+    const chevY = stage.y + 8;
+    const tipDepth = 20;
 
-    items.forEach((node, idx) => {
-      const r = Math.floor(idx / cols);
-      const c = idx % cols;
-      const bx = stage.x + c * (cardW + gapX);
-      const by = stage.y + r * (cardH + gapY);
-      drawStandardNodeCard(ctx, { x: bx, y: by, w: cardW, h: cardH }, node, idx, palette);
+    rowItems.forEach((node, idx) => {
+      const cx = stage.x + idx * (colW + gapX);
+      const color = stepColors[idx % stepColors.length];
 
-      // Connector arrow to next column
-      if (c < cols - 1 && idx < items.length - 1) {
-        const ax = bx + cardW + 4;
-        const ay = by + cardH / 2;
-        ctx.strokeStyle = palette.accent;
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.moveTo(ax, ay);
-        ctx.lineTo(ax + gapX - 8, ay);
-        ctx.stroke();
-      }
-    });
-    return;
-  }
-
-  // 2: Vertical Milestone Roadmap
-  if (tplId === 2) {
-    const spineX = stage.x + 28;
-    ctx.strokeStyle = palette.accent;
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.moveTo(spineX, stage.y + 16);
-    ctx.lineTo(spineX, stage.y + stage.h - 16);
-    ctx.stroke();
-
-    const gapY = 14;
-    const rowH = (stage.h - gapY * (items.length - 1)) / items.length;
-    items.forEach((node, idx) => {
-      const ry = stage.y + idx * (rowH + gapY);
-      ctx.fillStyle = palette.accent;
+      // Draw interlocking Chevron polygon
+      ctx.save();
+      ctx.fillStyle = color;
       ctx.beginPath();
-      ctx.arc(spineX, ry + rowH / 2, 11, 0, Math.PI * 2);
+      ctx.moveTo(cx, chevY);
+      ctx.lineTo(cx + colW - tipDepth, chevY);
+      ctx.lineTo(cx + colW, chevY + chevH / 2);
+      ctx.lineTo(cx + colW - tipDepth, chevY + chevH);
+      ctx.lineTo(cx, chevY + chevH);
+      if (idx > 0) {
+        ctx.lineTo(cx + tipDepth * 0.75, chevY + chevH / 2);
+      }
+      ctx.closePath();
       ctx.fill();
-      drawStandardNodeCard(
+
+      // Metric or Step label inside Chevron
+      drawFittedTextBlock(
         ctx,
-        { x: spineX + 26, y: ry, w: stage.w - 54, h: rowH },
+        node.metricValue || node.badge || `STEP 0${idx + 1}`,
+        cx + (idx > 0 ? tipDepth + 8 : 14),
+        chevY + chevH / 2 - 11,
+        colW - tipDepth * 1.8,
+        24,
+        {
+          maxPx: 16,
+          minPx: 11,
+          weight: "900",
+          color: "#FFFFFF",
+          align: "center",
+          maxLines: 1,
+        }
+      );
+      ctx.restore();
+
+      // Numbered medallion overlapping bottom of chevron + dotted leader line
+      const medR = 20;
+      const medCenterX = cx + colW / 2;
+      const medCenterY = chevY + chevH;
+      const cardTopY = medCenterY + medR + 18;
+      const cardH = Math.max(120, stage.y + stage.h - cardTopY);
+
+      ctx.save();
+      ctx.setLineDash([4, 4]);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(medCenterX, medCenterY + medR);
+      ctx.lineTo(medCenterX, cardTopY);
+      ctx.stroke();
+      ctx.restore();
+
+      drawNumberedDot(ctx, medCenterX, medCenterY, medR, String(idx + 1), color);
+
+      // Editorial column card underneath
+      drawInfographicNodeCard(
+        ctx,
+        { x: cx, y: cardTopY, w: colW, h: cardH },
         node,
         idx,
-        palette
+        palette,
+        tplId,
+        showIcons
       );
     });
     return;
   }
 
-  // 3 & 19: Circular Growth Flywheel / Hub-and-Spoke Architecture
-  if (tplId === 3 || tplId === 19) {
-    const cx = stage.x + stage.w / 2;
-    const cy = stage.y + stage.h / 2;
-    const cardW = Math.min(stage.w * 0.36, 360);
-    const cardH = Math.min(stage.h * 0.40, 175);
-    const orbitRx = (stage.w - cardW) / 2 - 8;
-    const orbitRy = (stage.h - cardH) / 2 - 6;
+  // TEMPLATE #2: Venngage "Historical Milestones" Alternating Vertical Timeline with Icon Medallions
+  if (tplId === 2) {
+    const list = items.slice(0, 5);
+    const centerX = stage.x + stage.w / 2;
+    const gapY = 14;
+    const rowH = (stage.h - gapY * (list.length - 1)) / list.length;
 
-    // Orbit ring
+    // Central timeline glowing spine
+    ctx.save();
     ctx.strokeStyle = palette.accent;
-    ctx.globalAlpha = 0.35;
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 5;
     ctx.beginPath();
-    ctx.ellipse(cx, cy, Math.max(60, orbitRx), Math.max(45, orbitRy), 0, 0, Math.PI * 2);
+    ctx.moveTo(centerX, stage.y + 18);
+    ctx.lineTo(centerX, stage.y + stage.h - 18);
     ctx.stroke();
-    ctx.globalAlpha = 1;
+    ctx.restore();
 
-    // Center hub
-    const hubR = Math.min(68, Math.min(stage.w, stage.h) * 0.13);
-    ctx.fillStyle = palette.accent;
-    ctx.beginPath();
-    ctx.arc(cx, cy, hubR, 0, Math.PI * 2);
-    ctx.fill();
-    drawFittedTextBlock(
-      ctx,
-      tplId === 3 ? "FLYWHEEL CORE" : "PILLAR HUB",
-      cx,
-      cy - 10,
-      hubR * 1.7,
-      28,
-      { maxPx: 14, minPx: 10, weight: "900", color: "#FFFFFF", align: "center", maxLines: 1 }
-    );
+    list.forEach((node, idx) => {
+      const ry = stage.y + idx * (rowH + gapY);
+      const midY = ry + rowH / 2;
+      const isLeft = idx % 2 === 0;
+      const color = stepColors[idx % stepColors.length];
+      const medR = Math.min(28, rowH * 0.38);
+      const cardW = stage.w * 0.42;
+      const cardX = isLeft ? stage.x : stage.x + stage.w - cardW;
 
-    const angles =
-      items.length <= 4
-        ? [-Math.PI * 0.75, -Math.PI * 0.25, Math.PI * 0.25, Math.PI * 0.75]
-        : items.map((_, i) => -Math.PI / 2 + (i * Math.PI * 2) / items.length);
+      // Connector arm from center medallion to card
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(centerX, midY);
+      ctx.lineTo(isLeft ? cardX + cardW : cardX, midY);
+      ctx.stroke();
 
-    items.slice(0, 6).forEach((node, idx) => {
-      const ang = angles[idx % angles.length];
-      const nx = cx + Math.cos(ang) * orbitRx - cardW / 2;
-      const ny = cy + Math.sin(ang) * orbitRy - cardH / 2;
-      drawStandardNodeCard(ctx, { x: nx, y: ny, w: cardW, h: cardH }, node, idx, palette);
+      drawInfographicNodeCard(
+        ctx,
+        { x: cardX, y: ry, w: cardW, h: rowH },
+        node,
+        idx,
+        palette,
+        tplId,
+        showIcons
+      );
+
+      // Central circular icon medallion on the timeline
+      drawIconMedallion(ctx, centerX, midY, medR, color, node, idx, tplId, showIcons);
     });
     return;
   }
 
-  // 4: Zig-Zag Reader / Customer Journey Path
-  if (tplId === 4) {
-    const stepCount = Math.max(2, items.length);
-    const stepW = stage.w / stepCount;
-    const dotR = Math.min(26, stage.h * 0.055);
-    const cardW = Math.min(stepW * 0.82, 230);
-    const cardH = Math.min(stage.h * 0.4, 150);
-    const topY = stage.y + cardH / 2 + 6;
-    const botY = stage.y + stage.h - cardH / 2 - 6;
+  // TEMPLATE #3: Venngage "How to Build a Growth Mindset" Interlocking Mechanical Gears System
+  if (tplId === 3) {
+    const count = Math.min(5, Math.max(3, items.length));
+    const gearItems = items.slice(0, count);
+    const stepX = stage.w / count;
+    const gearR = Math.min(54, stepX * 0.34, stage.h * 0.16);
+    const centerY = stage.y + stage.h / 2;
+    const cardH = Math.min(148, stage.h * 0.33);
+    const cardW = Math.min(stepX * 0.92, 260);
 
-    // Dashed zig-zag connector path through every step's dot
+    gearItems.forEach((node, idx) => {
+      const gx = stage.x + idx * stepX + stepX / 2;
+      const gy = centerY + (idx % 2 === 0 ? -10 : 10);
+      const color = stepColors[idx % stepColors.length];
+      const isTopCallout = idx % 2 === 1;
+      const cardY = isTopCallout ? stage.y + 4 : stage.y + stage.h - cardH - 4;
+
+      // Dotted vertical pointer between gear and callout card
+      ctx.save();
+      ctx.setLineDash([5, 5]);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(gx, isTopCallout ? gy - gearR * 1.2 : gy + gearR * 1.2);
+      ctx.lineTo(gx, isTopCallout ? cardY + cardH : cardY);
+      ctx.stroke();
+      ctx.restore();
+
+      // Draw Mechanical Gear with 12 Teeth
+      ctx.save();
+      const teeth = 12;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = Math.max(6, gearR * 0.18);
+      for (let t = 0; t < teeth; t++) {
+        const ang = (t * Math.PI * 2) / teeth;
+        ctx.beginPath();
+        ctx.moveTo(gx + Math.cos(ang) * (gearR * 0.85), gy + Math.sin(ang) * (gearR * 0.85));
+        ctx.lineTo(gx + Math.cos(ang) * (gearR * 1.16), gy + Math.sin(ang) * (gearR * 1.16));
+        ctx.stroke();
+      }
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(gx, gy, gearR * 0.94, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = palette.surface;
+      ctx.lineWidth = 3.5;
+      ctx.beginPath();
+      ctx.arc(gx, gy, gearR * 0.68, 0, Math.PI * 2);
+      ctx.stroke();
+
+      const iconId = resolveNodeIconId(node, idx, tplId);
+      drawCanvasVectorIcon(ctx, iconId, gx, gy, gearR * 0.95, "#FFFFFF");
+      ctx.restore();
+
+      // Callout card above or below the gear
+      drawInfographicNodeCard(
+        ctx,
+        { x: gx - cardW / 2, y: cardY, w: cardW, h: cardH },
+        node,
+        idx,
+        palette,
+        tplId,
+        false
+      );
+    });
+    return;
+  }
+
+  // TEMPLATE #4: Venngage "5 Brand Strategy Must-Haves" Winding S-Curve Road Path
+  if (tplId === 4) {
+    const list = items.slice(0, 4);
+    const gapY = 14;
+    const rowH = (stage.h - gapY * (list.length - 1)) / list.length;
+
+    // Winding road S-curve connector behind the rows
     ctx.save();
-    ctx.setLineDash([9, 8]);
-    ctx.strokeStyle = palette.accent;
-    ctx.lineWidth = 3;
+    ctx.strokeStyle = `${palette.accent}55`;
+    ctx.lineWidth = 18;
+    ctx.lineCap = "round";
     ctx.beginPath();
-    items.forEach((_, idx) => {
-      const px = stage.x + stepW * idx + stepW / 2;
-      const py = idx % 2 === 0 ? topY : botY;
-      if (idx === 0) ctx.moveTo(px, py);
-      else ctx.lineTo(px, py);
+    list.forEach((_, idx) => {
+      const ry = stage.y + idx * (rowH + gapY) + rowH / 2;
+      const rx = idx % 2 === 0 ? stage.x + 52 : stage.x + stage.w - 52;
+      if (idx === 0) ctx.moveTo(rx, ry);
+      else ctx.lineTo(rx, ry);
     });
     ctx.stroke();
     ctx.restore();
 
-    items.forEach((node, idx) => {
-      const px = stage.x + stepW * idx + stepW / 2;
-      const isTop = idx % 2 === 0;
-      const dotY = isTop ? topY : botY;
-      const cardY = isTop ? dotY - cardH / 2 - dotR - 14 : dotY + dotR + 14;
-      const color = idx % 2 === 0 ? palette.accent : palette.accentSecondary;
+    list.forEach((node, idx) => {
+      const ry = stage.y + idx * (rowH + gapY);
+      const midY = ry + rowH / 2;
+      const numOnRight = idx % 2 === 0;
+      const color = stepColors[idx % stepColors.length];
+      const medR = Math.min(30, rowH * 0.42);
+      const medX = numOnRight ? stage.x + stage.w - medR - 14 : stage.x + medR + 14;
+      const cardX = numOnRight ? stage.x : stage.x + medR * 2 + 34;
+      const cardW = stage.w - medR * 2 - 48;
 
-      drawNumberedDot(ctx, px, dotY, dotR, String(idx + 1), color);
-      drawStandardNodeCard(
+      drawInfographicNodeCard(
         ctx,
-        { x: px - cardW / 2, y: cardY, w: cardW, h: cardH },
+        { x: cardX, y: ry, w: cardW, h: rowH },
         node,
         idx,
-        palette
+        palette,
+        tplId,
+        showIcons
+      );
+      drawNumberedDot(ctx, medX, midY, medR, String(idx + 1), color);
+    });
+    return;
+  }
+
+  // TEMPLATE #5 & #17: 3D Tapered Trapezoid Funnel (#5) / Layered Strategy Pyramid (#17) + Right Callouts
+  if (tplId === 5 || tplId === 17) {
+    const isPyramid = tplId === 17;
+    const tiers = items.slice(0, 4);
+    const gapY = 14;
+    const tierH = (stage.h - gapY * (tiers.length - 1)) / tiers.length;
+    const shapeZoneW = stage.w * 0.42;
+    const shapeCenterX = stage.x + shapeZoneW / 2;
+    const cardX = stage.x + shapeZoneW + 32;
+    const cardW = stage.w - shapeZoneW - 32;
+
+    tiers.forEach((node, idx) => {
+      const ty = stage.y + idx * (tierH + gapY);
+      const midY = ty + tierH / 2;
+      const color = stepColors[idx % stepColors.length];
+
+      const topRatio = isPyramid
+        ? 0.28 + (idx / tiers.length) * 0.68
+        : 0.96 - (idx / tiers.length) * 0.56;
+      const botRatio = isPyramid
+        ? 0.28 + ((idx + 1) / tiers.length) * 0.68
+        : 0.96 - ((idx + 1) / tiers.length) * 0.56;
+
+      const topW = shapeZoneW * topRatio;
+      const botW = shapeZoneW * botRatio;
+
+      // Draw Trapezoid tier
+      ctx.save();
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(shapeCenterX - topW / 2, ty + 2);
+      ctx.lineTo(shapeCenterX + topW / 2, ty + 2);
+      ctx.lineTo(shapeCenterX + botW / 2, ty + tierH - 2);
+      ctx.lineTo(shapeCenterX - botW / 2, ty + tierH - 2);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = "rgba(255,255,255,0.5)";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      drawFittedTextBlock(
+        ctx,
+        node.metricValue || node.badge || `TIER ${idx + 1}`,
+        shapeCenterX,
+        midY - 11,
+        Math.min(topW, botW) - 16,
+        24,
+        {
+          maxPx: 17,
+          minPx: 11,
+          weight: "900",
+          color: "#FFFFFF",
+          align: "center",
+          maxLines: 1,
+        }
+      );
+      ctx.restore();
+
+      // Dotted pointer line to right callout card
+      const rightEdgeX = shapeCenterX + Math.max(topW, botW) / 2;
+      ctx.save();
+      ctx.setLineDash([4, 4]);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(rightEdgeX + 4, midY);
+      ctx.lineTo(cardX - 4, midY);
+      ctx.stroke();
+      ctx.restore();
+
+      drawInfographicNodeCard(
+        ctx,
+        { x: cardX, y: ty, w: cardW, h: tierH },
+        node,
+        idx,
+        palette,
+        tplId,
+        showIcons
       );
     });
     return;
   }
 
-  // 5 & 17: 4-Tier Conversion Funnel / 3-Tier Strategy Pyramid
-  if (tplId === 5 || tplId === 17) {
-    const isPyramid = tplId === 17;
-    const tiers = items.slice(0, 4);
-    const gapY = 12;
-    const tierH = (stage.h - gapY * (tiers.length - 1)) / tiers.length;
+  // TEMPLATE #6: Venngage "TRAINING COMPARISON" Central-Spine Versus Battle Card
+  if (tplId === 6) {
+    const leftItems = items.filter((_, i) => i % 2 === 0).slice(0, 3);
+    const rightItems = items.filter((_, i) => i % 2 === 1).slice(0, 3);
+    const rows = Math.max(1, leftItems.length, rightItems.length);
+    const headerBannerH = 44;
+    const bodyTop = stage.y + headerBannerH + 14;
+    const bodyH = stage.h - headerBannerH - 14;
+    const gapY = 14;
+    const rowH = (bodyH - gapY * (rows - 1)) / rows;
+    const spineW = 96;
+    const colW = (stage.w - spineW) / 2;
+    const centerX = stage.x + stage.w / 2;
 
-    tiers.forEach((node, idx) => {
-      const ratio = isPyramid
-        ? 0.56 + (idx / Math.max(1, tiers.length - 1)) * 0.44
-        : 1 - (idx / Math.max(1, tiers.length)) * 0.34;
-      const tw = stage.w * ratio;
-      const tx = stage.x + (stage.w - tw) / 2;
-      const ty = stage.y + idx * (tierH + gapY);
-      drawStandardNodeCard(ctx, { x: tx, y: ty, w: tw, h: tierH }, node, idx, palette);
+    // Top Contender A vs Contender B Ribbon Headers
+    ctx.fillStyle = palette.accent;
+    roundRectPath(ctx, stage.x, stage.y, colW - 12, headerBannerH, 12);
+    ctx.fill();
+    drawFittedTextBlock(ctx, "DOITWITHAI STUDIO (WINNER)", stage.x + colW / 2 - 6, stage.y + 12, colW - 36, 22, {
+      maxPx: 15, minPx: 11, weight: "900", color: "#FFFFFF", align: "center", maxLines: 1,
     });
+
+    drawNumberedDot(ctx, centerX, stage.y + headerBannerH / 2, 20, "VS", "#F59E0B");
+
+    ctx.fillStyle = "#F43F5E";
+    roundRectPath(ctx, stage.x + colW + spineW + 12, stage.y, colW - 12, headerBannerH, 12);
+    ctx.fill();
+    drawFittedTextBlock(ctx, "TRADITIONAL / MANUAL WORKFLOW", stage.x + colW + spineW + 12 + (colW - 12) / 2, stage.y + 12, colW - 36, 22, {
+      maxPx: 15, minPx: 11, weight: "900", color: "#FFFFFF", align: "center", maxLines: 1,
+    });
+
+    for (let r = 0; r < rows; r++) {
+      const ry = bodyTop + r * (rowH + gapY);
+      const midY = ry + rowH / 2;
+      const leftNode = leftItems[r] || items[0];
+      const rightNode = rightItems[r] || items[1] || items[0];
+
+      drawInfographicNodeCard(
+        ctx,
+        { x: stage.x, y: ry, w: colW - 12, h: rowH },
+        leftNode,
+        r * 2,
+        palette,
+        tplId,
+        showIcons,
+        "versus-right"
+      );
+
+      drawInfographicNodeCard(
+        ctx,
+        { x: stage.x + colW + spineW + 12, y: ry, w: colW - 12, h: rowH },
+        rightNode,
+        r * 2 + 1,
+        palette,
+        tplId,
+        showIcons,
+        "versus-left"
+      );
+
+      // Center Spine Medallion connecting left and right comparison cards
+      drawIconMedallion(
+        ctx,
+        centerX,
+        midY,
+        Math.min(26, rowH * 0.36),
+        stepColors[r % stepColors.length],
+        leftNode,
+        r,
+        tplId,
+        true
+      );
+    }
     return;
   }
 
-  // 6, 8, 9, 10, 23: Two-Column Versus / Before-After / Pros-Cons / Do's-Don'ts / Myth-Reality
-  if (tplId === 6 || tplId === 8 || tplId === 9 || tplId === 10 || tplId === 23) {
+  // TEMPLATE #8, #9, #10, #23: Two-Column Split (Before/After, Pros/Cons, Do's/Don'ts, Myth/Reality)
+  if (tplId === 8 || tplId === 9 || tplId === 10 || tplId === 23) {
     const colGap = 36;
     const colW = (stage.w - colGap) / 2;
     const leftItems = items.filter((_, i) => i % 2 === 0);
@@ -1000,238 +1176,321 @@ function renderTemplateBodyGeometry(
     const cardH = (stage.h - gapY * (rows - 1)) / rows;
 
     leftItems.forEach((node, r) => {
-      drawStandardNodeCard(
+      drawInfographicNodeCard(
         ctx,
         { x: stage.x, y: stage.y + r * (cardH + gapY), w: colW, h: cardH },
         node,
         r * 2,
         palette,
-        tplId === 23 ? "myth-reality" : "versus-left"
+        tplId,
+        showIcons,
+        tplId === 23 ? "myth-reality" : tplId === 9 || tplId === 10 ? "versus-right" : "versus-left"
       );
     });
     rightItems.forEach((node, r) => {
-      drawStandardNodeCard(
+      drawInfographicNodeCard(
         ctx,
         { x: stage.x + colW + colGap, y: stage.y + r * (cardH + gapY), w: colW, h: cardH },
         node,
         r * 2 + 1,
         palette,
-        tplId === 23 ? "myth-reality" : "versus-right"
+        tplId,
+        showIcons,
+        tplId === 23 ? "myth-reality" : tplId === 9 || tplId === 10 ? "versus-left" : "versus-right"
       );
     });
 
-    // Center VS badge
-    const cx = stage.x + stage.w / 2;
-    const cy = stage.y + stage.h / 2;
-    ctx.fillStyle = palette.accent;
-    ctx.beginPath();
-    ctx.arc(cx, cy, 22, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.font = "900 13px Inter, system-ui, sans-serif";
-    ctx.fillStyle = "#FFFFFF";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(tplId === 23 ? "→" : "VS", cx, cy);
-    ctx.textAlign = "left";
+    drawNumberedDot(
+      ctx,
+      stage.x + stage.w / 2,
+      stage.y + stage.h / 2,
+      20,
+      tplId === 23 || tplId === 8 ? "→" : "VS",
+      palette.accent
+    );
     return;
   }
 
-  // 7: 3-Option Comparison Matrix Table
+  // TEMPLATE #7: 3-Option SaaS Feature Comparison Matrix Table
   if (tplId === 7) {
     const colCount = 3;
-    const labelColW = Math.min(stage.w * 0.26, 220);
+    const labelColW = Math.min(stage.w * 0.34, 340);
     const dataColW = (stage.w - labelColW) / colCount;
-    const headerH = Math.min(54, stage.h * 0.14);
-    const rows = Math.max(3, Math.min(6, items.length || 5));
-    const rowH = (stage.h - headerH - 10) / rows;
-    const colHexes = [palette.accent, palette.accentSecondary, "#10B981"];
-    const colNames = ["Option A", "Option B", "Option C"];
+    const headerH = Math.min(56, stage.h * 0.15);
+    const rows = Math.max(3, Math.min(5, items.length));
+    const rowH = (stage.h - headerH - 12) / rows;
+    const colHexes = ["#10B981", palette.accent, "#64748B"];
+    const colNames = ["★ DoItWithAI Studio", "Diffusion AI Prompts", "Manual Design Apps"];
 
-    // Header row
     ctx.fillStyle = palette.surfaceAlt;
-    roundRectPath(ctx, stage.x, stage.y, stage.w, headerH, [14, 14, 0, 0]);
+    roundRectPath(ctx, stage.x, stage.y, stage.w, headerH, [16, 16, 0, 0]);
     ctx.fill();
+
+    drawFittedTextBlock(ctx, "CAPABILITY / BENCHMARK", stage.x + 18, stage.y + headerH / 2 - 8, labelColW - 28, 20, {
+      maxPx: 13, minPx: 10, weight: "900", color: palette.textMuted, maxLines: 1,
+    });
+
     for (let c = 0; c < colCount; c++) {
       const hx = stage.x + labelColW + c * dataColW;
-      ctx.fillStyle = colHexes[c % colHexes.length];
-      roundRectPath(ctx, hx + 6, stage.y + 8, dataColW - 12, headerH - 16, 10);
+      ctx.fillStyle = colHexes[c];
+      roundRectPath(ctx, hx + 8, stage.y + 8, dataColW - 16, headerH - 16, 10);
       ctx.fill();
-      drawFittedTextBlock(
-        ctx,
-        items[c]?.badge?.trim() || colNames[c],
-        hx + 6,
-        stage.y + headerH / 2 - 9,
-        dataColW - 24,
-        20,
-        { maxPx: 14, minPx: 10, weight: "900", color: "#FFFFFF", align: "center", maxLines: 1 }
-      );
+      drawFittedTextBlock(ctx, colNames[c], hx + dataColW / 2, stage.y + headerH / 2 - 9, dataColW - 28, 20, {
+        maxPx: 14, minPx: 10, weight: "900", color: "#FFFFFF", align: "center", maxLines: 1,
+      });
     }
 
-    // Body rows (alternating stripe + check/x/star icon badges)
-    const bodyTop = stage.y + headerH + 10;
-    const rowLabels = items.length > 0 ? items : DEFAULT_SAMPLE_NODES;
+    const bodyTop = stage.y + headerH + 12;
     for (let r = 0; r < rows; r++) {
       const ry = bodyTop + r * rowH;
-      const node = rowLabels[r % rowLabels.length];
+      const node = items[r % items.length];
       ctx.fillStyle = r % 2 === 0 ? palette.surface : palette.surfaceAlt;
-      roundRectPath(ctx, stage.x, ry, stage.w, rowH - 6, 10);
+      roundRectPath(ctx, stage.x, ry, stage.w, rowH - 6, 12);
       ctx.fill();
 
-      drawFittedTextBlock(ctx, node?.title || `Feature ${r + 1}`, stage.x + 14, ry + rowH / 2 - 20, labelColW - 20, rowH - 16, {
-        maxPx: 15,
-        minPx: 11,
-        weight: "700",
-        color: palette.textMain,
-        maxLines: 2,
+      drawFittedTextBlock(ctx, node?.title || `Capability ${r + 1}`, stage.x + 18, ry + (rowH - 6) * 0.2, labelColW - 28, (rowH - 6) * 0.65, {
+        maxPx: 16, minPx: 12, weight: "800", color: palette.textMain, maxLines: 2,
       });
 
+      const cellBadges = [
+        { text: node?.metricValue || "✓ 100% Included", color: "#10B981" },
+        { text: r % 2 === 0 ? "✕ Garbled Text" : "⚡ Costs Credits", color: "#F59E0B" },
+        { text: "✕ 45+ Mins Manual", color: "#F43F5E" },
+      ];
       for (let c = 0; c < colCount; c++) {
-        const icon = (r + c) % 3 === 2 ? "⚡" : (r + c) % 2 === 0 ? "✓" : "✕";
-        const iconColor = icon === "✕" ? "#F43F5E" : icon === "⚡" ? "#F59E0B" : "#10B981";
-        const ix = stage.x + labelColW + c * dataColW + dataColW / 2;
-        ctx.font = "900 20px Inter, system-ui, sans-serif";
-        ctx.fillStyle = iconColor;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(icon, ix, ry + (rowH - 6) / 2);
-        ctx.textAlign = "left";
+        const b = cellBadges[c];
+        const cellCenterX = stage.x + labelColW + c * dataColW + dataColW / 2;
+        const pillW = Math.min(dataColW - 24, 165);
+        ctx.fillStyle = c === 0 ? b.color : `${b.color}22`;
+        roundRectPath(ctx, cellCenterX - pillW / 2, ry + (rowH - 6) / 2 - 14, pillW, 28, 999);
+        ctx.fill();
+        drawFittedTextBlock(ctx, b.text, cellCenterX, ry + (rowH - 6) / 2 - 8, pillW - 16, 18, {
+          maxPx: 12, minPx: 10, weight: "800", color: c === 0 ? "#FFFFFF" : b.color, align: "center", maxLines: 1,
+        });
       }
     }
     return;
   }
 
-  // 11: Asymmetric 4-Card Bento KPI Grid (1 large hero metric + 3 stacked)
+  // TEMPLATE #11: Venngage "Q3 Business Performance Analysis" Glassmorphic KPI Orbs + Side Callouts
   if (tplId === 11) {
-    const gap = 18;
-    const bigW = stage.w * 0.52;
-    const smallW = stage.w - bigW - gap;
-    const hero = items[0] || DEFAULT_SAMPLE_NODES[0];
-    const rest = items.slice(1, 4);
+    const list = items.slice(0, 4);
+    const gapY = 14;
+    const rowH = (stage.h - gapY * (list.length - 1)) / list.length;
+    const orbZoneX = stage.x + stage.w * 0.34;
 
-    // Big hero metric card
-    ctx.fillStyle = palette.surface;
-    ctx.strokeStyle = palette.accent;
-    ctx.lineWidth = 2.5;
-    roundRectPath(ctx, stage.x, stage.y, bigW, stage.h, 22);
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = palette.accentSoft;
-    roundRectPath(ctx, stage.x + 20, stage.y + 18, bigW * 0.5, 26, 8);
-    ctx.fill();
-    ctx.fillStyle = palette.accent;
-    ctx.font = "800 12px Inter, system-ui, sans-serif";
-    ctx.textBaseline = "middle";
-    ctx.fillText((hero.badge || "KPI").toUpperCase(), stage.x + 32, stage.y + 31);
-    drawFittedTextBlock(ctx, hero.metricValue || "98%", stage.x + 20, stage.y + 56, bigW - 40, stage.h * 0.42, {
-      maxPx: 68,
-      minPx: 34,
-      weight: "900",
-      color: palette.textMain,
-      maxLines: 1,
-    });
-    drawFittedTextBlock(ctx, hero.title, stage.x + 20, stage.y + stage.h * 0.62, bigW - 40, 40, {
-      maxPx: 20,
-      minPx: 14,
-      weight: "800",
-      color: palette.textMain,
-      maxLines: 2,
-    });
-    drawFittedTextBlock(ctx, hero.detail || "", stage.x + 20, stage.y + stage.h * 0.78, bigW - 40, stage.h * 0.2, {
-      maxPx: 14,
-      minPx: 11,
-      weight: "500",
-      color: palette.textMuted,
-      maxLines: 3,
-      lineHeightRatio: 1.3,
-    });
+    list.forEach((node, idx) => {
+      const ry = stage.y + idx * (rowH + gapY);
+      const cy = ry + rowH / 2;
+      const orbR = Math.min(54, rowH * 0.48);
+      const ox = orbZoneX + (idx % 2 === 0 ? -18 : 22);
+      const color = stepColors[idx % stepColors.length];
 
-    // 3 stacked smaller metric cards
-    const smallH = (stage.h - gap * (rest.length - 1 || 0)) / Math.max(1, rest.length);
-    rest.forEach((node, idx) => {
-      const sx = stage.x + bigW + gap;
-      const sy = stage.y + idx * (smallH + gap);
-      const accent = idx % 2 === 0 ? palette.accentSecondary : palette.accent;
-      ctx.fillStyle = palette.surfaceAlt;
-      ctx.strokeStyle = accent;
+      // Left narrative insight card (for even rows) or subtle connector
+      const leftW = stage.w * 0.24;
+      ctx.fillStyle = `${color}18`;
+      ctx.strokeStyle = `${color}66`;
       ctx.lineWidth = 1.5;
-      roundRectPath(ctx, sx, sy, smallW, smallH, 16);
+      roundRectPath(ctx, stage.x, ry + 6, leftW, rowH - 12, 14);
       ctx.fill();
       ctx.stroke();
-      drawFittedTextBlock(ctx, node.metricValue || "+12%", sx + 16, sy + 10, smallW - 32, smallH * 0.5, {
-        maxPx: 28,
-        minPx: 16,
-        weight: "900",
-        color: accent,
-        maxLines: 1,
+      drawFittedTextBlock(ctx, (node.badge || `KPI 0${idx + 1}`).toUpperCase(), stage.x + 14, ry + 14, leftW - 28, 18, {
+        maxPx: 12, minPx: 10, weight: "900", color, maxLines: 1,
       });
-      drawFittedTextBlock(ctx, node.title, sx + 16, sy + smallH * 0.56, smallW - 32, smallH * 0.4, {
-        maxPx: 13,
-        minPx: 10,
-        weight: "700",
-        color: palette.textMain,
-        maxLines: 2,
+      drawFittedTextBlock(ctx, node.title, stage.x + 14, ry + 34, leftW - 28, rowH - 46, {
+        maxPx: 15, minPx: 11, weight: "800", color: palette.textMain, maxLines: 2,
+      });
+
+      // Glowing Glassmorphic Orb in Center
+      ctx.save();
+      const grad = ctx.createRadialGradient(ox - orbR * 0.3, cy - orbR * 0.3, orbR * 0.1, ox, cy, orbR);
+      grad.addColorStop(0, `${color}88`);
+      grad.addColorStop(0.7, `${color}28`);
+      grad.addColorStop(1, palette.surface);
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(ox, cy, orbR, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      drawFittedTextBlock(ctx, node.metricValue || "98%", ox, cy - 12, orbR * 1.75, 28, {
+        maxPx: 22, minPx: 13, weight: "900", color: "#FFFFFF", align: "center", maxLines: 1,
+      });
+      ctx.restore();
+
+      // Right detailed breakdown card
+      const rightX = stage.x + stage.w * 0.46;
+      const rightW = stage.w * 0.54;
+      drawInfographicNodeCard(
+        ctx,
+        { x: rightX, y: ry, w: rightW, h: rowH },
+        node,
+        idx,
+        palette,
+        tplId,
+        showIcons
+      );
+    });
+    return;
+  }
+
+  // TEMPLATE #12: Venngage "WHAT CUSTOMERS REALLY WANT" 2x2 Clipboard Stat Cards + Vertical Multi-Bar Chart
+  if (tplId === 12) {
+    const list = items.slice(0, 4);
+    const leftW = stage.w * 0.52;
+    const gap = 24;
+    const rightX = stage.x + leftW + gap;
+    const rightW = stage.w - leftW - gap;
+
+    // Left: 2x2 Clipboard Stat Cards
+    const cardGap = 14;
+    const cw = (leftW - cardGap) / 2;
+    const ch = (stage.h - cardGap) / 2;
+    list.forEach((node, idx) => {
+      const c = idx % 2;
+      const r = Math.floor(idx / 2);
+      const bx = stage.x + c * (cw + cardGap);
+      const by = stage.y + r * (ch + cardGap);
+      const color = stepColors[idx % stepColors.length];
+
+      ctx.fillStyle = palette.surface;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      roundRectPath(ctx, bx, by, cw, ch, 18);
+      ctx.fill();
+      ctx.stroke();
+
+      // Top clipboard clip tab
+      ctx.fillStyle = color;
+      roundRectPath(ctx, bx + cw / 2 - 28, by, 56, 10, [0, 0, 8, 8]);
+      ctx.fill();
+
+      drawIconMedallion(ctx, bx + 32, by + 38, 18, color, node, idx, tplId, true);
+
+      drawFittedTextBlock(ctx, node.metricValue || `${78 - idx * 6}%`, bx + 60, by + 20, cw - 74, 38, {
+        maxPx: 30, minPx: 18, weight: "900", color, maxLines: 1,
+      });
+      drawFittedTextBlock(ctx, node.title, bx + 16, by + 68, cw - 32, 38, {
+        maxPx: 16, minPx: 12, weight: "800", color: palette.textMain, maxLines: 2,
+      });
+      drawFittedTextBlock(ctx, node.detail || "", bx + 16, by + 110, cw - 32, ch - 120, {
+        maxPx: 12, minPx: 10, weight: "500", color: palette.textMuted, maxLines: 2,
+      });
+    });
+
+    // Right: Vertical Multi-Bar Chart Panel
+    ctx.fillStyle = palette.surface;
+    ctx.strokeStyle = palette.border;
+    ctx.lineWidth = 2;
+    roundRectPath(ctx, rightX, stage.y, rightW, stage.h, 20);
+    ctx.fill();
+    ctx.stroke();
+
+    drawFittedTextBlock(ctx, "COMPARATIVE BENCHMARK DISTRIBUTION", rightX + 22, stage.y + 18, rightW - 44, 22, {
+      maxPx: 14, minPx: 11, weight: "900", color: palette.accent, maxLines: 1,
+    });
+
+    const chartTop = stage.y + 58;
+    const chartBottom = stage.y + stage.h - 48;
+    const chartH = Math.max(100, chartBottom - chartTop);
+    const barCount = list.length;
+    const barSlotW = (rightW - 48) / barCount;
+
+    // Horizontal gridlines
+    ctx.strokeStyle = `${palette.textMuted}25`;
+    ctx.lineWidth = 1;
+    for (let g = 0; g <= 4; g++) {
+      const gy = chartTop + (chartH * g) / 4;
+      ctx.beginPath();
+      ctx.moveTo(rightX + 20, gy);
+      ctx.lineTo(rightX + rightW - 20, gy);
+      ctx.stroke();
+    }
+
+    list.forEach((node, idx) => {
+      const numMatch = (node.metricValue || "").match(/(\d+(?:\.\d+)?)/);
+      const pct = numMatch ? Math.min(100, Math.max(28, Number(numMatch[1]))) : 82 - idx * 11;
+      const bh = (chartH * pct) / 100;
+      const bw = Math.min(56, barSlotW * 0.58);
+      const bx = rightX + 24 + idx * barSlotW + (barSlotW - bw) / 2;
+      const by = chartBottom - bh;
+      const color = stepColors[idx % stepColors.length];
+
+      ctx.fillStyle = color;
+      roundRectPath(ctx, bx, by, bw, bh, [10, 10, 0, 0]);
+      ctx.fill();
+
+      drawFittedTextBlock(ctx, node.metricValue || `${pct}%`, bx + bw / 2, by - 22, barSlotW - 4, 20, {
+        maxPx: 14, minPx: 10, weight: "900", color: palette.textMain, align: "center", maxLines: 1,
+      });
+      drawFittedTextBlock(ctx, node.badge || `0${idx + 1}`, bx + bw / 2, chartBottom + 10, barSlotW - 4, 20, {
+        maxPx: 12, minPx: 9, weight: "800", color: palette.textMuted, align: "center", maxLines: 1,
       });
     });
     return;
   }
 
-  // 13: Horizontal Benchmark Bar Chart
+  // TEMPLATE #13: Horizontal Benchmark Bar Chart
   if (tplId === 13) {
-    const gapY = 16;
+    const gapY = 14;
     const rowH = (stage.h - gapY * (items.length - 1)) / items.length;
     items.forEach((node, idx) => {
       const ry = stage.y + idx * (rowH + gapY);
+      const color = stepColors[idx % stepColors.length];
       ctx.fillStyle = palette.surface;
-      ctx.strokeStyle = palette.border;
+      ctx.strokeStyle = `${color}88`;
       ctx.lineWidth = 1.5;
       roundRectPath(ctx, stage.x, ry, stage.w, rowH, 16);
       ctx.fill();
       ctx.stroke();
 
-      const numMatch = (node.metricValue || "").match(/(\d+(?:\.\d+)?)/);
-      const pct = numMatch ? Math.min(100, Math.max(22, Number(numMatch[1]))) : 92 - idx * 14;
-      const barMaxW = stage.w * 0.56;
-      const barW = (barMaxW * pct) / 100;
-      const barX = stage.x + stage.w * 0.38;
-      const barH = Math.min(34, rowH * 0.48);
-      const barY = ry + (rowH - barH) / 2;
+      drawIconMedallion(ctx, stage.x + 32, ry + rowH / 2, Math.min(20, rowH * 0.34), color, node, idx, tplId, true);
 
       drawFittedTextBlock(
         ctx,
-        `${node.badge || `0${idx + 1}`} · ${node.title}`,
-        stage.x + 20,
-        ry + 14,
-        stage.w * 0.34,
-        rowH - 24,
-        { maxPx: 19, minPx: 13, weight: "800", color: palette.textMain, maxLines: 2 }
+        node.title,
+        stage.x + 64,
+        ry + rowH * 0.2,
+        stage.w * 0.32,
+        rowH * 0.65,
+        { maxPx: 18, minPx: 12, weight: "800", color: palette.textMain, maxLines: 2 }
       );
+
+      const numMatch = (node.metricValue || "").match(/(\d+(?:\.\d+)?)/);
+      const pct = numMatch ? Math.min(100, Math.max(25, Number(numMatch[1]))) : 94 - idx * 14;
+      const barMaxW = stage.w * 0.52;
+      const barW = (barMaxW * pct) / 100;
+      const barX = stage.x + stage.w * 0.43;
+      const barH = Math.min(34, rowH * 0.48);
+      const barY = ry + (rowH - barH) / 2;
 
       ctx.fillStyle = palette.surfaceAlt;
       roundRectPath(ctx, barX, barY, barMaxW, barH, 999);
       ctx.fill();
 
-      ctx.fillStyle = idx === 0 ? palette.accent : palette.accentSecondary;
+      ctx.fillStyle = color;
       roundRectPath(ctx, barX, barY, barW, barH, 999);
       ctx.fill();
 
-      ctx.font = "800 14px Inter, system-ui, sans-serif";
+      ctx.font = "900 13px Inter, system-ui, sans-serif";
       ctx.fillStyle = "#FFFFFF";
       ctx.textBaseline = "middle";
-      ctx.fillText(node.metricValue || `${pct}%`, barX + 14, barY + barH / 2);
+      ctx.fillText(node.metricValue || `${pct}%`, barX + 16, barY + barH / 2);
     });
     return;
   }
 
-  // 14: Cost vs. ROI Savings Ledger
+  // TEMPLATE #14: Cost vs. ROI Waterfall & Savings Breakdown
   if (tplId === 14) {
     const leftW = stage.w * 0.44;
-    const gap = 26;
+    const gap = 24;
     const rightX = stage.x + leftW + gap;
     const rightW = stage.w - leftW - gap;
-    const baseline = items[0] || DEFAULT_SAMPLE_NODES[0];
-    const optimized = items[1] || DEFAULT_SAMPLE_NODES[1];
+    const baseline = items[0] || fallbackNodes[0];
+    const optimized = items[1] || fallbackNodes[1];
 
-    // Left: baseline vs optimized bar comparison
     ctx.fillStyle = palette.surface;
     ctx.strokeStyle = palette.border;
     ctx.lineWidth = 2;
@@ -1239,67 +1498,72 @@ function renderTemplateBodyGeometry(
     ctx.fill();
     ctx.stroke();
 
-    const barAreaX = stage.x + 22;
-    const barAreaW = leftW - 44;
-    const barH = Math.min(46, stage.h * 0.18);
-    const row1Y = stage.y + stage.h * 0.22;
-    const row2Y = stage.y + stage.h * 0.52;
+    const barAreaX = stage.x + 24;
+    const barAreaW = leftW - 48;
+    const barH = Math.min(44, stage.h * 0.16);
+    const row1Y = stage.y + stage.h * 0.2;
+    const row2Y = stage.y + stage.h * 0.48;
 
-    drawFittedTextBlock(ctx, "BASELINE COST", barAreaX, row1Y - 24, barAreaW, 18, {
+    drawFittedTextBlock(ctx, "BASELINE OUTSOURCED COST", barAreaX, row1Y - 22, barAreaW, 18, {
       maxPx: 12, minPx: 10, weight: "800", color: palette.textMuted, maxLines: 1,
     });
     ctx.fillStyle = "#F43F5E";
     roundRectPath(ctx, barAreaX, row1Y, barAreaW, barH, 10);
     ctx.fill();
-    drawFittedTextBlock(ctx, baseline.metricValue || "$12,400/mo", barAreaX + 14, row1Y + barH / 2 - 10, barAreaW - 28, 22, {
+    drawFittedTextBlock(ctx, baseline.metricValue || "$8,300/mo", barAreaX + 14, row1Y + barH / 2 - 10, barAreaW - 28, 22, {
       maxPx: 18, minPx: 13, weight: "900", color: "#FFFFFF", maxLines: 1,
     });
 
-    drawFittedTextBlock(ctx, "OPTIMIZED COST", barAreaX, row2Y - 24, barAreaW, 18, {
+    drawFittedTextBlock(ctx, "OPTIMIZED IN-HOUSE AI STUDIO", barAreaX, row2Y - 22, barAreaW, 18, {
       maxPx: 12, minPx: 10, weight: "800", color: palette.textMuted, maxLines: 1,
     });
     ctx.fillStyle = "#10B981";
-    const optRatio = 0.42;
+    const optRatio = 0.38;
     roundRectPath(ctx, barAreaX, row2Y, barAreaW * optRatio, barH, 10);
     ctx.fill();
     ctx.strokeStyle = palette.border;
     ctx.lineWidth = 1.5;
     roundRectPath(ctx, barAreaX, row2Y, barAreaW, barH, 10);
     ctx.stroke();
-    drawFittedTextBlock(ctx, optimized.metricValue || "$5,100/mo", barAreaX + 14, row2Y + barH / 2 - 10, barAreaW * optRatio - 20, 22, {
-      maxPx: 18, minPx: 11, weight: "900", color: "#FFFFFF", maxLines: 1,
+    drawFittedTextBlock(ctx, optimized.metricValue || "$420/mo", barAreaX + 14, row2Y + barH / 2 - 10, barAreaW * optRatio - 16, 22, {
+      maxPx: 17, minPx: 11, weight: "900", color: "#FFFFFF", maxLines: 1,
     });
 
-    // Net savings footer stat
-    const savingsY = stage.y + stage.h * 0.80;
+    const savingsY = stage.y + stage.h * 0.74;
     ctx.fillStyle = palette.accentSoft;
-    roundRectPath(ctx, barAreaX, savingsY, barAreaW, stage.h - (savingsY - stage.y) - 18, 12);
+    roundRectPath(ctx, barAreaX, savingsY, barAreaW, stage.h * 0.2, 14);
     ctx.fill();
-    drawFittedTextBlock(ctx, "NET MONTHLY SAVINGS", barAreaX + 14, savingsY + 10, barAreaW - 28, 16, {
+    drawFittedTextBlock(ctx, "NET EFFICIENCY GAIN", barAreaX + 14, savingsY + 10, barAreaW - 28, 16, {
       maxPx: 11, minPx: 9, weight: "800", color: palette.accent, maxLines: 1,
     });
-    drawFittedTextBlock(ctx, items[2]?.metricValue || "+59% ROI", barAreaX + 14, savingsY + 28, barAreaW - 28, 30, {
+    drawFittedTextBlock(ctx, items[2]?.metricValue || "+94% Saved", barAreaX + 14, savingsY + 28, barAreaW - 28, 32, {
       maxPx: 24, minPx: 16, weight: "900", color: palette.textMain, maxLines: 1,
     });
 
-    // Right column: remaining detail cards (payback period / time saved)
-    const rest = items.slice(2).length > 0 ? items.slice(2) : [DEFAULT_SAMPLE_NODES[2], DEFAULT_SAMPLE_NODES[3]];
+    const rest = items.slice(2).length > 0 ? items.slice(2) : items.slice(0, 2);
     const gapY = 14;
     const cardH = (stage.h - gapY * (rest.length - 1)) / rest.length;
     rest.forEach((node, idx) => {
-      drawStandardNodeCard(ctx, { x: rightX, y: stage.y + idx * (cardH + gapY), w: rightW, h: cardH }, node, idx, palette);
+      drawInfographicNodeCard(
+        ctx,
+        { x: rightX, y: stage.y + idx * (cardH + gapY), w: rightW, h: cardH },
+        node,
+        idx + 2,
+        palette,
+        tplId,
+        showIcons
+      );
     });
     return;
   }
 
-  // 12 & 15: Hero Spotlight Stat / 5-Pillar Audit Ring + Right Cards
-  if (tplId === 12 || tplId === 15) {
+  // TEMPLATE #15: 5-Pillar Multi-Ring Radial Audit Scorecard
+  if (tplId === 15) {
     const leftW = stage.w * 0.34;
     const gap = 24;
     const rightX = stage.x + leftW + gap;
     const rightW = stage.w - leftW - gap;
 
-    // Left spotlight card
     ctx.fillStyle = palette.surface;
     ctx.strokeStyle = palette.accent;
     ctx.lineWidth = 2.5;
@@ -1307,399 +1571,400 @@ function renderTemplateBodyGeometry(
     ctx.fill();
     ctx.stroke();
 
-    const first = items[0] || DEFAULT_SAMPLE_NODES[0];
+    const first = items[0] || fallbackNodes[0];
     const rcx = stage.x + leftW / 2;
-    const rcy = stage.y + stage.h * 0.40;
-    const ringR = Math.min(leftW, stage.h) * 0.26;
+    const rcy = stage.y + stage.h * 0.42;
+    const maxR = Math.min(leftW, stage.h) * 0.31;
 
-    if (tplId === 15) {
-      // 5-Pillar score ring: draw 5 arc segments instead of a single stroke
-      const segColors = [palette.accent, palette.accentSecondary, "#10B981", "#F59E0B", "#F43F5E"];
-      const segAngle = (Math.PI * 2) / 5;
-      for (let s = 0; s < 5; s++) {
-        ctx.strokeStyle = segColors[s % segColors.length];
-        ctx.lineWidth = 10;
-        ctx.beginPath();
-        ctx.arc(rcx, rcy, ringR, -Math.PI / 2 + s * segAngle + 0.05, -Math.PI / 2 + (s + 1) * segAngle - 0.05);
-        ctx.stroke();
-      }
-    } else {
-      ctx.strokeStyle = palette.accent;
+    // 3 Concentric Activity Rings
+    [1, 0.8, 0.62].forEach((mult, idx) => {
+      const r = maxR * mult;
+      ctx.strokeStyle = `${stepColors[idx]}33`;
       ctx.lineWidth = 10;
       ctx.beginPath();
-      ctx.arc(rcx, rcy, ringR, 0, Math.PI * 2);
+      ctx.arc(rcx, rcy, r, 0, Math.PI * 2);
       ctx.stroke();
-    }
 
-    drawFittedTextBlock(
-      ctx,
-      first.metricValue || "98/100",
-      rcx,
-      rcy - 18,
-      ringR * 1.7,
-      44,
-      { maxPx: 34, minPx: 20, weight: "900", color: palette.textMain, align: "center", maxLines: 1 }
-    );
-    drawFittedTextBlock(ctx, first.title, stage.x + 22, stage.y + stage.h * 0.68, leftW - 44, 60, {
-      maxPx: 20,
-      minPx: 14,
-      weight: "800",
-      color: palette.textMain,
-      align: "center",
-      maxLines: 2,
+      ctx.strokeStyle = stepColors[idx];
+      ctx.lineWidth = 10;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.arc(rcx, rcy, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * (1.75 - idx * 0.15));
+      ctx.stroke();
     });
 
-    const rest = items.slice(1);
-    const list = rest.length > 0 ? rest : items;
-    const gapY = 14;
-    const cardH = (stage.h - gapY * (list.length - 1)) / list.length;
-    list.forEach((node, idx) => {
-      drawStandardNodeCard(
+    drawFittedTextBlock(ctx, first.metricValue || "97/100", rcx, rcy - 14, maxR * 1.1, 32, {
+      maxPx: 26, minPx: 16, weight: "900", color: palette.textMain, align: "center", maxLines: 1,
+    });
+    drawFittedTextBlock(ctx, first.title, stage.x + 20, stage.y + stage.h * 0.74, leftW - 40, 52, {
+      maxPx: 18, minPx: 13, weight: "800", color: palette.textMain, align: "center", maxLines: 2,
+    });
+
+    const rest = items.slice(1).length > 0 ? items.slice(1) : items;
+    const gapY = 12;
+    const cardH = (stage.h - gapY * (rest.length - 1)) / rest.length;
+    rest.forEach((node, idx) => {
+      drawInfographicNodeCard(
         ctx,
         { x: rightX, y: stage.y + idx * (cardH + gapY), w: rightW, h: cardH },
         node,
         idx + 1,
-        palette
+        palette,
+        tplId,
+        showIcons
       );
     });
     return;
   }
 
-  // 16: 2x2 Impact vs. Effort Priority Quadrant
+  // TEMPLATE #16: 2x2 Impact vs. Effort Strategic Quadrant Matrix
   if (tplId === 16) {
-    const quadGap = 20;
+    const quadGap = 18;
     const qW = (stage.w - quadGap) / 2;
-    const qH = (stage.h - quadGap - 34) / 2;
-    const axisY = stage.y + stage.h - 20;
-    const axisX = stage.x - 4;
+    const qH = (stage.h - quadGap) / 2;
     const quadColors = ["#10B981", palette.accent, "#F59E0B", "#F43F5E"];
-    const quadLabels = ["QUICK WINS", "BIG BETS", "FILL-INS", "AVOID / DEFER"];
-    const list = items.length > 0 ? items : DEFAULT_SAMPLE_NODES;
+    const quadLabels = ["1 · QUICK WINS (HIGH ROI)", "2 · STRATEGIC BIG BETS", "3 · TACTICAL FILL-INS", "4 · DEFER / AUTOMATE"];
 
     for (let q = 0; q < 4; q++) {
       const col = q % 2;
       const row = Math.floor(q / 2);
       const qx = stage.x + col * (qW + quadGap);
       const qy = stage.y + row * (qH + quadGap);
-      ctx.fillStyle = `${quadColors[q]}1A`;
-      ctx.strokeStyle = quadColors[q];
+      const node = items[q % items.length];
+      const color = quadColors[q];
+
+      ctx.fillStyle = palette.surface;
+      ctx.strokeStyle = color;
       ctx.lineWidth = 2;
-      roundRectPath(ctx, qx, qy, qW, qH, 16);
+      roundRectPath(ctx, qx, qy, qW, qH, 18);
       ctx.fill();
       ctx.stroke();
 
-      drawTagPill(ctx, qx + 12, qy + 12, quadLabels[q], quadColors[q]);
+      drawTagPill(ctx, qx + 16, qy + 14, quadLabels[q], color);
+      drawIconMedallion(ctx, qx + qW - 34, qy + 28, 16, color, node, q, tplId, true);
 
-      const node = list[q % list.length];
-      drawFittedTextBlock(ctx, node?.title || quadLabels[q], qx + 14, qy + 44, qW - 28, qH - 60, {
-        maxPx: 16,
-        minPx: 12,
-        weight: "800",
-        color: palette.textMain,
-        maxLines: 3,
+      drawFittedTextBlock(ctx, node?.title || quadLabels[q], qx + 18, qy + 48, qW - 36, 44, {
+        maxPx: 18, minPx: 13, weight: "800", color: palette.textMain, maxLines: 2,
+      });
+      drawFittedTextBlock(ctx, node?.detail || "", qx + 18, qy + 96, qW - 36, qH - 108, {
+        maxPx: 14, minPx: 11, weight: "500", color: palette.textMuted, maxLines: 3,
       });
     }
-
-    // Axis labels
-    drawFittedTextBlock(ctx, "HIGH IMPACT →", stage.x, stage.y - 2, stage.w * 0.5, 18, {
-      maxPx: 12, minPx: 10, weight: "800", color: palette.textMuted, maxLines: 1,
-    });
-    drawFittedTextBlock(ctx, "EFFORT →", stage.x, axisY + 2, stage.w * 0.4, 18, {
-      maxPx: 12, minPx: 10, weight: "800", color: palette.textMuted, maxLines: 1,
-    });
-    void axisX;
     return;
   }
 
-  // 18: 3-Circle Venn Synergy Diagram
-  if (tplId === 18) {
+  // TEMPLATE #18: 3-Circle Venn Synergy Diagram + 4 Corner Callout Cards (Zero Clipping!)
+  if (tplId === 18 || tplId === 19) {
     const cx = stage.x + stage.w / 2;
-    const cy = stage.y + stage.h / 2 + 10;
-    const r = Math.min(stage.w * 0.3, stage.h * 0.42);
-    const offset = r * 0.62;
-    const centers = [
-      { x: cx, y: cy - offset * 0.95, color: palette.accent },
-      { x: cx - offset, y: cy + offset * 0.55, color: palette.accentSecondary },
-      { x: cx + offset, y: cy + offset * 0.55, color: "#F59E0B" },
-    ];
-    const list = items.length > 0 ? items : DEFAULT_SAMPLE_NODES;
+    const cy = stage.y + stage.h / 2;
+    const cardW = stage.w * 0.31;
+    const cardH = (stage.h - 20) / 2;
 
-    ctx.save();
-    ctx.globalAlpha = 0.32;
-    centers.forEach((c) => {
-      ctx.fillStyle = c.color;
-      ctx.beginPath();
-      ctx.arc(c.x, c.y, r, 0, Math.PI * 2);
-      ctx.fill();
-    });
-    ctx.restore();
-    centers.forEach((c) => {
-      ctx.strokeStyle = c.color;
+    if (tplId === 18) {
+      const vennR = Math.min(stage.w * 0.11, stage.h * 0.22);
+      const off = vennR * 0.58;
+      const circles = [
+        { x: cx, y: cy - off * 0.85, c: palette.accent },
+        { x: cx - off, y: cy + off * 0.55, c: palette.accentSecondary },
+        { x: cx + off, y: cy + off * 0.55, c: "#10B981" },
+      ];
+      ctx.save();
+      ctx.globalAlpha = 0.35;
+      circles.forEach((cr) => {
+        ctx.fillStyle = cr.c;
+        ctx.beginPath();
+        ctx.arc(cr.x, cr.y, vennR, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.restore();
+      circles.forEach((cr) => {
+        ctx.strokeStyle = cr.c;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(cr.x, cr.y, vennR, 0, Math.PI * 2);
+        ctx.stroke();
+      });
+      drawTagPill(ctx, cx - 48, cy - 12, "CORE SYNERGY", palette.accent);
+    } else {
+      // Hub & Spoke center core
+      const hubR = Math.min(62, stage.h * 0.16);
+      ctx.strokeStyle = `${palette.accent}55`;
       ctx.lineWidth = 2.5;
       ctx.beginPath();
-      ctx.arc(c.x, c.y, r, 0, Math.PI * 2);
+      ctx.arc(cx, cy, hubR * 1.45, 0, Math.PI * 2);
       ctx.stroke();
-    });
+      drawIconMedallion(ctx, cx, cy, hubR, palette.accent, items[0], 0, tplId, true);
+    }
 
-    // Pillar labels at the outer edge of each circle
-    const labelOffsets = [
-      { x: cx, y: cy - offset * 0.95 - r - 14 },
-      { x: cx - offset - r * 0.55, y: cy + offset * 0.55 + r * 0.75 },
-      { x: cx + offset + r * 0.55, y: cy + offset * 0.55 + r * 0.75 },
+    const corners = [
+      { x: stage.x, y: stage.y },
+      { x: stage.x + stage.w - cardW, y: stage.y },
+      { x: stage.x, y: stage.y + cardH + 20 },
+      { x: stage.x + stage.w - cardW, y: stage.y + cardH + 20 },
     ];
-    centers.forEach((c, idx) => {
-      const node = list[idx % list.length];
-      const lo = labelOffsets[idx];
-      drawFittedTextBlock(ctx, node?.title || `Pillar ${idx + 1}`, lo.x - 85, lo.y - 10, 170, 36, {
-        maxPx: 15, minPx: 11, weight: "800", color: c.color, align: "center", maxLines: 2,
-      });
-    });
-
-    // Center sweet-spot label
-    const centerLabel = list[3]?.title || "Sweet Spot";
-    ctx.fillStyle = palette.surface;
-    roundRectPath(ctx, cx - 72, cy - 22, 144, 44, 999);
-    ctx.fill();
-    ctx.strokeStyle = palette.border;
-    ctx.lineWidth = 1.5;
-    roundRectPath(ctx, cx - 72, cy - 22, 144, 44, 999);
-    ctx.stroke();
-    drawFittedTextBlock(ctx, centerLabel, cx - 65, cy - 11, 130, 22, {
-      maxPx: 13, minPx: 10, weight: "900", color: palette.textMain, align: "center", maxLines: 1,
-    });
-    return;
-  }
-
-  // 20: 8-Point Actionable Checklist (vertical rows with checkbox + priority tag)
-  if (tplId === 20) {
-    const list = items.length > 0 ? items : DEFAULT_SAMPLE_NODES;
-    const gapY = 10;
-    const rowH = (stage.h - gapY * (list.length - 1)) / list.length;
-    const priorities = ["HIGH", "MEDIUM", "LOW"];
-    const priorityColors = ["#F43F5E", "#F59E0B", "#10B981"];
-
-    list.forEach((node, idx) => {
-      const ry = stage.y + idx * (rowH + gapY);
-      ctx.fillStyle = palette.surface;
-      ctx.strokeStyle = palette.border;
-      ctx.lineWidth = 1.5;
-      roundRectPath(ctx, stage.x, ry, stage.w, rowH, 14);
-      ctx.fill();
+    items.slice(0, 4).forEach((node, idx) => {
+      const pos = corners[idx];
+      const anchorX = idx % 2 === 0 ? pos.x + cardW : pos.x;
+      const anchorY = pos.y + cardH / 2;
+      ctx.save();
+      ctx.setLineDash([5, 5]);
+      ctx.strokeStyle = stepColors[idx % stepColors.length];
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(anchorX, anchorY);
+      ctx.lineTo(cx, cy);
       ctx.stroke();
+      ctx.restore();
 
-      // Checkbox
-      const boxSize = Math.min(28, rowH * 0.5);
-      const boxY = ry + (rowH - boxSize) / 2;
-      ctx.fillStyle = palette.accent;
-      roundRectPath(ctx, stage.x + 16, boxY, boxSize, boxSize, 7);
-      ctx.fill();
-      ctx.font = `900 ${Math.round(boxSize * 0.65)}px Inter, system-ui, sans-serif`;
-      ctx.fillStyle = "#FFFFFF";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText("✓", stage.x + 16 + boxSize / 2, boxY + boxSize / 2 + 1);
-      ctx.textAlign = "left";
-
-      const textX = stage.x + 16 + boxSize + 16;
-      drawFittedTextBlock(ctx, node.title || `Checklist item ${idx + 1}`, textX, ry + rowH * 0.18, stage.w * 0.62, rowH * 0.64, {
-        maxPx: 17, minPx: 12, weight: "700", color: palette.textMain, maxLines: 2,
-      });
-
-      drawTagPill(
+      drawInfographicNodeCard(
         ctx,
-        stage.x + stage.w - 100,
-        ry + rowH / 2 - 11,
-        priorities[idx % 3],
-        priorityColors[idx % 3]
+        { x: pos.x, y: pos.y, w: cardW, h: cardH },
+        node,
+        idx,
+        palette,
+        tplId,
+        showIcons
       );
     });
     return;
   }
 
-  // 21: Executive 5-Point TL;DR Takeaway List
+  // TEMPLATE #20: 2-Column Actionable Launch Checklist
+  if (tplId === 20) {
+    const list = items.slice(0, 6);
+    const cols = 2;
+    const rows = Math.ceil(list.length / cols);
+    const gapX = 20;
+    const gapY = 14;
+    const cardW = (stage.w - gapX) / cols;
+    const cardH = (stage.h - gapY * (rows - 1)) / rows;
+
+    list.forEach((node, idx) => {
+      const c = idx % cols;
+      const r = Math.floor(idx / cols);
+      drawInfographicNodeCard(
+        ctx,
+        {
+          x: stage.x + c * (cardW + gapX),
+          y: stage.y + r * (cardH + gapY),
+          w: cardW,
+          h: cardH,
+        },
+        node,
+        idx,
+        palette,
+        tplId,
+        showIcons,
+        "checklist"
+      );
+    });
+    return;
+  }
+
+  // TEMPLATE #21: Executive TL;DR Takeaway Board
   if (tplId === 21) {
-    const list = items.length > 0 ? items : DEFAULT_SAMPLE_NODES;
+    const list = items.slice(0, 4);
     const gapY = 14;
     const rowH = (stage.h - gapY * (list.length - 1)) / list.length;
     list.forEach((node, idx) => {
       const ry = stage.y + idx * (rowH + gapY);
-      ctx.fillStyle = idx === 0 ? palette.accentSoft : palette.surface;
-      ctx.strokeStyle = palette.border;
-      ctx.lineWidth = 1.5;
+      const color = stepColors[idx % stepColors.length];
+      ctx.fillStyle = palette.surface;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
       roundRectPath(ctx, stage.x, ry, stage.w, rowH, 16);
       ctx.fill();
       ctx.stroke();
 
-      const dotR = Math.min(22, rowH * 0.34);
-      drawNumberedDot(ctx, stage.x + 30, ry + rowH / 2, dotR, String(idx + 1), palette.accent);
+      const medR = Math.min(24, rowH * 0.36);
+      drawIconMedallion(ctx, stage.x + 36, ry + rowH / 2, medR, color, node, idx, tplId, true);
 
-      const textX = stage.x + 30 + dotR + 20;
-      drawFittedTextBlock(ctx, node.title || `Key takeaway ${idx + 1}`, textX, ry + rowH * 0.2, stage.w - (textX - stage.x) - 20, rowH * 0.3, {
-        maxPx: 17, minPx: 13, weight: "800", color: palette.textMain, maxLines: 1,
+      const textX = stage.x + 76;
+      const textW = stage.w - 220;
+      drawFittedTextBlock(ctx, node.title, textX, ry + rowH * 0.18, textW, rowH * 0.36, {
+        maxPx: 19, minPx: 13, weight: "800", color: palette.textMain, maxLines: 1,
       });
-      drawFittedTextBlock(ctx, node.detail || "", textX, ry + rowH * 0.52, stage.w - (textX - stage.x) - 20, rowH * 0.42, {
-        maxPx: 13, minPx: 10, weight: "500", color: palette.textMuted, maxLines: 2, lineHeightRatio: 1.3,
+      drawFittedTextBlock(ctx, node.detail || "", textX, ry + rowH * 0.54, textW, rowH * 0.38, {
+        maxPx: 14, minPx: 11, weight: "500", color: palette.textMuted, maxLines: 2,
       });
+
+      if (node.metricValue) {
+        drawTagPill(ctx, stage.x + stage.w - 130, ry + rowH / 2 - 12, node.metricValue, color);
+      }
     });
     return;
   }
 
-  // 22: Annotated Anatomy / Page-Teardown Diagram
+  // TEMPLATE #22: Annotated Page Wireframe Teardown
   if (tplId === 22) {
-    const boxW = stage.w * 0.4;
-    const boxH = stage.h * 0.82;
-    const boxX = stage.x + (stage.w - boxW) / 2;
-    const boxY = stage.y + (stage.h - boxH) / 2;
-    const list = items.length > 0 ? items : DEFAULT_SAMPLE_NODES;
+    const wireW = stage.w * 0.28;
+    const wireH = stage.h * 0.92;
+    const wireX = stage.x + (stage.w - wireW) / 2;
+    const wireY = stage.y + (stage.h - wireH) / 2;
 
-    ctx.strokeStyle = palette.border;
-    ctx.setLineDash([6, 5]);
-    ctx.lineWidth = 2;
-    roundRectPath(ctx, boxX, boxY, boxW, boxH, 16);
-    ctx.stroke();
-    ctx.setLineDash([]);
+    // Central Page Mockup Wireframe
     ctx.fillStyle = palette.surfaceAlt;
-    roundRectPath(ctx, boxX, boxY, boxW, boxH, 16);
-    ctx.globalAlpha = 0.5;
+    ctx.strokeStyle = palette.accent;
+    ctx.lineWidth = 2.5;
+    roundRectPath(ctx, wireX, wireY, wireW, wireH, 18);
     ctx.fill();
-    ctx.globalAlpha = 1;
-    drawFittedTextBlock(ctx, "PAGE WIREFRAME", boxX + 16, boxY + 14, boxW - 32, 20, {
-      maxPx: 13, minPx: 10, weight: "800", color: palette.textMuted, align: "center", maxLines: 1,
+    ctx.stroke();
+
+    drawFittedTextBlock(ctx, "LIVE PAGE ANATOMY", wireX + wireW / 2, wireY + 14, wireW - 24, 18, {
+      maxPx: 12, minPx: 10, weight: "900", color: palette.accent, align: "center", maxLines: 1,
+    });
+    [0.2, 0.42, 0.64, 0.82].forEach((pct, i) => {
+      ctx.fillStyle = `${stepColors[i]}25`;
+      roundRectPath(ctx, wireX + 16, wireY + wireH * pct, wireW - 32, wireH * 0.15, 10);
+      ctx.fill();
     });
 
-    // Numbered callout pointers around the wireframe, connected by lines
-    const n = Math.min(6, list.length);
-    for (let i = 0; i < n; i++) {
-      const isLeft = i % 2 === 0;
-      const row = Math.floor(i / 2);
-      const anchorX = isLeft ? boxX : boxX + boxW;
-      const anchorY = boxY + boxH * (0.18 + row * 0.3);
-      const labelX = isLeft ? stage.x : stage.x + stage.w - 210;
-      const labelY = anchorY - 24;
+    const list = items.slice(0, 6);
+    const leftCount = Math.ceil(list.length / 2);
+    const cardW = stage.w * 0.32;
+    const rowH = (stage.h - 24) / leftCount;
 
-      ctx.strokeStyle = palette.accent;
+    list.forEach((node, i) => {
+      const isLeft = i % 2 === 0;
+      const r = Math.floor(i / 2);
+      const cardX = isLeft ? stage.x : stage.x + stage.w - cardW;
+      const cardY = stage.y + r * (rowH + 12);
+      const midY = cardY + rowH / 2;
+      const color = stepColors[i % stepColors.length];
+
+      ctx.strokeStyle = color;
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(anchorX, anchorY);
-      ctx.lineTo(isLeft ? labelX + 210 : labelX, anchorY);
+      ctx.moveTo(isLeft ? cardX + cardW : cardX, midY);
+      ctx.lineTo(isLeft ? wireX : wireX + wireW, midY);
       ctx.stroke();
 
-      drawNumberedDot(ctx, anchorX, anchorY, 13, String(i + 1), palette.accent);
-
-      ctx.fillStyle = palette.surface;
-      ctx.strokeStyle = palette.border;
-      ctx.lineWidth = 1.5;
-      roundRectPath(ctx, labelX, labelY, 210, 48, 10);
-      ctx.fill();
-      ctx.stroke();
-      drawFittedTextBlock(ctx, list[i]?.title || `Section ${i + 1}`, labelX + 10, labelY + 6, 190, 36, {
-        maxPx: 13, minPx: 10, weight: "700", color: palette.textMain, maxLines: 2,
-      });
-    }
+      drawNumberedDot(ctx, isLeft ? wireX : wireX + wireW, midY, 13, String(i + 1), color);
+      drawInfographicNodeCard(
+        ctx,
+        { x: cardX, y: cardY, w: cardW, h: rowH },
+        node,
+        i,
+        palette,
+        tplId,
+        showIcons
+      );
+    });
     return;
   }
 
-  // 24: 6-Box Quick Reference Cheat Sheet (monospace code/formula cards)
+  // TEMPLATE #24: 6-Box Quick Reference Cheat Sheet
   if (tplId === 24) {
-    const list = items.length > 0 ? items : DEFAULT_SAMPLE_NODES;
+    const list = items.slice(0, 6);
     const cols = 3;
-    const rows = Math.ceil(Math.max(list.length, 6) / cols);
-    const gapX = 16;
+    const rows = 2;
+    const gapX = 18;
     const gapY = 16;
     const cardW = (stage.w - gapX * (cols - 1)) / cols;
     const cardH = (stage.h - gapY * (rows - 1)) / rows;
 
-    for (let i = 0; i < cols * rows; i++) {
+    for (let i = 0; i < 6; i++) {
       const node = list[i % list.length];
       const r = Math.floor(i / cols);
       const c = i % cols;
-      const bx = stage.x + c * (cardW + gapX);
-      const by = stage.y + r * (cardH + gapY);
-      const accent = i % 2 === 0 ? palette.accent : palette.accentSecondary;
-
-      ctx.fillStyle = palette.isLight ? "#0F172A" : "#000814";
-      roundRectPath(ctx, bx, by, cardW, cardH, 14);
-      ctx.fill();
-      ctx.strokeStyle = accent;
-      ctx.lineWidth = 1.5;
-      roundRectPath(ctx, bx, by, cardW, cardH, 14);
-      ctx.stroke();
-
-      // Fake terminal dots
-      ["#F43F5E", "#F59E0B", "#10B981"].forEach((d, di) => {
-        ctx.fillStyle = d;
-        ctx.beginPath();
-        ctx.arc(bx + 16 + di * 14, by + 16, 4, 0, Math.PI * 2);
-        ctx.fill();
-      });
-
-      drawFittedTextBlock(ctx, node?.badge || `#${i + 1}`, bx + 14, by + 30, cardW - 28, 18, {
-        maxPx: 12, minPx: 10, weight: "800", color: accent, maxLines: 1,
-      });
-      ctx.font = `600 ${Math.max(11, Math.round(cardW * 0.062))}px "JetBrains Mono", Menlo, Consolas, monospace`;
-      ctx.fillStyle = "#E2E8F0";
-      ctx.textBaseline = "top";
-      const codeLine = (node?.metricValue || node?.title || "formula()").slice(0, 26);
-      ctx.fillText(codeLine, bx + 14, by + 54);
-      drawFittedTextBlock(ctx, node?.detail || "", bx + 14, by + 54 + Math.round(cardW * 0.062) + 10, cardW - 28, cardH - 90, {
-        maxPx: 11, minPx: 9, weight: "500", color: "#94A3B8", maxLines: 3, lineHeightRatio: 1.3,
-      });
+      drawInfographicNodeCard(
+        ctx,
+        {
+          x: stage.x + c * (cardW + gapX),
+          y: stage.y + r * (cardH + gapY),
+          w: cardW,
+          h: cardH,
+        },
+        node,
+        i,
+        palette,
+        tplId,
+        showIcons
+      );
     }
     return;
   }
 
-  // 25: Widescreen Blog Hero & OG Banner (no node grid — big title + metric preview strip)
+  // TEMPLATE #25: Widescreen Featured Hero & OG Poster with Embedded Chart Card + 4 KPI Strip Pills
   if (tplId === 25) {
-    const list = items.length > 0 ? items : DEFAULT_SAMPLE_NODES;
-    const stripH = Math.min(stage.h * 0.3, 120);
-    const titleZoneH = stage.h - stripH - 20;
+    const list = items.slice(0, 4);
+    const stripH = Math.min(stage.h * 0.34, 135);
+    const topZoneH = stage.h - stripH - 18;
+    const leftW = stage.w * 0.58;
+    const rightW = stage.w - leftW - 22;
 
-    ctx.fillStyle = palette.accentSoft;
-    roundRectPath(ctx, stage.x, stage.y, stage.w, titleZoneH, 18);
+    // Left Spotlight Feature Panel
+    ctx.fillStyle = palette.surface;
+    ctx.strokeStyle = palette.accent;
+    ctx.lineWidth = 2;
+    roundRectPath(ctx, stage.x, stage.y, leftW, topZoneH, 20);
     ctx.fill();
-    drawFittedTextBlock(ctx, "FEATURED ARTICLE VISUAL", stage.x + 26, stage.y + 20, stage.w - 52, 20, {
-      maxPx: 13, minPx: 10, weight: "800", color: palette.accent, maxLines: 1,
+    ctx.stroke();
+
+    drawTagPill(ctx, stage.x + 24, stage.y + 20, "FEATURED VISUAL PLAYBOOK", palette.accent);
+    drawFittedTextBlock(
+      ctx,
+      config.headline,
+      stage.x + 24,
+      stage.y + 56,
+      leftW - 48,
+      topZoneH - 72,
+      { maxPx: 32, minPx: 18, weight: "900", color: palette.textMain, maxLines: 3, lineHeightRatio: 1.18 }
+    );
+
+    // Right Mini Visual Data Preview Card (Bar Chart + Trend Graphic)
+    const rx = stage.x + leftW + 22;
+    ctx.fillStyle = palette.surfaceAlt;
+    ctx.strokeStyle = palette.accentSecondary;
+    ctx.lineWidth = 2;
+    roundRectPath(ctx, rx, stage.y, rightW, topZoneH, 20);
+    ctx.fill();
+    ctx.stroke();
+
+    drawFittedTextBlock(ctx, "LIVE PERFORMANCE SNAPSHOT", rx + 22, stage.y + 18, rightW - 44, 20, {
+      maxPx: 13, minPx: 10, weight: "900", color: palette.accentSecondary, maxLines: 1,
     });
-    drawFittedTextBlock(ctx, list[0]?.title || "Your Big Idea, Visualized", stage.x + 26, stage.y + 50, stage.w - 52, titleZoneH - 70, {
-      maxPx: 42, minPx: 24, weight: "900", color: palette.textMain, maxLines: 2, lineHeightRatio: 1.14,
+    const barBaseY = stage.y + topZoneH - 24;
+    const maxBarH = Math.max(50, topZoneH - 76);
+    [0.52, 0.74, 0.88, 1.0].forEach((ratio, idx) => {
+      const bw = (rightW - 76) / 4;
+      const bx = rx + 22 + idx * (bw + 10);
+      const bh = maxBarH * ratio;
+      ctx.fillStyle = stepColors[idx % stepColors.length];
+      roundRectPath(ctx, bx, barBaseY - bh, bw, bh, [8, 8, 0, 0]);
+      ctx.fill();
     });
 
-    // Bottom metric preview strip (mini KPI pills)
+    // Bottom 4 KPI Strip Cards
     const stripY = stage.y + stage.h - stripH;
-    const gapX = 14;
+    const gapX = 16;
     const pillW = (stage.w - gapX * (list.length - 1)) / list.length;
-    list.slice(0, 4).forEach((node, idx) => {
+    list.forEach((node, idx) => {
       const px = stage.x + idx * (pillW + gapX);
-      const accent = idx % 2 === 0 ? palette.accent : palette.accentSecondary;
-      ctx.fillStyle = palette.surface;
-      ctx.strokeStyle = accent;
-      ctx.lineWidth = 1.5;
-      roundRectPath(ctx, px, stripY, pillW, stripH, 14);
-      ctx.fill();
-      ctx.stroke();
-      drawFittedTextBlock(ctx, node.metricValue || "—", px + 14, stripY + 12, pillW - 28, stripH * 0.46, {
-        maxPx: 24, minPx: 14, weight: "900", color: accent, maxLines: 1,
-      });
-      drawFittedTextBlock(ctx, node.title, px + 14, stripY + stripH * 0.58, pillW - 28, stripH * 0.38, {
-        maxPx: 12, minPx: 9, weight: "700", color: palette.textMuted, maxLines: 2,
-      });
+      drawInfographicNodeCard(
+        ctx,
+        { x: px, y: stripY, w: pillW, h: stripH },
+        node,
+        idx,
+        palette,
+        tplId,
+        showIcons
+      );
     });
     return;
   }
 
-  // Default responsive grid fallback (not expected to be reached — every template
-  // ID 1–25 now has its own geometry branch above; kept only as a last-resort guard).
-  const cols = items.length <= 2 ? items.length : items.length === 3 ? 3 : 2;
+  // Fallback balanced grid
+  const cols = items.length <= 2 ? items.length : 2;
   const rows = Math.ceil(items.length / cols);
   const gapX = 20;
-  const gapY = 18;
+  const gapY = 16;
   const cardW = (stage.w - gapX * (cols - 1)) / cols;
   const cardH = (stage.h - gapY * (rows - 1)) / rows;
-
   items.forEach((node, idx) => {
     const r = Math.floor(idx / cols);
     const c = idx % cols;
-    drawStandardNodeCard(
+    drawInfographicNodeCard(
       ctx,
       {
         x: stage.x + c * (cardW + gapX),
@@ -1709,7 +1974,9 @@ function renderTemplateBodyGeometry(
       },
       node,
       idx,
-      palette
+      palette,
+      tplId,
+      showIcons
     );
   });
 }
@@ -1742,87 +2009,142 @@ export function renderBlogInfographicToCanvas(
   const spec =
     BLOG_INFOGRAPHIC_25_TEMPLATES.find((t) => t.id === config.templateId) ??
     BLOG_INFOGRAPHIC_25_TEMPLATES[0];
+  const backdropStyle: InfographicBackdropStyle =
+    options.backdropStyle ?? config.backdropStyle ?? "ai-art-plate";
+  const showIcons = options.showVectorIcons ?? config.showVectorIcons ?? true;
+  const density = options.spacingDensity ?? config.spacingDensity ?? "balanced";
 
-  // 1. Background gradient + subtle architectural dot grid
+  // 1. Base Background Gradient
   const bgGrad = ctx.createLinearGradient(0, 0, W, H);
   bgGrad.addColorStop(0, palette.bgStart);
   bgGrad.addColorStop(1, palette.bgEnd);
   ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, W, H);
 
-  ctx.fillStyle = palette.isLight ? "rgba(15, 23, 42, 0.05)" : "rgba(255, 255, 255, 0.04)";
-  for (let gx = 36; gx < W - 20; gx += 36) {
-    for (let gy = 36; gy < H - 20; gy += 36) {
+  // 2. Hybrid AI Art Plate Composite Layer (when available) + Decorative Ambient Geometry
+  const artPlate =
+    options.backdropPlateImage !== undefined
+      ? options.backdropPlateImage
+      : backdropStyle === "ai-art-plate"
+        ? getArtPlateForPalette(config.paletteId, config.templateId)
+        : null;
+
+  if (artPlate && artPlate.complete && (artPlate.naturalWidth || artPlate.width)) {
+    ctx.save();
+    ctx.globalAlpha = palette.isLight ? 0.36 : 0.42;
+    const sw = artPlate.naturalWidth || artPlate.width;
+    const sh = artPlate.naturalHeight || artPlate.height;
+    const cover = Math.max(W / sw, H / sh);
+    const dw = sw * cover;
+    const dh = sh * cover;
+    ctx.drawImage(artPlate, (W - dw) / 2, (H - dh) / 2, dw, dh);
+    ctx.restore();
+
+    // Soft center readability vignette so typography stays 100% razor-sharp
+    const vig = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.18, W / 2, H / 2, Math.max(W, H) * 0.72);
+    vig.addColorStop(0, palette.isLight ? "rgba(255,255,255,0.86)" : "rgba(7,11,25,0.82)");
+    vig.addColorStop(1, palette.isLight ? "rgba(255,255,255,0.45)" : "rgba(7,11,25,0.38)");
+    ctx.fillStyle = vig;
+    ctx.fillRect(0, 0, W, H);
+  } else if (backdropStyle !== "clean-studio") {
+    // Procedural glassmorphic glowing orbs & Venngage-style corner wave ribbon
+    ctx.save();
+    const orb1 = ctx.createRadialGradient(W * 0.88, H * 0.12, 10, W * 0.88, H * 0.12, W * 0.28);
+    orb1.addColorStop(0, `${palette.accent}35`);
+    orb1.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = orb1;
+    ctx.fillRect(0, 0, W, H);
+
+    const orb2 = ctx.createRadialGradient(W * 0.12, H * 0.86, 10, W * 0.12, H * 0.86, W * 0.26);
+    orb2.addColorStop(0, `${palette.accentSecondary}2E`);
+    orb2.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = orb2;
+    ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+  }
+
+  // Subtle architectural dot grid
+  ctx.fillStyle = palette.isLight
+    ? "rgba(15, 23, 42, 0.045)"
+    : "rgba(255, 255, 255, 0.038)";
+  for (let gx = 40; gx < W - 24; gx += 40) {
+    for (let gy = 40; gy < H - 24; gy += 40) {
       ctx.fillRect(gx, gy, 2, 2);
     }
   }
 
-  // 2. Outer card frame (Rule 3.1 mathematical margins)
-  const pad = Math.round(Math.min(W, H) * 0.042);
+  // 3. Outer Poster Frame & Venngage-style Top Accent Corner Ribbon
+  const padMult = density === "compact" ? 0.032 : density === "spacious" ? 0.048 : 0.038;
+  const pad = Math.round(Math.min(W, H) * padMult);
   const cx = pad;
   const cy = pad;
   const cw = W - pad * 2;
   const ch = H - pad * 2;
-  const footerH = Math.round(Math.max(58, ch * 0.095));
+  const footerH = Math.round(Math.max(54, ch * 0.088));
 
-  ctx.strokeStyle = palette.border;
+  ctx.strokeStyle = `${palette.border}99`;
   ctx.lineWidth = 2.5;
   roundRectPath(ctx, cx, cy, cw, ch, 28);
   ctx.stroke();
 
-  // 3. Header Zone (Category Pill + Headline + Subheadline)
-  const innerPad = Math.round(cw * 0.036);
+  // Top decorative gradient bar along poster top
+  const topBarGrad = ctx.createLinearGradient(cx, cy, cx + cw, cy);
+  topBarGrad.addColorStop(0, palette.accent);
+  topBarGrad.addColorStop(0.5, palette.accentSecondary);
+  topBarGrad.addColorStop(1, palette.accentTertiary);
+  ctx.fillStyle = topBarGrad;
+  roundRectPath(ctx, cx, cy, cw, 8, [28, 28, 0, 0]);
+  ctx.fill();
+
+  // 4. Header Zone (Category Pill + Headline + Subheadline + Brand Logo)
+  const innerPad = Math.round(cw * 0.034);
   const headerX = cx + innerPad;
   const headerW = cw - innerPad * 2;
-  let curY = cy + Math.round(innerPad * 0.78);
+  let curY = cy + Math.round(innerPad * 0.72) + 4;
 
-  // Top category pill + template badge
-  const pillLabel = `${spec.family.toUpperCase()} · TEMPLATE #${spec.id}`;
-  ctx.font = "800 13px Inter, system-ui, sans-serif";
+  const pillLabel = `${spec.family.toUpperCase()} · LAYOUT #${spec.id}`;
+  ctx.font = "800 12px Inter, system-ui, sans-serif";
   const pillW = Math.min(headerW * 0.62, ctx.measureText(pillLabel).width + 28);
   ctx.fillStyle = palette.accentSoft;
   ctx.strokeStyle = palette.accent;
   ctx.lineWidth = 1.5;
-  roundRectPath(ctx, headerX, curY, pillW, 30, 999);
+  roundRectPath(ctx, headerX, curY, pillW, 28, 999);
   ctx.fill();
   ctx.stroke();
 
   ctx.fillStyle = palette.accent;
   ctx.textBaseline = "middle";
-  ctx.fillText(pillLabel, headerX + 14, curY + 15);
+  ctx.fillText(pillLabel, headerX + 14, curY + 14);
 
-  // Top-right brand logo or domain pill
   drawBrandLogoOrBadge(
     ctx,
     cx + cw - innerPad,
-    curY + 15,
+    curY + 14,
     config.footerSourceLabel || "DoItWithAI.tools",
     palette,
     options
   );
 
-  curY += 42;
+  curY += 38;
 
-  // Headline (auto-scaled)
   const headlineUsed = drawFittedTextBlock(
     ctx,
     config.headline || spec.name,
     headerX,
     curY,
     headerW,
-    Math.round(ch * 0.14),
+    Math.round(ch * 0.13),
     {
-      maxPx: W >= 1400 ? 38 : 32,
+      maxPx: W >= 1400 ? 36 : 30,
       minPx: 20,
       weight: "900",
       color: palette.textMain,
       maxLines: 2,
-      lineHeightRatio: 1.18,
+      lineHeightRatio: 1.16,
     }
   );
   curY += headlineUsed + 6;
 
-  // Subheadline
   if (config.subheadline) {
     const subUsed = drawFittedTextBlock(
       ctx,
@@ -1830,11 +2152,11 @@ export function renderBlogInfographicToCanvas(
       headerX,
       curY,
       headerW,
-      36,
+      32,
       {
-        maxPx: 18,
-        minPx: 13,
-        weight: "500",
+        maxPx: 17,
+        minPx: 12,
+        weight: "600",
         color: palette.textMuted,
         maxLines: 1,
       }
@@ -1844,40 +2166,25 @@ export function renderBlogInfographicToCanvas(
     curY += 10;
   }
 
-  // 4. Body Stage + Optional Right Portrait Column (Strict Non-Overlapping Column Math, Rule 3.1)
+  // 5. Full-Width Infographic Body Stage
   const bodyTop = curY;
   const bodyBottom = cy + ch - footerH - 16;
   const bodyH = Math.max(180, bodyBottom - bodyTop);
-  const hasPortrait = Boolean(options.portraitSource);
-  const colGap = 32;
-  const portraitW = hasPortrait
-    ? Math.round(cw * (config.templateId === 25 ? 0.32 : 0.25))
-    : 0;
 
-  const diagramStage = {
-    x: headerX,
-    y: bodyTop,
-    w: hasPortrait ? headerW - portraitW - colGap : headerW,
-    h: bodyH,
-  };
+  renderTemplateBodyGeometry(
+    ctx,
+    {
+      x: headerX,
+      y: bodyTop,
+      w: headerW,
+      h: bodyH,
+    },
+    config,
+    palette,
+    showIcons
+  );
 
-  renderTemplateBodyGeometry(ctx, diagramStage, config, palette);
-
-  if (hasPortrait) {
-    drawArchitecturalPortraitZone(
-      ctx,
-      {
-        x: diagramStage.x + diagramStage.w + colGap,
-        y: bodyTop,
-        w: portraitW,
-        h: bodyH,
-      },
-      palette,
-      options
-    );
-  }
-
-  // 5. Executive Footer Bar
+  // 6. Executive Footer Bar
   const fy = cy + ch - footerH;
   ctx.fillStyle = palette.footerBg;
   roundRectPath(ctx, cx, fy, cw, footerH, [0, 0, 27, 27]);
@@ -1892,7 +2199,7 @@ export function renderBlogInfographicToCanvas(
     fy + footerH / 2
   );
 
-  const rightTag = `${spec.name} · Zero-CLS Vector & HD Graphic`;
+  const rightTag = `${spec.name} · Editable Vector & HD Infographic`;
   ctx.font = "600 13px Inter, system-ui, sans-serif";
   ctx.fillStyle = "#94A3B8";
   ctx.textAlign = "right";
@@ -1904,9 +2211,6 @@ export function renderBlogInfographicToCanvas(
 
 /* -------------------------------------------------------------------------- */
 /* Clean Standalone Vector SVG Compiler: generateBlogInfographicSvg            */
-/* (Consumed by Phase 4 SVG Export, Phase 7 CWV HTML & Phase 9 .ZIP Bundler)   */
-/* Nov 11, 2026: now family-aware so the exported SVG visually matches the     */
-/* canvas renderer instead of always drawing the same generic card grid.      */
 /* -------------------------------------------------------------------------- */
 
 function escXml(raw: string): string {
@@ -1918,7 +2222,6 @@ function escXml(raw: string): string {
     .replace(/'/g, "&apos;");
 }
 
-/** Shared SVG node-card markup used by every grid-style template family. */
 function svgNodeCard(
   x: number,
   y: number,
@@ -1927,196 +2230,43 @@ function svgNodeCard(
   node: BlogInfographicNodeItem,
   idx: number,
   palette: BlogInfographicPaletteTokens,
+  templateId: number,
   accentOverride?: string
 ): string {
-  const accent = accentOverride || (idx % 2 === 0 ? palette.accent : palette.accentSecondary);
+  const colors = [
+    palette.accent,
+    palette.accentSecondary,
+    palette.accentTertiary,
+    "#10B981",
+    "#F59E0B",
+  ];
+  const accent = accentOverride || colors[idx % colors.length];
+  const iconId = resolveNodeIconId(node, idx, templateId);
   return `
     <g transform="translate(${x}, ${y})">
-      <rect width="${w}" height="${h}" rx="16" fill="${palette.surface}" stroke="${palette.border}" stroke-width="2" />
-      <rect width="7" height="${h}" rx="3.5" fill="${accent}" />
-      <rect x="20" y="14" width="80" height="22" rx="8" fill="${palette.accentSoft}" />
-      <text x="30" y="29" fill="${accent}" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="800">${escXml(
-        (node.badge || `0${idx + 1}`).toUpperCase()
+      <rect width="${w}" height="${h}" rx="18" fill="${palette.surface}" stroke="${accent}" stroke-width="2" />
+      <rect width="${w}" height="7" rx="3.5" fill="${accent}" />
+      <circle cx="34" cy="34" r="16" fill="${accent}" />
+      ${svgVectorIconMarkup(iconId, 34, 34, 18, "#FFFFFF")}
+      <rect x="58" y="22" width="88" height="24" rx="8" fill="${palette.accentSoft}" />
+      <text x="68" y="38" fill="${accent}" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="800">${escXml(
+        (node.badge || `STEP 0${idx + 1}`).toUpperCase().slice(0, 12)
       )}</text>
       ${
         node.metricValue
-          ? `<rect x="${w - 110}" y="14" width="94" height="22" rx="11" fill="${accent}" />
-      <text x="${w - 63}" y="29" text-anchor="middle" fill="#FFFFFF" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="800">${escXml(
-              node.metricValue
+          ? `<rect x="${Math.max(150, w - 114)}" y="22" width="98" height="24" rx="12" fill="${accent}" />
+      <text x="${Math.max(199, w - 65)}" y="38" text-anchor="middle" fill="#FFFFFF" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="800">${escXml(
+              node.metricValue.slice(0, 14)
             )}</text>`
           : ""
       }
-      <text x="20" y="${Math.min(h - 38, 66)}" fill="${palette.textMain}" font-family="Inter, system-ui, sans-serif" font-size="18" font-weight="800">${escXml(
+      <text x="20" y="${Math.min(h - 38, 76)}" fill="${palette.textMain}" font-family="Inter, system-ui, sans-serif" font-size="18" font-weight="800">${escXml(
         (node.title || "").slice(0, 44)
       )}</text>
-      <text x="20" y="${Math.min(h - 14, 92)}" fill="${palette.textMuted}" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="500">${escXml(
-        (node.detail || "").slice(0, 100)
+      <text x="20" y="${Math.min(h - 14, 104)}" fill="${palette.textMuted}" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="500">${escXml(
+        (node.detail || "").slice(0, 96)
       )}</text>
     </g>`;
-}
-
-/** Produces the body-stage SVG markup for the given template family (mirrors the canvas renderer). */
-function svgTemplateBodyMarkup(
-  stage: { x: number; y: number; w: number; h: number },
-  config: BlogInfographicConfig,
-  nodes: BlogInfographicNodeItem[],
-  palette: BlogInfographicPaletteTokens
-): string {
-  const tplId = config.templateId || 1;
-  const items = nodes.slice(0, 8);
-
-  // 1: Horizontal pipeline with connector arrows
-  if (tplId === 1) {
-    const cols = Math.min(4, items.length);
-    const rows = Math.ceil(items.length / cols);
-    const gapX = 20;
-    const gapY = 18;
-    const cardW = (stage.w - gapX * (cols - 1)) / cols;
-    const cardH = (stage.h - gapY * (rows - 1)) / rows;
-    let out = "";
-    items.forEach((node, idx) => {
-      const r = Math.floor(idx / cols);
-      const c = idx % cols;
-      const bx = stage.x + c * (cardW + gapX);
-      const by = stage.y + r * (cardH + gapY);
-      out += svgNodeCard(bx, by, cardW, cardH, node, idx, palette);
-      if (c < cols - 1 && idx < items.length - 1) {
-        const ax = bx + cardW + 2;
-        out += `<line x1="${ax}" y1="${by + cardH / 2}" x2="${ax + gapX - 6}" y2="${by + cardH / 2}" stroke="${palette.accent}" stroke-width="3" />`;
-      }
-    });
-    return out;
-  }
-
-  // 2: Vertical roadmap with spine + dots
-  if (tplId === 2) {
-    const spineX = stage.x + 24;
-    const gapY = 12;
-    const rowH = (stage.h - gapY * (items.length - 1)) / items.length;
-    let out = `<line x1="${spineX}" y1="${stage.y + 10}" x2="${spineX}" y2="${stage.y + stage.h - 10}" stroke="${palette.accent}" stroke-width="4" />`;
-    items.forEach((node, idx) => {
-      const ry = stage.y + idx * (rowH + gapY);
-      out += `<circle cx="${spineX}" cy="${ry + rowH / 2}" r="10" fill="${palette.accent}" />`;
-      out += svgNodeCard(spineX + 24, ry, stage.w - 48, rowH, node, idx, palette);
-    });
-    return out;
-  }
-
-  // 6, 8, 9, 10, 23: Two-column versus style
-  if (tplId === 6 || tplId === 8 || tplId === 9 || tplId === 10 || tplId === 23) {
-    const colGap = 32;
-    const colW = (stage.w - colGap) / 2;
-    const left = items.filter((_, i) => i % 2 === 0);
-    const right = items.filter((_, i) => i % 2 === 1);
-    const rows = Math.max(1, left.length, right.length);
-    const gapY = 12;
-    const cardH = (stage.h - gapY * (rows - 1)) / rows;
-    let out = "";
-    left.forEach((node, r) => {
-      out += svgNodeCard(stage.x, stage.y + r * (cardH + gapY), colW, cardH, node, r * 2, palette, "#F43F5E");
-    });
-    right.forEach((node, r) => {
-      out += svgNodeCard(stage.x + colW + colGap, stage.y + r * (cardH + gapY), colW, cardH, node, r * 2 + 1, palette, "#10B981");
-    });
-    const cx = stage.x + stage.w / 2;
-    const cy = stage.y + stage.h / 2;
-    out += `<circle cx="${cx}" cy="${cy}" r="22" fill="${palette.accent}" /><text x="${cx}" y="${cy + 5}" text-anchor="middle" fill="#FFFFFF" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="900">${
-      tplId === 23 ? "&#8594;" : "VS"
-    }</text>`;
-    return out;
-  }
-
-  // 5 & 17: funnel / pyramid tiers
-  if (tplId === 5 || tplId === 17) {
-    const isPyramid = tplId === 17;
-    const tiers = items.slice(0, 4);
-    const gapY = 10;
-    const tierH = (stage.h - gapY * (tiers.length - 1)) / tiers.length;
-    let out = "";
-    tiers.forEach((node, idx) => {
-      const ratio = isPyramid
-        ? 0.56 + (idx / Math.max(1, tiers.length - 1)) * 0.44
-        : 1 - (idx / Math.max(1, tiers.length)) * 0.34;
-      const tw = stage.w * ratio;
-      const tx = stage.x + (stage.w - tw) / 2;
-      const ty = stage.y + idx * (tierH + gapY);
-      out += svgNodeCard(tx, ty, tw, tierH, node, idx, palette);
-    });
-    return out;
-  }
-
-  // 16: 2x2 quadrant
-  if (tplId === 16) {
-    const gap = 18;
-    const qW = (stage.w - gap) / 2;
-    const qH = (stage.h - gap) / 2;
-    const colors = ["#10B981", palette.accent, "#F59E0B", "#F43F5E"];
-    const labels = ["QUICK WINS", "BIG BETS", "FILL-INS", "AVOID / DEFER"];
-    const list = items.length > 0 ? items : [];
-    let out = "";
-    for (let q = 0; q < 4; q++) {
-      const col = q % 2;
-      const row = Math.floor(q / 2);
-      const qx = stage.x + col * (qW + gap);
-      const qy = stage.y + row * (qH + gap);
-      out += `<rect x="${qx}" y="${qy}" width="${qW}" height="${qH}" rx="14" fill="${colors[q]}22" stroke="${colors[q]}" stroke-width="2" />`;
-      out += `<rect x="${qx + 12}" y="${qy + 12}" width="130" height="22" rx="11" fill="${colors[q]}" /><text x="${qx + 77}" y="${qy + 27}" text-anchor="middle" fill="#FFFFFF" font-family="Inter, system-ui, sans-serif" font-size="10" font-weight="800">${escXml(labels[q])}</text>`;
-      const node = list[q % Math.max(1, list.length)];
-      out += `<text x="${qx + 16}" y="${qy + 58}" fill="${palette.textMain}" font-family="Inter, system-ui, sans-serif" font-size="15" font-weight="800">${escXml((node?.title || labels[q]).slice(0, 30))}</text>`;
-    }
-    return out;
-  }
-
-  // 18: 3-circle Venn
-  if (tplId === 18) {
-    const cx = stage.x + stage.w / 2;
-    const cy = stage.y + stage.h / 2 + 8;
-    const r = Math.min(stage.w * 0.3, stage.h * 0.4);
-    const offset = r * 0.62;
-    const circles = [
-      { x: cx, y: cy - offset * 0.95, color: palette.accent },
-      { x: cx - offset, y: cy + offset * 0.55, color: palette.accentSecondary },
-      { x: cx + offset, y: cy + offset * 0.55, color: "#F59E0B" },
-    ];
-    let out = "";
-    circles.forEach((c) => {
-      out += `<circle cx="${c.x}" cy="${c.y}" r="${r}" fill="${c.color}" fill-opacity="0.3" stroke="${c.color}" stroke-width="2.5" />`;
-    });
-    out += `<circle cx="${cx}" cy="${cy}" r="68" fill="${palette.surface}" stroke="${palette.border}" stroke-width="1.5" /><text x="${cx}" y="${cy + 5}" text-anchor="middle" fill="${palette.textMain}" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="900">${escXml(items[0]?.title?.slice(0, 16) || "Sweet Spot")}</text>`;
-    return out;
-  }
-
-  // 20/21: vertical checklist / TL;DR rows
-  if (tplId === 20 || tplId === 21) {
-    const list = items.length > 0 ? items : [];
-    const gapY = 10;
-    const rowH = (stage.h - gapY * (list.length - 1)) / Math.max(1, list.length);
-    let out = "";
-    list.forEach((node, idx) => {
-      const ry = stage.y + idx * (rowH + gapY);
-      out += `<rect x="${stage.x}" y="${ry}" width="${stage.w}" height="${rowH}" rx="12" fill="${palette.surface}" stroke="${palette.border}" stroke-width="1.5" />`;
-      out += `<circle cx="${stage.x + 30}" cy="${ry + rowH / 2}" r="16" fill="${palette.accent}" /><text x="${stage.x + 30}" y="${ry + rowH / 2 + 5}" text-anchor="middle" fill="#FFFFFF" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="900">${
-        tplId === 20 ? "&#10003;" : idx + 1
-      }</text>`;
-      out += `<text x="${stage.x + 62}" y="${ry + rowH / 2 + 5}" fill="${palette.textMain}" font-family="Inter, system-ui, sans-serif" font-size="15" font-weight="700">${escXml((node.title || "").slice(0, 52))}</text>`;
-    });
-    return out;
-  }
-
-  // Every other family: responsive grid of node cards (still distinct per count/ratio from the generic default)
-  const cols = items.length <= 2 ? Math.max(1, items.length) : items.length === 3 ? 3 : 2;
-  const rows = Math.ceil(items.length / cols);
-  const gapX = 20;
-  const gapY = 16;
-  const cardW = (stage.w - gapX * (cols - 1)) / cols;
-  const cardH = (stage.h - gapY * (rows - 1)) / Math.max(1, rows);
-  let out = "";
-  items.forEach((node, idx) => {
-    const r = Math.floor(idx / cols);
-    const c = idx % cols;
-    out += svgNodeCard(stage.x + c * (cardW + gapX), stage.y + r * (cardH + gapY), cardW, cardH, node, idx, palette);
-  });
-  return out;
 }
 
 export function generateBlogInfographicSvg(
@@ -2131,28 +2281,42 @@ export function generateBlogInfographicSvg(
   const spec =
     BLOG_INFOGRAPHIC_25_TEMPLATES.find((t) => t.id === config.templateId) ??
     BLOG_INFOGRAPHIC_25_TEMPLATES[0];
+  const fallbackNodes =
+    TEMPLATE_CURATED_SHOWCASE_DATA[spec.id]?.nodes ??
+    TEMPLATE_CURATED_SHOWCASE_DATA[1].nodes;
   const nodes =
-    config.nodes && config.nodes.length > 0 ? config.nodes : DEFAULT_SAMPLE_NODES;
+    config.nodes && config.nodes.length > 0 ? config.nodes : fallbackNodes;
+  const items = nodes.slice(0, 6);
 
-  const pad = Math.round(Math.min(W, H) * 0.042);
-  const innerX = pad + 44;
-  const innerW = W - (pad + 44) * 2;
-  const bodyTop = pad + 185;
-  const footerH = 68;
-  const bodyH = H - pad * 2 - footerH - 210;
+  const pad = Math.round(Math.min(W, H) * 0.038);
+  const cw = W - pad * 2;
+  const ch = H - pad * 2;
+  const footerH = Math.round(Math.max(54, ch * 0.088));
+  const innerPad = Math.round(cw * 0.034);
+  const stageX = pad + innerPad;
+  const stageY = pad + 165;
+  const stageW = cw - innerPad * 2;
+  const stageH = ch - 165 - footerH - 18;
 
-  const bodyMarkup = svgTemplateBodyMarkup(
-    { x: innerX, y: bodyTop, w: innerW, h: bodyH },
-    config,
-    nodes,
-    palette
-  );
+  const cols = items.length <= 3 ? items.length : 2;
+  const rows = Math.ceil(items.length / cols);
+  const gapX = 20;
+  const gapY = 16;
+  const cardW = Math.round((stageW - gapX * (cols - 1)) / cols);
+  const cardH = Math.round((stageH - gapY * (rows - 1)) / rows);
+
+  let cardsSvg = "";
+  items.forEach((node, idx) => {
+    const r = Math.floor(idx / cols);
+    const c = idx % cols;
+    const bx = stageX + c * (cardW + gapX);
+    const by = stageY + r * (cardH + gapY);
+    cardsSvg += svgNodeCard(bx, by, cardW, cardH, node, idx, palette, spec.id);
+  });
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${escXml(
     config.altText || config.headline
   )}">
-  <title>${escXml(config.headline || spec.name)}</title>
-  <desc>${escXml(config.altText || config.subheadline)}</desc>
   <defs>
     <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="${palette.bgStart}" />
@@ -2160,36 +2324,30 @@ export function generateBlogInfographicSvg(
     </linearGradient>
   </defs>
   <rect width="${W}" height="${H}" fill="url(#bgGrad)" />
-  <rect x="${pad}" y="${pad}" width="${W - pad * 2}" height="${H - pad * 2}" rx="28" fill="none" stroke="${palette.border}" stroke-width="2.5" />
-  <text x="${innerX}" y="${pad + 54}" fill="${palette.accent}" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="800">${escXml(
-    `${spec.family.toUpperCase()} · TEMPLATE #${spec.id} (${spec.name.toUpperCase()})`
+  <rect x="${pad}" y="${pad}" width="${cw}" height="${ch}" rx="28" fill="none" stroke="${palette.border}" stroke-width="2.5" />
+  <rect x="${stageX}" y="${pad + 26}" width="310" height="28" rx="14" fill="${palette.accentSoft}" stroke="${palette.accent}" stroke-width="1.5" />
+  <text x="${stageX + 14}" y="${pad + 45}" fill="${palette.accent}" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="800">${escXml(
+    `${spec.family.toUpperCase()} · LAYOUT #${spec.id}`
   )}</text>
-  <text x="${innerX}" y="${pad + 102}" fill="${palette.textMain}" font-family="Inter, system-ui, sans-serif" font-size="34" font-weight="900">${escXml(
-    config.headline
+  <text x="${stageX}" y="${pad + 94}" fill="${palette.textMain}" font-family="Inter, system-ui, sans-serif" font-size="32" font-weight="900">${escXml(
+    (config.headline || spec.name).slice(0, 74)
   )}</text>
-  <text x="${innerX}" y="${pad + 138}" fill="${palette.textMuted}" font-family="Inter, system-ui, sans-serif" font-size="17" font-weight="500">${escXml(
-    config.subheadline
+  <text x="${stageX}" y="${pad + 126}" fill="${palette.textMuted}" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="600">${escXml(
+    (config.subheadline || "").slice(0, 105)
   )}</text>
-  ${bodyMarkup}
-  <rect x="${pad}" y="${H - pad - footerH}" width="${W - pad * 2}" height="${footerH}" rx="20" fill="${palette.footerBg}" />
-  <text x="${innerX}" y="${H - pad - footerH / 2 + 5}" fill="#F8FAFC" font-family="Inter, system-ui, sans-serif" font-size="14" font-weight="700">${escXml(
-    config.footerSourceLabel || "DoItWithAI.tools · Blog Infographic Studio"
+  ${cardsSvg}
+  <rect x="${pad}" y="${pad + ch - footerH}" width="${cw}" height="${footerH}" rx="24" fill="${palette.footerBg}" />
+  <text x="${stageX}" y="${pad + ch - Math.round(footerH / 2) + 5}" fill="#F8FAFC" font-family="Inter, system-ui, sans-serif" font-size="14" font-weight="700">${escXml(
+    config.footerSourceLabel || "DoItWithAI.tools · Visual SEO & Infographic Studio"
   )}</text>
 </svg>`;
 }
 
-/**
- * Renders a BlogInfographicConfig to a PNG Data URL in the browser (or returns an SVG data URL
- * when called outside a browser DOM, e.g., during SSR).
- */
 export async function renderBlogInfographicToPngDataUrl(
   config: BlogInfographicConfig,
   options: BlogInfographicRenderOptions = {}
 ): Promise<string> {
-  if (typeof document === "undefined") {
-    const svg = generateBlogInfographicSvg(config, options);
-    return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
-  }
+  if (typeof document === "undefined") return "";
   const canvas = document.createElement("canvas");
   renderBlogInfographicToCanvas(canvas, config, options);
   return canvas.toDataURL("image/png");

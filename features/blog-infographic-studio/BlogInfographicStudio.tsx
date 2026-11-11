@@ -1,14 +1,20 @@
 "use client";
 
 /**
- * Phase 4 Core Deliverable #2: Dedicated 25-Template Canva / Napkin.ai-Style Blog Infographic Studio
+ * Phase 4 Core Deliverable #2: Dedicated 25-Template Venngage / Canva-Style Blog Infographic Studio
  * File: features/blog-infographic-studio/BlogInfographicStudio.tsx
  *
- * Built & Signed by: Nova-Forge (Flagship Studio Persistence & Workspace Engineer)
+ * Upgraded by: Aegis-Prime & Nova-Forge
  *
- * Supports TWO execution modes:
- *  - `mode="standalone"` (default on `/tools/blog-section-infographic-generator`)
- *  - `mode="embedded-modal"` (drawer/modal inside Phase 6 `Stage4RichEditorAndScorecard.tsx`)
+ * Key Upgrades:
+ *  - Removed irrelevant Testimonial/Founder headshot controls from the Infographic Studio
+ *    (Infographics use Brand Logos, Vector Icon Medallions, Charts & AI Art Plates—not portraits)
+ *  - Added Hybrid AI Art Plate Selector + Custom Backdrop Image Upload + Spacing Density Controls
+ *  - Added Per-Node Vector Icon Picker (20 geometric vector icons) + 6 One-Click Scenario Presets
+ *  - Upgraded the 25-Template Preview Cards with "Curated Showcase Mode" (each card displays its
+ *    own signature palette, AI art plate & realistic data like Venngage) vs "My Active Text Mode"
+ *  - Supports both `mode="standalone"` (/tools/blog-section-infographic-generator) and
+ *    `mode="embedded-modal"` (inside /ai-content-writer Stage 4 Rich Editor)
  */
 
 import React, {
@@ -19,18 +25,16 @@ import React, {
   useState,
 } from "react";
 import type { ChangeEvent } from "react";
-import Image from "next/image";
 import JSZip from "jszip";
 import {
   Check,
   Code2,
   Copy,
   Download,
+  Eye,
   FileCode2,
   ImagePlus,
   Layers,
-  Loader2,
-  Move,
   PackageCheck,
   Palette,
   Plus,
@@ -40,7 +44,6 @@ import {
   Sparkles,
   Trash2,
   Type,
-  Upload,
   Wand2,
   X,
   ZoomIn,
@@ -53,21 +56,14 @@ import {
   downloadCanvasAsPng,
   printCanvasAsPdfPoster,
 } from "@/features/tool-ui/visualCardExport";
-import {
-  MALE_PORTRAIT_PRESETS,
-  type LogoBadgeStyle,
-  type MalePortraitPresetId,
-  type PortraitFrameMode,
-} from "@/features/quote-stat-testimonial-card-studio/model";
-import {
-  loadImageFromFile,
-  removePortraitBackground,
-  removeStudioBackdropInstant,
-} from "@/features/quote-stat-testimonial-card-studio/portraitCutout";
+import type { LogoBadgeStyle } from "@/features/quote-stat-testimonial-card-studio/model";
+import { loadImageFromFile } from "@/features/quote-stat-testimonial-card-studio/portraitCutout";
 import type {
   BlogInfographicConfig,
   BlogInfographicNodeItem,
   InfographicAspectRatio,
+  InfographicBackdropStyle,
+  InfographicIconId,
 } from "@/lib/blog-writer/canonical-state";
 import { autoRecommendInfographicTemplate } from "@/lib/blog-writer/deterministic-analyzers";
 import {
@@ -79,6 +75,9 @@ import {
   BLOG_INFOGRAPHIC_PALETTES,
   createSampleInfographicConfig,
   generateBlogInfographicSvg,
+  INFOGRAPHIC_ICON_OPTIONS,
+  preloadInfographicArtPlates,
+  QUICK_SCENARIO_PRESETS,
   renderBlogInfographicToCanvas,
   type BlogInfographicCustomColorOverrides,
   type BlogInfographicRenderOptions,
@@ -104,14 +103,6 @@ const FAMILY_FILTERS: (
   "Hero, OG & Quote Cards",
 ];
 
-const FRAME_MODE_OPTIONS: { id: PortraitFrameMode; label: string }[] = [
-  { id: "auto", label: "Auto (Ring)" },
-  { id: "ring-circle", label: "Circle in Ring" },
-  { id: "arch", label: "Arch Frame" },
-  { id: "rounded", label: "Radius Frame" },
-  { id: "cutout", label: "Cutout Aura" },
-];
-
 const LOGO_STYLE_OPTIONS: { id: LogoBadgeStyle; label: string }[] = [
   { id: "auto", label: "Auto" },
   { id: "pill", label: "Brand Pill" },
@@ -120,24 +111,51 @@ const LOGO_STYLE_OPTIONS: { id: LogoBadgeStyle; label: string }[] = [
   { id: "plain", label: "No Box" },
 ];
 
-type BgStatus = "idle" | "working" | "done" | "failed";
+const BACKDROP_STYLE_OPTIONS: {
+  id: InfographicBackdropStyle;
+  label: string;
+  desc: string;
+}[] = [
+  {
+    id: "ai-art-plate",
+    label: "✨ AI Art Plate",
+    desc: "Blends curated 3D glass/isometric/paper AI backdrop plates",
+  },
+  {
+    id: "glass-orbs",
+    label: "🔮 3D Glow Orbs",
+    desc: "Procedural radial neon orbs & architectural grid",
+  },
+  {
+    id: "clean-studio",
+    label: "📐 Clean Vector",
+    desc: "Minimalist flat studio poster backdrop",
+  },
+];
 
 /**
- * Live miniature <canvas> preview of each of the 25 templates (`0.22x` scale via `useDeferredValue`)
- * rendered with the user's active headline, nodes, palette, portrait, and logo.
+ * Upgraded Venngage-Style Live Template Preview Card (`0.26x` high-DPI `<canvas>`):
+ * Supports both "Showcase Mode" (each template renders with its own curated palette,
+ * AI art plate & realistic data) and "My Active Text Mode".
  */
 function InfographicTemplateThumb({
   spec,
   baseConfig,
   renderOptions,
+  showcaseMode,
+  plateVersion,
   active,
-  onSelect,
+  onApplyLayoutOnly,
+  onLoadFullSample,
 }: {
   spec: BlogInfographicTemplateSpec;
   baseConfig: BlogInfographicConfig;
   renderOptions: BlogInfographicRenderOptions;
+  showcaseMode: boolean;
+  plateVersion: number;
   active: boolean;
-  onSelect: () => void;
+  onApplyLayoutOnly: () => void;
+  onLoadFullSample: () => void;
 }) {
   const ref = useRef<HTMLCanvasElement | null>(null);
   const deferredConfig = useDeferredValue(baseConfig);
@@ -145,59 +163,112 @@ function InfographicTemplateThumb({
 
   useEffect(() => {
     if (!ref.current) return;
-    renderBlogInfographicToCanvas(
-      ref.current,
-      {
-        ...deferredConfig,
-        templateId: spec.id,
-        templateSlug: spec.slug,
-        templateName: spec.name,
-        aspectRatio: "16:9",
-      },
-      {
-        ...deferredOpts,
-        scale: 0.22,
-      }
-    );
-  }, [deferredConfig, deferredOpts, spec]);
+    const targetConfig: BlogInfographicConfig = showcaseMode
+      ? createSampleInfographicConfig(spec.id)
+      : {
+          ...deferredConfig,
+          templateId: spec.id,
+          templateSlug: spec.slug,
+          templateName: spec.name,
+          aspectRatio: "16:9",
+        };
+
+    renderBlogInfographicToCanvas(ref.current, targetConfig, {
+      ...(showcaseMode ? {} : deferredOpts),
+      scale: 0.26,
+      showVectorIcons: true,
+    });
+  }, [deferredConfig, deferredOpts, spec, showcaseMode, plateVersion]);
+
+  const curatedSample = useMemo(
+    () => createSampleInfographicConfig(spec.id),
+    [spec.id]
+  );
+  const paletteInfo =
+    BLOG_INFOGRAPHIC_PALETTES[
+      showcaseMode ? curatedSample.paletteId : baseConfig.paletteId
+    ];
 
   return (
-    <button
-      type="button"
-      onClick={onSelect}
-      aria-pressed={active}
-      className={`group relative flex flex-col justify-between rounded-2xl border p-2.5 text-left transition-all ${
+    <div
+      className={`group relative flex flex-col justify-between rounded-2xl border p-3 text-left transition-all duration-200 ${
         active
-          ? "border-[#4058d0] bg-[#4058d0]/10 ring-2 ring-[#4058d0]/35 dark:bg-[#4058d0]/20"
-          : "border-slate-200 bg-white hover:border-[#4058d0]/50 hover:shadow-md dark:border-slate-800 dark:bg-slate-950"
+          ? "border-[#4058d0] bg-[#4058d0]/10 ring-2 ring-[#4058d0]/40 dark:bg-[#4058d0]/20"
+          : "border-slate-200 bg-white hover:-translate-y-0.5 hover:border-[#4058d0]/60 hover:shadow-xl dark:border-slate-800 dark:bg-slate-950"
       }`}
     >
       <div>
-        <div className="relative overflow-hidden rounded-xl border border-slate-200/80 bg-slate-900 dark:border-slate-800">
+        <div
+          onClick={onApplyLayoutOnly}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              onApplyLayoutOnly();
+            }
+          }}
+          className="relative cursor-pointer overflow-hidden rounded-xl border border-slate-200/80 bg-slate-950 shadow-sm dark:border-slate-800"
+        >
           <canvas
             ref={ref}
             role="img"
-            aria-label={`${spec.name} live template preview`}
-            className="block h-auto w-full transition-transform duration-200 group-hover:scale-[1.02]"
+            aria-label={`${spec.name} live infographic preview`}
+            className="block h-auto w-full transition-transform duration-300 group-hover:scale-[1.03]"
           />
+          <div className="absolute left-2 top-2 flex items-center gap-1">
+            <span
+              className={`rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-wider shadow-sm ${
+                active
+                  ? "bg-[#4058d0] text-white"
+                  : "bg-slate-950/85 text-white backdrop-blur-xs"
+              }`}
+            >
+              #{spec.id} · {spec.family.split(" ")[0]}
+            </span>
+          </div>
           <span
-            className={`absolute right-2 top-2 rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-wider shadow-xs ${
-              active
-                ? "bg-[#4058d0] text-white"
-                : "bg-slate-900/85 text-white backdrop-blur-xs"
-            }`}
+            style={{ backgroundColor: paletteInfo.accent }}
+            className="absolute right-2 top-2 rounded-full px-2 py-0.5 text-[9px] font-extrabold text-white shadow-sm"
           >
-            #{spec.id} · {spec.family.split(" ")[0]}
+            {paletteInfo.label.split(" ")[0]}
           </span>
         </div>
-        <strong className="mt-2 block text-xs font-extrabold text-slate-900 dark:text-white">
-          #{spec.id}. {spec.name}
-        </strong>
-        <span className="mt-0.5 block text-[10px] leading-4 text-slate-500 dark:text-slate-400">
-          Best for: {spec.bestForSectionType}
-        </span>
+
+        <div className="mt-2.5 flex items-start justify-between gap-2">
+          <div>
+            <strong className="block text-xs font-extrabold text-slate-900 dark:text-white">
+              #{spec.id}. {spec.name}
+            </strong>
+            <span className="mt-0.5 block text-[10px] leading-4 text-slate-500 dark:text-slate-400">
+              Best for: {spec.bestForSectionType}
+            </span>
+          </div>
+        </div>
       </div>
-    </button>
+
+      <div className="mt-3 grid grid-cols-2 gap-1.5 border-t border-slate-100 pt-2.5 dark:border-slate-800/80">
+        <button
+          type="button"
+          onClick={onApplyLayoutOnly}
+          className={`rounded-lg px-2 py-1.5 text-[10px] font-extrabold transition ${
+            active
+              ? "bg-[#4058d0] text-white"
+              : "bg-slate-100 text-slate-800 hover:bg-[#4058d0] hover:text-white dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-[#4058d0]"
+          }`}
+        >
+          {active ? "✓ Active Layout" : "Use Layout"}
+        </button>
+        <button
+          type="button"
+          onClick={onLoadFullSample}
+          className="rounded-lg border border-indigo-500/30 bg-indigo-500/10 px-2 py-1.5 text-[10px] font-extrabold text-[#3452d1] transition hover:bg-indigo-500/20 dark:text-indigo-300"
+          title="Load this template along with its curated sample data and signature palette"
+        >
+          Load Sample
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -210,13 +281,16 @@ function parseParagraphIntoNodes(raw: string): BlogInfographicNodeItem[] {
   if (lines.length === 0) return [];
   return lines.slice(0, 6).map((line, idx) => {
     const words = line.split(/\s+/);
-    const numMatch = line.match(/(\d+(?:\.\d+)?(?:\s*%|\s*x|\s*px|\s*ms|\+)?)/i);
+    const numMatch = line.match(
+      /(\d+(?:\.\d+)?(?:\s*%|\s*x|\s*px|\s*ms|\s*M|\s*K|\+)?)/i
+    );
     return {
       id: `n-${Date.now().toString(36)}-${idx + 1}`,
       badge: `0${idx + 1}`,
       title: words.slice(0, 5).join(" ").replace(/[:.,;-]+$/, ""),
       detail: line.slice(0, 115),
       metricValue: numMatch ? numMatch[1].trim() : `Step ${idx + 1}`,
+      iconId: "auto",
     };
   });
 }
@@ -231,52 +305,32 @@ export function BlogInfographicStudio({
     initialConfig
       ? [initialConfig]
       : [
-          createSampleInfographicConfig(1, "indigo-cyber"),
+          createSampleInfographicConfig(1),
           {
-            ...createSampleInfographicConfig(6, "emerald-growth"),
+            ...createSampleInfographicConfig(6),
             id: "infographic-tpl-6",
-            headline: "Single-Prompt AI Wrapper vs. 62-Tool Blog Visual Studio",
-            subheadline: "Head-to-head SEO, typography & token efficiency comparison",
           },
           {
-            ...createSampleInfographicConfig(11, "amber-executive"),
+            ...createSampleInfographicConfig(11),
             id: "infographic-tpl-11",
-            headline: "4 Core Web Vitals & Organic Ranking Benchmarks (2026)",
-            subheadline: "Key metrics across 121 live AI SEO & Visual Studio tools",
+          },
+          {
+            ...createSampleInfographicConfig(12),
+            id: "infographic-tpl-12",
           },
         ]
   );
   const [activeIdx, setActiveIdx] = useState(0);
   const [familyFilter, setFamilyFilter] =
     useState<(typeof FAMILY_FILTERS)[number]>("All 25");
+  const [showcaseMode, setShowcaseMode] = useState(true);
+  const [plateVersion, setPlateVersion] = useState(0);
   const [customColors, setCustomColors] =
     useState<BlogInfographicCustomColorOverrides>({});
   const [rawPasteText, setRawPasteText] = useState("");
   const [showPasteBox, setShowPasteBox] = useState(false);
 
-  // Executive portrait & framing state (100% male executive presets per site-wide rule)
-  const [portraitPreset, setPortraitPreset] =
-    useState<MalePortraitPresetId>("none");
-  const [portraitFrame, setPortraitFrame] = useState<PortraitFrameMode>("auto");
-  const [portraitScale, setPortraitScale] = useState(1);
-  const [portraitRingScale, setPortraitRingScale] = useState(1);
-  const [portraitOffsetX, setPortraitOffsetX] = useState(0);
-  const [portraitOffsetY, setPortraitOffsetY] = useState(0);
-  const [portraitRadius, setPortraitRadius] = useState(24);
-  const [authorName, setAuthorName] = useState("Sufian Mustafa");
-  const [authorRole, setAuthorRole] = useState("Founder · DoItWithAI.tools");
-
-  const [presetCutout, setPresetCutout] = useState<
-    HTMLImageElement | HTMLCanvasElement | null
-  >(null);
-  const [uploadedImg, setUploadedImg] = useState<HTMLImageElement | null>(null);
-  const [uploadedCutout, setUploadedCutout] =
-    useState<HTMLCanvasElement | null>(null);
-  const [uploadedName, setUploadedName] = useState("");
-  const [autoRemoveBg, setAutoRemoveBg] = useState(true);
-  const [bgStatus, setBgStatus] = useState<BgStatus>("idle");
-
-  // Brand logo state
+  // Brand logo & Custom Backdrop Plate state (No founder/person portrait clutter)
   const [uploadedLogo, setUploadedLogo] = useState<HTMLImageElement | null>(
     null
   );
@@ -284,15 +338,20 @@ export function BlogInfographicStudio({
   const [logoScale, setLogoScale] = useState(1);
   const [logoBgStyle, setLogoBgStyle] = useState<LogoBadgeStyle>("auto");
 
+  const [customBackdropImg, setCustomBackdropImg] =
+    useState<HTMLImageElement | null>(null);
+  const [customBackdropName, setCustomBackdropName] = useState("");
+  const [showVectorIcons, setShowVectorIcons] = useState(true);
+  const [spacingDensity, setSpacingDensity] = useState<
+    "compact" | "balanced" | "spacious"
+  >("balanced");
+
   const [zoomLevel, setZoomLevel] = useState(1);
   const [toast, setToast] = useState("");
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const personInputRef = useRef<HTMLInputElement | null>(null);
   const logoInputRef = useRef<HTMLInputElement | null>(null);
-  const presetCacheRef = useRef<
-    Record<string, { raw: HTMLImageElement; cutout: HTMLCanvasElement }>
-  >({});
+  const backdropInputRef = useRef<HTMLInputElement | null>(null);
 
   const activeConfig = cards[activeIdx] || cards[0];
 
@@ -300,6 +359,13 @@ export function BlogInfographicStudio({
     setToast(msg);
     window.setTimeout(() => setToast(""), 3500);
   }
+
+  // Preload AI-generated Infographic Art Plates
+  useEffect(() => {
+    preloadInfographicArtPlates(() => {
+      setPlateVersion((v) => v + 1);
+    });
+  }, []);
 
   const updateActiveConfig = (
     updater:
@@ -322,102 +388,62 @@ export function BlogInfographicStudio({
     }
   }, [initialConfig]);
 
-  // Listen for Hero Showcase CustomEvent ("select-blog-infographic-template")
+  // Listen for Hero Showcase & Below-Page CustomEvent ("select-blog-infographic-template")
   useEffect(() => {
     const handler = (e: Event) => {
       const detail = (
         e as CustomEvent<{
           templateId?: number;
           paletteId?: BlogInfographicConfig["paletteId"];
-          portraitPreset?: MalePortraitPresetId;
+          loadSampleData?: boolean;
         }>
       ).detail;
       if (!detail) return;
       const spec =
         BLOG_INFOGRAPHIC_25_TEMPLATES.find((t) => t.id === detail.templateId) ??
         BLOG_INFOGRAPHIC_25_TEMPLATES[0];
-      updateActiveConfig((curr) => ({
-        ...curr,
-        templateId: spec.id,
-        templateSlug: spec.slug,
-        templateName: spec.name,
-        paletteId: detail.paletteId ?? curr.paletteId,
-      }));
-      if (detail.portraitPreset) {
-        setPortraitPreset(detail.portraitPreset);
+
+      if (detail.loadSampleData) {
+        const sample = createSampleInfographicConfig(spec.id, detail.paletteId);
+        updateActiveConfig((curr) => ({
+          ...sample,
+          id: curr.id,
+          sectionId: curr.sectionId,
+        }));
+        setCustomColors({});
+      } else {
+        updateActiveConfig((curr) => ({
+          ...curr,
+          templateId: spec.id,
+          templateSlug: spec.slug,
+          templateName: spec.name,
+          paletteId: detail.paletteId ?? curr.paletteId,
+        }));
       }
+      notify(`Loaded Template #${spec.id}: ${spec.name}`);
     };
     window.addEventListener("select-blog-infographic-template", handler);
     return () =>
       window.removeEventListener("select-blog-infographic-template", handler);
   });
 
-  // Load male executive portrait preset when selected
-  useEffect(() => {
-    if (portraitPreset === "none" || portraitPreset === "custom-upload") {
-      setPresetCutout(null);
-      return;
-    }
-    const found = MALE_PORTRAIT_PRESETS.find((p) => p.id === portraitPreset);
-    if (!found) return;
-    setAuthorName(found.authorSample);
-    setAuthorRole(found.roleSample);
-
-    const cached = presetCacheRef.current[found.id];
-    if (cached) {
-      setPresetCutout(autoRemoveBg ? cached.cutout : cached.raw);
-      return;
-    }
-
-    const img = new window.Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
-      const cutout = removeStudioBackdropInstant(img);
-      presetCacheRef.current[found.id] = { raw: img, cutout };
-      setPresetCutout(autoRemoveBg ? cutout : img);
-    };
-    img.src = found.imageSrc;
-  }, [portraitPreset, autoRemoveBg]);
-
-  const activePortraitSource = useMemo(() => {
-    if (portraitPreset === "custom-upload") {
-      return autoRemoveBg ? uploadedCutout || uploadedImg : uploadedImg;
-    }
-    if (portraitPreset !== "none") {
-      return presetCutout;
-    }
-    return null;
-  }, [portraitPreset, autoRemoveBg, uploadedCutout, uploadedImg, presetCutout]);
-
   const renderOptions: BlogInfographicRenderOptions = useMemo(
     () => ({
       customColors,
-      portraitSource: activePortraitSource,
-      portraitPreset,
-      portraitFrame,
-      portraitScale,
-      portraitRingScale,
-      portraitOffsetX,
-      portraitOffsetY,
-      portraitRadius,
-      authorName,
-      authorRole,
+      backdropStyle: activeConfig?.backdropStyle ?? "ai-art-plate",
+      backdropPlateImage: customBackdropImg ?? undefined,
+      showVectorIcons,
+      spacingDensity,
       logoImage: uploadedLogo,
       logoScale,
       logoBgStyle,
     }),
     [
       customColors,
-      activePortraitSource,
-      portraitPreset,
-      portraitFrame,
-      portraitScale,
-      portraitRingScale,
-      portraitOffsetX,
-      portraitOffsetY,
-      portraitRadius,
-      authorName,
-      authorRole,
+      activeConfig?.backdropStyle,
+      customBackdropImg,
+      showVectorIcons,
+      spacingDensity,
       uploadedLogo,
       logoScale,
       logoBgStyle,
@@ -427,8 +453,12 @@ export function BlogInfographicStudio({
   // Render main HD canvas
   useEffect(() => {
     if (!canvasRef.current || !activeConfig) return;
-    renderBlogInfographicToCanvas(canvasRef.current, activeConfig, renderOptions);
-  }, [activeConfig, renderOptions]);
+    renderBlogInfographicToCanvas(
+      canvasRef.current,
+      activeConfig,
+      renderOptions
+    );
+  }, [activeConfig, renderOptions, plateVersion]);
 
   const filteredTemplates = useMemo(
     () =>
@@ -437,25 +467,6 @@ export function BlogInfographicStudio({
         : BLOG_INFOGRAPHIC_25_TEMPLATES.filter((t) => t.family === familyFilter),
     [familyFilter]
   );
-
-  const handlePersonUpload = async (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setBgStatus("working");
-    try {
-      const img = await loadImageFromFile(file);
-      setUploadedImg(img);
-      setUploadedName(file.name);
-      setPortraitPreset("custom-upload");
-      const instant = removeStudioBackdropInstant(img);
-      setUploadedCutout(instant);
-      const refined = await removePortraitBackground(img);
-      setUploadedCutout(refined);
-      setBgStatus("done");
-    } catch {
-      setBgStatus("failed");
-    }
-  };
 
   const handleLogoUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -470,16 +481,23 @@ export function BlogInfographicStudio({
     }
   };
 
-  const resetPhotoFit = () => {
-    setPortraitFrame("auto");
-    setPortraitScale(1);
-    setPortraitRingScale(1);
-    setPortraitOffsetX(0);
-    setPortraitOffsetY(0);
-    setPortraitRadius(24);
+  const handleCustomBackdropUpload = async (
+    e: ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const img = await loadImageFromFile(file);
+      setCustomBackdropImg(img);
+      setCustomBackdropName(file.name);
+      updateActiveConfig({ backdropStyle: "ai-art-plate" });
+      notify("Custom background art plate applied!");
+    } catch {
+      notify("Could not load custom background image.");
+    }
   };
 
-  const handleSelectTemplate = (spec: BlogInfographicTemplateSpec) => {
+  const handleApplyLayoutOnly = (spec: BlogInfographicTemplateSpec) => {
     updateActiveConfig((curr) => ({
       ...curr,
       templateId: spec.id,
@@ -487,6 +505,18 @@ export function BlogInfographicStudio({
       templateName: spec.name,
       altText: `${curr.headline} — ${spec.name}`,
     }));
+    notify(`Switched layout to #${spec.id}: ${spec.name} (kept your text).`);
+  };
+
+  const handleLoadFullSample = (spec: BlogInfographicTemplateSpec) => {
+    const sample = createSampleInfographicConfig(spec.id);
+    updateActiveConfig((curr) => ({
+      ...sample,
+      id: curr.id,
+      sectionId: curr.sectionId,
+    }));
+    setCustomColors({});
+    notify(`Loaded full curated sample for #${spec.id}: ${spec.name}!`);
   };
 
   const handleAddNode = () => {
@@ -498,6 +528,7 @@ export function BlogInfographicStudio({
       title: `Key Takeaway #${nextIdx}`,
       detail: "Add supporting benchmark, step detail, or E-E-A-T proof.",
       metricValue: `Step ${nextIdx}`,
+      iconId: "auto",
     };
     updateActiveConfig((curr) => ({
       ...curr,
@@ -643,22 +674,20 @@ export function BlogInfographicStudio({
                 .map((p: string, idx: number) => {
                   const firstSentence =
                     p.split(/[.!?]/)[0]?.trim() || `Section #${idx + 1}`;
-                  const rec = autoRecommendInfographicTemplate(firstSentence, p);
+                  const rec = autoRecommendInfographicTemplate(
+                    firstSentence,
+                    p
+                  );
                   const parsedNodes = parseParagraphIntoNodes(p);
+                  const sample = createSampleInfographicConfig(rec.templateId);
                   return {
+                    ...sample,
                     id: `extracted-${idx + 1}`,
                     sectionId: `sec-${idx + 1}`,
-                    templateId: rec.templateId,
-                    templateSlug: rec.templateSlug,
-                    templateName: rec.templateName,
                     headline: firstSentence.slice(0, 88),
                     subheadline: `Extracted from ${data.domain || "article URL"} · ${rec.templateName}`,
-                    paletteId: idx % 2 === 0 ? "indigo-cyber" : "emerald-growth",
-                    aspectRatio: "16:9",
                     nodes:
-                      parsedNodes.length >= 2
-                        ? parsedNodes
-                        : createSampleInfographicConfig(rec.templateId).nodes,
+                      parsedNodes.length >= 2 ? parsedNodes : sample.nodes,
                     footerSourceLabel: `${data.domain || "DoItWithAI.tools"} · Visual Summary`,
                     altText: `${firstSentence} infographic`,
                   };
@@ -679,11 +708,11 @@ export function BlogInfographicStudio({
               />
               <div>
                 <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#3452d1] dark:text-blue-300">
-                  25 Canva &amp; Napkin.ai-Style Blog Infographic Layouts · Zero
-                  API Cost
+                  25 Venngage &amp; Canva-Style Composite Infographic Layouts ·
+                  AI Art Plates + Vector SVG
                 </span>
                 <h2 className="text-base font-black text-slate-900 dark:text-white sm:text-lg">
-                  Interactive Blog Section Infographic &amp; Diagram Studio
+                  Interactive Blog Section Infographic &amp; Data Visual Studio
                 </h2>
               </div>
             </div>
@@ -700,8 +729,7 @@ export function BlogInfographicStudio({
                     BLOG_INFOGRAPHIC_25_TEMPLATES.find(
                       (t) => t.id === rec.templateId
                     ) ?? BLOG_INFOGRAPHIC_25_TEMPLATES[0];
-                  handleSelectTemplate(spec);
-                  notify(`Auto-matched Template #${spec.id}: ${spec.name}`);
+                  handleApplyLayoutOnly(spec);
                 }}
                 className="inline-flex items-center gap-1.5 rounded-xl bg-[#3452d1] px-3.5 py-2 text-xs font-extrabold text-white shadow-sm hover:bg-[#2842b5]"
               >
@@ -723,7 +751,8 @@ export function BlogInfographicStudio({
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4">
           <div>
             <span className="text-[11px] font-extrabold uppercase tracking-wider text-indigo-400">
-              Embedded H2 Visual Customizer · 25 Deterministic Templates
+              Embedded H2 Infographic Studio · 25 Composite Layouts + AI Art
+              Plates
             </span>
             <h3 className="text-lg font-black text-white">
               Customize Section Infographic: {activeConfig.headline}
@@ -758,25 +787,125 @@ export function BlogInfographicStudio({
 
       {/* UNIFIED 2-COLUMN STUDIO GRID */}
       <div className="grid items-start gap-6 lg:grid-cols-12">
-        {/* ============ LEFT COLUMN: STICKY 4-STEP CUSTOMIZATION DECK ============ */}
+        {/* ============ LEFT COLUMN: STICKY INFOGRAPHIC CONTROL DECK ============ */}
         <div className="order-2 space-y-4 lg:order-1 lg:col-span-5 lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto lg:pr-1">
-          {/* STEP 1 — AUTHOR / EXECUTIVE PORTRAIT, RING FRAME & BRAND LOGO */}
+          {/* STEP 1 — 1-CLICK INFOGRAPHIC SCENARIOS & PARAGRAPH-TO-DIAGRAM CONVERTER */}
           <div className={panel}>
             <div className="flex items-center justify-between gap-2">
               <span className={stepTitle}>
-                <ImagePlus size={14} />
-                1 · Brand Logo &amp; Optional Author Ring Frame
+                <Sparkles size={14} className="text-[#4058d0]" />
+                1 · Quick Infographic Presets &amp; AI Text Parser
               </span>
               <button
                 type="button"
-                onClick={resetPhotoFit}
-                className="inline-flex items-center gap-1 text-[10px] font-bold text-[#4058d0] hover:underline dark:text-blue-300"
+                onClick={() => setShowPasteBox((v) => !v)}
+                className="rounded-lg border border-indigo-500/40 bg-indigo-500/10 px-2 py-0.5 text-[10px] font-extrabold text-[#4058d0] dark:text-indigo-300"
               >
-                <RotateCcw size={10} /> Reset Fit
+                {showPasteBox ? "Close Parser" : "⚡ Paste Paragraph"}
               </button>
             </div>
 
-            <div className="mt-2.5 grid grid-cols-2 gap-2">
+            <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+              Load a Venngage-style infographic preset in 1 click or paste your
+              own H2 section text:
+            </p>
+
+            <div className="mt-2 grid grid-cols-2 gap-1.5">
+              {QUICK_SCENARIO_PRESETS.map((preset) => {
+                const isCurr = activeConfig.templateId === preset.templateId;
+                return (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    onClick={() => {
+                      const spec =
+                        BLOG_INFOGRAPHIC_25_TEMPLATES.find(
+                          (t) => t.id === preset.templateId
+                        ) ?? BLOG_INFOGRAPHIC_25_TEMPLATES[0];
+                      handleLoadFullSample(spec);
+                    }}
+                    className={`flex items-center justify-between rounded-xl border px-2.5 py-1.5 text-left text-[11px] font-extrabold transition ${
+                      isCurr
+                        ? "border-[#4058d0] bg-[#4058d0]/15 text-[#4058d0] dark:text-indigo-200"
+                        : "border-slate-200 bg-white text-slate-700 hover:border-[#4058d0]/50 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200"
+                    }`}
+                  >
+                    <span className="truncate">{preset.label}</span>
+                    <span className="ml-1 shrink-0 rounded bg-slate-900/10 px-1.5 py-0.5 text-[9px] font-black dark:bg-white/10">
+                      {preset.badge.split(" ")[1]}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {showPasteBox && (
+              <div className="mt-2.5 space-y-2 rounded-xl border border-indigo-500/30 bg-indigo-500/5 p-2.5">
+                <textarea
+                  rows={3}
+                  value={rawPasteText}
+                  onChange={(e) => setRawPasteText(e.target.value)}
+                  placeholder="Paste any blog H2 paragraph, bullet points, or statistics here to auto-generate diagram nodes..."
+                  className={field}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const parsed = parseParagraphIntoNodes(rawPasteText);
+                    if (parsed.length >= 2) {
+                      const rec = autoRecommendInfographicTemplate(
+                        activeConfig.headline,
+                        rawPasteText
+                      );
+                      updateActiveConfig((curr) => ({
+                        ...curr,
+                        templateId: rec.templateId,
+                        templateSlug: rec.templateSlug,
+                        templateName: rec.templateName,
+                        nodes: parsed,
+                      }));
+                      setShowPasteBox(false);
+                      notify(
+                        `Generated ${parsed.length} infographic nodes & matched Layout #${rec.templateId}!`
+                      );
+                    } else {
+                      notify("Paste at least 2 sentences or bullet points.");
+                    }
+                  }}
+                  className="w-full rounded-lg bg-[#4058d0] px-3 py-1.5 text-[11px] font-extrabold text-white hover:bg-[#3449b8]"
+                >
+                  Convert Paragraph into Infographic Diagram
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* STEP 2 — BRAND LOGO, AI ART PLATE BACKDROP & VISUAL DENSITY */}
+          <div className={`${panel} space-y-3`}>
+            <div className="flex items-center justify-between gap-2">
+              <span className={stepTitle}>
+                <ImagePlus size={14} className="text-[#4058d0]" />
+                2 · Brand Logo, AI Art Plate &amp; Spacing
+              </span>
+              {(uploadedLogo || customBackdropImg) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUploadedLogo(null);
+                    setUploadedLogoName("");
+                    setCustomBackdropImg(null);
+                    setCustomBackdropName("");
+                    setLogoScale(1);
+                    setLogoBgStyle("auto");
+                  }}
+                  className="inline-flex items-center gap-1 text-[10px] font-bold text-rose-500 hover:underline"
+                >
+                  <RotateCcw size={10} /> Reset Assets
+                </button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
               <div>
                 <button
                   type="button"
@@ -787,7 +916,7 @@ export function BlogInfographicStudio({
                   <span className="truncate">
                     {uploadedLogoName
                       ? `${uploadedLogoName.slice(0, 14)}…`
-                      : "Upload brand logo"}
+                      : "Upload Brand Logo"}
                   </span>
                 </button>
                 {uploadedLogoName && (
@@ -814,247 +943,102 @@ export function BlogInfographicStudio({
               <div>
                 <button
                   type="button"
-                  onClick={() => personInputRef.current?.click()}
+                  onClick={() => backdropInputRef.current?.click()}
                   className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-extrabold text-slate-800 transition hover:border-[#4058d0] dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
                 >
-                  {bgStatus === "working" ? (
-                    <Loader2 size={13} className="animate-spin" />
-                  ) : (
-                    <Upload size={13} className="text-[#4058d0]" />
-                  )}
+                  <ImagePlus size={13} className="text-[#4058d0]" />
                   <span className="truncate">
-                    {uploadedName
-                      ? `${uploadedName.slice(0, 14)}…`
-                      : "Upload author photo"}
+                    {customBackdropName
+                      ? `${customBackdropName.slice(0, 13)}…`
+                      : "Custom Art Plate"}
                   </span>
                 </button>
+                {customBackdropName && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCustomBackdropImg(null);
+                      setCustomBackdropName("");
+                    }}
+                    className="mt-1 flex w-full items-center justify-center gap-1 text-[10px] font-bold text-slate-500 hover:text-rose-500"
+                  >
+                    <X size={10} /> Use Built-In Plate
+                  </button>
+                )}
                 <input
-                  ref={personInputRef}
+                  ref={backdropInputRef}
                   type="file"
                   accept="image/png,image/jpeg,image/webp"
-                  onChange={handlePersonUpload}
+                  onChange={handleCustomBackdropUpload}
                   className="sr-only"
                 />
               </div>
             </div>
 
-            <div className="mt-3">
-              <span className="block text-[11px] font-bold text-slate-600 dark:text-slate-300">
-                Author / Executive Portrait Badge (or Diagram Only):
+            {/* Backdrop Visual Style Selector */}
+            <div className="rounded-xl border border-slate-200 bg-white p-2.5 dark:border-slate-800 dark:bg-slate-950">
+              <span className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                Infographic Visual Backdrop Engine
               </span>
-              <button
-                type="button"
-                onClick={() => setPortraitPreset("none")}
-                className={`mt-1.5 flex w-full items-center justify-center rounded-xl border py-1.5 text-[11px] font-extrabold transition ${
-                  portraitPreset === "none"
-                    ? "border-[#4058d0] bg-[#4058d0]/15 text-[#4058d0] dark:text-blue-300"
-                    : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300"
-                }`}
-              >
-                Diagram Only (Full-Width Infographic Nodes)
-              </button>
-
-              <div className="mt-1.5 grid grid-cols-2 gap-1.5">
-                {MALE_PORTRAIT_PRESETS.map((mp) => {
-                  const selected = portraitPreset === mp.id;
+              <div className="mt-1.5 grid grid-cols-3 gap-1.5">
+                {BACKDROP_STYLE_OPTIONS.map((bOpt) => {
+                  const isSel =
+                    (activeConfig.backdropStyle ?? "ai-art-plate") === bOpt.id;
                   return (
                     <button
-                      key={mp.id}
+                      key={bOpt.id}
                       type="button"
-                      onClick={() => setPortraitPreset(mp.id)}
-                      aria-pressed={selected}
-                      className={`flex items-center gap-2 rounded-xl border p-1.5 text-left transition ${
-                        selected
-                          ? "border-[#4058d0] bg-[#4058d0]/15 ring-2 ring-[#4058d0]/30"
-                          : "border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-950"
+                      onClick={() =>
+                        updateActiveConfig({ backdropStyle: bOpt.id })
+                      }
+                      title={bOpt.desc}
+                      className={`rounded-lg border px-2 py-1.5 text-[10px] font-extrabold transition ${
+                        isSel
+                          ? "border-[#4058d0] bg-[#4058d0] text-white"
+                          : "border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
                       }`}
                     >
-                      <span className="relative h-7 w-7 shrink-0 overflow-hidden rounded-full border border-slate-300 bg-slate-700 dark:border-slate-700">
-                        <Image
-                          src={mp.imageSrc}
-                          alt={mp.authorSample}
-                          fill
-                          sizes="28px"
-                          className="object-cover object-top"
-                        />
-                      </span>
-                      <span className="min-w-0">
-                        <span className="block truncate text-[11px] font-extrabold text-slate-900 dark:text-white">
-                          {mp.authorSample}
-                        </span>
-                        <span className="block truncate text-[9px] text-slate-500 dark:text-slate-400">
-                          {mp.roleSample.split("·")[0]}
-                        </span>
-                      </span>
+                      {bOpt.label}
                     </button>
                   );
                 })}
               </div>
-            </div>
 
-            {activePortraitSource && (
-              <div className="mt-3 space-y-2.5 rounded-xl border border-slate-200 bg-white p-2.5 dark:border-slate-800 dark:bg-slate-950">
-                <label className="flex cursor-pointer items-center gap-2 text-[11px]">
+              <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-2 dark:border-slate-800">
+                <label className="flex cursor-pointer items-center gap-1.5 text-[11px] font-bold text-slate-700 dark:text-slate-200">
                   <input
                     type="checkbox"
-                    checked={autoRemoveBg}
-                    onChange={(e) => setAutoRemoveBg(e.target.checked)}
+                    checked={showVectorIcons}
+                    onChange={(e) => setShowVectorIcons(e.target.checked)}
+                    className="accent-[#4058d0]"
                   />
-                  <span className="font-bold text-slate-800 dark:text-slate-200">
-                    Auto-remove &amp; blend photo background
-                  </span>
+                  <span>Show Vector Icon Medallions</span>
                 </label>
 
-                <div>
-                  <span className="flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-wider text-[#4058d0] dark:text-blue-300">
-                    <Move size={11} /> Portrait Frame Mode
-                  </span>
-                  <div className="mt-1 flex flex-wrap gap-1">
-                    {FRAME_MODE_OPTIONS.map((opt) => (
-                      <button
-                        key={opt.id}
-                        type="button"
-                        onClick={() => setPortraitFrame(opt.id)}
-                        className={`rounded-lg px-2 py-1 text-[10px] font-extrabold transition ${
-                          portraitFrame === opt.id
-                            ? "bg-[#4058d0] text-white"
-                            : "border border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
-                        }`}
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2.5">
-                  <label className={label}>
-                    <span className="flex justify-between">
-                      <span>Photo Zoom</span>
-                      <span className="text-[10px] text-[#4058d0]">
-                        {Math.round(portraitScale * 100)}%
-                      </span>
-                    </span>
-                    <input
-                      type="range"
-                      min={0.7}
-                      max={1.45}
-                      step={0.01}
-                      value={portraitScale}
-                      onChange={(e) => setPortraitScale(Number(e.target.value))}
-                      className="mt-1 w-full accent-[#4058d0]"
-                    />
-                  </label>
-
-                  <label className={label}>
-                    <span className="flex justify-between">
-                      <span>Ring / Frame Size</span>
-                      <span className="text-[10px] text-[#4058d0]">
-                        {Math.round(portraitRingScale * 100)}%
-                      </span>
-                    </span>
-                    <input
-                      type="range"
-                      min={0.75}
-                      max={1.2}
-                      step={0.01}
-                      value={portraitRingScale}
-                      onChange={(e) =>
-                        setPortraitRingScale(Number(e.target.value))
-                      }
-                      className="mt-1 w-full accent-[#4058d0]"
-                    />
-                  </label>
-
-                  <label className={label}>
-                    <span className="flex justify-between">
-                      <span>Position Up / Down</span>
-                      <span className="text-[10px] text-[#4058d0]">
-                        {Math.round(portraitOffsetY * 100)}%
-                      </span>
-                    </span>
-                    <input
-                      type="range"
-                      min={-0.25}
-                      max={0.25}
-                      step={0.01}
-                      value={portraitOffsetY}
-                      onChange={(e) =>
-                        setPortraitOffsetY(Number(e.target.value))
-                      }
-                      className="mt-1 w-full accent-[#4058d0]"
-                    />
-                  </label>
-
-                  <label className={label}>
-                    <span className="flex justify-between">
-                      <span>Position Left / Right</span>
-                      <span className="text-[10px] text-[#4058d0]">
-                        {Math.round(portraitOffsetX * 100)}%
-                      </span>
-                    </span>
-                    <input
-                      type="range"
-                      min={-0.25}
-                      max={0.25}
-                      step={0.01}
-                      value={portraitOffsetX}
-                      onChange={(e) =>
-                        setPortraitOffsetX(Number(e.target.value))
-                      }
-                      className="mt-1 w-full accent-[#4058d0]"
-                    />
-                  </label>
-                </div>
-
-                <label className={label}>
-                  <span className="flex justify-between">
-                    <span>Corner / Circle Radius (0%–50%)</span>
-                    <span className="text-[10px] text-[#4058d0]">
-                      {portraitRadius}%
-                    </span>
-                  </span>
-                  <input
-                    type="range"
-                    min={0}
-                    max={50}
-                    step={1}
-                    value={portraitRadius}
-                    onChange={(e) => {
-                      setPortraitRadius(Number(e.target.value));
-                      if (portraitFrame === "auto") setPortraitFrame("rounded");
-                    }}
-                    className="mt-1 w-full accent-[#4058d0]"
-                  />
-                </label>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className={label}>Author Name</label>
-                    <input
-                      type="text"
-                      value={authorName}
-                      onChange={(e) => setAuthorName(e.target.value)}
-                      className={field}
-                    />
-                  </div>
-                  <div>
-                    <label className={label}>Author Role</label>
-                    <input
-                      type="text"
-                      value={authorRole}
-                      onChange={(e) => setAuthorRole(e.target.value)}
-                      className={field}
-                    />
-                  </div>
+                <div className="flex items-center gap-1">
+                  {(["compact", "balanced", "spacious"] as const).map((d) => (
+                    <button
+                      key={d}
+                      type="button"
+                      onClick={() => setSpacingDensity(d)}
+                      className={`rounded px-2 py-0.5 text-[10px] font-bold capitalize ${
+                        spacingDensity === d
+                          ? "bg-[#4058d0] text-white"
+                          : "bg-slate-100 text-slate-600 dark:bg-slate-900 dark:text-slate-400"
+                      }`}
+                    >
+                      {d}
+                    </button>
+                  ))}
                 </div>
               </div>
-            )}
+            </div>
 
-            <div className="mt-2.5 space-y-1.5 rounded-xl border border-slate-200 bg-white p-2.5 dark:border-slate-800 dark:bg-slate-950">
+            {/* Logo Scale & Container Badge Style */}
+            <div className="space-y-1.5 rounded-xl border border-slate-200 bg-white p-2.5 dark:border-slate-800 dark:bg-slate-950">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                  Logo / Brand Badge Scale &amp; Style
+                  Logo / Brand Watermark Scale &amp; Style
                 </span>
                 <span className="text-[10px] font-bold text-[#4058d0]">
                   {Math.round(logoScale * 100)}%
@@ -1088,14 +1072,15 @@ export function BlogInfographicStudio({
             </div>
           </div>
 
-          {/* STEP 2 — H2 HEADLINE, SUBHEADLINE, ALT TEXT & FOOTER */}
+          {/* STEP 3 — H2 HEADLINE, SUBHEADLINE, ALT TEXT & FOOTER */}
           <div className={`${panel} space-y-2.5`}>
             <span className={stepTitle}>
-              <Type size={14} />2 · H2 Headline, Subtitle &amp; SEO Alt Text
+              <Type size={14} className="text-[#4058d0]" />3 · H2 Headline,
+              Subtitle &amp; Brand Domain
             </span>
 
             <div>
-              <label className={label}>H2 Section Headline</label>
+              <label className={label}>Infographic H2 Headline</label>
               <input
                 type="text"
                 value={activeConfig.headline}
@@ -1120,7 +1105,7 @@ export function BlogInfographicStudio({
 
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <div>
-                <label className={label}>Footer Source / Domain Label</label>
+                <label className={label}>Brand / Domain Watermark</label>
                 <input
                   type="text"
                   value={activeConfig.footerSourceLabel}
@@ -1144,59 +1129,22 @@ export function BlogInfographicStudio({
             </div>
           </div>
 
-          {/* STEP 3 — INTERACTIVE DIAGRAM NODES (2..8) */}
+          {/* STEP 4 — INTERACTIVE DIAGRAM NODES, KPI PILLS & VECTOR ICONS (2..8) */}
           <div className={`${panel} space-y-2.5`}>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className={stepTitle}>
-                <Layers size={14} />3 · Diagram Nodes ({activeConfig.nodes.length}
-                /8)
+                <Layers size={14} className="text-[#4058d0]" />4 · Infographic
+                Nodes &amp; Icons ({activeConfig.nodes.length}/8)
               </span>
-              <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => setShowPasteBox((v) => !v)}
-                  className="rounded-lg border border-indigo-500/40 bg-indigo-500/10 px-2 py-1 text-[10px] font-bold text-[#4058d0] dark:text-indigo-300"
-                >
-                  ⚡ Paste Paragraph → Nodes
-                </button>
-                <button
-                  type="button"
-                  onClick={handleAddNode}
-                  disabled={activeConfig.nodes.length >= 8}
-                  className="inline-flex items-center gap-1 rounded-lg bg-[#4058d0] px-2.5 py-1 text-[10px] font-extrabold text-white disabled:opacity-40"
-                >
-                  <Plus size={11} /> Add Node
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={handleAddNode}
+                disabled={activeConfig.nodes.length >= 8}
+                className="inline-flex items-center gap-1 rounded-lg bg-[#4058d0] px-2.5 py-1 text-[10px] font-extrabold text-white disabled:opacity-40"
+              >
+                <Plus size={11} /> Add Node
+              </button>
             </div>
-
-            {showPasteBox && (
-              <div className="space-y-2 rounded-xl border border-indigo-500/30 bg-indigo-500/5 p-2.5">
-                <textarea
-                  rows={3}
-                  value={rawPasteText}
-                  onChange={(e) => setRawPasteText(e.target.value)}
-                  placeholder="Paste any H2 section paragraph or bullet list here..."
-                  className={field}
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    const parsed = parseParagraphIntoNodes(rawPasteText);
-                    if (parsed.length >= 2) {
-                      updateActiveConfig({ nodes: parsed });
-                      setShowPasteBox(false);
-                      notify(`Extracted ${parsed.length} diagram nodes!`);
-                    } else {
-                      notify("Paste at least 2 sentences or bullet points.");
-                    }
-                  }}
-                  className="rounded-lg bg-[#4058d0] px-3 py-1.5 text-[11px] font-bold text-white"
-                >
-                  Convert Text into Diagram Nodes
-                </button>
-              </div>
-            )}
 
             <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
               {activeConfig.nodes.map((node, idx) => (
@@ -1204,8 +1152,8 @@ export function BlogInfographicStudio({
                   key={node.id}
                   className="rounded-xl border border-slate-200 bg-white p-2.5 dark:border-slate-800 dark:bg-slate-950"
                 >
-                  <div className="flex items-center justify-between gap-1.5">
-                    <div className="flex items-center gap-1.5">
+                  <div className="flex flex-wrap items-center justify-between gap-1.5">
+                    <div className="flex flex-wrap items-center gap-1.5">
                       <input
                         type="text"
                         value={node.badge}
@@ -1213,7 +1161,7 @@ export function BlogInfographicStudio({
                           handleUpdateNode(node.id, { badge: e.target.value })
                         }
                         aria-label={`Node ${idx + 1} badge`}
-                        className="w-14 rounded-lg border border-slate-300 bg-slate-50 px-2 py-1 font-mono text-[11px] font-extrabold text-[#4058d0] dark:border-slate-700 dark:bg-slate-900 dark:text-indigo-300"
+                        className="w-16 rounded-lg border border-slate-300 bg-slate-50 px-2 py-1 font-mono text-[11px] font-extrabold text-[#4058d0] dark:border-slate-700 dark:bg-slate-900 dark:text-indigo-300"
                       />
                       <input
                         type="text"
@@ -1223,9 +1171,25 @@ export function BlogInfographicStudio({
                             metricValue: e.target.value,
                           })
                         }
-                        placeholder="Metric / KPI"
+                        placeholder="KPI / Stat"
                         className="w-24 rounded-lg border border-slate-300 bg-slate-50 px-2 py-1 text-[11px] font-bold text-emerald-600 dark:border-slate-700 dark:bg-slate-900 dark:text-emerald-400"
                       />
+                      <select
+                        value={node.iconId || "auto"}
+                        onChange={(e) =>
+                          handleUpdateNode(node.id, {
+                            iconId: e.target.value as InfographicIconId,
+                          })
+                        }
+                        aria-label={`Node ${idx + 1} icon`}
+                        className="rounded-lg border border-slate-300 bg-slate-50 px-1.5 py-1 text-[10px] font-bold text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                      >
+                        {INFOGRAPHIC_ICON_OPTIONS.map((ic) => (
+                          <option key={ic.id} value={ic.id}>
+                            {ic.label}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                     <div className="flex items-center gap-1">
                       <button
@@ -1276,11 +1240,12 @@ export function BlogInfographicStudio({
             </div>
           </div>
 
-          {/* STEP 4 — 8 BRAND PALETTES, HEX WHEEL & 4 ASPECT RATIOS */}
+          {/* STEP 5 — 8 BRAND PALETTES, HEX WHEEL & 4 ASPECT RATIOS */}
           <div className={`${panel} space-y-2.5`}>
             <div className="flex items-center justify-between">
               <span className={stepTitle}>
-                <Palette size={14} />4 · Brand Palette, Hex &amp; Size
+                <Palette size={14} className="text-[#4058d0]" />5 · Color
+                Palette, Hex &amp; Poster Ratio
               </span>
               {Object.keys(customColors).length > 0 && (
                 <button
@@ -1293,7 +1258,7 @@ export function BlogInfographicStudio({
               )}
             </div>
 
-            <div className="flex flex-wrap gap-1">
+            <div className="flex flex-wrap gap-1.5">
               {Object.values(BLOG_INFOGRAPHIC_PALETTES).map((p) => (
                 <button
                   key={p.id}
@@ -1302,7 +1267,7 @@ export function BlogInfographicStudio({
                     updateActiveConfig({ paletteId: p.id });
                     setCustomColors({});
                   }}
-                  className={`inline-flex items-center gap-1.5 rounded-lg border px-2 py-1 text-[10px] font-bold transition ${
+                  className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[10px] font-bold transition ${
                     activeConfig.paletteId === p.id &&
                     Object.keys(customColors).length === 0
                       ? "border-[#4058d0] bg-[#4058d0] text-white"
@@ -1313,7 +1278,7 @@ export function BlogInfographicStudio({
                     className="h-2.5 w-2.5 rounded-full"
                     style={{ backgroundColor: p.accent }}
                   />
-                  {p.label.split(" ")[0]}
+                  {p.label.split(" (")[0]}
                 </button>
               ))}
             </div>
@@ -1390,7 +1355,7 @@ export function BlogInfographicStudio({
           </div>
         </div>
 
-        {/* ============ RIGHT COLUMN: LIVE HD CANVAS + 25 LIVE TEMPLATE PREVIEWS ============ */}
+        {/* ============ RIGHT COLUMN: LIVE HD CANVAS + 25 VENNGAGE-STYLE TEMPLATE PREVIEWS ============ */}
         <div className="order-1 space-y-4 lg:order-2 lg:col-span-7">
           {/* Multi-Section Visual Tabs */}
           {mode === "standalone" && (
@@ -1407,7 +1372,7 @@ export function BlogInfographicStudio({
                         : "border border-slate-200 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
                     }`}
                   >
-                    H2 Visual {idx + 1} (#{c.templateId})
+                    Section Visual {idx + 1} (#{c.templateId})
                   </button>
                 ))}
               </div>
@@ -1416,18 +1381,15 @@ export function BlogInfographicStudio({
                   type="button"
                   disabled={cards.length >= 8}
                   onClick={() => {
-                    const nextId = ((cards.length * 5) % 25) + 1;
-                    const created = createSampleInfographicConfig(
-                      nextId,
-                      "emerald-growth"
-                    );
+                    const nextId = ((cards.length * 4) % 25) + 1;
+                    const created = createSampleInfographicConfig(nextId);
                     created.id = `visual-${Date.now().toString(36)}`;
                     setCards((prev) => [...prev, created]);
                     setActiveIdx(cards.length);
                   }}
                   className="inline-flex items-center gap-0.5 rounded-lg bg-[#4058d0] px-2.5 py-1 text-[11px] font-bold text-white disabled:opacity-40"
                 >
-                  <Plus size={12} /> Add Section Visual
+                  <Plus size={12} /> Add Section Infographic
                 </button>
                 {cards.length > 1 && (
                   <button
@@ -1452,8 +1414,8 @@ export function BlogInfographicStudio({
           <div className="overflow-hidden rounded-2xl border-2 border-slate-300 bg-[#070b14] shadow-xl dark:border-slate-700">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 bg-slate-900 px-4 py-2.5">
               <span className="text-[11px] font-black uppercase tracking-wider text-white">
-                Template #{activeConfig.templateId} · {activeConfig.aspectRatio}{" "}
-                HD
+                Layout #{activeConfig.templateId} · {activeConfig.templateName}{" "}
+                · {activeConfig.aspectRatio}
               </span>
               <div className="flex flex-wrap items-center gap-1.5">
                 <button
@@ -1557,7 +1519,9 @@ export function BlogInfographicStudio({
                 <button
                   type="button"
                   onClick={() =>
-                    setZoomLevel((z) => Math.max(0.6, Number((z - 0.1).toFixed(2))))
+                    setZoomLevel((z) =>
+                      Math.max(0.6, Number((z - 0.1).toFixed(2)))
+                    )
                   }
                   className="rounded bg-white/10 p-1 hover:bg-white/20"
                   aria-label="Zoom out"
@@ -1570,7 +1534,9 @@ export function BlogInfographicStudio({
                 <button
                   type="button"
                   onClick={() =>
-                    setZoomLevel((z) => Math.min(1.3, Number((z + 0.1).toFixed(2))))
+                    setZoomLevel((z) =>
+                      Math.min(1.3, Number((z + 0.1).toFixed(2)))
+                    )
                   }
                   className="rounded bg-white/10 p-1 hover:bg-white/20"
                   aria-label="Zoom in"
@@ -1581,53 +1547,78 @@ export function BlogInfographicStudio({
             </div>
           </div>
 
-          {/* 25 LIVE MINIATURE CANVAS TEMPLATE PREVIEWS GALLERY */}
+          {/* 25 VENNGAGE-STYLE TEMPLATE PREVIEWS GALLERY */}
           <div className="rounded-2xl border border-slate-200 bg-slate-50/90 p-4 dark:border-slate-800 dark:bg-slate-900/90">
-            <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h3 className="text-sm font-black text-slate-900 dark:text-white">
-                  Choose from 25 Live Blog Infographic Templates (Click to
-                  Switch Instantly)
+                  25 Venngage &amp; Canva-Style Infographic Templates
                 </h3>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Every thumbnail below is rendered live with your current H2
-                  headline, nodes, brand palette, logo, and portrait—switching
-                  templates never resets your edits.
+                  Click <strong>&quot;Use Layout&quot;</strong> to apply the
+                  geometry to your current text, or{" "}
+                  <strong>&quot;Load Sample&quot;</strong> to load that
+                  template&apos;s curated design &amp; data.
                 </p>
+              </div>
+
+              {/* Showcase Mode vs My Active Text Toggle */}
+              <div className="inline-flex rounded-xl border border-slate-200 bg-white p-1 dark:border-slate-800 dark:bg-slate-950">
+                <button
+                  type="button"
+                  onClick={() => setShowcaseMode(true)}
+                  className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-extrabold transition ${
+                    showcaseMode
+                      ? "bg-[#4058d0] text-white"
+                      : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                  }`}
+                >
+                  <Sparkles size={11} /> Curated Designs
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowcaseMode(false)}
+                  className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-extrabold transition ${
+                    !showcaseMode
+                      ? "bg-[#4058d0] text-white"
+                      : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                  }`}
+                >
+                  <Eye size={11} /> My Active Text
+                </button>
               </div>
             </div>
 
-            {/* 6 Visual Family Filter Pills */}
+            {/* Family Filter Tabs */}
             <div className="mt-3 flex flex-wrap gap-1.5">
-              {FAMILY_FILTERS.map((fam) => {
-                const isAct = familyFilter === fam;
-                return (
-                  <button
-                    key={fam}
-                    type="button"
-                    onClick={() => setFamilyFilter(fam)}
-                    className={`rounded-full px-3 py-1 text-[11px] font-extrabold transition ${
-                      isAct
-                        ? "bg-[#4058d0] text-white shadow-xs"
-                        : "border border-slate-200 bg-white text-slate-700 hover:border-[#4058d0]/40 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300"
-                    }`}
-                  >
-                    {fam}
-                  </button>
-                );
-              })}
+              {FAMILY_FILTERS.map((fam) => (
+                <button
+                  key={fam}
+                  type="button"
+                  onClick={() => setFamilyFilter(fam)}
+                  className={`rounded-full px-3 py-1 text-[10px] font-extrabold transition ${
+                    familyFilter === fam
+                      ? "bg-[#4058d0] text-white"
+                      : "border border-slate-200 bg-white text-slate-700 hover:border-[#4058d0]/40 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300"
+                  }`}
+                >
+                  {fam}
+                </button>
+              ))}
             </div>
 
-            {/* Live Canvas Thumbnails Grid */}
-            <div className="mt-3.5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="mt-4 grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-3">
               {filteredTemplates.map((spec) => (
                 <InfographicTemplateThumb
                   key={spec.id}
                   spec={spec}
                   baseConfig={activeConfig}
                   renderOptions={renderOptions}
+                  showcaseMode={showcaseMode}
+                  plateVersion={plateVersion}
                   active={activeConfig.templateId === spec.id}
-                  onSelect={() => handleSelectTemplate(spec)}
+                  onApplyLayoutOnly={() => handleApplyLayoutOnly(spec)}
+                  onLoadFullSample={() => handleLoadFullSample(spec)}
                 />
               ))}
             </div>

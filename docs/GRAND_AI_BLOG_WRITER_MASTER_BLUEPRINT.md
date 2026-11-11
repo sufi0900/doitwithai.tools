@@ -3,7 +3,7 @@
 > **Repository**: `sufi0900/doitwithai.tools`
 > **🚨 MANDATORY GIT BRANCH RULE FOR ALL AI AGENTS**: **`feat/homepage-tools-learning`** (`https://github.com/sufi0900/doitwithai.tools/tree/feat/homepage-tools-learning`) — **NEVER push directly to `main` or `master`!**
 > **Standalone Root Flagship Route**: **`https://doitwithai.tools/ai-content-writer`** (`app/ai-content-writer/page.tsx`) — **Strictly OUTSIDE `/tools`!**
-> **Companion Visual Studio Route**: `/tools/blog-section-infographic-generator` (25+ Editable Canva / Napkin.ai-Style HTML5 Canvas & SVG Infographic Templates)
+> **Companion Visual Studio Route**: `/tools/blog-section-infographic-generator` (25 Editable Venngage / Canva / Napkin.ai-Style Hybrid AI Art Plate + Vector Infographic Templates)
 > **Primary Lead Architect & Author**: **Aegis-Prime (`Founder's Master AI Strategist & Lead Ecosystem Architect`)**
 
 ---
@@ -41,6 +41,18 @@
      - Removed all 4 writer slugs (`ai-content-writer`, `ai-blog-writer`, `ai-article-writer`, `ai-blog-article-writer`) from `/tools` and permanently redirected (`308`) them to `/ai-content-writer`.
      - Removed the legacy 8-template `blog-to-infographic-generator` from `/tools` and permanently redirected it to our flagship 25-template `/tools/blog-section-infographic-generator`.
      - Removed the 10 duplicate `/tools/*-agent` wrappers from `/tools` so Autonomous AI Agents live strictly under `/agents/*` without duplicating across `/tools/*`.
+
+---
+
+## PART B: Hybrid AI Art Plate + 25 Venngage/Canva-Grade Infographic Studio (`/tools/blog-section-infographic-generator`)
+
+1. **No Person/Founder Portraits in the Infographic Generator**:
+   - Person/founder portraits with ring/arch framing belong exclusively to `/tools/quote-stat-testimonial-card-studio`.
+   - `/tools/blog-section-infographic-generator` focuses 100% on authentic data infographics: **Brand Logo Pill & Domain Watermark**, **AI 3D Art Plates**, **20 Geometric Vector Icon Medallions**, **Charts, Gears, Timelines, Chevrons, VS Battle Cards**, and **8 Light & Dark Palettes**.
+2. **3-Layer Hybrid Composite Rendering (`lib/blog-infographic-studio/canvas-renderer.ts` & `infographic-presets-and-icons.ts`)**:
+   - **Layer 1 (Photographic/3D AI Art Plate Backdrops)**: Preloads 4 custom AI-generated text-free art plates (`public/images/infographics/obsidian-glass-orbs.jpg`, `royal-indigo-isometric.jpg`, `editorial-warm-paper.jpg`, `emerald-data-waves.jpg`) plus `/visual-studio/paper-sculpture.webp` and composites them with a protective readability vignette.
+   - **Layer 2 (25 Venngage-Grade Infographic Geometries)**: Interlocking Chevron Strategy Pipeline (`#1`), Alternating Milestone Timeline with 56px Icon Medallions (`#2`), Interlocking 12-Tooth Mechanical Growth Gears (`#3`), Winding S-Curve Roadmap (`#4`), 3D Tapered Funnel (`#5`), Central-Spine Versus Battle Card (`#6`), 3-Column SaaS Feature Matrix (`#7`), Split Transformation Boards (`#8, #9, #10, #23`), Glassmorphic KPI Orbs (`#11`), 2×2 Clipboard Stat Cards + Vertical Multi-Bar Chart (`#12`), Horizontal Benchmark Bars (`#13`), Cost vs. ROI Waterfall (`#14`), 3-Ring Radial Audit Gauge (`#15`), 2×2 Priority Quadrant (`#16`), 3D Layered Pyramid (`#17`), 3-Circle Venn Diagram (`#18`), Hub-and-Spoke Circuit (`#19`), 2-Column Launch Checklist (`#20`), Executive TL;DR Board (`#21`), Annotated Page Wireframe Teardown (`#22`), 6-Box Cheat Sheet (`#24`), and Widescreen Hero Poster with Embedded Mini Bar Chart (`#25`).
+   - **Layer 3 (25 Distinct Curated Showcase Previews)**: `TEMPLATE_CURATED_SHOWCASE_DATA` provides unique headlines, palettes (light and dark), metrics, and icons for every template so the 25 gallery cards look like a true Venngage/Canva template marketplace.
 
 ---
 *— Authored & Signed by: **Aegis-Prime (`Founder's Master AI Strategist & Lead Ecosystem Architect`)***

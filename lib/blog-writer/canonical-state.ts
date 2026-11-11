@@ -26,12 +26,43 @@ export type BlogWorkflowMode = "express-one-click" | "guided-6-stage";
 
 export type InfographicAspectRatio = "16:9" | "1:1" | "4:5" | "9:16";
 
+export type InfographicIconId =
+  | "auto"
+  | "rocket"
+  | "gear"
+  | "chart"
+  | "target"
+  | "shield"
+  | "bolt"
+  | "trophy"
+  | "layers"
+  | "database"
+  | "users"
+  | "globe"
+  | "sparkles"
+  | "check"
+  | "scale"
+  | "clock"
+  | "lightbulb"
+  | "cpu"
+  | "funnel"
+  | "code"
+  | "trending";
+
+export type InfographicBackdropStyle =
+  | "ai-art-plate"
+  | "glass-orbs"
+  | "isometric-grid"
+  | "editorial-paper"
+  | "clean-studio";
+
 export interface BlogInfographicNodeItem {
   id: string;
   badge: string;
   title: string;
   detail: string;
   metricValue?: string;
+  iconId?: InfographicIconId;
 }
 
 export interface BlogInfographicConfig {
@@ -42,11 +73,22 @@ export interface BlogInfographicConfig {
   templateName: string;
   headline: string;
   subheadline: string;
-  paletteId: "indigo-cyber" | "emerald-growth" | "amber-executive" | "rose-editorial" | "cyan-tech" | "slate-minimal" | "violet-saas" | "blue-trust";
+  paletteId:
+    | "indigo-cyber"
+    | "emerald-growth"
+    | "amber-executive"
+    | "rose-editorial"
+    | "cyan-tech"
+    | "slate-minimal"
+    | "violet-saas"
+    | "blue-trust";
   aspectRatio: InfographicAspectRatio;
   nodes: BlogInfographicNodeItem[];
   footerSourceLabel: string;
   altText: string;
+  backdropStyle?: InfographicBackdropStyle;
+  showVectorIcons?: boolean;
+  spacingDensity?: "compact" | "balanced" | "spacious";
   renderedPngDataUrl?: string;
   renderedSvgMarkup?: string;
 }

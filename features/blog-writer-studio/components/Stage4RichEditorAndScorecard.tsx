@@ -36,6 +36,7 @@ import {
   generateBlogInfographicSvg,
   renderBlogInfographicToCanvas,
 } from "@/lib/blog-infographic-studio/canvas-renderer";
+import { preloadInfographicArtPlates } from "@/lib/blog-infographic-studio/infographic-presets-and-icons";
 import { BLOG_INFOGRAPHIC_25_TEMPLATES } from "@/lib/founder-hub/grand-blog-writer-blueprint";
 import type { SectionCopilotAction } from "@/app/api/blog-writer/generate/route";
 
@@ -105,11 +106,16 @@ function InlineSectionInfographicCard({
   onQuickChangeConfig: (updated: BlogInfographicConfig) => void;
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [platesReadyTick, setPlatesReadyTick] = useState(0);
+
+  useEffect(() => {
+    preloadInfographicArtPlates(() => setPlatesReadyTick((t) => t + 1));
+  }, []);
 
   useEffect(() => {
     if (!canvasRef.current) return;
     renderBlogInfographicToCanvas(canvasRef.current, config);
-  }, [config]);
+  }, [config, platesReadyTick]);
 
   function handleCycleTemplate(delta: number) {
     const currentIdx = BLOG_INFOGRAPHIC_25_TEMPLATES.findIndex(

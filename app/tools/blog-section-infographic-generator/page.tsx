@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import BlogInfographicStudio from "@/features/blog-infographic-studio/BlogInfographicStudio";
 import HeroAnimatedInfographicShowcase from "@/features/blog-infographic-studio/HeroAnimatedInfographicShowcase";
+import { TEMPLATE_CURATED_SHOWCASE_DATA } from "@/lib/blog-infographic-studio/infographic-presets-and-icons";
 import { BLOG_INFOGRAPHIC_25_TEMPLATES } from "@/lib/founder-hub/grand-blog-writer-blueprint";
 import ToolFaq from "@/features/tool-ui/ToolFaq";
 import ToolResources from "@/features/tool-catalog/ToolResources";
@@ -29,9 +30,9 @@ import { PlatformBrandIcon } from "@/features/tool-ui/PlatformBrandIcon";
 const pageUrl =
   "https://doitwithai.tools/tools/blog-section-infographic-generator";
 const title =
-  "Free AI Blog Section Infographic Generator: 25 Canva & Napkin Layouts";
+  "Free AI Blog Section Infographic Generator: 25 Venngage, Canva & Napkin Layouts";
 const description =
-  "Turn any blog H2 heading, paragraph, or article URL into an editable Canva or Napkin.ai-style section infographic with our free AI blog section infographic generator—choose from 25 responsive templates, add your brand logo and framed author portrait, and export HD PNG, vector SVG, WebP, or PDF.";
+  "Turn any blog H2 heading, paragraph, or article URL into a realistic Venngage, Canva, or Napkin.ai-style section infographic with our free AI blog section infographic generator—combining high-resolution AI art plates, 20 vector icon medallions, 25 data-driven layouts, and instant PNG, vector SVG, WebP, or PDF export.";
 const templateCount = BLOG_INFOGRAPHIC_25_TEMPLATES.length;
 
 export const metadata: Metadata = {
@@ -40,6 +41,7 @@ export const metadata: Metadata = {
   keywords: [
     "free AI blog section infographic generator",
     "AI blog infographic generator",
+    "venngage infographic generator alternative",
     "napkin ai alternative free",
     "blog diagram generator",
     "text to infographic generator free",
@@ -67,31 +69,31 @@ const faqs = [
     question:
       "What is the Free AI Blog Section Infographic Generator and how does it work?",
     answer:
-      "The Free AI Blog Section Infographic Generator converts any H2 blog heading, bullet list, paragraph, or public article URL into a crisp, typo-free visual diagram. Unlike diffusion image generators that paint flat pixels with misspelled words, our engine renders 25 structured HTML5 Canvas and vector SVG templates that you can edit live in your browser.",
+      "The Free AI Blog Section Infographic Generator converts any H2 blog heading, bullet list, paragraph, or public article URL into a realistic, typo-free visual infographic. Our Hybrid Composite Engine combines high-resolution AI-generated 3D art plates (glassmorphic orbs, isometric tech grids, editorial warm paper, and emerald data waves) with 25 structured HTML5 Canvas and vector SVG diagram layouts.",
   },
   {
     question:
-      "How is this 25-template studio different from Napkin.ai, Canva, or Midjourney?",
+      "How is this 25-template studio different from Venngage, Napkin.ai, Canva, or Midjourney?",
     answer:
-      "Diffusion generators (like Midjourney or DALL-E) frequently garble small text inside flowcharts and cost per-image API credits. Paid diagram tools lock exports behind monthly subscriptions. Our studio runs 100% free in your browser at zero token cost, maps your H2 heading to the ideal layout automatically, and exports crisp PNG, vector SVG, WebP, PDF, and zero-CLS Core Web Vitals HTML.",
+      "Raw diffusion image generators (like Midjourney or DALL-E) frequently garble small text inside charts and cost per-image API credits. Paid infographic tools lock high-res exports behind $19–$49/month subscriptions. Our studio blends photographic AI art plates with 100% live-editable vector typography, charts, gears, timelines, and chevrons—running free in your browser with PNG, vector SVG, WebP, PDF, and zero-CLS Core Web Vitals HTML exports.",
   },
   {
     question:
       "Which 25 blog infographic templates are included in the studio?",
     answer:
-      "The studio includes 25 purpose-built templates across 6 visual families: Process & Step Flows (4-Step Pipeline, Vertical Roadmap, Growth Flywheel, Zig-Zag Journey, 4-Tier Funnel), Comparison & Versus (Battle Card, 3-Tier Matrix, Before/After Split, Pros & Cons, Do's & Don'ts), Data & KPI Callouts (4-Card Bento KPI, Spotlight Stat, Benchmark Bars, ROI Breakdown, 5-Pillar Scorecard), Frameworks & Pyramids (2x2 Quadrant, 3-Tier Pyramid, 3-Circle Venn, Hub & Spoke), Checklists & Cheat Sheets (8-Point Checklist, 5-Point TL;DR, Page Anatomy, Myth vs Reality, 6-Box Cheat Sheet), and Widescreen Blog Hero & OG Banners.",
+      "The studio includes 25 purpose-built Venngage and Canva-grade templates across 6 visual families: Process & Step Flows (Interlocking Chevron Pipeline, Alternating Milestone Timeline, 12-Tooth Mechanical Growth Gears, Winding S-Curve Road, 3D Tapered Funnel), Comparison & Versus (Central-Spine Battle Card, 3-Tier SaaS Matrix, Before/After Split, Pros & Cons, Do's & Don'ts), Data & KPI Callouts (Glassmorphic KPI Orbs, 2x2 Stat Cards + Vertical Multi-Bar Chart, Horizontal Benchmark Bars, Cost vs. ROI Waterfall, 3-Ring Radial Audit Gauge), Frameworks & Pyramids (2x2 Priority Quadrant, 3D Layered Pyramid, 3-Circle Venn Diagram, Hub & Spoke Circuit), Checklists & Cheat Sheets (8-Point Checklist, Executive TL;DR Board, Annotated Page Wireframe, Myth vs Reality, 6-Box Cheat Sheet), and Widescreen Blog Hero Posters.",
   },
   {
     question:
-      "Can I upload my company logo and an author or executive portrait?",
+      "Can I upload my company logo, customize icons, and switch AI art plate backdrops?",
     answer:
-      "Yes. Upload your PNG, SVG, JPG, or WEBP brand logo and adjust its scale and badge container (Auto, Brand Pill, White Box, Dark Box, or Plain). You can also add an optional author portrait (or choose one of our 4 built-in male executive portraits) framed cleanly inside Concentric Rings, an Arch Frame, or an Adjustable-Radius Window with real-time pan, zoom, and radius sliders.",
+      "Yes. Upload your PNG, SVG, JPG, or WEBP brand logo and adjust its scale and badge container (Auto, Brand Pill, White Box, Dark Box, or Plain). You can also switch between AI Art Plate backdrops, 3D Glow Orbs, or Clean Vector Studio mode, upload your own custom background art plate, and assign 20 geometric vector icons (Rocket, Trophy, Chart, Gear, Shield, Target, CPU, etc.) to each individual infographic node.",
   },
   {
     question:
       "Does switching between the 25 templates or 4 aspect ratios erase my edited text?",
     answer:
-      "Never. Your H2 headline, subheadline, node badges, titles, details, metrics, brand colors, logo, and portrait settings are stored in a unified state. Click any of the 25 live miniature canvas previews or switch between 16:9, 1:1, 4:5, and 9:16 to re-render your exact content instantaneously.",
+      "Never. Your H2 headline, subheadline, node badges, titles, details, KPI metrics, vector icons, brand colors, and logo settings are stored in a unified state. Click 'Use Layout' on any of the 25 live miniature canvas previews to re-render your exact text in that layout, or click 'Load Sample' to try that template's curated showcase data.",
   },
   {
     question:
@@ -109,12 +111,12 @@ const faqs = [
     question:
       "How does this tool connect to the Grand AI Blog, Article & Content Writer Studio?",
     answer:
-      "This 25-template engine powers the inline H2 visuals inside our flagship AI Blog Writer, AI Content Writer, and AI Article Writer studios—allowing you to generate a complete 2,000-word SEO article with a custom infographic under every H2 section.",
+      "This 25-template hybrid engine powers the inline H2 visuals inside our flagship AI Content Writer (/ai-content-writer) and AI Blog Writer studios—allowing you to generate a complete 2,000-word SEO article with a custom infographic under every H2 section.",
   },
   {
     question: "Is this blog infographic generator completely free for commercial use?",
     answer:
-      "Yes. It is 100% free with zero signup, zero watermark, and full commercial publishing rights across client blogs, SaaS landing pages, LinkedIn carousels, and newsletters.",
+      "Yes. It is 100% free with zero signup, zero mandatory watermark, and full commercial publishing rights across client blogs, SaaS landing pages, LinkedIn carousels, and newsletters.",
   },
   {
     question: "Can I chain this tool inside the Do It AI workspace?",
@@ -126,27 +128,27 @@ const faqs = [
 const USE_CASES = [
   {
     title: "SEO blog posts & pillar guides",
-    body: "Place a structured process pipeline, comparison matrix, or KPI bento card under every H2 heading to boost reader dwell time and earn image search impressions.",
+    body: "Place an interlocking chevron pipeline, comparison matrix, or KPI orb board under every H2 heading to boost reader dwell time and earn Google Image Search impressions.",
   },
   {
     title: "SaaS & B2B product comparisons",
-    body: "Use Template #6 (Head-to-Head Versus Card) or Template #7 (3-Tier Feature Matrix) to visually prove why your platform outperforms legacy alternatives.",
+    body: "Use Template #6 (Central-Spine Versus Battle Card) or Template #7 (3-Tier SaaS Feature Matrix) to visually prove why your platform outperforms legacy alternatives.",
   },
   {
     title: "AI automation & SEO agencies",
-    body: "Turn client audit scores, ROI savings, and 90-day implementation roadmaps into branded executive graphics with the client's logo and hex palette.",
+    body: "Turn client audit scores, ROI savings, and 90-day implementation roadmaps into branded executive infographics with the client's logo, hex palette, and vector icon medallions.",
   },
   {
     title: "LinkedIn & X/Twitter thought leadership",
-    body: "Switch any blog diagram to 1:1 Square or 4:5 Portrait to turn long-form H2 sections into high-engagement social feed graphics.",
+    body: "Switch any blog diagram to 1:1 Square or 4:5 Portrait to turn long-form H2 sections into high-engagement social feed infographics.",
   },
   {
     title: "Digital PR & original data studies",
-    body: "Package survey findings and benchmark bars into downloadable SVG and PNG stat cards that journalists and niche bloggers love to embed and cite.",
+    body: "Package survey findings, multi-bar charts, and benchmark bars into downloadable SVG and PNG stat posters that journalists and niche bloggers love to embed and cite.",
   },
   {
     title: "Newsletters, SOPs & documentation",
-    body: "Replace walls of instructional text with 8-point checklists, 6-box cheat sheets, and annotated page anatomy diagrams.",
+    body: "Replace walls of instructional text with 8-point checklists, 6-box cheat sheets, and annotated page wireframe teardowns.",
   },
 ];
 
@@ -224,7 +226,7 @@ const COURSE_LEARNING_CARDS = [
       "Package keyword clusters, humanized articles, and 25-template section infographics into high-ticket content retainers.",
     modules: [
       "Module 1: Mapping H2 search intent to visual families",
-      "Module 2: Brand palette & executive ring framing",
+      "Module 2: Brand palette, AI art plates & vector icon medallions",
       "Module 3: Zero-CLS WebP/SVG publishing & schema",
     ],
     href: "/ai-learn-earn",
@@ -236,7 +238,7 @@ const COURSE_LEARNING_CARDS = [
     outcome:
       "Download portable HTML5 Canvas and React tools from our catalog, customize templates, and embed them on your own domain.",
     modules: [
-      "Module 1: Deterministic Canvas & SVG architecture",
+      "Module 1: Hybrid AI Art Plate + Canvas/SVG architecture",
       "Module 2: Adding custom brand themes & logos",
       "Module 3: Embedding interactive visual lead magnets",
     ],
@@ -261,31 +263,37 @@ const COURSE_LEARNING_CARDS = [
 const RELATED_TOOLS = [
   {
     slug: "ai-blog-writer",
+    href: "/tools/ai-blog-writer",
     label: "Free AI Blog Writer Studio",
     why: "Draft complete SEO blog posts with embedded H2 infographics",
   },
   {
     slug: "ai-content-writer",
-    label: "Free AI Content Writer Studio",
-    why: "Run the full multi-stage SEO & AEO content production pipeline",
+    href: "/ai-content-writer",
+    label: "Flagship AI Content Writer Studio",
+    why: "Run the full 6-stage SEO, AEO & inline infographic production pipeline",
   },
   {
     slug: "quote-stat-testimonial-card-studio",
+    href: "/tools/quote-stat-testimonial-card-studio",
     label: "Free AI Testimonial Card Generator",
     why: "Create customer quote & KPI cards with ring-framed portraits",
   },
   {
     slug: "blog-to-linkedin-carousel",
+    href: "/tools/blog-to-linkedin-carousel",
     label: "LinkedIn PDF Carousel Studio",
     why: "Turn your blog sections into a swipeable 10-slide PDF carousel",
   },
   {
     slug: "data-to-chart-visual-card-maker",
+    href: "/tools/data-to-chart-visual-card-maker",
     label: "Data & KPI Chart Maker",
     why: "Build dedicated bar, line, and benchmark chart cards",
   },
   {
     slug: "pinterest-pin-visual-generator",
+    href: "/tools/pinterest-pin-visual-generator",
     label: "Pinterest 1000×1500 Pin Studio",
     why: "Convert blog takeaways into vertical Pinterest traffic pins",
   },
@@ -300,11 +308,11 @@ export default function BlogSectionInfographicGeneratorPage() {
     "@graph": [
       {
         "@type": ["WebApplication", "SoftwareApplication"],
-        name: "Free AI Blog Section Infographic Generator: 25 Canva & Napkin Layouts",
+        name: "Free AI Blog Section Infographic Generator: 25 Venngage, Canva & Napkin Layouts",
         alternateName: [
           "Free AI Blog Section Infographic Generator",
           "AI Blog Infographic Studio",
-          "Napkin.ai Alternative Blog Diagram Maker",
+          "Venngage & Napkin.ai Alternative Blog Diagram Maker",
           "Do It With AI Blog Visual Studio",
         ],
         url: pageUrl,
@@ -314,10 +322,10 @@ export default function BlogSectionInfographicGeneratorPage() {
         browserRequirements: "Requires JavaScript",
         isAccessibleForFree: true,
         featureList: [
-          `${templateCount} deterministic Canva & Napkin.ai-style blog infographic templates across 6 visual families`,
-          "100% live-editable typography, node badges, titles, details, and KPI metrics with zero garbled AI text",
-          "Optional author / executive portrait framed inside Concentric Rings, Arch Frames, or Adjustable-Radius Windows",
-          "Custom brand logo upload with adjustable scale and badge styles plus 8 brand palettes & custom hex wheel",
+          `${templateCount} realistic Venngage, Canva & Napkin.ai-style blog infographic templates across 6 visual families`,
+          "Hybrid 3D AI Art Plate Backdrops (Obsidian Glass Orbs, Royal Indigo Isometric, Editorial Warm Paper, Emerald Data Waves)",
+          "20 geometric vector icon medallions with per-node icon picker and 100% live-editable typography (zero garbled AI text)",
+          "Custom brand logo upload with adjustable scale and badge styles plus 8 light & dark brand palettes and custom hex wheel",
           "URL-to-Infographic extractor for turning existing articles into multi-section visual packs",
           "Instant 16:9, 1:1, 4:5, and 9:16 exports in HD PNG, Vector SVG, WebP, PDF, CWV <figure> HTML, and .ZIP",
         ],
@@ -325,27 +333,27 @@ export default function BlogSectionInfographicGeneratorPage() {
       },
       {
         "@type": "HowTo",
-        name: "How to Create an Editable Blog Section Infographic in 3 Steps",
+        name: "How to Create a Realistic Blog Section Infographic in 3 Steps",
         description:
           "Turn any H2 blog heading, paragraph, or URL into a branded, zero-CLS section infographic.",
         step: [
           {
             "@type": "HowToStep",
             position: 1,
-            name: "Enter your H2 heading, paste section notes, or extract from a URL",
-            text: "Type your H2 section headline and nodes (or paste a raw paragraph / article URL to extract nodes automatically). Click 'Auto-Match Template from H2' to map your heading to the ideal layout.",
+            name: "Load a preset, paste section notes, or extract from a URL",
+            text: "Type your H2 section headline and nodes (or paste a raw paragraph / article URL to extract nodes automatically). Click 'Auto-Match Layout from H2' to map your heading to the ideal infographic geometry.",
           },
           {
             "@type": "HowToStep",
             position: 2,
-            name: "Customize the 25 live templates, brand palette, logo, and optional author ring",
-            text: "Click any of the 25 live miniature canvas previews to switch layouts without losing your text. Upload your brand logo, pick one of 8 palettes or custom hex colors, and optionally enable a ring-framed executive portrait.",
+            name: "Customize AI art plates, vector icons, brand palette, and logo",
+            text: "Choose between AI Art Plate backdrops, 3D Glow Orbs, or Clean Vector mode. Assign 20 geometric vector icons to each node, upload your company logo, and pick from 8 light & dark brand palettes.",
           },
           {
             "@type": "HowToStep",
             position: 3,
-            name: "Export in PNG, Vector SVG, WebP, PDF, or Zero-CLS HTML",
-            text: "Download your graphic in 16:9, 1:1, 4:5, or 9:16 as a crisp PNG, scalable SVG, Core Web Vitals WebP, print-ready PDF, or multi-section .ZIP bundle.",
+            name: "Preview across 25 live layouts and export in PNG, SVG, WebP, or PDF",
+            text: "Click 'Use Layout' or 'Load Sample' on any of the 25 live miniature infographic previews. Download in 16:9, 1:1, 4:5, or 9:16 as a crisp PNG, scalable SVG, Core Web Vitals WebP, print-ready PDF, or multi-section .ZIP bundle.",
           },
         ],
       },
@@ -380,7 +388,7 @@ export default function BlogSectionInfographicGeneratorPage() {
         }}
       />
 
-      {/* COMPACT UNIFIED HERO: LEFT SEO & CTA COLUMN + RIGHT 5-SLIDE INTERACTIVE SHOWCASE */}
+      {/* COMPACT UNIFIED HERO: LEFT SEO & CTA COLUMN + RIGHT 5-SLIDE LIVE COMPOSITE INFOGRAPHIC SHOWCASE */}
       <header
         className={`relative overflow-hidden ${toolHeroSurface} text-white`}
       >
@@ -399,7 +407,7 @@ export default function BlogSectionInfographicGeneratorPage() {
             </span>
           </nav>
 
-          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
+          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1.05fr)]">
             <div>
               <div className="mb-3 inline-flex flex-wrap items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-bold text-white backdrop-blur-xs">
                 <PlatformBrandIcon
@@ -407,7 +415,7 @@ export default function BlogSectionInfographicGeneratorPage() {
                   size={18}
                 />
                 <span>
-                  Free AI Blog Infographic Studio · No Signup · Zero Watermark
+                  Hybrid AI Art Plates + 25 Vector Infographic Layouts · Zero Watermark
                 </span>
                 <span className="inline-flex items-center gap-0.5 text-amber-300">
                   <Star size={12} fill="currentColor" /> 4.9/5
@@ -415,24 +423,30 @@ export default function BlogSectionInfographicGeneratorPage() {
               </div>
 
               <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                AI BLOG SECTION INFOGRAPHIC GENERATOR · 25 CANVA &amp; NAPKIN
-                LAYOUTS · SVG &amp; WEBP
+                AI BLOG SECTION INFOGRAPHIC GENERATOR · 25 VENNGAGE, CANVA &amp;
+                NAPKIN LAYOUTS
               </p>
 
               <h1 className="mt-3 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
                 Free AI Blog Section Infographic Generator:{" "}
                 <span className={toolHeroHeading}>
-                  25 Canva &amp; Napkin-Style Visual Templates
+                  25 Realistic Data, Timeline &amp; Comparison Templates
                 </span>
               </h1>
 
               <p className="mt-4 max-w-2xl text-base leading-relaxed text-slate-200">
                 Turn any blog H2 heading, paragraph, bullet list, or article URL
-                into a crisp, 100% editable section diagram. Choose from{" "}
-                {templateCount} deterministic layouts (pipelines, versus cards,
-                KPI bento grids, pyramids &amp; checklists), add your brand logo
-                and ring-framed executive portrait, and export HD PNG, vector
-                SVG, WebP, or PDF at $0 API cost.
+                into a realistic, 100% editable infographic. Our{" "}
+                <strong>Hybrid Composite Engine</strong> blends high-resolution{" "}
+                <strong>AI 3D Art Plates</strong> with{" "}
+                <strong>
+                  {templateCount} Venngage &amp; Canva-grade geometries
+                </strong>{" "}
+                (interlocking chevrons, milestone timelines, mechanical growth
+                gears, VS battle cards, KPI glass orbs &amp; multi-bar charts),{" "}
+                <strong>20 vector icon medallions</strong>, and your{" "}
+                <strong>brand logo</strong>—exporting HD PNG, vector SVG, WebP,
+                or PDF at $0 cost.
               </p>
 
               <PortableToolHeroBar
@@ -467,14 +481,15 @@ export default function BlogSectionInfographicGeneratorPage() {
           <p className={prose}>
             To create a high-retention blog section infographic, convert each{" "}
             <strong>H2 heading into 3–6 structured visual nodes</strong> paired
-            with <strong>quantified KPI badges</strong>, match the section
-            intent to a{" "}
+            with <strong>quantified KPI badges and vector icons</strong>, match
+            the section intent to a{" "}
             <strong>
-              process pipeline, versus card, bento grid, or pyramid layout
+              chevron pipeline, milestone timeline, versus battle card, KPI orb
+              board, or multi-bar chart
             </strong>
-            , apply your <strong>brand logo and hex palette</strong>, and embed{" "}
-            <strong>zero-CLS WebP or vector SVG markup</strong> with descriptive
-            alt text.
+            , composite over a <strong>branded AI art plate</strong> with your
+            logo, and embed <strong>zero-CLS WebP or vector SVG markup</strong>{" "}
+            with descriptive alt text.
           </p>
         </div>
       </section>
@@ -485,32 +500,32 @@ export default function BlogSectionInfographicGeneratorPage() {
       >
         <div className="text-center">
           <p className="text-xs font-extrabold uppercase tracking-widest text-[#3452d1] dark:text-blue-300">
-            Simple 3-Step AI Visual Workflow
+            Simple 3-Step Hybrid AI Infographic Workflow
           </p>
           <h2 className="mt-2 text-3xl font-black sm:text-4xl">
             How does the Free AI Blog Section Infographic Generator work?
           </h2>
           <p className="mx-auto mt-3 max-w-2xl text-sm text-slate-600 dark:text-slate-300">
             Go from a raw H2 heading, paragraph, or published blog URL to a
-            publish-ready diagram in under 30 seconds.
+            realistic, publish-ready infographic in under 30 seconds.
           </p>
         </div>
         <div className="mt-10 grid gap-6 md:grid-cols-3">
           {[
             {
               num: "1",
-              title: "Enter H2 heading, paste text, or extract URL",
-              body: "Type your H2 headline and nodes, paste a raw paragraph to auto-split into diagram cards, or extract multiple H2 sections directly from any public article URL.",
+              title: "Enter H2 heading, load preset, or extract URL",
+              body: "Pick one of 6 Venngage-style scenario presets, paste a raw paragraph to auto-split into diagram nodes, or extract multiple H2 sections directly from any public article URL.",
             },
             {
               num: "2",
-              title: "Customize logo, ring portrait & brand colors",
-              body: "Upload your company logo, pick from 8 curated brand palettes or custom hex colors, and optionally enable a ring-framed or arch-framed executive portrait.",
+              title: "Customize AI art plates, vector icons & logo",
+              body: "Switch between 3D AI Art Plate backdrops, Glow Orbs, or Clean Vector mode. Assign 20 geometric vector icons to each node, upload your brand logo, and apply 8 light or dark palettes.",
             },
             {
               num: "3",
-              title: "Switch across 25 live layouts & export HD",
-              body: "Click any of the 25 live miniature canvas previews to test different visual families without losing your text. Export as PNG, vector SVG, WebP, PDF, CWV HTML, or a multi-section .ZIP.",
+              title: "Preview 25 live layouts & export HD",
+              body: "Browse all 25 curated infographic designs or toggle 'My Active Text' to see your copy across every layout. Export as PNG, vector SVG, WebP, PDF, CWV HTML, or a multi-section .ZIP.",
             },
           ].map((step) => (
             <div
@@ -531,53 +546,85 @@ export default function BlogSectionInfographicGeneratorPage() {
         </div>
       </section>
 
-      {/* ALL 25 TEMPLATES OVERVIEW WITH FAMILY BADGES */}
+      {/* ALL 25 TEMPLATES OVERVIEW WITH CURATED SHOWCASE DATA & FAMILY BADGES */}
       <section
         className={`${section} border-t border-slate-200 dark:border-slate-800`}
       >
         <div className="text-center">
           <p className="text-xs font-extrabold uppercase tracking-widest text-[#3452d1] dark:text-blue-300">
-            {templateCount} Built-In Canva &amp; Napkin.ai-Style Blog Layouts
+            {templateCount} Built-In Venngage, Canva &amp; Napkin.ai-Style Blog Layouts
           </p>
           <h2 className="mt-2 text-3xl font-black sm:text-4xl">
-            Every blog infographic template engineered for zero-overlap clarity
+            Every blog infographic template engineered with distinct visual geometry
           </h2>
           <p className="mx-auto mt-3 max-w-2xl text-sm text-slate-600 dark:text-slate-300">
-            All 25 templates adapt across 16:9 Blog/OG, 1:1 Square, 4:5
-            LinkedIn, and 9:16 Story/Pin dimensions with crisp, editable
-            typography.
+            All 25 templates combine AI art plate depth, 20 vector icon
+            medallions, and auto-fitted typography across 16:9 Blog/OG, 1:1
+            Square, 4:5 LinkedIn, and 9:16 Story/Pin dimensions.
           </p>
         </div>
-        <ul className="mt-8 grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
-          {BLOG_INFOGRAPHIC_25_TEMPLATES.map((t) => (
-            <li
-              key={t.id}
-              className="flex flex-col justify-between rounded-2xl border border-slate-200 bg-slate-50/70 p-4 transition hover:border-[#3452d1]/50 dark:border-slate-800 dark:bg-slate-900"
-            >
-              <div>
-                <div className="flex items-center justify-between gap-2">
-                  <h3 className="text-sm font-black text-slate-900 dark:text-white">
-                    #{t.id}. {t.name}
-                  </h3>
-                  <span className="shrink-0 rounded-full bg-[#3452d1]/10 px-2.5 py-0.5 text-[10px] font-extrabold text-[#3452d1] dark:bg-blue-500/20 dark:text-blue-300">
-                    {t.family}
-                  </span>
-                </div>
-                <p className="mt-1.5 text-xs leading-6 text-slate-600 dark:text-slate-300">
-                  <strong>Best for:</strong> {t.bestForSectionType} ·{" "}
-                  <span className="text-slate-500 dark:text-slate-400">
-                    {t.editableFields}
-                  </span>
-                </p>
-              </div>
-              <a
-                href="#tool-studio-workspace"
-                className="mt-3 inline-flex items-center gap-1 text-[11px] font-extrabold text-[#3452d1] hover:underline dark:text-blue-300"
+        <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {BLOG_INFOGRAPHIC_25_TEMPLATES.map((t) => {
+            const showcase = TEMPLATE_CURATED_SHOWCASE_DATA[t.id];
+            return (
+              <li
+                key={t.id}
+                className="flex flex-col justify-between rounded-2xl border border-slate-200 bg-slate-50/80 p-4 shadow-2xs transition hover:border-[#3452d1]/60 hover:shadow-md dark:border-slate-800 dark:bg-slate-900"
               >
-                Preview in live studio above ↑
-              </a>
-            </li>
-          ))}
+                <div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-2.5 py-0.5 text-[11px] font-black text-white dark:bg-indigo-500/20 dark:text-indigo-200">
+                      Template #{t.id}
+                    </span>
+                    <span className="shrink-0 rounded-full bg-[#3452d1]/10 px-2.5 py-0.5 text-[10px] font-extrabold text-[#3452d1] dark:bg-blue-500/20 dark:text-blue-300">
+                      {t.family}
+                    </span>
+                  </div>
+
+                  <h3 className="mt-2.5 text-sm font-black text-slate-900 dark:text-white">
+                    {t.name}
+                  </h3>
+
+                  {showcase && (
+                    <div className="mt-2 rounded-xl border border-slate-200/80 bg-white p-2.5 dark:border-slate-800 dark:bg-slate-950/70">
+                      <p className="text-[11px] font-bold text-slate-800 dark:text-slate-200">
+                        “{showcase.headline}”
+                      </p>
+                      <div className="mt-1.5 flex flex-wrap gap-1">
+                        {showcase.nodes.slice(0, 3).map((n, idx) => (
+                          <span
+                            key={idx}
+                            className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 dark:bg-slate-900 dark:text-slate-300"
+                          >
+                            {n.metricValue || n.badge}: {n.title}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <p className="mt-2.5 text-xs leading-6 text-slate-600 dark:text-slate-300">
+                    <strong>Best for:</strong> {t.bestForSectionType} ·{" "}
+                    <span className="text-slate-500 dark:text-slate-400">
+                      {t.editableFields}
+                    </span>
+                  </p>
+                </div>
+
+                <div className="mt-3 flex items-center justify-between border-t border-slate-200/70 pt-2.5 dark:border-slate-800">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Palette: {showcase?.paletteId || "indigo-cyber"}
+                  </span>
+                  <a
+                    href="#tool-studio-workspace"
+                    className="inline-flex items-center gap-1 text-[11px] font-extrabold text-[#3452d1] hover:underline dark:text-blue-300"
+                  >
+                    Use in Studio ↑
+                  </a>
+                </div>
+              </li>
+            );
+          })}
         </ul>
       </section>
 
@@ -614,7 +661,7 @@ export default function BlogSectionInfographicGeneratorPage() {
       >
         <div className="text-center">
           <p className="text-xs font-extrabold uppercase tracking-widest text-[#3452d1] dark:text-blue-300">
-            Industrial-Grade Blog Visual Engine
+            Hybrid AI Art Plate + Vector Diagram Engine
           </p>
           <h2 className="mt-2 text-3xl font-black sm:text-4xl">
             Why our 25-Template Studio beats diffusion image prompts &amp; paid
@@ -626,23 +673,24 @@ export default function BlogSectionInfographicGeneratorPage() {
           <div className="rounded-3xl border border-slate-200 bg-slate-50/70 p-6 dark:border-slate-800 dark:bg-slate-900">
             <Layers className="text-[#3452d1]" size={26} />
             <h3 className="mt-4 text-xl font-black">
-              100% crisp, editable typography (zero garbled AI text)
+              Hybrid AI art plates + 100% crisp vector typography
             </h3>
             <p className="mt-2 text-sm leading-7 text-slate-600 dark:text-slate-300">
-              Diffusion image models paint raster pixels and routinely misspell
-              labels inside flowcharts. Our HTML5 Canvas and vector SVG engine
-              renders razor-sharp, live-editable typography every time.
+              Diffusion image models paint flat pixels and misspell labels
+              inside charts. We composite high-resolution AI 3D art plates
+              underneath razor-sharp, live-editable HTML5 Canvas and SVG
+              diagrams.
             </p>
           </div>
           <div className="rounded-3xl border border-slate-200 bg-slate-50/70 p-6 dark:border-slate-800 dark:bg-slate-900">
             <Palette className="text-[#EA580C]" size={26} />
             <h3 className="mt-4 text-xl font-black">
-              Brand logo, hex palette &amp; ring portrait framing
+              20 vector icon medallions, brand logo &amp; 8 palettes
             </h3>
             <p className="mt-2 text-sm leading-7 text-slate-600 dark:text-slate-300">
-              Upload your brand logo, apply custom hex colors across all 25
-              layouts, and optionally frame an author or founder portrait inside
-              concentric rings or an arch window.
+              Assign custom geometric icons (Rocket, Trophy, Chart, Gear,
+              Shield, CPU) to every node, upload your brand logo pill, and
+              switch between light editorial paper and dark glassmorphic themes.
             </p>
           </div>
           <div className="rounded-3xl border border-slate-200 bg-slate-50/70 p-6 dark:border-slate-800 dark:bg-slate-900">
@@ -651,9 +699,9 @@ export default function BlogSectionInfographicGeneratorPage() {
               Zero-CLS Core Web Vitals HTML, SVG &amp; WebP exports
             </h3>
             <p className="mt-2 text-sm leading-7 text-slate-600 dark:text-slate-300">
-              Export lightweight vector SVGs, compressed WebPs, or copy ready-to-paste{" "}
-              <code>&lt;figure&gt;</code> HTML with explicit width and height
-              attributes for 0.000 layout shift.
+              Export lightweight vector SVGs, compressed WebPs, or copy
+              ready-to-paste <code>&lt;figure&gt;</code> HTML with explicit
+              width and height attributes for 0.000 layout shift.
             </p>
           </div>
         </div>
@@ -664,41 +712,43 @@ export default function BlogSectionInfographicGeneratorPage() {
               <tr>
                 <th className="px-4 py-3.5">Capability</th>
                 <th className="px-4 py-3.5 text-[#3452d1] dark:text-blue-300">
-                  DoItWithAI 25-Template Infographic Studio
+                  DoItWithAI 25-Template Hybrid Infographic Studio
                 </th>
-                <th className="px-4 py-3.5">Paid Diagram SaaS (Napkin / Venngage)</th>
+                <th className="px-4 py-3.5">
+                  Paid Diagram SaaS (Venngage / Napkin / Canva Pro)
+                </th>
                 <th className="px-4 py-3.5">Raw AI Diffusion Image Prompts</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 bg-white dark:divide-slate-800 dark:bg-slate-900">
               <tr>
                 <td className="px-4 py-3.5 font-bold">
-                  Blog-Specific Infographic Templates
+                  Blog-Specific Infographic Geometries
                 </td>
                 <td className="px-4 py-3.5 font-semibold text-emerald-600 dark:text-emerald-400">
-                  25 Layouts across 6 Families (Pipelines, Versus, Bento KPI,
-                  Pyramids, Checklists, Hero OG)
+                  25 Layouts (Chevrons, Timelines, Gears, VS Battle Cards, KPI
+                  Orbs, Multi-Bar Charts, Pyramids)
                 </td>
                 <td className="px-4 py-3.5">Limited on free tier</td>
                 <td className="px-4 py-3.5">Unstructured random art</td>
               </tr>
               <tr>
                 <td className="px-4 py-3.5 font-bold">
-                  Typography &amp; Live Node Editing
+                  Visual Depth &amp; Typography Accuracy
                 </td>
                 <td className="px-4 py-3.5 font-semibold text-emerald-600 dark:text-emerald-400">
-                  100% Editable Badges, Titles, Details &amp; Metrics (Zero
-                  Typos)
+                  3D AI Art Plates + 100% Editable Badges, Titles, Metrics &amp;
+                  Vector Icons (Zero Typos)
                 </td>
                 <td className="px-4 py-3.5">Editable (requires account login)</td>
                 <td className="px-4 py-3.5">Frequent misspelled / garbled text</td>
               </tr>
               <tr>
                 <td className="px-4 py-3.5 font-bold">
-                  Author Ring Framing &amp; Brand Logo Upload
+                  Brand Logo Pill &amp; Custom Art Plate Upload
                 </td>
                 <td className="px-4 py-3.5 font-semibold text-emerald-600 dark:text-emerald-400">
-                  Auto Background Cutout + Ring/Arch Sliders + Custom Logo Pill
+                  Custom Logo Container + Custom Art Plate Backdrop + 8 Palettes
                 </td>
                 <td className="px-4 py-3.5">Paid Brand Kit tier only</td>
                 <td className="px-4 py-3.5">Not supported</td>
@@ -745,17 +795,17 @@ export default function BlogSectionInfographicGeneratorPage() {
                 </Link>
                 . Chain our{" "}
                 <Link
+                  href="/ai-content-writer"
+                  className="font-bold text-blue-300 underline hover:text-white"
+                >
+                  Flagship AI Content Writer Studio
+                </Link>
+                ,{" "}
+                <Link
                   href="/tools/ai-blog-writer"
                   className="font-bold text-blue-300 underline hover:text-white"
                 >
                   Free AI Blog Writer
-                </Link>
-                ,{" "}
-                <Link
-                  href="/tools/ai-content-writer"
-                  className="font-bold text-blue-300 underline hover:text-white"
-                >
-                  AI Content Writer Studio
                 </Link>
                 , and this 25-Template Blog Infographic Studio in one seamless
                 pipeline.
@@ -767,7 +817,7 @@ export default function BlogSectionInfographicGeneratorPage() {
                 </span>
                 <span className="inline-flex items-center gap-1.5 rounded-xl bg-white/10 px-3 py-1.5">
                   <CheckCircle2 size={14} className="text-emerald-400" /> 25
-                  Editable HTML5 &amp; SVG Diagram Layouts
+                  Hybrid AI Art Plate + SVG Layouts
                 </span>
                 <span className="inline-flex items-center gap-1.5 rounded-xl bg-white/10 px-3 py-1.5">
                   <CheckCircle2 size={14} className="text-emerald-400" /> Zero
@@ -789,7 +839,7 @@ export default function BlogSectionInfographicGeneratorPage() {
               {RELATED_TOOLS.slice(0, 2).map((r) => (
                 <Link
                   key={r.slug}
-                  href={`/tools/${r.slug}`}
+                  href={r.href}
                   className="inline-flex items-center justify-between rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-xs font-bold text-slate-200 transition hover:bg-white/10"
                 >
                   <span>{r.label}</span>
@@ -812,7 +862,7 @@ export default function BlogSectionInfographicGeneratorPage() {
           {RELATED_TOOLS.map((r) => (
             <Link
               key={r.slug}
-              href={`/tools/${r.slug}`}
+              href={r.href}
               className="group rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-[#3452d1] dark:border-slate-800 dark:bg-slate-900"
             >
               <span className="flex items-center justify-between text-sm font-black">
