@@ -68,7 +68,7 @@ const faqs = [
     question:
       "Can I customize and download the 25 section infographics inside my content?",
     answer:
-      "Yes. Every H2 section automatically maps to one of 25 deterministic HTML5 Canvas and vector SVG templates. You can click 'Customize in 25-Template Studio' on any section in Stage 4 to edit text nodes, switch color themes, upload your brand logo or executive portrait, and export HD PNG, SVG, WebP, or zero-CLS HTML.",
+      "Yes. Every H2 section automatically maps to one of 25 deterministic HTML5 Canvas and vector SVG templates. You can click 'Customize in 25-Template Studio' on any section in Stage 4 to edit text nodes, switch color themes, upload your brand logo, choose an editorial illustration, and export PNG, SVG, WebP, or dimensioned embed HTML.",
   },
   {
     question:

@@ -4,6 +4,12 @@ This handbook documents the complete engineering, visual design, canvas geometry
 
 Use this handbook—and the **Copy-Paste Master Prompt in Section 8**—whenever upgrading any tool in the `doitwithai.tools` catalog (whether with Gemini, Claude, Cursor, Windsurf, Copilot, or a human developer).
 
+## Scope: transfer engineering practices, never unrelated content
+
+Portrait framing and photo controls below apply only when a person's image belongs in the tool's output. **The blog section infographic studio must not contain executive portrait presets, testimonial copy or photo-framing controls.** It uses content-driven diagrams, optional editorial artwork and a company logo. Its detailed implementation contract is in `docs/INFOGRAPHIC_STUDIO_DESIGN.md`.
+
+Reuse measured spacing, responsive controls, live previews, accessible interactions and export consistency. Do not copy testimonial headlines, ratings, invented results, or a competitor's artwork. Treat the portrait-specific examples and checklist items in this handbook as conditional, including the master prompt.
+
 ## 1. Evolution Post-Mortem: Every Problem We Solved & Why It Matters
 
 During the multi-turn overhaul of `/tools/quote-stat-testimonial-card-studio`, we encountered and permanently solved seven critical failure modes that commonly break AI-built visual and interactive tools:
