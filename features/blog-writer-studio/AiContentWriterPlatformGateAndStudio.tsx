@@ -4,15 +4,12 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useWorkspace } from "@/features/tools-workspace/WorkspaceProvider";
 import {
-  type CanonicalBlogProjectState,
   type BlogSectionNode,
-  DEFAULT_FLAGSHIP_BLOG_PROJECT,
 } from "@/lib/blog-writer/canonical-state";
 import {
   measureTitlePixelWidth,
   measureMetaDescriptionPixelWidth,
   runFullDeterministicSeoScorecard,
-  applyOneClickSeoAutoFixes,
   normalizeSeoSlug,
 } from "@/lib/blog-writer/deterministic-analyzers";
 import { useBlogProjectWorkspace } from "@/lib/blog-writer/project-storage-db";
@@ -41,7 +38,6 @@ export default function AiContentWriterPlatformGateAndStudio() {
     projectList,
     createNewProject,
     switchProject,
-    deleteProject,
     duplicateProject,
     runOneClickAutoFix,
     saveNow,
@@ -135,7 +131,7 @@ export default function AiContentWriterPlatformGateAndStudio() {
       }
       if (sec.includeKeyTakeawayCallout && sec.keyTakeawayText) {
         lines.push(
-          `> **Key Takeaway:** ${sec.keyTakeawayText} *(Visual Template: ${sec.infographicConfig.templateId} • ${sec.infographicConfig.aspectRatio})*`,
+          `> **Key Takeaway:** ${sec.keyTakeawayText} *(Visual Template #${sec.infographicConfig.templateId}: ${sec.infographicConfig.templateName} • ${sec.infographicConfig.aspectRatio})*`,
         );
         lines.push("");
       }
@@ -583,10 +579,10 @@ export default function AiContentWriterPlatformGateAndStudio() {
                       className="rounded-2xl border border-slate-800 bg-slate-950/90 p-3.5"
                     >
                       <div className="text-[11px] font-bold uppercase tracking-wider text-indigo-400">
-                        {tpl.category}
+                        {tpl.family}
                       </div>
                       <div className="mt-1 text-sm font-bold text-white">
-                        {tpl.name}
+                        #{tpl.id} {tpl.name}
                       </div>
                       <div className="mt-1 text-xs text-slate-400">
                         {tpl.bestForSectionType}
@@ -1022,13 +1018,24 @@ export default function AiContentWriterPlatformGateAndStudio() {
                             aria-label={`Template for section ${idx + 1}`}
                             value={sec.infographicConfig.templateId}
                             onChange={(e) => {
+                              const nextId = Number(e.target.value);
+                              const foundTpl =
+                                BLOG_INFOGRAPHIC_25_TEMPLATES.find(
+                                  (t) => t.id === nextId,
+                                );
                               const next = project.sections.map((s, i) =>
                                 i === idx
                                   ? {
                                       ...s,
                                       infographicConfig: {
                                         ...s.infographicConfig,
-                                        templateId: e.target.value,
+                                        templateId: nextId,
+                                        templateSlug:
+                                          foundTpl?.slug ||
+                                          s.infographicConfig.templateSlug,
+                                        templateName:
+                                          foundTpl?.name ||
+                                          s.infographicConfig.templateName,
                                       },
                                     }
                                   : s,
@@ -1042,7 +1049,7 @@ export default function AiContentWriterPlatformGateAndStudio() {
                           >
                             {BLOG_INFOGRAPHIC_25_TEMPLATES.map((tpl) => (
                               <option key={tpl.id} value={tpl.id}>
-                                📊 {tpl.name}
+                                📊 #{tpl.id} {tpl.name}
                               </option>
                             ))}
                           </select>
@@ -1133,7 +1140,7 @@ export default function AiContentWriterPlatformGateAndStudio() {
                           </label>
                           <input
                             type="text"
-                            value={sec.infographicConfig.title}
+                            value={sec.infographicConfig.headline}
                             onChange={(e) => {
                               const next = project.sections.map((s, i) =>
                                 i === idx
@@ -1141,7 +1148,7 @@ export default function AiContentWriterPlatformGateAndStudio() {
                                       ...s,
                                       infographicConfig: {
                                         ...s.infographicConfig,
-                                        title: e.target.value,
+                                        headline: e.target.value,
                                       },
                                     }
                                   : s,
