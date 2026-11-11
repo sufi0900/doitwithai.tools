@@ -1,11 +1,107 @@
-/** Prism Forge · Original editorial masters compiled with AntV's DOM-free JSX/SVG API. */
-import { jsx, renderSVG, Text, getElementBounds } from "@antv/infographic";
-import type { JSXNode } from "@antv/infographic";
+/** Prism Forge · Original editorial masters compiled with native DOM-free SVG AST API. */
 import type {
   BlogInfographicConfig,
   BlogInfographicNodeItem,
 } from "@/lib/blog-writer/canonical-state";
 import { ASPECT_RATIO_DIMENSIONS, BLOG_INFOGRAPHIC_PALETTES } from "./palettes";
+
+export type JSXNode =
+  | string
+  | number
+  | boolean
+  | null
+  | undefined
+  | JSXNode[]
+  | {
+      type: string;
+      props: Record<string, unknown> & { children?: JSXNode | JSXNode[] };
+    };
+
+function escapeXml(str: unknown): string {
+  return String(str ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
+const CAMEL_PRESERVE = new Set(["viewBox", "preserveAspectRatio", "patternUnits"]);
+function svgAttrName(key: string): string {
+  if (CAMEL_PRESERVE.has(key)) return key;
+  if (key === "className") return "class";
+  return key.replace(/([A-Z])/g, "-$1").toLowerCase();
+}
+
+function renderNode(node: JSXNode): string {
+  if (node == null || node === false || node === true) return "";
+  if (typeof node === "string" || typeof node === "number") {
+    return escapeXml(node);
+  }
+  if (Array.isArray(node)) {
+    return node.map(renderNode).join("");
+  }
+  const { type, props = {} } = node;
+  const { children, ...rest } = props;
+  const attrEntries: string[] = [];
+  for (const [key, val] of Object.entries(rest)) {
+    if (val === undefined || val === null) continue;
+    attrEntries.push(`${svgAttrName(key)}="${escapeXml(val)}"`);
+  }
+  const attrs = attrEntries.length > 0 ? " " + attrEntries.join(" ") : "";
+  const inner = children !== undefined ? renderNode(children) : "";
+  const voidTags = new Set([
+    "rect",
+    "circle",
+    "ellipse",
+    "line",
+    "path",
+    "polygon",
+    "polyline",
+    "image",
+    "stop",
+    "use",
+  ]);
+  if (!inner && voidTags.has(type)) {
+    return `<${type}${attrs} />`;
+  }
+  return `<${type}${attrs}>${inner}</${type}>`;
+}
+
+export function jsx(
+  type: string | any,
+  props?: Record<string, unknown>,
+  children?: JSXNode | JSXNode[],
+): JSXNode {
+  const mergedProps = { ...props };
+  if (children !== undefined) {
+    mergedProps.children = children;
+  }
+  return { type, props: mergedProps };
+}
+
+export function renderSVG(
+  root: JSXNode,
+  options?: {
+    width?: number;
+    height?: number;
+    viewBox?: string;
+    role?: string;
+    "aria-label"?: string;
+  },
+): string {
+  const inner = renderNode(root);
+  const {
+    width = 1080,
+    height = 1350,
+    viewBox = `0 0 ${width} ${height}`,
+    role = "img",
+    "aria-label": ariaLabel,
+  } = options || {};
+  const ariaAttr = ariaLabel ? ` aria-label="${escapeXml(ariaLabel)}"` : "";
+  const roleAttr = role ? ` role="${escapeXml(role)}"` : "";
+  return `<svg width="${width}" height="${height}" viewBox="${viewBox}"${roleAttr}${ariaAttr} xmlns="http://www.w3.org/2000/svg">${inner}</svg>`;
+}
 
 type Issue = { field: string; message: string };
 type Icon = NonNullable<BlogInfographicNodeItem["icon"]>;
@@ -43,20 +139,33 @@ const circle = (cx: number, cy: number, r: number, fill: string, props = {}) =>
   el("circle", { cx, cy, r, fill, ...props });
 const color = (value: string | undefined, fallback: string) =>
   /^#[0-9a-f]{6}$/i.test(value || "") ? value! : fallback;
+
+const ARIAL_GLYPH_WIDTHS: Record<string, number> = {
+  " ": 0.29, "!": 0.29, "\"": 0.37, "#": 0.57, "$": 0.57, "%": 0.91, "&": 0.68,
+  "'": 0.2, "(": 0.34, ")": 0.34, "*": 0.4, "+": 0.6, ",": 0.29, "-": 0.34,
+  ".": 0.29, "/": 0.29, "0": 0.57, "1": 0.57, "2": 0.57, "3": 0.57, "4": 0.57,
+  "5": 0.57, "6": 0.57, "7": 0.57, "8": 0.57, "9": 0.57, ":": 0.29, ";": 0.29,
+  "<": 0.6, "=": 0.6, ">": 0.6, "?": 0.57, "@": 1.04, "A": 0.68, "B": 0.68,
+  "C": 0.74, "D": 0.74, "E": 0.68, "F": 0.63, "G": 0.79, "H": 0.74, "I": 0.29,
+  "J": 0.51, "K": 0.68, "L": 0.57, "M": 0.85, "N": 0.74, "O": 0.79, "P": 0.68,
+  "Q": 0.79, "R": 0.74, "S": 0.68, "T": 0.63, "U": 0.74, "V": 0.68, "W": 0.96,
+  "X": 0.68, "Y": 0.68, "Z": 0.63, "[": 0.29, "\\": 0.29, "]": 0.29, "^": 0.48,
+  "_": 0.51, "`": 0.34, "a": 0.57, "b": 0.57, "c": 0.51, "d": 0.57, "e": 0.57,
+  "f": 0.29, "g": 0.57, "h": 0.57, "i": 0.23, "j": 0.23, "k": 0.51, "l": 0.23,
+  "m": 0.85, "n": 0.57, "o": 0.57, "p": 0.57, "q": 0.57, "r": 0.34, "s": 0.51,
+  "t": 0.29, "u": 0.57, "v": 0.51, "w": 0.74, "x": 0.51, "y": 0.51, "z": 0.51,
+  "{": 0.34, "|": 0.27, "}": 0.34, "~": 0.6,
+};
+
 const widths = new Map<string, number>();
 function widthOf(text: string, size: number, bold = false) {
   const key = `${size}:${bold}:${text}`;
   if (widths.has(key)) return widths.get(key)!;
-  // AntV delegates text metrics to Measury. Using the same font in SVG avoids character-count guessing.
-  const bounds = getElementBounds(
-    jsx(Text, {
-      children: text,
-      fontSize: size,
-      fontFamily: "Arial",
-      fontWeight: bold ? 700 : 400,
-    }),
-  );
-  const result = bounds?.width || 0;
+  let units = 0;
+  for (const ch of Array.from(text || "")) {
+    units += ARIAL_GLYPH_WIDTHS[ch] ?? (ch.charCodeAt(0) > 255 ? 1 : 0.6);
+  }
+  const result = units * size * (bold ? 1.05 : 1);
   if (widths.size > 5000) widths.clear();
   widths.set(key, result);
   return result;
@@ -545,8 +654,8 @@ export function buildPrismScene(config: BlogInfographicConfig): {
         viewBox: `0 0 ${W} ${H}`,
         role: "img",
         "aria-label": config.altText,
-      } as any,
-    ).replace("<svg ", `<svg width="${W}" height="${H}" `),
+      },
+    ),
     issues,
   };
 }

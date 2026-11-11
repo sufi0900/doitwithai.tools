@@ -27,6 +27,11 @@ const nextConfig = {
         destination: '/tools/categories/ai-seo',
         permanent: true,
       },
+      {
+        source: '/download-and-embed',
+        destination: '/tools/downloadable-ai-tools',
+        permanent: true,
+      },
     ];
   },
 

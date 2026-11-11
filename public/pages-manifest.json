@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-11-10T08:17:25.762Z",
+  "generated": "2026-11-11T16:58:33.224Z",
   "static_pages": [
     {
       "url": "/",
@@ -741,6 +741,102 @@
       "type": "static"
     },
     {
+      "url": "/tools/seo-optimizer-ai-agent",
+      "title": "SEO & AEO Page Optimizer Agent",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/ai-support-agent-builder",
+      "title": "No-Code Docs-to-Chatbot Support Agent Builder",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/client-intake-lead-agent",
+      "title": "B2B Buyer-Fit & Client Intake Agent",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/ai-marketing-campaign-agent",
+      "title": "Omnichannel Content & Marketing Campaign Agent",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/whatsapp-instagram-ai-agent-studio",
+      "title": "WhatsApp, Telegram & Instagram DM Sales Agent Studio",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/no-code-workflow-agent-planner",
+      "title": "No-Code Workflow & Capacity Planning Agent (n8n / Sheets)",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/on-page-ai-seo-repair-agent",
+      "title": "Autonomous On-Page AI SEO Repair Agent",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/ai-citation-geo-agent",
+      "title": "Generative Engine Optimization (GEO) & AI Citation Agent",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/serp-content-gap-agent",
+      "title": "Competitor SERP Content Gap & Outranker Agent",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/omnichannel-marketing-agent",
+      "title": "Omni-Channel Content Repurposing & Safe Marketing Agent",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/ai-content-writer",
+      "title": "Free AI Content Writer: 6-Stage SEO, AEO, 25 Visuals & Schema Studio",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/ai-automation-roi-calculator",
+      "title": "AI Automation ROI & Manual Task Hours Savings Calculator",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/ai-workflow-blueprint-generator",
+      "title": "AI Workflow Blueprint Generator for Make, Zapier & n8n",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/blog-section-infographic-generator",
+      "title": "Free AI Blog Section Infographic Generator (25 Canva & Napkin Layouts)",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/ai-blog-writer",
+      "title": "Free AI Blog Writer: 6-Stage SEO Blog, 25 Visuals & Schema Studio",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/ai-article-writer",
+      "title": "Free AI Article Writer: Long-Form E-E-A-T, 25 Visuals & Schema Studio",
+      "priority": "high",
+      "type": "static"
+    },
+    {
       "url": "/tools/categories/ai-seo",
       "title": "AI SEO",
       "priority": "medium",
@@ -765,5 +861,5 @@
       "type": "static"
     }
   ],
-  "total_pages": 127
+  "total_pages": 143
 }
