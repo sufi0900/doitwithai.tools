@@ -29,18 +29,30 @@ import {
   ZoomIn,
   ZoomOut,
 } from "lucide-react";
+import {
+  InfographicDepthControls,
+  InfographicSignatureControls,
+} from "./InfographicDesignControls";
+import {
+  getInfographicDimensions,
+  lockInfographicGeometry,
+} from "@/lib/blog-infographic-studio/layout-registry";
+import {
+  brandColors,
+  normalizeSignature,
+} from "@/lib/blog-infographic-studio/appearance";
 import UrlArticleExtractorBar from "@/features/tool-ui/UrlArticleExtractorBar";
 import { printCanvasAsPdfPoster } from "@/features/tool-ui/visualCardExport";
 import type {
   BlogInfographicConfig,
   BlogInfographicNodeItem,
   BlogSectionNode,
-  InfographicAspectRatio,
 } from "@/lib/blog-writer/canonical-state";
 import {
   PRISM_LAYOUTS,
   buildSectionVisual,
   createPrismSample,
+  recommendPrismLayout,
   sectionFromText,
   visualFromWriterSection,
   withPrismLayout,
@@ -49,7 +61,6 @@ import type { PrismLayout } from "@/lib/blog-infographic-studio/visual-brief";
 import { autoRecommendInfographicTemplate } from "@/lib/blog-writer/deterministic-analyzers";
 import { BLOG_INFOGRAPHIC_25_TEMPLATES } from "@/lib/blog-infographic-studio/templates";
 import {
-  ASPECT_RATIO_DIMENSIONS,
   BLOG_INFOGRAPHIC_PALETTES,
   buildInfographicScene,
   createSampleInfographicConfig,
@@ -132,13 +143,14 @@ function PrismTemplateCard({
       onClick={onSelect}
       className={`overflow-hidden rounded-xl border-2 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${selected ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/30" : "border-transparent bg-slate-100 hover:border-indigo-300 dark:bg-slate-800"}`}
     >
-      <div className="flex h-64 items-center justify-center bg-slate-200/60 p-3 dark:bg-slate-950/50">
+      <div className="flex h-64 items-center justify-center overflow-hidden bg-slate-200/60 p-3 dark:bg-slate-950/50">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={svgSource(scene.svg)}
           alt={`${spec.name} with your current text`}
           loading="lazy"
-          className="max-h-full max-w-full object-contain shadow-md"
+          className="h-full w-full object-contain"
+          style={{ width: "100%", height: "100%", objectFit: "contain" }}
         />
       </div>
       <div className="p-3">
@@ -151,7 +163,7 @@ function PrismTemplateCard({
         </p>
         {scene.issues.length > 0 && (
           <p className="mt-2 text-xs font-semibold text-amber-700 dark:text-amber-300">
-            Needs a text or format adjustment
+            Check content fit for this layout
           </p>
         )}
       </div>
@@ -235,10 +247,10 @@ export function BlogInfographicStudio({
   onClose,
 }: BlogInfographicStudioProps) {
   const [cards, setCards] = useState<BlogInfographicConfig[]>(() => [
-    initialConfig || createPrismSample(),
+    lockInfographicGeometry(initialConfig || createPrismSample()),
   ]);
   const [activeIdx, setActiveIdx] = useState(0),
-    [panel, setPanel] = useState<"content" | "design" | "brand">("content"),
+    [panel, setPanel] = useState<"content" | "design">("content"),
     [family, setFamily] = useState(0),
     [query, setQuery] = useState("");
   const [paste, setPaste] = useState(""),
@@ -253,7 +265,7 @@ export function BlogInfographicStudio({
   const active = cards[Math.min(activeIdx, cards.length - 1)];
   const deferred = useDeferredValue(active);
   const scene = useMemo(() => buildInfographicScene(deferred), [deferred]);
-  const dimensions = ASPECT_RATIO_DIMENSIONS[active.aspectRatio];
+  const dimensions = getInfographicDimensions(active);
   const spec = BLOG_INFOGRAPHIC_25_TEMPLATES.find(
     (t) => t.id === active.templateId,
   )!;
@@ -272,7 +284,7 @@ export function BlogInfographicStudio({
   useEffect(() => () => clearTimeout(toastTimer.current), []);
   useEffect(() => {
     if (initialConfig) {
-      setCards([initialConfig]);
+      setCards([lockInfographicGeometry(initialConfig)]);
       setActiveIdx(0);
       setPast([]);
       setFuture([]);
@@ -480,6 +492,9 @@ export function BlogInfographicStudio({
       footerSourceLabel: "Source: supplied section text",
       altText: "",
       brand: { ...active.brand },
+      depth: active.depth,
+      signature: active.signature,
+      extractedBrand: active.extractedBrand,
     };
     commit([...cards, card]);
     setActiveIdx(cards.length);
@@ -506,7 +521,10 @@ export function BlogInfographicStudio({
       return;
     }
     update({
-      ...withPrismLayout(active, active.prismLayout || "editorial"),
+      ...withPrismLayout(
+        active,
+        recommendPrismLayout(result.brief, result.nodes.length),
+      ),
       headline,
       subheadline: "",
       nodes: result.nodes,
@@ -595,7 +613,10 @@ export function BlogInfographicStudio({
         </div>
       </div>
       {mode === "standalone" && (
-        <details className="mb-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900">
+        <details
+          open
+          className="mb-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900"
+        >
           <summary className="cursor-pointer text-sm font-bold text-slate-700 dark:text-slate-200">
             Start from an article URL{" "}
             <span className="ml-2 text-xs font-normal text-slate-500">
@@ -628,7 +649,6 @@ export function BlogInfographicStudio({
                     sectionId: input.id,
                     headline: input.title,
                     subheadline: "",
-                    aspectRatio: "4:5",
                     nodes: result.nodes,
                     visualBrief: {
                       ...result.brief,
@@ -637,14 +657,32 @@ export function BlogInfographicStudio({
                     footerSourceLabel: `Source: ${data.domain}`,
                     altText: `${input.title}: ${result.nodes.map((n) => n.title).join("; ")}`,
                   },
-                  active.prismLayout || "editorial",
+                  recommendPrismLayout(result.brief, result.nodes.length),
                 );
-                if (
-                  buildInfographicScene(next).issues.some(
-                    (i) => i.field === "Text fit",
-                  )
-                )
-                  next = { ...next, aspectRatio: "9:16" };
+                const newArticle = active.visualBrief?.sourceUrl !== data.url;
+                if (newArticle && data.brandTheme) {
+                  const hint = data.brandTheme;
+                  next = {
+                    ...next,
+                    extractedBrand: hint,
+                    signature: {
+                      ...normalizeSignature(active.signature),
+                      name: active.signature?.name || hint.siteName,
+                    },
+                    ...(hint.accent
+                      ? {
+                          brand: {
+                            ...active.brand,
+                            customColors: brandColors(
+                              hint.accent,
+                              !BLOG_INFOGRAPHIC_PALETTES[active.paletteId]
+                                .isLight,
+                            ),
+                          },
+                        }
+                      : {}),
+                  };
+                }
                 // Selecting a source replaces the current visual; it never creates a separate card for every paragraph.
                 update(next);
                 notify(
@@ -670,19 +708,19 @@ export function BlogInfographicStudio({
             role="tablist"
             aria-label="Editor controls"
             onKeyDown={(e) => {
-              const tabs = ["content", "design", "brand"] as const;
+              const tabs = ["content", "design"] as const;
               let next = tabs.indexOf(panel);
-              if (e.key === "ArrowRight") next = (next + 1) % 3;
-              else if (e.key === "ArrowLeft") next = (next + 2) % 3;
+              if (e.key === "ArrowRight") next = (next + 1) % 2;
+              else if (e.key === "ArrowLeft") next = (next + 1) % 2;
               else if (e.key === "Home") next = 0;
-              else if (e.key === "End") next = 2;
+              else if (e.key === "End") next = 1;
               else return;
               e.preventDefault();
               setPanel(tabs[next]);
               document.getElementById(`infographic-tab-${tabs[next]}`)?.focus();
             }}
           >
-            {(["content", "design", "brand"] as const).map((tab) => (
+            {(["content", "design"] as const).map((tab) => (
               <button
                 type="button"
                 id={`infographic-tab-${tab}`}
@@ -1061,42 +1099,18 @@ export function BlogInfographicStudio({
             )}
             {panel === "design" && (
               <>
-                <div>
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                    Canvas format
-                  </h3>
-                  <div className="mt-3 grid grid-cols-2 gap-2">
-                    {(
-                      Object.keys(
-                        ASPECT_RATIO_DIMENSIONS,
-                      ) as InfographicAspectRatio[]
-                    ).map((r) => (
-                      <button
-                        type="button"
-                        key={r}
-                        aria-pressed={active.aspectRatio === r}
-                        className={active.aspectRatio === r ? primary : button}
-                        onClick={() => update({ aspectRatio: r })}
-                      >
-                        {r}
-                        <span className="text-[10px] opacity-70">
-                          {r === "16:9"
-                            ? "Landscape"
-                            : r === "1:1"
-                              ? "Square"
-                              : r === "4:5"
-                                ? "Portrait"
-                                : "Tall"}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                  <p className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-                    Portrait and tall formats give longer explanations more
-                    breathing room.
+                <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-3 text-xs text-indigo-800 dark:border-indigo-800 dark:bg-indigo-950/30 dark:text-indigo-200">
+                  <p className="font-bold">
+                    Designed to fit · {dimensions.width} × {dimensions.height}
+                  </p>
+                  <p className="mt-1 leading-relaxed">
+                    Each layout has a fixed canvas. Choose another composition
+                    in the gallery for a different format.
                   </p>
                 </div>
-                {[6, 8, 9, 10, 23].includes(active.templateId) && (
+                {(active.visualEngine
+                  ? active.prismLayout === "comparison"
+                  : [6, 8, 9, 10, 23].includes(active.templateId)) && (
                   <div className="space-y-3">
                     <h3 className="text-sm font-bold text-slate-900 dark:text-white">
                       Comparison headings
@@ -1171,9 +1185,13 @@ export function BlogInfographicStudio({
                     className={button + " mt-3 w-full"}
                     onClick={() => {
                       if (active.visualEngine) {
-                        const layout =
-                          active.nodes.length <= 3
-                            ? "constellation"
+                        const layout = active.visualBrief
+                          ? recommendPrismLayout(
+                              active.visualBrief,
+                              active.nodes.length,
+                            )
+                          : active.nodes.length > 3
+                            ? "ribbon"
                             : "editorial";
                         update(withPrismLayout(active, layout));
                         notify(
@@ -1225,20 +1243,26 @@ export function BlogInfographicStudio({
                     </div>
                   </div>
                 )}
-              </>
-            )}
-            {panel === "brand" && (
-              <>
+                {active.visualEngine && (
+                  <InfographicDepthControls config={active} onChange={update} />
+                )}
                 <div>
                   <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
                     <Palette size={16} />
-                    Color collection
+                    Color themes
                   </h3>
+                  <p className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                    One click coordinates the gradient, panels, text and
+                    illustrations.
+                  </p>
                   <div className="mt-3 grid grid-cols-2 gap-2">
                     {Object.values(BLOG_INFOGRAPHIC_PALETTES).map((p) => (
                       <button
                         type="button"
-                        aria-pressed={active.paletteId === p.id}
+                        aria-pressed={
+                          active.paletteId === p.id &&
+                          !Object.keys(active.brand?.customColors || {}).length
+                        }
                         key={p.id}
                         onClick={() =>
                           update({
@@ -1246,9 +1270,14 @@ export function BlogInfographicStudio({
                             brand: { ...active.brand, customColors: {} },
                           })
                         }
-                        className={`rounded-xl border p-3 text-left ${active.paletteId === p.id ? "border-indigo-500 ring-1 ring-indigo-500" : "border-slate-200 dark:border-slate-700"}`}
+                        className={`rounded-xl border p-3 text-left ${active.paletteId === p.id && !Object.keys(active.brand?.customColors || {}).length ? "border-indigo-500 ring-1 ring-indigo-500" : "border-slate-200 dark:border-slate-700"}`}
                       >
-                        <span className="flex gap-1">
+                        <span
+                          className="flex h-14 items-end gap-1 rounded-lg p-2"
+                          style={{
+                            background: `linear-gradient(135deg, ${p.bgStart}, ${p.bgEnd})`,
+                          }}
+                        >
                           {[p.bgStart, p.accent, p.accentSecondary].map(
                             (c, i) => (
                               <span
@@ -1268,50 +1297,89 @@ export function BlogInfographicStudio({
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                    Custom colors
+                    Your brand color
                   </h3>
-                  <div className="mt-3 grid grid-cols-2 gap-3">
-                    {(
-                      [
-                        ["bgStart", "Background"],
-                        ["surface", "Panels"],
-                        ["accent", "Accent"],
-                        ["textMain", "Text"],
-                      ] as const
-                    ).map(([key, label]) => (
-                      <label
-                        key={key}
-                        className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300"
-                      >
-                        <input
-                          type="color"
-                          aria-label={label}
-                          className="h-9 w-9 cursor-pointer rounded-lg border-0 bg-transparent"
-                          value={
-                            active.brand?.customColors?.[key] ||
-                            BLOG_INFOGRAPHIC_PALETTES[active.paletteId][key]
-                          }
-                          onChange={(e) =>
-                            updateBrand({
-                              customColors: {
-                                ...active.brand?.customColors,
-                                [key]: e.target.value,
-                              },
-                            })
-                          }
-                        />
-                        {label}
-                      </label>
-                    ))}
-                  </div>
-                  <button
-                    type="button"
-                    className="mt-3 text-xs font-semibold text-indigo-500"
-                    onClick={() => updateBrand({ customColors: {} })}
-                  >
-                    Reset custom colors
-                  </button>
+                  <label className="mt-3 flex items-center gap-3 text-xs">
+                    <input
+                      type="color"
+                      aria-label="Brand color"
+                      className="h-10 w-12 cursor-pointer rounded-lg border-0 bg-transparent"
+                      value={
+                        active.brand?.customColors?.accent ||
+                        BLOG_INFOGRAPHIC_PALETTES[active.paletteId].accent
+                      }
+                      onChange={(e) =>
+                        updateBrand({
+                          customColors: brandColors(
+                            e.target.value,
+                            !BLOG_INFOGRAPHIC_PALETTES[active.paletteId]
+                              .isLight,
+                          ),
+                        })
+                      }
+                    />
+                    Build a coordinated theme from your color
+                  </label>
+                  {active.extractedBrand && (
+                    <p className="mt-2 text-xs leading-relaxed text-slate-500">
+                      {active.extractedBrand.accent
+                        ? `Brand hint from ${active.extractedBrand.source}: ${active.extractedBrand.accent}. Review or replace it here.`
+                        : "No reliable brand color was found. Your selected theme is preserved."}
+                    </p>
+                  )}
+                  <details className="mt-3">
+                    <summary className="cursor-pointer text-xs font-semibold">
+                      Fine-tune individual colors
+                    </summary>
+                    <div className="mt-3 grid grid-cols-2 gap-3">
+                      {(
+                        [
+                          ["bgStart", "Background"],
+                          ["surface", "Panels"],
+                          ["accent", "Accent"],
+                          ["textMain", "Text"],
+                        ] as const
+                      ).map(([key, label]) => (
+                        <label
+                          key={key}
+                          className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300"
+                        >
+                          <input
+                            type="color"
+                            aria-label={label}
+                            className="h-9 w-9 cursor-pointer rounded-lg border-0 bg-transparent"
+                            value={
+                              active.brand?.customColors?.[key] ||
+                              BLOG_INFOGRAPHIC_PALETTES[active.paletteId][key]
+                            }
+                            onChange={(e) =>
+                              updateBrand({
+                                customColors: {
+                                  ...active.brand?.customColors,
+                                  [key]: e.target.value,
+                                },
+                              })
+                            }
+                          />
+                          {label}
+                        </label>
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      className="mt-3 text-xs font-semibold text-indigo-500"
+                      onClick={() => updateBrand({ customColors: {} })}
+                    >
+                      Reset custom colors
+                    </button>
+                  </details>
                 </div>
+                {active.visualEngine && (
+                  <InfographicSignatureControls
+                    config={active}
+                    onChange={update}
+                  />
+                )}
                 <div className="space-y-4 border-t border-slate-200 pt-5 dark:border-slate-700">
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white">
                     Brand logo
@@ -1399,11 +1467,14 @@ export function BlogInfographicStudio({
                             patchInfographic(c, {
                               paletteId: active.paletteId,
                               brand: { ...active.brand },
+                              depth: active.depth,
+                              signature: active.signature,
+                              extractedBrand: active.extractedBrand,
                             }),
                           ),
                         );
                         notify(
-                          "Applied colors, logo and illustration to all sections.",
+                          "Applied colors, depth and branding to all sections.",
                         );
                       }}
                     >
@@ -1612,23 +1683,28 @@ export function BlogInfographicStudio({
                 <button
                   type="button"
                   onClick={() => {
-                    update({ aspectRatio: "9:16" });
                     setPanel("design");
+                    document
+                      .getElementById("infographic-layouts")
+                      ?.scrollIntoView({ behavior: "smooth", block: "start" });
                   }}
                   className="mt-3 font-bold underline"
                 >
-                  Try the tall format
+                  Choose another layout
                 </button>
               )}
             </div>
           )}
-          <div className="rounded-2xl border border-indigo-200 bg-white p-4 dark:border-indigo-500/30 dark:bg-slate-900 sm:p-5">
+          <div
+            id="infographic-layouts"
+            className="scroll-mt-28 rounded-2xl border border-indigo-200 bg-white p-4 dark:border-indigo-500/30 dark:bg-slate-900 sm:p-5"
+          >
             <h3 className="text-xl font-bold text-slate-900 dark:text-white">
               An editorial collection for your section
             </h3>
             <p className="mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-              Three original compositions. Your explanations, palette and logo
-              stay in place when you switch.
+              Six original compositions with fixed canvases. Your explanations,
+              colors and logo stay in place when you switch.
             </p>
             <div className="mt-4 grid gap-4 sm:grid-cols-3">
               {PRISM_LAYOUTS.map((layout) => (

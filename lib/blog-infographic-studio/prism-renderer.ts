@@ -1,9 +1,17 @@
+import { sourceId } from "./article-source";
 /** Prism Forge · Original editorial masters compiled with native DOM-free SVG AST API. */
 import type {
   BlogInfographicConfig,
   BlogInfographicNodeItem,
 } from "@/lib/blog-writer/canonical-state";
-import { ASPECT_RATIO_DIMENSIONS, BLOG_INFOGRAPHIC_PALETTES } from "./palettes";
+import { getInfographicDimensions } from "./layout-registry";
+import {
+  infographicColors,
+  normalizeDepth,
+  normalizeSignature,
+  contrast,
+  mixColor,
+} from "./appearance";
 
 export type JSXNode =
   | string
@@ -26,7 +34,16 @@ function escapeXml(str: unknown): string {
     .replace(/'/g, "&apos;");
 }
 
-const CAMEL_PRESERVE = new Set(["viewBox", "preserveAspectRatio", "patternUnits"]);
+const CAMEL_PRESERVE = new Set([
+  "viewBox",
+  "preserveAspectRatio",
+  "patternUnits",
+  "gradientUnits",
+  "gradientTransform",
+  "filterUnits",
+  "primitiveUnits",
+  "stdDeviation",
+]);
 function svgAttrName(key: string): string {
   if (CAMEL_PRESERVE.has(key)) return key;
   if (key === "className") return "class";
@@ -141,20 +158,101 @@ const color = (value: string | undefined, fallback: string) =>
   /^#[0-9a-f]{6}$/i.test(value || "") ? value! : fallback;
 
 const ARIAL_GLYPH_WIDTHS: Record<string, number> = {
-  " ": 0.29, "!": 0.29, "\"": 0.37, "#": 0.57, "$": 0.57, "%": 0.91, "&": 0.68,
-  "'": 0.2, "(": 0.34, ")": 0.34, "*": 0.4, "+": 0.6, ",": 0.29, "-": 0.34,
-  ".": 0.29, "/": 0.29, "0": 0.57, "1": 0.57, "2": 0.57, "3": 0.57, "4": 0.57,
-  "5": 0.57, "6": 0.57, "7": 0.57, "8": 0.57, "9": 0.57, ":": 0.29, ";": 0.29,
-  "<": 0.6, "=": 0.6, ">": 0.6, "?": 0.57, "@": 1.04, "A": 0.68, "B": 0.68,
-  "C": 0.74, "D": 0.74, "E": 0.68, "F": 0.63, "G": 0.79, "H": 0.74, "I": 0.29,
-  "J": 0.51, "K": 0.68, "L": 0.57, "M": 0.85, "N": 0.74, "O": 0.79, "P": 0.68,
-  "Q": 0.79, "R": 0.74, "S": 0.68, "T": 0.63, "U": 0.74, "V": 0.68, "W": 0.96,
-  "X": 0.68, "Y": 0.68, "Z": 0.63, "[": 0.29, "\\": 0.29, "]": 0.29, "^": 0.48,
-  "_": 0.51, "`": 0.34, "a": 0.57, "b": 0.57, "c": 0.51, "d": 0.57, "e": 0.57,
-  "f": 0.29, "g": 0.57, "h": 0.57, "i": 0.23, "j": 0.23, "k": 0.51, "l": 0.23,
-  "m": 0.85, "n": 0.57, "o": 0.57, "p": 0.57, "q": 0.57, "r": 0.34, "s": 0.51,
-  "t": 0.29, "u": 0.57, "v": 0.51, "w": 0.74, "x": 0.51, "y": 0.51, "z": 0.51,
-  "{": 0.34, "|": 0.27, "}": 0.34, "~": 0.6,
+  " ": 0.29,
+  "!": 0.29,
+  '"': 0.37,
+  "#": 0.57,
+  $: 0.57,
+  "%": 0.91,
+  "&": 0.68,
+  "'": 0.2,
+  "(": 0.34,
+  ")": 0.34,
+  "*": 0.4,
+  "+": 0.6,
+  ",": 0.29,
+  "-": 0.34,
+  ".": 0.29,
+  "/": 0.29,
+  "0": 0.57,
+  "1": 0.57,
+  "2": 0.57,
+  "3": 0.57,
+  "4": 0.57,
+  "5": 0.57,
+  "6": 0.57,
+  "7": 0.57,
+  "8": 0.57,
+  "9": 0.57,
+  ":": 0.29,
+  ";": 0.29,
+  "<": 0.6,
+  "=": 0.6,
+  ">": 0.6,
+  "?": 0.57,
+  "@": 1.04,
+  A: 0.68,
+  B: 0.68,
+  C: 0.74,
+  D: 0.74,
+  E: 0.68,
+  F: 0.63,
+  G: 0.79,
+  H: 0.74,
+  I: 0.29,
+  J: 0.51,
+  K: 0.68,
+  L: 0.57,
+  M: 0.85,
+  N: 0.74,
+  O: 0.79,
+  P: 0.68,
+  Q: 0.79,
+  R: 0.74,
+  S: 0.68,
+  T: 0.63,
+  U: 0.74,
+  V: 0.68,
+  W: 0.96,
+  X: 0.68,
+  Y: 0.68,
+  Z: 0.63,
+  "[": 0.29,
+  "\\": 0.29,
+  "]": 0.29,
+  "^": 0.48,
+  _: 0.51,
+  "`": 0.34,
+  a: 0.57,
+  b: 0.57,
+  c: 0.51,
+  d: 0.57,
+  e: 0.57,
+  f: 0.29,
+  g: 0.57,
+  h: 0.57,
+  i: 0.23,
+  j: 0.23,
+  k: 0.51,
+  l: 0.23,
+  m: 0.85,
+  n: 0.57,
+  o: 0.57,
+  p: 0.57,
+  q: 0.57,
+  r: 0.34,
+  s: 0.51,
+  t: 0.29,
+  u: 0.57,
+  v: 0.51,
+  w: 0.74,
+  x: 0.51,
+  y: 0.51,
+  z: 0.51,
+  "{": 0.34,
+  "|": 0.27,
+  "}": 0.34,
+  "~": 0.6,
 };
 
 const widths = new Map<string, number>();
@@ -285,187 +383,395 @@ function pictogram(
     icons[icon].map((d) => path(d, ink, 1.5)),
   );
 }
-function luminance(hex: string) {
-  const rgb = [1, 3, 5]
-    .map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
-    .map((c) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
-  return rgb[0] * 0.2126 + rgb[1] * 0.7152 + rgb[2] * 0.0722;
-}
-const contrast = (a: string, b: string) =>
-  (Math.max(luminance(a), luminance(b)) + 0.05) /
-  (Math.min(luminance(a), luminance(b)) + 0.05);
-
 export function buildPrismScene(config: BlogInfographicConfig): {
   svg: string;
   issues: Issue[];
 } {
-  const { width: W, height: H } = ASPECT_RATIO_DIMENSIONS[config.aspectRatio];
-  const p = BLOG_INFOGRAPHIC_PALETTES[config.paletteId],
-    custom = config.brand?.customColors;
-  const bg = color(custom?.bgStart, p.bgStart),
-    surface = color(custom?.surface, p.surface),
-    accent = color(custom?.accent, p.accent),
-    ink = color(custom?.textMain, p.textMain);
-  const light = luminance(bg) > 0.45,
-    muted = light ? "#495775" : "#CBD5E1";
-  const second = light ? "#078479" : "#5EEAD4",
-    third = light ? "#8B45C4" : "#D8B4FE";
-  const colors = [accent, second, third, light ? "#B86E0B" : "#FBBF24"];
-  const M = W * 0.0667,
-    contentW = W - M * 2,
-    footerY = H - 70;
-  const issues: Issue[] = [];
-  const parts: JSXNode[] = [];
+  const { width: W, height: H } = getInfographicDimensions(config);
+  const { bg, bgEnd, surface, ink, muted, accent, colors, light } =
+    infographicColors(config);
+  const depth = normalizeDepth(config.depth),
+    signature = normalizeSignature(config.signature);
+  const scale = Math.min(1.5, Math.max(0.7, config.brand?.logoScale || 1));
+  const logo =
+    signature.showLogo !== false &&
+    config.brand?.logoDataUrl &&
+    /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=\s]+$/.test(
+      config.brand.logoDataUrl,
+    )
+      ? config.brand.logoDataUrl
+      : "";
+  const hasSignature = signature.visible && (logo || signature.name?.trim());
+  const M = Math.round(W * 0.0667),
+    contentW = W - M * 2;
+  const signatureH = 44 * scale + (signature.padding || 12) * 2;
+  const footerY =
+    H -
+    (hasSignature && signature.placement === "footer" ? signatureH + 78 : 78);
+  const issues: Issue[] = [],
+    parts: JSXNode[] = [];
   const layout = config.prismLayout || "editorial";
-  if (contrast(ink, bg) < 4.5 || contrast(ink, surface) < 4.5)
-    issues.push({
-      field: "Colors",
-      message:
-        "Text contrast is too low. Adjust the text, background or surface color before exporting.",
-    });
-  if (contrast(accent, surface) < 3)
-    issues.push({
-      field: "Colors",
-      message:
-        "The accent is too faint against the surface. Choose a stronger accent so the topic icons remain visible.",
-    });
+  // Namespaced definitions also work when several exported SVGs are embedded inline.
+  const prefix = `prism-${sourceId(JSON.stringify([layout, W, H, bg, bgEnd, surface, accent, colors, depth]))}`;
+  const svgId = (name: string) => `${prefix}-${name}`;
+  const svgRef = (name: string) => `url(#${svgId(name)})`;
+
+  const addIssue = (field: string, message: string) =>
+    issues.push({ field, message });
+  if (
+    contrast(ink, bg) < 4.5 ||
+    contrast(ink, surface) < 4.5 ||
+    contrast(ink, bgEnd) < 4.5 ||
+    contrast(muted, surface) < 4.5
+  )
+    addIssue(
+      "Colors",
+      "Text contrast is too low. Choose a coordinated theme or adjust your custom background, surface and text colors.",
+    );
   if (!config.headline.trim())
-    issues.push({
-      field: "Headline",
-      message: "Add a headline before exporting.",
-    });
+    addIssue("Headline", "Add a headline before exporting.");
   if (config.nodes.length < 2 || config.nodes.length > 6)
-    issues.push({
-      field: "Points",
-      message:
-        "Use 2–6 explained points in these editorial layouts. Split larger sections into another infographic.",
-    });
-  const gradients = el("defs", {}, [
-    el("linearGradient", { id: "prism-bg", x1: 0, y1: 0, x2: 1, y2: 1 }, [
-      el("stop", { offset: 0, stopColor: bg }),
-      el("stop", { offset: 1, stopColor: color(custom?.bgStart, p.bgEnd) }),
-    ]),
-    el("linearGradient", { id: "prism-ribbon", x1: 0, y1: 0, x2: 1, y2: 0 }, [
-      el("stop", {
-        offset: 0,
-        stopColor: accent,
-        stopOpacity: light ? 0.13 : 0.3,
-      }),
-      el("stop", { offset: 1, stopColor: second, stopOpacity: 0.02 }),
-    ]),
-    el(
-      "pattern",
-      {
-        id: "prism-dots",
-        width: 32,
-        height: 32,
-        patternUnits: "userSpaceOnUse",
-      },
-      circle(2, 2, 1, accent, { opacity: 0.1 }),
-    ),
-  ]);
+    addIssue(
+      "Points",
+      "Use 2–6 explained points. Split larger sections into another infographic.",
+    );
+  if (layout === "comparison" && config.nodes.length % 2 !== 0)
+    addIssue(
+      "Comparison",
+      "Comparison points are paired left, right, left, right. Add or remove a point to create complete pairs.",
+    );
+  const strength = depth.strength / 100,
+    distance = depth.distance * strength;
+  const dx =
+    depth.direction === "left"
+      ? -distance
+      : depth.direction === "right"
+        ? distance
+        : 0;
+  const shadow =
+    depth.preset !== "flat" && strength > 0 ? { filter: svgRef("depth") } : {};
   parts.push(
-    gradients,
-    rect(0, 0, W, H, "url(#prism-bg)"),
-    rect(0, 0, W, H, "url(#prism-dots)"),
+    el("defs", {}, [
+      el(
+        "linearGradient",
+        { id: svgId("bg"), x1: "0%", y1: "0%", x2: "100%", y2: "100%" },
+        [
+          el("stop", { offset: 0, stopColor: bg }),
+          el("stop", { offset: 1, stopColor: bgEnd }),
+        ],
+      ),
+      el(
+        "linearGradient",
+        { id: svgId("band"), x1: "0%", y1: "0%", x2: "100%", y2: "100%" },
+        [
+          el("stop", {
+            offset: 0,
+            stopColor: accent,
+            stopOpacity: light ? 0.14 : 0.28,
+          }),
+          el("stop", { offset: 1, stopColor: colors[1], stopOpacity: 0.025 }),
+        ],
+      ),
+      el("radialGradient", { id: svgId("glow") }, [
+        el("stop", { offset: 0, stopColor: accent, stopOpacity: 0.17 }),
+        el("stop", { offset: 1, stopColor: accent, stopOpacity: 0 }),
+      ]),
+      // User-space bounds encompass every surface, including the largest supported shadow.
+      el(
+        "filter",
+        {
+          id: svgId("depth"),
+          x: -80,
+          y: -80,
+          width: W + 160,
+          height: H + 160,
+          filterUnits: "userSpaceOnUse",
+          colorInterpolationFilters: "sRGB",
+        },
+        el("feDropShadow", {
+          dx,
+          dy: distance,
+          stdDeviation: depth.softness * strength,
+          floodColor: light ? "#142445" : "#000000",
+          floodOpacity: depth.opacity * strength,
+        }),
+      ),
+    ]),
+  );
+  parts.push(
+    rect(0, 0, W, H, svgRef("bg")),
+    circle(W * 0.98, H * 0.18, W * 0.65, svgRef("glow")),
   );
   parts.push(
     path(
-      `M ${W * 0.68} -90 C ${W * 0.1} ${H * 0.25}, ${W * 1.5} ${H * 0.3}, ${W * 0.8} ${H * 0.86} S ${W * 0.3} ${H * 1.1}, -80 ${H * 0.85}`,
+      `M ${W * 0.66} -70 C ${W * 0.2} ${H * 0.28}, ${W * 1.35} ${H * 0.4}, ${W * 0.8} ${H * 0.85}`,
       accent,
-      100,
+      90,
       { opacity: 0.045 },
     ),
-    circle(W * 0.95, H * 0.03, W * 0.27, accent, { opacity: 0.04 }),
   );
-  // Quiet print-like framing belongs to the graphic; editor labels never enter the SVG.
-  parts.push(rect(M, 58, 54, 6, accent, 3), rect(M + 64, 58, 20, 6, second, 3));
-  const titleSize = config.aspectRatio === "16:9" ? 60 : 62;
+  // Drawing-only backgrounds: never put editor labels or made-up data in the artwork.
+  const surfaceRect = (
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    tint = false,
+  ) => {
+    if (depth.preset === "layered" && strength > 0)
+      parts.push(
+        rect(
+          x + 5 * strength,
+          y + 8 * strength,
+          w,
+          h,
+          mixColor(surface, accent, 0.18),
+          22,
+        ),
+      );
+    parts.push(
+      rect(x, y, w, h, surface, 22, {
+        ...shadow,
+        stroke: mixColor(surface, accent, 0.18),
+        strokeWidth: 1,
+      }),
+    );
+    if (tint) parts.push(rect(x, y, w, h, svgRef("band"), 22));
+  };
+  const medallion = (
+    n: BlogInfographicNodeItem,
+    x: number,
+    y: number,
+    r: number,
+    c: string,
+  ) => {
+    parts.push(
+      circle(x, y, r + 14, c, { opacity: 0.08 }),
+      circle(x, y, r, surface, {
+        ...shadow,
+        stroke: c,
+        strokeOpacity: 0.3,
+        strokeWidth: 1.5,
+      }),
+      pictogram(semanticIcon(n), x - r * 0.55, y - r * 0.55, r * 1.1, c),
+    );
+  };
+  const drawSignature = (y: number) => {
+    if (!hasSignature) return;
+    const pad = signature.padding || 12,
+      lw = logo ? 120 * scale : 0,
+      lh = 40 * scale;
+    const name = signature.name?.trim() || "";
+    const nameW = name
+      ? Math.min(
+          contentW - lw - (logo ? 44 : 0) - pad * 2,
+          Math.max(100, widthOf(name, 22, true)),
+        )
+      : 0;
+    const nameHeight = name ? wrap(name, nameW, 22, true).length * 28.6 : 0;
+    if (nameHeight > 58)
+      addIssue(
+        "Website name",
+        "Shorten the website display name so it fits on two lines.",
+      );
+    const blockW = lw + (name && logo ? 18 : 0) + nameW + pad * 2;
+    const x = signature.align === "left" ? M : W - M - blockW;
+    if (config.brand?.logoStyle !== "plain" && config.brand?.logoStyle)
+      parts.push(
+        rect(
+          x,
+          y,
+          blockW,
+          signatureH,
+          config.brand.logoStyle === "dark" ? "#0F172A" : "#FFFFFF",
+          12,
+        ),
+      );
+    const nameInk =
+      config.brand?.logoStyle === "dark"
+        ? "#F8FAFC"
+        : config.brand?.logoStyle === "white"
+          ? "#101827"
+          : ink;
+    if (logo)
+      parts.push(
+        el("image", {
+          href: logo,
+          x: x + pad,
+          y: y + (signatureH - lh) / 2,
+          width: lw,
+          height: lh,
+          preserveAspectRatio: "xMidYMid meet",
+        }),
+      );
+    if (name)
+      parts.push(
+        textBlock(
+          name,
+          x + pad + lw + (logo ? 18 : 0),
+          y + Math.max(pad, (signatureH - nameHeight) / 2),
+          nameW,
+          22,
+          nameInk,
+          true,
+        ).node,
+      );
+  };
+  let headerTop = 54;
+  if (hasSignature && signature.placement === "header") {
+    drawSignature(32);
+    headerTop = 32 + signatureH + 30;
+  }
+  parts.push(
+    rect(M, headerTop, 58, 6, accent, 3),
+    rect(M + 69, headerTop, 23, 6, colors[1], 3),
+  );
   const headline = textBlock(
     config.headline,
     M,
-    96,
+    headerTop + 32,
     contentW,
-    titleSize,
+    W > 1200 ? 60 : 62,
     ink,
     true,
   );
   parts.push(headline.node);
-  let top = 96 + headline.height + 20;
+  let top = headerTop + 32 + headline.height + 20;
   if (config.subheadline.trim()) {
     const sub = textBlock(config.subheadline, M, top, contentW, 26, muted);
     parts.push(sub.node);
     top += sub.height + 20;
   }
-  top += 26;
+  top += 30;
   const nodes = config.nodes.slice(0, 6);
-  const safeNodes = nodes.map((n) => {
+  nodes.forEach((n) => {
     if (
       !n.title.trim() ||
       !n.detail.trim() ||
       n.title.trim().toLowerCase() === n.detail.trim().toLowerCase()
     )
-      issues.push({
-        field: n.title || "Point",
-        message:
-          "Every point needs a distinct title and an explanatory detail. Headings alone cannot make a useful infographic.",
-      });
-    return n;
+      addIssue(
+        n.title || "Point",
+        "Every point needs a distinct title and an explanatory detail. Headings alone cannot make a useful infographic.",
+      );
   });
   const bodySize = 27,
-    labelSize = 33;
-  let bottom = top;
+    labelSize = 33,
+    badgeOffset = layout === "comparison" ? 0 : 30;
+  const textHeight = (n: BlogInfographicNodeItem, w: number) =>
+    badgeOffset +
+    wrap(n.title, w, labelSize, true).length * labelSize * 1.3 +
+    12 +
+    wrap(n.detail, w, bodySize).length * bodySize * 1.3;
   const drawText = (
     n: BlogInfographicNodeItem,
     x: number,
     y: number,
     w: number,
-    index: number,
+    i: number,
   ) => {
-    const badgeText = n.badge.trim() || String(index + 1).padStart(2, "0");
-    const badge = textBlock(badgeText, x, y, w, 19, colors[index % 4], true);
-    const title = textBlock(n.title, x, y + 34, w, labelSize, ink, true);
+    const badge = textBlock(
+      n.badge.trim() || String(i + 1).padStart(2, "0"),
+      x,
+      y,
+      w,
+      19,
+      colors[i % 4],
+      true,
+    );
+    const title = textBlock(
+      n.title,
+      x,
+      y + badgeOffset,
+      w,
+      labelSize,
+      ink,
+      true,
+    );
     const detail = textBlock(
       n.detail,
       x,
-      y + 34 + title.height + 12,
+      y + badgeOffset + title.height + 12,
       w,
       bodySize,
       muted,
     );
-    parts.push(badge.node, title.node, detail.node);
-    return 34 + title.height + 12 + detail.height;
+    if (badgeOffset) parts.push(badge.node);
+    parts.push(title.node, detail.node);
+    return badgeOffset + title.height + 12 + detail.height;
   };
-  if (layout === "constellation") {
-    const orbitH = config.aspectRatio === "16:9" ? 140 : 240;
-    const cy = top + orbitH / 2,
+  let bottom = top;
+  if (layout === "comparison") {
+    const gap = 42,
+      cellW = (contentW - gap) / 2;
+    const labels = config.comparisonLabels || [
+      "Perspective A",
+      "Perspective B",
+    ];
+    const labelH =
+      Math.max(
+        ...labels.map((t) => wrap(t, cellW - 48, 32, true).length * 41.6),
+      ) + 30;
+    [0, 1].forEach((k) => {
+      surfaceRect(M + k * (cellW + gap), top, cellW, labelH, true);
+      parts.push(
+        textBlock(
+          labels[k],
+          M + k * (cellW + gap) + 24,
+          top + 14,
+          cellW - 48,
+          32,
+          ink,
+          true,
+        ).node,
+      );
+    });
+    let y = top + labelH + 20;
+    for (let i = 0; i < nodes.length; i += 2) {
+      const row = nodes.slice(i, i + 2),
+        textW = cellW - 124;
+      const h = Math.max(...row.map((n) => textHeight(n, textW)), 110) + 28;
+      row.forEach((n, k) => {
+        const x = M + k * (cellW + gap);
+        surfaceRect(x, y, cellW, h);
+        medallion(n, x + 55, y + 57, 28, colors[k]);
+        drawText(n, x + 100, y + 14, textW, i + k);
+      });
+      y += h + 20;
+    }
+    bottom = y - 20;
+  } else if (layout === "constellation") {
+    const cy = top + 125,
       cx = W / 2,
-      radius = Math.min(contentW * 0.34, 330);
+      radius = contentW * 0.34;
     parts.push(
       el("ellipse", {
         cx,
         cy,
         rx: radius,
-        ry: orbitH * 0.36,
+        ry: 98,
         fill: "none",
         stroke: accent,
         strokeWidth: 2,
         strokeDasharray: "5 9",
-        opacity: 0.45,
+        opacity: 0.4,
       }),
     );
     nodes.forEach((n, i) => {
-      const angle = -Math.PI / 2 + (Math.PI * 2 * i) / nodes.length,
-        x = cx + Math.cos(angle) * radius,
-        y = cy + Math.sin(angle) * orbitH * 0.36;
+      const a = -Math.PI / 2 + (Math.PI * 2 * i) / nodes.length,
+        x = cx + Math.cos(a) * radius,
+        y = cy + Math.sin(a) * 98;
       parts.push(
         path(`M ${cx} ${cy} L ${x} ${y}`, colors[i % 4], 2, { opacity: 0.3 }),
-        circle(x, y, 37, surface, { stroke: colors[i % 4], strokeWidth: 2 }),
-        pictogram(semanticIcon(n), x - 17, y - 17, 34, colors[i % 4]),
       );
+      medallion(n, x, y, 33, colors[i % 4]);
     });
     parts.push(
-      circle(cx, cy, 64, surface, { stroke: accent, strokeWidth: 2 }),
+      circle(cx, cy, 64, surface, {
+        ...shadow,
+        stroke: accent,
+        strokeWidth: 2,
+      }),
       pictogram("idea", cx - 19, cy - 35, 38, accent),
     );
     const center = textBlock(
@@ -479,173 +785,130 @@ export function buildPrismScene(config: BlogInfographicConfig): {
       true,
     );
     if (center.height > 50)
-      issues.push({
-        field: "Center label",
-        message:
-          "Use a shorter center label so it fits inside the concept hub.",
-      });
+      addIssue(
+        "Center label",
+        "Use a shorter center label so it fits inside the concept hub.",
+      );
     parts.push(center.node);
-    const columns =
-      config.aspectRatio === "16:9"
-        ? Math.min(nodes.length, nodes.length === 4 ? 2 : 3)
-        : config.aspectRatio === "1:1"
-          ? 2
-          : 1;
-    const gap = 34,
-      cellW = (contentW - gap * (columns - 1)) / columns;
-    let rowY = top + orbitH + 26;
-    for (let i = 0; i < safeNodes.length; i += columns) {
-      let height = 0;
-      safeNodes.slice(i, i + columns).forEach((n, k) => {
-        const x = M + k * (cellW + gap),
-          c = colors[(i + k) % 4];
-        parts.push(rect(x, rowY, 4, 32, c, 2));
-        height = Math.max(height, drawText(n, x + 20, rowY, cellW - 20, i + k));
-      });
-      rowY += height + 32;
-    }
-    bottom = rowY;
-  } else if (config.aspectRatio === "16:9") {
-    const columns = Math.min(nodes.length, nodes.length === 4 ? 2 : 3),
-      gap = 34,
-      cellW = (contentW - gap * (columns - 1)) / Math.max(1, columns);
-    let rowY = top;
-    for (let i = 0; i < safeNodes.length; i += columns) {
-      let height = 0;
-      safeNodes.slice(i, i + columns).forEach((n, k) => {
-        const x = M + k * (cellW + gap),
-          c = colors[(i + k) % 4];
-        if (layout === "ribbon")
-          parts.push(
-            rect(
-              x - 12,
-              rowY - 14,
-              cellW + 24,
-              footerY - rowY - 35,
-              "url(#prism-ribbon)",
-              20,
-            ),
-          );
-        parts.push(
-          circle(x + 42, rowY + 42, 42, c, { opacity: 0.1 }),
-          pictogram(semanticIcon(n), x + 16, rowY + 16, 52, c),
-        );
-        height = Math.max(
-          height,
-          100 + drawText(n, x, rowY + 100, cellW, i + k),
-        );
-      });
-      rowY += height + 32;
-    }
-    bottom = rowY;
-  } else {
-    let y = top;
-    const heights = safeNodes.map((n) => {
-      const textW = contentW - 205;
-      return (
-        Math.max(
-          148,
-          34 +
-            wrap(n.title, textW, labelSize, true).length * labelSize * 1.3 +
-            12 +
-            wrap(n.detail, textW, bodySize).length * bodySize * 1.3,
-        ) + 36
-      );
+    let y = top + 280;
+    nodes.forEach((n, i) => {
+      const h = textHeight(n, contentW - 44);
+      parts.push(rect(M, y + 4, 5, h - 8, colors[i % 4], 2));
+      drawText(n, M + 28, y, contentW - 44, i);
+      y += h + 30;
     });
+    bottom = y;
+  } else {
+    const isTimeline = layout === "timeline",
+      isChecklist = layout === "checklist",
+      isRibbon = layout === "ribbon";
+    const textW = contentW - (isChecklist ? 236 : isTimeline ? 166 : 205);
+    const heights = nodes.map(
+      (n) => Math.max(isChecklist ? 150 : 140, textHeight(n, textW)) + 38,
+    );
     const total =
-      heights.reduce((n, h) => n + h, 0) + Math.max(0, nodes.length - 1) * 22;
-    const extra = Math.max(0, footerY - 44 - top - total);
-    safeNodes.forEach((n, i) => {
-      const rightIcon = layout === "ribbon" && i % 2 === 1;
-      const h = heights[i] + Math.min(extra / Math.max(1, nodes.length), 26),
-        c = colors[i % 4];
-      if (layout === "ribbon") {
-        parts.push(
-          rect(M - 16, y - 4, contentW + 32, h + 4, surface, 22),
-          rect(M - 16, y - 4, contentW + 32, h + 4, "url(#prism-ribbon)", 22),
-        );
-      } else {
-        parts.push(
-          path(`M ${M + 180} ${y + h + 10} H ${W - M}`, c, 1, { opacity: 0.2 }),
-        );
-      }
-      const ix = rightIcon ? W - M - 136 : M + 7,
-        iy = y + Math.max(0, (h - 132) / 2);
+      heights.reduce((a, b) => a + b, 0) + Math.max(0, nodes.length - 1) * 26;
+    const extra = Math.min(
+      24,
+      Math.max(0, footerY - 42 - top - total) / Math.max(1, nodes.length),
+    );
+    if (isTimeline && nodes.length > 1)
       parts.push(
-        circle(ix + 64, iy + 64, 65, c, { opacity: light ? 0.09 : 0.18 }),
-        circle(ix + 64, iy + 64, 48, surface, {
-          stroke: c,
-          strokeWidth: 1.5,
-          strokeOpacity: 0.3,
-        }),
-        pictogram(semanticIcon(n), ix + 31, iy + 31, 66, c),
+        path(
+          `M ${M + 42} ${top + 44} V ${top + total + extra * nodes.length - heights[heights.length - 1] + 44}`,
+          accent,
+          5,
+          { opacity: 0.3 },
+        ),
       );
-      const tx = rightIcon ? M + 20 : M + 184;
-      drawText(n, tx, y + 16, contentW - 205, i);
-      y += h + 22;
+    let y = top;
+    nodes.forEach((n, i) => {
+      const h = heights[i] + extra,
+        c = colors[i % 4];
+      if (isTimeline) {
+        surfaceRect(M + 112, y, contentW - 112, h);
+        parts.push(
+          circle(M + 42, y + 44, 32, surface, {
+            ...shadow,
+            stroke: c,
+            strokeWidth: 3,
+          }),
+        );
+        parts.push(
+          textBlock(
+            String(i + 1).padStart(2, "0"),
+            M + 18,
+            y + 29,
+            48,
+            22,
+            c,
+            true,
+            true,
+          ).node,
+        );
+        drawText(n, M + 138, y + 18, textW, i);
+      } else if (isChecklist) {
+        surfaceRect(M, y, contentW, h, i % 2 === 0);
+        parts.push(
+          rect(M + 24, y + 26, 42, 42, c, 12),
+          path(
+            `m ${M + 34} ${y + 47} 8 8 15 -18`,
+            light ? "#FFFFFF" : "#081322",
+            4,
+          ),
+        );
+        drawText(n, M + 92, y + 18, textW, i);
+        medallion(n, W - M - 62, y + h / 2, 36, c);
+      } else {
+        const right = isRibbon && i % 2 === 1;
+        if (isRibbon) surfaceRect(M, y, contentW, h, true);
+        else
+          parts.push(
+            path(`M ${M + 180} ${y + h + 12} H ${W - M}`, c, 1, {
+              opacity: 0.2,
+            }),
+          );
+        const ix = right ? W - M - 70 : M + 68;
+        medallion(n, ix, y + h / 2, 48, c);
+        drawText(n, right ? M + 18 : M + 184, y + 18, textW, i);
+      }
+      y += h + 26;
     });
     bottom = y;
   }
-  if (bottom > footerY - 30)
-    issues.push({
-      field: "Text fit",
-      message: `This ${config.aspectRatio} composition needs more space. Switch to 9:16, shorten the explanations, or split the section. Export is paused to prevent cropped text.`,
-    });
-  // A real source/footer stays with the image, with room reserved for a raster brand mark.
+  if (bottom > footerY - 26)
+    addIssue(
+      "Text fit",
+      "This fixed composition is full. Shorten the explanations, choose a roomier layout, or split the section. Export is paused to prevent cropped text.",
+    );
   parts.push(
-    path(`M ${M} ${footerY - 10} H ${W - M}`, accent, 1, { opacity: 0.25 }),
+    path(`M ${M} ${footerY - 8} H ${W - M}`, accent, 1, { opacity: 0.25 }),
   );
   const footer = textBlock(
     config.footerSourceLabel,
     M,
     footerY + 8,
-    contentW - (config.brand?.logoDataUrl ? 190 : 0),
+    contentW,
     18,
     muted,
   );
-  if (footer.height > 44)
-    issues.push({
-      field: "Source label",
-      message:
-        "Shorten the source label to two lines; keep the full source URL in the project.",
-    });
-  parts.push(footer.node);
-  if (
-    config.brand?.logoDataUrl &&
-    /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=\s]+$/.test(
-      config.brand.logoDataUrl,
-    )
-  ) {
-    const scale = Math.min(1.5, Math.max(0.7, config.brand.logoScale || 1)),
-      w = 120 * scale,
-      h = 32 * scale;
-    if (config.brand.logoStyle !== "plain")
-      parts.push(
-        rect(
-          W - M - w - 12,
-          footerY + 5 - 8,
-          w + 24,
-          h + 16,
-          config.brand.logoStyle === "dark" ? "#0F172A" : "#FFFFFF",
-          8,
-        ),
-      );
-    parts.push(
-      el("image", {
-        href: config.brand.logoDataUrl,
-        x: W - M - w,
-        y: footerY + 5,
-        width: w,
-        height: h,
-        preserveAspectRatio: "xMidYMid meet",
-      }),
+  if (footer.height > 46)
+    addIssue(
+      "Source label",
+      "Shorten the source label to two lines; keep the full source URL in the project.",
     );
-  }
+  parts.push(footer.node);
+  if (hasSignature && signature.placement === "footer")
+    drawSignature(H - signatureH - 20);
   return {
     svg: renderSVG(
       el(
         "g",
-        { "data-visual-engine": "prism-antv", "data-composition": layout },
+        {
+          "data-visual-engine": "prism-antv",
+          "data-composition": layout,
+          "data-depth": depth.preset,
+        },
         parts,
       ),
       {

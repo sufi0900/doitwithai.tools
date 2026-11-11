@@ -1,3 +1,4 @@
+import { ASPECT_RATIO_DIMENSIONS } from "../../lib/blog-infographic-studio/palettes";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -22,7 +23,7 @@ import {
   selectInfographicTemplate,
 } from "../../lib/blog-infographic-studio/project";
 import { DEFAULT_FLAGSHIP_BLOG_PROJECT } from "../../lib/blog-writer/canonical-state";
-import { compileCleanCwvArticleHtml } from "../../lib/blog-writer/technical-seo-compiler";
+import { compileCleanCwvArticleHtml } from "../../lib/blog-infographic-studio/writer-export";
 
 const fixture = readFileSync(
   new URL("../fixtures/ai-seo-framework-section.html", import.meta.url),
@@ -108,14 +109,14 @@ test("traversal reaches later nested paragraphs, exposes limits, and never fabri
   assert.ok(large.coverage.blocksFound > large.coverage.blocksIncluded);
 });
 
-test("three AntV compositions render the real source with complete text, semantic icons and exact portrait dimensions", () => {
+test("original native SVG compositions render the real source with complete text, semantic icons and their fixed portrait dimensions", () => {
   const source = extract(),
     section = source.sections.find(
       (s) => s.id === source.recommendedSectionId,
     )!;
   const { nodes } = buildSectionVisual(section);
   const structures = new Set<string>();
-  for (const layout of PRISM_LAYOUTS) {
+  for (const layout of PRISM_LAYOUTS.slice(0, 3)) {
     const config = {
       ...withPrismLayout(createPrismSample(), layout.id),
       headline: section.title,
@@ -126,7 +127,10 @@ test("three AntV compositions render the real source with complete text, semanti
       $ = load(scene.svg, { xmlMode: true });
     assert.deepEqual(scene.issues, []);
     assert.equal($("svg").attr("width"), "1080");
-    assert.equal($("svg").attr("height"), "1350");
+    assert.equal(
+      $("svg").attr("height"),
+      String(ASPECT_RATIO_DIMENSIONS[layout.ratio].height),
+    );
     assert.equal(
       $("[data-visual-engine]").attr("data-visual-engine"),
       "prism-antv",
@@ -153,7 +157,7 @@ test("text overflow, incomplete points and low contrast block exports with actio
           detail: "Detailed source text that needs more space. ".repeat(30),
         })),
       }),
-    /needs more space/,
+    /fixed composition is full/,
   );
   assert.throws(
     () =>

@@ -5,13 +5,22 @@ import type {
   BlogSectionNode,
   BlogSubHeadingNode,
   CanonicalBlogProjectState,
-  InfographicAspectRatio,
 } from "@/lib/blog-writer/canonical-state";
 import {
   autoRecommendInfographicTemplate,
   generateAnchorId,
 } from "@/lib/blog-writer/deterministic-analyzers";
+import { getInfographicDimensions } from "@/lib/blog-infographic-studio/layout-registry";
 import { BLOG_INFOGRAPHIC_25_TEMPLATES } from "@/lib/blog-infographic-studio/templates";
+import {
+  PRISM_LAYOUTS,
+  withPrismLayout,
+} from "@/lib/blog-infographic-studio/visual-brief";
+import type { PrismLayout } from "@/lib/blog-infographic-studio/visual-brief";
+import {
+  selectInfographicTemplate,
+  patchInfographic,
+} from "@/lib/blog-infographic-studio/project";
 export interface Stage2OutlineArchitectProps {
   project: CanonicalBlogProjectState;
   onChange: (next: CanonicalBlogProjectState) => void;
@@ -46,7 +55,6 @@ const PALETTES: {
   { id: "violet-saas", label: "Violet SaaS" },
   { id: "blue-trust", label: "Blue Trust" },
 ];
-const ASPECT_RATIOS: InfographicAspectRatio[] = ["16:9", "1:1", "4:5", "9:16"];
 function reindexSections(sections: BlogSectionNode[]): BlogSectionNode[] {
   return sections.map((sec, idx) => ({
     ...sec,
@@ -174,15 +182,11 @@ export default function Stage2OutlineArchitect({
       return {
         ...sec,
         infographicConfig: {
-          ...sec.infographicConfig,
-          templateId: tpl.templateId,
-          templateSlug: tpl.templateSlug,
-          templateName: tpl.templateName,
+          ...selectInfographicTemplate(sec.infographicConfig, tpl.templateId),
           headline: sec.infographicConfig?.headline || sec.h2Text,
           paletteId:
             sec.infographicConfig?.paletteId ||
             (idx % 2 === 0 ? "indigo-cyber" : "emerald-growth"),
-          aspectRatio: sec.infographicConfig?.aspectRatio || "16:9",
           altText: `${sec.h2Text} — ${tpl.templateName}`,
         },
       };
@@ -196,10 +200,7 @@ export default function Stage2OutlineArchitect({
     updateSection(sectionId, (sec) => ({
       ...sec,
       infographicConfig: {
-        ...sec.infographicConfig,
-        templateId: spec.id,
-        templateSlug: spec.slug,
-        templateName: spec.name,
+        ...selectInfographicTemplate(sec.infographicConfig, spec.id),
         altText: `${sec.h2Text} — ${spec.name}`,
       },
     }));
@@ -482,34 +483,67 @@ export default function Stage2OutlineArchitect({
                   <div className="text-xs font-semibold text-indigo-200">
                     🎨 Paired H2 Infographic Template:{" "}
                     <span className="text-white">
-                      #{matchedTemplate.id} · {matchedTemplate.name}
+                      {sec.infographicConfig.visualEngine
+                        ? sec.infographicConfig.templateName
+                        : `#${matchedTemplate.id} · ${matchedTemplate.name}`}
                     </span>{" "}
                     <span className="text-indigo-300/80">
-                      ({matchedTemplate.family})
+                      (
+                      {sec.infographicConfig.visualEngine
+                        ? "Editorial collection"
+                        : matchedTemplate.family}
+                      )
                     </span>
                   </div>
                   <span className="text-[11px] text-slate-400">
-                    Best for: {matchedTemplate.bestForSectionType}
+                    Best for:{" "}
+                    {sec.infographicConfig.visualEngine
+                      ? PRISM_LAYOUTS.find(
+                          (l) => l.id === sec.infographicConfig.prismLayout,
+                        )?.description
+                      : matchedTemplate.bestForSectionType}
                   </span>
                 </div>
 
                 <div className="mt-2.5 grid grid-cols-1 gap-2.5 sm:grid-cols-3">
                   <div>
                     <label className="block text-[11px] text-slate-400">
-                      Select Template (1–25)
+                      Select infographic layout
                     </label>
                     <select
-                      value={sec.infographicConfig?.templateId ?? 1}
-                      onChange={(e) =>
-                        handleTemplateSelect(sec.id, Number(e.target.value))
+                      value={
+                        sec.infographicConfig?.visualEngine
+                          ? `prism:${sec.infographicConfig.prismLayout}`
+                          : (sec.infographicConfig?.templateId ?? 1)
                       }
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value.startsWith("prism:"))
+                          updateSection(sec.id, (curr) => ({
+                            ...curr,
+                            infographicConfig: withPrismLayout(
+                              curr.infographicConfig,
+                              value.slice(6) as PrismLayout,
+                            ),
+                          }));
+                        else handleTemplateSelect(sec.id, Number(value));
+                      }}
                       className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-xs text-white focus:border-indigo-500 focus:outline-none"
                     >
-                      {BLOG_INFOGRAPHIC_25_TEMPLATES.map((tpl) => (
-                        <option key={tpl.id} value={tpl.id}>
-                          #{tpl.id} · {tpl.name} ({tpl.family})
-                        </option>
-                      ))}
+                      <optgroup label="Editorial collection">
+                        {PRISM_LAYOUTS.map((layout) => (
+                          <option key={layout.id} value={`prism:${layout.id}`}>
+                            {layout.name}
+                          </option>
+                        ))}
+                      </optgroup>
+                      <optgroup label="Classic collection">
+                        {BLOG_INFOGRAPHIC_25_TEMPLATES.map((tpl) => (
+                          <option key={tpl.id} value={tpl.id}>
+                            #{tpl.id} · {tpl.name} ({tpl.family})
+                          </option>
+                        ))}
+                      </optgroup>
                     </select>
                   </div>
 
@@ -523,9 +557,14 @@ export default function Stage2OutlineArchitect({
                         updateSection(sec.id, (curr) => ({
                           ...curr,
                           infographicConfig: {
-                            ...curr.infographicConfig,
-                            paletteId: e.target
-                              .value as BlogInfographicConfig["paletteId"],
+                            ...patchInfographic(curr.infographicConfig, {
+                              paletteId: e.target
+                                .value as BlogInfographicConfig["paletteId"],
+                              brand: {
+                                ...curr.infographicConfig.brand,
+                                customColors: {},
+                              },
+                            }),
                           },
                         }))
                       }
@@ -539,31 +578,11 @@ export default function Stage2OutlineArchitect({
                     </select>
                   </div>
 
-                  <div>
-                    <label className="block text-[11px] text-slate-400">
-                      Aspect Ratio
-                    </label>
-                    <select
-                      value={sec.infographicConfig?.aspectRatio ?? "16:9"}
-                      onChange={(e) =>
-                        updateSection(sec.id, (curr) => ({
-                          ...curr,
-                          infographicConfig: {
-                            ...curr.infographicConfig,
-                            aspectRatio: e.target
-                              .value as InfographicAspectRatio,
-                          },
-                        }))
-                      }
-                      className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-xs text-white focus:border-indigo-500 focus:outline-none"
-                    >
-                      {ASPECT_RATIOS.map((ar) => (
-                        <option key={ar} value={ar}>
-                          {ar}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <p className="self-center text-xs text-slate-400">
+                    Fixed template canvas ·{" "}
+                    {getInfographicDimensions(sec.infographicConfig).width} ×{" "}
+                    {getInfographicDimensions(sec.infographicConfig).height}
+                  </p>
                 </div>
               </div>
 

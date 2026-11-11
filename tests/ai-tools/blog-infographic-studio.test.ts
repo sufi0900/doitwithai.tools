@@ -1,3 +1,4 @@
+import { getInfographicDimensions } from "../../lib/blog-infographic-studio/layout-registry";
 import { autoRecommendInfographicTemplate } from "../../lib/blog-writer/deterministic-analyzers";
 import { BLOG_INFOGRAPHIC_25_TEMPLATES } from "../../lib/blog-infographic-studio/templates";
 import React from "react";
@@ -27,12 +28,12 @@ import {
   compileWordPressGutenbergHtml,
   compileCompleteJsonLdGraph,
   compileHeadMetaTagsHtml,
-} from "../../lib/blog-writer/technical-seo-compiler";
+} from "../../lib/blog-infographic-studio/writer-export";
 
 const logo =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLbtAAAAABJRU5ErkJggg==";
 
-test("all 25 layouts render four valid formats with bounded geometry and escaped editable content", () => {
+test("all 25 layouts enforce fixed geometry even when stored ratios are changed, with escaped editable content", () => {
   const signatures = new Set<string>();
   for (let id = 1; id <= 25; id++)
     for (const ratio of Object.keys(
@@ -54,11 +55,11 @@ test("all 25 layouts render four valid formats with bounded geometry and escaped
       const $ = load(scene.svg, { xmlMode: true });
       assert.equal(
         $("svg").attr("width"),
-        String(ASPECT_RATIO_DIMENSIONS[ratio].width),
+        String(getInfographicDimensions(config).width),
       );
       assert.equal(
         $("svg").attr("height"),
-        String(ASPECT_RATIO_DIMENSIONS[ratio].height),
+        String(getInfographicDimensions(config).height),
       );
       assert.equal($("script,foreignObject").length, 0);
       assert.ok(scene.svg.includes("&lt;plan&gt;"));
@@ -264,7 +265,7 @@ test("server-rendered editor and hero expose real infographic previews without p
     }),
   );
   const $ = load(html);
-  assert.equal($('[aria-label="Editor controls"] button').length, 3);
+  assert.equal($('[aria-label="Editor controls"] button').length, 2);
   assert.equal($('button[role="tab"][tabindex="0"]').length, 1);
   assert.ok($("img").length >= 4);
   assert.ok(html.includes("Classic collection"));
@@ -272,6 +273,17 @@ test("server-rendered editor and hero expose real infographic previews without p
     html,
     /male-avatars|Marcus Vance|Daniel Mercer|Author \/ Executive|portraitFrame|Photo Zoom/,
   );
+  const standalone = load(
+    renderToStaticMarkup(React.createElement(BlogInfographicStudio)),
+  );
+  assert.equal(
+    standalone("details[open] summary")
+      .first()
+      .text()
+      .includes("Start from an article URL"),
+    true,
+  );
+  assert.equal(standalone('[aria-label="Editor controls"] button').length, 2);
   const hero = renderToStaticMarkup(
     React.createElement(HeroAnimatedInfographicShowcase),
   );

@@ -5,7 +5,12 @@ import type {
 import { BLOG_INFOGRAPHIC_25_TEMPLATES } from "@/lib/blog-infographic-studio/templates";
 import { ASPECT_RATIO_DIMENSIONS, BLOG_INFOGRAPHIC_PALETTES } from "./palettes";
 import { isSafeInfographicImage } from "./canvas-renderer";
-import { PRISM_LAYOUTS } from "./visual-brief";
+import {
+  PRISM_LAYOUTS,
+  fixedInfographicRatio,
+  lockInfographicGeometry,
+} from "./layout-registry";
+import { isHex, normalizeDepth, normalizeSignature } from "./appearance";
 import type { VisualBrief } from "./visual-brief";
 function importBrief(raw: VisualBrief | undefined): VisualBrief | undefined {
   if (!raw) return undefined;
@@ -74,12 +79,12 @@ export function patchInfographic(
   config: BlogInfographicConfig,
   patch: Partial<BlogInfographicConfig>,
 ): BlogInfographicConfig {
-  return {
+  return lockInfographicGeometry({
     ...config,
     ...patch,
     renderedSvgMarkup: undefined,
     renderedPngDataUrl: undefined,
-  };
+  });
 }
 export function selectInfographicTemplate(
   config: BlogInfographicConfig,
@@ -194,7 +199,23 @@ export function importInfographicProject(
       subheadline: c.subheadline,
       footerSourceLabel: c.footerSourceLabel,
       altText: c.altText,
-      aspectRatio: c.aspectRatio,
+      aspectRatio: fixedInfographicRatio(c),
+      depth: normalizeDepth(c.depth),
+      signature: normalizeSignature(c.signature),
+      extractedBrand:
+        c.extractedBrand && typeof c.extractedBrand.siteName === "string"
+          ? {
+              accent: isHex(c.extractedBrand.accent)
+                ? c.extractedBrand.accent
+                : undefined,
+              siteName: c.extractedBrand.siteName.slice(0, 64),
+              source: ["theme-color", "css-variable"].includes(
+                c.extractedBrand.source,
+              )
+                ? c.extractedBrand.source
+                : "site-name",
+            }
+          : undefined,
       paletteId: c.paletteId,
       comparisonLabels:
         Array.isArray(c.comparisonLabels) &&
@@ -237,7 +258,16 @@ export function importInfographicProject(
             logoStyle: ["white", "dark"].includes(brand.logoStyle || "")
               ? brand.logoStyle
               : "plain",
-            customColors: brand.customColors,
+            customColors: brand.customColors
+              ? Object.fromEntries(
+                  Object.entries(brand.customColors).filter(
+                    ([k, v]) =>
+                      ["bgStart", "surface", "accent", "textMain"].includes(
+                        k,
+                      ) && isHex(v),
+                  ),
+                )
+              : undefined,
             illustration:
               brand.illustration === "paper-steps" ? "paper-steps" : "none",
           }

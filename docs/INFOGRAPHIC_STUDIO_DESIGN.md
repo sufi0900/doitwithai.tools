@@ -1,3 +1,5 @@
+> Current extension contract: [Prism Forge infographic handbook](./PRISM_FORGE_INFOGRAPHIC_HANDBOOK.md), signed `PF::INFOGRAPHIC-DESIGN-V2::2026-11-11`. Its fixed geometry, six editorial layouts and shared export rules supersede the earlier arbitrary-ratio behavior described in this historical baseline.
+
 # Blog section infographic studio
 
 **Current implementation:** see [Prism Forge pilot and manual tests](./PRISM_FORGE_INFOGRAPHIC_PILOT.md). The notes below describe the earlier 25-layout baseline; source selection, the default collection and hero have since been revised.

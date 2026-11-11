@@ -1,3 +1,5 @@
+> Historical pilot record. Current implementation and replication rules: [Prism Forge handbook](./PRISM_FORGE_INFOGRAPHIC_HANDBOOK.md). The subsequent native-SVG build fix removed the AntV dependency described below. The current collection contains six fixed-size editorial compositions with coordinated themes, depth and positioned website signatures.
+
 # Prism Forge: infographic pilot
 
 AI contributor: **Codex**, working name **Prism Forge** — Visual Systems Engineer.

@@ -1,3 +1,7 @@
+import {
+  getInfographicDimensions,
+  lockInfographicGeometry,
+} from "./layout-registry";
 /** One SVG scene is used by the gallery, editor, PNG rasterizer and writer exports. */
 import type {
   BlogInfographicConfig,
@@ -5,7 +9,7 @@ import type {
 } from "@/lib/blog-writer/canonical-state";
 import { buildPrismScene } from "./prism-renderer";
 import { BLOG_INFOGRAPHIC_25_TEMPLATES } from "@/lib/blog-infographic-studio/templates";
-import { ASPECT_RATIO_DIMENSIONS, BLOG_INFOGRAPHIC_PALETTES } from "./palettes";
+import { BLOG_INFOGRAPHIC_PALETTES } from "./palettes";
 import artwork from "./editorial-art.json";
 export { ASPECT_RATIO_DIMENSIONS, BLOG_INFOGRAPHIC_PALETTES } from "./palettes";
 export type { BlogInfographicPaletteTokens } from "./palettes";
@@ -185,10 +189,19 @@ export function buildInfographicScene(
   config: BlogInfographicConfig,
   options: BlogInfographicRenderOptions = {},
 ): { svg: string; issues: InfographicFitIssue[] } {
-  if (config.visualEngine === "prism-antv") return buildPrismScene({ ...config, brand: { ...config.brand, customColors: { ...config.brand?.customColors, ...options.customColors } } });
-  const { width: W, height: H } =
-    ASPECT_RATIO_DIMENSIONS[config.aspectRatio] ||
-    ASPECT_RATIO_DIMENSIONS["16:9"];
+  config = lockInfographicGeometry(config);
+  if (config.visualEngine === "prism-antv")
+    return buildPrismScene({
+      ...config,
+      brand: {
+        ...config.brand,
+        customColors: {
+          ...config.brand?.customColors,
+          ...options.customColors,
+        },
+      },
+    });
+  const { width: W, height: H } = getInfographicDimensions(config);
   const base =
     BLOG_INFOGRAPHIC_PALETTES[config.paletteId] ||
     BLOG_INFOGRAPHIC_PALETTES["blue-trust"];
@@ -1212,7 +1225,10 @@ export function generateBlogInfographicSvg(
   options: BlogInfographicRenderOptions = {},
 ): string {
   const scene = buildInfographicScene(config, options);
-  if (config.visualEngine === "prism-antv" && scene.issues.length) throw new Error(scene.issues.map(i => `${i.field}: ${i.message}`).join(" "));
+  if (config.visualEngine === "prism-antv" && scene.issues.length)
+    throw new Error(
+      scene.issues.map((i) => `${i.field}: ${i.message}`).join(" "),
+    );
   return scene.svg;
 }
 const pendingRenders = new WeakMap<HTMLCanvasElement, object>();
@@ -1235,9 +1251,7 @@ export async function renderBlogInfographicToCanvas(
     img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
   });
   if (pendingRenders.get(canvas) !== ticket) return;
-  const dims =
-      ASPECT_RATIO_DIMENSIONS[config.aspectRatio] ||
-      ASPECT_RATIO_DIMENSIONS["16:9"],
+  const dims = getInfographicDimensions(config),
     scale = options.scale || 1;
   canvas.width = Math.max(1, Math.round(dims.width * scale));
   canvas.height = Math.max(1, Math.round(dims.height * scale));

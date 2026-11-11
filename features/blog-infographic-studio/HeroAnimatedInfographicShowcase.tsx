@@ -2,17 +2,14 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight, Pause, Play } from "lucide-react";
 import { buildInfographicScene } from "@/lib/blog-infographic-studio/canvas-renderer";
-import {
-  createPrismSample,
-  PRISM_LAYOUTS,
-  withPrismLayout,
-} from "@/lib/blog-infographic-studio/visual-brief";
+import { PRISM_LAYOUTS } from "@/lib/blog-infographic-studio/layout-registry";
+import { createLayoutSample } from "@/lib/blog-infographic-studio/samples";
+import { infographicColors } from "@/lib/blog-infographic-studio/appearance";
 
 export default function HeroAnimatedInfographicShowcase() {
   const [index, setIndex] = useState(0),
     [paused, setPaused] = useState(false),
     [hover, setHover] = useState(false),
-    [focused, setFocused] = useState(false),
     [hidden, setHidden] = useState(false),
     [reduced, setReduced] = useState(true);
   useEffect(() => {
@@ -29,19 +26,23 @@ export default function HeroAnimatedInfographicShowcase() {
     };
   }, []);
   useEffect(() => {
-    if (paused || hover || focused || hidden || reduced) return;
+    if (paused || hover || hidden || reduced) return;
     const timer = setInterval(
       () => setIndex((i) => (i + 1) % PRISM_LAYOUTS.length),
-      2400,
+      1800,
     );
     return () => clearInterval(timer);
-  }, [paused, hover, focused, hidden, reduced]);
+  }, [paused, hover, hidden, reduced]);
   const slides = useMemo(
     () =>
-      PRISM_LAYOUTS.map(
-        (l) =>
-          `data:image/svg+xml;charset=utf-8,${encodeURIComponent(buildInfographicScene(withPrismLayout(createPrismSample(), l.id)).svg)}`,
-      ),
+      PRISM_LAYOUTS.map((l) => {
+        const config = createLayoutSample(l.id);
+        return {
+          src: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(buildInfographicScene(config).svg)}`,
+          alt: config.altText,
+          bg: infographicColors(config).bg,
+        };
+      }),
     [],
   );
   const select = (i: number) => {
@@ -55,33 +56,28 @@ export default function HeroAnimatedInfographicShowcase() {
       className="group relative mx-auto w-full max-w-[540px]"
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
-      onFocusCapture={() => setFocused(true)}
-      onBlurCapture={(e) => {
-        if (!e.currentTarget.contains(e.relatedTarget as Node))
-          setFocused(false);
-      }}
+      onFocusCapture={() => setPaused(true)}
     >
-      <div className="relative aspect-[4/5] overflow-hidden rounded-xl bg-[#F6F7FF] shadow-[0_24px_70px_#3452d12e] ring-1 ring-indigo-500/10">
-        {slides.map((src, i) => (
+      <div
+        className="relative aspect-[4/5] overflow-hidden rounded-xl shadow-[0_24px_70px_#3452d12e] ring-1 ring-indigo-500/10 motion-safe:transition-colors"
+        style={{ background: slides[index].bg }}
+      >
+        {slides.map((slide, i) => (
           <img
             key={i}
-            src={src}
-            alt={
-              i === index
-                ? `${PRISM_LAYOUTS[i].name}: three sides of AI SEO`
-                : ""
-            }
+            src={slide.src}
+            alt={i === index ? slide.alt : ""}
             aria-hidden={i !== index}
             className={`absolute inset-0 h-full w-full object-contain motion-safe:transition-opacity motion-safe:duration-300 ${i === index ? "opacity-100" : "opacity-0"}`}
           />
         ))}
       </div>
-      <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full border border-slate-200 bg-white/95 p-1 shadow-lg dark:border-slate-700 dark:bg-slate-900/95">
+      <div className="relative mx-auto mt-3 flex w-fit items-center gap-1 rounded-full border border-slate-200 bg-white/95 p-1 shadow-lg dark:border-slate-700 dark:bg-slate-900/95">
         <button
           type="button"
           aria-label="Previous infographic"
           onClick={() => select(index - 1)}
-          className="rounded-full p-2 text-indigo-600 dark:text-indigo-300"
+          className="flex h-10 w-10 items-center justify-center rounded-full text-indigo-600 dark:text-indigo-300"
         >
           <ArrowLeft size={14} />
         </button>
@@ -92,7 +88,7 @@ export default function HeroAnimatedInfographicShowcase() {
             aria-label={`Show ${l.name}`}
             aria-pressed={i === index}
             onClick={() => select(i)}
-            className="flex h-8 w-6 items-center justify-center"
+            className="flex h-10 w-6 items-center justify-center"
           >
             <span
               className={`h-2 rounded-full ${index === i ? "w-4 bg-indigo-600" : "w-2 bg-slate-300"}`}
@@ -110,7 +106,7 @@ export default function HeroAnimatedInfographicShowcase() {
                 : "Pause infographic showcase"
           }
           onClick={() => setPaused((p) => !p)}
-          className="rounded-full p-2 text-indigo-600 disabled:opacity-40 dark:text-indigo-300"
+          className="flex h-10 w-10 items-center justify-center rounded-full text-indigo-600 disabled:opacity-40 dark:text-indigo-300"
         >
           {paused || reduced ? <Play size={14} /> : <Pause size={14} />}
         </button>
@@ -118,7 +114,7 @@ export default function HeroAnimatedInfographicShowcase() {
           type="button"
           aria-label="Next infographic"
           onClick={() => select(index + 1)}
-          className="rounded-full p-2 text-indigo-600 dark:text-indigo-300"
+          className="flex h-10 w-10 items-center justify-center rounded-full text-indigo-600 dark:text-indigo-300"
         >
           <ArrowRight size={14} />
         </button>

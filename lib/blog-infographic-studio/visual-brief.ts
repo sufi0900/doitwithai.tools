@@ -10,27 +10,10 @@ import type {
 } from "./article-source";
 import { sourceId } from "./article-source";
 
-export const PRISM_LAYOUTS = [
-  {
-    id: "editorial",
-    name: "Editorial atlas",
-    description:
-      "Oversized pictograms and clear explanations, arranged as an editorial poster.",
-  },
-  {
-    id: "constellation",
-    name: "Connected concepts",
-    description:
-      "A shared idea surrounded by related concepts, with a readable explanation for each.",
-  },
-  {
-    id: "ribbon",
-    name: "Illustrated bands",
-    description:
-      "Alternating illustrations and full-width color bands for a scannable visual summary.",
-  },
-] as const;
-export type PrismLayout = (typeof PRISM_LAYOUTS)[number]["id"];
+import { PRISM_LAYOUTS, prismLayoutSpec } from "./layout-registry";
+import type { PrismLayout } from "./layout-registry";
+export { PRISM_LAYOUTS } from "./layout-registry";
+export type { PrismLayout } from "./layout-registry";
 export interface VisualBrief {
   sourceUrl?: string;
   sectionId: string;
@@ -231,16 +214,25 @@ export function withPrismLayout(
   config: BlogInfographicConfig,
   layout: PrismLayout,
 ): BlogInfographicConfig {
-  const spec = PRISM_LAYOUTS.find((l) => l.id === layout) || PRISM_LAYOUTS[0];
+  const spec = prismLayoutSpec(layout);
   return {
     ...config,
     visualEngine: "prism-antv",
     prismLayout: spec.id,
+    aspectRatio: spec.ratio,
     templateSlug: `prism-${spec.id}`,
     templateName: spec.name,
     renderedPngDataUrl: undefined,
     renderedSvgMarkup: undefined,
   };
+}
+/** Relationships select geometry; raw word count never stretches a fixed template. */
+export function recommendPrismLayout(
+  brief: VisualBrief,
+  points: number,
+): PrismLayout {
+  if (brief.relationship === "sequence") return "timeline";
+  return points > 3 ? "ribbon" : "editorial";
 }
 /** Direct writer adapter. It consumes section bodies, never re-scrapes generated article HTML. */
 export function visualFromWriterSection(
@@ -262,11 +254,12 @@ export function visualFromWriterSection(
       ...section.infographicConfig,
       headline: section.h2Text,
       subheadline: "",
-      aspectRatio: result.nodes.length > 3 ? "9:16" : "4:5",
+
       nodes: result.nodes,
       visualBrief: result.brief,
     },
-    section.infographicConfig.prismLayout || "editorial",
+    section.infographicConfig.prismLayout ||
+      recommendPrismLayout(result.brief, result.nodes.length),
   );
 }
 export function createPrismSample(): BlogInfographicConfig {

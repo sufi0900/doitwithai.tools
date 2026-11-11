@@ -1,4 +1,8 @@
 "use client";
+import {
+  getInfographicDimensions,
+  fixedInfographicRatio,
+} from "@/lib/blog-infographic-studio/layout-registry";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import type {
   BlogInfographicConfig,
@@ -15,7 +19,6 @@ import { BlogInfographicStudio } from "@/features/blog-infographic-studio/BlogIn
 import {
   generateBlogInfographicSvg,
   renderBlogInfographicToCanvas,
-  ASPECT_RATIO_DIMENSIONS,
 } from "@/lib/blog-infographic-studio/canvas-renderer";
 import { BLOG_INFOGRAPHIC_25_TEMPLATES } from "@/lib/blog-infographic-studio/templates";
 import {
@@ -83,9 +86,7 @@ function InlineSectionInfographicCard({
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [visualError, setVisualError] = useState("");
-  const dims =
-    ASPECT_RATIO_DIMENSIONS[config.aspectRatio] ||
-    ASPECT_RATIO_DIMENSIONS["16:9"];
+  const dims = getInfographicDimensions(config);
   useEffect(() => {
     if (!canvasRef.current) return;
     let stale = false;
@@ -167,7 +168,7 @@ function InlineSectionInfographicCard({
             {config.templateName}
           </span>
           <span className="hidden text-[11px] text-slate-400 sm:inline">
-            · {config.aspectRatio}
+            · {fixedInfographicRatio(config)}
           </span>
         </div>
 
@@ -233,7 +234,7 @@ function InlineSectionInfographicCard({
           Alt Text: <strong className="text-slate-300">{config.altText}</strong>
         </span>
         <span className="text-emerald-400">
-          {dims.width} × {dims.height} · {config.aspectRatio}
+          {dims.width} × {dims.height} · {fixedInfographicRatio(config)}
         </span>
       </div>
     </div>
@@ -382,8 +383,7 @@ export function Stage4RichEditorAndScorecard({
       .map((s, idx) => {
         const fetchAttr =
           idx === 0 ? 'fetchpriority="high" loading="eager"' : 'loading="lazy"';
-        const visualDims =
-          ASPECT_RATIO_DIMENSIONS[s.infographicConfig?.aspectRatio || "16:9"];
+        const visualDims = getInfographicDimensions(s.infographicConfig);
         const subBlocks = s.subHeadings
           .map(
             (sub) =>

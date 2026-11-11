@@ -28,8 +28,7 @@ import { PlatformBrandIcon } from "@/features/tool-ui/PlatformBrandIcon";
 
 const pageUrl =
   "https://doitwithai.tools/tools/blog-section-infographic-generator";
-const title =
-  "Free AI Blog Infographic Generator | 25 Editable Layouts";
+const title = "Free AI Blog Infographic Generator | 25 Editable Layouts";
 const description =
   "Create clear blog section infographics from your text with 25 editable layouts, custom brand colors and a logo, then download PNG, SVG, WebP or PDF for free.";
 const templateCount = BLOG_INFOGRAPHIC_25_TEMPLATES.length;
@@ -76,22 +75,19 @@ const faqs = [
       "Diffusion generators (like Midjourney or DALL-E) frequently garble small text inside flowcharts and cost per-image API credits. Paid diagram tools lock exports behind monthly subscriptions. Our studio runs 100% free in your browser at zero token cost, maps your H2 heading to the ideal layout automatically, and exports crisp PNG, vector SVG, WebP, PDF, and zero-CLS Core Web Vitals HTML.",
   },
   {
-    question:
-      "Which 25 blog infographic templates are included in the studio?",
+    question: "Which 25 blog infographic templates are included in the studio?",
     answer:
       "The studio includes 25 purpose-built templates across 6 visual families: Process & Step Flows (4-Step Pipeline, Vertical Roadmap, Growth Flywheel, Zig-Zag Journey, 4-Tier Funnel), Comparison & Versus (Battle Card, 3-Tier Matrix, Before/After Split, Pros & Cons, Do's & Don'ts), Data & KPI Callouts (4-Card Bento KPI, Spotlight Stat, Benchmark Bars, ROI Breakdown, 5-Pillar Scorecard), Frameworks & Pyramids (2x2 Quadrant, 3-Tier Pyramid, 3-Circle Venn, Hub & Spoke), Checklists & Cheat Sheets (8-Point Checklist, 5-Point TL;DR, Page Anatomy, Myth vs Reality, 6-Box Cheat Sheet), and Widescreen Blog Hero & OG Banners.",
   },
   {
-    question:
-      "Can I add my own logo and brand colors?",
+    question: "Can I add my own logo and brand colors?",
     answer:
       "Yes. Upload a PNG, JPG or WebP logo under 2 MB, adjust its size and choose a plain, white or dark container. Pick a color collection or custom background, panel, accent and text colors. Your brand settings are saved with the infographic and reused in the content writer and exports.",
   },
   {
-    question:
-      "Does switching between the 25 templates or 4 aspect ratios erase my edited text?",
+    question: "Does switching layouts erase my edited text?",
     answer:
-      "Never. Your H2 headline, subheadline, node badges, titles, details, metrics, brand colors, logo, and illustration settings are stored in a unified state. Click any of the 25 live layout previews or switch between 16:9, 1:1, 4:5, and 9:16 to re-render your exact content without replacing your writing.",
+      "Never. Your H2 headline, subheadline, node badges, titles, details, metrics, brand colors, logo, and illustration settings are stored in a unified state. Switch layouts to re-render your content without replacing your writing. Each template has a fixed canvas to protect its spacing. You can adjust coordinated color themes, branding and editorial depth without resizing the layout.",
   },
   {
     question:
@@ -112,7 +108,8 @@ const faqs = [
       "This 25-template engine powers the inline H2 visuals inside our flagship AI Blog Writer, AI Content Writer, and AI Article Writer studios—allowing you to generate a complete 2,000-word SEO article with a custom infographic under every H2 section.",
   },
   {
-    question: "Is this blog infographic generator completely free for commercial use?",
+    question:
+      "Is this blog infographic generator completely free for commercial use?",
     answer:
       "Yes. It is 100% free with zero signup, zero watermark, and full commercial publishing rights across client blogs, SaaS landing pages, LinkedIn carousels, and newsletters.",
   },
@@ -138,7 +135,7 @@ const USE_CASES = [
   },
   {
     title: "LinkedIn & X/Twitter thought leadership",
-    body: "Switch any blog diagram to 1:1 Square or 4:5 Portrait to turn long-form H2 sections into high-engagement social feed graphics.",
+    body: "Choose a portrait editorial composition to turn useful section takeaways into branded social graphics. Every template keeps its own dimensions.",
   },
   {
     title: "Digital PR & original data studies",
@@ -186,7 +183,8 @@ const PROMPT_PROMO_CARDS = [
 const BLOG_GUIDE_CARDS = [
   {
     category: "Content & AEO Playbook · 7 Min Read",
-    title: "What to Do After Keyword Research: From Topic Clusters to Visual Proof",
+    title:
+      "What to Do After Keyword Research: From Topic Clusters to Visual Proof",
     summary:
       "Why top-ranking articles in 2026 pair 50-word quick answers with deterministic H2 section infographics and comparison tables.",
     image: "/images/articles/what-to-do-after-keyword-research.jpg",
@@ -319,7 +317,7 @@ export default function BlogSectionInfographicGeneratorPage() {
           "Optional editorial illustration with independently editable text and a source footer",
           "Custom brand logo upload with adjustable scale and badge styles plus 8 brand palettes & custom hex wheel",
           "URL-to-Infographic extractor for turning existing articles into multi-section visual packs",
-          "Instant 16:9, 1:1, 4:5, and 9:16 exports in HD PNG, Vector SVG, WebP, PDF, CWV <figure> HTML, and .ZIP",
+          "Fixed, template-specific dimensions with PNG, SVG, WebP, PDF, figure HTML and ZIP exports",
         ],
         offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
       },
@@ -345,7 +343,7 @@ export default function BlogSectionInfographicGeneratorPage() {
             "@type": "HowToStep",
             position: 3,
             name: "Export in PNG, Vector SVG, WebP, PDF, or Zero-CLS HTML",
-            text: "Download your graphic in 16:9, 1:1, 4:5, or 9:16 as a crisp PNG, scalable SVG, Core Web Vitals WebP, print-ready PDF, or multi-section .ZIP bundle.",
+            text: "Download the fixed-size artwork as PNG, scalable SVG, WebP, PDF or a multi-section ZIP bundle. Save the editable project to keep your content, depth, themes and website signature.",
           },
         ],
       },
@@ -426,7 +424,11 @@ export default function BlogSectionInfographicGeneratorPage() {
               </h1>
 
               <p className="mt-4 max-w-2xl text-base leading-relaxed text-slate-200">
-                Turn a blog section into a clear visual story. Choose a section from an article URL or paste its text, review the key explanations, then make it yours with editable text, topic icons and your brand. Start with three original editorial compositions, or explore the classic collection.
+                Turn a blog section into a clear visual story. Choose a section
+                from an article URL or paste its text, review the key
+                explanations, then make it yours with editable text, topic icons
+                and your brand. Start with six original editorial compositions,
+                or explore the classic collection.
               </p>
 
               <PortableToolHeroBar
@@ -458,7 +460,11 @@ export default function BlogSectionInfographicGeneratorPage() {
             How do you turn a blog section into a useful infographic?
           </h2>
           <p className={prose}>
-            Start with a section’s explanation, select the concepts a reader needs to understand, and give each one a clear title and supporting detail. Choose a composition that shows how the ideas relate, apply your branding, then check the source and text fit before exporting. Use numbers only when the source provides their meaning and context.
+            Start with a section’s explanation, select the concepts a reader
+            needs to understand, and give each one a clear title and supporting
+            detail. Choose a composition that shows how the ideas relate, apply
+            your branding, then check the source and text fit before exporting.
+            Use numbers only when the source provides their meaning and context.
           </p>
         </div>
       </section>
@@ -475,7 +481,8 @@ export default function BlogSectionInfographicGeneratorPage() {
             How does the Free AI Blog Section Infographic Generator work?
           </h2>
           <p className="mx-auto mt-3 max-w-2xl text-sm text-slate-600 dark:text-slate-300">
-            Start with the section’s explanation, review what belongs in the visual, then choose the composition that makes it clearest.
+            Start with the section’s explanation, review what belongs in the
+            visual, then choose the composition that makes it clearest.
           </p>
         </div>
         <div className="mt-10 grid gap-6 md:grid-cols-3">
@@ -493,7 +500,7 @@ export default function BlogSectionInfographicGeneratorPage() {
             {
               num: "3",
               title: "Choose a composition and check the fit",
-              body: "Compare three original editorial compositions using your own content. The classic 25-layout collection is also available. Fix text-fit warnings, then export images or keep the editable project.",
+              body: "Compare six original editorial compositions using your own content. The classic 25-layout collection is also available. Fix text-fit warnings, then export images or keep the editable project.",
             },
           ].map((step) => (
             <div
@@ -526,7 +533,9 @@ export default function BlogSectionInfographicGeneratorPage() {
             Explore the classic collection
           </h2>
           <p className="mx-auto mt-3 max-w-2xl text-sm text-slate-600 dark:text-slate-300">
-            Use the classic collection for specialized charts, comparisons and checklists. The new editorial collection above starts in portrait and flags content that needs more space.
+            Use the classic collection for specialized charts, comparisons and
+            checklists. The new editorial collection above starts in portrait
+            and flags content that needs more space.
           </p>
         </div>
         <ul className="mt-8 grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
@@ -610,8 +619,8 @@ export default function BlogSectionInfographicGeneratorPage() {
             </h3>
             <p className="mt-2 text-sm leading-7 text-slate-600 dark:text-slate-300">
               Combine reusable editorial artwork with editable text, measured
-              spacing and a source footer. Preview changes before you download
-              a graphic, without asking an image model to redraw your words.
+              spacing and a source footer. Preview changes before you download a
+              graphic, without asking an image model to redraw your words.
             </p>
           </div>
           <div className="rounded-3xl border border-slate-200 bg-slate-50/70 p-6 dark:border-slate-800 dark:bg-slate-900">
@@ -631,23 +640,57 @@ export default function BlogSectionInfographicGeneratorPage() {
               PNG, SVG, WebP &amp; dimensioned embed HTML
             </h3>
             <p className="mt-2 text-sm leading-7 text-slate-600 dark:text-slate-300">
-              Export lightweight vector SVGs, compressed WebPs, or copy ready-to-paste{" "}
-              <code>&lt;figure&gt;</code> HTML with explicit width and height
-              attributes that reserve space while the image loads.
+              Export lightweight vector SVGs, compressed WebPs, or copy
+              ready-to-paste <code>&lt;figure&gt;</code> HTML with explicit
+              width and height attributes that reserve space while the image
+              loads.
             </p>
           </div>
         </div>
 
         <div className="mt-10 overflow-x-auto rounded-3xl border border-slate-200 dark:border-slate-800">
           <table className="w-full min-w-[600px] text-left text-sm">
-            <thead className="bg-slate-100 dark:bg-slate-800"><tr><th className="px-4 py-3">Capability</th><th className="px-4 py-3">Included in this studio</th><th className="px-4 py-3">Before publishing</th></tr></thead>
+            <thead className="bg-slate-100 dark:bg-slate-800">
+              <tr>
+                <th className="px-4 py-3">Capability</th>
+                <th className="px-4 py-3">Included in this studio</th>
+                <th className="px-4 py-3">Before publishing</th>
+              </tr>
+            </thead>
             <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
               {[
-                ["Article section summaries", "Source paragraphs, lists, subheadings and tables stay attached to your draft.", "Review the selected section and source coverage."],
-                ["Editable compositions", "Three original editorial compositions plus the classic 25-layout collection.", "Choose a structure that suits the message and check text fit."],
-                ["Brand and illustrations", "Your logo, palette, topic icons and editable wording.", "Check contrast, icon relevance and logo readability."],
-                ["Export and reuse", "PNG, SVG, WebP, PDF/print, editable project JSON and ZIP.", "Compare the download with the preview at the size readers will see."],
-              ].map(row => <tr key={row[0]}>{row.map((cell,i) => <td key={i} className={`px-4 py-3.5 ${i === 0 ? "font-bold" : "text-slate-600 dark:text-slate-300"}`}>{cell}</td>)}</tr>)}
+                [
+                  "Article section summaries",
+                  "Source paragraphs, lists, subheadings and tables stay attached to your draft.",
+                  "Review the selected section and source coverage.",
+                ],
+                [
+                  "Editable compositions",
+                  "Six original editorial compositions plus the classic 25-layout collection.",
+                  "Choose a structure that suits the message and check text fit.",
+                ],
+                [
+                  "Brand and illustrations",
+                  "Your logo, palette, topic icons and editable wording.",
+                  "Check contrast, icon relevance and logo readability.",
+                ],
+                [
+                  "Export and reuse",
+                  "PNG, SVG, WebP, PDF/print, editable project JSON and ZIP.",
+                  "Compare the download with the preview at the size readers will see.",
+                ],
+              ].map((row) => (
+                <tr key={row[0]}>
+                  {row.map((cell, i) => (
+                    <td
+                      key={i}
+                      className={`px-4 py-3.5 ${i === 0 ? "font-bold" : "text-slate-600 dark:text-slate-300"}`}
+                    >
+                      {cell}
+                    </td>
+                  ))}
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
