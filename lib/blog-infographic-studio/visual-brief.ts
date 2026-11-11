@@ -2,6 +2,7 @@ import type {
   BlogInfographicConfig,
   BlogInfographicNodeItem,
   BlogSectionNode,
+  InfographicAspectRatio,
 } from "@/lib/blog-writer/canonical-state";
 import type {
   ArticleSourceSection,
@@ -15,22 +16,60 @@ export const PRISM_LAYOUTS = [
     id: "editorial",
     name: "Editorial atlas",
     description:
-      "Oversized pictograms and clear explanations, arranged as an editorial poster.",
+      "Oversized pictograms, numbered badges, and structured editorial cards.",
   },
   {
     id: "constellation",
     name: "Connected concepts",
     description:
-      "A shared idea surrounded by related concepts, with a readable explanation for each.",
+      "A central concept hub surrounded by related ideas and structured explanations.",
   },
   {
     id: "ribbon",
     name: "Illustrated bands",
     description:
-      "Alternating illustrations and full-width color bands for a scannable visual summary.",
+      "Alternating topic illustrations and full-width color bands for a scannable summary.",
+  },
+  {
+    id: "pipeline",
+    name: "Step-by-step spine",
+    description:
+      "Connected numbered stages along a vertical process spine for workflows and how-to guides.",
+  },
+  {
+    id: "bento",
+    name: "Bento concept grid",
+    description:
+      "Two-column architectural cards with topic badges and structured explanations.",
+  },
+  {
+    id: "versus",
+    name: "Side-by-side comparison",
+    description:
+      "Balanced two-column comparison matrix for contrasting approaches or trade-offs.",
+  },
+  {
+    id: "pyramid",
+    name: "Layered hierarchy",
+    description:
+      "Tiered foundation-to-apex layers showing how core principles support execution.",
+  },
+  {
+    id: "spotlight",
+    name: "Executive callout cards",
+    description:
+      "High-contrast numbered editorial cards with bold accent bars and topic pictograms.",
+  },
+  {
+    id: "checklist",
+    name: "Verification board",
+    description:
+      "Structured audit and verification cards with check-ring badges and clear takeaways.",
   },
 ] as const;
+
 export type PrismLayout = (typeof PRISM_LAYOUTS)[number]["id"];
+
 export interface VisualBrief {
   sourceUrl?: string;
   sectionId: string;
@@ -41,6 +80,59 @@ export interface VisualBrief {
   warnings: string[];
   articleCoverage?: ArticleSourceCoverage;
 }
+
+/**
+ * Determines the pre-built intrinsic aspect ratio for a given Editorial Collection
+ * layout and node set so users never need to manually adjust format dimensions.
+ */
+export function getPrebuiltPrismAspectRatio(
+  layout: PrismLayout,
+  nodes: BlogInfographicNodeItem[] = [],
+): InfographicAspectRatio {
+  const count = nodes.length;
+  if (count <= 3) return "4:5";
+  const totalChars = nodes.reduce(
+    (sum, n) => sum + (n.title?.length || 0) + (n.detail?.length || 0),
+    0,
+  );
+  const isTwoColumnLayout =
+    layout === "bento" || layout === "versus" || layout === "checklist";
+  if (isTwoColumnLayout) {
+    return count >= 6 && totalChars > 720 ? "9:16" : "4:5";
+  }
+  if (layout === "constellation") {
+    return count >= 5 || totalChars > 520 ? "9:16" : "4:5";
+  }
+  return count >= 5 || totalChars > 540 ? "9:16" : "4:5";
+}
+
+export function autoRecommendPrismLayout(
+  headline: string,
+  nodes: BlogInfographicNodeItem[] = [],
+): PrismLayout {
+  const combined =
+    `${headline} ${nodes.map((n) => `${n.title} ${n.detail}`).join(" ")}`.toLowerCase();
+  if (/\b(vs\.?|versus|compare|comparison|difference|trade-off|pros|cons)\b/.test(combined)) {
+    return "versus";
+  }
+  if (/\b(step|how to|process|pipeline|workflow|stage|roadmap|sequence)\b/.test(combined)) {
+    return "pipeline";
+  }
+  if (/\b(checklist|verify|verification|audit|launch|criteria|rule|faq|question)\b/.test(combined)) {
+    return "checklist";
+  }
+  if (/\b(pyramid|hierarchy|tier|layer|foundation|stack|maturity)\b/.test(combined)) {
+    return "pyramid";
+  }
+  if (nodes.length >= 4 && nodes.length % 2 === 0) {
+    return "bento";
+  }
+  if (nodes.length === 3) {
+    return "constellation";
+  }
+  return "editorial";
+}
+
 const clean = (s: string) =>
   s
     .replace(/\*\*|__|`/g, "")
@@ -58,6 +150,7 @@ const sentences = (s: string) =>
   clean(s)
     .split(/(?<=[.!?])\s+(?=[\p{Lu}\d])/u)
     .filter(Boolean);
+
 export function buildSectionVisual(
   section: ArticleSourceSection,
   sourceUrl?: string,
@@ -205,6 +298,7 @@ export function buildSectionVisual(
     },
   };
 }
+
 export function sectionFromText(
   title: string,
   text: string,
@@ -227,21 +321,28 @@ export function sectionFromText(
     .filter((b) => b.text);
   return { id, title, blocks, role: "content" };
 }
+
 export function withPrismLayout(
   config: BlogInfographicConfig,
   layout: PrismLayout,
 ): BlogInfographicConfig {
   const spec = PRISM_LAYOUTS.find((l) => l.id === layout) || PRISM_LAYOUTS[0];
+  const prebuiltRatio = getPrebuiltPrismAspectRatio(
+    spec.id,
+    config.nodes || [],
+  );
   return {
     ...config,
     visualEngine: "prism-antv",
     prismLayout: spec.id,
     templateSlug: `prism-${spec.id}`,
     templateName: spec.name,
+    aspectRatio: prebuiltRatio,
     renderedPngDataUrl: undefined,
     renderedSvgMarkup: undefined,
   };
 }
+
 /** Direct writer adapter. It consumes section bodies, never re-scrapes generated article HTML. */
 export function visualFromWriterSection(
   section: BlogSectionNode,
@@ -257,18 +358,21 @@ export function visualFromWriterSection(
   const result = buildSectionVisual(
     sectionFromText(section.h2Text, text, section.id),
   );
+  const chosenLayout =
+    section.infographicConfig.prismLayout ||
+    autoRecommendPrismLayout(section.h2Text, result.nodes);
   return withPrismLayout(
     {
       ...section.infographicConfig,
       headline: section.h2Text,
       subheadline: "",
-      aspectRatio: result.nodes.length > 3 ? "9:16" : "4:5",
       nodes: result.nodes,
       visualBrief: result.brief,
     },
-    section.infographicConfig.prismLayout || "editorial",
+    chosenLayout,
   );
 }
+
 export function createPrismSample(): BlogInfographicConfig {
   return {
     id: "prism-example",
