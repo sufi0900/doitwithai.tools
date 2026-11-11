@@ -14,6 +14,12 @@ const menuData: Menu[] = [
     newTab: false,
   },
   {
+    id: 108,
+    title: "AI Content Writer",
+    path: "/ai-content-writer",
+    newTab: false,
+  },
+  {
     id: 107,
     title: "AI Agents",
     path: "/agents",
@@ -43,39 +49,9 @@ const menuData: Menu[] = [
         newTab: false,
       },
       {
-        id: 111,
-        title: "Download & Embed 90+ Tools",
-        path: "/tools/downloadable-ai-tools",
-        newTab: false,
-      },
-      {
-        id: 105,
-        title: "Chrome Extension",
-        path: "/chrome-extension",
-        newTab: false,
-      },
-      {
-        id: 43,
-        title: "All Blogs & Articles",
-        path: "/blogs",
-        newTab: false,
-      },
-      {
         id: 3,
         title: "Free AI Resources",
         path: "/free-ai-resources",
-        newTab: false,
-      },
-      {
-        id: 48,
-        title: "Tool Categories",
-        path: "/tools/categories",
-        newTab: false,
-      },
-      {
-        id: 31,
-        title: "AI Tools Directory",
-        path: "/ai-tools",
         newTab: false,
       },
       {
@@ -85,27 +61,9 @@ const menuData: Menu[] = [
         newTab: false,
       },
       {
-        id: 41,
-        title: "About Us",
-        path: "/about",
-        newTab: false,
-      },
-      {
-        id: 47,
-        title: "Meet the Founder",
-        path: "/author/sufian-mustafa",
-        newTab: false,
-      },
-      {
-        id: 46,
-        title: "FAQ",
-        path: "/faq",
-        newTab: false,
-      },
-      {
-        id: 42,
-        title: "Contact Us",
-        path: "/contact",
+        id: 105,
+        title: "Chrome Extension",
+        path: "/chrome-extension",
         newTab: false,
       },
     ],
