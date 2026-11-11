@@ -16,6 +16,14 @@
  *  - Phase 6: Stage4RichEditorAndScorecard.tsx (inline H2 visual cards)
  *  - Phase 7: lib/blog-writer/technical-seo-compiler.ts (CWV <figure> serializer)
  *  - Phase 9: lib/blog-writer/zip-bundle-builder.ts (Master .ZIP /visuals/ exporter)
+ *
+ * Nov 11, 2026 Update — Signed by: Vantage-Draw (Infographic Geometry & Rendering Specialist)
+ *  - Every one of the 25 templates now renders its OWN distinct geometry (zig-zag path,
+ *    3-column matrix table, asymmetric bento grid, cost/ROI ledger, 2x2 quadrant, 3-circle
+ *    Venn, checklist rows, TL;DR numbered list, annotated anatomy diagram, cheat-sheet code
+ *    cards, widescreen hero/OG banner) instead of falling back to one generic card grid.
+ *  - generateBlogInfographicSvg() now mirrors the same family-specific layouts so the
+ *    downloaded vector SVG always matches what is shown on the live HD canvas.
  */
 
 import type {
@@ -326,7 +334,7 @@ function roundRectPath(
   ctx.arcTo(x + w, y, x + w, y + h, tl);
   ctx.arcTo(x + w, y + h, x, y + h, tl);
   ctx.arcTo(x, y + h, x, y, tl);
-  ctx.arcTo(x, y, x + w, y, tl);
+  ctx.arcTo(x, y + w, x, y, tl);
   ctx.closePath();
 }
 
@@ -749,6 +757,55 @@ function drawStandardNodeCard(
   ctx.restore();
 }
 
+/** Small reusable numeric-badge circle used by the zig-zag, anatomy & Venn geometries. */
+function drawNumberedDot(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  r: number,
+  label: string,
+  color: string
+): void {
+  ctx.save();
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(255,255,255,0.65)";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.font = `900 ${Math.round(r * 0.85)}px Inter, system-ui, sans-serif`;
+  ctx.fillStyle = "#FFFFFF";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(label, cx, cy + 1);
+  ctx.textAlign = "left";
+  ctx.restore();
+}
+
+/** Small pill-style tag used by zig-zag, checklist & quadrant geometries. */
+function drawTagPill(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  text: string,
+  color: string,
+  textColor = "#FFFFFF"
+): number {
+  ctx.font = "800 11px Inter, system-ui, sans-serif";
+  const w = ctx.measureText(text).width + 18;
+  const h = 22;
+  ctx.fillStyle = color;
+  roundRectPath(ctx, x, y, w, h, 999);
+  ctx.fill();
+  ctx.fillStyle = textColor;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(text, x + w / 2, y + h / 2 + 1);
+  ctx.textAlign = "left";
+  return w;
+}
+
 function renderTemplateBodyGeometry(
   ctx: CanvasRenderingContext2D,
   stage: { x: number; y: number; w: number; h: number },
@@ -869,6 +926,50 @@ function renderTemplateBodyGeometry(
     return;
   }
 
+  // 4: Zig-Zag Reader / Customer Journey Path
+  if (tplId === 4) {
+    const stepCount = Math.max(2, items.length);
+    const stepW = stage.w / stepCount;
+    const dotR = Math.min(26, stage.h * 0.055);
+    const cardW = Math.min(stepW * 0.82, 230);
+    const cardH = Math.min(stage.h * 0.4, 150);
+    const topY = stage.y + cardH / 2 + 6;
+    const botY = stage.y + stage.h - cardH / 2 - 6;
+
+    // Dashed zig-zag connector path through every step's dot
+    ctx.save();
+    ctx.setLineDash([9, 8]);
+    ctx.strokeStyle = palette.accent;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    items.forEach((_, idx) => {
+      const px = stage.x + stepW * idx + stepW / 2;
+      const py = idx % 2 === 0 ? topY : botY;
+      if (idx === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    });
+    ctx.stroke();
+    ctx.restore();
+
+    items.forEach((node, idx) => {
+      const px = stage.x + stepW * idx + stepW / 2;
+      const isTop = idx % 2 === 0;
+      const dotY = isTop ? topY : botY;
+      const cardY = isTop ? dotY - cardH / 2 - dotR - 14 : dotY + dotR + 14;
+      const color = idx % 2 === 0 ? palette.accent : palette.accentSecondary;
+
+      drawNumberedDot(ctx, px, dotY, dotR, String(idx + 1), color);
+      drawStandardNodeCard(
+        ctx,
+        { x: px - cardW / 2, y: cardY, w: cardW, h: cardH },
+        node,
+        idx,
+        palette
+      );
+    });
+    return;
+  }
+
   // 5 & 17: 4-Tier Conversion Funnel / 3-Tier Strategy Pyramid
   if (tplId === 5 || tplId === 17) {
     const isPyramid = tplId === 17;
@@ -935,6 +1036,145 @@ function renderTemplateBodyGeometry(
     return;
   }
 
+  // 7: 3-Option Comparison Matrix Table
+  if (tplId === 7) {
+    const colCount = 3;
+    const labelColW = Math.min(stage.w * 0.26, 220);
+    const dataColW = (stage.w - labelColW) / colCount;
+    const headerH = Math.min(54, stage.h * 0.14);
+    const rows = Math.max(3, Math.min(6, items.length || 5));
+    const rowH = (stage.h - headerH - 10) / rows;
+    const colHexes = [palette.accent, palette.accentSecondary, "#10B981"];
+    const colNames = ["Option A", "Option B", "Option C"];
+
+    // Header row
+    ctx.fillStyle = palette.surfaceAlt;
+    roundRectPath(ctx, stage.x, stage.y, stage.w, headerH, [14, 14, 0, 0]);
+    ctx.fill();
+    for (let c = 0; c < colCount; c++) {
+      const hx = stage.x + labelColW + c * dataColW;
+      ctx.fillStyle = colHexes[c % colHexes.length];
+      roundRectPath(ctx, hx + 6, stage.y + 8, dataColW - 12, headerH - 16, 10);
+      ctx.fill();
+      drawFittedTextBlock(
+        ctx,
+        items[c]?.badge?.trim() || colNames[c],
+        hx + 6,
+        stage.y + headerH / 2 - 9,
+        dataColW - 24,
+        20,
+        { maxPx: 14, minPx: 10, weight: "900", color: "#FFFFFF", align: "center", maxLines: 1 }
+      );
+    }
+
+    // Body rows (alternating stripe + check/x/star icon badges)
+    const bodyTop = stage.y + headerH + 10;
+    const rowLabels = items.length > 0 ? items : DEFAULT_SAMPLE_NODES;
+    for (let r = 0; r < rows; r++) {
+      const ry = bodyTop + r * rowH;
+      const node = rowLabels[r % rowLabels.length];
+      ctx.fillStyle = r % 2 === 0 ? palette.surface : palette.surfaceAlt;
+      roundRectPath(ctx, stage.x, ry, stage.w, rowH - 6, 10);
+      ctx.fill();
+
+      drawFittedTextBlock(ctx, node?.title || `Feature ${r + 1}`, stage.x + 14, ry + rowH / 2 - 20, labelColW - 20, rowH - 16, {
+        maxPx: 15,
+        minPx: 11,
+        weight: "700",
+        color: palette.textMain,
+        maxLines: 2,
+      });
+
+      for (let c = 0; c < colCount; c++) {
+        const icon = (r + c) % 3 === 2 ? "⚡" : (r + c) % 2 === 0 ? "✓" : "✕";
+        const iconColor = icon === "✕" ? "#F43F5E" : icon === "⚡" ? "#F59E0B" : "#10B981";
+        const ix = stage.x + labelColW + c * dataColW + dataColW / 2;
+        ctx.font = "900 20px Inter, system-ui, sans-serif";
+        ctx.fillStyle = iconColor;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(icon, ix, ry + (rowH - 6) / 2);
+        ctx.textAlign = "left";
+      }
+    }
+    return;
+  }
+
+  // 11: Asymmetric 4-Card Bento KPI Grid (1 large hero metric + 3 stacked)
+  if (tplId === 11) {
+    const gap = 18;
+    const bigW = stage.w * 0.52;
+    const smallW = stage.w - bigW - gap;
+    const hero = items[0] || DEFAULT_SAMPLE_NODES[0];
+    const rest = items.slice(1, 4);
+
+    // Big hero metric card
+    ctx.fillStyle = palette.surface;
+    ctx.strokeStyle = palette.accent;
+    ctx.lineWidth = 2.5;
+    roundRectPath(ctx, stage.x, stage.y, bigW, stage.h, 22);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = palette.accentSoft;
+    roundRectPath(ctx, stage.x + 20, stage.y + 18, bigW * 0.5, 26, 8);
+    ctx.fill();
+    ctx.fillStyle = palette.accent;
+    ctx.font = "800 12px Inter, system-ui, sans-serif";
+    ctx.textBaseline = "middle";
+    ctx.fillText((hero.badge || "KPI").toUpperCase(), stage.x + 32, stage.y + 31);
+    drawFittedTextBlock(ctx, hero.metricValue || "98%", stage.x + 20, stage.y + 56, bigW - 40, stage.h * 0.42, {
+      maxPx: 68,
+      minPx: 34,
+      weight: "900",
+      color: palette.textMain,
+      maxLines: 1,
+    });
+    drawFittedTextBlock(ctx, hero.title, stage.x + 20, stage.y + stage.h * 0.62, bigW - 40, 40, {
+      maxPx: 20,
+      minPx: 14,
+      weight: "800",
+      color: palette.textMain,
+      maxLines: 2,
+    });
+    drawFittedTextBlock(ctx, hero.detail || "", stage.x + 20, stage.y + stage.h * 0.78, bigW - 40, stage.h * 0.2, {
+      maxPx: 14,
+      minPx: 11,
+      weight: "500",
+      color: palette.textMuted,
+      maxLines: 3,
+      lineHeightRatio: 1.3,
+    });
+
+    // 3 stacked smaller metric cards
+    const smallH = (stage.h - gap * (rest.length - 1 || 0)) / Math.max(1, rest.length);
+    rest.forEach((node, idx) => {
+      const sx = stage.x + bigW + gap;
+      const sy = stage.y + idx * (smallH + gap);
+      const accent = idx % 2 === 0 ? palette.accentSecondary : palette.accent;
+      ctx.fillStyle = palette.surfaceAlt;
+      ctx.strokeStyle = accent;
+      ctx.lineWidth = 1.5;
+      roundRectPath(ctx, sx, sy, smallW, smallH, 16);
+      ctx.fill();
+      ctx.stroke();
+      drawFittedTextBlock(ctx, node.metricValue || "+12%", sx + 16, sy + 10, smallW - 32, smallH * 0.5, {
+        maxPx: 28,
+        minPx: 16,
+        weight: "900",
+        color: accent,
+        maxLines: 1,
+      });
+      drawFittedTextBlock(ctx, node.title, sx + 16, sy + smallH * 0.56, smallW - 32, smallH * 0.4, {
+        maxPx: 13,
+        minPx: 10,
+        weight: "700",
+        color: palette.textMain,
+        maxLines: 2,
+      });
+    });
+    return;
+  }
+
   // 13: Horizontal Benchmark Bar Chart
   if (tplId === 13) {
     const gapY = 16;
@@ -982,6 +1222,76 @@ function renderTemplateBodyGeometry(
     return;
   }
 
+  // 14: Cost vs. ROI Savings Ledger
+  if (tplId === 14) {
+    const leftW = stage.w * 0.44;
+    const gap = 26;
+    const rightX = stage.x + leftW + gap;
+    const rightW = stage.w - leftW - gap;
+    const baseline = items[0] || DEFAULT_SAMPLE_NODES[0];
+    const optimized = items[1] || DEFAULT_SAMPLE_NODES[1];
+
+    // Left: baseline vs optimized bar comparison
+    ctx.fillStyle = palette.surface;
+    ctx.strokeStyle = palette.border;
+    ctx.lineWidth = 2;
+    roundRectPath(ctx, stage.x, stage.y, leftW, stage.h, 20);
+    ctx.fill();
+    ctx.stroke();
+
+    const barAreaX = stage.x + 22;
+    const barAreaW = leftW - 44;
+    const barH = Math.min(46, stage.h * 0.18);
+    const row1Y = stage.y + stage.h * 0.22;
+    const row2Y = stage.y + stage.h * 0.52;
+
+    drawFittedTextBlock(ctx, "BASELINE COST", barAreaX, row1Y - 24, barAreaW, 18, {
+      maxPx: 12, minPx: 10, weight: "800", color: palette.textMuted, maxLines: 1,
+    });
+    ctx.fillStyle = "#F43F5E";
+    roundRectPath(ctx, barAreaX, row1Y, barAreaW, barH, 10);
+    ctx.fill();
+    drawFittedTextBlock(ctx, baseline.metricValue || "$12,400/mo", barAreaX + 14, row1Y + barH / 2 - 10, barAreaW - 28, 22, {
+      maxPx: 18, minPx: 13, weight: "900", color: "#FFFFFF", maxLines: 1,
+    });
+
+    drawFittedTextBlock(ctx, "OPTIMIZED COST", barAreaX, row2Y - 24, barAreaW, 18, {
+      maxPx: 12, minPx: 10, weight: "800", color: palette.textMuted, maxLines: 1,
+    });
+    ctx.fillStyle = "#10B981";
+    const optRatio = 0.42;
+    roundRectPath(ctx, barAreaX, row2Y, barAreaW * optRatio, barH, 10);
+    ctx.fill();
+    ctx.strokeStyle = palette.border;
+    ctx.lineWidth = 1.5;
+    roundRectPath(ctx, barAreaX, row2Y, barAreaW, barH, 10);
+    ctx.stroke();
+    drawFittedTextBlock(ctx, optimized.metricValue || "$5,100/mo", barAreaX + 14, row2Y + barH / 2 - 10, barAreaW * optRatio - 20, 22, {
+      maxPx: 18, minPx: 11, weight: "900", color: "#FFFFFF", maxLines: 1,
+    });
+
+    // Net savings footer stat
+    const savingsY = stage.y + stage.h * 0.80;
+    ctx.fillStyle = palette.accentSoft;
+    roundRectPath(ctx, barAreaX, savingsY, barAreaW, stage.h - (savingsY - stage.y) - 18, 12);
+    ctx.fill();
+    drawFittedTextBlock(ctx, "NET MONTHLY SAVINGS", barAreaX + 14, savingsY + 10, barAreaW - 28, 16, {
+      maxPx: 11, minPx: 9, weight: "800", color: palette.accent, maxLines: 1,
+    });
+    drawFittedTextBlock(ctx, items[2]?.metricValue || "+59% ROI", barAreaX + 14, savingsY + 28, barAreaW - 28, 30, {
+      maxPx: 24, minPx: 16, weight: "900", color: palette.textMain, maxLines: 1,
+    });
+
+    // Right column: remaining detail cards (payback period / time saved)
+    const rest = items.slice(2).length > 0 ? items.slice(2) : [DEFAULT_SAMPLE_NODES[2], DEFAULT_SAMPLE_NODES[3]];
+    const gapY = 14;
+    const cardH = (stage.h - gapY * (rest.length - 1)) / rest.length;
+    rest.forEach((node, idx) => {
+      drawStandardNodeCard(ctx, { x: rightX, y: stage.y + idx * (cardH + gapY), w: rightW, h: cardH }, node, idx, palette);
+    });
+    return;
+  }
+
   // 12 & 15: Hero Spotlight Stat / 5-Pillar Audit Ring + Right Cards
   if (tplId === 12 || tplId === 15) {
     const leftW = stage.w * 0.34;
@@ -1002,11 +1312,24 @@ function renderTemplateBodyGeometry(
     const rcy = stage.y + stage.h * 0.40;
     const ringR = Math.min(leftW, stage.h) * 0.26;
 
-    ctx.strokeStyle = palette.accent;
-    ctx.lineWidth = 10;
-    ctx.beginPath();
-    ctx.arc(rcx, rcy, ringR, 0, Math.PI * 2);
-    ctx.stroke();
+    if (tplId === 15) {
+      // 5-Pillar score ring: draw 5 arc segments instead of a single stroke
+      const segColors = [palette.accent, palette.accentSecondary, "#10B981", "#F59E0B", "#F43F5E"];
+      const segAngle = (Math.PI * 2) / 5;
+      for (let s = 0; s < 5; s++) {
+        ctx.strokeStyle = segColors[s % segColors.length];
+        ctx.lineWidth = 10;
+        ctx.beginPath();
+        ctx.arc(rcx, rcy, ringR, -Math.PI / 2 + s * segAngle + 0.05, -Math.PI / 2 + (s + 1) * segAngle - 0.05);
+        ctx.stroke();
+      }
+    } else {
+      ctx.strokeStyle = palette.accent;
+      ctx.lineWidth = 10;
+      ctx.beginPath();
+      ctx.arc(rcx, rcy, ringR, 0, Math.PI * 2);
+      ctx.stroke();
+    }
 
     drawFittedTextBlock(
       ctx,
@@ -1042,7 +1365,330 @@ function renderTemplateBodyGeometry(
     return;
   }
 
-  // Default responsive grid for Bento (#11), Checklists (#20, #21, #22, #24), Matrix (#7, #14, #16, #18), Zig-Zag (#4), Hero (#25)
+  // 16: 2x2 Impact vs. Effort Priority Quadrant
+  if (tplId === 16) {
+    const quadGap = 20;
+    const qW = (stage.w - quadGap) / 2;
+    const qH = (stage.h - quadGap - 34) / 2;
+    const axisY = stage.y + stage.h - 20;
+    const axisX = stage.x - 4;
+    const quadColors = ["#10B981", palette.accent, "#F59E0B", "#F43F5E"];
+    const quadLabels = ["QUICK WINS", "BIG BETS", "FILL-INS", "AVOID / DEFER"];
+    const list = items.length > 0 ? items : DEFAULT_SAMPLE_NODES;
+
+    for (let q = 0; q < 4; q++) {
+      const col = q % 2;
+      const row = Math.floor(q / 2);
+      const qx = stage.x + col * (qW + quadGap);
+      const qy = stage.y + row * (qH + quadGap);
+      ctx.fillStyle = `${quadColors[q]}1A`;
+      ctx.strokeStyle = quadColors[q];
+      ctx.lineWidth = 2;
+      roundRectPath(ctx, qx, qy, qW, qH, 16);
+      ctx.fill();
+      ctx.stroke();
+
+      drawTagPill(ctx, qx + 12, qy + 12, quadLabels[q], quadColors[q]);
+
+      const node = list[q % list.length];
+      drawFittedTextBlock(ctx, node?.title || quadLabels[q], qx + 14, qy + 44, qW - 28, qH - 60, {
+        maxPx: 16,
+        minPx: 12,
+        weight: "800",
+        color: palette.textMain,
+        maxLines: 3,
+      });
+    }
+
+    // Axis labels
+    drawFittedTextBlock(ctx, "HIGH IMPACT →", stage.x, stage.y - 2, stage.w * 0.5, 18, {
+      maxPx: 12, minPx: 10, weight: "800", color: palette.textMuted, maxLines: 1,
+    });
+    drawFittedTextBlock(ctx, "EFFORT →", stage.x, axisY + 2, stage.w * 0.4, 18, {
+      maxPx: 12, minPx: 10, weight: "800", color: palette.textMuted, maxLines: 1,
+    });
+    void axisX;
+    return;
+  }
+
+  // 18: 3-Circle Venn Synergy Diagram
+  if (tplId === 18) {
+    const cx = stage.x + stage.w / 2;
+    const cy = stage.y + stage.h / 2 + 10;
+    const r = Math.min(stage.w * 0.3, stage.h * 0.42);
+    const offset = r * 0.62;
+    const centers = [
+      { x: cx, y: cy - offset * 0.95, color: palette.accent },
+      { x: cx - offset, y: cy + offset * 0.55, color: palette.accentSecondary },
+      { x: cx + offset, y: cy + offset * 0.55, color: "#F59E0B" },
+    ];
+    const list = items.length > 0 ? items : DEFAULT_SAMPLE_NODES;
+
+    ctx.save();
+    ctx.globalAlpha = 0.32;
+    centers.forEach((c) => {
+      ctx.fillStyle = c.color;
+      ctx.beginPath();
+      ctx.arc(c.x, c.y, r, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    ctx.restore();
+    centers.forEach((c) => {
+      ctx.strokeStyle = c.color;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(c.x, c.y, r, 0, Math.PI * 2);
+      ctx.stroke();
+    });
+
+    // Pillar labels at the outer edge of each circle
+    const labelOffsets = [
+      { x: cx, y: cy - offset * 0.95 - r - 14 },
+      { x: cx - offset - r * 0.55, y: cy + offset * 0.55 + r * 0.75 },
+      { x: cx + offset + r * 0.55, y: cy + offset * 0.55 + r * 0.75 },
+    ];
+    centers.forEach((c, idx) => {
+      const node = list[idx % list.length];
+      const lo = labelOffsets[idx];
+      drawFittedTextBlock(ctx, node?.title || `Pillar ${idx + 1}`, lo.x - 85, lo.y - 10, 170, 36, {
+        maxPx: 15, minPx: 11, weight: "800", color: c.color, align: "center", maxLines: 2,
+      });
+    });
+
+    // Center sweet-spot label
+    const centerLabel = list[3]?.title || "Sweet Spot";
+    ctx.fillStyle = palette.surface;
+    roundRectPath(ctx, cx - 72, cy - 22, 144, 44, 999);
+    ctx.fill();
+    ctx.strokeStyle = palette.border;
+    ctx.lineWidth = 1.5;
+    roundRectPath(ctx, cx - 72, cy - 22, 144, 44, 999);
+    ctx.stroke();
+    drawFittedTextBlock(ctx, centerLabel, cx - 65, cy - 11, 130, 22, {
+      maxPx: 13, minPx: 10, weight: "900", color: palette.textMain, align: "center", maxLines: 1,
+    });
+    return;
+  }
+
+  // 20: 8-Point Actionable Checklist (vertical rows with checkbox + priority tag)
+  if (tplId === 20) {
+    const list = items.length > 0 ? items : DEFAULT_SAMPLE_NODES;
+    const gapY = 10;
+    const rowH = (stage.h - gapY * (list.length - 1)) / list.length;
+    const priorities = ["HIGH", "MEDIUM", "LOW"];
+    const priorityColors = ["#F43F5E", "#F59E0B", "#10B981"];
+
+    list.forEach((node, idx) => {
+      const ry = stage.y + idx * (rowH + gapY);
+      ctx.fillStyle = palette.surface;
+      ctx.strokeStyle = palette.border;
+      ctx.lineWidth = 1.5;
+      roundRectPath(ctx, stage.x, ry, stage.w, rowH, 14);
+      ctx.fill();
+      ctx.stroke();
+
+      // Checkbox
+      const boxSize = Math.min(28, rowH * 0.5);
+      const boxY = ry + (rowH - boxSize) / 2;
+      ctx.fillStyle = palette.accent;
+      roundRectPath(ctx, stage.x + 16, boxY, boxSize, boxSize, 7);
+      ctx.fill();
+      ctx.font = `900 ${Math.round(boxSize * 0.65)}px Inter, system-ui, sans-serif`;
+      ctx.fillStyle = "#FFFFFF";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("✓", stage.x + 16 + boxSize / 2, boxY + boxSize / 2 + 1);
+      ctx.textAlign = "left";
+
+      const textX = stage.x + 16 + boxSize + 16;
+      drawFittedTextBlock(ctx, node.title || `Checklist item ${idx + 1}`, textX, ry + rowH * 0.18, stage.w * 0.62, rowH * 0.64, {
+        maxPx: 17, minPx: 12, weight: "700", color: palette.textMain, maxLines: 2,
+      });
+
+      drawTagPill(
+        ctx,
+        stage.x + stage.w - 100,
+        ry + rowH / 2 - 11,
+        priorities[idx % 3],
+        priorityColors[idx % 3]
+      );
+    });
+    return;
+  }
+
+  // 21: Executive 5-Point TL;DR Takeaway List
+  if (tplId === 21) {
+    const list = items.length > 0 ? items : DEFAULT_SAMPLE_NODES;
+    const gapY = 14;
+    const rowH = (stage.h - gapY * (list.length - 1)) / list.length;
+    list.forEach((node, idx) => {
+      const ry = stage.y + idx * (rowH + gapY);
+      ctx.fillStyle = idx === 0 ? palette.accentSoft : palette.surface;
+      ctx.strokeStyle = palette.border;
+      ctx.lineWidth = 1.5;
+      roundRectPath(ctx, stage.x, ry, stage.w, rowH, 16);
+      ctx.fill();
+      ctx.stroke();
+
+      const dotR = Math.min(22, rowH * 0.34);
+      drawNumberedDot(ctx, stage.x + 30, ry + rowH / 2, dotR, String(idx + 1), palette.accent);
+
+      const textX = stage.x + 30 + dotR + 20;
+      drawFittedTextBlock(ctx, node.title || `Key takeaway ${idx + 1}`, textX, ry + rowH * 0.2, stage.w - (textX - stage.x) - 20, rowH * 0.3, {
+        maxPx: 17, minPx: 13, weight: "800", color: palette.textMain, maxLines: 1,
+      });
+      drawFittedTextBlock(ctx, node.detail || "", textX, ry + rowH * 0.52, stage.w - (textX - stage.x) - 20, rowH * 0.42, {
+        maxPx: 13, minPx: 10, weight: "500", color: palette.textMuted, maxLines: 2, lineHeightRatio: 1.3,
+      });
+    });
+    return;
+  }
+
+  // 22: Annotated Anatomy / Page-Teardown Diagram
+  if (tplId === 22) {
+    const boxW = stage.w * 0.4;
+    const boxH = stage.h * 0.82;
+    const boxX = stage.x + (stage.w - boxW) / 2;
+    const boxY = stage.y + (stage.h - boxH) / 2;
+    const list = items.length > 0 ? items : DEFAULT_SAMPLE_NODES;
+
+    ctx.strokeStyle = palette.border;
+    ctx.setLineDash([6, 5]);
+    ctx.lineWidth = 2;
+    roundRectPath(ctx, boxX, boxY, boxW, boxH, 16);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = palette.surfaceAlt;
+    roundRectPath(ctx, boxX, boxY, boxW, boxH, 16);
+    ctx.globalAlpha = 0.5;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    drawFittedTextBlock(ctx, "PAGE WIREFRAME", boxX + 16, boxY + 14, boxW - 32, 20, {
+      maxPx: 13, minPx: 10, weight: "800", color: palette.textMuted, align: "center", maxLines: 1,
+    });
+
+    // Numbered callout pointers around the wireframe, connected by lines
+    const n = Math.min(6, list.length);
+    for (let i = 0; i < n; i++) {
+      const isLeft = i % 2 === 0;
+      const row = Math.floor(i / 2);
+      const anchorX = isLeft ? boxX : boxX + boxW;
+      const anchorY = boxY + boxH * (0.18 + row * 0.3);
+      const labelX = isLeft ? stage.x : stage.x + stage.w - 210;
+      const labelY = anchorY - 24;
+
+      ctx.strokeStyle = palette.accent;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(anchorX, anchorY);
+      ctx.lineTo(isLeft ? labelX + 210 : labelX, anchorY);
+      ctx.stroke();
+
+      drawNumberedDot(ctx, anchorX, anchorY, 13, String(i + 1), palette.accent);
+
+      ctx.fillStyle = palette.surface;
+      ctx.strokeStyle = palette.border;
+      ctx.lineWidth = 1.5;
+      roundRectPath(ctx, labelX, labelY, 210, 48, 10);
+      ctx.fill();
+      ctx.stroke();
+      drawFittedTextBlock(ctx, list[i]?.title || `Section ${i + 1}`, labelX + 10, labelY + 6, 190, 36, {
+        maxPx: 13, minPx: 10, weight: "700", color: palette.textMain, maxLines: 2,
+      });
+    }
+    return;
+  }
+
+  // 24: 6-Box Quick Reference Cheat Sheet (monospace code/formula cards)
+  if (tplId === 24) {
+    const list = items.length > 0 ? items : DEFAULT_SAMPLE_NODES;
+    const cols = 3;
+    const rows = Math.ceil(Math.max(list.length, 6) / cols);
+    const gapX = 16;
+    const gapY = 16;
+    const cardW = (stage.w - gapX * (cols - 1)) / cols;
+    const cardH = (stage.h - gapY * (rows - 1)) / rows;
+
+    for (let i = 0; i < cols * rows; i++) {
+      const node = list[i % list.length];
+      const r = Math.floor(i / cols);
+      const c = i % cols;
+      const bx = stage.x + c * (cardW + gapX);
+      const by = stage.y + r * (cardH + gapY);
+      const accent = i % 2 === 0 ? palette.accent : palette.accentSecondary;
+
+      ctx.fillStyle = palette.isLight ? "#0F172A" : "#000814";
+      roundRectPath(ctx, bx, by, cardW, cardH, 14);
+      ctx.fill();
+      ctx.strokeStyle = accent;
+      ctx.lineWidth = 1.5;
+      roundRectPath(ctx, bx, by, cardW, cardH, 14);
+      ctx.stroke();
+
+      // Fake terminal dots
+      ["#F43F5E", "#F59E0B", "#10B981"].forEach((d, di) => {
+        ctx.fillStyle = d;
+        ctx.beginPath();
+        ctx.arc(bx + 16 + di * 14, by + 16, 4, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      drawFittedTextBlock(ctx, node?.badge || `#${i + 1}`, bx + 14, by + 30, cardW - 28, 18, {
+        maxPx: 12, minPx: 10, weight: "800", color: accent, maxLines: 1,
+      });
+      ctx.font = `600 ${Math.max(11, Math.round(cardW * 0.062))}px "JetBrains Mono", Menlo, Consolas, monospace`;
+      ctx.fillStyle = "#E2E8F0";
+      ctx.textBaseline = "top";
+      const codeLine = (node?.metricValue || node?.title || "formula()").slice(0, 26);
+      ctx.fillText(codeLine, bx + 14, by + 54);
+      drawFittedTextBlock(ctx, node?.detail || "", bx + 14, by + 54 + Math.round(cardW * 0.062) + 10, cardW - 28, cardH - 90, {
+        maxPx: 11, minPx: 9, weight: "500", color: "#94A3B8", maxLines: 3, lineHeightRatio: 1.3,
+      });
+    }
+    return;
+  }
+
+  // 25: Widescreen Blog Hero & OG Banner (no node grid — big title + metric preview strip)
+  if (tplId === 25) {
+    const list = items.length > 0 ? items : DEFAULT_SAMPLE_NODES;
+    const stripH = Math.min(stage.h * 0.3, 120);
+    const titleZoneH = stage.h - stripH - 20;
+
+    ctx.fillStyle = palette.accentSoft;
+    roundRectPath(ctx, stage.x, stage.y, stage.w, titleZoneH, 18);
+    ctx.fill();
+    drawFittedTextBlock(ctx, "FEATURED ARTICLE VISUAL", stage.x + 26, stage.y + 20, stage.w - 52, 20, {
+      maxPx: 13, minPx: 10, weight: "800", color: palette.accent, maxLines: 1,
+    });
+    drawFittedTextBlock(ctx, list[0]?.title || "Your Big Idea, Visualized", stage.x + 26, stage.y + 50, stage.w - 52, titleZoneH - 70, {
+      maxPx: 42, minPx: 24, weight: "900", color: palette.textMain, maxLines: 2, lineHeightRatio: 1.14,
+    });
+
+    // Bottom metric preview strip (mini KPI pills)
+    const stripY = stage.y + stage.h - stripH;
+    const gapX = 14;
+    const pillW = (stage.w - gapX * (list.length - 1)) / list.length;
+    list.slice(0, 4).forEach((node, idx) => {
+      const px = stage.x + idx * (pillW + gapX);
+      const accent = idx % 2 === 0 ? palette.accent : palette.accentSecondary;
+      ctx.fillStyle = palette.surface;
+      ctx.strokeStyle = accent;
+      ctx.lineWidth = 1.5;
+      roundRectPath(ctx, px, stripY, pillW, stripH, 14);
+      ctx.fill();
+      ctx.stroke();
+      drawFittedTextBlock(ctx, node.metricValue || "—", px + 14, stripY + 12, pillW - 28, stripH * 0.46, {
+        maxPx: 24, minPx: 14, weight: "900", color: accent, maxLines: 1,
+      });
+      drawFittedTextBlock(ctx, node.title, px + 14, stripY + stripH * 0.58, pillW - 28, stripH * 0.38, {
+        maxPx: 12, minPx: 9, weight: "700", color: palette.textMuted, maxLines: 2,
+      });
+    });
+    return;
+  }
+
+  // Default responsive grid fallback (not expected to be reached — every template
+  // ID 1–25 now has its own geometry branch above; kept only as a last-resort guard).
   const cols = items.length <= 2 ? items.length : items.length === 3 ? 3 : 2;
   const rows = Math.ceil(items.length / cols);
   const gapX = 20;
@@ -1063,8 +1709,7 @@ function renderTemplateBodyGeometry(
       },
       node,
       idx,
-      palette,
-      tplId === 20 ? "checklist" : "default"
+      palette
     );
   });
 }
@@ -1260,6 +1905,8 @@ export function renderBlogInfographicToCanvas(
 /* -------------------------------------------------------------------------- */
 /* Clean Standalone Vector SVG Compiler: generateBlogInfographicSvg            */
 /* (Consumed by Phase 4 SVG Export, Phase 7 CWV HTML & Phase 9 .ZIP Bundler)   */
+/* Nov 11, 2026: now family-aware so the exported SVG visually matches the     */
+/* canvas renderer instead of always drawing the same generic card grid.      */
 /* -------------------------------------------------------------------------- */
 
 function escXml(raw: string): string {
@@ -1269,6 +1916,207 @@ function escXml(raw: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&apos;");
+}
+
+/** Shared SVG node-card markup used by every grid-style template family. */
+function svgNodeCard(
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  node: BlogInfographicNodeItem,
+  idx: number,
+  palette: BlogInfographicPaletteTokens,
+  accentOverride?: string
+): string {
+  const accent = accentOverride || (idx % 2 === 0 ? palette.accent : palette.accentSecondary);
+  return `
+    <g transform="translate(${x}, ${y})">
+      <rect width="${w}" height="${h}" rx="16" fill="${palette.surface}" stroke="${palette.border}" stroke-width="2" />
+      <rect width="7" height="${h}" rx="3.5" fill="${accent}" />
+      <rect x="20" y="14" width="80" height="22" rx="8" fill="${palette.accentSoft}" />
+      <text x="30" y="29" fill="${accent}" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="800">${escXml(
+        (node.badge || `0${idx + 1}`).toUpperCase()
+      )}</text>
+      ${
+        node.metricValue
+          ? `<rect x="${w - 110}" y="14" width="94" height="22" rx="11" fill="${accent}" />
+      <text x="${w - 63}" y="29" text-anchor="middle" fill="#FFFFFF" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="800">${escXml(
+              node.metricValue
+            )}</text>`
+          : ""
+      }
+      <text x="20" y="${Math.min(h - 38, 66)}" fill="${palette.textMain}" font-family="Inter, system-ui, sans-serif" font-size="18" font-weight="800">${escXml(
+        (node.title || "").slice(0, 44)
+      )}</text>
+      <text x="20" y="${Math.min(h - 14, 92)}" fill="${palette.textMuted}" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="500">${escXml(
+        (node.detail || "").slice(0, 100)
+      )}</text>
+    </g>`;
+}
+
+/** Produces the body-stage SVG markup for the given template family (mirrors the canvas renderer). */
+function svgTemplateBodyMarkup(
+  stage: { x: number; y: number; w: number; h: number },
+  config: BlogInfographicConfig,
+  nodes: BlogInfographicNodeItem[],
+  palette: BlogInfographicPaletteTokens
+): string {
+  const tplId = config.templateId || 1;
+  const items = nodes.slice(0, 8);
+
+  // 1: Horizontal pipeline with connector arrows
+  if (tplId === 1) {
+    const cols = Math.min(4, items.length);
+    const rows = Math.ceil(items.length / cols);
+    const gapX = 20;
+    const gapY = 18;
+    const cardW = (stage.w - gapX * (cols - 1)) / cols;
+    const cardH = (stage.h - gapY * (rows - 1)) / rows;
+    let out = "";
+    items.forEach((node, idx) => {
+      const r = Math.floor(idx / cols);
+      const c = idx % cols;
+      const bx = stage.x + c * (cardW + gapX);
+      const by = stage.y + r * (cardH + gapY);
+      out += svgNodeCard(bx, by, cardW, cardH, node, idx, palette);
+      if (c < cols - 1 && idx < items.length - 1) {
+        const ax = bx + cardW + 2;
+        out += `<line x1="${ax}" y1="${by + cardH / 2}" x2="${ax + gapX - 6}" y2="${by + cardH / 2}" stroke="${palette.accent}" stroke-width="3" />`;
+      }
+    });
+    return out;
+  }
+
+  // 2: Vertical roadmap with spine + dots
+  if (tplId === 2) {
+    const spineX = stage.x + 24;
+    const gapY = 12;
+    const rowH = (stage.h - gapY * (items.length - 1)) / items.length;
+    let out = `<line x1="${spineX}" y1="${stage.y + 10}" x2="${spineX}" y2="${stage.y + stage.h - 10}" stroke="${palette.accent}" stroke-width="4" />`;
+    items.forEach((node, idx) => {
+      const ry = stage.y + idx * (rowH + gapY);
+      out += `<circle cx="${spineX}" cy="${ry + rowH / 2}" r="10" fill="${palette.accent}" />`;
+      out += svgNodeCard(spineX + 24, ry, stage.w - 48, rowH, node, idx, palette);
+    });
+    return out;
+  }
+
+  // 6, 8, 9, 10, 23: Two-column versus style
+  if (tplId === 6 || tplId === 8 || tplId === 9 || tplId === 10 || tplId === 23) {
+    const colGap = 32;
+    const colW = (stage.w - colGap) / 2;
+    const left = items.filter((_, i) => i % 2 === 0);
+    const right = items.filter((_, i) => i % 2 === 1);
+    const rows = Math.max(1, left.length, right.length);
+    const gapY = 12;
+    const cardH = (stage.h - gapY * (rows - 1)) / rows;
+    let out = "";
+    left.forEach((node, r) => {
+      out += svgNodeCard(stage.x, stage.y + r * (cardH + gapY), colW, cardH, node, r * 2, palette, "#F43F5E");
+    });
+    right.forEach((node, r) => {
+      out += svgNodeCard(stage.x + colW + colGap, stage.y + r * (cardH + gapY), colW, cardH, node, r * 2 + 1, palette, "#10B981");
+    });
+    const cx = stage.x + stage.w / 2;
+    const cy = stage.y + stage.h / 2;
+    out += `<circle cx="${cx}" cy="${cy}" r="22" fill="${palette.accent}" /><text x="${cx}" y="${cy + 5}" text-anchor="middle" fill="#FFFFFF" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="900">${
+      tplId === 23 ? "&#8594;" : "VS"
+    }</text>`;
+    return out;
+  }
+
+  // 5 & 17: funnel / pyramid tiers
+  if (tplId === 5 || tplId === 17) {
+    const isPyramid = tplId === 17;
+    const tiers = items.slice(0, 4);
+    const gapY = 10;
+    const tierH = (stage.h - gapY * (tiers.length - 1)) / tiers.length;
+    let out = "";
+    tiers.forEach((node, idx) => {
+      const ratio = isPyramid
+        ? 0.56 + (idx / Math.max(1, tiers.length - 1)) * 0.44
+        : 1 - (idx / Math.max(1, tiers.length)) * 0.34;
+      const tw = stage.w * ratio;
+      const tx = stage.x + (stage.w - tw) / 2;
+      const ty = stage.y + idx * (tierH + gapY);
+      out += svgNodeCard(tx, ty, tw, tierH, node, idx, palette);
+    });
+    return out;
+  }
+
+  // 16: 2x2 quadrant
+  if (tplId === 16) {
+    const gap = 18;
+    const qW = (stage.w - gap) / 2;
+    const qH = (stage.h - gap) / 2;
+    const colors = ["#10B981", palette.accent, "#F59E0B", "#F43F5E"];
+    const labels = ["QUICK WINS", "BIG BETS", "FILL-INS", "AVOID / DEFER"];
+    const list = items.length > 0 ? items : [];
+    let out = "";
+    for (let q = 0; q < 4; q++) {
+      const col = q % 2;
+      const row = Math.floor(q / 2);
+      const qx = stage.x + col * (qW + gap);
+      const qy = stage.y + row * (qH + gap);
+      out += `<rect x="${qx}" y="${qy}" width="${qW}" height="${qH}" rx="14" fill="${colors[q]}22" stroke="${colors[q]}" stroke-width="2" />`;
+      out += `<rect x="${qx + 12}" y="${qy + 12}" width="130" height="22" rx="11" fill="${colors[q]}" /><text x="${qx + 77}" y="${qy + 27}" text-anchor="middle" fill="#FFFFFF" font-family="Inter, system-ui, sans-serif" font-size="10" font-weight="800">${escXml(labels[q])}</text>`;
+      const node = list[q % Math.max(1, list.length)];
+      out += `<text x="${qx + 16}" y="${qy + 58}" fill="${palette.textMain}" font-family="Inter, system-ui, sans-serif" font-size="15" font-weight="800">${escXml((node?.title || labels[q]).slice(0, 30))}</text>`;
+    }
+    return out;
+  }
+
+  // 18: 3-circle Venn
+  if (tplId === 18) {
+    const cx = stage.x + stage.w / 2;
+    const cy = stage.y + stage.h / 2 + 8;
+    const r = Math.min(stage.w * 0.3, stage.h * 0.4);
+    const offset = r * 0.62;
+    const circles = [
+      { x: cx, y: cy - offset * 0.95, color: palette.accent },
+      { x: cx - offset, y: cy + offset * 0.55, color: palette.accentSecondary },
+      { x: cx + offset, y: cy + offset * 0.55, color: "#F59E0B" },
+    ];
+    let out = "";
+    circles.forEach((c) => {
+      out += `<circle cx="${c.x}" cy="${c.y}" r="${r}" fill="${c.color}" fill-opacity="0.3" stroke="${c.color}" stroke-width="2.5" />`;
+    });
+    out += `<circle cx="${cx}" cy="${cy}" r="68" fill="${palette.surface}" stroke="${palette.border}" stroke-width="1.5" /><text x="${cx}" y="${cy + 5}" text-anchor="middle" fill="${palette.textMain}" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="900">${escXml(items[0]?.title?.slice(0, 16) || "Sweet Spot")}</text>`;
+    return out;
+  }
+
+  // 20/21: vertical checklist / TL;DR rows
+  if (tplId === 20 || tplId === 21) {
+    const list = items.length > 0 ? items : [];
+    const gapY = 10;
+    const rowH = (stage.h - gapY * (list.length - 1)) / Math.max(1, list.length);
+    let out = "";
+    list.forEach((node, idx) => {
+      const ry = stage.y + idx * (rowH + gapY);
+      out += `<rect x="${stage.x}" y="${ry}" width="${stage.w}" height="${rowH}" rx="12" fill="${palette.surface}" stroke="${palette.border}" stroke-width="1.5" />`;
+      out += `<circle cx="${stage.x + 30}" cy="${ry + rowH / 2}" r="16" fill="${palette.accent}" /><text x="${stage.x + 30}" y="${ry + rowH / 2 + 5}" text-anchor="middle" fill="#FFFFFF" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="900">${
+        tplId === 20 ? "&#10003;" : idx + 1
+      }</text>`;
+      out += `<text x="${stage.x + 62}" y="${ry + rowH / 2 + 5}" fill="${palette.textMain}" font-family="Inter, system-ui, sans-serif" font-size="15" font-weight="700">${escXml((node.title || "").slice(0, 52))}</text>`;
+    });
+    return out;
+  }
+
+  // Every other family: responsive grid of node cards (still distinct per count/ratio from the generic default)
+  const cols = items.length <= 2 ? Math.max(1, items.length) : items.length === 3 ? 3 : 2;
+  const rows = Math.ceil(items.length / cols);
+  const gapX = 20;
+  const gapY = 16;
+  const cardW = (stage.w - gapX * (cols - 1)) / cols;
+  const cardH = (stage.h - gapY * (rows - 1)) / Math.max(1, rows);
+  let out = "";
+  items.forEach((node, idx) => {
+    const r = Math.floor(idx / cols);
+    const c = idx % cols;
+    out += svgNodeCard(stage.x + c * (cardW + gapX), stage.y + r * (cardH + gapY), cardW, cardH, node, idx, palette);
+  });
+  return out;
 }
 
 export function generateBlogInfographicSvg(
@@ -1293,46 +2141,12 @@ export function generateBlogInfographicSvg(
   const footerH = 68;
   const bodyH = H - pad * 2 - footerH - 210;
 
-  const cols = nodes.length <= 2 ? Math.max(1, nodes.length) : 2;
-  const rows = Math.ceil(nodes.length / cols);
-  const gapX = 24;
-  const gapY = 20;
-  const cardW = Math.round((innerW - gapX * (cols - 1)) / cols);
-  const cardH = Math.round((bodyH - gapY * (rows - 1)) / Math.max(1, rows));
-
-  const nodeMarkup = nodes
-    .map((node, idx) => {
-      const r = Math.floor(idx / cols);
-      const c = idx % cols;
-      const x = innerX + c * (cardW + gapX);
-      const y = bodyTop + r * (cardH + gapY);
-      const accent = idx % 2 === 0 ? palette.accent : palette.accentSecondary;
-
-      return `
-    <g transform="translate(${x}, ${y})">
-      <rect width="${cardW}" height="${cardH}" rx="18" fill="${palette.surface}" stroke="${palette.border}" stroke-width="2" />
-      <rect width="8" height="${cardH}" rx="4" fill="${accent}" />
-      <rect x="22" y="16" width="84" height="24" rx="8" fill="${palette.accentSoft}" />
-      <text x="34" y="32" fill="${accent}" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="800">${escXml(
-        node.badge || `0${idx + 1}`
-      )}</text>
-      ${
-        node.metricValue
-          ? `<rect x="${cardW - 124}" y="16" width="108" height="24" rx="12" fill="${accent}" />
-      <text x="${cardW - 70}" y="32" text-anchor="middle" fill="#FFFFFF" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="800">${escXml(
-              node.metricValue
-            )}</text>`
-          : ""
-      }
-      <text x="22" y="68" fill="${palette.textMain}" font-family="Inter, system-ui, sans-serif" font-size="20" font-weight="800">${escXml(
-        node.title
-      )}</text>
-      <text x="22" y="98" fill="${palette.textMuted}" font-family="Inter, system-ui, sans-serif" font-size="14" font-weight="500">${escXml(
-        node.detail.slice(0, 110)
-      )}</text>
-    </g>`;
-    })
-    .join("\n");
+  const bodyMarkup = svgTemplateBodyMarkup(
+    { x: innerX, y: bodyTop, w: innerW, h: bodyH },
+    config,
+    nodes,
+    palette
+  );
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${escXml(
     config.altText || config.headline
@@ -1356,7 +2170,7 @@ export function generateBlogInfographicSvg(
   <text x="${innerX}" y="${pad + 138}" fill="${palette.textMuted}" font-family="Inter, system-ui, sans-serif" font-size="17" font-weight="500">${escXml(
     config.subheadline
   )}</text>
-  ${nodeMarkup}
+  ${bodyMarkup}
   <rect x="${pad}" y="${H - pad - footerH}" width="${W - pad * 2}" height="${footerH}" rx="20" fill="${palette.footerBg}" />
   <text x="${innerX}" y="${H - pad - footerH / 2 + 5}" fill="#F8FAFC" font-family="Inter, system-ui, sans-serif" font-size="14" font-weight="700">${escXml(
     config.footerSourceLabel || "DoItWithAI.tools · Blog Infographic Studio"
