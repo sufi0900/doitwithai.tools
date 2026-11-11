@@ -79,6 +79,8 @@ export interface CreateNewBlogProjectOptions {
   /** "blank" (default) starts with an empty outline; "flagship-demo" clones DEFAULT_FLAGSHIP_BLOG_PROJECT. */
   template?: "blank" | "flagship-demo";
   variant?: BlogStudioVariant;
+  /** Optional project title override (convenience alias for partial.projectTitle). */
+  title?: string;
   partial?: Partial<CanonicalBlogProjectState>;
 }
 
@@ -190,9 +192,12 @@ export function withFreshScorecard(
 export function createNewBlogProjectState(
   options: CreateNewBlogProjectOptions = {}
 ): CanonicalBlogProjectState {
-  const { template = "blank", variant, partial } = options;
+  const { template = "blank", variant, title, partial } = options;
   const base = createEmptyBlogProjectState({ projectId: generateBlogProjectId() });
   const variantKeyword = variant ? VARIANT_PRIMARY_KEYWORD[variant] : undefined;
+  const mergedPartial = title
+    ? { projectTitle: title, ...partial }
+    : partial;
 
   if (template === "flagship-demo") {
     const demo = deepClone(base);
@@ -208,12 +213,12 @@ export function createNewBlogProjectState(
         ],
       };
     }
-    return withFreshScorecard({ ...demo, ...partial, projectId: partial?.projectId ?? demo.projectId });
+    return withFreshScorecard({ ...demo, ...mergedPartial, projectId: mergedPartial?.projectId ?? demo.projectId });
   }
 
   const blank: CanonicalBlogProjectState = {
     ...base,
-    projectTitle: "Untitled Blog Project",
+    projectTitle: title || "Untitled Blog Project",
     activeStage: 1,
     rawUserBriefOrSourceText: "",
     customUserInstructions: "",
