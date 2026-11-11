@@ -1503,7 +1503,7 @@ export const SCHEMA_SUPPORT_STYLES = {
   limited:
     "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-300",
   retired:
-    "border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-300",
+    "border-orange-200 bg-[#5271ff]/10 text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-300",
   schema:
     "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-300",
 } as const;

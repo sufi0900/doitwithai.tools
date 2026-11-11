@@ -3,8 +3,10 @@
 import {
   AlertTriangle,
   CheckCircle2,
+  Download,
   Link2,
   PencilLine,
+  RotateCcw,
   XCircle,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -48,6 +50,29 @@ export default function SlugLab({ candidate, input }: Props) {
 
   const evaluation = useMemo(() => evaluateSlug(value, input), [value, input]);
   const fullUrl = buildFullUrl(input.baseUrl, value);
+  const wordCount = value.split("-").filter(Boolean).length;
+
+  function downloadSlugReport() {
+    const body = [
+      `Selected Slug: /${value}`,
+      `Full URL: ${fullUrl}`,
+      `Quality Score: ${evaluation.score}/100`,
+      `Characters: ${value.length} | Words: ${wordCount}`,
+      "",
+      "Deterministic Checks:",
+      ...evaluation.checks.map(
+        (c) => `- [${c.status.toUpperCase()}] ${c.label}: ${c.detail}`,
+      ),
+    ].join("\n");
+    const u = URL.createObjectURL(
+      new Blob([body], { type: "text/plain;charset=utf-8" }),
+    );
+    const a = document.createElement("a");
+    a.href = u;
+    a.download = `seo-url-slug-${value || "draft"}.txt`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(u), 1000);
+  }
 
   return (
     <section
@@ -58,7 +83,7 @@ export default function SlugLab({ candidate, input }: Props) {
         <div className="p-5 sm:p-7 lg:p-9">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <div className="inline-flex items-center gap-2 rounded-full bg-[#5271ff]/10 px-3 py-1 text-xs font-extrabold uppercase tracking-[0.15em] text-[#4662df]">
+              <div className="inline-flex items-center gap-2 rounded-full bg-[#4058D0]/10 px-3 py-1 text-xs font-extrabold uppercase tracking-[0.15em] text-[#4058D0] dark:text-blue-300">
                 <PencilLine className="h-3.5 w-3.5" /> Live URL lab
               </div>
               <h2
@@ -75,13 +100,30 @@ export default function SlugLab({ candidate, input }: Props) {
             <ScoreRing score={evaluation.score} label="Slug quality score" />
           </div>
 
-          <label
-            htmlFor="liveSlug"
-            className="mt-7 block text-sm font-bold text-slate-800 dark:text-slate-100"
-          >
-            Final slug
-          </label>
-          <div className="mt-2 flex items-center rounded-xl border border-slate-200 bg-slate-50 px-3 focus-within:border-[#5271ff] focus-within:ring-4 focus-within:ring-[#5271ff]/10 dark:border-slate-700 dark:bg-slate-950">
+          <div className="mt-7 flex flex-wrap items-center justify-between gap-2">
+            <label
+              htmlFor="liveSlug"
+              className="block text-sm font-bold text-slate-800 dark:text-slate-100"
+            >
+              Final slug
+            </label>
+            <div className="flex items-center gap-3 text-xs font-bold text-slate-500 dark:text-slate-400">
+              <span>
+                {value.length} characters · {wordCount}{" "}
+                {wordCount === 1 ? "word" : "words"}
+              </span>
+              {value !== candidate.slug && (
+                <button
+                  type="button"
+                  onClick={() => setValue(candidate.slug)}
+                  className="inline-flex items-center gap-1 text-[#4058D0] hover:underline dark:text-blue-300"
+                >
+                  <RotateCcw className="h-3 w-3" /> Reset
+                </button>
+              )}
+            </div>
+          </div>
+          <div className="mt-2 flex items-center rounded-xl border border-slate-200 bg-slate-50 px-3 focus-within:border-[#4058D0] focus-within:ring-4 focus-within:ring-[#4058D0]/10 dark:border-slate-700 dark:bg-slate-950">
             <span className="text-slate-400">/</span>
             <input
               id="liveSlug"
@@ -110,6 +152,13 @@ export default function SlugLab({ candidate, input }: Props) {
             <div className="mt-4 flex flex-wrap gap-2">
               <CopyButton value={value} label="Copy slug" />
               <CopyButton value={fullUrl} label="Copy full URL" />
+              <button
+                type="button"
+                onClick={downloadSlugReport}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-bold text-slate-700 hover:border-[#4058D0] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+              >
+                <Download className="h-3.5 w-3.5" /> Download .TXT
+              </button>
             </div>
           </div>
 

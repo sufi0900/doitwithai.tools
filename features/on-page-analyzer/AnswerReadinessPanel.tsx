@@ -14,6 +14,7 @@ import { answerReadiness, type AnswerSection } from "./readiness";
 import { crawlerReadiness } from "./crawlers";
 import type { PageSnapshot, Section } from "./types";
 import styles from "./analyzer.module.css";
+
 export default function AnswerReadinessPanel({
   page,
   onEdit,
@@ -34,7 +35,7 @@ export default function AnswerReadinessPanel({
     <details
       key={s.heading?.id || "opening"}
       className={styles.answerSection}
-      open={label === "Article opening"}
+      open
     >
       <summary>
         <div className={styles.findingTop}>
@@ -58,7 +59,7 @@ export default function AnswerReadinessPanel({
         <blockquote className={styles.evidence}>{s.passage.text}</blockquote>
       )}
       <p className={styles.advice}>{s.reason}</p>
-      <details className={styles.options}>
+      <details open className={styles.options}>
         <summary>Why this label was shown</summary>
         <p>
           Editorial heuristic: {s.signals.rule}. No citation probability or
@@ -83,7 +84,7 @@ export default function AnswerReadinessPanel({
         </p>
       </details>
       {s.paragraphs.length > 1 && (
-        <details className={styles.options}>
+        <details open className={styles.options}>
           <summary>
             Following paragraph context ({s.paragraphs.length - 1})
           </summary>
@@ -170,7 +171,7 @@ export default function AnswerReadinessPanel({
               </div>
             ))}
         </div>
-        <details className={styles.options}>
+        <details open className={styles.options}>
           <summary>Other AI product policies, not scored</summary>
           {crawlers
             .filter((c) => !c.scored)

@@ -1,4 +1,6 @@
 "use client";
+
+import ToolRunOverlay, { paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
 import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 
 import { useState } from "react";
@@ -9,7 +11,9 @@ import {
   CheckCircle2,
   Loader2,
   Monitor,
+  RotateCcw,
   Smartphone,
+  Sparkles,
 } from "lucide-react";
 import {
   inputClass as sharedInputClass,
@@ -25,7 +29,207 @@ import {
   reportSummary,
 } from "./report-state";
 import ReportInsights from "./ReportInsights";
-import type { Metric, Strategy } from "./types";
+import type { Metric, PageSpeedResult, Strategy } from "./types";
+
+const SAMPLE_URL = "https://doitwithai.tools/tools/on-page-ai-seo-analyzer";
+
+const SAMPLE_REPORTS: Record<Strategy, PageSpeedResult> = {
+  mobile: {
+    checkedAt: "2026-04-01T12:00:00.000Z",
+    analysisAt: "2026-04-01T12:00:00.000Z",
+    requestedUrl: SAMPLE_URL,
+    finalUrl: SAMPLE_URL,
+    strategy: "mobile",
+    categories: [
+      { id: "performance", name: "Performance", score: 86 },
+      { id: "accessibility", name: "Accessibility", score: 98 },
+      { id: "best-practices", name: "Best Practices", score: 96 },
+      { id: "seo", name: "SEO", score: 100 },
+    ],
+    fieldData: {
+      source: "origin",
+      overallRating: "good",
+      metrics: [
+        {
+          id: "lcp",
+          label: "Largest Contentful Paint (LCP)",
+          displayValue: "2.1 s",
+          numericValue: 2100,
+          rating: "good",
+        },
+        {
+          id: "inp",
+          label: "Interaction to Next Paint (INP)",
+          displayValue: "145 ms",
+          numericValue: 145,
+          rating: "good",
+        },
+        {
+          id: "cls",
+          label: "Cumulative Layout Shift (CLS)",
+          displayValue: "0.03",
+          numericValue: 0.03,
+          rating: "good",
+        },
+      ],
+    },
+    labMetrics: [
+      {
+        id: "fcp",
+        label: "First Contentful Paint (FCP)",
+        displayValue: "1.2 s",
+        numericValue: 1200,
+        rating: "good",
+      },
+      {
+        id: "lcp",
+        label: "Largest Contentful Paint (LCP)",
+        displayValue: "2.3 s",
+        numericValue: 2300,
+        rating: "good",
+      },
+      {
+        id: "tbt",
+        label: "Total Blocking Time (TBT)",
+        displayValue: "110 ms",
+        numericValue: 110,
+        rating: "good",
+      },
+      {
+        id: "cls",
+        label: "Cumulative Layout Shift (CLS)",
+        displayValue: "0.02",
+        numericValue: 0.02,
+        rating: "good",
+      },
+      {
+        id: "si",
+        label: "Speed Index",
+        displayValue: "2.4 s",
+        numericValue: 2400,
+        rating: "good",
+      },
+    ],
+    findings: [
+      {
+        id: "render-blocking-resources",
+        title: "Eliminate render-blocking resources",
+        description:
+          "Resources are blocking the first paint of your page. Consider delivering critical JS/CSS inline and deferring all non-critical JS/styles.",
+        category: "performance",
+        score: 0.65,
+        displayValue: "Potential savings of 280 ms",
+        savingsMs: 280,
+        savingsBytes: 18432,
+        resources: [
+          "https://doitwithai.tools/_next/static/css/app-layout.css",
+        ],
+        nextStep:
+          "Inline critical above-the-fold CSS and defer non-essential stylesheets.",
+      },
+      {
+        id: "unused-javascript",
+        title: "Reduce unused JavaScript",
+        description:
+          "Reduce unused JavaScript and defer loading scripts until they are required to decrease bytes consumed by network activity.",
+        category: "performance",
+        score: 0.72,
+        displayValue: "Potential savings of 42 KiB",
+        savingsMs: 190,
+        savingsBytes: 43008,
+        resources: [
+          "https://doitwithai.tools/_next/static/chunks/main-app.js",
+        ],
+        nextStep:
+          "Code-split below-the-fold interactive widgets with dynamic imports.",
+      },
+    ],
+    reportWarnings: [
+      "Illustrative sample report pre-loaded. Enter any public URL above and click 'Check Core Web Vitals' to run a live Google PageSpeed Insights test.",
+    ],
+  },
+  desktop: {
+    checkedAt: "2026-04-01T12:00:00.000Z",
+    analysisAt: "2026-04-01T12:00:00.000Z",
+    requestedUrl: SAMPLE_URL,
+    finalUrl: SAMPLE_URL,
+    strategy: "desktop",
+    categories: [
+      { id: "performance", name: "Performance", score: 96 },
+      { id: "accessibility", name: "Accessibility", score: 98 },
+      { id: "best-practices", name: "Best Practices", score: 100 },
+      { id: "seo", name: "SEO", score: 100 },
+    ],
+    fieldData: {
+      source: "origin",
+      overallRating: "good",
+      metrics: [
+        {
+          id: "lcp",
+          label: "Largest Contentful Paint (LCP)",
+          displayValue: "1.1 s",
+          numericValue: 1100,
+          rating: "good",
+        },
+        {
+          id: "inp",
+          label: "Interaction to Next Paint (INP)",
+          displayValue: "58 ms",
+          numericValue: 58,
+          rating: "good",
+        },
+        {
+          id: "cls",
+          label: "Cumulative Layout Shift (CLS)",
+          displayValue: "0.01",
+          numericValue: 0.01,
+          rating: "good",
+        },
+      ],
+    },
+    labMetrics: [
+      {
+        id: "fcp",
+        label: "First Contentful Paint (FCP)",
+        displayValue: "0.5 s",
+        numericValue: 500,
+        rating: "good",
+      },
+      {
+        id: "lcp",
+        label: "Largest Contentful Paint (LCP)",
+        displayValue: "0.9 s",
+        numericValue: 900,
+        rating: "good",
+      },
+      {
+        id: "tbt",
+        label: "Total Blocking Time (TBT)",
+        displayValue: "20 ms",
+        numericValue: 20,
+        rating: "good",
+      },
+      {
+        id: "cls",
+        label: "Cumulative Layout Shift (CLS)",
+        displayValue: "0.005",
+        numericValue: 0.005,
+        rating: "good",
+      },
+      {
+        id: "si",
+        label: "Speed Index",
+        displayValue: "0.8 s",
+        numericValue: 800,
+        rating: "good",
+      },
+    ],
+    findings: [],
+    reportWarnings: [
+      "Illustrative sample report pre-loaded. Enter any public URL above and click 'Check Core Web Vitals' to run a live Google PageSpeed Insights test.",
+    ],
+  },
+};
 
 function MetricRow({ metric }: { metric: Metric }) {
   const style = RATING_STYLE[metric.rating];
@@ -47,13 +251,17 @@ function MetricRow({ metric }: { metric: Metric }) {
 }
 
 export default function CoreWebVitalsClient() {
-  const [url, setUrl] = useState("");
+  const [url, setUrl] = useState(SAMPLE_URL);
+  const [showSample, setShowSample] = useState(true);
   const [strategy, setStrategy] = useState<Strategy>("mobile");
   const [validationError, setValidationError] = useState("");
   const { reports, pending, errors, ensure } = useReports();
-  const result = matchingReport(reports, url, strategy);
-  const mobile = matchingReport(reports, url, "mobile");
-  const desktop = matchingReport(reports, url, "desktop");
+  const liveResult = matchingReport(reports, url, strategy);
+  const liveMobile = matchingReport(reports, url, "mobile");
+  const liveDesktop = matchingReport(reports, url, "desktop");
+  const result = liveResult || (showSample ? SAMPLE_REPORTS[strategy] : null);
+  const mobile = liveMobile || (showSample ? SAMPLE_REPORTS.mobile : null);
+  const desktop = liveDesktop || (showSample ? SAMPLE_REPORTS.desktop : null);
   let selectedKey = "",
     mobileKey = "",
     desktopKey = "";
@@ -73,9 +281,9 @@ export default function CoreWebVitalsClient() {
   function handleCheck() {
     try {
       const target = normalizeReportUrl(url);
+      setShowSample(false);
       setValidationError("");
       void ensure(target, strategy);
-      void ensure(target, strategy === "mobile" ? "desktop" : "mobile");
     } catch {
       setValidationError(
         "Enter a full page URL beginning with https:// or http://.",
@@ -85,6 +293,16 @@ export default function CoreWebVitalsClient() {
   function selectDevice(device: Strategy) {
     setStrategy(device);
     setValidationError("");
+    if (!showSample && url.trim()) {
+      try {
+        const target = normalizeReportUrl(url);
+        if (!matchingReport(reports, target, device)) {
+          void ensure(target, device);
+        }
+      } catch {
+        /* Ignore invalid URL on device switch */
+      }
+    }
   }
   function downloadReport() {
     if (!result) return;
@@ -103,6 +321,11 @@ export default function CoreWebVitalsClient() {
       id="core-web-vitals-checker"
       className={`${panelClass} relative p-5 sm:p-8`}
     >
+      <ToolRunOverlay
+        active={anyLoading}
+        title="Running Core Web Vitals & PageSpeed audit"
+        description="Measuring LCP, INP, CLS, and mobile/desktop field & lab performance diagnostics."
+      />
       <div className="flex flex-col gap-3 xl:flex-row">
         <ToolUrlInput
           className={`${inputClass} h-12 flex-1`}
@@ -146,10 +369,37 @@ export default function CoreWebVitalsClient() {
           {anyLoading ? "Checking devices…" : "Check Core Web Vitals"}
         </button>
       </div>
-      <p className="mt-2 text-xs leading-6 text-slate-500 dark:text-slate-400">
-        One check prepares mobile and desktop together. Switch devices at any
-        time. A fresh check may take up to a minute.
-      </p>
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs leading-6 text-slate-500 dark:text-slate-400">
+        <span>
+          Fast Core Web Vitals audit with field data and lab diagnostics. Switch between Mobile and Desktop at any time.
+        </span>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setUrl(SAMPLE_URL);
+              setShowSample(true);
+              setValidationError("");
+            }}
+            className={secondaryButton}
+          >
+            <Sparkles className="h-3.5 w-3.5 text-[#4058D0]" />
+            Load sample report
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setUrl("");
+              setShowSample(false);
+              setValidationError("");
+            }}
+            className={secondaryButton}
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            Clear
+          </button>
+        </div>
+      </div>
       {(loading || otherLoading) && (
         <div
           className="mt-3 flex flex-wrap gap-2"
@@ -158,7 +408,7 @@ export default function CoreWebVitalsClient() {
         >
           {(["mobile", "desktop"] as Strategy[]).map((device) => {
             const key = device === "mobile" ? mobileKey : desktopKey;
-            const ready = device === "mobile" ? mobile : desktop;
+            const ready = device === "mobile" ? liveMobile : liveDesktop;
             return (
               <span
                 key={device}
@@ -207,7 +457,7 @@ export default function CoreWebVitalsClient() {
             <div className="rounded-full border-4 border-blue-100 p-4 dark:border-blue-950">
               <Loader2
                 aria-hidden
-                className="animate-spin motion-reduce:animate-none h-10 w-10 text-[#5271ff]"
+                className="animate-spin motion-reduce:animate-none h-10 w-10 text-[#4058D0]"
               />
             </div>
             <h2 className="text-xl font-black text-slate-950 dark:text-white">
@@ -235,7 +485,7 @@ export default function CoreWebVitalsClient() {
             href={`https://pagespeed.web.dev/analysis?url=${encodeURIComponent(url)}&form_factor=${strategy}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-3 inline-flex rounded-xl bg-[#5271ff] px-4 py-3 text-sm font-bold text-white"
+            className="mt-3 inline-flex rounded-xl bg-[#4058D0] px-4 py-3 text-sm font-bold text-white"
           >
             Check in Google PageSpeed Insights
           </a>
@@ -339,7 +589,7 @@ export default function CoreWebVitalsClient() {
 
           <section className="rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <h2 className="text-sm font-black uppercase tracking-wider text-[#4662df] dark:text-blue-300">
+              <h2 className="text-sm font-black uppercase tracking-wider text-[#4058D0] dark:text-blue-300">
                 Real-user field data (Core Web Vitals)
               </h2>
               {result.fieldData.source && (
@@ -367,7 +617,7 @@ export default function CoreWebVitalsClient() {
           </section>
 
           <section className="rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
-            <h2 className="text-sm font-black uppercase tracking-wider text-[#4662df] dark:text-blue-300">
+            <h2 className="text-sm font-black uppercase tracking-wider text-[#4058D0] dark:text-blue-300">
               Lab data (simulated single run)
             </h2>
             <div className="mt-3 space-y-2">

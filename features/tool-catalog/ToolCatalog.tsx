@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import {
   ChevronRight,
   ArrowRightLeft,
@@ -57,6 +57,7 @@ export default function ToolCatalog({ category }: { category?: string }) {
   const [tag, setTag] = useState("");
   const [layout, setLayout] = useState<"grid" | "list">("grid");
   const [query, setQuery] = useState("");
+  const deferredQuery = useDeferredValue(query);
   const [selected, setSelected] = useState(category || "all");
   const [sort, setSort] = useState("featured");
 
@@ -120,7 +121,7 @@ export default function ToolCatalog({ category }: { category?: string }) {
 
   const results = useMemo(
     () =>
-      findTools(tools, { query, category, selected, sort }).filter(
+      findTools(tools, { query: deferredQuery, category, selected, sort }).filter(
         (tool) =>
           matchesTopic(tool, topic) &&
           (!tag || tool.tags.includes(tag)) &&
@@ -130,7 +131,7 @@ export default function ToolCatalog({ category }: { category?: string }) {
             )),
       ),
     [
-      query,
+      deferredQuery,
       selected,
       sort,
       category,
@@ -169,7 +170,7 @@ export default function ToolCatalog({ category }: { category?: string }) {
         !tools.some((tool) =>
           tool.categories.includes("content-conversion"),
         ) && (
-          <p className="mb-5 rounded-xl border border-orange-200 bg-orange-50 p-4 text-sm leading-7 text-orange-900 dark:border-orange-300/25 dark:bg-orange-300/5 dark:text-orange-100">
+          <p className="mb-5 rounded-xl border border-orange-200 bg-[#5271ff]/10 p-4 text-sm leading-7 text-orange-900 dark:border-orange-300/25 dark:bg-orange-300/5 dark:text-orange-100">
             The Content Conversion collection is in preparation.{" "}
             <Link
               href="/tools/categories/content-conversion"

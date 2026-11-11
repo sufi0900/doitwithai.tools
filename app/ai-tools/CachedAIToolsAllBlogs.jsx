@@ -10,6 +10,7 @@ import { CACHE_KEYS } from '@/React_Query_Caching/cacheKeys';
 import { usePageCache } from '@/React_Query_Caching/usePageCache';
 import { cacheSystem } from '@/React_Query_Caching/cacheSystem';
 import { CacheStatusIndicator } from '@/React_Query_Caching/CacheStatusIndicator';
+import { getStaticArticlesByType } from '@/features/articles/legacy/staticArticles';
 
 const ReusableCachedAllBlogs = ({
   currentPage = 1,
@@ -204,7 +205,22 @@ const {
     );
   }
 
-  const postsToDisplay = (pageData && Array.isArray(pageData)) ? pageData.slice(0, limit) : [];
+  const rawPosts = (pageData && Array.isArray(pageData)) ? pageData : [];
+  const postsToDisplay = (() => {
+    if (currentPage === 1 && !isSearchMode && !customQuery) {
+      const staticPosts = getStaticArticlesByType(documentType);
+      const seenSlugs = new Set();
+      return [...staticPosts, ...rawPosts]
+        .filter((post) => {
+          const s = post?.slug?.current || post?.slug;
+          if (!s || seenSlugs.has(s)) return false;
+          seenSlugs.add(s);
+          return true;
+        })
+        .slice(0, limit);
+    }
+    return rawPosts.slice(0, limit);
+  })();
 
   return (
     <div className="space-y-4" style={{ position: 'relative' }}>
@@ -230,7 +246,7 @@ const {
             overview={post.overview}
             title={post.title}
             tags={post.tags}
-            mainImage={post.mainImage ? urlForImage(post.mainImage).url() : "https://placehold.co/600x400/cccccc/000000?text=No+Image"} 
+            mainImage={post.mainImage?.localUrl || (post.mainImage ? urlForImage(post.mainImage).url() : "https://placehold.co/600x400/cccccc/000000?text=No+Image")} 
             slug={
               post._type === "seo"
                 ? `/ai-seo/${post.slug.current}`

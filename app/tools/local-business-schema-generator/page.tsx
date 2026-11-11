@@ -1,3 +1,4 @@
+import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Code2, Globe, MapPin } from "lucide-react";
@@ -108,10 +109,10 @@ export default function LocalBusinessSchemaGeneratorPage() {
         className={`relative overflow-hidden ${toolHeroSurface} text-white`}
       >
         <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
           <nav
             aria-label="Breadcrumb"
-            className="mb-7 flex flex-wrap gap-2 text-xs text-slate-300"
+            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
           >
             <Link href="/">Home</Link>
             <span>/</span>
@@ -150,6 +151,7 @@ export default function LocalBusinessSchemaGeneratorPage() {
                   OpeningHours + sameAs
                 </span>
               </div>
+              <PortableToolHeroBar />
             </div>
 
             <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">

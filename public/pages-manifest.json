@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-10-30T09:48:40.022Z",
+  "generated": "2026-11-11T07:19:55.517Z",
   "static_pages": [
     {
       "url": "/",
@@ -471,6 +471,372 @@
       "type": "static"
     },
     {
+      "url": "/tools/google-review-link-generator",
+      "title": "Google Review Link & QR Poster Generator",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/local-business-schema-generator",
+      "title": "LocalBusiness Schema Markup Generator",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/google-business-profile-auditor",
+      "title": "Google Business Profile (GBP) Auditor & Optimizer",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/nap-consistency-checker",
+      "title": "NAP Consistency & Local Citation Formatter",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/google-review-response-generator",
+      "title": "Google Review Response & Crisis Reply Generator",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/local-seo-service-page-planner",
+      "title": "Local SEO Service-Area & City Page Planner",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/linkedin-post-formatter",
+      "title": "LinkedIn Post Formatter & Fold Previewer",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/youtube-title-thumbnail-optimizer",
+      "title": "YouTube Title, Hook & Thumbnail Optimizer",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/short-form-video-script-generator",
+      "title": "Short-Form Video Hook & Script Builder",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/utm-link-builder",
+      "title": "UTM Campaign Link Builder & GA4 Validator",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/social-thread-generator",
+      "title": "X (Twitter) & Threads Viral Thread Splitter",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/video-transcript-to-blog",
+      "title": "YouTube Transcript to SEO Blog Post Converter",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/article-to-html-cheatsheet",
+      "title": "Article to HTML Infographic & Summary Cheatsheet",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/comparison-page-generator",
+      "title": "\"X vs. Y\" Comparison Page & Matrix Builder",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/ai-brand-visibility-prompt-generator",
+      "title": "Brand AI Search Visibility & GEO Prompt Matrix",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/youtube-transcript-generator",
+      "title": "YouTube Transcript, Chapters & AI Summary Studio",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/webpage-image-extractor",
+      "title": "Webpage Image Extractor & Bulk .ZIP Downloader",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/linkedin-comment-generator",
+      "title": "LinkedIn Comment & Engagement Generator",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/facebook-post-generator",
+      "title": "Facebook Post & Visual Card Studio",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/instagram-caption-generator",
+      "title": "Instagram Caption & Carousel Slide Studio",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/tiktok-script-caption-generator",
+      "title": "TikTok Script, Hook & Search SEO Studio",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/social-media-video-thumbnail-grabber",
+      "title": "YouTube, Shorts & Social Video 4K Thumbnail Grabber",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/blog-to-infographic-generator",
+      "title": "AI Blog & Idea to Visual Infographic Studio",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/data-to-chart-visual-card-maker",
+      "title": "AI Data & Stat to Visual Chart Card Maker",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/framework-matrix-diagram-builder",
+      "title": "AI 2x2 Matrix, SWOT, Flywheel & Strategy Diagram Builder",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/pinterest-pin-visual-generator",
+      "title": "AI Blog to Pinterest Tall Pin Visual Studio (1000x1500)",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/quote-stat-testimonial-card-studio",
+      "title": "AI Quote, Founder Memo & Testimonial Visual Card Studio",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/ai-blog-article-writer",
+      "title": "AI Blog & Article Writer",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/downloadable-ai-tools",
+      "title": "Downloadable & Embeddable AI Tools Studio",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/seo-roi-calculator",
+      "title": "SEO ROI, Cost & Budget Calculator",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/keyword-golden-ratio-calculator",
+      "title": "Keyword Golden Ratio (KGR) & Affinity Calculator",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/ai-mode-llm-seo-tracker",
+      "title": "AI Mode & LLM SEO Rank Tracker",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/claude-copilot-seo-analyzer",
+      "title": "Claude, Copilot & Gemini SEO Analyzer",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/ugc-video-prompt-generator",
+      "title": "UGC Ad, Sora Video & Text-to-Video Prompt Studio",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/ai-art-image-prompt-generator",
+      "title": "AI Art, Grok & 8K Image Upscaling Prompt Generator",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/seo-originality-plagiarism-checker",
+      "title": "AI Content Detector, Burstiness Grader & Humanizer Studio",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/buyer-search-prompt-generator",
+      "title": "AI Buyer Search & Commercial Prompt Generator",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/outbound-link-checker",
+      "title": "Outbound Link Checker & External SEO Link Auditor",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/local-seo-audit-tool",
+      "title": "Free Local SEO Audit Tool: Map Pack & Near Me Optimizer",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/excel-seo-report-generator",
+      "title": "Free Excel SEO Tool & Website Analysis Report Generator",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/faq-schema-validator",
+      "title": "Free FAQ Schema Validator & AI Visibility Optimizer",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/seo-content-pricing-calculator",
+      "title": "AI SEO Content Writing Cost, Per-Article Pricing & ROI Calculator",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/article-to-quiz-test-generator",
+      "title": "AI Article-to-Quiz, Assessment Test & Lead Magnet Generator",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/source-pdf-to-article-generator",
+      "title": "AI Source, PDF, Interview & NotebookLM-to-Article Converter Studio",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/ai-article-summarizer",
+      "title": "AI Article Summarizer & 50-Word AI Overview Summary Box Builder",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/seo-optimizer-ai-agent",
+      "title": "SEO & AEO Page Optimizer Agent",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/ai-support-agent-builder",
+      "title": "No-Code Docs-to-Chatbot Support Agent Builder",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/client-intake-lead-agent",
+      "title": "B2B Buyer-Fit & Client Intake Agent",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/ai-marketing-campaign-agent",
+      "title": "Omnichannel Content & Marketing Campaign Agent",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/whatsapp-instagram-ai-agent-studio",
+      "title": "WhatsApp, Telegram & Instagram DM Sales Agent Studio",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/no-code-workflow-agent-planner",
+      "title": "No-Code Workflow & Capacity Planning Agent (n8n / Sheets)",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/on-page-ai-seo-repair-agent",
+      "title": "Autonomous On-Page AI SEO Repair Agent",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/ai-citation-geo-agent",
+      "title": "Generative Engine Optimization (GEO) & AI Citation Agent",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/serp-content-gap-agent",
+      "title": "Competitor SERP Content Gap & Outranker Agent",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/omnichannel-marketing-agent",
+      "title": "Omni-Channel Content Repurposing & Safe Marketing Agent",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/ai-content-writer",
+      "title": "Free AI Content Writer: 6-Stage SEO, AEO, 25 Visuals & Schema Studio",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/ai-automation-roi-calculator",
+      "title": "AI Automation ROI & Manual Task Hours Savings Calculator",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/ai-workflow-blueprint-generator",
+      "title": "AI Workflow Blueprint Generator for Make, Zapier & n8n",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/blog-section-infographic-generator",
+      "title": "Free AI Blog Section Infographic Generator (25 Canva & Napkin Layouts)",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/ai-blog-writer",
+      "title": "Free AI Blog Writer: 6-Stage SEO Blog, 25 Visuals & Schema Studio",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/ai-article-writer",
+      "title": "Free AI Article Writer: Long-Form E-E-A-T, 25 Visuals & Schema Studio",
+      "priority": "high",
+      "type": "static"
+    },
+    {
       "url": "/tools/categories/ai-seo",
       "title": "AI SEO",
       "priority": "medium",
@@ -487,7 +853,13 @@
       "title": "Content Conversion",
       "priority": "medium",
       "type": "static"
+    },
+    {
+      "url": "/tools/categories/productivity",
+      "title": "Productivity",
+      "priority": "medium",
+      "type": "static"
     }
   ],
-  "total_pages": 81
+  "total_pages": 143
 }

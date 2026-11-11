@@ -1,3 +1,4 @@
+import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Link2, TextSearch, ScanEye } from "lucide-react";
@@ -153,7 +154,7 @@ export default function Page() {
         <div className="relative mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
           <nav
             aria-label="Breadcrumb"
-            className="mb-7 flex flex-wrap gap-2 text-xs text-slate-300"
+            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
           >
             <Link href="/">Home</Link>
             <span>/</span>
@@ -188,6 +189,7 @@ export default function Page() {
                   Evidence CSV
                 </span>
               </div>
+              <PortableToolHeroBar />
             </div>
             <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
               <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">

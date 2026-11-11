@@ -1,0 +1,58 @@
+name: Scheduled 2-Hour AI Agent Rollout
+
+on:
+  schedule:
+    # Runs automatically every 2 hours on GitHub's cloud runners
+    - cron: "0 */2 * * *"
+  workflow_dispatch:
+    inputs:
+      target_agent_slug:
+        description: "Optional specific agent slug to activate (leaves blank to activate next coming-soon agent)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  rollout-next-agent:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Activate next scheduled AI SEO Agent in registry.json
+        id: activate
+        env:
+          TARGET_SLUG: ${{ github.event.inputs.target_agent_slug }}
+        run: |
+          node -e '
+            const fs = require("fs");
+            const file = "features/tool-catalog/registry.json";
+            const data = JSON.parse(fs.readFileSync(file, "utf8"));
+            const targetSlug = process.env.TARGET_SLUG ? process.env.TARGET_SLUG.trim() : "";
+            const nextTool = data.tools.find(t =>
+              targetSlug ? t.slug === targetSlug : t.status === "coming-soon"
+            );
+            if (!nextTool || nextTool.status === "live") {
+              console.log("All agents are already live or no matching coming-soon agent found.");
+              fs.appendFileSync(process.env.GITHUB_OUTPUT, "changed=false\n");
+              process.exit(0);
+            }
+            nextTool.status = "live";
+            nextTool.addedAt = new Date().toISOString().slice(0, 10);
+            fs.writeFileSync(file, JSON.stringify(data, null, 2) + "\n");
+            console.log("Activated agent:", nextTool.slug);
+            fs.appendFileSync(process.env.GITHUB_OUTPUT, `changed=true\nslug=${nextTool.slug}\nname=${nextTool.name}\n`);
+          '
+
+      - name: Commit and Push Activated Agent
+        if: steps.activate.outputs.changed == 'true'
+        run: |
+          git config user.name "Sufian Mustafa (Scheduled Rollout)"
+          git config user.email "108760976+sufi0900@users.noreply.github.com"
+          git add features/tool-catalog/registry.json
+          git commit -m "feat(scheduled-release): activate ${{ steps.activate.outputs.name }} (/tools/${{ steps.activate.outputs.slug }})"
+          git push origin HEAD:main

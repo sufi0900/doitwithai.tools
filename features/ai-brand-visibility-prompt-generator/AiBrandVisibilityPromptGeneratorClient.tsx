@@ -1,5 +1,7 @@
 "use client";
 
+import ToolRunOverlay, { paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
+
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
@@ -7,7 +9,9 @@ import {
   Copy,
   Download,
   ExternalLink,
+  FileText,
   Globe,
+  Plus,
   Sparkles,
 } from "lucide-react";
 import {
@@ -16,11 +20,26 @@ import {
   type BrandGeoInput,
   type BrandGeoPack,
   type CitationStatus,
+  type GeoBuyerStage,
+  type GeoPromptItem,
 } from "./model";
+
+const STAGES: Array<"All" | GeoBuyerStage> = [
+  "All",
+  "1. Category Discovery",
+  "2. Best-For Use Case",
+  "3. Competitor Comparison",
+  "4. Trust, Pricing & Proof",
+];
 
 export default function AiBrandVisibilityPromptGeneratorClient() {
   const [input, setInput] = useState<BrandGeoInput>(DEFAULT_BRAND_GEO_INPUT);
   const [aiPack, setAiPack] = useState<BrandGeoPack | null>(null);
+  const [promptOverrides, setPromptOverrides] = useState<
+    Record<string, string>
+  >({});
+  const [customPrompts, setCustomPrompts] = useState<GeoPromptItem[]>([]);
+  const [stageFilter, setStageFilter] = useState<"All" | GeoBuyerStage>("All");
   const [statuses, setStatuses] = useState<Record<string, CitationStatus>>({
     p1: "cited-top",
     p2: "cited-top",
@@ -39,6 +58,22 @@ export default function AiBrandVisibilityPromptGeneratorClient() {
   );
   const pack = aiPack || deterministicPack;
 
+  const allPrompts = useMemo(() => {
+    const base = pack.prompts.map((p) => ({
+      ...p,
+      promptText: promptOverrides[p.id] ?? p.promptText,
+    }));
+    return [...base, ...customPrompts];
+  }, [pack.prompts, promptOverrides, customPrompts]);
+
+  const filteredPrompts = useMemo(
+    () =>
+      stageFilter === "All"
+        ? allPrompts
+        : allPrompts.filter((p) => p.stage === stageFilter),
+    [allPrompts, stageFilter],
+  );
+
   function notify(msg: string) {
     setToast(msg);
     setTimeout(() => setToast(""), 2600);
@@ -49,7 +84,34 @@ export default function AiBrandVisibilityPromptGeneratorClient() {
     val: BrandGeoInput[K],
   ) {
     setAiPack(null);
+    setPromptOverrides({});
     setInput((prev) => ({ ...prev, [key]: val }));
+  }
+
+  function handleAddCustomPrompt() {
+    const nextId = `custom-${Date.now().toString(36)}`;
+    const newItem: GeoPromptItem = {
+      id: nextId,
+      stage:
+        stageFilter === "All" ? "1. Category Discovery" : stageFilter,
+      promptText: `What are the top advantages of ${input.brandName || "our brand"} for ${input.targetAudience || "marketing teams"}?`,
+      targetEngine: "ChatGPT / SearchGPT",
+      citationTriggerSignal:
+        "Clear entity definition + verified third-party comparison tables.",
+    };
+    setCustomPrompts((prev) => [...prev, newItem]);
+    setStatuses((prev) => ({ ...prev, [nextId]: "cited-top" }));
+    notify("Added custom GEO buyer-intent prompt card!");
+  }
+
+  function updatePromptText(id: string, value: string) {
+    if (id.startsWith("custom-")) {
+      setCustomPrompts((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, promptText: value } : p)),
+      );
+    } else {
+      setPromptOverrides((prev) => ({ ...prev, [id]: value }));
+    }
   }
 
   async function handleGenerateAiMatrix() {
@@ -66,6 +128,7 @@ export default function AiBrandVisibilityPromptGeneratorClient() {
       const data = await res.json();
       if (data?.pack) {
         setAiPack(data.pack);
+        setPromptOverrides({});
         notify("Generated custom 12-Prompt GEO Test Matrix!");
       }
     } catch {
@@ -76,16 +139,23 @@ export default function AiBrandVisibilityPromptGeneratorClient() {
   }
 
   const shareOfVoiceScore = useMemo(() => {
-    if (!pack.prompts.length) return 0;
-    const totalPoints = pack.prompts.reduce((acc, p) => {
+    if (!allPrompts.length) return 0;
+    const totalPoints = allPrompts.reduce((acc, p) => {
       const st = statuses[p.id] || "missing";
       return acc + (st === "cited-top" ? 100 : st === "mentioned" ? 55 : 0);
     }, 0);
-    return Math.round(totalPoints / pack.prompts.length);
-  }, [pack.prompts, statuses]);
+    return Math.round(totalPoints / allPrompts.length);
+  }, [allPrompts, statuses]);
 
   function downloadCsv() {
-    const blob = new Blob([pack.csvExportString], {
+    const csvRows = [
+      '"Prompt ID","Buyer Stage","Target AI Engine","Citation Status","Test Prompt","Citation Signal Required"',
+      ...allPrompts.map((p) => {
+        const st = statuses[p.id] || "missing";
+        return `"${p.id}","${p.stage}","${p.targetEngine}","${st}","${p.promptText.replace(/"/g, '""')}","${p.citationTriggerSignal.replace(/"/g, '""')}"`;
+      }),
+    ];
+    const blob = new Blob([csvRows.join("\r\n")], {
       type: "text/csv;charset=utf-8",
     });
     const url = URL.createObjectURL(blob);
@@ -97,11 +167,41 @@ export default function AiBrandVisibilityPromptGeneratorClient() {
     notify("Downloaded GEO Prompt Matrix (.CSV)!");
   }
 
+  function downloadMarkdownBrief() {
+    const lines = [
+      `# AI Brand Visibility & GEO Prompt Audit — ${input.brandName}`,
+      `- **Primary Category:** ${input.primaryCategory}`,
+      `- **Target Audience:** ${input.targetAudience}`,
+      `- **Estimated AI Citation Share of Voice:** ${shareOfVoiceScore}%`,
+      "",
+      "## Buyer-Intent Prompt Matrix",
+      ...allPrompts.map((p, idx) => {
+        const st = statuses[p.id] || "missing";
+        return `${idx + 1}. **[${p.stage} · ${p.targetEngine} · Status: ${st.toUpperCase()}]** "${p.promptText}"\n   - *Citation Signal:* ${p.citationTriggerSignal}`;
+      }),
+    ];
+    const blob = new Blob([lines.join("\n")], {
+      type: "text/markdown;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "ai-brand-visibility-geo-brief.md";
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    notify("Downloaded GEO Audit Brief (.MD)!");
+  }
+
   return (
     <section
       aria-label="Brand AI Search Visibility and GEO Prompt Matrix Workspace"
       className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-10 sm:px-6"
     >
+      <ToolRunOverlay
+        active={loadingAi}
+        title="Generating AI brand visibility prompt matrix"
+        description="Building buyer-stage prompts across ChatGPT, Perplexity, Gemini, and Google AI Overviews."
+      />
       {toast && (
         <div
           role="status"
@@ -122,20 +222,29 @@ export default function AiBrandVisibilityPromptGeneratorClient() {
             Estimated AI Citation Share of Voice: {shareOfVoiceScore}%
           </h2>
           <p className="mt-0.5 text-xs text-slate-600 dark:text-slate-300">
-            Test each buyer-intent prompt in ChatGPT, Perplexity, Gemini, or AI
-            Overviews and toggle its status below to measure your brand&apos;s
-            LLM citation footprint.
+            Edit any buyer-intent prompt inline, test it in ChatGPT, Perplexity,
+            Gemini, or AI Overviews, and toggle its citation status below.
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={downloadCsv}
-          className="inline-flex items-center gap-2 rounded-xl bg-[#3452d1] px-4 py-3 text-xs font-extrabold text-white shadow-sm hover:bg-[#2842b5]"
-        >
-          <Download size={15} />
-          Export GEO Prompt Tracker (.CSV)
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={downloadMarkdownBrief}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs font-extrabold text-slate-800 hover:border-[#3452d1] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+          >
+            <FileText size={14} />
+            Export Brief (.MD)
+          </button>
+          <button
+            type="button"
+            onClick={downloadCsv}
+            className="inline-flex items-center gap-2 rounded-xl bg-[#3452d1] px-4 py-2.5 text-xs font-extrabold text-white shadow-sm hover:bg-[#2842b5]"
+          >
+            <Download size={15} />
+            Export Matrix (.CSV)
+          </button>
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
@@ -260,7 +369,33 @@ export default function AiBrandVisibilityPromptGeneratorClient() {
 
         {/* RIGHT COLUMN: 12-PROMPT 4-STAGE BUYER MATRIX */}
         <div className="space-y-3.5">
-          {pack.prompts.map((p, idx) => {
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-slate-200 bg-white p-3.5 dark:border-slate-800 dark:bg-[#111827]">
+            <div className="flex flex-wrap gap-1.5">
+              {STAGES.map((stage) => (
+                <button
+                  key={stage}
+                  type="button"
+                  onClick={() => setStageFilter(stage)}
+                  className={`rounded-lg px-2.5 py-1 text-[11px] font-extrabold transition ${
+                    stageFilter === stage
+                      ? "bg-[#3452d1] text-white"
+                      : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"
+                  }`}
+                >
+                  {stage === "All" ? `All (${allPrompts.length})` : stage}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={handleAddCustomPrompt}
+              className="inline-flex items-center gap-1 rounded-lg border border-[#3452d1]/30 bg-[#3452d1]/5 px-2.5 py-1 text-xs font-extrabold text-[#3452d1] hover:bg-[#3452d1]/10 dark:border-[#5271ff]/40 dark:text-[#b4c3ff]"
+            >
+              <Plus size={13} /> Add Custom Prompt
+            </button>
+          </div>
+
+          {filteredPrompts.map((p, idx) => {
             const st = statuses[p.id] || "missing";
             return (
               <div
@@ -289,9 +424,13 @@ export default function AiBrandVisibilityPromptGeneratorClient() {
                   </button>
                 </div>
 
-                <p className="mt-2.5 font-bold text-sm text-slate-900 dark:text-white">
-                  &ldquo;{p.promptText}&rdquo;
-                </p>
+                <input
+                  type="text"
+                  value={p.promptText}
+                  onChange={(e) => updatePromptText(p.id, e.target.value)}
+                  aria-label={`Edit prompt #${idx + 1}`}
+                  className="mt-2.5 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-sm font-bold text-slate-900 focus:border-[#5271ff] focus:bg-white focus:outline-none dark:border-slate-800 dark:bg-slate-900/70 dark:text-white"
+                />
 
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-200/80 pt-2.5 text-[11px] dark:border-slate-800">
                   <span className="text-slate-500 dark:text-slate-400">

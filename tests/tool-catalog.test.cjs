@@ -26,8 +26,8 @@ test('registry has unique, route-safe IDs, slugs and category membership', () =>
 });
 test('legacy tools, hub and category redirect without loops or wildcard article redirects', async () => {
   const redirects = await config.redirects();
-  assert.equal(redirects.length, 7);
-  assert.deepEqual(redirects.map(rule => rule.source).sort(), ['/ai-seo-tools', '/ai-seo/meta-title-generator', '/ai-seo/schema-markup-generator', '/ai-seo/slug-url-generator', '/prompts/meta-description-prompts', '/prompts/meta-title-prompts', '/tools/categories/seo']);
+  assert.equal(redirects.length, 8);
+  assert.deepEqual(redirects.map(rule => rule.source).sort(), ['/ai-seo-tools', '/ai-seo/meta-title-generator', '/ai-seo/schema-markup-generator', '/ai-seo/slug-url-generator', '/download-and-embed', '/prompts/meta-description-prompts', '/prompts/meta-title-prompts', '/tools/categories/seo']);
   for (const rule of redirects) {
     assert.equal(rule.permanent, true);
     assert.ok(!rule.source.includes(':') && !rule.source.includes('*'));
@@ -38,6 +38,7 @@ test('tool pages point canonical metadata and breadcrumbs at the new URLs', () =
   for (const tool of tools) {
     if (["meta-description-generator", "h1-heading-generator"].includes(tool.slug)) continue;
     const source = fs.readFileSync(path.join(root, 'app', 'tools', tool.slug, 'page.tsx'), 'utf8');
+    if (source.includes('permanentRedirect')) continue;
     assert.ok(source.replace(/\s+/g, " ").includes(`const pageUrl = "https://doitwithai.tools/tools/${tool.slug}"`));
     assert.ok(source.includes('alternates: { canonical: pageUrl }'));
     assert.ok(source.includes('href="/tools"'));

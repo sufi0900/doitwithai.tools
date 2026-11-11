@@ -41,7 +41,7 @@ async function run() {
         html.includes(`href="https://doitwithai.tools${path}"`),
         `Missing canonical for ${path}`,
       );
-      if (path.endsWith("productivity") || path === "/guides")
+      if (path === "/guides")
         assert.ok(html.includes("noindex"), `Empty index policy for ${path}`);
     }
     const redirects = [
@@ -80,7 +80,7 @@ async function run() {
     ])
       assert.ok(sitemap.includes(`/tools/${slug}`));
     assert.ok(!sitemap.includes("/ai-seo-tools"));
-    assert.ok(!sitemap.includes("/tools/categories/productivity"));
+    assert.ok(sitemap.includes("/tools/categories/productivity"));
     assert.ok(!sitemap.includes("/news/"));
     assert.ok(!sitemap.includes("/freeResources/"));
     if (process.env.SMOKE_BROWSER) {

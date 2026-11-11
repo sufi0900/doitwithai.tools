@@ -1,3 +1,4 @@
+import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import ToolFaq from "@/features/tool-ui/ToolFaq";
 import { ToolHeroBackground, toolHeroSurface, toolHeroHeading } from "@/features/tool-ui/ToolHero";
 import ToolResources from "@/features/tool-catalog/ToolResources";
@@ -151,66 +152,71 @@ export default function OgPreviewGeneratorPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
 
-      <div className={`relative overflow-hidden ${toolHeroSurface} pb-20 pt-10 text-white sm:pt-16 lg:pb-28`}>
+      <div className={`relative overflow-hidden ${toolHeroSurface} text-white`}>
         <ToolHeroBackground />
 
-        <div className="relative mx-auto max-w-[1500px] px-4 sm:px-6 lg:px-8">
+        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
           <nav
             aria-label="Breadcrumb"
-            className="mb-10 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-400"
+            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
           >
-            <Link href="/" className="transition hover:text-white">
-              Home
-            </Link>
+            <Link href="/">Home</Link>
             <span>/</span>
-            <Link href="/tools" className="transition hover:text-white">
-              Tools
-            </Link>
+            <Link href="/tools">Tools</Link>
             <span>/</span>
-            <span className="text-blue-200">OG & Twitter Card Preview Generator</span>
+            <span aria-current="page">OG & Twitter Card Preview Generator</span>
           </nav>
 
-          <div className="mx-auto max-w-5xl text-center">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.16em] text-blue-100 backdrop-blur">
-              <Sparkles className="h-4 w-4 text-cyan-300" /> Technical SEO
+          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
+                Technical SEO · Social Sharing Card Simulator & Tag Builder
+              </p>
+              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
+                Open Graph & X Card 
+                <span className={toolHeroHeading}>
+                  Preview & Meta Tag Generator
+                </span>
+              </h1>
+              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
+                Import any live URL or edit fields directly to preview how your link renders on Facebook, LinkedIn, X (Twitter), and Discord—complete with live image dimension checks.
+              </p>
+              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  Live URL metadata import
+                </span>
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  Real og:image dimension check
+                </span>
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  Copy HTML & Next.js metadata
+                </span>
+              </div>
+              <PortableToolHeroBar />
             </div>
-            <h1 className="mt-7 text-4xl font-black leading-[1.06] tracking-[-0.045em] sm:text-6xl lg:text-7xl">
-              OG & Twitter Card Preview
-              <span className={`block ${toolHeroHeading}`}>
-                Before You Ever Hit Publish
-              </span>
-            </h1>
-            <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-slate-300 sm:text-lg">
-              See exactly how a link will look on Facebook, LinkedIn, and X before you share it.
-              Import existing tags, check image dimensions, then copy
-              clean meta tags straight into your site.
-            </p>
-            <div className="mt-7 flex flex-wrap justify-center gap-3 text-xs font-bold text-slate-300">
-              {[
-                [ImageIcon, "Real image dimension check"],
-                [ShieldCheck, "Review and export your results"],
-              ].map(([Icon, label]) => {
-                const FeatureIcon = Icon as typeof ImageIcon;
-                return (
-                  <span
-                    key={label as string}
-                    className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-2"
-                  >
-                    <FeatureIcon className="h-3.5 w-3.5 text-blue-300" />
-                    {label as string}
-                  </span>
-                );
-              })}
+
+            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
+              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
+                4 Social Card Checks Included
+              </p>
+              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
+                <li>
+                  <strong className="text-emerald-300">Live Tag Fetch:</strong> Imports existing og:title, og:description, and twitter:card tags.
+                </li>
+                <li>
+                  <strong className="text-indigo-300">Image Audit:</strong> Verifies 1200×630 (1.91:1) aspect ratio and file accessibility.
+                </li>
+                <li>
+                  <strong className="text-sky-300">Multi-Feed Preview:</strong> Simulates large-summary cards across major social feeds.
+                </li>
+                <li>
+                  <strong className="text-amber-300">Code Export:</strong> Outputs clean HTML &lt;meta&gt; tags ready to paste into your &lt;head&gt;.
+                </li>
+              </ul>
             </div>
-            <a
-              href="#og-twitter-preview-generator"
-              className="mt-8 inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3.5 text-sm font-extrabold text-slate-950 shadow-xl transition hover:-translate-y-0.5 hover:bg-blue-50"
-            >
-              Build your card <ArrowRight className="h-4 w-4" />
-            </a>
           </div>
 
-          <div className="mt-14">
+          <div className="mt-8">
             <OgPreviewClient />
           </div>
         </div>

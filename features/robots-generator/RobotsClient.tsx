@@ -1,4 +1,6 @@
 "use client";
+
+import ToolRunOverlay, { paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
 import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 
 import { useMemo, useState } from "react";
@@ -7,12 +9,14 @@ import {
   CheckCircle2,
   Copy,
   Download,
+  Edit3,
   Globe,
   Info,
   Loader2,
   Plus,
   ShieldCheck,
   ShieldX,
+  Sparkles,
   Trash2,
   XCircle,
 } from "lucide-react";
@@ -37,12 +41,6 @@ import type { RobotsGroup, RobotsState } from "./types";
 
 type Mode = "build" | "check";
 
-const RULE_LABEL: Record<string, string> = {
-  allow: "Allow",
-  disallow: "Disallow",
-  "crawl-delay": "Crawl-delay",
-};
-
 export default function RobotsClient() {
   const [mode, setMode] = useState<Mode>("build");
   const [state, setState] = useState<RobotsState>(() => defaultState());
@@ -53,13 +51,86 @@ export default function RobotsClient() {
     text: string;
   } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [isEditingRaw, setIsEditingRaw] = useState(false);
+  const [rawOverride, setRawOverride] = useState<string | null>(null);
 
-  const output = useMemo(() => buildRobotsTxt(state), [state]);
+  const compiledOutput = useMemo(() => buildRobotsTxt(state), [state]);
+  const output = rawOverride !== null ? rawOverride : compiledOutput;
   const issues = useMemo(() => validateRobotsTxt(state), [state]);
   const matrix = useMemo(() => buildCrawlerMatrix(state), [state]);
   const errorCount = issues.filter((issue) => issue.level === "error").length;
 
+  function applyPreset(
+    preset: "standard-seo" | "block-ai-training" | "full-allow",
+  ) {
+    setRawOverride(null);
+    if (preset === "standard-seo") {
+      setState({
+        groups: [
+          {
+            id: makeId("group"),
+            userAgents: ["*"],
+            rules: [
+              { id: makeId("rule"), type: "disallow", path: "/admin/" },
+              { id: makeId("rule"), type: "disallow", path: "/api/" },
+              { id: makeId("rule"), type: "allow", path: "/" },
+            ],
+          },
+        ],
+        sitemapUrls: ["https://doitwithai.tools/sitemap.xml"],
+      });
+      setFetchMessage({
+        tone: "success",
+        text: "Applied preset: Standard SEO + AI Crawlers Allowed.",
+      });
+    } else if (preset === "block-ai-training") {
+      setState({
+        groups: [
+          {
+            id: makeId("group"),
+            userAgents: ["*"],
+            rules: [
+              { id: makeId("rule"), type: "disallow", path: "/admin/" },
+              { id: makeId("rule"), type: "allow", path: "/" },
+            ],
+          },
+          {
+            id: makeId("group"),
+            userAgents: ["GPTBot", "Google-Extended", "CCBot", "ClaudeBot"],
+            rules: [{ id: makeId("rule"), type: "disallow", path: "/" }],
+          },
+          {
+            id: makeId("group"),
+            userAgents: ["OAI-SearchBot", "PerplexityBot"],
+            rules: [{ id: makeId("rule"), type: "allow", path: "/" }],
+          },
+        ],
+        sitemapUrls: ["https://doitwithai.tools/sitemap.xml"],
+      });
+      setFetchMessage({
+        tone: "success",
+        text: "Applied preset: Allow AI Search Citations + Block AI Model Training.",
+      });
+    } else {
+      setState({
+        groups: [
+          {
+            id: makeId("group"),
+            userAgents: ["*"],
+            rules: [{ id: makeId("rule"), type: "allow", path: "/" }],
+          },
+        ],
+        sitemapUrls: ["https://doitwithai.tools/sitemap.xml"],
+      });
+      setFetchMessage({
+        tone: "success",
+        text: "Applied preset: Full Allow for all search and AI crawlers.",
+      });
+    }
+  }
+
   function updateGroup(groupId: string, patch: Partial<RobotsGroup>) {
+    setRawOverride(null);
     setState((previous) => ({
       ...previous,
       groups: previous.groups.map((group) =>
@@ -69,6 +140,7 @@ export default function RobotsClient() {
   }
 
   function addGroup() {
+    setRawOverride(null);
     setState((previous) => ({
       ...previous,
       groups: [...previous.groups, emptyGroup([""])],
@@ -76,6 +148,7 @@ export default function RobotsClient() {
   }
 
   function removeGroup(groupId: string) {
+    setRawOverride(null);
     setState((previous) => ({
       ...previous,
       groups: previous.groups.filter((group) => group.id !== groupId),
@@ -114,6 +187,7 @@ export default function RobotsClient() {
   }
 
   function setSitemap(index: number, value: string) {
+    setRawOverride(null);
     setState((previous) => {
       const sitemapUrls = [...previous.sitemapUrls];
       sitemapUrls[index] = value;
@@ -122,6 +196,7 @@ export default function RobotsClient() {
   }
 
   function addSitemap() {
+    setRawOverride(null);
     setState((previous) => ({
       ...previous,
       sitemapUrls: [...previous.sitemapUrls, ""],
@@ -129,6 +204,7 @@ export default function RobotsClient() {
   }
 
   function removeSitemap(index: number) {
+    setRawOverride(null);
     setState((previous) => ({
       ...previous,
       sitemapUrls: previous.sitemapUrls.filter((_, i) => i !== index),
@@ -139,6 +215,7 @@ export default function RobotsClient() {
     token: string,
     action: "block" | "allow" | "default",
   ) {
+    setRawOverride(null);
     setState((previous) => {
       const lower = token.toLowerCase();
       const others = previous.groups.filter(
@@ -173,6 +250,7 @@ export default function RobotsClient() {
       setFetchMessage({ tone: "error", text: outcome.message });
       return;
     }
+    setRawOverride(null);
     setState(outcome.state);
     setMode("build");
     setFetchMessage({
@@ -206,21 +284,55 @@ export default function RobotsClient() {
 
   return (
     <div id="robots-txt-generator" className={`${panelClass} p-5 sm:p-8`}>
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={() => setMode("build")}
-          className={mode === "build" ? primaryButton : secondaryButton}
-        >
-          Build rules
-        </button>
-        <button
-          type="button"
-          onClick={() => setMode("check")}
-          className={mode === "check" ? primaryButton : secondaryButton}
-        >
-          <Globe className="h-3.5 w-3.5" /> Check a live site
-        </button>
+      <ToolRunOverlay
+        active={fetching}
+        title="Fetching live robots.txt & sitemap directives"
+        description="Reading crawler rules, AI bot directives, and sitemap declarations from the domain."
+      />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setMode("build")}
+            className={mode === "build" ? primaryButton : secondaryButton}
+          >
+            Build rules
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode("check")}
+            className={mode === "check" ? primaryButton : secondaryButton}
+          >
+            <Globe className="h-3.5 w-3.5" /> Check a live site
+          </button>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="mr-1 inline-flex items-center gap-1 text-xs font-extrabold text-slate-500 dark:text-slate-400">
+            <Sparkles className="h-3.5 w-3.5 text-[#5271ff]" /> Quick Presets:
+          </span>
+          <button
+            type="button"
+            onClick={() => applyPreset("standard-seo")}
+            className="rounded-xl border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 hover:border-[#3452d1] hover:text-[#3452d1] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+          >
+            Standard SEO + AI Allowed
+          </button>
+          <button
+            type="button"
+            onClick={() => applyPreset("block-ai-training")}
+            className="rounded-xl border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 hover:border-[#3452d1] hover:text-[#3452d1] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+          >
+            Allow Search + Block AI Training
+          </button>
+          <button
+            type="button"
+            onClick={() => applyPreset("full-allow")}
+            className="rounded-xl border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 hover:border-[#3452d1] hover:text-[#3452d1] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+          >
+            Full Allow
+          </button>
+        </div>
       </div>
 
       {mode === "check" && (
@@ -321,7 +433,9 @@ export default function RobotsClient() {
                           onChange={(event) =>
                             updateRule(group.id, rule.id, {
                               type: event.target.value as
-                                "allow" | "disallow" | "crawl-delay",
+                                | "allow"
+                                | "disallow"
+                                | "crawl-delay",
                             })
                           }
                         >
@@ -483,15 +597,41 @@ export default function RobotsClient() {
           <section>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-sm font-black uppercase tracking-wider text-[#4662df] dark:text-blue-300">
-                Live preview
+                Live preview {rawOverride !== null ? "(Custom Edited)" : ""}
               </h2>
-              <span className="text-xs font-semibold text-slate-400">
-                {output.length.toLocaleString()} chars
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-slate-400">
+                  {output.length.toLocaleString()} chars
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!isEditingRaw && rawOverride === null) {
+                      setRawOverride(compiledOutput);
+                    }
+                    setIsEditingRaw((prev) => !prev);
+                  }}
+                  className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-2.5 py-1 text-xs font-bold text-slate-700 hover:border-[#3452d1] dark:border-slate-700 dark:text-slate-200"
+                >
+                  <Edit3 className="h-3 w-3" />
+                  {isEditingRaw ? "Compiled View" : "Edit Text"}
+                </button>
+              </div>
             </div>
-            <pre className="mt-3 max-h-[420px] overflow-auto whitespace-pre-wrap break-words rounded-2xl border border-slate-200 bg-slate-950 p-4 font-mono text-xs leading-6 text-slate-100 dark:border-slate-700">
-              {output}
-            </pre>
+            {isEditingRaw ? (
+              <textarea
+                rows={14}
+                value={output}
+                onChange={(e) => setRawOverride(e.target.value)}
+                spellCheck={false}
+                aria-label="Direct robots.txt editor"
+                className="mt-3 w-full rounded-2xl border border-[#5271ff] bg-slate-950 p-4 font-mono text-xs leading-6 text-slate-100 focus:outline-none"
+              />
+            ) : (
+              <pre className="mt-3 max-h-[420px] overflow-auto whitespace-pre-wrap break-words rounded-2xl border border-slate-200 bg-slate-950 p-4 font-mono text-xs leading-6 text-slate-100 dark:border-slate-700">
+                {output}
+              </pre>
+            )}
             <div className="mt-3 flex flex-wrap gap-2">
               <button
                 type="button"

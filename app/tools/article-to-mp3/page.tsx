@@ -1,3 +1,5 @@
+import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
+import { ToolHeroBackground, toolHeroHeading, toolHeroSurface } from "@/features/tool-ui/ToolHero";
 import type { Metadata } from "next";
 import Link from "next/link";
 import ArticlePdfClient from "@/features/article-conversion/ArticlePdfClient";
@@ -128,12 +130,12 @@ export default function Page() {
       <header className="relative overflow-hidden bg-[#291B26] text-white">
         <div
           aria-hidden
-          className="pointer-events-none absolute -right-24 -top-20 h-80 w-80 rounded-full bg-orange-500/20 blur-3xl"
+          className="pointer-events-none absolute -right-24 -top-20 h-80 w-80 rounded-full bg-[#5271ff]/100/20 blur-3xl"
         />
         <div className={`${section} relative py-12 sm:py-16`}>
           <nav
             aria-label="Breadcrumb"
-            className="mb-8 flex flex-wrap gap-2 text-xs text-orange-100/80"
+            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
           >
             <Link href="/tools">Tools</Link>
             <span aria-hidden>/</span>
@@ -143,16 +145,16 @@ export default function Page() {
             <span aria-hidden>/</span>
             <span aria-current="page">Article to MP3</span>
           </nav>
-          <div className="grid items-center gap-8 lg:grid-cols-[1.3fr_0.8fr]">
+          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
             <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-orange-200">
+              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
                 Content conversion · Listen and save
               </p>
               <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
                 Article to MP3{" "}
-                <span className="text-orange-300">and read aloud</span>
+                <span className={toolHeroHeading}>and read aloud</span>
               </h1>
-              <p className="mt-5 text-base leading-8 text-orange-50/85">
+              <p className="mt-5 text-base leading-8 text-slate-300">
                 Give a useful article a listening format. Review the text,
                 choose from six English voices, and download an MP3 for offline
                 listening.
@@ -171,10 +173,11 @@ export default function Page() {
                   </span>
                 ))}
               </div>
+              <PortableToolHeroBar />
             </div>
-            <div className="rounded-2xl border border-orange-200/25 bg-white/5 p-6">
+            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 shadow-xl p-6">
               <h2 className="text-lg font-bold">A simple listening workflow</h2>
-              <ol className="mt-4 space-y-3 text-sm leading-7 text-orange-50/85">
+              <ol className="mt-4 space-y-3 text-sm leading-7 text-slate-300">
                 <li>1. Import a URL or paste permitted content</li>
                 <li>2. Choose a starting section and preview an English voice</li>
                 <li>3. Listen, review, and save the MP3</li>
@@ -207,7 +210,7 @@ export default function Page() {
         </p>
       </section>
       <section
-        className={`${section} border-y border-slate-200 bg-orange-50/50 dark:border-slate-800 dark:bg-orange-950/10`}
+        className={`${section} border-y border-slate-200 bg-[#5271ff]/10/50 dark:border-slate-800 dark:bg-orange-950/10`}
       >
         <h2 className="text-2xl font-extrabold">
           How to convert an article into downloadable audio

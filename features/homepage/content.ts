@@ -11,9 +11,9 @@ export const homepage = {
   featuredToolSlugs: [
     "meta-title-generator",
     "meta-description-generator",
-    "article-outline-generator",
+    "keyword-clustering-tool",
+    "search-intent-checker",
     "readability-checker",
-    "image-alt-text-generator",
     "schema-markup-generator",
   ],
   learningSlugs: [

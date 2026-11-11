@@ -13,30 +13,58 @@ export const metadata: Metadata = {
   title:
     "Free AI SEO, Content Writing & Digital Marketing Tools | Do It With AI Tools",
   description:
-    "Explore free SEO and content writing tools. Improve page titles, analyze site structure, research keywords, and preview search and social results.",
+    "Explore 84+ free AI tools for SEO, keyword research, content writing, technical schema, and social media marketing. Built for practical workflows and human review.",
   alternates: { canonical: "https://doitwithai.tools/tools" },
   openGraph: {
     title: "Free AI SEO, Content Writing & Digital Marketing Tools",
     description:
-      "Practical tools for On-Page SEO, Technical SEO, Content Writing, Keyword Research, and Social Media workflows.",
+      "Practical AI tools for On-Page SEO, Technical SEO, Content Writing, Keyword Research, and Social Media workflows.",
     url: "https://doitwithai.tools/tools",
     type: "website",
   },
 };
 
+const workspaceFaqs = [
+  [
+    "What can AI do for your SEO and keyword research workflow?",
+    "AI tools can group large keyword lists by topic and reader task, classify search intent, draft title tags and meta descriptions, inspect heading hierarchies, and generate structured data. You still verify live search results, real search demand, and page accuracy before publishing.",
+  ],
+  [
+    "How can AI help with content marketing and blog writing?",
+    "AI can turn a topic brief into an article outline, suggest clearer H1s and introductions, check readability, and spot missing supporting evidence. Combining AI speed with your own examples and subject expertise keeps content helpful for readers.",
+  ],
+  [
+    "Can AI help with social media marketing and content repurposing?",
+    "Yes. Once an article or brief is ready, you can use AI utilities to adapt key takeaways into LinkedIn posts, social threads, short-form video scripts, and visual infographic cards while keeping your tone and factual claims consistent.",
+  ],
+  [
+    "Are these SEO and content writing tools free to use?",
+    "Yes. All interactive tools in the workspace run directly in your browser without requiring an account or paid subscription.",
+  ],
+] as const;
+
 export default function ToolsPage() {
+  const fullSchema = {
+    "@context": "https://schema.org",
+    "@graph": [
+      collectionSchema("AI & Productivity Tools Directory", "/tools", tools),
+      {
+        "@type": "FAQPage",
+        "@id": "https://doitwithai.tools/tools#faq",
+        mainEntity: workspaceFaqs.map(([question, answer]) => ({
+          "@type": "Question",
+          name: question,
+          acceptedAnswer: { "@type": "Answer", text: answer },
+        })),
+      },
+    ],
+  };
   return (
     <div className="bg-slate-50 pb-20 pt-6 text-slate-900 dark:bg-[#0F1523] dark:text-white sm:pt-8">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(
-            collectionSchema(
-              "AI & Productivity Tools Directory",
-              "/tools",
-              tools,
-            ),
-          ).replace(/</g, "\\u003c"),
+          __html: JSON.stringify(fullSchema).replace(/</g, "\\u003c"),
         }}
       />
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -183,6 +211,33 @@ export default function ToolsPage() {
                 </div>
               );
             })}
+          </div>
+        </section>
+
+        <section
+          aria-labelledby="workspace-faq-heading"
+          className="mt-8 rounded-3xl border border-slate-200/90 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-[#161F30] sm:p-8"
+        >
+          <h2
+            id="workspace-faq-heading"
+            className="text-xl font-extrabold text-slate-900 dark:text-white sm:text-2xl"
+          >
+            How AI supports your SEO, content, and social media work
+          </h2>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600 dark:text-slate-300">
+            Practical answers on what AI tools can handle quickly and where human review makes the difference.
+          </p>
+          <div className="mt-6 divide-y divide-slate-200 dark:divide-slate-800">
+            {workspaceFaqs.map(([question, answer]) => (
+              <details key={question} className="py-4">
+                <summary className="cursor-pointer text-sm font-bold leading-6 text-slate-900 dark:text-white sm:text-base">
+                  {question}
+                </summary>
+                <p className="mt-2 text-sm leading-7 text-slate-600 dark:text-slate-300">
+                  {answer}
+                </p>
+              </details>
+            ))}
           </div>
         </section>
 

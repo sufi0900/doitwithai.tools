@@ -14,6 +14,9 @@ export const metadata = {
   creator: "Sufian Mustafa",
   publisher: homepage.brand,
   alternates: { canonical: `${origin}/` },
+  other: {
+    "google-adsense-account": "ca-pub-1402360917878288",
+  },
   openGraph: {
     type: "website",
     locale: "en_US",

@@ -5,6 +5,26 @@ export const faqsData = [
       "Do It With AI Tools is a comprehensive platform founded by Sufian Mustafa that helps content creators, marketers, and businesses master generative AI for content creation and SEO optimization. We provide expert strategies, proven workflows, tutorials, and free resources to create high-quality content optimized for traditional search engines (SEO), AI-powered search (GEO), and answer engines (AEO).",
   },
   {
+    question: "What is Do It AI (DoIt AI), and what can it do?",
+    answer:
+      "Do It AI is our flagship unified AI SEO workspace and chat agent at doitwithai.tools/do-it-ai. Unlike generic chatbots, Do It AI is connected directly to 90+ specialized SEO engines—allowing you to audit live on-page URLs, verify SERP pixel limits, generate Schema.org JSON-LD, cluster keywords, and export standalone portable HTML/React tools with zero coding required.",
+  },
+  {
+    question: "Why do marketers search 'Do it with AI' or 'AI do it'?",
+    answer:
+      "Marketers and founders search 'Do it with AI' or 'AI do it' when looking for actionable software tools that perform real marketing tasks rather than just generating conversational text. Do It With AI Tools delivers exactly that: practical, algorithmic SEO tools and an intelligent workspace that automates on-page audits, schema creation, and content repurposing.",
+  },
+  {
+    question: "Can I download and run 90+ AI SEO tools on my PC offline?",
+    answer:
+      "Yes! Every tool in our catalog is available as a 100% standalone desktop web application at /tools/downloadable-ai-tools. You can download a single 1-click .ZIP package containing Run-Tool.html, extract it, and double-click to run on any computer in Chrome, Edge, or Safari with zero terminal commands, Node.js, or installation.",
+  },
+  {
+    question: "What is the Bring Your Own Key (BYOK) privacy policy on portable tools?",
+    answer:
+      "Every downloaded portable tool connects to our default DoItWithAI Cloud API for free when online. However, if you enter your personal Google Gemini or OpenAI API key, our default cloud API is permanently removed from that tool, ensuring 100% private, client-side execution directly between your browser and your AI provider.",
+  },
+  {
     question: "How can Do It With AI Tools help improve content creation and SEO?",
     answer:
       "Do It With AI Tools teaches you strategic workflows that combine modern AI tools like ChatGPT and Gemini with proven SEO techniques for keyword research, content optimization, and creating content that ranks on traditional search engines, AI-powered search (GEO), and answer engines (AEO). Our proven methods help you save 10+ hours weekly while producing higher-quality content that ranks better and converts more effectively.",
@@ -39,7 +59,6 @@ export const faqsData = [
     answer:
       "Do It With AI Tools is a modern AI hub focused on the future of content and search, specializing in traditional SEO, Generative Engine Optimization (GEO), and Answer Engine Optimization (AEO). We provide battle-tested workflows derived from building our own successful platform, with every strategy based on real implementation and measurable results. Our content is designed for the modern digital landscape, making us your essential modern resource hub.",
   },
- 
   {
     question: "How often is new content added to Do It With AI Tools?",
     answer:

@@ -13,8 +13,15 @@ const description =
   "Plan an article around your reader's intent. Compare H1, H2, and H3 alternatives, edit section notes, and export a structured writing outline.";
 const image = `https://doitwithai.tools/api/og?${new URLSearchParams({ title: "Article Outline Generator", category: "AI SEO · Content Writing", ctaText: "Plan. Compare. Refine.", features: "Heading Alternatives,Writing Notes,Markdown Export" })}`;
 export const metadata: Metadata = {
-  title: "AI Article Outline Generator",
+  title: "AI Article Outline Generator: Plan H1–H3 Heading Structure",
   description,
+  keywords: [
+    "ai article outline generator",
+    "h1 h2 h3 outline generator",
+    "blog post outline generator",
+    "seo heading hierarchy planner",
+    "content brief and outline tool",
+  ],
   alternates: { canonical: pageUrl },
   openGraph: {
     title: "AI Article Outline Generator",
@@ -349,7 +356,28 @@ export default function Page() {
           >
             W3C&apos;s heading guidance
           </a>
-          . For a stronger brief, explore our{" "}
+          . For a stronger brief and heading hierarchy, explore our{" "}
+          <Link
+            className="font-semibold text-[#4662df] underline dark:text-blue-300"
+            href="/ai-seo/h1-heading"
+          >
+            H1 tag SEO best practices &amp; length guide
+          </Link>
+          , test your main headline in the{" "}
+          <Link
+            className="font-semibold text-[#4662df] underline dark:text-blue-300"
+            href="/tools/h1-heading-generator"
+          >
+            AI H1 Heading Generator
+          </Link>
+          , audit published pages in the{" "}
+          <Link
+            className="font-semibold text-[#4662df] underline dark:text-blue-300"
+            href="/tools/heading-structure-analyzer"
+          >
+            Heading Structure Analyzer
+          </Link>
+          , and read our{" "}
           <Link
             className="text-[#4662df] underline dark:text-blue-300"
             href="/ai-seo/chatgpt-target-audience-research"

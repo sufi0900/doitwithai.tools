@@ -35,7 +35,7 @@ const INITIAL_BLOGS_LIMIT = 24;
 
 // --- Server-side data fetching function ---
 async function getAllBlogsInitialData() {
-  const cacheKey = 'blogList:all-blogs:main:v2';
+  const cacheKey = 'blogList:all-blogs:main:v3-cwv';
   const startTime = Date.now();
 
   try {
@@ -66,8 +66,7 @@ async function getAllBlogsInitialData() {
     slug,
     mainImage,
     overview,
-    body,
-    content,
+    // body and content omitted from listing cards to save 365+ KiB RSC hydration payload
     publishedAt
   }`;
 
@@ -116,39 +115,34 @@ export const metadata = {
   
   author: "Sufian Mustafa",
   
-  // --- KEYWORDS ---
-  keywords: "modern AI blog, AI strategies, AI tools for content, AI SEO, content creation workflows, scale business with AI, AI Learn & Earn, AI Code, prompt engineering insights", // <-- UPDATED KEYWORDS: Removed generic terms and focused on strategic action areas.
+  keywords: "modern AI blog, AI strategies, AI tools for content, AI SEO, content creation workflows, scale business with AI, AI Learn & Earn, AI Code, prompt engineering insights",
   
-  // --- OPEN GRAPH (SOCIAL SHARING) ---
   openGraph: {
-    title: "Modern AI Blog Hub for SEO & Business Scale | Do It With AI Tools", // <-- UPDATED OG TITLE: Focus on Strategy & Workflow
-  description:"Explore our expert blogs for advanced AI insights and practical AI tools to master content creation, enhance SEO, and strategically scale your business.", 
-     type: "website",
+    title: "Modern AI Blog Hub for SEO & Business Scale | Do It With AI Tools",
+    description:"Explore our expert blogs for advanced AI insights and practical AI tools to master content creation, enhance SEO, and strategically scale your business.", 
+    type: "website",
     url: `${getBaseUrl()}/blogs`,
     siteName: "doitwithai.tools",
     images: [{
       url: generateOGImageURL({
-        title: 'Modern AI Blog Hub for Content Creation, SEO, and business  Scale', // <-- UPDATED IMAGE TITLE
-        // description field is removed
-        category: 'AI Strategy Hub', // <-- UPDATED CATEGORY
-        ctaText: 'Explore Expert Articles', // <-- UPDATED CTA
-        features: 'AI Workflows,SEO/Content,Scale Business', // <-- UPDATED FEATURES
+        title: 'Modern AI Blog Hub for Content Creation, SEO, and business Scale',
+        category: 'AI Strategy Hub',
+        ctaText: 'Explore Expert Articles',
+        features: 'AI Workflows,SEO/Content,Scale Business',
         bgColor: 'teal',
       }),
       width: 1200,
       height: 630,
-      alt: "Modern AI Blog Hub - Strategies for Content Creation and Business Scale" // <-- UPDATED ALT
+      alt: "Modern AI Blog Hub - Strategies for Content Creation and Business Scale"
     }],
   },
   
-  // --- TWITTER CARD ---
- twitter: {
+  twitter: {
     card: "summary_large_image",
     site: "@doitwithai",
     creator: "@doitwithai",
     domain: "doitwithai.tools",
     url: `${getBaseUrl()}/blogs`,
-    // Keep titles/descriptions identical to OpenGraph
     title: "AI Blog Hub for Content Creation, SEO & Business Scale",
     description:
       "Discover expert blog posts with advanced AI insights and practical tools to master content creation, improve SEO, and scale your projects and business with proven AI workflows.",
@@ -157,7 +151,6 @@ export const metadata = {
       ctaText: "Explore Articles",
       features: "AI Content,SEO Strategies,Scale",
     }),
-    creator: "@doitwithai",
   },
 
   alternates: {
@@ -186,14 +179,11 @@ function blogCollectionSchema() {
     __html: JSON.stringify({
       "@context": "https://schema.org",
       "@type": "CollectionPage",
-      // Name reflects the modern focus
       "name": "Modern AI Blog Hub by Do It With AI Tools", 
       "url": `${baseUrl}/blogs`,
-      // Description is updated to include strategic keywords and mission
       "description": "The Modern AI Blog Hub delivering advanced insights and strategic human-AI workflows to master content creation, enhance SEO, and strategically scale your business.",
       "publisher": {
         "@type": "Organization",
-        // Added @id for entity linking consistency
         "@id": `${baseUrl}/#organization`, 
         "name": "doitwithai.tools",
         "logo": {
@@ -205,47 +195,47 @@ function blogCollectionSchema() {
         "url": `${baseUrl}`,
         "sameAs": [
           "https://x.com/doitwithaitools",
-        "https://www.facebook.com/profile.php?id=61579751720695&mibextid=ZbWKwL",
-        "https://www.linkedin.com/company/do-it-with-ai-tools",
-        "https://www.pinterest.com/doitwithai/",
-        "https://www.tiktok.com/@doitwithai.tools",
-        "https://www.youtube.com/@doitwithaitools",
-        "https://www.instagram.com/doitwithaitools",
-        "https://linktr.ee/doitwithaitools?"
+          "https://www.facebook.com/profile.php?id=61579751720695&mibextid=ZbWKwL",
+          "https://www.linkedin.com/company/do-it-with-ai-tools",
+          "https://www.pinterest.com/doitwithai/",
+          "https://www.tiktok.com/@doitwithai.tools",
+          "https://www.youtube.com/@doitwithaitools",
+          "https://www.instagram.com/doitwithaitools",
+          "https://linktr.ee/doitwithaitools?"
         ]
       },
       "mainEntity": {
         "@type": "ItemList",
-        "name": "AI Content Strategy & Workflow Categories", // <-- UPDATED NAME
-        "description": "Explore strategic content categories covering AI tools, modern SEO, coding workflows, and income generation.", // <-- UPDATED DESC
+        "name": "AI Content Strategy & Workflow Categories",
+        "description": "Explore strategic content categories covering AI tools, modern SEO, coding workflows, and income generation.",
         "itemListElement": [
           {
             "@type": "ListItem",
             "position": 1,
-            "name": "AI Tools & Strategic Workflows", // <-- UPDATED NAME
+            "name": "AI Tools & Strategic Workflows",
             "url": `${baseUrl}/ai-tools`,
-            "description": "Latest reviews, tutorials, and insights on cutting-edge AI tools and strategic workflows for content creation, SEO, and business scale." // <-- UPDATED DESC
+            "description": "Latest reviews, tutorials, and insights on cutting-edge AI tools and strategic workflows for content creation, SEO, and business scale."
           },
           {
             "@type": "ListItem",
             "position": 2,
-            "name": "Modern AI SEO & Content Strategy", // <-- UPDATED NAME: Highlights the main niche
+            "name": "Modern AI SEO & Content Strategy",
             "url": `${baseUrl}/ai-seo`,
-            "description": "Expert strategies for leveraging generative AI to revolutionize your content creation and search performance, covering GEO, AEO, and modern SEO techniques." // <-- UPDATED DESC: Added GEO/AEO/Content
+            "description": "Expert strategies for leveraging generative AI to revolutionize your content creation and search performance, covering GEO, AEO, and modern SEO techniques."
           },
           {
             "@type": "ListItem",
             "position": 3,
-            "name": "Code with AI for Web Development", // <-- UPDATED NAME
+            "name": "Code with AI for Web Development",
             "url": `${baseUrl}/ai-code`,
-            "description": "Programming tutorials and development insights using AI to accelerate full-stack coding, solve problems, and build scalable content-driven applications." // <-- UPDATED DESC: Added Content/Scalable focus
+            "description": "Programming tutorials and development insights using AI to accelerate full-stack coding, solve problems, and build scalable content-driven applications."
           },
           {
             "@type": "ListItem",
             "position": 4,
-            "name": "AI Learn, Earn, and Business Scale", // <-- UPDATED NAME: Added "Business Scale"
+            "name": "AI Learn, Earn, and Business Scale",
             "url": `${baseUrl}/ai-learn-earn`,
-            "description": "Practical guides for acquiring AI skills, unlocking income opportunities, and scaling your business and digital projects using artificial intelligence." // <-- UPDATED DESC: Added Business/Scale focus
+            "description": "Practical guides for acquiring AI skills, unlocking income opportunities, and scaling your business and digital projects using artificial intelligence."
           }
         ]
       },
@@ -254,27 +244,26 @@ function blogCollectionSchema() {
         "target": `${baseUrl}/blogs?search={search_term_string}`,
         "query-input": "required name=search_term_string"
       },
-      // Updated the 'about' section for sharper keyword focus
       "about": [
         {
           "@type": "Thing",
-          "name": "Generative AI Workflows", // <-- UPDATED NAME
-          "description": "AI tools, strategic workflows, and content automation technologies" // <-- UPDATED DESC
+          "name": "Generative AI Workflows",
+          "description": "AI tools, strategic workflows, and content automation technologies"
         },
         {
           "@type": "Thing",
-          "name": "Modern SEO Strategy", // <-- UPDATED NAME
-          "description": "SEO strategies, GEO, AEO, and AI-powered content optimization methods" // <-- UPDATED DESC
+          "name": "Modern SEO Strategy",
+          "description": "SEO strategies, GEO, AEO, and AI-powered content optimization methods"
         },
         {
           "@type": "Thing",
-          "name": "AI-Assisted Web Development", // <-- UPDATED NAME
-          "description": "Coding tutorials, programming best practices, and AI-assisted project building" // <-- UPDATED DESC
+          "name": "AI-Assisted Web Development",
+          "description": "Coding tutorials, programming best practices, and AI-assisted project building"
         },
         {
           "@type": "Thing",
-          "name": "Business Scale & Digital Monetization", // <-- UPDATED NAME
-          "description": "Digital income strategies, scaling projects, and AI-powered earning opportunities" // <-- UPDATED DESC
+          "name": "Business Scale & Digital Monetization",
+          "description": "Digital income strategies, scaling projects, and AI-powered earning opportunities"
         }
       ]
     })
@@ -315,7 +304,6 @@ function blogCollectionSchema() {
           "name": "What topics does the Do It With AI Tools blog cover?",
           "acceptedAnswer": {
             "@type": "Answer",
-            // UPDATED: Focused on the core mission categories (Tools, Content/SEO, and broader strategy/scale)
             "text": "The Do It With AI Tools blog is the modern hub for advanced insights on generative AI. We primarily cover three main areas: AI tools and strategic workflows, modern AI SEO and content creation, and scaling your business and digital projects with AI. Our content is designed to provide actionable strategies, not just theory."
           }
         },
@@ -324,7 +312,6 @@ function blogCollectionSchema() {
           "name": "How often is new content published on the blog?",
           "acceptedAnswer": {
             "@type": "Answer",
-            // ENHANCED: Added strategic keywords (workflows, scale)
             "text": "We publish new, high-value content regularly, ensuring you always have access to the latest strategic workflows, AI tools, and methods for content creation and business scale. We continuously update existing articles to reflect the rapidly evolving AI and SEO landscape."
           }
         },
@@ -333,7 +320,6 @@ function blogCollectionSchema() {
           "name": "Are the AI tools and strategies mentioned in the blog suitable for beginners?",
           "acceptedAnswer": {
             "@type": "Answer",
-            // ENHANCED: Reinforced brand and mission
             "text": "Yes, our content is designed for all skill levels. We provide step-by-step tutorials for beginners looking to master content creation with AI, while also offering advanced strategies for experienced users aiming to optimize complex human-AI workflows and scale their SEO."
           }
         },
@@ -342,7 +328,6 @@ function blogCollectionSchema() {
           "name": "Can I filter blog posts by specific categories or topics?",
           "acceptedAnswer": {
             "@type": "Answer",
-            // ENHANCED: Used new category names
             "text": "Absolutely! Our blog page features robust filtering options that allow you to sort by categories like AI Tools and Strategic Workflows, Modern AI SEO and Content Strategy, Code with AI for Web Development, and AI Learn, Earn, and Business Scale. You can also search for specific topics or keywords."
           }
         }
@@ -357,10 +342,8 @@ function websiteSchema() {
     __html: JSON.stringify({
       "@context": "https://schema.org",
       "@type": "WebSite",
-      // UPDATED NAME: Aligns with the Metadata title
       "name": "Modern AI Blog Hub | Do It With AI Tools",
       "url": `${baseUrl}/blogs`,
-      // UPDATED DESCRIPTION: Focuses on advanced insights, strategy, and scale
       "description": "Explore the Modern AI Blog Hub for advanced insights and strategic workflows to master content creation, enhance SEO, and strategically scale your business.",
       "inLanguage": "en-US",
       "isPartOf": {
@@ -373,11 +356,9 @@ function websiteSchema() {
         "name": "Sufian Mustafa",
         "url": `${baseUrl}/author/sufian-mustafa`
       },
-      // IMPORTANT: Use Organization @id reference for cleaner entity linking
       "publisher": {
          "@id": `${baseUrl}/#organization` 
       },
-      // Add potentialAction for sitelinks searchbox feature
       "potentialAction": {
         "@type": "SearchAction",
         "target": `${baseUrl}/blogs?search={search_term_string}`,

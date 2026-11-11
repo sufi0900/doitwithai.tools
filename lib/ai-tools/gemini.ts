@@ -3,6 +3,12 @@ import { randomUUID } from "node:crypto";
 import { compactOutputSchema } from "./compact-schema";
 import { readBoundedJson } from "./request-body";
 import {
+  generateOpenRouter,
+  getOpenRouterModel,
+  isOpenRouterConfigured,
+  OpenRouterError,
+} from "./openrouter";
+import {
   generateGroq,
   getGroqModel,
   isGroqConfigured,
@@ -13,10 +19,30 @@ export function getGeminiModel(tool?: string) {
   const override = tool ? process.env[`GEMINI_${tool}_MODEL`]?.trim() : "";
   return override || process.env.GEMINI_MODEL?.trim() || "";
 }
+export function getGeminiApiKeys(): string[] {
+  const keys: string[] = [];
+  const primary = process.env.GEMINI_API_KEY?.trim();
+  if (primary) keys.push(primary);
+  const rawList = process.env.GEMINI_API_KEYS?.trim();
+  if (rawList) {
+    for (const k of rawList.split(",")) {
+      const clean = k.trim();
+      if (clean && !keys.includes(clean)) keys.push(clean);
+    }
+  }
+  for (let i = 2; i <= 10; i++) {
+    const k = process.env[`GEMINI_API_KEY_${i}`]?.trim();
+    if (k && !keys.includes(k)) keys.push(k);
+  }
+  const backup = process.env.GEMINI_API_KEY_BACKUP?.trim();
+  if (backup && !keys.includes(backup)) keys.push(backup);
+  return keys;
+}
+
 export function isGeminiConfigured(model: string) {
   return Boolean(
     typeof model === "string" &&
-    process.env.GEMINI_API_KEY?.trim() &&
+    getGeminiApiKeys().length > 0 &&
     /^[a-zA-Z0-9][a-zA-Z0-9._-]{1,80}$/.test(model),
   );
 }
@@ -114,21 +140,27 @@ async function generateGemini<T>(
 ) {
   if (!isGeminiConfigured(params.model))
     throw new GeminiError(503, "AI_NOT_CONFIGURED");
-  const controller = new AbortController();
-  const timer = setTimeout(
-    () => controller.abort(),
-    Math.min(options.timeout ?? 45_000, 50_000),
-  );
-  try {
-    const send = (jsonMode: boolean) =>
-      fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${params.model}:generateContent`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-goog-api-key": process.env.GEMINI_API_KEY!.trim(),
-          },
+
+  const keys = getGeminiApiKeys();
+  let lastFailure: GeminiError | null = null;
+
+  for (let keyIdx = 0; keyIdx < keys.length; keyIdx++) {
+    const activeKey = keys[keyIdx];
+    const controller = new AbortController();
+    const timer = setTimeout(
+      () => controller.abort(),
+      Math.min(options.timeout ?? 45_000, 50_000),
+    );
+    try {
+      const send = (jsonMode: boolean) =>
+        fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${params.model}:generateContent`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-goog-api-key": activeKey,
+            },
           cache: "no-store",
           signal: controller.signal,
           body: JSON.stringify({
@@ -190,6 +222,21 @@ async function generateGemini<T>(
       const provider = rejection || (await providerStatus(response));
       const failure = (status: number, code: string) =>
         new GeminiError(status, code, upstream, provider.status);
+
+      // Rotate keys if quota exhausted or temporarily unavailable and more keys exist
+      if ((upstream === 429 || upstream === 503 || upstream === 401 || upstream === 403) && keyIdx + 1 < keys.length) {
+        process.stderr.write(
+          JSON.stringify({
+            event: "gemini_key_rotation",
+            fromKeyIdx: keyIdx,
+            toKeyIdx: keyIdx + 1,
+            upstreamStatus: upstream,
+          }) + "\n",
+        );
+        lastFailure = failure(upstream === 429 ? 429 : 503, upstream === 429 ? "PROVIDER_RATE_LIMITED" : "PROVIDER_UNAVAILABLE");
+        continue;
+      }
+
       if (upstream === 400) throw failure(502, "PROVIDER_BAD_REQUEST");
       if (upstream === 429) throw failure(429, "PROVIDER_RATE_LIMITED");
       if (upstream === 401 || upstream === 403)
@@ -286,14 +333,22 @@ async function generateGemini<T>(
   } finally {
     clearTimeout(timer);
   }
+  }
+  if (lastFailure) throw lastFailure;
+  throw new GeminiError(502, "PROVIDER_FAILED");
 }
+
 export function isAiConfigured(model: string, image = false) {
-  return isGeminiConfigured(model) || isGroqConfigured(image);
+  return (
+    isGeminiConfigured(model) ||
+    isGroqConfigured(image) ||
+    (!image && isOpenRouterConfigured())
+  );
 }
 
 type GenerationResult<T> = {
   output_parsed: T;
-  provider?: "gemini" | "groq";
+  provider?: "gemini" | "groq" | "openrouter";
   model?: string;
 };
 async function generate<T>(
@@ -310,7 +365,7 @@ async function generate<T>(
   const traceId = randomUUID();
   const startedAt = Date.now();
   const trace = (
-    provider: "gemini" | "groq",
+    provider: "gemini" | "groq" | "openrouter",
     state: "started" | "succeeded" | "failed" | "skipped",
     code?: string,
   ) => {
@@ -322,7 +377,12 @@ async function generate<T>(
         state,
         code,
         elapsedMs: Date.now() - startedAt,
-        model: provider === "gemini" ? params.model : getGroqModel(image),
+        model:
+        provider === "gemini"
+          ? params.model
+          : provider === "groq"
+            ? getGroqModel(image)
+            : getOpenRouterModel(),
       }) + "\n",
     );
   };
@@ -336,10 +396,31 @@ async function generate<T>(
     try {
       const result = await generateGemini(params, options);
       trace("gemini", "succeeded");
-      return result;
+      return { ...result, provider: "gemini", model: params.model };
     } catch (cause) {
       if (!(cause instanceof GeminiError)) throw cause;
       trace("gemini", "failed", cause.code);
+      if (
+        !image &&
+        isOpenRouterConfigured() &&
+        !["OUTPUT_BLOCKED", "INVALID_IMAGE"].includes(cause.code)
+      ) {
+        try {
+          trace("openrouter", "started");
+          const orResult = await generateOpenRouter(
+            params,
+            options.timeout ?? 25000,
+          );
+          trace("openrouter", "succeeded");
+          return {
+            ...orResult,
+            provider: "openrouter",
+            model: getOpenRouterModel(),
+          };
+        } catch {
+          trace("openrouter", "failed");
+        }
+      }
       const failure = cause;
       failure.failures = { gemini: cause.code, groq: "NOT_CONFIGURED" };
       process.stderr.write(
@@ -396,6 +477,30 @@ async function generate<T>(
         ? cause
         : new GroqError(502, "PROVIDER_FAILED");
     trace("groq", "failed", failure.code);
+    if (
+      !image &&
+      isOpenRouterConfigured() &&
+      failure.code !== "OUTPUT_BLOCKED"
+    ) {
+      const remainingForOpenRouter = deadline - Date.now();
+      if (remainingForOpenRouter > 1500) {
+        try {
+          trace("openrouter", "started");
+          const orResult = await generateOpenRouter(
+            params,
+            remainingForOpenRouter,
+          );
+          trace("openrouter", "succeeded");
+          return {
+            ...orResult,
+            provider: "openrouter",
+            model: getOpenRouterModel(),
+          };
+        } catch {
+          trace("openrouter", "failed");
+        }
+      }
+    }
     const finalFailure = new GeminiError(
       failure.code === "OUTPUT_BLOCKED" ? 422 : failure.status,
       failure.code === "OUTPUT_BLOCKED"

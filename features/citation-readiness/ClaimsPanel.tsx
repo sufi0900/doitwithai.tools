@@ -13,6 +13,7 @@ import {
 import type { EditorialReview } from "../on-page-analyzer/review";
 import { reviewClaim } from "./claim-review-client";
 import styles from "../content-evidence/evidence.module.css";
+
 function ClaimCard({
   claim,
   saved,
@@ -95,12 +96,12 @@ function ClaimCard({
         ))}
       </div>
       <blockquote>
-        <details>
+        <details open>
           <summary>
             {claim.text.slice(0, 300)}
             {claim.text.length > 300
               ? "… Show full passage"
-              : " · Show passage"}
+              : " · Passage text"}
           </summary>
           <p>{claim.text}</p>
         </details>
@@ -241,6 +242,7 @@ function ClaimCard({
     </article>
   );
 }
+
 export default function ClaimsPanel({
   claims,
   reviews,

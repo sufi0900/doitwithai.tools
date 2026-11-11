@@ -1,3 +1,4 @@
+import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import type { Metadata } from "next";
 import Link from "next/link";
 import ValidatorClient from "@/features/schema-inspector/ValidatorClient";
@@ -104,45 +105,78 @@ export default function StructuredDataValidatorPage() {
           __html: JSON.stringify(schema).replace(/</g, "\\u003c"),
         }}
       />
-      <section
-        className={`relative overflow-hidden ${toolHeroSurface} px-5 py-14 text-white`}
+      <section className={`relative overflow-hidden ${toolHeroSurface} text-white`}
       >
         <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl">
+        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
           <nav
-            className="mb-10 flex flex-wrap gap-2 text-xs text-blue-100"
             aria-label="Breadcrumb"
+            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
           >
             <Link href="/">Home</Link>
             <span>/</span>
             <Link href="/tools">Tools</Link>
             <span>/</span>
-            <span>Structured Data Validator</span>
+            <span aria-current="page">Structured Data Validator</span>
           </nav>
-          <div className="mx-auto max-w-3xl text-center">
-            <p className="text-xs font-bold uppercase tracking-widest text-blue-200">
-              Every entity, in view
-            </p>
-            <h1 className="mt-5 text-4xl font-black leading-tight tracking-tight sm:text-6xl">
-              Structured Data Validator
-              <span className={`block ${toolHeroHeading}`}>
-                Inspect. Understand. Correct.
-              </span>
-            </h1>
-            <p className="mt-6 text-base leading-8 text-blue-100">
-              See your page’s JSON-LD entities, inspect field findings, and
-              prepare source corrections in one focused workspace.
-            </p>
+
+          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
+                Technical SEO · JSON-LD Syntax & Rich Result Inspector
+              </p>
+              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
+                Structured Data & 
+                <span className={toolHeroHeading}>
+                  JSON-LD Schema Validator
+                </span>
+              </h1>
+              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
+                Inspect all JSON-LD structured data blocks on a live URL or pasted code. Catch syntax errors, missing @context/@type fields, invalid dates, and rich-result gaps.
+              </p>
+              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  Live URL or raw JSON-LD
+                </span>
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  Inline code editor & fixer
+                </span>
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  Entity & property breakdown
+                </span>
+              </div>
+              <PortableToolHeroBar />
+            </div>
+
+            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
+              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
+                4 Schema Checks Performed
+              </p>
+              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
+                <li>
+                  <strong className="text-emerald-300">JSON Syntax:</strong> Catches trailing commas, unescaped quotes, and broken brackets.
+                </li>
+                <li>
+                  <strong className="text-indigo-300">Graph Entities:</strong> Lists every @type detected across standalone and @graph blocks.
+                </li>
+                <li>
+                  <strong className="text-sky-300">Required Fields:</strong> Flags missing properties needed for Google rich result eligibility.
+                </li>
+                <li>
+                  <strong className="text-amber-300">Live Remediation:</strong> Edit JSON-LD inline, re-validate instantly, and export clean code.
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
       </section>
-      <section className="bg-slate-50 px-3 py-10 dark:bg-[#0c1422] sm:px-6">
-        <div className="mx-auto max-w-6xl">
+      <section className="bg-slate-50 py-10 dark:bg-[#0c1422]">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <ValidatorClient />
         </div>
       </section>
-      <section className="bg-white px-5 py-20 dark:bg-slate-950">
-        <div className="mx-auto max-w-6xl">
+      <section className="bg-white py-20 dark:bg-slate-950">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <h2 className="text-3xl font-extrabold tracking-tight text-slate-950 dark:text-white">
             Understand what your schema report means
           </h2>
@@ -206,7 +240,7 @@ export default function StructuredDataValidatorPage() {
         </div>
       </section>
       <section className="bg-slate-50 px-5 py-16 dark:bg-slate-900">
-        <div className="mx-auto max-w-5xl">
+        <div className="mx-auto max-w-6xl">
           <h2 className="text-3xl font-extrabold text-slate-950 dark:text-white">
             Structured data questions
           </h2>

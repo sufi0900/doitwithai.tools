@@ -1,10 +1,20 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+} from "react";
 import {
   AlertTriangle,
+  Copy,
   Download,
+  Plus,
   RefreshCw,
+  Search,
   Sparkles,
   TrendingDown,
   Upload,
@@ -38,10 +48,17 @@ const primaryBtn =
 const secondaryBtn =
   "inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold hover:bg-slate-100 focus-visible:outline-[#5271ff] dark:border-slate-600 dark:hover:bg-slate-800";
 
+function buildInitialSampleDecayReport(): ContentDecayReport {
+  return analyzeContentDecayCsv(SAMPLE_DECAY_CSV);
+}
+
 export default function ContentDecayRefreshAnalyzerClient() {
-  const [csvInput, setCsvInput] = useState("");
-  const [report, setReport] = useState<ContentDecayReport | null>(null);
+  const [csvInput, setCsvInput] = useState(SAMPLE_DECAY_CSV);
+  const [report, setReport] = useState<ContentDecayReport | null>(
+    buildInitialSampleDecayReport,
+  );
   const [filter, setFilter] = useState<DecayDiagnosis | "all">("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [feedback, setFeedback] = useState("");
@@ -64,6 +81,45 @@ export default function ContentDecayRefreshAnalyzerClient() {
     setFeedback(
       "Loaded 5-page GSC comparison dataset and separated true ranking decay from SERP CTR compression.",
     );
+  }
+
+  function updatePlaybookStep(rowId: string, stepIdx: number, value: string) {
+    setReport((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        rows: prev.rows.map((r) =>
+          r.id === rowId
+            ? {
+                ...r,
+                refreshPlaybook: r.refreshPlaybook.map((s, idx) =>
+                  idx === stepIdx ? value : s,
+                ),
+              }
+            : r,
+        ),
+      };
+    });
+  }
+
+  function addPlaybookStep(rowId: string) {
+    setReport((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        rows: prev.rows.map((r) =>
+          r.id === rowId
+            ? {
+                ...r,
+                refreshPlaybook: [
+                  ...r.refreshPlaybook,
+                  "Add 2–3 contextual internal links from high-authority hub articles.",
+                ],
+              }
+            : r,
+        ),
+      };
+    });
   }
 
   async function handleFileUpload(e: ChangeEvent<HTMLInputElement>) {
@@ -100,6 +156,9 @@ export default function ContentDecayRefreshAnalyzerClient() {
       }
       setReport(built);
       setRevision((r) => r + 1);
+      setFeedback(
+        `Analyzed ${built.rows.length} URLs and prioritized refresh playbooks by recoverable clicks.`,
+      );
     } finally {
       setBusy(false);
     }
@@ -107,9 +166,16 @@ export default function ContentDecayRefreshAnalyzerClient() {
 
   const filteredRows = useMemo(() => {
     if (!report) return [];
-    if (filter === "all") return report.rows;
-    return report.rows.filter((r) => r.diagnosis === filter);
-  }, [report, filter]);
+    return report.rows.filter((r) => {
+      if (filter !== "all" && r.diagnosis !== filter) return false;
+      if (searchQuery.trim()) {
+        return r.pageOrQuery
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase().trim());
+      }
+      return true;
+    });
+  }, [report, filter, searchQuery]);
 
   function triggerDownload(blob: Blob, filename: string) {
     const url = URL.createObjectURL(blob);
@@ -246,11 +312,14 @@ export default function ContentDecayRefreshAnalyzerClient() {
             <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200 pb-6 dark:border-slate-700">
               <div>
                 <span className="text-xs font-bold uppercase tracking-wider text-[#5271ff]">
-                  Root-Cause Decay Triage · {report.rows.length} URLs
+                  Root-Cause Decay Triage · {report.rows.length} URLs · Editable Playbooks
                 </span>
                 <h3 className="mt-1 text-2xl font-black">
                   Content Refresh Priority Queue
                 </h3>
+                <p className="mt-1 text-xs text-slate-500">
+                  Customize any URL&apos;s refresh checklist below before exporting your `.CSV` queue or `.DOCX` editorial brief.
+                </p>
               </div>
               <div className="flex flex-wrap gap-2">
                 <button
@@ -319,29 +388,45 @@ export default function ContentDecayRefreshAnalyzerClient() {
               </div>
             </div>
 
-            <div className="mt-6 flex flex-wrap gap-2">
-              {(
-                [
-                  ["all", "All Pages"],
-                  ["ranking-decay", "True Ranking Decay"],
-                  ["serp-ctr-compression", "SERP CTR Compression"],
-                  ["demand-drop", "Demand Drop"],
-                  ["growing-or-stable", "Growing / Stable"],
-                ] as const
-              ).map(([val, label]) => (
-                <button
-                  key={val}
-                  type="button"
-                  onClick={() => setFilter(val)}
-                  className={`rounded-lg border px-3 py-1.5 text-xs font-bold ${
-                    filter === val
-                      ? "border-[#3452d1] bg-[#3452d1] text-white"
-                      : "border-slate-300 dark:border-slate-600"
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
+            <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap gap-2">
+                {(
+                  [
+                    ["all", "All Pages"],
+                    ["ranking-decay", "True Ranking Decay"],
+                    ["serp-ctr-compression", "SERP CTR Compression"],
+                    ["demand-drop", "Demand Drop"],
+                    ["growing-or-stable", "Growing / Stable"],
+                  ] as const
+                ).map(([val, label]) => (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => setFilter(val)}
+                    className={`rounded-lg border px-3 py-1.5 text-xs font-bold ${
+                      filter === val
+                        ? "border-[#3452d1] bg-[#3452d1] text-white"
+                        : "border-slate-300 dark:border-slate-600"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <div className="relative">
+                <Search
+                  size={14}
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                />
+                <input
+                  type="search"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Filter URL or query..."
+                  aria-label="Filter URL or query"
+                  className="rounded-xl border border-slate-300 bg-transparent py-1.5 pl-8 pr-3 text-xs dark:border-slate-600"
+                />
+              </div>
             </div>
 
             <div className="mt-5 space-y-4">
@@ -364,26 +449,67 @@ export default function ContentDecayRefreshAnalyzerClient() {
                         {r.pageOrQuery}
                       </span>
                     </div>
-                    <div className="text-xs font-semibold">
-                      Clicks: {r.prevClicks} → {r.currClicks} (
-                      <span
-                        className={
-                          r.clickDelta < 0
-                            ? "text-rose-600 dark:text-rose-400"
-                            : "text-emerald-600 dark:text-emerald-400"
-                        }
-                      >
-                        {r.clickDelta > 0 ? `+${r.clickDelta}` : r.clickDelta} /{" "}
-                        {r.clickDeltaPct}%
+                    <div className="flex flex-wrap items-center gap-3 text-xs font-semibold">
+                      <span>
+                        Clicks: {r.prevClicks} → {r.currClicks} (
+                        <span
+                          className={
+                            r.clickDelta < 0
+                              ? "text-rose-600 dark:text-rose-400"
+                              : "text-emerald-600 dark:text-emerald-400"
+                          }
+                        >
+                          {r.clickDelta > 0 ? `+${r.clickDelta}` : r.clickDelta}{" "}
+                          / {r.clickDeltaPct}%
+                        </span>
+                        ) · Pos: #{r.prevPosition} → #{r.currPosition}
                       </span>
-                      ) · Pos: #{r.prevPosition} → #{r.currPosition}
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const text = [
+                            `URL: ${r.pageOrQuery}`,
+                            `Diagnosis: ${r.diagnosisLabel} (Priority ${r.priorityScore}/100)`,
+                            `Clicks: ${r.prevClicks} -> ${r.currClicks} (${r.clickDeltaPct}%) | Position: #${r.prevPosition} -> #${r.currPosition}`,
+                            "Refresh Playbook:",
+                            ...r.refreshPlaybook.map((s, i) => `${i + 1}. ${s}`),
+                          ].join("\n");
+                          await navigator.clipboard.writeText(text);
+                          setFeedback(`Copied refresh brief for ${r.pageOrQuery}.`);
+                        }}
+                        className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-2.5 py-1 text-xs font-bold hover:bg-slate-100 dark:border-slate-600 dark:hover:bg-slate-800"
+                      >
+                        <Copy size={12} />
+                        Copy Brief
+                      </button>
                     </div>
                   </div>
-                  <ul className="mt-3 space-y-1 text-xs text-slate-600 dark:text-slate-300">
-                    {r.refreshPlaybook.map((step) => (
-                      <li key={step}>• {step}</li>
+                  <div className="mt-3 space-y-2">
+                    {r.refreshPlaybook.map((step, stepIdx) => (
+                      <div key={stepIdx} className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-[#3452d1] dark:text-[#9aabff]">
+                          {stepIdx + 1}.
+                        </span>
+                        <input
+                          type="text"
+                          value={step}
+                          onChange={(e) =>
+                            updatePlaybookStep(r.id, stepIdx, e.target.value)
+                          }
+                          aria-label={`Refresh step ${stepIdx + 1} for ${r.pageOrQuery}`}
+                          className="w-full rounded-lg border border-slate-200 bg-slate-50/70 px-2.5 py-1 text-xs text-slate-700 focus:border-[#4058D0] focus:outline-none dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-200"
+                        />
+                      </div>
                     ))}
-                  </ul>
+                    <button
+                      type="button"
+                      onClick={() => addPlaybookStep(r.id)}
+                      className="inline-flex items-center gap-1 text-xs font-bold text-[#3452d1] hover:underline dark:text-[#9aabff]"
+                    >
+                      <Plus size={12} />
+                      Add Playbook Step
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

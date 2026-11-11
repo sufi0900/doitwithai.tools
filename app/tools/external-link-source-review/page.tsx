@@ -1,3 +1,4 @@
+import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import type { Metadata } from "next";
 import Link from "next/link";
 import Client from "@/features/external-links/Client";
@@ -99,51 +100,78 @@ export default function Page() {
           __html: JSON.stringify(schema).replace(/</g, "\\u003c"),
         }}
       />
-      <section
-        className={`relative overflow-hidden ${toolHeroSurface} px-5 py-14 text-white`}
+      <section className={`relative overflow-hidden ${toolHeroSurface} text-white`}
       >
         <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl">
+        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
           <nav
             aria-label="Breadcrumb"
-            className="mb-12 flex flex-wrap gap-2 text-xs text-blue-100"
+            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
           >
             <Link href="/">Home</Link>
-            <span aria-hidden="true">/</span>
+            <span>/</span>
             <Link href="/tools">Tools</Link>
-            <span aria-hidden="true">/</span>
+            <span>/</span>
             <span aria-current="page">External Link and Source Review</span>
           </nav>
-          <header className="mx-auto max-w-4xl text-center">
-            <p className="text-xs font-bold uppercase tracking-widest text-blue-200">
-              On-page SEO · Thoughtful source review
-            </p>
-            <h1 className="mt-6 text-4xl font-black leading-tight tracking-tight sm:text-6xl">
-              External Link and Source Review
-              <span className={`mt-4 block ${toolHeroHeading}`}>
-                See what your links tell readers.
-              </span>
-            </h1>
-            <p className="mx-auto mt-6 max-w-2xl text-base leading-8 text-blue-100 sm:text-lg">
-              Inspect outbound references in context. Review anchor wording and
-              link relationships, then record the changes you want to make.
-            </p>
-            <a
-              href="#external-link-workspace"
-              className="mt-8 inline-flex min-h-12 items-center rounded-xl bg-white px-6 py-3 text-sm font-bold text-[#3048bb]"
-            >
-              Review your outbound links
-            </a>
-          </header>
+
+          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
+                On-Page SEO · Outbound Link & Attribute Auditor
+              </p>
+              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
+                External Link & Source 
+                <span className={toolHeroHeading}>
+                  Relationship Auditor
+                </span>
+              </h1>
+              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
+                Inspect every outbound reference on a webpage in context. Audit anchor text, destination domains, and rel attributes (sponsored, ugc, nofollow) before publishing.
+              </p>
+              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  Contextual anchor review
+                </span>
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  rel attribute inspection
+                </span>
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  CSV & JSON decision log
+                </span>
+              </div>
+              <PortableToolHeroBar />
+            </div>
+
+            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
+              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
+                What This Outbound Audit Checks
+              </p>
+              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
+                <li>
+                  <strong className="text-emerald-300">Anchor Context:</strong> Shows the exact sentence and heading surrounding each link.
+                </li>
+                <li>
+                  <strong className="text-indigo-300">Rel Attributes:</strong> Flags paid, affiliate, or UGC links missing proper rel tags.
+                </li>
+                <li>
+                  <strong className="text-sky-300">Target Quality:</strong> Checks HTTPS status, link placement, and domain diversity.
+                </li>
+                <li>
+                  <strong className="text-amber-300">Editorial Log:</strong> Records Keep, Update, or Remove decisions for your team.
+                </li>
+              </ul>
+            </div>
+          </div>
         </div>
       </section>
-      <section className="bg-slate-50 px-3 py-10 dark:bg-[#0c1422] sm:px-6">
-        <div className="mx-auto max-w-6xl">
+      <section className="bg-slate-50 py-10 dark:bg-[#0c1422]">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <Client />
         </div>
       </section>
-      <section className="bg-white px-5 py-16 dark:bg-slate-950">
-        <div className="mx-auto max-w-6xl">
+      <section className="bg-white py-16 dark:bg-slate-950">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <h2 className="text-3xl font-extrabold text-slate-950 dark:text-white">
             Make each reference useful
           </h2>

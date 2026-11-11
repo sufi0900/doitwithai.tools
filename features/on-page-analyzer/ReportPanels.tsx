@@ -19,6 +19,7 @@ import {
 } from "./metrics";
 import type { Finding, PageSnapshot, Section } from "./types";
 import styles from "./analyzer.module.css";
+
 const band = (score: number | null) =>
   score === null
     ? "unknown"
@@ -27,6 +28,7 @@ const band = (score: number | null) =>
       : score < 80
         ? "review"
         : "good";
+
 export function CategoryReport({
   findings,
   onSelect,
@@ -76,6 +78,7 @@ export function CategoryReport({
     </section>
   );
 }
+
 export function SectionScore({
   category,
   findings,
@@ -112,6 +115,7 @@ export function SectionScore({
     </header>
   );
 }
+
 export function SocialPreview({ page }: { page: PageSnapshot }) {
   const [platform, setPlatform] = useState("LinkedIn");
   const [failed, setFailed] = useState("");
@@ -197,11 +201,13 @@ export function SocialPreview({ page }: { page: PageSnapshot }) {
     </section>
   );
 }
+
 type ReviewState = {
   reviewed: Record<string, boolean>;
   setReviewed: Dispatch<SetStateAction<Record<string, boolean>>>;
 };
 const ReviewContext = createContext<ReviewState | null>(null);
+
 export function EvidenceReviewScope({ children }: { children: ReactNode }) {
   const [reviewed, setReviewed] = useState<Record<string, boolean>>({});
   const value = useMemo(() => ({ reviewed, setReviewed }), [reviewed]);
@@ -209,6 +215,7 @@ export function EvidenceReviewScope({ children }: { children: ReactNode }) {
     <ReviewContext.Provider value={value}>{children}</ReviewContext.Provider>
   );
 }
+
 export function EvidenceReview({ page }: { page: PageSnapshot }) {
   const claims = useMemo(() => claimPassages(page), [page]);
   const shared = useContext(ReviewContext);
@@ -281,7 +288,7 @@ export function EvidenceReview({ page }: { page: PageSnapshot }) {
           accuracy.
         </p>
       )}
-      <details className={styles.options}>
+      <details open className={styles.options}>
         <summary>Extracted external sources</summary>
         <p className={styles.muted}>
           Inspect anchor wording and link relationships in{" "}
@@ -307,6 +314,7 @@ export function EvidenceReview({ page }: { page: PageSnapshot }) {
     </section>
   );
 }
+
 export function ContentReport({
   page,
   primary,
@@ -476,7 +484,7 @@ export function ContentReport({
         </Link>
       </section>
       <EvidenceReview key={page.checkedAt} page={page} />
-      <details className={styles.evidencePanel}>
+      <details open className={styles.evidencePanel}>
         <summary>Inspect extracted text</summary>
         {page.blocks.slice(0, 200).map((b) => (
           <p key={b.id}>
@@ -491,6 +499,7 @@ export function ContentReport({
     </>
   );
 }
+
 export function TechnicalReport({ page }: { page: PageSnapshot }) {
   const entries = [
     [
@@ -536,7 +545,7 @@ export function TechnicalReport({ page }: { page: PageSnapshot }) {
         directive do not prove Google indexing or crawler access.
       </p>
       {page.resources.robotsText && (
-        <details className={styles.options}>
+        <details open className={styles.options}>
           <summary>Retrieved robots.txt text</summary>
           <pre className={styles.rawEvidence}>{page.resources.robotsText}</pre>
         </details>

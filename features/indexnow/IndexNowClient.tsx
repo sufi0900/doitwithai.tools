@@ -1,4 +1,6 @@
 "use client";
+
+import ToolRunOverlay, { paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
 import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 
 import { useEffect, useMemo, useState } from "react";
@@ -31,7 +33,8 @@ const STORAGE_KEY = "indexnow-tool:v1";
 
 const inputClass =
   "min-w-0 w-full rounded-xl border border-white/10 bg-slate-900/70 px-3 py-2.5 text-sm text-white placeholder:text-slate-500 focus:border-[#7f9aff] focus:outline-none focus:ring-2 focus:ring-[#5271ff]/40";
-const labelClass = "mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-400";
+const labelClass =
+  "mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-400";
 const smallButton =
   "inline-flex items-center gap-2 rounded-xl border border-white/15 px-4 py-2.5 text-xs font-bold text-slate-200 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50";
 const primaryButton =
@@ -49,7 +52,9 @@ const toneClass: Record<Tone, string> = {
   error: "border-rose-300/30 bg-rose-300/10 text-rose-200",
 };
 
-async function callApi(payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+async function callApi(
+  payload: Record<string, unknown>,
+): Promise<Record<string, unknown>> {
   const res = await fetch("/api/indexnow", {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -58,21 +63,26 @@ async function callApi(payload: Record<string, unknown>): Promise<Record<string,
   try {
     return (await res.json()) as Record<string, unknown>;
   } catch {
-    return { ok: false, message: "The server returned an unreadable response." };
+    return {
+      ok: false,
+      message: "The server returned an unreadable response.",
+    };
   }
 }
 
 export default function IndexNowClient() {
-  const [hostInput, setHostInput] = useState("");
-  const [key, setKey] = useState("");
-  const [urlsText, setUrlsText] = useState("");
+  const [hostInput, setHostInput] = useState("doitwithai.tools");
+  const [key, setKey] = useState("doitwithai-indexnow-key-2026");
+  const [urlsText, setUrlsText] = useState(
+    "https://doitwithai.tools/tools/indexnow\nhttps://doitwithai.tools/tools/llms-txt-generator",
+  );
   const [verifying, setVerifying] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [verifyResult, setVerifyResult] = useState<Feedback | null>(null);
   const [submitResult, setSubmitResult] = useState<Feedback | null>(null);
   const [copied, setCopied] = useState("");
-  const [demo, setDemo] = useState(false);
-  const [published, setPublished] = useState(false);
+  const [demo, setDemo] = useState(true);
+  const [published, setPublished] = useState(true);
   const [verifiedIdentity, setVerifiedIdentity] = useState("");
 
   // Restore the last host and key from this browser only.
@@ -81,8 +91,11 @@ export default function IndexNowClient() {
       const saved = window.localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved) as { host?: string; key?: string };
-        if (typeof parsed.host === "string") setHostInput(parsed.host);
-        if (typeof parsed.key === "string") setKey(parsed.key);
+        if (typeof parsed.host === "string" && parsed.host) {
+          setHostInput(parsed.host);
+          setDemo(false);
+        }
+        if (typeof parsed.key === "string" && parsed.key) setKey(parsed.key);
       }
     } catch {
       /* storage unavailable ; ignore */
@@ -91,7 +104,11 @@ export default function IndexNowClient() {
 
   useEffect(() => {
     try {
-      if (!demo && (hostInput || key)) window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ host: hostInput, key }));
+      if (!demo && (hostInput || key))
+        window.localStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify({ host: hostInput, key }),
+        );
     } catch {
       /* ignore */
     }
@@ -100,10 +117,27 @@ export default function IndexNowClient() {
   const host = useMemo(() => normalizeHost(hostInput), [hostInput]);
   const hostOk = isValidHost(host);
   const keyOk = isValidKey(key);
-  const parsedUrls = useMemo(() => (hostOk ? parseUrlList(urlsText, host) : null), [urlsText, host, hostOk]);
+  const parsedUrls = useMemo(
+    () => (hostOk ? parseUrlList(urlsText, host) : null),
+    [urlsText, host, hostOk],
+  );
   const validCount = parsedUrls?.valid.length ?? 0;
   const tooMany = validCount > MAX_URLS;
-  const canSubmit = hostOk && keyOk && validCount > 0 && !tooMany && !submitting && (demo || verifiedIdentity === host+"/"+key);
+  const canSubmit =
+    hostOk &&
+    keyOk &&
+    validCount > 0 &&
+    !tooMany &&
+    !submitting &&
+    (demo || verifiedIdentity === host + "/" + key);
+
+  const curlSnippet = useMemo(
+    () =>
+      hostOk && keyOk && parsedUrls && parsedUrls.valid.length > 0
+        ? buildCurl(host, key, parsedUrls.valid)
+        : "",
+    [hostOk, keyOk, parsedUrls, host, key],
+  );
 
   const copy = async (label: string, value: string) => {
     try {
@@ -126,19 +160,44 @@ export default function IndexNowClient() {
   };
 
   const verify = async () => {
-    if(demo){setVerifyResult({tone:"success",title:"Example key file",detail:"Demo only. A real check succeeds after the text file is published at the shown address."});return;}
+    if (demo) {
+      setVerifyResult({
+        tone: "success",
+        title: "Example key file verified",
+        detail:
+          "Demo mode active. For your live domain, upload the key text file to your root directory and run this check.",
+      });
+      return;
+    }
     setVerifying(true);
     setVerifyResult(null);
     try {
       const data = await callApi({ action: "verify", host, key });
-      if(data.ok === true) setVerifiedIdentity(host+"/"+key);
+      if (data.ok === true) setVerifiedIdentity(host + "/" + key);
       setVerifyResult({
-        tone: data.ok === true ? "success" : data.status === 404 ? "warning" : "error",
-        title: data.ok === true ? "Key file verified" : data.status === 404 ? "File not published yet" : "Check the key file",
-        detail: typeof data.message === "string" ? data.message : "Something went wrong.",
+        tone:
+          data.ok === true
+            ? "success"
+            : data.status === 404
+              ? "warning"
+              : "error",
+        title:
+          data.ok === true
+            ? "Key file verified"
+            : data.status === 404
+              ? "File not published yet"
+              : "Check the key file",
+        detail:
+          typeof data.message === "string"
+            ? data.message
+            : "Something went wrong.",
       });
     } catch {
-      setVerifyResult({ tone: "error", title: "Check failed", detail: "Couldn't reach the tool's server. Try again." });
+      setVerifyResult({
+        tone: "error",
+        title: "Check failed",
+        detail: "Couldn't reach the tool's server. Try again.",
+      });
     } finally {
       setVerifying(false);
     }
@@ -146,69 +205,165 @@ export default function IndexNowClient() {
 
   const submit = async () => {
     if (!parsedUrls) return;
-    if(demo){setSubmitResult({tone:"warning",title:"Example response",detail:"Demo only. No URLs were sent. A 202 response means ownership validation is pending, not that pages are indexed."});return;}
+    if (demo) {
+      setSubmitResult({
+        tone: "success",
+        title: "Example submission preview (HTTP 200 / 202)",
+        detail: `Simulated IndexNow ping for ${parsedUrls.valid.length} URL(s) on ${host}. Switch to your live domain when ready.`,
+      });
+      return;
+    }
     setSubmitting(true);
     setSubmitResult(null);
     try {
-      const data = await callApi({ action: "submit", host, key, urls: parsedUrls.valid });
+      const data = await callApi({
+        action: "submit",
+        host,
+        key,
+        urls: parsedUrls.valid,
+      });
       if (typeof data.status === "number" && typeof data.title === "string") {
         setSubmitResult({
           tone: (data.tone as Tone) ?? "warning",
           title: data.title,
           detail: `${typeof data.detail === "string" ? data.detail : ""}${
-            typeof data.submitted === "number" ? ` (${data.submitted} URL${data.submitted === 1 ? "" : "s"} sent.)` : ""
+            typeof data.submitted === "number"
+              ? ` (${data.submitted} URL${data.submitted === 1 ? "" : "s"} sent.)`
+              : ""
           }`,
         });
       } else {
         setSubmitResult({
           tone: "error",
           title: "Not submitted",
-          detail: typeof data.message === "string" ? data.message : "Something went wrong.",
+          detail:
+            typeof data.message === "string"
+              ? data.message
+              : "Something went wrong.",
         });
       }
     } catch {
-      setSubmitResult({ tone: "error", title: "Not submitted", detail: "Couldn't reach the tool's server. Try again." });
+      setSubmitResult({
+        tone: "error",
+        title: "Not submitted",
+        detail: "Couldn't reach the tool's server. Try again.",
+      });
     } finally {
       setSubmitting(false);
     }
   };
 
   const CopyIcon = ({ label }: { label: string }) =>
-    copied === label ? <Check className="h-4 w-4 text-emerald-300" aria-hidden="true" /> : <Copy className="h-4 w-4" aria-hidden="true" />;
+    copied === label ? (
+      <Check className="h-4 w-4 text-emerald-300" aria-hidden="true" />
+    ) : (
+      <Copy className="h-4 w-4" aria-hidden="true" />
+    );
 
   return (
     <div
       id="indexnow-key-generator"
       className="mx-auto max-w-6xl scroll-mt-24 rounded-3xl border border-white/10 bg-white/[0.06] p-5 text-left backdrop-blur sm:p-8"
     >
-      <div className="mb-6 rounded-2xl border border-blue-300/20 bg-blue-300/5 p-5"><p className="font-bold text-white">Generate → Publish → Verify → Submit</p><p className="mt-2 text-sm leading-7 text-slate-300">Generating a key does not install anything on your website. Download its text file, upload it to your site root, then verify it.</p><div className="mt-3 flex flex-wrap gap-2"><button type="button" className={smallButton} onClick={()=>{setDemo(true);setHostInput("example.com");setKey("example-indexnow-key-12345678");setUrlsText("https://example.com/new-guide");setPublished(true);setVerifyResult(null);setSubmitResult(null);}}>Try example</button>{demo&&<button type="button" className={smallButton} onClick={()=>{setDemo(false);setHostInput("");setKey("");setUrlsText("");setPublished(false);setVerifyResult(null);setSubmitResult(null);}}>Exit example</button>}</div>{demo&&<p role="status" className="mt-3 text-sm font-bold text-amber-200">Example mode. Verification and submission are simulated. No requests are sent.</p>}</div>
+      <ToolRunOverlay
+        active={verifying || submitting}
+        title="Processing IndexNow key & URL submission"
+        description="Checking key file accessibility and submitting URLs to participating search engines."
+      />
+      <div className="mb-6 rounded-2xl border border-blue-300/20 bg-blue-300/5 p-5">
+        <p className="font-bold text-white">
+          Generate → Publish → Verify → Submit
+        </p>
+        <p className="mt-2 text-sm leading-7 text-slate-300">
+          Generating a key does not install anything on your website. Download
+          its text file, upload it to your site root, then verify it.
+        </p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button
+            type="button"
+            className={smallButton}
+            onClick={() => {
+              setDemo(true);
+              setHostInput("doitwithai.tools");
+              setKey("doitwithai-indexnow-key-2026");
+              setUrlsText(
+                "https://doitwithai.tools/tools/indexnow\nhttps://doitwithai.tools/tools/llms-txt-generator",
+              );
+              setPublished(true);
+              setVerifyResult(null);
+              setSubmitResult(null);
+            }}
+          >
+            Load Sample Setup
+          </button>
+          {demo && (
+            <button
+              type="button"
+              className={smallButton}
+              onClick={() => {
+                setDemo(false);
+                setHostInput("");
+                setKey("");
+                setUrlsText("");
+                setPublished(false);
+                setVerifyResult(null);
+                setSubmitResult(null);
+              }}
+            >
+              Clear / Enter Live Domain
+            </button>
+          )}
+        </div>
+        {demo && (
+          <p role="status" className="mt-3 text-xs font-bold text-amber-200">
+            Interactive sample mode active. Edit the domain/key below to switch
+            to live verification.
+          </p>
+        )}
+      </div>
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         {/* Step 1 */}
         <div>
           <p className={labelClass}>1. Generate your key and key file</p>
-          <label className="mb-1 block text-xs font-semibold text-slate-300" htmlFor="indexnow-host">
+          <label
+            className="mb-1 block text-xs font-semibold text-slate-300"
+            htmlFor="indexnow-host"
+          >
             Your website domain
           </label>
           <ToolUrlInput
-            id="indexnow-host" urlKind="domain"
+            id="indexnow-host"
+            urlKind="domain"
             type="text"
             value={hostInput}
-            onChange={(event) => setHostInput(event.target.value)}
+            onChange={(event) => {
+              setDemo(false);
+              setHostInput(event.target.value);
+            }}
             placeholder="www.example.com"
             autoComplete="off"
             className={inputClass}
           />
           <p className="mt-1.5 text-xs text-slate-400">
-            Use the exact host your URLs use ; <span className="font-semibold">www.example.com</span> and{" "}
-            <span className="font-semibold">example.com</span> count as different hosts.
+            Use the exact host your URLs use ;{" "}
+            <span className="font-semibold">www.example.com</span> and{" "}
+            <span className="font-semibold">example.com</span> count as
+            different hosts.
           </p>
           {hostInput && !hostOk && (
-            <p role="alert" className="mt-1.5 text-xs font-semibold text-amber-300">
-              Enter a public domain such as example.com (no IP address, port, or local name).
+            <p
+              role="alert"
+              className="mt-1.5 text-xs font-semibold text-amber-300"
+            >
+              Enter a public domain such as example.com (no IP address, port, or
+              local name).
             </p>
           )}
 
-          <label className="mb-1 mt-4 block text-xs font-semibold text-slate-300" htmlFor="indexnow-key">
+          <label
+            className="mb-1 mt-4 block text-xs font-semibold text-slate-300"
+            htmlFor="indexnow-key"
+          >
             IndexNow key
           </label>
           <div className="flex gap-2">
@@ -221,124 +376,253 @@ export default function IndexNowClient() {
               spellCheck={false}
               className={`${inputClass} font-mono text-xs`}
             />
-            <button type="button" onClick={() => setKey(generateKey())} className={primaryButton}>
-              {key ? <RefreshCw className="h-4 w-4" aria-hidden="true" /> : <Key className="h-4 w-4" aria-hidden="true" />}
+            <button
+              type="button"
+              onClick={() => setKey(generateKey())}
+              className={primaryButton}
+            >
+              {key ? (
+                <RefreshCw className="h-4 w-4" aria-hidden="true" />
+              ) : (
+                <Key className="h-4 w-4" aria-hidden="true" />
+              )}
               {key ? "New" : "Generate"}
             </button>
           </div>
           {key && !keyOk && (
-            <p role="alert" className="mt-1.5 text-xs font-semibold text-amber-300">
+            <p
+              role="alert"
+              className="mt-1.5 text-xs font-semibold text-amber-300"
+            >
               Keys must be 8–128 characters: letters, numbers, and dashes only.
             </p>
           )}
 
           {keyOk && (
             <div className="mt-4 rounded-2xl border border-white/10 bg-slate-900/60 p-4">
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Key file to host</p>
-              <p className="mt-2 break-all font-mono text-xs text-blue-200">{keyFileName(key)}</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                Key file to host
+              </p>
+              <p className="mt-2 break-all font-mono text-xs text-blue-200">
+                {keyFileName(key)}
+              </p>
               <p className="mt-1 text-xs leading-6 text-slate-400">
-                A plain text file containing only the key, placed at the root of your site
+                A plain text file containing only the key, placed at the root of
+                your site
                 {hostOk ? (
                   <>
-                    {" "}so it opens at <span className="break-all font-mono text-slate-300">{keyFileUrl(host, key)}</span>
+                    {" "}
+                    so it opens at{" "}
+                    <span className="break-all font-mono text-slate-300">
+                      {keyFileUrl(host, key)}
+                    </span>
                   </>
                 ) : null}
                 .
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
-                <button type="button" onClick={downloadKeyFile} className={primaryButton}>
-                  <Download className="h-4 w-4" aria-hidden="true" /> Download key file
+                <button
+                  type="button"
+                  onClick={downloadKeyFile}
+                  className={primaryButton}
+                >
+                  <Download className="h-4 w-4" aria-hidden="true" /> Download
+                  key file
                 </button>
-                <button type="button" onClick={() => void copy("key", key)} className={smallButton}>
+                <button
+                  type="button"
+                  onClick={() => void copy("key", key)}
+                  className={smallButton}
+                >
                   <CopyIcon label="key" /> Copy key
                 </button>
-                <button type="button" onClick={verify} disabled={!hostOk || verifying || (!published && !demo)} className={smallButton}>
-                  {verifying ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <ShieldCheck className="h-4 w-4" aria-hidden="true" />}
+                <button
+                  type="button"
+                  onClick={verify}
+                  disabled={!hostOk || verifying || (!published && !demo)}
+                  className={smallButton}
+                >
+                  {verifying ? (
+                    <Loader2
+                      className="h-4 w-4 animate-spin"
+                      aria-hidden="true"
+                    />
+                  ) : (
+                    <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+                  )}
                   Check key file
                 </button>
               </div>
-              <div className="mt-4 rounded-xl border border-blue-300/20 p-4 text-xs leading-6 text-slate-300"><p className="font-bold text-blue-200">Publish the file before checking</p><p>For Next.js, add the downloaded file to your public folder and deploy. On other hosts, upload it to the website root. Open the displayed URL and confirm it shows only your key.</p><label className="mt-3 flex items-start gap-2"><input type="checkbox" checked={published} onChange={e=>setPublished(e.target.checked)} className="mt-1 shrink-0"/>I have published this key file on this host.</label></div>
+              <div className="mt-4 rounded-xl border border-blue-300/20 p-4 text-xs leading-6 text-slate-300">
+                <p className="font-bold text-blue-200">
+                  Publish the file before checking
+                </p>
+                <p>
+                  For Next.js, add the downloaded file to your public folder and
+                  deploy. On other hosts, upload it to the website root. Open
+                  the displayed URL and confirm it shows only your key.
+                </p>
+                <label className="mt-3 flex items-start gap-2">
+                  <input
+                    type="checkbox"
+                    checked={published}
+                    onChange={(e) => setPublished(e.target.checked)}
+                    className="mt-1 shrink-0"
+                  />
+                  I have published this key file on this host.
+                </label>
+              </div>
               {verifyResult && (
-                <p role="status" className={`mt-3 rounded-xl border p-3 text-xs leading-6 ${toneClass[verifyResult.tone]}`}>
-                  <span className="font-extrabold">{verifyResult.title}.</span> {verifyResult.detail}
+                <p
+                  role="status"
+                  className={`mt-3 rounded-xl border p-3 text-xs leading-6 ${toneClass[verifyResult.tone]}`}
+                >
+                  <span className="font-extrabold">{verifyResult.title}.</span>{" "}
+                  {verifyResult.detail}
                 </p>
               )}
             </div>
           )}
           <p className="mt-3 text-xs leading-6 text-slate-400">
-            Your domain and key are remembered in this browser only, so you can reuse the same key later.
+            Your domain and key are remembered in this browser only, so you can
+            reuse the same key later.
           </p>
         </div>
 
         {/* Step 2 */}
         <div>
-          <p className={labelClass}>Submit new or updated URLs</p><p className="mb-3 text-xs leading-6 text-slate-300">Submission unlocks after your current host and key are verified. A 404 means the key file is missing, not that your whole website is broken.</p>
-          <label className="mb-1 block text-xs font-semibold text-slate-300" htmlFor="indexnow-urls">
+          <p className={labelClass}>2. Submit new or updated URLs</p>
+          <p className="mb-3 text-xs leading-6 text-slate-300">
+            Submission unlocks after your current host and key are verified. A
+            404 means the key file is missing, not that your whole website is
+            broken.
+          </p>
+          <label
+            className="mb-1 block text-xs font-semibold text-slate-300"
+            htmlFor="indexnow-urls"
+          >
             URLs (one per line, up to {MAX_URLS.toLocaleString()})
           </label>
           <textarea
             id="indexnow-urls"
             value={urlsText}
             onChange={(event) => setUrlsText(event.target.value)}
-            rows={9}
+            rows={8}
             spellCheck={false}
-            placeholder={"https://www.example.com/new-post\nhttps://www.example.com/updated-page"}
+            placeholder={
+              "https://www.example.com/new-post\nhttps://www.example.com/updated-page"
+            }
             className={`${inputClass} font-mono text-xs`}
           />
 
           {parsedUrls && urlsText.trim() && (
             <ul className="mt-2 space-y-1 text-xs leading-6" aria-live="polite">
               <li className="flex items-center gap-2 text-emerald-300">
-                <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" /> {validCount.toLocaleString()} valid URL{validCount === 1 ? "" : "s"} on {host}
+                <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />{" "}
+                {validCount.toLocaleString()} valid URL
+                {validCount === 1 ? "" : "s"} on {host}
               </li>
               {parsedUrls.wrongHost.length > 0 && (
                 <li className="flex items-start gap-2 text-amber-300">
-                  <AlertTriangle className="mt-1 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                  {parsedUrls.wrongHost.length} URL(s) are on a different host and must be removed (e.g. {parsedUrls.wrongHost[0]})
+                  <AlertTriangle
+                    className="mt-1 h-3.5 w-3.5 shrink-0"
+                    aria-hidden="true"
+                  />
+                  {parsedUrls.wrongHost.length} URL(s) are on a different host
+                  and must be removed (e.g. {parsedUrls.wrongHost[0]})
                 </li>
               )}
               {parsedUrls.invalid.length > 0 && (
                 <li className="flex items-start gap-2 text-amber-300">
-                  <AlertTriangle className="mt-1 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                  {parsedUrls.invalid.length} entr{parsedUrls.invalid.length === 1 ? "y isn't" : "ies aren't"} a valid URL (e.g. {parsedUrls.invalid[0]})
+                  <AlertTriangle
+                    className="mt-1 h-3.5 w-3.5 shrink-0"
+                    aria-hidden="true"
+                  />
+                  {parsedUrls.invalid.length} entr
+                  {parsedUrls.invalid.length === 1 ? "y isn't" : "ies aren't"} a
+                  valid URL (e.g. {parsedUrls.invalid[0]})
                 </li>
               )}
               {parsedUrls.insecure > 0 && (
                 <li className="flex items-start gap-2 text-slate-300">
-                  <AlertTriangle className="mt-1 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                  {parsedUrls.insecure} URL(s) use http:// ; submit the https:// version if that is your canonical URL.
+                  <AlertTriangle
+                    className="mt-1 h-3.5 w-3.5 shrink-0"
+                    aria-hidden="true"
+                  />
+                  {parsedUrls.insecure} URL(s) use http:// ; submit the https://
+                  version if that is your canonical URL.
                 </li>
               )}
-              {parsedUrls.duplicates > 0 && <li className="text-slate-400">{parsedUrls.duplicates} duplicate(s) removed.</li>}
-              {tooMany && <li className="text-amber-300">Too many URLs ; submit {MAX_URLS.toLocaleString()} or fewer at a time.</li>}
+              {parsedUrls.duplicates > 0 && (
+                <li className="text-slate-400">
+                  {parsedUrls.duplicates} duplicate(s) removed.
+                </li>
+              )}
+              {tooMany && (
+                <li className="text-amber-300">
+                  Too many URLs ; submit {MAX_URLS.toLocaleString()} or fewer at
+                  a time.
+                </li>
+              )}
             </ul>
           )}
-          {!hostOk && urlsText.trim() && <p className="mt-2 text-xs text-slate-400">Enter your domain in step 1 to validate these URLs.</p>}
+          {!hostOk && urlsText.trim() && (
+            <p className="mt-2 text-xs text-slate-400">
+              Enter your domain in step 1 to validate these URLs.
+            </p>
+          )}
 
           <div className="mt-4 flex flex-wrap gap-2">
-            <button type="button" onClick={submit} disabled={!canSubmit || parsedUrls?.wrongHost.length !== 0 || parsedUrls?.invalid.length !== 0} className={primaryButton}>
-              {submitting ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Send className="h-4 w-4" aria-hidden="true" />}
+            <button
+              type="button"
+              onClick={submit}
+              disabled={
+                !canSubmit ||
+                parsedUrls?.wrongHost.length !== 0 ||
+                parsedUrls?.invalid.length !== 0
+              }
+              className={primaryButton}
+            >
+              {submitting ? (
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+              ) : (
+                <Send className="h-4 w-4" aria-hidden="true" />
+              )}
               Submit to IndexNow
             </button>
             <button
               type="button"
-              disabled={!hostOk || !keyOk || validCount === 0}
-              onClick={() => parsedUrls && void copy("curl", buildCurl(host, key, parsedUrls.valid))}
+              disabled={!curlSnippet}
+              onClick={() => void copy("curl", curlSnippet)}
               className={smallButton}
             >
               <CopyIcon label="curl" /> Copy as cURL
             </button>
           </div>
-          {keyOk && hostOk && !verifyResult && validCount > 0 && (
-            <p className="mt-2 text-xs text-slate-400">Tip: run &ldquo;Check key file&rdquo; first ; a missing key file is the most common cause of a 403 error.</p>
+
+          {curlSnippet && (
+            <div className="mt-4 rounded-2xl border border-white/10 bg-slate-900/60 p-3.5">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                Live IndexNow API cURL Request Preview
+              </p>
+              <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-all rounded-xl bg-slate-950/90 p-3 font-mono text-[11px] leading-5 text-emerald-300">
+                {curlSnippet}
+              </pre>
+            </div>
           )}
+
           {submitResult && (
-            <p role="status" className={`mt-3 rounded-xl border p-3 text-xs leading-6 ${toneClass[submitResult.tone]}`}>
-              <span className="font-extrabold">{submitResult.title}.</span> {submitResult.detail}
+            <p
+              role="status"
+              className={`mt-3 rounded-xl border p-3 text-xs leading-6 ${toneClass[submitResult.tone]}`}
+            >
+              <span className="font-extrabold">{submitResult.title}.</span>{" "}
+              {submitResult.detail}
             </p>
           )}
           <p className="mt-3 text-xs leading-6 text-slate-400">
-            Submitting tells participating search engines these pages changed. It doesn&apos;t guarantee indexing or rankings.
+            Submitting tells participating search engines these pages changed.
+            It doesn&apos;t guarantee indexing or rankings.
           </p>
         </div>
       </div>

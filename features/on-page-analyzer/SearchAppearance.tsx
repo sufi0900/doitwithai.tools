@@ -2,8 +2,10 @@
 import { useEffect, useRef, useState } from "react";
 import {
   BatteryFull,
+  Copy,
   Globe2,
   Monitor,
+  RotateCcw,
   Search,
   Smartphone,
   Wifi,
@@ -11,6 +13,7 @@ import {
 import { PRESETS, textLayout } from "@/features/serp-preview/preview";
 import type { PageSnapshot } from "./types";
 import styles from "./analyzer.module.css";
+
 function SiteIcon({ src }: { src?: string }) {
   const [failed, setFailed] = useState("");
   return (
@@ -31,6 +34,7 @@ function SiteIcon({ src }: { src?: string }) {
     </span>
   );
 }
+
 export default function SearchAppearance({
   page,
   keyword = "",
@@ -39,12 +43,26 @@ export default function SearchAppearance({
   keyword?: string;
 }) {
   const [device, setDevice] = useState<"desktop" | "mobile">("desktop");
+  const [customTitle, setCustomTitle] = useState<string | null>(null);
+  const [customDescription, setCustomDescription] = useState<string | null>(
+    null,
+  );
+  const [copiedNotice, setCopiedNotice] = useState("");
   const contentRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(600);
   const [layouts, setLayouts] = useState<{
     title: ReturnType<typeof textLayout>;
     description: ReturnType<typeof textLayout>;
   } | null>(null);
+
+  const activeTitle = customTitle ?? page.title;
+  const activeDescription = customDescription ?? page.description;
+
+  useEffect(() => {
+    setCustomTitle(null);
+    setCustomDescription(null);
+  }, [page.title, page.description]);
+
   useEffect(() => {
     const element = contentRef.current;
     if (!element) return;
@@ -55,6 +73,7 @@ export default function SearchAppearance({
     observer.observe(element);
     return () => observer.disconnect();
   }, [device]);
+
   useEffect(() => {
     const context = document.createElement("canvas").getContext("2d");
     if (!context) {
@@ -64,20 +83,21 @@ export default function SearchAppearance({
     const preset = PRESETS[device];
     context.font = "400 20px Arial";
     const title = textLayout(
-      page.title,
+      activeTitle,
       Math.min(width, preset.titleWidth),
       preset.titleLines,
       (t) => context.measureText(t).width,
     );
     context.font = "400 14px Arial";
     const description = textLayout(
-      page.description,
+      activeDescription,
       Math.min(width, preset.descriptionWidth),
       preset.descriptionLines,
       (t) => context.measureText(t).width,
     );
     setLayouts({ title, description });
-  }, [device, page.title, page.description, width]);
+  }, [device, activeTitle, activeDescription, width]);
+
   let host = "Your website",
     path = "your-website.com › page";
   try {
@@ -91,6 +111,9 @@ export default function SearchAppearance({
         .map((p) => ` › ${p}`)
         .join("");
   } catch {}
+
+  const isEdited = customTitle !== null || customDescription !== null;
+
   return (
     <section
       className={styles.previewCard}
@@ -100,7 +123,8 @@ export default function SearchAppearance({
         <div>
           <h3>Search appearance</h3>
           <p className={styles.muted}>
-            See how your page could appear in search.
+            See how your page could appear in search and test snippet edits
+            live.
           </p>
         </div>
         <div className={styles.segment}>
@@ -175,12 +199,12 @@ export default function SearchAppearance({
             </div>
             <div className={styles.mockResultTitle}>
               {layouts?.title.lines.join("\n") ||
-                page.title ||
+                activeTitle ||
                 "Add a descriptive page title"}
             </div>
             <p className={styles.mockDescription}>
               {layouts?.description.lines.join("\n") ||
-                page.description ||
+                activeDescription ||
                 "Add a page-specific summary to preview your search snippet."}
             </p>
           </div>
@@ -192,11 +216,11 @@ export default function SearchAppearance({
       <div className={styles.previewStats}>
         <span>
           Title {layouts ? `≈ ${layouts.title.pixels} px · ` : ""}
-          {Array.from(page.title).length} characters
+          {Array.from(activeTitle).length} characters
         </span>
         <span>
           Description {layouts ? `≈ ${layouts.description.pixels} px · ` : ""}
-          {Array.from(page.description).length} characters
+          {Array.from(activeDescription).length} characters
         </span>
       </div>
       {layouts && (
@@ -209,6 +233,72 @@ export default function SearchAppearance({
             : "Description fits this preview guide."}
         </p>
       )}
+      <div className="mt-4 space-y-3 rounded-xl border border-slate-200/80 bg-slate-50/70 p-3.5 dark:border-slate-700 dark:bg-slate-900/50">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className="text-xs font-bold uppercase tracking-wider text-[#4058D0] dark:text-blue-300">
+            Live Snippet Sandbox (Edit to test pixel fit)
+          </span>
+          <div className="flex flex-wrap gap-2">
+            {isEdited && (
+              <button
+                type="button"
+                onClick={() => {
+                  setCustomTitle(null);
+                  setCustomDescription(null);
+                  setCopiedNotice("Restored original page metadata.");
+                }}
+                className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-2.5 py-1 text-xs font-semibold hover:bg-slate-100 dark:border-slate-600 dark:hover:bg-slate-800"
+              >
+                <RotateCcw size={12} /> Reset
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={async () => {
+                const snippetHtml = `<title>${activeTitle}</title>\n<meta name="description" content="${activeDescription.replace(/"/g, "&quot;")}" />`;
+                try {
+                  await navigator.clipboard.writeText(snippetHtml);
+                  setCopiedNotice("Copied <title> & <meta> HTML tags!");
+                } catch {
+                  setCopiedNotice("Clipboard unavailable.");
+                }
+              }}
+              className="inline-flex items-center gap-1 rounded-lg bg-[#4058D0] px-2.5 py-1 text-xs font-bold text-white hover:bg-[#3452D1]"
+            >
+              <Copy size={12} /> Copy HTML Tags
+            </button>
+          </div>
+        </div>
+        <label className="block text-xs font-semibold">
+          Test Title Tag
+          <input
+            type="text"
+            value={activeTitle}
+            onChange={(e) => {
+              setCustomTitle(e.target.value);
+              setCopiedNotice("");
+            }}
+            className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-900 focus:border-[#4058D0] focus:outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+          />
+        </label>
+        <label className="block text-xs font-semibold">
+          Test Meta Description
+          <textarea
+            rows={2}
+            value={activeDescription}
+            onChange={(e) => {
+              setCustomDescription(e.target.value);
+              setCopiedNotice("");
+            }}
+            className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-900 focus:border-[#4058D0] focus:outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+          />
+        </label>
+        {copiedNotice && (
+          <p role="status" className="text-xs font-bold text-emerald-700 dark:text-emerald-300">
+            {copiedNotice}
+          </p>
+        )}
+      </div>
       <p className={styles.muted}>
         Illustrative Google-style preview. Available width, device, and search
         engine rewrites can change the actual appearance.

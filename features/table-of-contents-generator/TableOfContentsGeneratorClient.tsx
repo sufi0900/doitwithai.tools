@@ -51,10 +51,9 @@ const clearBtn =
   "inline-flex items-center justify-center gap-2 rounded-xl border-2 border-rose-300 bg-rose-50/80 px-4 py-2.5 text-xs font-extrabold text-rose-700 transition hover:bg-rose-100 focus-visible:outline-[#5271ff] dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-200 dark:hover:bg-rose-900/50";
 
 export default function TableOfContentsGeneratorClient() {
-  // Start completely EMPTY on initial visit so users are never confused by pre-filled dummy content!
   const [mode, setMode] = useState<"paste" | "url">("paste");
   const [articleUrl, setArticleUrl] = useState("");
-  const [inputContent, setInputContent] = useState("");
+  const [inputContent, setInputContent] = useState(SAMPLE_ARTICLE_CONTENT);
   const [maxDepth, setMaxDepth] = useState<TocDepth>(3);
   const [listStyle, setListStyle] = useState<TocListStyle>("ol");
   const [tocTitle, setTocTitle] = useState("Table of Contents");
@@ -67,12 +66,16 @@ export default function TableOfContentsGeneratorClient() {
   >({});
   const [activeTab, setActiveTab] = useState<
     "visual-preview" | "toc-html" | "full-html" | "markdown" | "schema"
-  >("toc-html");
-  const [selectedJumpSlug, setSelectedJumpSlug] = useState<string>("");
+  >("visual-preview");
+  const [selectedJumpSlug, setSelectedJumpSlug] = useState<string>(
+    "what-is-on-page-seo-optimization",
+  );
   const [wrapCode, setWrapCode] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [feedback, setFeedback] = useState("");
+  const [feedback, setFeedback] = useState(
+    "Sample article pre-loaded with 6 H2/H3 jump-link anchors. Customize any #anchor-slug or switch tabs below to copy HTML, Markdown, or JSON-LD.",
+  );
 
   const studioRef = useRef<HTMLDivElement>(null);
   const outputBoxRef = useRef<HTMLDivElement>(null);
@@ -219,7 +222,7 @@ export default function TableOfContentsGeneratorClient() {
     setCustomSlugs({});
     setError("");
     setFeedback(
-      "Loaded sample HTML article with 5 H2/H3 headings. Scroll or click any tab below to inspect the generated TOC.",
+      "Loaded sample HTML article with 6 H2/H3 headings. Scroll or click any tab below to inspect the generated TOC.",
     );
     setTimeout(() => focusToolSection(studioRef.current), 80);
   }
@@ -593,17 +596,17 @@ export default function TableOfContentsGeneratorClient() {
               <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
                 <div className="flex min-w-0 flex-wrap gap-1.5">
                   {[
-                    { id: "toc-html" as const, label: "1. TOC <nav> HTML" },
-                    {
-                      id: "full-html" as const,
-                      label: "2. Full HTML + Injected IDs",
-                    },
-                    { id: "markdown" as const, label: "3. Markdown TOC" },
-                    { id: "schema" as const, label: "4. ItemList JSON-LD" },
                     {
                       id: "visual-preview" as const,
-                      label: "5. Live Interactive Preview",
+                      label: "1. Live Interactive Preview",
                     },
+                    { id: "toc-html" as const, label: "2. TOC <nav> HTML" },
+                    {
+                      id: "full-html" as const,
+                      label: "3. Full HTML + Injected IDs",
+                    },
+                    { id: "markdown" as const, label: "4. Markdown TOC" },
+                    { id: "schema" as const, label: "5. ItemList JSON-LD" },
                   ].map((t) => (
                     <button
                       key={t.id}
@@ -742,9 +745,7 @@ export default function TableOfContentsGeneratorClient() {
             aria-hidden="true"
           />
           <h3 className="mt-3 text-base font-extrabold">
-            
             Ready to Generate Your SEO Table of Contents
-
           </h3>
           <p className="mx-auto mt-1 max-w-xl text-xs leading-5 text-slate-500 dark:text-slate-400">
             Paste your article HTML or Markdown above, enter a live article URL,

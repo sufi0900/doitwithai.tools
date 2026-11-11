@@ -257,8 +257,8 @@ export async function POST(request: NextRequest) {
 
     // Non-YouTube Social or Webpage URL inspection
     const targetUrl = publicUrl(rawUrl);
-    const fetched = await fetchPublic(targetUrl);
-    const { document } = parseHTML(fetched.text || "");
+    const fetched = await fetchPublic(targetUrl.toString());
+    const { document } = parseHTML(fetched.html || "");
 
     const ogTitle =
       document.querySelector('meta[property="og:title"]')?.getAttribute("content") ||

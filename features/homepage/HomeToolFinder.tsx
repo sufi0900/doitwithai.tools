@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useDeferredValue, useMemo } from "react";
 import Link from "next/link";
 import { Search, ArrowRight } from "lucide-react";
 import { categories, tools } from "@/features/tool-catalog/catalog";
@@ -7,22 +7,28 @@ import ToolCard from "@/features/tool-catalog/ToolCard";
 import { homepage } from "./content";
 export default function HomeToolFinder() {
   const [query, setQuery] = useState("");
+  const deferredQuery = useDeferredValue(query);
   const [category, setCategory] = useState("all");
-  const active = categories.filter((c) =>
-    tools.some((t) => t.categories.includes(c.slug)),
+  const active = useMemo(
+    () => categories.filter((c) => tools.some((t) => t.categories.includes(c.slug))),
+    []
   );
-  const searching = !!query.trim() || category !== "all";
-  const matched = searching
-    ? tools.filter(
-        (t) =>
-          (category === "all" || t.categories.includes(category)) &&
-          `${t.name} ${t.description} ${t.tags.join(" ")}`
-            .toLowerCase()
-            .includes(query.trim().toLowerCase()),
-      )
-    : homepage.featuredToolSlugs
-        .map((slug) => tools.find((t) => t.slug === slug))
-        .filter(Boolean);
+  const searching = !!deferredQuery.trim() || category !== "all";
+  const matched = useMemo(
+    () =>
+      searching
+        ? tools.filter(
+            (t) =>
+              (category === "all" || t.categories.includes(category)) &&
+              `${t.name} ${t.description} ${t.tags.join(" ")}`
+                .toLowerCase()
+                .includes(deferredQuery.trim().toLowerCase()),
+          )
+        : homepage.featuredToolSlugs
+            .map((slug) => tools.find((t) => t.slug === slug))
+            .filter(Boolean),
+    [searching, category, deferredQuery]
+  );
   return (
     <section
       id="featured-tools"

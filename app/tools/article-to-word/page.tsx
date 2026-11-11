@@ -1,3 +1,5 @@
+import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
+import { ToolHeroBackground, toolHeroHeading, toolHeroSurface } from "@/features/tool-ui/ToolHero";
 import type { Metadata } from "next";
 import Link from "next/link";
 import ArticlePdfClient from "@/features/article-conversion/ArticlePdfClient";
@@ -128,7 +130,7 @@ export default function Page() {
         <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
           <nav
             aria-label="Breadcrumb"
-            className="mb-8 flex flex-wrap gap-2 text-xs text-orange-100/80"
+            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
           >
             <Link href="/tools">Tools</Link>
             <span>/</span>
@@ -138,14 +140,14 @@ export default function Page() {
             <span>/</span>
             <span aria-current="page">Article to Word</span>
           </nav>
-          <div className="grid items-center gap-8 lg:grid-cols-[1.3fr_0.8fr]">
+          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
             <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-orange-200">
+              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
                 Content conversion · Editable documents
               </p>
               <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
                 Article to Word{" "}
-                <span className="text-orange-300">ready for your edits</span>
+                <span className={toolHeroHeading}>ready for your edits</span>
               </h1>
               <p className="mt-5 text-base leading-8 text-orange-50/80">
                 Turn a public article URL or pasted content into a clean DOCX.
@@ -166,9 +168,10 @@ export default function Page() {
                   </span>
                 ))}
               </div>
+              <PortableToolHeroBar />
             </div>
             <div className="rounded-2xl border border-orange-200/25 bg-[#352630] p-6">
-              <p className="text-xs font-bold uppercase tracking-wide text-orange-200">
+              <p className="text-xs font-bold uppercase tracking-wide text-[#b4c3ff]">
                 From article to working document
               </p>
               <ol className="mt-5 space-y-4 text-sm leading-7">
@@ -249,7 +252,7 @@ export default function Page() {
           supplying a real article.
         </p>
       </section>
-      <section className={`${section} bg-orange-50/50 dark:bg-orange-950/10`}>
+      <section className={`${section} bg-[#5271ff]/10/50 dark:bg-orange-950/10`}>
         <h2 className="text-2xl font-extrabold">
           Choose Word for editing or PDF for a reading copy
         </h2>

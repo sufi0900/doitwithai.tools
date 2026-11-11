@@ -1,0 +1,74 @@
+[
+  {
+    "id": "linkable-assets",
+    "name": "Linkable asset ideation: data studies, calculators & benchmark hubs",
+    "intro": "Design original research reports, industry statistics roundups, interactive calculators, and visual cheat sheets that writers and journalists naturally cite as primary sources.",
+    "tool": "digital-pr-linkable-asset-planner",
+    "toolName": "Digital PR & Linkable Asset Planner",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 1\u201311"
+  },
+  {
+    "id": "digital-pr-angles",
+    "name": "Digital PR data angles, press headlines & methodology notes",
+    "intro": "Turn raw survey or dataset numbers into newsworthy hooks, regional comparisons, contrarian takeaways, and transparent methodology sections that pass editorial fact-checking.",
+    "tool": "digital-pr-linkable-asset-planner",
+    "toolName": "Digital PR & Linkable Asset Planner",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 12\u201322"
+  },
+  {
+    "id": "haro-journalist-pitches",
+    "name": "HARO, Connectively, Qwoted & journalist source request pitches",
+    "intro": "Write concise, quotable 150-word expert responses to reporter queries with a direct first-sentence takeaway, concrete field example, and zero promotional fluff.",
+    "tool": "journalist-pitch-builder",
+    "toolName": "HARO & Journalist Pitch Response Builder",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 23\u201333"
+  },
+  {
+    "id": "cold-outreach-emails",
+    "name": "Personalized cold outreach emails & respectful follow-up sequences",
+    "intro": "Draft human-sounding, under-120-word outreach emails and single-bump follow-ups grounded in a specific reason the recipient's readers will benefit.",
+    "tool": "outreach-email-builder",
+    "toolName": "Personalized Outreach Email Builder",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 34\u201344"
+  },
+  {
+    "id": "competitor-link-gaps",
+    "name": "Competitor backlink gap analysis & link intersect prospecting",
+    "intro": "Filter competitor backlink exports to isolate editorial resource links, listicle inclusions, and industry roundups that link to multiple peers but not yet to you.",
+    "tool": "competitor-backlink-gap-analyzer",
+    "toolName": "Competitor Backlink Gap Analyzer",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 45\u201355"
+  },
+  {
+    "id": "reclamation-broken-links",
+    "name": "Unlinked brand mentions, broken link building & outdated stat reclamation",
+    "intro": "Convert unlinked brand, founder, or tool mentions into clickable links, and help editors replace dead 404 citations or 5-year-old statistics with your updated resource.",
+    "tool": "unlinked-brand-mention-checker",
+    "toolName": "Unlinked Brand Mention Checker",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 56\u201366"
+  },
+  {
+    "id": "resource-guest-editorial",
+    "name": "Resource page curations, guest post pitches & co-marketing swaps",
+    "intro": "Pitch universities, trade associations, and curated industry hubs, or propose data-backed guest columns and newsletter swaps that build authority and referral traffic.",
+    "tool": "link-placement-quality-checker",
+    "toolName": "Guest Post & Link Placement Quality Checker",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 67\u201377"
+  },
+  {
+    "id": "anchor-safety-visual-pr",
+    "name": "Anchor text risk audits, toxic link disavow review & infographic PR",
+    "intro": "Audit your backlink anchor text ratios for over-optimization, evaluate whether a Google Disavow file is warranted, and pitch embeddable SVG/PNG chart cards.",
+    "tool": "anchor-text-analyzer",
+    "toolName": "Anchor Text Analyzer & Ratio Calculator",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 78\u201388"
+  }
+]

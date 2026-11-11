@@ -1,3 +1,4 @@
+import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { FileText, Film, Sparkles } from "lucide-react";
@@ -9,6 +10,7 @@ import {
   toolHeroHeading,
   toolHeroSurface,
 } from "@/features/tool-ui/ToolHero";
+import { PlatformBrandIcon } from "@/features/tool-ui/PlatformBrandIcon";
 
 const pageUrl = "https://doitwithai.tools/tools/video-transcript-to-blog";
 const title =
@@ -107,10 +109,10 @@ export default function VideoTranscriptToBlogPage() {
         className={`relative overflow-hidden ${toolHeroSurface} text-white`}
       >
         <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
           <nav
             aria-label="Breadcrumb"
-            className="mb-7 flex flex-wrap gap-2 text-xs text-slate-300"
+            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
           >
             <Link href="/">Home</Link>
             <span>/</span>
@@ -121,6 +123,10 @@ export default function VideoTranscriptToBlogPage() {
 
           <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
             <div>
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-bold text-white backdrop-blur-xs">
+                <PlatformBrandIcon slugOrText="video-transcript-to-blog" size={18} />
+                <span>Official Platform Studio</span>
+              </div>
               <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
                 Content Conversion · Video-to-Article Repurposing
               </p>
@@ -147,6 +153,7 @@ export default function VideoTranscriptToBlogPage() {
                   Markdown &amp; HTML Export
                 </span>
               </div>
+              <PortableToolHeroBar />
             </div>
 
             <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">

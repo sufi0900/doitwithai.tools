@@ -1,9 +1,12 @@
 "use client";
 
+import ToolRunOverlay, { paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
+
 import { useMemo, useState } from "react";
 import {
   CheckCircle2,
   Copy,
+  Download,
   MessageSquare,
   ShieldAlert,
   Sparkles,
@@ -22,6 +25,9 @@ export default function GoogleReviewResponseGeneratorClient() {
     DEFAULT_REVIEW_RESPONSE_INPUT,
   );
   const [aiReplies, setAiReplies] = useState<ReviewReplyVariant[] | null>(null);
+  const [replyOverrides, setReplyOverrides] = useState<Record<number, string>>(
+    {},
+  );
   const [loadingAi, setLoadingAi] = useState(false);
   const [toast, setToast] = useState("");
 
@@ -29,7 +35,19 @@ export default function GoogleReviewResponseGeneratorClient() {
     () => buildDeterministicReviewReplies(input),
     [input],
   );
-  const replies = aiReplies || deterministicReplies;
+  const baseReplies = aiReplies || deterministicReplies;
+  const replies = useMemo(
+    () =>
+      baseReplies.map((r, i) => {
+        const text = replyOverrides[i] ?? r.replyText;
+        const wordCount = text
+          .trim()
+          .split(/\s+/)
+          .filter(Boolean).length;
+        return { ...r, replyText: text, wordCount };
+      }),
+    [baseReplies, replyOverrides],
+  );
 
   function notify(msg: string) {
     setToast(msg);
@@ -41,6 +59,7 @@ export default function GoogleReviewResponseGeneratorClient() {
     val: ReviewResponseInput[K],
   ) {
     setAiReplies(null);
+    setReplyOverrides({});
     setInput((prev) => ({ ...prev, [key]: val }));
   }
 
@@ -58,6 +77,7 @@ export default function GoogleReviewResponseGeneratorClient() {
       const data = await res.json();
       if (data?.replies) {
         setAiReplies(data.replies);
+        setReplyOverrides({});
         notify("Generated 3 custom AI review replies!");
       }
     } catch {
@@ -67,11 +87,40 @@ export default function GoogleReviewResponseGeneratorClient() {
     }
   }
 
+  function downloadAllRepliesMd() {
+    const lines = [
+      `# Google Review Responses — ${input.businessName} (${input.cityAndState})`,
+      `- **Sentiment:** ${input.sentiment}`,
+      `- **Reviewer:** ${input.reviewerName}`,
+      `- **Service Mentioned:** ${input.primaryServiceMentioned}`,
+      "",
+      ...replies.map(
+        (r, i) =>
+          `## Option ${i + 1}: ${r.style} (${r.wordCount} words)\n${r.replyText}\n`,
+      ),
+    ];
+    const blob = new Blob([lines.join("\n")], {
+      type: "text/markdown;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "google-review-responses.md";
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    notify("Downloaded all 3 review replies (.MD)!");
+  }
+
   return (
     <section
       aria-label="Google Review Response Generator Workspace"
       className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-10 sm:px-6"
     >
+      <ToolRunOverlay
+        active={loadingAi}
+        title="Drafting custom Google review replies"
+        description="Creating polite, brand-aligned owner responses tailored to the customer review."
+      />
       {toast && (
         <div
           role="status"
@@ -238,8 +287,22 @@ export default function GoogleReviewResponseGeneratorClient() {
           </div>
         </div>
 
-        {/* RIGHT COLUMN: 3 READY-TO-POST OWNER REPLY VARIATIONS */}
+        {/* RIGHT COLUMN: 3 READY-TO-POST OWNER REPLY VARIATIONS (INLINE EDITABLE) */}
         <div className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-[#111827]">
+            <span className="text-xs font-extrabold uppercase tracking-wider text-[#3452d1] dark:text-[#9aabff]">
+              3 Ready-to-Post Owner Reply Variations (Editable)
+            </span>
+            <button
+              type="button"
+              onClick={downloadAllRepliesMd}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-extrabold text-slate-800 hover:border-[#3452d1] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+            >
+              <Download size={13} />
+              Download All 3 (.MD)
+            </button>
+          </div>
+
           {replies.map((item, idx) => (
             <div
               key={idx}
@@ -263,9 +326,18 @@ export default function GoogleReviewResponseGeneratorClient() {
                 </button>
               </div>
 
-              <p className="mt-3.5 rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs leading-6 text-slate-800 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100">
-                {item.replyText}
-              </p>
+              <textarea
+                rows={4}
+                value={item.replyText}
+                onChange={(e) =>
+                  setReplyOverrides((prev) => ({
+                    ...prev,
+                    [idx]: e.target.value,
+                  }))
+                }
+                aria-label={`Edit review reply variation #${idx + 1}`}
+                className="mt-3.5 w-full rounded-xl border border-slate-200 bg-slate-50 p-3.5 text-xs leading-6 text-slate-800 focus:border-[#3452d1] focus:bg-white focus:outline-none dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
+              />
 
               <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500">
                 <div className="flex flex-wrap gap-1.5">
@@ -278,7 +350,9 @@ export default function GoogleReviewResponseGeneratorClient() {
                     </span>
                   ))}
                 </div>
-                <span>{item.wordCount} words</span>
+                <span>
+                  {item.wordCount} words · {item.replyText.length} chars
+                </span>
               </div>
             </div>
           ))}

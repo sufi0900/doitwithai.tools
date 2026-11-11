@@ -1,3 +1,5 @@
+import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
+import { ToolHeroBackground, toolHeroHeading, toolHeroSurface } from "@/features/tool-ui/ToolHero";
 import type { Metadata } from "next";
 import Link from "next/link";
 import ArticlePdfClient from "@/features/article-conversion/ArticlePdfClient";
@@ -89,11 +91,12 @@ export default function Page() {
           __html: JSON.stringify(schema).replace(/</g, "\\u003c"),
         }}
       />
-      <header className="relative overflow-hidden bg-[#291B26] text-white">
-        <div className={`${section} relative py-12 sm:py-16`}>
+      <header className={`relative overflow-hidden ${toolHeroSurface} text-white`}>
+        <ToolHeroBackground />
+        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
           <nav
             aria-label="Breadcrumb"
-            className="mb-8 flex flex-wrap gap-2 text-xs text-orange-100/80"
+            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
           >
             <Link href="/tools">Tools</Link>
             <span aria-hidden>/</span>
@@ -103,24 +106,25 @@ export default function Page() {
             <span aria-hidden>/</span>
             <span aria-current="page">Blog to Social Posts</span>
           </nav>
-          <div className="grid items-center gap-8 lg:grid-cols-[1.3fr_0.8fr]">
+          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
             <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-orange-200">
+              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
                 Content conversion · Social distribution
               </p>
               <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
                 Blog to Social Posts{" "}
-                <span className="text-orange-300">across four channels</span>
+                <span className={toolHeroHeading}>across four channels</span>
               </h1>
-              <p className="mt-5 text-base leading-8 text-orange-50/85">
+              <p className="mt-5 text-base leading-8 text-slate-300">
                 Repurpose your reviewed article into LinkedIn posts, X threads,
                 Facebook updates, and Instagram captions. Edit each draft and
                 download CSV or TXT.
               </p>
+              <PortableToolHeroBar />
             </div>
-            <div className="rounded-2xl border border-orange-200/25 bg-white/5 p-6">
+            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 shadow-xl p-6">
               <h2 className="text-lg font-bold">Repurposing workflow</h2>
-              <ol className="mt-4 space-y-3 text-sm leading-7 text-orange-50/85">
+              <ol className="mt-4 space-y-3 text-sm leading-7 text-slate-300">
                 <li>1. Import a public article URL or paste content</li>
                 <li>2. Choose a drafting angle and link preference</li>
                 <li>3. Edit channel posts and download CSV or TXT</li>

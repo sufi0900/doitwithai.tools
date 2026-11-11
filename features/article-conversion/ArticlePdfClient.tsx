@@ -8,6 +8,8 @@ import {
   Download,
   FileText,
   Pencil,
+  RotateCcw,
+  Sparkles,
   Trash2,
   ChevronDown,
 } from "lucide-react";
@@ -31,6 +33,58 @@ import RepurposePanel from "./RepurposePanel";
 import type { ConversionFormat } from "./formats";
 export type RepurposeFormat = Exclude<ConversionFormat, "pdf" | "docx" | "audio">;
 
+const INITIAL_SAMPLE_ARTICLE: Article = {
+  title: "A Practical Workflow for Reviewing and Repurposing Long-Form Articles",
+  byline: "DoItWithAI Editorial Team",
+  published: "October 1, 2026",
+  source: "https://doitwithai.tools/guides/content-repurposing",
+  method: "Sample editorial article pre-loaded for instant preview",
+  warnings: [
+    "Sample article pre-loaded. Paste your own URL, text, or HTML above to replace it.",
+  ],
+  links: [
+    {
+      label: "MDN Web Docs: Semantic HTML Structure",
+      url: "https://developer.mozilla.org/en-US/docs/Web/HTML",
+    },
+  ],
+  blocks: [
+    {
+      id: "b0",
+      kind: "paragraph",
+      text: "Long technical articles are easier to review and repurpose when headings, lists, tables, and references stay together in one structured document. Start with a clean source draft before exporting to PDF, DOCX, audio, or social formats.",
+    },
+    {
+      id: "b1",
+      kind: "heading",
+      level: 2,
+      text: "1. What Stays in Your Exported Reading Copy",
+    },
+    {
+      id: "b2",
+      kind: "paragraph",
+      text: "Every exported document preserves section hierarchy, paragraph order, structured data tables, and numbered link references so readers can focus on the core argument without page clutter.",
+    },
+    {
+      id: "b3",
+      kind: "quote",
+      text: "Keep the reader focused on the substance and verifiable proof points, not the surrounding page chrome.",
+    },
+    {
+      id: "b4",
+      kind: "table",
+      text: "",
+      header: true,
+      cells: [
+        ["Element", "Export Handling"],
+        ["Headings & Sections", "Preserved as H2/H3 outline"],
+        ["Tables & Lists", "Kept as structured rows"],
+        ["Outbound Links", "Converted to numbered references"],
+      ],
+    },
+  ],
+};
+
 const control =
   "w-full rounded-xl border border-slate-300 bg-transparent px-4 py-3 text-sm leading-7 focus:outline-none focus:ring-2 focus:ring-[#5271ff] dark:border-slate-600";
 const panel =
@@ -38,7 +92,7 @@ const panel =
 const button =
   "inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 py-3 text-sm font-semibold hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#5271ff] dark:border-slate-600 dark:hover:bg-slate-800 disabled:opacity-50";
 const primary =
-  "inline-flex items-center justify-center gap-2 rounded-xl bg-[#3452d1] px-5 py-3 text-sm font-bold text-white hover:bg-[#2943b5] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#5271ff] disabled:opacity-50";
+  "inline-flex items-center justify-center gap-2 rounded-xl bg-[#4058D0] px-5 py-3 text-sm font-bold text-white hover:bg-[#3452D1] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#5271ff] disabled:opacity-50";
 
 type Result = {
   url: string;
@@ -89,16 +143,18 @@ export default function ArticlePdfClient({
 
   const [mode, setMode] = useState<"url" | "text" | "html">("url"),
     [source, setSource] = useState(""),
-    [content, setContent] = useState(""),
-    [article, setArticle] = useState<Article | null>(null),
+    [content, setContent] = useState(exampleHtml),
+    [article, setArticle] = useState<Article | null>(INITIAL_SAMPLE_ARTICLE),
     [settings, setSettings] = useState<Settings>(defaults),
     [editing, setEditing] = useState(false),
     [busy, setBusy] = useState<"" | "import" | "pdf">(""),
     [errors, setErrors] = useState<{ source?: string; content?: string }>({}),
-    [message, setMessage] = useState(""),
+    [message, setMessage] = useState(
+      `Sample article pre-loaded below so you can explore the ${label} studio right away, or import your own URL / text above.`,
+    ),
     [result, setResult] = useState<Result | null>(null),
     [revision, setRevision] = useState(0),
-    [autoRunSignal, setAutoRunSignal] = useState(0),
+    [autoRunSignal, setAutoRunSignal] = useState(1),
     [destination, setDestination] = useState<"review" | "result">("review");
 
   const abort = useRef<AbortController | null>(null),
@@ -334,7 +390,6 @@ export default function ArticlePdfClient({
             : "The import failed. Try pasted content.";
         setMessage(msg);
         if (!c.signal.aborted) {
-          // Clear stale article and result when a new import fails so old articles/logos never remain displayed below the error
           setArticle(null);
           setResult(null);
           setErrors(mode === "url" ? { source: msg } : { content: msg });
@@ -360,13 +415,13 @@ export default function ArticlePdfClient({
   return (
     <div className={`${styles.root} mx-auto max-w-6xl px-4 py-12 sm:px-6`}>
       <form onSubmit={preview} noValidate className={panel} aria-busy={!!busy}>
-        <p className="text-xs font-bold uppercase tracking-widest text-[#9A3412] dark:text-[#FDBA74]">
+        <p className="text-xs font-bold uppercase tracking-widest text-[#4058D0] dark:text-blue-300">
           Step 1 · Enter your article &amp; convert directly
         </p>
         <h2 className="mt-2 flex items-center gap-3 text-2xl font-extrabold">
           <FileText
             aria-hidden
-            className="text-[#9A3412] dark:text-[#FDBA74]"
+            className="text-[#4058D0] dark:text-blue-300"
           />
           {STEP1_ACTION_LABELS[format]}
         </h2>
@@ -391,7 +446,7 @@ export default function ArticlePdfClient({
               <button
                 type="button"
                 key={id}
-                className={`${button} ${mode === id ? "border-[#9A3412] bg-orange-50 text-[#9A3412] dark:bg-orange-950/40 dark:text-[#FDBA74]" : ""}`}
+                className={`${button} ${mode === id ? "border-[#4058D0] bg-[#4058D0]/10 text-[#4058D0] dark:bg-blue-950/40 dark:text-blue-200" : ""}`}
                 aria-pressed={mode === id}
                 onClick={() => {
                   setMode(id);
@@ -502,13 +557,29 @@ export default function ArticlePdfClient({
                 setMode("html");
                 setContent(exampleHtml);
                 setSource("");
+                setArticle(INITIAL_SAMPLE_ARTICLE);
+                setAutoRunSignal((n) => n + 1);
                 setErrors({});
                 setMessage(
-                  `Fictional example loaded. Click "${STEP1_ACTION_LABELS[format]}" to test the workflow.`,
+                  `Sample article loaded below. Click "${STEP1_ACTION_LABELS[format]}" or customize sections directly.`,
                 );
               }}
             >
-              Load fictional example
+              <Sparkles size={16} className="text-[#4058D0]" />
+              Load sample article
+            </button>
+            <button
+              type="button"
+              className={button}
+              onClick={() => {
+                setSource("");
+                setContent("");
+                setErrors({});
+                setMessage("Cleared input fields. Previous preview remains below until you import a new article.");
+              }}
+            >
+              <RotateCcw size={16} />
+              Clear input
             </button>
           </div>
         </fieldset>
@@ -528,9 +599,9 @@ export default function ArticlePdfClient({
           ref={done}
           tabIndex={-1}
           aria-labelledby="article-result-title"
-          className={`${panel} mb-7 scroll-mt-28 border-2 border-[#3452d1] bg-blue-50/40 focus:outline focus:outline-2 focus:outline-[#5271ff] dark:border-[#5271ff] dark:bg-blue-950/20`}
+          className={`${panel} mb-7 scroll-mt-28 border-2 border-[#4058D0] bg-blue-50/40 focus:outline focus:outline-2 focus:outline-[#5271ff] dark:border-[#5271ff] dark:bg-blue-950/20`}
         >
-          <p className="text-xs font-bold uppercase tracking-widest text-[#9A3412] dark:text-[#FDBA74]">
+          <p className="text-xs font-bold uppercase tracking-widest text-[#4058D0] dark:text-blue-300">
             Step 2 · Save your reading copy
           </p>
           <h2
@@ -604,7 +675,7 @@ export default function ArticlePdfClient({
 
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#9A3412] dark:text-[#FDBA74]">
+              <p className="text-xs font-bold uppercase tracking-widest text-[#4058D0] dark:text-blue-300">
                 Review the source article
               </p>
               <h2
@@ -691,7 +762,7 @@ export default function ArticlePdfClient({
                 href={safeLink(article.source)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[#3452d1] underline dark:text-[#b4c3ff]"
+                className="text-[#4058D0] underline dark:text-[#b4c3ff]"
               >
                 {article.source}
               </a>
@@ -742,7 +813,7 @@ export default function ArticlePdfClient({
                     downloaded.
                   </p>
                 ) : b.kind === "image" ? (
-                  <div className="rounded-xl border border-dashed border-orange-300 p-4 dark:border-orange-800">
+                  <div className="rounded-xl border border-dashed border-blue-300 p-4 dark:border-blue-800">
                     <label className="flex cursor-pointer items-start gap-3 text-sm leading-7">
                       <input
                         type="checkbox"
@@ -750,7 +821,7 @@ export default function ArticlePdfClient({
                         onChange={(e) =>
                           update(b.id, { included: e.target.checked })
                         }
-                        className="mt-1 h-5 w-5 shrink-0 accent-[#5271ff]"
+                        className="mt-1 h-5 w-5 shrink-0 accent-[#4058D0]"
                       />
                       <span>
                         Include image: {b.alt}
@@ -853,7 +924,10 @@ export default function ArticlePdfClient({
             ))}
           </div>
           {article.links.length > 0 && (
-            <details className="mt-6 rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+            <details
+              open
+              className="mt-6 rounded-xl border border-slate-200 p-4 dark:border-slate-700"
+            >
               <summary className="cursor-pointer text-sm font-bold">
                 Article link references ({article.links.length})
               </summary>
@@ -864,7 +938,7 @@ export default function ArticlePdfClient({
                       href={safeLink(l.url)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-[#3452d1] underline dark:text-[#b4c3ff]"
+                      className="text-[#4058D0] underline dark:text-[#b4c3ff]"
                     >
                       {l.label}
                     </a>
@@ -875,7 +949,10 @@ export default function ArticlePdfClient({
           )}
           {isDocExport && (
             <>
-              <details className="mt-7 rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+              <details
+                open
+                className="mt-7 rounded-xl border border-slate-200 p-4 dark:border-slate-700"
+              >
                 <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-bold">
                   {fileLabel} layout options
                   <ChevronDown size={18} aria-hidden />

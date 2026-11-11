@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
   AlertTriangle,
+  CheckCircle2,
   Copy,
   Download,
   FileText,
@@ -58,6 +59,17 @@ const primaryBtn =
   "inline-flex items-center justify-center gap-2 rounded-xl bg-[#3452d1] px-5 py-3 text-sm font-bold text-white hover:bg-[#2943b5] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#5271ff] disabled:opacity-50";
 const secondaryBtn =
   "inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold hover:bg-slate-100 focus-visible:outline-[#5271ff] dark:border-slate-600 dark:hover:bg-slate-800";
+
+function buildInitialEntityGapReport(): SemanticGapReport {
+  return compareSemanticEntityCoverage({
+    targetKeyword: "technical seo audit",
+    yourDoc: { htmlOrText: SAMPLE_YOUR_TEXT, url: "Your Draft" },
+    competitorDocs: [
+      { htmlOrText: SAMPLE_COMP_1, url: "Competitor #1 (Ranking #1)" },
+      { htmlOrText: SAMPLE_COMP_2, url: "Competitor #2 (Ranking #2)" },
+    ],
+  });
+}
 
 function CoverageCircleGauge({ score }: { score: number }) {
   const [animated, setAnimated] = useState(0);
@@ -122,16 +134,17 @@ function CoverageCircleGauge({ score }: { score: number }) {
 }
 
 export default function SemanticEntityGapAnalyzerClient() {
-  // Default to Live URL mode ("live") as requested so users can directly enter their URL + Competitor URLs
   const [mode, setMode] = useState<"live" | "text">("live");
   const [targetKeyword, setTargetKeyword] = useState("technical seo audit");
   const [yourUrl, setYourUrl] = useState("");
-  const [yourContent, setYourContent] = useState("");
+  const [yourContent, setYourContent] = useState(SAMPLE_YOUR_TEXT);
   const [compUrlsInput, setCompUrlsInput] = useState("");
-  const [comp1Text, setComp1Text] = useState("");
-  const [comp2Text, setComp2Text] = useState("");
+  const [comp1Text, setComp1Text] = useState(SAMPLE_COMP_1);
+  const [comp2Text, setComp2Text] = useState(SAMPLE_COMP_2);
 
-  const [report, setReport] = useState<SemanticGapReport | null>(null);
+  const [report, setReport] = useState<SemanticGapReport | null>(
+    buildInitialEntityGapReport,
+  );
   const [statusFilter, setStatusFilter] = useState<EntityGapStatus | "all">(
     "all",
   );
@@ -140,6 +153,14 @@ export default function SemanticEntityGapAnalyzerClient() {
   const [error, setError] = useState("");
   const [feedback, setFeedback] = useState("");
   const [revision, setRevision] = useState(0);
+
+  // Interactive Entity-Closing Section Composer state
+  const [composerHeading, setComposerHeading] = useState(
+    "Core Web Vitals, Canonical Tags & Structured Data Checklist",
+  );
+  const [composerBody, setComposerBody] = useState(
+    "Beyond basic crawlability in Google Search Console and Screaming Frog, a complete technical seo audit must inspect Core Web Vitals—specifically Largest Contentful Paint (LCP), Interaction to Next Paint (INP), and Cumulative Layout Shift (CLS)—alongside canonical tags, 301 redirect chains, orphan pages, hreflang annotations, and JSON-LD Schema.org structured data.",
+  );
 
   const resultRef = useRef<HTMLElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -150,6 +171,21 @@ export default function SemanticEntityGapAnalyzerClient() {
     }
   }, [busy, revision]);
 
+  function syncComposerWithReport(nextReport: SemanticGapReport) {
+    const topMissing = nextReport.terms
+      .filter((t) => t.status === "missing-critical" || t.status === "under-used")
+      .slice(0, 6)
+      .map((t) => t.term);
+    if (nextReport.missingSubtopics[0]) {
+      setComposerHeading(nextReport.missingSubtopics[0]);
+    }
+    if (topMissing.length > 0) {
+      setComposerBody(
+        `To ensure comprehensive semantic coverage for ${nextReport.targetKeyword || "this topic"}, evaluate ${topMissing.slice(0, 3).join(", ")} alongside ${topMissing.slice(3).join(", ") || "core technical benchmarks"}. Document your verification thresholds and remediation steps for each entity.`,
+      );
+    }
+  }
+
   function loadSample() {
     setMode("text");
     setTargetKeyword("technical seo audit");
@@ -157,15 +193,9 @@ export default function SemanticEntityGapAnalyzerClient() {
     setComp1Text(SAMPLE_COMP_1);
     setComp2Text(SAMPLE_COMP_2);
     setError("");
-    const built = compareSemanticEntityCoverage({
-      targetKeyword: "technical seo audit",
-      yourDoc: { htmlOrText: SAMPLE_YOUR_TEXT, url: "Your Draft" },
-      competitorDocs: [
-        { htmlOrText: SAMPLE_COMP_1, url: "Competitor #1 (Ranking #1)" },
-        { htmlOrText: SAMPLE_COMP_2, url: "Competitor #2 (Ranking #2)" },
-      ],
-    });
+    const built = buildInitialEntityGapReport();
     setReport(built);
+    syncComposerWithReport(built);
     setRevision((r) => r + 1);
     setFeedback(
       "Compared your draft against 2 top-ranking competitors and extracted missing entities & subtopics.",
@@ -188,7 +218,7 @@ export default function SemanticEntityGapAnalyzerClient() {
       setBusy(true);
       try {
         await paintToolFeedback();
-        await new Promise((r) => setTimeout(r, 850));
+        await new Promise((r) => setTimeout(r, 600));
         const comps = [
           comp1Text.trim()
             ? { htmlOrText: comp1Text, url: "Competitor #1" }
@@ -204,6 +234,7 @@ export default function SemanticEntityGapAnalyzerClient() {
           competitorDocs: comps,
         });
         setReport(built);
+        syncComposerWithReport(built);
         setRevision((r) => r + 1);
       } finally {
         setBusy(false);
@@ -246,7 +277,6 @@ export default function SemanticEntityGapAnalyzerClient() {
       });
       const data = await res.json();
       if (!res.ok || !data.report) {
-        setReport(null);
         setError(
           data?.error?.message ||
             "Could not fetch one or more URLs. Switch to 'Compare Pasted Drafts / HTML' mode instead.",
@@ -254,10 +284,10 @@ export default function SemanticEntityGapAnalyzerClient() {
         return;
       }
       setReport(data.report);
+      syncComposerWithReport(data.report);
       setRevision((r) => r + 1);
     } catch (err) {
       if ((err as Error)?.name !== "AbortError") {
-        setReport(null);
         setError("Comparison interrupted. Try Pasted Drafts mode.");
       }
     } finally {
@@ -275,6 +305,13 @@ export default function SemanticEntityGapAnalyzerClient() {
       return true;
     });
   }, [report, statusFilter, searchQuery]);
+
+  const missingEntitiesForComposer = useMemo(() => {
+    if (!report) return [];
+    return report.terms
+      .filter((t) => t.status === "missing-critical" || t.status === "under-used")
+      .slice(0, 12);
+  }, [report]);
 
   function triggerDownload(blob: Blob, filename: string) {
     const url = URL.createObjectURL(blob);
@@ -641,6 +678,119 @@ export default function SemanticEntityGapAnalyzerClient() {
             </div>
           </div>
 
+          {/* Interactive Entity-Closing Section Composer */}
+          <div className={panel}>
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-[#5271ff]">
+                  Live Gap-Closing Studio
+                </span>
+                <h3 className="mt-1 text-xl font-extrabold">
+                  Entity-Injected H2 Section Composer
+                </h3>
+                <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
+                  Draft or refine a new H2 section below to weave in your missing competitor entities. Click any entity chip to insert it at the end of your paragraph.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await navigator.clipboard.writeText(
+                      `## ${composerHeading}\n\n${composerBody}`,
+                    );
+                    setFeedback("Copied entity-injected H2 section to clipboard.");
+                  }}
+                  className={primaryBtn}
+                >
+                  <Copy size={15} />
+                  Copy H2 Section
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    triggerDownload(
+                      new Blob([`## ${composerHeading}\n\n${composerBody}\n`], {
+                        type: "text/markdown;charset=utf-8",
+                      }),
+                      "entity-gap-section.md",
+                    );
+                    setFeedback("Downloaded entity-injected section (.MD).");
+                  }}
+                  className={secondaryBtn}
+                >
+                  <Download size={15} />
+                  Download .MD
+                </button>
+              </div>
+            </div>
+
+            {missingEntitiesForComposer.length > 0 && (
+              <div className="mt-4">
+                <p className="text-xs font-bold text-slate-600 dark:text-slate-300">
+                  Live Missing/Under-Used Entity Checklist (click a chip to insert):
+                </p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {missingEntitiesForComposer.map((ent) => {
+                    const included =
+                      composerBody
+                        .toLowerCase()
+                        .includes(ent.term.toLowerCase()) ||
+                      composerHeading
+                        .toLowerCase()
+                        .includes(ent.term.toLowerCase());
+                    return (
+                      <button
+                        key={ent.term}
+                        type="button"
+                        onClick={() => {
+                          if (!included) {
+                            setComposerBody((prev) =>
+                              `${prev.trim()} ${ent.term}.`.trim(),
+                            );
+                          }
+                        }}
+                        className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 font-mono text-xs font-bold transition ${
+                          included
+                            ? "border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-200"
+                            : "border-rose-200 bg-rose-50/70 text-rose-800 hover:bg-rose-100 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-200"
+                        }`}
+                      >
+                        {included && <CheckCircle2 size={12} />}
+                        {ent.term}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            <div className="mt-4 grid gap-4">
+              <label className="block text-xs font-bold">
+                H2 Section Heading
+                <input
+                  type="text"
+                  value={composerHeading}
+                  onChange={(e) => setComposerHeading(e.target.value)}
+                  className={`${control} mt-1 font-bold`}
+                />
+              </label>
+              <label className="block text-xs font-bold">
+                Entity-Enriched Paragraph Draft (
+                {composerBody.trim()
+                  ? composerBody.trim().split(/\s+/).length
+                  : 0}{" "}
+                words)
+                <textarea
+                  rows={4}
+                  value={composerBody}
+                  onChange={(e) => setComposerBody(e.target.value)}
+                  className={`${control} mt-1`}
+                />
+              </label>
+            </div>
+          </div>
+
           {/* Missing Subtopics Banner */}
           {report.missingSubtopics.length > 0 && (
             <div className={panel}>
@@ -664,12 +814,18 @@ export default function SemanticEntityGapAnalyzerClient() {
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
                 {report.missingSubtopics.map((h) => (
-                  <span
+                  <button
                     key={h}
-                    className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold dark:border-slate-700 dark:bg-slate-800"
+                    type="button"
+                    onClick={() => {
+                      setComposerHeading(h);
+                      setFeedback(`Loaded "${h}" into the H2 Section Composer.`);
+                    }}
+                    title="Click to load into the H2 Section Composer"
+                    className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-left text-xs font-semibold hover:border-[#3452d1] hover:bg-[#3452d1]/5 dark:border-slate-700 dark:bg-slate-800"
                   >
                     {h}
-                  </span>
+                  </button>
                 ))}
               </div>
             </div>

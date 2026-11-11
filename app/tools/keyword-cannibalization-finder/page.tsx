@@ -1,3 +1,4 @@
+import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import ToolFaq from "@/features/tool-ui/ToolFaq";
 import { ToolHeroBackground, toolHeroSurface, toolHeroHeading } from "@/features/tool-ui/ToolHero";
 import ToolResources from "@/features/tool-catalog/ToolResources";
@@ -165,66 +166,71 @@ export default function KeywordCannibalizationFinderPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
 
-      <div className={`relative overflow-hidden ${toolHeroSurface} pb-20 pt-10 text-white sm:pt-16 lg:pb-28`}>
+      <div className={`relative overflow-hidden ${toolHeroSurface} text-white`}>
         <ToolHeroBackground />
 
-        <div className="relative mx-auto max-w-[1500px] px-4 sm:px-6 lg:px-8">
+        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
           <nav
             aria-label="Breadcrumb"
-            className="mb-10 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-400"
+            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
           >
-            <Link href="/" className="transition hover:text-white">
-              Home
-            </Link>
+            <Link href="/">Home</Link>
             <span>/</span>
-            <Link href="/tools" className="transition hover:text-white">
-              Tools
-            </Link>
+            <Link href="/tools">Tools</Link>
             <span>/</span>
-            <span className="text-blue-200">Keyword Cannibalization Finder</span>
+            <span aria-current="page">Keyword Cannibalization Finder</span>
           </nav>
 
-          <div className="mx-auto max-w-5xl text-center">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.16em] text-blue-100 backdrop-blur">
-              <Sparkles className="h-4 w-4 text-cyan-300" /> Search Console SEO
+          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
+                Search Console SEO · Competing URL & Split-Click Detector
+              </p>
+              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
+                Keyword Cannibalization 
+                <span className={toolHeroHeading}>
+                  & Competing Page Finder
+                </span>
+              </h1>
+              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
+                Import a Google Search Console query-and-page export to spot search terms where multiple URLs on your domain split impressions and clicks—plus see which page leads.
+              </p>
+              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  Supports GSC CSV & ZIP files
+                </span>
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  Impression-split severity score
+                </span>
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  Consolidation & redirect tips
+                </span>
+              </div>
+              <PortableToolHeroBar />
             </div>
-            <h1 className="mt-7 text-4xl font-black leading-[1.06] tracking-[-0.045em] sm:text-6xl lg:text-7xl">
-              Keyword Cannibalization Finder
-              <span className={`block ${toolHeroHeading}`}>
-                See Which Pages Compete For One Query
-              </span>
-            </h1>
-            <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-slate-300 sm:text-lg">
-              Load a Search Console export that lists queries and pages together. The tool finds the
-              queries where several of your pages compete, shows the leading page, and suggests a
-              next step for each one.
-            </p>
-            <div className="mt-7 flex flex-wrap justify-center gap-3 text-xs font-bold text-slate-300">
-              {[
-                [FileSpreadsheet, "Works from a CSV export"],
-                [ShieldCheck, "Review and export your results"],
-              ].map(([Icon, label]) => {
-                const FeatureIcon = Icon as typeof FileSpreadsheet;
-                return (
-                  <span
-                    key={label as string}
-                    className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-2"
-                  >
-                    <FeatureIcon className="h-3.5 w-3.5 text-blue-300" />
-                    {label as string}
-                  </span>
-                );
-              })}
+
+            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
+              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
+                4 Cannibalization Signals Audited
+              </p>
+              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
+                <li>
+                  <strong className="text-emerald-300">Impression Split:</strong> Measures how impressions are divided across competing URLs.
+                </li>
+                <li>
+                  <strong className="text-indigo-300">Click Dilution:</strong> Identifies secondary pages siphoning clicks from your main URL.
+                </li>
+                <li>
+                  <strong className="text-sky-300">Position Conflict:</strong> Highlights queries where Google flips between two different pages.
+                </li>
+                <li>
+                  <strong className="text-amber-300">Resolution Plan:</strong> Suggests differentiating intent, merging, or 301 redirecting.
+                </li>
+              </ul>
             </div>
-            <a
-              href="#keyword-cannibalization-finder"
-              className="mt-8 inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3.5 text-sm font-extrabold text-slate-950 shadow-xl transition hover:-translate-y-0.5 hover:bg-blue-50"
-            >
-              Check your pages <ArrowRight className="h-4 w-4" />
-            </a>
           </div>
 
-          <div className="mt-14">
+          <div className="mt-8">
             <KeywordCannibalizationClient />
           </div>
         </div>

@@ -362,7 +362,28 @@ export default function WritingEducation({ kind }: { kind: WritingKind }) {
               meta description
             </Link>
           )}
-          . Each element should represent the same page accurately.
+          . After publishing,{" "}
+          <Link
+            href="/tools/heading-structure-analyzer"
+            className="font-semibold text-[#4662df] underline underline-offset-4 dark:text-blue-300"
+          >
+            check your live H1–H6 heading hierarchy
+          </Link>
+          , plan new section outlines with the{" "}
+          <Link
+            href="/tools/article-outline-generator"
+            className="font-semibold text-[#4662df] underline underline-offset-4 dark:text-blue-300"
+          >
+            AI Article Outline Generator
+          </Link>
+          , and review our{" "}
+          <Link
+            href="/ai-seo/h1-heading"
+            className="font-semibold text-[#4662df] underline underline-offset-4 dark:text-blue-300"
+          >
+            H1 tag SEO best practices &amp; length guide
+          </Link>
+          .
         </p>
       </section>
     </div>

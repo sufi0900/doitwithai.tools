@@ -63,7 +63,7 @@ const MISTAKES = [
 export default function SerpPreviewTutorial() {
   return (
     <section className="border-t border-slate-200 bg-slate-50 py-20 dark:border-slate-800 dark:bg-slate-900/40">
-      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <div className="text-center">
           <p className="text-xs font-extrabold uppercase tracking-[0.17em] text-[#5271ff]">
             Step-by-step

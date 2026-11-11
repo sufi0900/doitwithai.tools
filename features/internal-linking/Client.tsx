@@ -1,4 +1,6 @@
 "use client";
+
+import ToolRunOverlay, { paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
 import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 import { useRef, useState, useEffect } from "react";
 import {
@@ -8,18 +10,21 @@ import {
   Download,
   ArrowUpRight,
   Loader2,
+  Sparkles,
 } from "lucide-react";
 import CopyButton from "@/components/ai-tools/CopyButton";
 import { readToolResponse } from "@/lib/ai-tools/client-response";
 import type { Report } from "./core";
+
 const field =
   "mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-950 outline-none focus:ring-4 focus:ring-blue-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:ring-blue-900";
+
 const example: Report = {
   sourceUrl: "https://example.com/keyword-research",
   sourceTitle: "Keyword research for content writers",
   sourceMode: "Illustrative example",
-  discovered: 3,
-  analyzed: 2,
+  discovered: 4,
+  analyzed: 3,
   discovery: "Example page list",
   suggestions: [
     {
@@ -33,12 +38,28 @@ const example: Report = {
         "The destination explains the intent check mentioned here, giving readers a useful next step.",
       method: "Text match",
     },
+    {
+      destinationUrl: "https://example.com/keyword-clustering-tool",
+      destinationTitle: "Keyword clustering workflow for SEO teams",
+      paragraphIndex: 2,
+      passage:
+        "Once you collect candidate queries, group related search terms by shared reader task so you do not publish competing pages.",
+      anchor: "group related search terms",
+      reason:
+        "Links the clustering step directly to the dedicated keyword grouping workflow.",
+      method: "AI reviewed",
+    },
   ],
   pages: [
     {
       url: "https://example.com/search-intent",
       status: "Analyzed",
       title: "How to check search intent",
+    },
+    {
+      url: "https://example.com/keyword-clustering-tool",
+      status: "Analyzed",
+      title: "Keyword clustering workflow for SEO teams",
     },
     {
       url: "https://example.com/content-planning",
@@ -51,16 +72,26 @@ const example: Report = {
     },
   ],
   notes: [
-    "This is an illustrative example. No website was fetched and these URLs are placeholders.",
+    "This is an illustrative example. You can edit any anchor text or destination URL inline below and copy ready-to-paste HTML.",
   ],
 };
+
 function csv(report: Report) {
   const rows = [
-    ["Source URL", "Destination URL", "Anchor", "Passage", "Reason", "Method"],
+    [
+      "Source URL",
+      "Destination URL",
+      "Anchor",
+      "HTML Link Tag",
+      "Passage",
+      "Reason",
+      "Method",
+    ],
     ...report.suggestions.map((s) => [
       report.sourceUrl,
       s.destinationUrl,
       s.anchor,
+      `<a href="${s.destinationUrl}">${s.anchor}</a>`,
       s.passage,
       s.reason,
       s.method,
@@ -77,17 +108,48 @@ function csv(report: Report) {
     )
     .join("\r\n");
 }
+
+function buildHtmlExport(report: Report) {
+  return report.suggestions
+    .map((s, idx) => {
+      const at = s.passage.toLowerCase().indexOf(s.anchor.toLowerCase());
+      const linkedPassage =
+        at >= 0
+          ? `${s.passage.slice(0, at)}<a href="${s.destinationUrl}">${s.anchor}</a>${s.passage.slice(at + s.anchor.length)}`
+          : `${s.passage} (<a href="${s.destinationUrl}">${s.anchor}</a>)`;
+      return `<!-- Opportunity ${idx + 1}: ${s.destinationTitle} -->\n<p>${linkedPassage}</p>`;
+    })
+    .join("\n\n");
+}
+
 export default function Client() {
-  const [sourceUrl, setSourceUrl] = useState("");
+  const [sourceUrl, setSourceUrl] = useState(example.sourceUrl);
   const [sourceText, setSourceText] = useState("");
   const [sitemapUrl, setSitemapUrl] = useState("");
   const [urls, setUrls] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [report, setReport] = useState<Report | null>(null);
+  const [report, setReport] = useState<Report | null>(example);
   const controller = useRef<AbortController | null>(null);
   const results = useRef<HTMLDivElement>(null);
+
   useEffect(() => () => controller.current?.abort(), []);
+
+  function updateSuggestion(
+    idx: number,
+    patch: Partial<Report["suggestions"][number]>,
+  ) {
+    setReport((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        suggestions: prev.suggestions.map((item, i) =>
+          i === idx ? { ...item, ...patch } : item,
+        ),
+      };
+    });
+  }
+
   async function analyze(event: React.FormEvent) {
     event.preventDefault();
     if (busy) return;
@@ -127,7 +189,8 @@ export default function Client() {
       controller.current = null;
     }
   }
-  function download() {
+
+  function downloadCsv() {
     if (!report) return;
     const url = URL.createObjectURL(
       new Blob([csv(report)], { type: "text/csv;charset=utf-8" }),
@@ -138,23 +201,55 @@ export default function Client() {
     a.click();
     URL.revokeObjectURL(url);
   }
+
+  function downloadHtml() {
+    if (!report) return;
+    const url = URL.createObjectURL(
+      new Blob([buildHtmlExport(report)], { type: "text/html;charset=utf-8" }),
+    );
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "internal-link-passages.html";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div className="grid items-start gap-7 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+      <ToolRunOverlay
+        active={busy}
+        title="Finding contextual internal link opportunities"
+        description="Scanning candidate pages and matching natural anchor phrases inside your article."
+      />
       <form
         onSubmit={analyze}
         className="min-w-0 rounded-3xl border border-white/10 bg-white p-5 shadow-2xl dark:bg-[#1D2430] sm:p-8"
       >
-        <div className="flex items-center gap-3">
-          <span className="rounded-xl bg-blue-50 p-3 text-[#5271ff] dark:bg-blue-950">
-            <Link2 aria-hidden className="h-5 w-5" />
-          </span>
-          <h2 className="text-xl font-bold text-slate-950 dark:text-white">
-            Find useful link placements
-          </h2>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <span className="rounded-xl bg-blue-50 p-3 text-[#5271ff] dark:bg-blue-950">
+              <Link2 aria-hidden className="h-5 w-5" />
+            </span>
+            <h2 className="text-xl font-bold text-slate-950 dark:text-white">
+              Find useful link placements
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setSourceUrl(example.sourceUrl);
+              setReport(example);
+              setError("");
+            }}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+          >
+            <Sparkles size={14} className="text-[#5271ff]" />
+            Load sample opportunities
+          </button>
         </div>
         <p className="mt-4 text-sm leading-7 text-slate-500 dark:text-slate-400">
           Start with one article. We discover sitemap pages, read promising
-          destinations, and suggest links for your review.
+          destinations, and suggest contextual anchor placements for your review.
         </p>
         <fieldset
           disabled={busy}
@@ -172,9 +267,12 @@ export default function Client() {
               className={field}
             />
           </label>
-          <details className="rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+          <details
+            open
+            className="rounded-xl border border-slate-200 p-4 dark:border-slate-700"
+          >
             <summary className="cursor-pointer text-sm font-bold text-slate-700 dark:text-slate-200">
-              Optional inputs and fallback
+              Optional inputs and fallback (Sitemap, Candidate URLs, Pasted Text)
             </summary>
             <div className="mt-5 space-y-5">
               <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200">
@@ -191,7 +289,7 @@ export default function Client() {
               <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200">
                 Destination URLs, one per line
                 <textarea
-                  rows={5}
+                  rows={4}
                   maxLength={100000}
                   value={urls}
                   onChange={(e) => setUrls(e.target.value)}
@@ -206,7 +304,7 @@ export default function Client() {
               <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200">
                 Paste article text
                 <textarea
-                  rows={7}
+                  rows={5}
                   maxLength={40000}
                   value={sourceText}
                   onChange={(e) => setSourceText(e.target.value)}
@@ -222,7 +320,7 @@ export default function Client() {
           </details>
           <button
             type="submit"
-            className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#5271ff] px-5 py-3 text-sm font-bold text-white hover:bg-blue-600 focus-visible:ring-4 focus-visible:ring-blue-300"
+            className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#3452d1] px-5 py-3 text-sm font-bold text-white hover:bg-[#2943b5] focus-visible:ring-4 focus-visible:ring-blue-300"
           >
             {busy ? (
               <Loader2
@@ -235,8 +333,8 @@ export default function Client() {
             {busy ? "Analyzing pages…" : "Find link opportunities"}
           </button>
         </fieldset>
-        <div className="mt-4 flex flex-wrap gap-4">
-          {busy ? (
+        {busy && (
+          <div className="mt-4">
             <button
               type="button"
               onClick={() => controller.current?.abort()}
@@ -244,23 +342,11 @@ export default function Client() {
             >
               Stop analysis
             </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => {
-                setReport(example);
-                setError("");
-              }}
-              className="min-h-10 text-sm font-semibold text-[#4662df] dark:text-blue-300"
-            >
-              View an example
-            </button>
-          )}
-        </div>
+          </div>
+        )}
         <p className="mt-4 text-xs leading-6 text-slate-500 dark:text-slate-400">
           Up to 100 candidates, 20 new destination downloads, and five
-          suggestions. 15 analyses per day, with up to five starts per 10
-          minutes. Review each suggested placement before changing your page.
+          suggestions. Review each suggested placement before changing your page.
         </p>
         {error && (
           <p
@@ -294,23 +380,41 @@ export default function Client() {
                 ? "Discovering URLs, extracting article passages, and reviewing candidate pages. A bounded analysis can take about a minute."
                 : "Each suggestion includes a destination, existing anchor words, the original passage, and a reason to add the link."}
             </p>
-            <p className="mt-4 text-sm leading-8">
-              Review every suggestion before publishing. This tool does not edit
-              your website or promise ranking improvements.
-            </p>
           </div>
         ) : (
           <>
             <div className="rounded-3xl border border-white/15 bg-white/5 p-6 text-white">
-              <h2 className="text-xl font-bold">
-                {report.suggestions.length} link{" "}
-                {report.suggestions.length === 1
-                  ? "opportunity"
-                  : "opportunities"}
-              </h2>
-              <p className="mt-2 break-words text-sm text-slate-300">
-                {report.sourceTitle}
-              </p>
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-xl font-bold">
+                    {report.suggestions.length} link{" "}
+                    {report.suggestions.length === 1
+                      ? "opportunity"
+                      : "opportunities"}
+                  </h2>
+                  <p className="mt-1 break-words text-sm text-slate-300">
+                    {report.sourceTitle}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={downloadCsv}
+                    className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-[#3452d1] px-4 text-xs font-bold text-white hover:bg-[#2943b5]"
+                  >
+                    <Download aria-hidden className="h-4 w-4" />
+                    Export .CSV
+                  </button>
+                  <button
+                    type="button"
+                    onClick={downloadHtml}
+                    className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-white/20 px-4 text-xs font-bold hover:bg-white/10"
+                  >
+                    <Download aria-hidden className="h-4 w-4" />
+                    Export .HTML
+                  </button>
+                </div>
+              </div>
               <div className="mt-5 grid grid-cols-3 gap-3 text-center">
                 {[
                   [report.discovered, "Discovered"],
@@ -329,24 +433,6 @@ export default function Client() {
                   ? ` · ${report.sourcePassages} article passages read`
                   : ""}
               </p>
-              <p className="mt-2 text-xs text-slate-300">
-                {report.alreadyLinked ?? 0} discovered pages already linked ·{" "}
-                {report.aiReviewed
-                  ? "AI review completed"
-                  : "Local text analysis"}
-                {report.reviewCharacters
-                  ? ` · ${report.reviewCharacters.toLocaleString()} content characters sent for AI review`
-                  : ""}
-                {" · Images, video, scripts, and styles excluded from AI input"}
-              </p>
-              <button
-                type="button"
-                onClick={download}
-                className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-lg border border-white/20 px-4 text-xs font-bold"
-              >
-                <Download aria-hidden className="h-4 w-4" />
-                Export suggestions
-              </button>
             </div>
             {report.notes.map((note) => (
               <p
@@ -356,40 +442,36 @@ export default function Client() {
                 {note}
               </p>
             ))}
-            {!report.suggestions.length && (
-              <p className="rounded-2xl border border-white/15 p-6 text-sm leading-7 text-slate-300">
-                {(report.alreadyLinked ?? 0) > 0 &&
-                report.alreadyLinked === report.discovered
-                  ? `Good news: all ${report.alreadyLinked} discovered destination pages are already linked from this source. No new destination links were needed within this candidate set.`
-                  : `No additional links passed the checks across ${report.analyzed} readable destination pages. ${report.alreadyLinked ?? 0} discovered pages are already linked.`}
-                {
-                  " This is a limited scan, not proof that every internal link is optimized. Review page coverage below. Supply closer destination URLs to expand the check."
-                }
-              </p>
-            )}
             {report.suggestions.map((s, i) => {
-              const at = s.passage.indexOf(s.anchor);
+              const at = s.passage
+                .toLowerCase()
+                .indexOf(s.anchor.toLowerCase());
+              const htmlLinkTag = `<a href="${s.destinationUrl}">${s.anchor}</a>`;
+              const updatedParagraphHtml =
+                at >= 0
+                  ? `<p>${s.passage.slice(0, at)}${htmlLinkTag}${s.passage.slice(at + s.anchor.length)}</p>`
+                  : `<p>${s.passage} ${htmlLinkTag}</p>`;
               return (
                 <article
-                  key={s.destinationUrl}
+                  key={`${s.destinationUrl}-${i}`}
                   className="rounded-3xl bg-white p-6 dark:bg-[#1D2430]"
                 >
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-xs font-bold uppercase tracking-wide text-[#4662df] dark:text-blue-300">
-                      Opportunity {i + 1}
+                      Opportunity {i + 1} · Live Editable Anchor
                     </span>
                     <span className="text-xs text-slate-500 dark:text-slate-400">
                       {s.method}
                     </span>
                   </div>
-                  <h3 className="mt-3 text-lg font-bold text-slate-950 dark:text-white">
+                  <h3 className="mt-2 text-lg font-bold text-slate-950 dark:text-white">
                     {s.destinationTitle}
                   </h3>
                   <a
                     href={s.destinationUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-2 inline-flex max-w-full items-start gap-2 break-all text-xs leading-6 text-[#4662df] dark:text-blue-300"
+                    className="mt-1 inline-flex max-w-full items-start gap-2 break-all text-xs leading-6 text-[#4662df] dark:text-blue-300"
                   >
                     {s.destinationUrl}
                     <ArrowUpRight
@@ -397,29 +479,71 @@ export default function Client() {
                       className="mt-1 h-4 w-4 shrink-0"
                     />
                   </a>
-                  <p className="mt-5 text-xs font-bold text-slate-500 dark:text-slate-400">
+
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
+                      Editable Anchor Text
+                      <input
+                        type="text"
+                        value={s.anchor}
+                        onChange={(e) =>
+                          updateSuggestion(i, { anchor: e.target.value })
+                        }
+                        className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                      />
+                    </label>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
+                      Editable Target URL
+                      <input
+                        type="url"
+                        value={s.destinationUrl}
+                        onChange={(e) =>
+                          updateSuggestion(i, {
+                            destinationUrl: e.target.value,
+                          })
+                        }
+                        className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-mono text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                      />
+                    </label>
+                  </div>
+
+                  <p className="mt-4 text-xs font-bold text-slate-500 dark:text-slate-400">
                     Source passage {s.paragraphIndex + 1}
                   </p>
                   <blockquote className="mt-2 rounded-xl bg-slate-50 p-4 text-sm leading-7 text-slate-700 dark:bg-slate-900 dark:text-slate-200">
-                    {s.passage.slice(0, at)}
-                    <mark className="rounded bg-blue-100 px-1 text-blue-900 dark:bg-blue-900 dark:text-blue-100">
-                      {s.anchor}
-                    </mark>
-                    {s.passage.slice(at + s.anchor.length)}
+                    {at >= 0 ? (
+                      <>
+                        {s.passage.slice(0, at)}
+                        <mark className="rounded bg-blue-100 px-1 font-semibold text-blue-900 dark:bg-blue-900 dark:text-blue-100">
+                          {s.anchor}
+                        </mark>
+                        {s.passage.slice(at + s.anchor.length)}
+                      </>
+                    ) : (
+                      s.passage
+                    )}
                   </blockquote>
-                  <p className="mt-4 text-sm leading-7 text-slate-600 dark:text-slate-300">
+                  <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
                     {s.reason}
                   </p>
                   <div className="mt-4 flex flex-wrap gap-2">
-                    <CopyButton value={s.anchor} label="Copy anchor" />
+                    <CopyButton value={htmlLinkTag} label="Copy HTML <a> Tag" />
+                    <CopyButton
+                      value={updatedParagraphHtml}
+                      label="Copy Linked Paragraph HTML"
+                    />
+                    <CopyButton value={s.anchor} label="Copy Anchor" />
                     <CopyButton value={s.destinationUrl} label="Copy URL" />
                   </div>
                 </article>
               );
             })}
-            <details className="rounded-2xl border border-white/15 p-5 text-slate-300">
+            <details
+              open
+              className="rounded-2xl border border-white/15 p-5 text-slate-300"
+            >
               <summary className="cursor-pointer text-sm font-bold text-white">
-                Page coverage and skipped URLs
+                Page coverage and skipped URLs ({report.pages.length})
               </summary>
               <p className="mt-3 text-xs leading-6">
                 Coverage is limited to this run. Sitemaps can omit pages, and

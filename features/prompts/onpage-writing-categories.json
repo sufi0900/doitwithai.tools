@@ -1,0 +1,74 @@
+[
+  {
+    "id": "heading-architecture",
+    "name": "Question-led H1\u2013H3 heading hierarchy & content briefs",
+    "intro": "Build logical H1, H2, and H3 outlines around real reader sub-questions and competitor gaps without stuffing the primary keyword into every heading.",
+    "tool": "heading-structure-analyzer",
+    "toolName": "Heading Structure & H1\u2013H6 Analyzer",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 1\u201311"
+  },
+  {
+    "id": "intros-hooks",
+    "name": "Answer-first introductions, TL;DR boxes & jump-link TOCs",
+    "intro": "Eliminate fluffy 200-word throat-clearing intros. Answer the core query in paragraph one, frame who the page is for, and build crawl-safe jump-link Table of Contents.",
+    "tool": "seo-content-brief-generator",
+    "toolName": "SEO Content Brief & Outline Generator",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 12\u201321"
+  },
+  {
+    "id": "snippets-tables",
+    "name": "45-word Featured Snippets, People Also Ask & comparison tables",
+    "intro": "Write self-contained 40-to-55 word definition passages, ordered process lists, and HTML/Markdown comparison tables immediately underneath question-based H2 headings.",
+    "tool": "ai-citation-readiness-checker",
+    "toolName": "AI Citation & Featured Snippet Optimizer",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 22\u201332"
+  },
+  {
+    "id": "eeat-infogain",
+    "name": "E-E-A-T first-hand proof, Information Gain & citation weaving",
+    "intro": "Differentiate your article from consensus AI summaries by weaving in first-hand test notes, quantitative benchmarks, edge-case caveats, and primary source citations.",
+    "tool": "on-page-ai-seo-analyzer",
+    "toolName": "On-Page AI SEO & E-E-A-T Analyzer",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 33\u201343"
+  },
+  {
+    "id": "readability-editing",
+    "name": "Plain-English readability editing, sentence cadence & de-fluffing",
+    "intro": "Revise dense, academic, or robotic paragraphs for Grade 7\u20139 clarity while strictly preserving technical accuracy, legal/clinical caveats, and author voice.",
+    "tool": "readability-checker",
+    "toolName": "Readability & Sentence Flow Checker",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 44\u201354"
+  },
+  {
+    "id": "semantic-entities",
+    "name": "Semantic coverage, competitor sub-topic gaps & entity depth",
+    "intro": "Compare your draft against top-ranking outlines to spot missing sub-topics, unanswered reader edge cases, and natural domain terminology without 'LSI' keyword stuffing.",
+    "tool": "semantic-entity-gap-analyzer",
+    "toolName": "Competitor Content Gap Analyzer",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 55\u201364"
+  },
+  {
+    "id": "internal-links-media",
+    "name": "Internal link anchor bridges, image Alt Text & visual callouts",
+    "intro": "Write natural contextual bridge sentences for internal links, descriptive screen-reader & SEO image Alt Text, and inline infographic or chart callout boxes.",
+    "tool": "image-alt-text-generator",
+    "toolName": "AI Image Alt Text & Accessibility Studio",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 65\u201374"
+  },
+  {
+    "id": "content-refresh",
+    "name": "Content decay refreshes, historical updates & pre-publish QA",
+    "intro": "Audit decaying articles for outdated claims, merge thin overlapping sections, update year-specific examples responsibly, and run a final pre-publish fact & SEO check.",
+    "tool": "content-decay-refresh-analyzer",
+    "toolName": "Content Decay & Refresh Planner",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 75\u201384"
+  }
+]

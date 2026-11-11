@@ -1,5 +1,6 @@
 "use client";
 import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
+import UrlArticleExtractorBar from "@/features/tool-ui/UrlArticleExtractorBar";
 
 import {
   ChevronDown,
@@ -18,7 +19,7 @@ import {
 const inputClass =
   "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#5271ff] focus:ring-4 focus:ring-[#5271ff]/10 dark:border-slate-700 dark:bg-slate-950 dark:text-white";
 
-const emptyForm: MetaTitleInput = {
+export const emptyForm: MetaTitleInput = {
   topicSummary: "",
   primaryKeyword: "",
   secondaryKeywords: [],
@@ -36,7 +37,7 @@ const emptyForm: MetaTitleInput = {
   pageUrl: "",
 };
 
-const sampleForm: MetaTitleInput = {
+export const sampleForm: MetaTitleInput = {
   topicSummary:
     "A practical guide that teaches content marketers how to create accurate meta titles for Google results, AI search systems, and human readers. It explains pixel width, mobile previews, keyword placement, search intent, and human refinement.",
   primaryKeyword: "meta title optimization",
@@ -62,6 +63,7 @@ const sampleForm: MetaTitleInput = {
 type Props = {
   busy: boolean;
   onSubmit: (input: MetaTitleInput) => Promise<void>;
+  onLoadSample?: () => void;
 };
 
 function splitList(value: string) {
@@ -75,12 +77,23 @@ function joinList(value: string[]) {
   return value.join(", ");
 }
 
-export default function MetaTitleForm({ busy, onSubmit }: Props) {
-  const [form, setForm] = useState<MetaTitleInput>(emptyForm);
-  const [secondaryText, setSecondaryText] = useState("");
-  const [existingTitlesText, setExistingTitlesText] = useState("");
-  const [prohibitedTermsText, setProhibitedTermsText] = useState("");
-  const [advanced, setAdvanced] = useState(false);
+export default function MetaTitleForm({
+  busy,
+  onSubmit,
+  onLoadSample,
+}: Props) {
+  const [form, setForm] = useState<MetaTitleInput>(sampleForm);
+  const [secondaryText, setSecondaryText] = useState(() =>
+    joinList(sampleForm.secondaryKeywords),
+  );
+  const [existingTitlesText, setExistingTitlesText] = useState(() =>
+    sampleForm.existingTitles.join("\n"),
+  );
+  const [prohibitedTermsText, setProhibitedTermsText] = useState(() =>
+    joinList(sampleForm.prohibitedTerms),
+  );
+  // Open Advanced controls by default so Brand Name, Page URL, and Secondary Keywords are never hidden
+  const [advanced, setAdvanced] = useState(true);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const readiness = useMemo(() => {
@@ -155,10 +168,13 @@ export default function MetaTitleForm({ busy, onSubmit }: Props) {
             <div className="flex gap-2">
               <button
                 type="button"
-                onClick={() => applyPreset(sampleForm)}
+                onClick={() => {
+                  applyPreset(sampleForm);
+                  onLoadSample?.();
+                }}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-[#5271ff]/20 bg-[#5271ff]/5 px-3 py-2 text-xs font-bold text-[#4662df] transition hover:bg-[#5271ff]/10"
               >
-                <Sparkles className="h-3.5 w-3.5" /> Try sample
+                <Sparkles className="h-3.5 w-3.5" /> Load sample workspace
               </button>
               <button
                 type="button"
@@ -172,6 +188,25 @@ export default function MetaTitleForm({ busy, onSubmit }: Props) {
             </div>
           </div>
 
+          <UrlArticleExtractorBar
+            label="Optional: Import a live URL to auto-populate topic summary, current title, and URL"
+            placeholder="https://your-site.com/blog/article"
+            onExtracted={(res) => {
+              setForm((prev) => ({
+                ...prev,
+                pageUrl: res.url || prev.pageUrl,
+                currentTitle: res.title || prev.currentTitle,
+                brandName: res.domain || prev.brandName,
+                topicSummary:
+                  res.description && res.description.length >= 40
+                    ? res.description
+                    : res.cleanText
+                      ? res.cleanText.slice(0, 800)
+                      : prev.topicSummary,
+              }));
+            }}
+          />
+
           <FormField
             label="Page topic or content summary"
             htmlFor="topicSummary"
@@ -180,7 +215,7 @@ export default function MetaTitleForm({ busy, onSubmit }: Props) {
           >
             <textarea
               id="topicSummary"
-              rows={6}
+              rows={5}
               value={form.topicSummary}
               onChange={(event) => update("topicSummary", event.target.value)}
               placeholder="Example: A step-by-step guide that helps local businesses..."
@@ -308,7 +343,7 @@ export default function MetaTitleForm({ busy, onSubmit }: Props) {
             className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm font-bold text-slate-700 transition hover:border-[#5271ff]/30 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
             aria-expanded={advanced}
           >
-            Advanced controls
+            Brand, URL, Secondary Keywords &amp; Differentiation Controls
             <ChevronDown
               className={`h-4 w-4 transition ${advanced ? "rotate-180" : ""}`}
             />
@@ -364,7 +399,7 @@ export default function MetaTitleForm({ busy, onSubmit }: Props) {
                 label="Page URL"
                 htmlFor="pageUrl"
                 optional
-                hint="Used for your preview. The page is not imported."
+                hint="Used for your preview."
               >
                 <ToolUrlInput
                   id="pageUrl"
@@ -448,7 +483,7 @@ export default function MetaTitleForm({ busy, onSubmit }: Props) {
           <button
             type="submit"
             disabled={busy}
-            className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-[#5271ff] px-6 py-4 text-base font-extrabold text-white shadow-[0_16px_35px_-16px_rgba(82,113,255,0.8)] transition hover:-translate-y-0.5 hover:bg-[#4564ed] disabled:cursor-not-allowed disabled:opacity-60"
+            className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-[#3452d1] px-6 py-4 text-base font-extrabold text-white shadow-[0_16px_35px_-16px_rgba(52,82,209,0.8)] transition hover:-translate-y-0.5 hover:bg-[#2943b5] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {busy ? (
               <>

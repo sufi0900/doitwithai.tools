@@ -15,11 +15,13 @@ import {
   type Segment,
 } from "./audio";
 import { encodeMp3 } from "./mp3";
+
 const field =
     "w-full rounded-xl border border-slate-300 bg-transparent p-3 text-sm leading-7 focus:outline-none focus:ring-2 focus:ring-[#5271ff] dark:border-slate-600",
   button =
     "rounded-xl border border-slate-300 px-4 py-3 text-sm font-bold focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#5271ff] dark:border-slate-600 disabled:opacity-50",
-  primary = button + " bg-[#3452d1] text-white";
+  primary = button + " bg-[#4058D0] text-white hover:bg-[#3452D1]";
+
 type Result = {
   url: string;
   wavUrl: string;
@@ -29,6 +31,7 @@ type Result = {
   snapshot: string;
   warnings: string[];
 };
+
 export default function Reader({
   article,
   autoRunSignal = 0,
@@ -185,7 +188,9 @@ export default function Reader({
           setProgress(`Encoding your MP3 download · ${percent}%.`);
       });
       c.signal.throwIfAborted();
-      const url = URL.createObjectURL(new Blob([mp3 as any], { type: "audio/mpeg" })),
+      const url = URL.createObjectURL(
+          new Blob([mp3 as any], { type: "audio/mpeg" }),
+        ),
         wavUrl = URL.createObjectURL(wav);
       if (mounted.current) {
         audio.current?.pause();
@@ -222,7 +227,6 @@ export default function Reader({
     }
   }, [article, busy, items, rate, snapshot, voice]);
 
-  // 2-Step Direct Flow: Automatically start audio generation when imported in Step 1!
   const hasAutoRunRef = useRef(0);
   useEffect(() => {
     if (autoRunSignal > 0 && hasAutoRunRef.current !== autoRunSignal) {
@@ -247,15 +251,14 @@ export default function Reader({
   }
   return (
     <div className="space-y-6">
-      {/* Ready Audio Player & Download Card at the top of Step 2 */}
       {result && (
         <section
           ref={done}
           tabIndex={-1}
           aria-labelledby="audio-result-title"
-          className="scroll-mt-28 rounded-2xl border-2 border-[#3452d1] bg-blue-50/40 p-5 focus:outline focus:outline-2 focus:outline-[#5271ff] dark:border-[#5271ff] dark:bg-blue-950/20 sm:p-7"
+          className="scroll-mt-28 rounded-2xl border-2 border-[#4058D0] bg-blue-50/40 p-5 focus:outline focus:outline-2 focus:outline-[#5271ff] dark:border-[#5271ff] dark:bg-blue-950/20 sm:p-7"
         >
-          <p className="text-xs font-bold uppercase tracking-widest text-[#9A3412] dark:text-[#FDBA74]">
+          <p className="text-xs font-bold uppercase tracking-widest text-[#4058D0] dark:text-blue-300">
             Step 2 · Listen and download your audio
           </p>
           <div className="mt-2 flex flex-wrap items-center justify-between gap-4">
@@ -370,7 +373,10 @@ export default function Reader({
             Playback speed changes listening only. The downloaded file uses the
             generated speaking rate.
           </p>
-          <details className="mt-5 rounded-xl border border-slate-300 p-4 dark:border-slate-700">
+          <details
+            open
+            className="mt-5 rounded-xl border border-slate-300 p-4 dark:border-slate-700"
+          >
             <summary className="cursor-pointer font-bold">
               Import notes and exclusions
             </summary>
@@ -389,7 +395,7 @@ export default function Reader({
             {result.chapters.map((c, i) => (
               <li
                 key={c.id}
-                className={`rounded-xl border p-4 ${current === i ? "border-[#5271ff] bg-blue-50 dark:bg-blue-950/30" : "border-slate-200 dark:border-slate-700"}`}
+                className={`rounded-xl border p-4 ${current === i ? "border-[#4058D0] bg-blue-50 dark:bg-blue-950/30" : "border-slate-200 dark:border-slate-700"}`}
                 aria-current={current === i ? "true" : undefined}
               >
                 <button
@@ -411,8 +417,8 @@ export default function Reader({
         </section>
       )}
 
-      <section className="rounded-2xl border border-orange-200 bg-orange-50/40 p-5 dark:border-orange-900 dark:bg-orange-950/10 sm:p-7">
-        <p className="text-xs font-bold uppercase tracking-widest text-[#9A3412] dark:text-[#FDBA74]">
+      <section className="rounded-2xl border border-blue-200 bg-[#4058D0]/5 p-5 dark:border-blue-900 dark:bg-blue-950/20 sm:p-7">
+        <p className="text-xs font-bold uppercase tracking-widest text-[#4058D0] dark:text-blue-300">
           Voice &amp; Narration Settings for &ldquo;{article.title.slice(0, 68)}
           {article.title.length > 68 ? "…" : ""}&rdquo;
         </p>
@@ -488,7 +494,7 @@ export default function Reader({
               <label className="flex items-center gap-3 text-sm font-semibold leading-6">
                 <input
                   type="checkbox"
-                  className="h-5 w-5 shrink-0 accent-[#5271ff]"
+                  className="h-5 w-5 shrink-0 accent-[#4058D0]"
                   checked={includeTitle}
                   onChange={(e) => setIncludeTitle(e.target.checked)}
                 />
@@ -514,9 +520,12 @@ export default function Reader({
             </div>
           </div>
 
-          <details className="mt-5 rounded-xl border border-slate-300 p-4 dark:border-slate-700">
+          <details
+            open
+            className="mt-5 rounded-xl border border-slate-300 p-4 dark:border-slate-700"
+          >
             <summary className="cursor-pointer font-bold">
-              Optional speaking rate and text selection
+              Speaking rate and text section selection
             </summary>
             <label htmlFor="audio-rate" className="mb-2 mt-4 block font-bold">
               Generated speaking rate
@@ -559,7 +568,7 @@ export default function Reader({
                 <label key={s.id} className="flex gap-3 text-sm leading-7">
                   <input
                     type="checkbox"
-                    className="mt-2 h-5 w-5 shrink-0 accent-[#5271ff]"
+                    className="mt-2 h-5 w-5 shrink-0 accent-[#4058D0]"
                     checked={!effectiveExcluded.includes(s.id)}
                     onChange={(e) =>
                       setExcluded(

@@ -395,14 +395,37 @@ function DatasetCard({
     </fieldset>
   );
 }
+
+function createInitialExampleInputs(): DatasetInput[] {
+  return exampleInputs.map((d) => ({
+    ...newDataset(d.id),
+    ...d,
+    table: parseTable(d.text),
+  }));
+}
+
+function createInitialExampleReport(): GapReport | null {
+  try {
+    const parsed = createInitialExampleInputs();
+    return buildGap(
+      parsed.map((item) => ingest(item)),
+      "domain",
+      false,
+    );
+  } catch {
+    return null;
+  }
+}
+
 export default function GapClient() {
-  const [inputs, setInputs] = useState<DatasetInput[]>([
-    newDataset("own"),
-    newDataset("competitor-one"),
-  ]);
+  const [inputs, setInputs] = useState<DatasetInput[]>(() =>
+    createInitialExampleInputs(),
+  );
   const [grouping, setGrouping] = useState<GapReport["grouping"]>("domain"),
     [includeInactive, setIncludeInactive] = useState(false);
-  const [report, setReport] = useState<GapReport | null>(null),
+  const [report, setReport] = useState<GapReport | null>(() =>
+      createInitialExampleReport(),
+    ),
     [filters, setFilters] = useState<Filters>(defaultFilters);
   const [reviews, setReviews] = useState<Record<string, Review>>({}),
     [open, setOpen] = useState<string | null>(null),
@@ -538,11 +561,7 @@ export default function GapClient() {
     }
   }
   function example() {
-    const source = exampleInputs.map((d) => ({
-      ...newDataset(d.id),
-      ...d,
-      table: parseTable(d.text),
-    }));
+    const source = createInitialExampleInputs();
     setReviews({});
     void compare(source, true);
   }
@@ -705,7 +724,7 @@ export default function GapClient() {
           <p className={styles.eyebrow}>COMPARE YOUR SUPPLIED DATA</p>
           <h2>Find the overlap. Keep the evidence.</h2>
           <p>
-            Start with your backlink list and one competitor's list. Add more
+            Start with your backlink list and one competitor&apos;s list. Add more
             competitors when needed.
           </p>
         </div>
@@ -729,7 +748,7 @@ export default function GapClient() {
         <summary>Where do I get backlink data?</summary>
         <p>
           Use a Search Console export for a website you manage. For competitors,
-          use a backlink provider's export or your own collected list.
+          use a backlink provider&apos;s export or your own collected list.
         </p>
         <p>
           Paste linking-page URLs or referring domains, one per line. A domain
@@ -745,7 +764,7 @@ export default function GapClient() {
         >
           Try a worked example
         </button>
-        <details className={styles.toolbox}>
+        <details open className={styles.toolbox}>
           <summary>Templates and saved projects</summary>
           <div className={styles.actions}>
             <button

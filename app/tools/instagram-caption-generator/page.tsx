@@ -1,3 +1,4 @@
+import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Layers, Sparkles, Hash } from "lucide-react";
@@ -9,12 +10,13 @@ import {
   toolHeroHeading,
   toolHeroSurface,
 } from "@/features/tool-ui/ToolHero";
+import { PlatformBrandIcon } from "@/features/tool-ui/PlatformBrandIcon";
 
 const pageUrl = "https://doitwithai.tools/tools/instagram-caption-generator";
 const title =
-  "Free Instagram Caption, Carousel Blueprint & Visual Cover Generator";
+  "Free Instagram Caption & 5-Slide Carousel Studio — 1-Click Vector Decks";
 const description =
-  "Generate save-worthy Instagram captions, 5-slide carousel copy, tiered hashtags, Instagram SEO Alt Text, and downloadable 1080x1080 cover graphics from any URL or topic.";
+  "Generate save-worthy Instagram captions, 5 rendered vector carousel slides, 10 color themes, tiered hashtags, and 1-click multi-page PDF or PNG slide downloads from any URL or topic.";
 
 export const metadata: Metadata = {
   title,
@@ -37,19 +39,19 @@ export const metadata: Metadata = {
 
 const faqs = [
   {
-    question: "Why are the first 125 characters of an Instagram caption so important?",
+    question: "How does the 1-click Carousel Generator work?",
     answer:
-      "Instagram truncates captions in the feed after roughly 125 characters with a '...more' link. Our generator previews your exact above-the-fold hook so you can maximize tap-throughs and dwell time.",
+      "Paste any blog URL or YouTube link. The tool automatically selects the first sub-topic angle and renders all 5 visual carousel slides (1080×1080) immediately in a single click, with 1-click switcher pills above the deck to jump to other sub-topics.",
   },
   {
-    question: "Does this also design the slides for an Instagram Carousel?",
+    question: "Can I customize the colors and text on every slide?",
     answer:
-      "Yes! Alongside 3 caption variations, you get a 5-slide Carousel Blueprint (with headline, body copy, and visual cue per slide) plus an interactive 1080×1080 / 1080×1350 Visual Card Studio to download your cover slide as a PNG.",
+      "Yes! You can pick from 10 designer color themes (Navy & Orange, Royal Cobalt, Emerald Growth, Canva Daylight, Cyber Violet, etc.) or use live custom color pickers. Clicking any slide allows you to edit the headline, metric pill, and explanation in real time.",
   },
   {
-    question: "What is Instagram SEO Alt Text?",
+    question: "How do I download the carousel slides?",
     answer:
-      "Instagram's search engine reads custom image Alt Text (found under Advanced Settings when posting) to rank your post when users search keywords in the Instagram search bar.",
+      "Hovering over any individual slide reveals a download button for high-res PNG or vector SVG. You can also click 'Download Carousel PDF Deck' at the top of the studio to get a multi-page PDF ready for LinkedIn and Instagram document posts, or download all 5 PNGs in a bundle.",
   },
 ];
 
@@ -62,10 +64,10 @@ export default function InstagramCaptionGeneratorPage() {
     "@graph": [
       {
         "@type": "WebApplication",
-        name: "Instagram Caption, Carousel & Visual Cover Studio",
+        name: "Instagram Caption & 5-Slide Carousel Studio",
         url: pageUrl,
         description,
-        applicationCategory: "BusinessApplication",
+        applicationCategory: "DesignApplication",
         operatingSystem: "Any",
         isAccessibleForFree: true,
         offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
@@ -102,10 +104,10 @@ export default function InstagramCaptionGeneratorPage() {
         className={`relative overflow-hidden ${toolHeroSurface} text-white`}
       >
         <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
           <nav
             aria-label="Breadcrumb"
-            className="mb-7 flex flex-wrap gap-2 text-xs text-slate-300"
+            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
           >
             <Link href="/">Home</Link>
             <span>/</span>
@@ -116,8 +118,12 @@ export default function InstagramCaptionGeneratorPage() {
 
           <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
             <div>
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-bold text-white backdrop-blur-xs">
+                <PlatformBrandIcon slugOrText="instagram-caption-generator" size={24} />
+                <span>Instagram Studio · 5 Rendered Vector Slides</span>
+              </div>
               <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                Social Media Studio · Captions, Carousels &amp; 1080p Covers
+                Social Media Studio · 1-Click Carousels &amp; Vector Decks
               </p>
               <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
                 Instagram Caption &amp;{" "}
@@ -126,21 +132,22 @@ export default function InstagramCaptionGeneratorPage() {
                 </span>
               </h1>
               <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-                Repurpose any blog URL or idea into save-worthy Instagram
-                captions, a 5-slide carousel deck, SEO alt text, and a
-                downloadable 1080p graphic.
+                Repurpose any blog URL or topic into a 5-slide vector carousel
+                deck across 10 color themes with hover PNG/SVG downloads,
+                multi-page PDF export, and 125-character hook previews.
               </p>
+              <PortableToolHeroBar />
             </div>
 
             <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
               <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
-                Complete Instagram Package
+                Complete 1-Click Carousel Package
               </p>
               <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
-                <li>1. 125-char Above-the-Fold Hook Preview</li>
-                <li>2. 5-Slide Educational Carousel Blueprint</li>
-                <li>3. Tiered Hashtags + Custom Alt Text SEO</li>
-                <li>4. Downloadable 1:1 &amp; 4:5 Cover Graphic</li>
+                <li>1. 1-Click URL Extraction with Sub-Topic Switcher</li>
+                <li>2. 5 Rendered 1080×1080 Vector Slide Graphics</li>
+                <li>3. 10 Curated Color Themes + Custom Color Pickers</li>
+                <li>4. Multi-Page Carousel PDF + PNG Slide Downloads</li>
               </ul>
             </div>
           </div>
@@ -165,18 +172,18 @@ export default function InstagramCaptionGeneratorPage() {
           {[
             [
               Layers,
-              "5-Slide Carousel Deck",
-              "Get ready-to-paste headline and body copy for every slide in your carousel.",
+              "5 Rendered Vector Slides",
+              "Get an interactive 5-slide carousel with cover hook, tactical steps, metric pills, and saveable checklist.",
             ],
             [
               Hash,
-              "Instagram Search SEO",
-              "Includes tiered hashtags and keyword-optimized custom Alt Text.",
+              "10 Themes & Custom Pickers",
+              "Switch between 10 high-contrast themes or customize background, card, accent, and text colors.",
             ],
             [
               Sparkles,
-              "1080p Visual Cover Builder",
-              "Download a crisp 1:1 Square or 4:5 Portrait cover graphic right in your browser.",
+              "Hover PNG & Multi-Page PDF",
+              "Hover over any slide to download individual 1080p PNGs or download the complete multi-page PDF deck.",
             ],
           ].map(([Icon, heading, body]) => {
             const I = Icon as typeof Layers;

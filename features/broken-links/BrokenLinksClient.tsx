@@ -1,6 +1,14 @@
 "use client";
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { ChevronDown, Download, Link2, Search } from "lucide-react";
+import {
+  CheckCircle2,
+  ChevronDown,
+  Copy,
+  Download,
+  Link2,
+  RotateCcw,
+  Search,
+} from "lucide-react";
 import ToolRunOverlay, { focusToolSection } from "../tool-ui/ToolRunOverlay";
 import {
   evidenceCsv,
@@ -10,6 +18,94 @@ import {
   type LinkState,
 } from "./model";
 
+const SAMPLE_SOURCES =
+  "https://marketingexamples.org/seo-resources\nhttps://contentopsweekly.com/useful-tools";
+
+const SAMPLE_REPORTS: Report[] = [
+  {
+    sourceUrl: "https://marketingexamples.org/seo-resources",
+    finalSourceUrl: "https://marketingexamples.org/seo-resources",
+    title: "Curated Technical & On-Page SEO Resource Directory (2026)",
+    method: "live",
+    sourceStatus: 200,
+    totalExternal: 14,
+    checkedCount: 4,
+    checkedAt: "2026-03-25T10:15:00.000Z",
+    notes: [
+      "Inspected 4 priority external resource links on this publisher page.",
+    ],
+    error: "",
+    rows: [
+      {
+        href: "https://legacy-seo-checklist.io/2023-on-page-guide",
+        finalUrl: "https://legacy-seo-checklist.io/2023-on-page-guide",
+        anchor: "comprehensive on-page SEO audit checklist",
+        context:
+          "Before publishing new pillar pages, run your draft through a comprehensive on-page SEO audit checklist to verify heading hierarchy and entity coverage.",
+        rel: ["noopener"],
+        occurrences: 1,
+        httpStatus: 404,
+        redirects: [],
+        state: "broken",
+        reason:
+          "Destination returned HTTP 404 Not Found. High-priority broken resource replacement candidate.",
+        checkedAt: "2026-03-25T10:15:00.000Z",
+      },
+      {
+        href: "https://old-schema-validator.dev/json-ld-guide",
+        finalUrl: "https://old-schema-validator.dev/json-ld-guide",
+        anchor: "JSON-LD schema markup generator & validator",
+        context:
+          "Use a dedicated JSON-LD schema markup generator & validator to test Article, FAQPage, and SoftwareApplication structured data before deployment.",
+        rel: ["noopener"],
+        occurrences: 1,
+        httpStatus: 410,
+        redirects: [],
+        state: "broken",
+        reason:
+          "Destination returned HTTP 410 Gone. Resource permanently removed by original host.",
+        checkedAt: "2026-03-25T10:15:00.000Z",
+      },
+      {
+        href: "https://searchconsole-guides.com/ctr-benchmarks",
+        finalUrl: "https://searchconsole-guides.com/organic-ctr-study",
+        anchor: "GSC CTR benchmark study",
+        context:
+          "Compare your query click-through rates against the latest GSC CTR benchmark study to spot underperforming title tags.",
+        rel: ["noopener"],
+        occurrences: 1,
+        httpStatus: 200,
+        redirects: [
+          {
+            url: "https://searchconsole-guides.com/ctr-benchmarks",
+            status: 301,
+            location: "https://searchconsole-guides.com/organic-ctr-study",
+          },
+        ],
+        state: "redirected",
+        reason:
+          "Destination redirected via HTTP 301 to a updated canonical URL.",
+        checkedAt: "2026-03-25T10:15:00.000Z",
+      },
+      {
+        href: "https://developers.google.com/search/docs/fundamentals/seo-starter-guide",
+        finalUrl:
+          "https://developers.google.com/search/docs/fundamentals/seo-starter-guide",
+        anchor: "Google Search Essentials starter guide",
+        context:
+          "Review the official Google Search Essentials starter guide for crawlability and indexing requirements.",
+        rel: ["noopener"],
+        occurrences: 1,
+        httpStatus: 200,
+        redirects: [],
+        state: "working",
+        reason: "Destination responded with HTTP 200 OK.",
+        checkedAt: "2026-03-25T10:15:00.000Z",
+      },
+    ],
+  },
+];
+
 const box =
   "rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900 sm:p-7";
 const control =
@@ -18,24 +114,34 @@ const primary =
   "inline-flex items-center justify-center gap-2 rounded-xl bg-[#3452d1] px-5 py-3 text-sm font-bold text-white hover:bg-[#2943b5] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#5271ff] disabled:opacity-50";
 const secondary =
   "inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 py-3 text-sm font-semibold hover:bg-slate-100 focus-visible:outline-[#5271ff] disabled:opacity-40 dark:border-slate-600 dark:hover:bg-slate-800";
+
 export default function BrokenLinksClient() {
-  const [sources, setSources] = useState(""),
+  const [sources, setSources] = useState(SAMPLE_SOURCES),
     [html, setHtml] = useState(""),
     [mode, setMode] = useState<"live" | "pasted">("live"),
     [limit, setLimit] = useState(15);
   const [busy, setBusy] = useState(false),
     [fieldError, setFieldError] = useState(""),
     [htmlError, setHtmlError] = useState(""),
-    [message, setMessage] = useState("");
-  const [reports, setReports] = useState<Report[]>([]),
+    [message, setMessage] = useState(""),
+    [toast, setToast] = useState("");
+  const [reports, setReports] = useState<Report[]>(SAMPLE_REPORTS),
     [progress, setProgress] = useState({ completed: 0, total: 0 }),
-    [filter, setFilter] = useState<LinkState | "all">("all");
+    [filter, setFilter] = useState<LinkState | "all">("all"),
+    [replacementUrls, setReplacementUrls] = useState<Record<string, string>>({
+      "https://legacy-seo-checklist.io/2023-on-page-guide":
+        "https://doitwithai.tools/tools/eeat-content-auditor",
+      "https://old-schema-validator.dev/json-ld-guide":
+        "https://doitwithai.tools/tools/schema-generator",
+    });
+
   const sourceInput = useRef<HTMLTextAreaElement>(null),
     htmlInput = useRef<HTMLTextAreaElement>(null),
     results = useRef<HTMLElement>(null),
     feedback = useRef<HTMLDivElement>(null),
     controller = useRef<AbortController | null>(null),
     mounted = useRef(true);
+
   useEffect(() => {
     mounted.current = true;
     return () => {
@@ -43,9 +149,36 @@ export default function BrokenLinksClient() {
       controller.current?.abort();
     };
   }, []);
-  useEffect(() => {
-    if (!busy && reports.length) focusToolSection(results.current);
-  }, [busy, reports]);
+
+  function notify(msg: string) {
+    setToast(msg);
+    setTimeout(() => setToast(""), 2600);
+  }
+
+  function handleLoadSampleReport() {
+    setSources(SAMPLE_SOURCES);
+    setReports(SAMPLE_REPORTS);
+    setFilter("all");
+    setFieldError("");
+    setHtmlError("");
+    setMessage("");
+    notify("Loaded sample publisher resource page broken-link report.");
+  }
+
+  async function copyOutreachPitch(
+    publisherTitle: string,
+    publisherUrl: string,
+    brokenHref: string,
+    anchor: string,
+  ) {
+    const replacement =
+      replacementUrls[brokenHref]?.trim() ||
+      "https://doitwithai.tools/tools/on-page-seo-audit";
+    const pitch = `Hi team,\n\nI was reading your resource guide "${publisherTitle}" (${publisherUrl}) and noticed that the external link anchored "${anchor}" (${brokenHref}) is currently returning an HTTP 404/410 dead page.\n\nIf you're updating the guide, you might consider replacing it with this live, free interactive resource: ${replacement}\n\nThanks for maintaining such a helpful checklist!`;
+    await navigator.clipboard.writeText(pitch);
+    notify(`Copied replacement outreach pitch for "${anchor}"!`);
+  }
+
   async function run(e: FormEvent) {
     e.preventDefault();
     if (busy) return;
@@ -110,6 +243,9 @@ export default function BrokenLinksClient() {
           setProgress({ completed: completed.length, total: urls.length });
         }
       }
+      if (mounted.current && completed.length) {
+        focusToolSection(results.current);
+      }
       if (mounted.current && runController.signal.aborted)
         setMessage(
           "Scan stopped. Completed publisher reports remain below. Unfinished pages were not checked.",
@@ -131,9 +267,11 @@ export default function BrokenLinksClient() {
       }
     }
   }
+
   const rows = reports.flatMap((r) => r.rows),
     candidates = rows.filter((r) => r.state === "broken").length,
     unverified = rows.filter((r) => r.state === "unverified").length;
+
   function download(onlyBroken = false) {
     const blob = new Blob([evidenceCsv(reports, onlyBroken)], {
       type: "text/csv;charset=utf-8",
@@ -147,13 +285,36 @@ export default function BrokenLinksClient() {
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
+      {toast && (
+        <div
+          role="status"
+          className="mb-5 flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2.5 text-xs font-bold text-emerald-800 dark:text-emerald-300"
+        >
+          <CheckCircle2 size={15} />
+          <span>{toast}</span>
+        </div>
+      )}
+
       <form onSubmit={run} noValidate className={box} aria-busy={busy}>
-        <h2 className="flex items-center gap-3 text-2xl font-extrabold">
-          <Search aria-hidden className="shrink-0 text-[#5271ff]" />
-          Inspect publisher resource pages
-        </h2>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="flex items-center gap-3 text-2xl font-extrabold">
+            <Search aria-hidden className="shrink-0 text-[#5271ff]" />
+            Inspect publisher resource pages
+          </h2>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={handleLoadSampleReport}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-[#3452d1]/30 bg-[#3452d1]/5 px-3.5 py-2 text-xs font-extrabold text-[#3452d1] hover:bg-[#3452d1]/10 dark:border-[#5271ff]/35 dark:text-[#b4c3ff]"
+          >
+            <RotateCcw size={13} />
+            Load Sample Broken-Link Report
+          </button>
+        </div>
+
         <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
           Bring pages that discuss your topic or list useful resources. This
           checks their external links, rather than searching the entire web.
@@ -199,7 +360,10 @@ export default function BrokenLinksClient() {
             {fieldError}
           </p>
         )}
-        <details className="group mt-5 rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+        <details
+          open
+          className="group mt-5 rounded-xl border border-slate-200 p-4 dark:border-slate-700"
+        >
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-bold">
             Optional settings and supplied HTML
             <ChevronDown
@@ -445,6 +609,7 @@ export default function BrokenLinksClient() {
                     .map((l) => (
                       <details
                         key={l.href}
+                        open={l.state === "broken" || l.state === "redirected"}
                         className="group rounded-xl border border-slate-200 p-4 dark:border-slate-700"
                       >
                         <summary className="flex cursor-pointer list-none items-start gap-3 text-sm focus-visible:outline-[#5271ff]">
@@ -486,6 +651,42 @@ export default function BrokenLinksClient() {
                           >
                             Open destination for manual review
                           </a>
+                          {l.state === "broken" && (
+                            <div className="mt-3 rounded-xl border border-[#3452d1]/20 bg-[#3452d1]/5 p-3.5 dark:border-[#5271ff]/30 dark:bg-[#5271ff]/10">
+                              <label className="block text-xs font-extrabold uppercase tracking-wider text-[#3452d1] dark:text-[#b4c3ff]">
+                                Your Replacement Resource URL (for Outreach Pitch)
+                              </label>
+                              <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+                                <input
+                                  type="url"
+                                  value={replacementUrls[l.href] ?? ""}
+                                  onChange={(e) =>
+                                    setReplacementUrls((prev) => ({
+                                      ...prev,
+                                      [l.href]: e.target.value,
+                                    }))
+                                  }
+                                  placeholder="https://doitwithai.tools/your-replacement-guide"
+                                  className="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold dark:border-slate-700 dark:bg-slate-900"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    copyOutreachPitch(
+                                      r.title || "your resource page",
+                                      r.sourceUrl,
+                                      l.href,
+                                      l.anchor,
+                                    )
+                                  }
+                                  className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-[#3452d1] px-3.5 py-2 text-xs font-extrabold text-white hover:bg-[#2943b5]"
+                                >
+                                  <Copy size={13} />
+                                  Copy Outreach Pitch
+                                </button>
+                              </div>
+                            </div>
+                          )}
                           {l.redirects.length > 0 && (
                             <div>
                               <p className="font-semibold">Redirect evidence</p>

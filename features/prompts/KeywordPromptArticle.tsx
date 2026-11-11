@@ -319,6 +319,16 @@ export default function KeywordPromptArticle({
                 "Turn a reviewed keyword into metadata",
                 "Draft accurate titles and descriptions after the page purpose and target reader are clear.",
               ],
+              [
+                "/prompts/topic-clustering-topical-authority-prompts",
+                "94 Topic Clustering, Pillar Page & Topical Authority Prompts",
+                "Group reviewed keywords into Pillar Hubs and supporting Spokes without keyword cannibalization.",
+              ],
+              [
+                "/prompts/on-page-seo-content-writing-prompts",
+                "84 On-Page SEO, Headings, E-E-A-T & Readability Prompts",
+                "Turn your chosen keyword and search intent into a structured H1–H3 outline and 45-word snippet answer.",
+              ],
             ].map(([href, title, text]) => (
               <Link
                 className="rounded-xl border border-slate-200 p-5 hover:border-[#5271FF] dark:border-slate-700"

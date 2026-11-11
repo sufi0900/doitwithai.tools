@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+} from "react";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -9,7 +16,9 @@ import {
   FileCheck2,
   FileSpreadsheet,
   GitMerge,
+  PencilLine,
   RefreshCw,
+  Search,
   ShieldCheck,
   Sparkles,
   Upload,
@@ -49,9 +58,11 @@ const secondaryBtn =
   "inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold hover:bg-slate-100 focus-visible:outline-[#5271ff] dark:border-slate-600 dark:hover:bg-slate-800";
 
 export default function DisavowFileGeneratorClient() {
-  const [mode, setMode] = useState<DisavowInputMode>("paste");
-  const [rawInput, setRawInput] = useState("");
-  const [existingDisavowTxt, setExistingDisavowTxt] = useState("");
+  const [mode, setMode] = useState<DisavowInputMode>("merge");
+  const [rawInput, setRawInput] = useState(SAMPLE_TOXIC_INPUT);
+  const [existingDisavowTxt, setExistingDisavowTxt] = useState(
+    SAMPLE_EXISTING_DISAVOW,
+  );
   const [ownDomain, setOwnDomain] = useState("doitwithai.tools");
   const [defaultScope, setDefaultScope] = useState<"auto" | "domain" | "url">(
     "auto",
@@ -64,7 +75,11 @@ export default function DisavowFileGeneratorClient() {
     Record<string, { scope?: DisavowScope; included?: boolean }>
   >({});
 
-  const [hasGenerated, setHasGenerated] = useState(false);
+  // Pre-load the interactive disavow studio on initial mount
+  const [hasGenerated, setHasGenerated] = useState(true);
+  const [searchFilter, setSearchFilter] = useState("");
+  const [editFileMode, setEditFileMode] = useState(false);
+  const [customDisavowText, setCustomDisavowText] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [feedback, setFeedback] = useState("");
@@ -101,6 +116,23 @@ export default function DisavowFileGeneratorClient() {
     overrides,
   ]);
 
+  useEffect(() => {
+    if (report && !editFileMode) {
+      setCustomDisavowText(report.disavowTxtContent);
+    }
+  }, [report, editFileMode]);
+
+  const filteredEntries = useMemo(() => {
+    if (!report) return [];
+    if (!searchFilter.trim()) return report.entries;
+    const q = searchFilter.toLowerCase().trim();
+    return report.entries.filter(
+      (e) =>
+        e.formattedRule.toLowerCase().includes(q) ||
+        e.reasonTag.toLowerCase().includes(q),
+    );
+  }, [report, searchFilter]);
+
   function loadSample() {
     setMode("merge");
     setOwnDomain("doitwithai.tools");
@@ -109,6 +141,7 @@ export default function DisavowFileGeneratorClient() {
     setDefaultScope("auto");
     setCollapseSubdomains(true);
     setOverrides({});
+    setEditFileMode(false);
     setError("");
     setHasGenerated(true);
     setRevision((r) => r + 1);
@@ -154,6 +187,7 @@ export default function DisavowFileGeneratorClient() {
     setBusy(true);
     try {
       await paintToolFeedback();
+      setEditFileMode(false);
       setHasGenerated(true);
       setRevision((r) => r + 1);
     } finally {
@@ -188,9 +222,12 @@ export default function DisavowFileGeneratorClient() {
 
   async function handleDownload(kind: "txt" | "csv" | "docx") {
     if (!report) return;
+    const finalTxt = editFileMode
+      ? customDisavowText
+      : report.disavowTxtContent;
     if (kind === "txt") {
       triggerDownload(
-        new Blob([report.disavowTxtContent], {
+        new Blob([finalTxt], {
           type: "text/plain;charset=utf-8",
         }),
         "disavow.txt",
@@ -489,7 +526,7 @@ export default function DisavowFileGeneratorClient() {
         <div className="mt-6 flex flex-wrap items-center gap-3">
           <button type="submit" disabled={busy} className={primaryBtn}>
             <ShieldCheck size={18} />
-            Validate & Generate disavow.txt
+            Validate &amp; Generate disavow.txt
           </button>
           {report && (
             <button
@@ -526,7 +563,8 @@ export default function DisavowFileGeneratorClient() {
                     : "Exceeds GSC File Size / Line Limit"}
                 </span>
                 <h3 className="mt-1 text-2xl font-black">
-                  Ready-to-Upload <code>disavow.txt</code> & Validation Summary
+                  Ready-to-Upload <code>disavow.txt</code> &amp; Validation
+                  Summary
                 </h3>
                 <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
                   {report.activeDomainCount} domain-level rules and{" "}
@@ -589,7 +627,7 @@ export default function DisavowFileGeneratorClient() {
 
               <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-700 dark:bg-slate-800/40">
                 <p className="text-xs font-semibold uppercase text-slate-500">
-                  Duplicates & Collapsed
+                  Duplicates &amp; Collapsed
                 </p>
                 <p className="mt-2 text-3xl font-black">
                   {report.DuplicateRemovedCount + report.collapsedUrlCount}
@@ -601,7 +639,7 @@ export default function DisavowFileGeneratorClient() {
 
               <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-700 dark:bg-slate-800/40">
                 <p className="text-xs font-semibold uppercase text-slate-500">
-                  Syntax Fixes & Guards
+                  Syntax Fixes &amp; Guards
                 </p>
                 <p className="mt-2 text-3xl font-black text-amber-600 dark:text-amber-400">
                   {report.validationIssues.length}
@@ -630,7 +668,7 @@ export default function DisavowFileGeneratorClient() {
             <div className={panel}>
               <h3 className="flex items-center gap-2 text-lg font-extrabold">
                 <AlertTriangle size={18} className="text-amber-500" />
-                Syntax Auto-Corrections & Safety Guards Applied (
+                Syntax Auto-Corrections &amp; Safety Guards Applied (
                 {report.validationIssues.length})
               </h3>
               <ul className="mt-4 space-y-2.5 text-xs">
@@ -658,13 +696,32 @@ export default function DisavowFileGeneratorClient() {
           {/* Side-by-Side Interactive Rule Editor & Live disavow.txt Output */}
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,0.95fr)]">
             <div className={panel}>
-              <h3 className="text-lg font-extrabold">
-                Interactive Rule Inspector ({report.entries.length} Entries)
-              </h3>
-              <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
-                Toggle any row between <code>domain:</code> and single{" "}
-                <code>URL</code> scope, or uncheck rows you want to keep.
-              </p>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h3 className="text-lg font-extrabold">
+                    Interactive Rule Inspector ({filteredEntries.length} of{" "}
+                    {report.entries.length})
+                  </h3>
+                  <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
+                    Toggle any row between <code>domain:</code> and single{" "}
+                    <code>URL</code> scope, or uncheck rows you want to keep.
+                  </p>
+                </div>
+                <div className="relative">
+                  <Search
+                    size={14}
+                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                  />
+                  <input
+                    type="search"
+                    value={searchFilter}
+                    onChange={(e) => setSearchFilter(e.target.value)}
+                    placeholder="Filter domain or rule..."
+                    aria-label="Filter disavow rules"
+                    className="rounded-xl border border-slate-300 bg-transparent py-1.5 pl-8 pr-3 text-xs dark:border-slate-600"
+                  />
+                </div>
+              </div>
 
               <div className="mt-4 max-h-[520px] overflow-y-auto pr-1">
                 <table className="w-full border-collapse text-left text-xs">
@@ -677,7 +734,7 @@ export default function DisavowFileGeneratorClient() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                    {report.entries.map((entry) => (
+                    {filteredEntries.map((entry) => (
                       <tr
                         key={entry.id}
                         className={
@@ -724,7 +781,8 @@ export default function DisavowFileGeneratorClient() {
                           </span>
                           {entry.coveredByDomain && (
                             <span className="text-[11px] text-amber-600 dark:text-amber-400">
-                              Auto-collapsed (covered by domain:{entry.domainValue})
+                              Auto-collapsed (covered by domain:
+                              {entry.domainValue})
                             </span>
                           )}
                           {entry.warning && (
@@ -741,31 +799,58 @@ export default function DisavowFileGeneratorClient() {
             </div>
 
             <div className={panel}>
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <h3 className="text-lg font-extrabold">
                   Live <code>disavow.txt</code> File Preview
                 </h3>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    await navigator.clipboard.writeText(
-                      report.disavowTxtContent,
-                    );
-                    setFeedback("Copied disavow.txt content to clipboard.");
-                  }}
-                  className={secondaryBtn}
-                >
-                  <Copy size={14} />
-                  Copy File Text
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!editFileMode)
+                        setCustomDisavowText(report.disavowTxtContent);
+                      setEditFileMode((v) => !v);
+                    }}
+                    className={secondaryBtn}
+                  >
+                    <PencilLine size={14} />
+                    {editFileMode ? "Compiled View" : "Edit Text"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(
+                        editFileMode
+                          ? customDisavowText
+                          : report.disavowTxtContent,
+                      );
+                      setFeedback("Copied disavow.txt content to clipboard.");
+                    }}
+                    className={secondaryBtn}
+                  >
+                    <Copy size={14} />
+                    Copy File Text
+                  </button>
+                </div>
               </div>
               <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
                 Exact UTF-8 plain-text file formatted for Google Search Console
                 › Disavow links.
               </p>
-              <pre className="mt-4 max-h-[500px] w-full max-w-full overflow-auto whitespace-pre-wrap break-words rounded-xl border border-slate-200 bg-slate-950 p-4 font-mono text-xs leading-6 text-emerald-300 dark:border-slate-700">
-                {report.disavowTxtContent}
-              </pre>
+              {editFileMode ? (
+                <textarea
+                  rows={18}
+                  value={customDisavowText}
+                  onChange={(e) => setCustomDisavowText(e.target.value)}
+                  spellCheck={false}
+                  aria-label="Editable disavow.txt content"
+                  className="mt-4 w-full rounded-xl border border-[#4058D0] bg-slate-950 p-4 font-mono text-xs leading-6 text-emerald-300 focus:outline-none"
+                />
+              ) : (
+                <pre className="mt-4 max-h-[500px] w-full max-w-full overflow-auto whitespace-pre-wrap break-words rounded-xl border border-slate-200 bg-slate-950 p-4 font-mono text-xs leading-6 text-emerald-300 dark:border-slate-700">
+                  {report.disavowTxtContent}
+                </pre>
+              )}
             </div>
           </div>
         </section>

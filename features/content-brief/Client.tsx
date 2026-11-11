@@ -1,4 +1,6 @@
 "use client";
+
+import ToolRunOverlay, { paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
 import { useEffect, useRef, useState } from "react";
 import {
   inputSchema,
@@ -9,7 +11,8 @@ import {
   type BriefInput,
 } from "./schema";
 import { readToolResponse } from "@/lib/ai-tools/client-response";
-const example = {
+
+const example: BriefInput = {
   topic: "How to write a useful meta title with AI",
   audience: "SEO beginners publishing their first business blog",
   goal: "Help readers draft and review an accurate title",
@@ -23,31 +26,49 @@ const example = {
     },
   ],
 };
+
+const emptyBriefInput: BriefInput = {
+  topic: "",
+  audience: "",
+  goal: "",
+  intent: "Informational",
+  notes: "",
+  links: [],
+};
+
 const field =
   "mt-2 w-full rounded-xl border border-slate-600 bg-slate-950 px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-400";
 const button =
   "min-h-11 rounded-xl border border-slate-600 px-4 py-3 text-sm font-bold text-white hover:bg-slate-700 disabled:opacity-50";
+
 export default function ContentBriefClient() {
-  const [input, setInput] = useState<BriefInput>({
-    topic: "",
-    audience: "",
-    goal: "",
-    intent: "Informational",
-    notes: "",
-    links: [],
-  });
-  const [links, setLinks] = useState("");
+  const [input, setInput] = useState<BriefInput>(example);
+  const [links, setLinks] = useState(
+    example.links.map((l) => `${l.title} | ${l.url}`).join("\n"),
+  );
   const [result, setResult] = useState<{
     brief: Brief;
     input: BriefInput;
     method: string;
-  } | null>(null);
-  const [draft, setDraft] = useState("");
+  } | null>(() => {
+    const initialBrief = template(example);
+    return {
+      brief: initialBrief,
+      input: example,
+      method: "Brief template",
+    };
+  });
+  const [draft, setDraft] = useState(() =>
+    exportMarkdown(template(example), example, "Brief template"),
+  );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState(
+    "Sample content brief pre-loaded. Edit the Markdown directly on the right or generate an AI brief.",
+  );
   const active = useRef<AbortController | null>(null);
   useEffect(() => () => active.current?.abort(), []);
+
   function parse() {
     const parsed = inputSchema.safeParse({
       ...input,
@@ -68,6 +89,7 @@ export default function ContentBriefClient() {
       );
     return parsed.data;
   }
+
   function show(brief: Brief, data: BriefInput, method: string) {
     setResult({ brief, input: data, method });
     setDraft(exportMarkdown(brief, data, method));
@@ -75,6 +97,7 @@ export default function ContentBriefClient() {
       `${method} ready. Review and edit the brief before handing it to a writer.`,
     );
   }
+
   async function generate(ai: boolean) {
     if (active.current) return;
     setError("");
@@ -87,7 +110,10 @@ export default function ContentBriefClient() {
       return;
     }
     if (!ai) {
+      setBusy(true);
+      await paintToolFeedback();
       show(template(data), data, "Brief template");
+      setBusy(false);
       return;
     }
     const controller = new AbortController();
@@ -119,6 +145,7 @@ export default function ContentBriefClient() {
       setBusy(false);
     }
   }
+
   function download() {
     const url = URL.createObjectURL(
       new Blob([draft], { type: "text/markdown;charset=utf-8" }),
@@ -129,12 +156,33 @@ export default function ContentBriefClient() {
     a.click();
     URL.revokeObjectURL(url);
   }
+
   return (
     <div className="grid gap-6 lg:grid-cols-2">
+      <ToolRunOverlay
+        active={busy}
+        title="Building SEO content brief & writer outline"
+        description="Structuring search intent, heading outline, reader questions, and internal link targets."
+      />
       <div className="min-w-0 rounded-[28px] border border-white/10 bg-slate-900/80 p-5 sm:p-8">
-        <h2 className="text-xl font-bold text-white">
-          Plan the writer handoff
-        </h2>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-xl font-bold text-white">
+            Plan the writer handoff
+          </h2>
+          <button
+            type="button"
+            disabled={busy}
+            className="rounded-lg border border-slate-600 px-3 py-1.5 text-xs font-bold text-slate-300 hover:bg-slate-800"
+            onClick={() => {
+              setInput(emptyBriefInput);
+              setLinks("");
+              setError("");
+              setStatus("Cleared brief inputs. Your editable Markdown brief remains on the right.");
+            }}
+          >
+            Clear inputs
+          </button>
+        </div>
         <p className="mt-3 text-sm leading-7 text-slate-400">
           One focused page, one reader task. No websites, images, or videos are
           downloaded.
@@ -214,7 +262,7 @@ export default function ContentBriefClient() {
           <div className="flex flex-wrap gap-3">
             <button
               type="button"
-              className={`${button} border-transparent bg-[#5271FF] hover:bg-blue-600`}
+              className={`${button} border-transparent bg-[#4058D0] hover:bg-[#3452D1]`}
               onClick={() => generate(true)}
             >
               Generate AI brief
@@ -234,8 +282,8 @@ export default function ContentBriefClient() {
                 setLinks(
                   example.links.map((l) => `${l.title} | ${l.url}`).join("\n"),
                 );
+                show(template(example), example, "Brief template");
                 setError("");
-                setStatus("Example loaded. Choose a template or AI draft.");
               }}
             >
               Try example

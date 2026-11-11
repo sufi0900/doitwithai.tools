@@ -35,6 +35,7 @@ import PerformancePanel from "./PerformancePanel";
 import SchemaPanel from "../schema-inspector/SchemaPanel";
 import styles from "../content-evidence/evidence.module.css";
 import dashboard from "./dashboard.module.css";
+
 const state = {
   restriction: {
     label: "Restriction detected",
@@ -49,6 +50,7 @@ const state = {
   },
   unknown: { label: "Not established", icon: CircleHelp, tone: "unknown" },
 };
+
 function Row({ row }: { row: ReviewRow }) {
   const Icon = state[row.state].icon;
   return (
@@ -65,7 +67,7 @@ function Row({ row }: { row: ReviewRow }) {
       <h4>{row.label}</h4>
       <p>{row.evidence}</p>
       <p className={styles.small}>{row.action}</p>
-      <details className="mt-3">
+      <details open className="mt-3">
         <summary className="cursor-pointer text-sm font-semibold">
           Basis: {row.basis.label}
         </summary>
@@ -85,6 +87,7 @@ function Row({ row }: { row: ReviewRow }) {
     </article>
   );
 }
+
 function download(content: string, type: "json" | "csv", suffix = "review") {
   const href = URL.createObjectURL(
     new Blob([content], {
@@ -97,6 +100,7 @@ function download(content: string, type: "json" | "csv", suffix = "review") {
   a.click();
   setTimeout(() => URL.revokeObjectURL(href), 1000);
 }
+
 export default function Dashboard({
   page,
   reviews,
@@ -124,6 +128,7 @@ export default function Dashboard({
     coverage = exported.coverage,
     progress = exported.manualProgress;
   const rows = categoryRows(report, category);
+
   function select(value: Category) {
     setCategory(value);
     requestAnimationFrame(() => {
@@ -138,9 +143,11 @@ export default function Dashboard({
       });
     });
   }
+
   const contentFlags = [answers.opening, ...answers.sections].filter(
     (s) => s.status === "review",
   );
+
   return (
     <section
       aria-label="Citation readiness results dashboard"
@@ -153,7 +160,7 @@ export default function Dashboard({
             role="img"
             aria-label={`Audit evidence coverage ${coverage.percentage ?? 0} percent`}
             style={{
-              background: `conic-gradient(#5271ff ${(coverage.percentage ?? 0) * 3.6}deg, var(--line) 0deg)`,
+              background: `conic-gradient(#4058D0 ${(coverage.percentage ?? 0) * 3.6}deg, var(--line) 0deg)`,
             }}
           >
             <div>
@@ -388,7 +395,7 @@ export default function Dashboard({
                   <blockquote>{opening.passage.text}</blockquote>
                 )}
                 <p>{opening.reason}</p>
-                <details>
+                <details open>
                   <summary>Show detection details</summary>
                   <p>
                     Rule: {opening.signals.rule}. Framing phrase:{" "}
@@ -486,7 +493,10 @@ export default function Dashboard({
           />
         </div>
       </div>
-      <details className="mt-6 rounded-xl border border-slate-200 p-5 dark:border-slate-700">
+      <details
+        open
+        className="mt-6 rounded-xl border border-slate-200 p-5 dark:border-slate-700"
+      >
         <summary className="cursor-pointer font-bold">
           Scope, warnings, and supporting tools
         </summary>

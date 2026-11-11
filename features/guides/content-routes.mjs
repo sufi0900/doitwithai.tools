@@ -16,10 +16,22 @@ const EXCLUDED_FROM_TOOLS_SITEMAP = new Set([
   "omnichannel-marketing-agent",
 ]);
 
+export const contentPrefixes = {
+  makemoney: "ai-learn-earn",
+  aitool: "ai-tools",
+  coding: "ai-code",
+  seo: "ai-seo",
+  blogPost: "blogs",
+  guide: "guides",
+};
+
 export function articlePath(article) {
-  const category = article?.category || "ai-seo";
-  const slug = article?.slug?.current || article?.slug || "";
-  return `/${category}/${slug}`;
+  const prefix = contentPrefixes[article?._type];
+  const slug =
+    typeof article?.slug === "string" ? article.slug : article?.slug?.current;
+  return prefix && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug || "")
+    ? `/${prefix}/${slug}`
+    : undefined;
 }
 
 export function toolSitemapEntries(registry, origin) {
@@ -51,12 +63,18 @@ export function toolSitemapEntries(registry, origin) {
   return paths.map((path) => ({ url: `${origin}${path}` }));
 }
 
-export function contentSitemapEntries(articles, guides, origin) {
-  const articleUrls = (articles || []).map((a) => ({
-    url: `${origin}${articlePath(a)}`,
-  }));
-  const guideUrls = (guides || []).map((g) => ({
-    url: `${origin}/guides/${g.slug}`,
-  }));
-  return [...articleUrls, ...guideUrls];
+export function contentSitemapEntries(posts, origin) {
+  return (posts || []).flatMap((post) => {
+    const path = articlePath(post);
+    if (!path) return [];
+    const date = post._updatedAt && new Date(post._updatedAt);
+    return [
+      {
+        url: `${origin}${path}`,
+        ...(date && !Number.isNaN(date.getTime())
+          ? { lastModified: date }
+          : {}),
+      },
+    ];
+  });
 }

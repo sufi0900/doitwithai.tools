@@ -727,7 +727,7 @@ export default function ChromeExtensionShowcaseClient() {
           <div className="absolute left-1/3 top-36 h-64 w-96 -translate-x-1/2 rounded-full bg-cyan-500/10 blur-[100px]" />
         </div>
 
-        <div className="relative mx-auto max-w-5xl">
+        <div className="relative mx-auto max-w-6xl">
           {/* Top Breadcrumb + Mini Extension Status Pill Bar */}
           <div className="flex flex-wrap items-center justify-between gap-3 pb-8">
             <nav

@@ -13,8 +13,18 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+};
+
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
+}
+
 const inputSchema = z.object({
-  videoId: z.string().trim().max(40).default("exampleSEO2026"),
+  videoId: z.string().trim().max(40).default("cH9LbVH7EI4"),
   videoUrl: z.string().trim().max(1024).default(""),
   title: z.string().trim().max(240).default(""),
   channelName: z.string().trim().max(140).default(""),
@@ -26,29 +36,54 @@ const inputSchema = z.object({
         text: z.string(),
       }),
     )
-    .max(400)
+    .max(6000)
     .default([]),
 });
 
 const aiSummarySchema = z.object({
-  executiveSummary: z.string().min(80).max(460),
-  keyTakeaways: z.array(z.string().min(15).max(200)).min(4).max(6),
+  executiveSummary: z.string().min(120).max(1600),
+  executiveSummaryParagraphs: z
+    .array(z.string().min(60).max(600))
+    .min(3)
+    .max(4),
+  keyTakeaways: z.array(z.string().min(25).max(320)).min(6).max(10),
+  deepInsights: z
+    .array(
+      z.object({
+        timestamp: z.string(),
+        category: z.string(),
+        title: z.string(),
+        detail: z.string(),
+      }),
+    )
+    .min(6)
+    .max(10),
+  actionChecklist: z.array(z.string().min(20).max(280)).min(5).max(8),
   chapters: z
     .array(
       z.object({
         timestamp: z.string().min(3).max(16),
-        heading: z.string().min(5).max(90),
-        summary: z.string().min(15).max(220),
+        heading: z.string().min(5).max(120),
+        summary: z.string().min(20).max(340),
       }),
     )
-    .min(3)
+    .min(5)
+    .max(10),
+  videoFaqs: z
+    .array(
+      z.object({
+        question: z.string(),
+        answer: z.string(),
+      }),
+    )
+    .min(4)
     .max(6),
 });
 
 export async function POST(request: NextRequest) {
   let input: z.infer<typeof inputSchema>;
   try {
-    input = inputSchema.parse(await readBoundedJson(request, 250_000));
+    input = inputSchema.parse(await readBoundedJson(request, 1_500_000));
   } catch (error) {
     return NextResponse.json(
       {
@@ -59,17 +94,20 @@ export async function POST(request: NextRequest) {
               : "Provide a YouTube URL or transcript segments.",
         },
       },
-      { status: 422 },
+      { status: 422, headers: CORS_HEADERS },
     );
   }
 
   const fallback = buildYoutubeTranscriptPack(input);
   const model = getGeminiModel("YOUTUBE_TRANSCRIPT") || getGeminiModel();
   if (!isAiConfigured(model)) {
-    return NextResponse.json({
-      pack: fallback,
-      provider: "deterministic",
-    });
+    return NextResponse.json(
+      {
+        pack: fallback,
+        provider: "deterministic",
+      },
+      { headers: CORS_HEADERS },
+    );
   }
 
   try {
@@ -77,20 +115,21 @@ export async function POST(request: NextRequest) {
     const res = await client.generate(
       {
         model,
-        max_output_tokens: 1500,
+        max_output_tokens: 4096,
         store: false,
         input: [
           {
             role: "system",
             content:
-              "You are a Video Content Analyst. Given a YouTube video's title and timestamped transcript segments, generate: (1) a concise 50-word executive summary, (2) 5 actionable key takeaway bullets, and (3) 4 to 6 timestamped chapters with clear headings and summaries.",
+              "You are a Senior Video Content Intelligence Analyst (like Merlin AI). Given a YouTube video's title, channel, and full timestamped transcript, produce an exhaustive, high-signal synthesis covering the ENTIRE video from 0:00 to the final minute: (1) a 3-paragraph executive summary covering Core Premise & Context, Key Rules/Methodology/Examples across the middle of the video, and Final Verdict & Strategic Recommendations, (2) 8 deep key insights with exact timestamps, categories, bold titles, and detailed explanations spanning the full timeline from 0:00 to the end, (3) a 6-step actionable implementation checklist, (4) 6 to 8 timestamped chapters with clear headings and 2-sentence summaries covering all major tips/sections, and (5) 5 detailed Video FAQs.",
           },
           {
             role: "user",
             content: JSON.stringify({
               title: fallback.title,
               channelName: fallback.channelName,
-              transcript: fallback.timestampedTranscript.slice(0, 12_000),
+              segmentCount: fallback.segments.length,
+              transcript: fallback.timestampedTranscript.slice(0, 80_000),
             }),
           },
         ],
@@ -100,27 +139,36 @@ export async function POST(request: NextRequest) {
           }),
         },
       },
-      { timeout: 26000 },
+      { timeout: 36000 },
     );
 
     if (!res.output_parsed) {
-      return NextResponse.json({
-        pack: fallback,
-        provider: "deterministic",
-      });
+      return NextResponse.json(
+        {
+          pack: fallback,
+          provider: "deterministic",
+        },
+        { headers: CORS_HEADERS },
+      );
     }
 
-    return NextResponse.json({
-      pack: buildYoutubeTranscriptPack({
-        ...input,
-        aiSummary: res.output_parsed,
-      }),
-      provider: "ai",
-    });
+    return NextResponse.json(
+      {
+        pack: buildYoutubeTranscriptPack({
+          ...input,
+          aiSummary: res.output_parsed,
+        }),
+        provider: "ai",
+      },
+      { headers: CORS_HEADERS },
+    );
   } catch {
-    return NextResponse.json({
-      pack: fallback,
-      provider: "deterministic",
-    });
+    return NextResponse.json(
+      {
+        pack: fallback,
+        provider: "deterministic",
+      },
+      { headers: CORS_HEADERS },
+    );
   }
 }

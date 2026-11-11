@@ -1,3 +1,4 @@
+import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import {
   ToolHeroBackground,
   toolHeroSurface,
@@ -163,63 +164,74 @@ export default function Page() {
           __html: JSON.stringify(schema).replace(/</g, "\\u003c"),
         }}
       />
-      <div
-        className={`relative overflow-clip ${toolHeroSurface} pb-20 pt-10 sm:pt-16`}
+      <div className={`relative overflow-hidden ${toolHeroSurface} text-white`}
       >
         <ToolHeroBackground />
-        <div className="relative mx-auto w-full px-4 sm:px-6 lg:px-8">
+        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
           <nav
             aria-label="Breadcrumb"
-            className="flex flex-wrap gap-2 text-xs text-slate-400"
+            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
           >
             <Link href="/">Home</Link>
             <span>/</span>
             <Link href="/tools">Tools</Link>
             <span>/</span>
-            <span aria-current="page" className="text-blue-200">
-              Readability Checker
-            </span>
+            <span aria-current="page">Readability Checker</span>
           </nav>
-          <header className="mx-auto mb-14 mt-12 max-w-5xl text-center text-white">
-            <p className="inline-flex rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-widest text-blue-100">
-              AI SEO · Content Writing
-            </p>
-            <h1 className="mt-7 text-balance text-4xl font-black tracking-tight sm:text-6xl lg:text-7xl">
-              Readability Checker and AI Improver
-              <span className={`mt-3 block text-balance ${toolHeroHeading}`}>
-                Make the Meaning Easier to Follow
-              </span>
-            </h1>
-            <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-slate-300 sm:text-lg">
-              Paste your draft and see hard sentences, passive voice, adverbs,
-              and wordy phrases highlighted as you type. Fix them in one click,
-              or compare AI revisions for a passage you select.
-            </p>
-            <div className="mt-7 flex flex-wrap justify-center gap-3 text-xs font-bold text-slate-300">
-              {[
-                [ScanText, "Live highlights"],
-                [Gauge, "Estimated grade"],
-                [Wand2, "One-click fixes"],
-                [FileCheck2, "Human meaning review"],
-              ].map(([Icon, label]) => {
-                const I = Icon as typeof ScanText;
-                return (
-                  <span
-                    key={label as string}
-                    className="inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-2"
-                  >
-                    <I aria-hidden className="h-4 w-4 text-blue-300" />
-                    {label as string}
-                  </span>
-                );
-              })}
+
+          <div className="mb-8 grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
+                Content Editing · Live Sentence Clarity & Grade Analyzer
+              </p>
+              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
+                Readability Checker 
+                <span className={toolHeroHeading}>
+                  & AI Sentence Improver
+                </span>
+              </h1>
+              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
+                Paste or edit your draft to highlight hard-to-read sentences, passive voice, adverbs, and wordy phrasing in real time—and apply one-click fixes or AI passage revisions.
+              </p>
+              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  Live color-coded highlights
+                </span>
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  Reading grade & time metrics
+                </span>
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  1-click & AI sentence rewrites
+                </span>
+              </div>
+              <PortableToolHeroBar />
             </div>
-          </header>
+
+            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
+              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
+                4 Clarity Issues Highlighted Live
+              </p>
+              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
+                <li>
+                  <strong className="text-emerald-300">Hard Sentences:</strong> Flags dense or multi-clause sentences that slow down comprehension.
+                </li>
+                <li>
+                  <strong className="text-indigo-300">Passive Voice:</strong> Identifies passive verbs where active phrasing is more direct.
+                </li>
+                <li>
+                  <strong className="text-sky-300">Wordy Phrases:</strong> Suggests simpler 1-click replacements for complex expressions.
+                </li>
+                <li>
+                  <strong className="text-amber-300">Audience Presets:</strong> Compare your draft against general, practitioner, or technical targets.
+                </li>
+              </ul>
+            </div>
+          </div>
           <ReadabilityClient />
         </div>
       </div>
 
-      <div className="mx-auto max-w-7xl space-y-20 px-4 py-20 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-6xl space-y-20 px-4 py-20 sm:px-6 lg:px-8">
         <section className="grid gap-8 lg:grid-cols-2">
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-[#4662df] dark:text-blue-300">

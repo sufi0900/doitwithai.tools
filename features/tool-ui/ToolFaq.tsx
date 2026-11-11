@@ -8,7 +8,7 @@ export default function ToolFaq({
 }) {
   return (
     <section className="border-t border-slate-200 bg-slate-50 py-16 dark:border-slate-800 dark:bg-slate-950">
-      <div className="mx-auto max-w-5xl px-4 sm:px-6">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="mb-8 flex items-center gap-4">
           <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[#5271ff]/10 text-[#5271ff]">
             <MessageCircleQuestion />

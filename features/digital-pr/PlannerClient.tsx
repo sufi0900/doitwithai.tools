@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { ChevronDown, ClipboardList, Download } from "lucide-react";
+import { ChevronDown, ClipboardList, Copy, Download } from "lucide-react";
 import ToolRunOverlay, {
   focusToolSection,
   paintToolFeedback,
@@ -50,12 +50,12 @@ const fields = [
   },
 ] as const;
 export default function PlannerClient() {
-  const [input, setInput] = useState<Input>(defaults),
+  const [input, setInput] = useState<Input>(example),
     [errors, setErrors] = useState<Partial<Record<keyof Input, string>>>({}),
-    [plan, setPlan] = useState<Plan | null>(null),
+    [plan, setPlan] = useState<Plan | null>(() => buildPlan(example)),
     [busy, setBusy] = useState(false),
     [message, setMessage] = useState(""),
-    [builtFrom, setBuiltFrom] = useState(""),
+    [builtFrom, setBuiltFrom] = useState(() => JSON.stringify(example)),
     [revision, setRevision] = useState(0);
   const result = useRef<HTMLElement>(null),
     cancelled = useRef(false),
@@ -143,6 +143,15 @@ export default function PlannerClient() {
       setMessage(
         "The download could not be prepared. Try another format or select and copy the plan text.",
       );
+    }
+  }
+  async function copyPlanMarkdown() {
+    if (!plan) return;
+    try {
+      await navigator.clipboard.writeText(markdown(plan));
+      setMessage("Copied full Markdown campaign brief to clipboard.");
+    } catch {
+      setMessage("Clipboard unavailable. Use the Download buttons instead.");
     }
   }
   return (
@@ -269,7 +278,10 @@ export default function PlannerClient() {
               )}
             </div>
           )}
-          <details className="rounded-xl border border-slate-200 p-4 dark:border-slate-700 sm:col-span-2">
+          <details
+            open
+            className="rounded-xl border border-slate-200 p-4 dark:border-slate-700 sm:col-span-2"
+          >
             <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-bold">
               Optional format, market, and owner
               <ChevronDown size={18} aria-hidden />
@@ -345,6 +357,8 @@ export default function PlannerClient() {
             className={button}
             onClick={() => {
               setInput(example);
+              setPlan(buildPlan(example));
+              setBuiltFrom(JSON.stringify(example));
               setErrors({});
               setMessage(
                 "Fictional example loaded. Replace these details before using the plan.",
@@ -352,6 +366,19 @@ export default function PlannerClient() {
             }}
           >
             Load fictional example
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            className={button}
+            onClick={() => {
+              setInput(defaults);
+              setPlan(null);
+              setErrors({});
+              setMessage("Cleared form.");
+            }}
+          >
+            Clear form
           </button>
         </div>
       </form>
@@ -382,6 +409,16 @@ export default function PlannerClient() {
             {plan.warning}
           </p>
           <div className="mt-5 flex flex-wrap gap-3">
+            <button
+              type="button"
+              className={primary}
+              onClick={copyPlanMarkdown}
+            >
+              <span className="inline-flex items-center gap-2">
+                <Copy size={16} aria-hidden />
+                Copy Markdown Brief
+              </span>
+            </button>
             {(
               [
                 ["docx", "DOCX plan"],
@@ -411,7 +448,9 @@ export default function PlannerClient() {
             className={control}
             value={plan.title}
             maxLength={200}
-            onChange={(e) => setPlan((p) => ({ ...p, title: e.target.value }))}
+            onChange={(e) =>
+              setPlan((p) => (p ? { ...p, title: e.target.value } : p))
+            }
           />
           <div className="mt-7 grid gap-7">
             {plan.sections.map((s) => (
@@ -429,14 +468,18 @@ export default function PlannerClient() {
                   rows={s.id === "evidence" || s.id === "distribution" ? 10 : 7}
                   maxLength={6000}
                   onChange={(e) =>
-                    setPlan((p) => ({
-                      ...p,
-                      sections: p.sections.map((old) =>
-                        old.id === s.id
-                          ? { ...old, text: e.target.value }
-                          : old,
-                      ),
-                    }))
+                    setPlan((p) =>
+                      p
+                        ? {
+                            ...p,
+                            sections: p.sections.map((old) =>
+                              old.id === s.id
+                                ? { ...old, text: e.target.value }
+                                : old,
+                            ),
+                          }
+                        : p,
+                    )
                   }
                 />
               </div>
@@ -459,14 +502,18 @@ export default function PlannerClient() {
                     className="mt-1 h-5 w-5 shrink-0 accent-[#5271ff]"
                     checked={a.done}
                     onChange={(e) =>
-                      setPlan((p) => ({
-                        ...p,
-                        actions: p.actions.map((old) =>
-                          old.id === a.id
-                            ? { ...old, done: e.target.checked }
-                            : old,
-                        ),
-                      }))
+                      setPlan((p) =>
+                        p
+                          ? {
+                              ...p,
+                              actions: p.actions.map((old) =>
+                                old.id === a.id
+                                  ? { ...old, done: e.target.checked }
+                                  : old,
+                              ),
+                            }
+                          : p,
+                      )
                     }
                   />
                   <span>
@@ -487,14 +534,18 @@ export default function PlannerClient() {
                     maxLength={100}
                     value={a.owner}
                     onChange={(e) =>
-                      setPlan((p) => ({
-                        ...p,
-                        actions: p.actions.map((old) =>
-                          old.id === a.id
-                            ? { ...old, owner: e.target.value }
-                            : old,
-                        ),
-                      }))
+                      setPlan((p) =>
+                        p
+                          ? {
+                              ...p,
+                              actions: p.actions.map((old) =>
+                                old.id === a.id
+                                  ? { ...old, owner: e.target.value }
+                                  : old,
+                              ),
+                            }
+                          : p,
+                      )
                     }
                   />
                 </div>

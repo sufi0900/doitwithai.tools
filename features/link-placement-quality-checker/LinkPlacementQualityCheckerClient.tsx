@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronUp,
+  Copy,
   Download,
   ExternalLink,
   FileText,
@@ -84,6 +85,24 @@ const primaryBtn =
 const secondaryBtn =
   "inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold hover:bg-slate-100 focus-visible:outline-[#5271ff] dark:border-slate-600 dark:hover:bg-slate-800";
 
+function buildInitialSampleProspects(): ProspectVettingResult[] {
+  const kw = [
+    "technical seo",
+    "link building",
+    "backlink audit",
+    "digital pr",
+    "search visibility",
+  ];
+  return SAMPLE_PROSPECTS.map((item) =>
+    analyzePublisherProspectHtml({
+      html: item.html,
+      url: item.url,
+      nicheKeywords: kw,
+      method: "sample",
+    }),
+  );
+}
+
 export default function LinkPlacementQualityCheckerClient() {
   const [mode, setMode] = useState<"live" | "html">("live");
   const [urlsInput, setUrlsInput] = useState("");
@@ -95,9 +114,15 @@ export default function LinkPlacementQualityCheckerClient() {
   );
   const [htmlContent, setHtmlContent] = useState("");
 
-  const [results, setResults] = useState<ProspectVettingResult[]>([]);
-  const [notes, setNotes] = useState<string[]>([]);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [results, setResults] = useState<ProspectVettingResult[]>(
+    buildInitialSampleProspects,
+  );
+  const [notes, setNotes] = useState<string[]>([
+    "Loaded 3-prospect comparison demo: (1) Strong Editorial Site, (2) Nofollow-Only Media Site, and (3) High-Risk Guest-Post Farm.",
+  ]);
+  const [expandedIds, setExpandedIds] = useState<string[]>(() =>
+    buildInitialSampleProspects().map((r) => r.id),
+  );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [feedback, setFeedback] = useState("");
@@ -131,21 +156,20 @@ export default function LinkPlacementQualityCheckerClient() {
       "search visibility",
     ];
     setNicheKeywordsInput(kw.join(", "));
-    const built = SAMPLE_PROSPECTS.map((item) =>
-      analyzePublisherProspectHtml({
-        html: item.html,
-        url: item.url,
-        nicheKeywords: kw,
-        method: "sample",
-      }),
-    );
+    const built = buildInitialSampleProspects();
     setResults(built);
-    setExpandedId(built[0]?.id || null);
+    setExpandedIds(built.map((r) => r.id));
     setNotes([
       "Loaded 3-prospect comparison demo: (1) Strong Editorial Site, (2) Nofollow-Only Media Site, and (3) High-Risk Guest-Post Farm.",
     ]);
     setRevision((r) => r + 1);
     setFeedback("Loaded 3-prospect side-by-side vetting comparison.");
+  }
+
+  function updateProspectSummaryNote(id: string, nextSummary: string) {
+    setResults((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, verdictSummary: nextSummary } : r)),
+    );
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -162,7 +186,9 @@ export default function LinkPlacementQualityCheckerClient() {
       return;
     }
     if (mode === "html" && !htmlContent.trim()) {
-      setError("Paste candidate webpage HTML to run the 10-point vetting audit.");
+      setError(
+        "Paste candidate webpage HTML to run the 10-point vetting audit.",
+      );
       return;
     }
 
@@ -180,7 +206,7 @@ export default function LinkPlacementQualityCheckerClient() {
           method: "html",
         });
         setResults([res]);
-        setExpandedId(res.id);
+        setExpandedIds([res.id]);
         setNotes([
           "Evaluated from supplied HTML. Live HTTP response headers were not fetched.",
         ]);
@@ -223,7 +249,7 @@ export default function LinkPlacementQualityCheckerClient() {
           return;
         }
         setResults(data.results);
-        setExpandedId(data.results[0]?.id || null);
+        setExpandedIds(data.results.map((r: ProspectVettingResult) => r.id));
         setNotes(data.notes || []);
         setRevision((r) => r + 1);
       }
@@ -284,7 +310,7 @@ export default function LinkPlacementQualityCheckerClient() {
           <div>
             <h2 className="flex items-center gap-2.5 text-2xl font-extrabold">
               <ShieldCheck aria-hidden className="text-[#5271ff]" />
-              Vet Guest Post Sites & Link Placement Prospects
+              Vet Guest Post Sites &amp; Link Placement Prospects
             </h2>
             <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
               Audit up to 5 candidate publisher URLs across 10 observable
@@ -389,18 +415,13 @@ export default function LinkPlacementQualityCheckerClient() {
               Candidate Publisher Article or Resource Page URLs (up to 5, one
               per line)
             </label>
-            <p className="mb-2 mt-1 text-xs text-slate-500 dark:text-slate-400">
-              Tip: Enter a sample article URL from each prospective guest-post
-              domain (or the exact niche-edit target URL) so we can measure real
-              article word count, author attribution, and outbound link density.
-            </p>
             <textarea
               id="vetting-live-urls"
               rows={4}
               value={urlsInput}
               onChange={(e) => setUrlsInput(e.target.value)}
               placeholder={`https://publisher-one.com/blog/seo-strategy-guide\nhttps://publisher-two.org/resources/marketing-tools`}
-              className={control}
+              className={`${control} mt-2`}
             />
           </div>
         ) : (
@@ -410,7 +431,7 @@ export default function LinkPlacementQualityCheckerClient() {
                 htmlFor="vetting-html-url"
                 className="block text-sm font-bold"
               >
-                Publisher Page URL (for canonical & internal/external domain
+                Publisher Page URL (for canonical &amp; internal/external domain
                 matching)
               </label>
               <input
@@ -493,7 +514,8 @@ export default function LinkPlacementQualityCheckerClient() {
             <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200 pb-6 dark:border-slate-700">
               <div>
                 <span className="text-xs font-bold uppercase tracking-wider text-[#5271ff]">
-                  10-Point Evidence Audit · {results.length} Prospect(s) Evaluated
+                  10-Point Evidence Audit · {results.length} Prospect(s)
+                  Evaluated
                 </span>
                 <h3 className="mt-1 text-2xl font-black">
                   Publisher Vetting Comparison Matrix
@@ -505,6 +527,21 @@ export default function LinkPlacementQualityCheckerClient() {
                 )}
               </div>
               <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setExpandedIds(
+                      expandedIds.length === results.length
+                        ? []
+                        : results.map((r) => r.id),
+                    )
+                  }
+                  className={secondaryBtn}
+                >
+                  {expandedIds.length === results.length
+                    ? "Collapse All Breakdowns"
+                    : "Expand All Breakdowns"}
+                </button>
                 <button
                   type="button"
                   onClick={() => handleDownload("csv")}
@@ -531,7 +568,7 @@ export default function LinkPlacementQualityCheckerClient() {
                     <th className="py-3 pr-3">Publisher Domain</th>
                     <th className="px-3 py-3">Verdict</th>
                     <th className="px-3 py-3">Checks Passed</th>
-                    <th className="px-3 py-3">Indexable & Canonical</th>
+                    <th className="px-3 py-3">Indexable &amp; Canonical</th>
                     <th className="px-3 py-3">Ext / Int Links</th>
                     <th className="px-3 py-3">Dofollow %</th>
                     <th className="px-3 py-3">Words</th>
@@ -597,11 +634,11 @@ export default function LinkPlacementQualityCheckerClient() {
           {/* Individual Expandable 10-Point Evidence Cards */}
           <div className="space-y-5">
             {results.map((r) => {
-              const isOpen = expandedId === r.id;
+              const isOpen = expandedIds.includes(r.id);
               return (
                 <div key={r.id} className={panel}>
                   <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2.5">
                         <span
                           className={`rounded-full border px-3 py-1 text-xs font-bold ${
@@ -620,27 +657,55 @@ export default function LinkPlacementQualityCheckerClient() {
                         </span>
                       </div>
                       <h4 className="mt-2 text-lg font-bold">{r.pageTitle}</h4>
-                      <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
-                        {r.verdictSummary}
-                      </p>
+                      <label className="mt-2 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                        Editable Outreach / Vetting Decision Note (Syncs to DOCX/CSV)
+                        <input
+                          type="text"
+                          value={r.verdictSummary}
+                          onChange={(e) =>
+                            updateProspectSummaryNote(r.id, e.target.value)
+                          }
+                          className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-normal text-slate-700 focus:border-[#4058D0] focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                        />
+                      </label>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setExpandedId(isOpen ? null : r.id)}
-                      className={secondaryBtn}
-                    >
-                      {isOpen ? (
-                        <>
-                          <ChevronUp size={15} />
-                          Hide 10-Point Breakdown
-                        </>
-                      ) : (
-                        <>
-                          <ChevronDown size={15} />
-                          Inspect 10-Point Breakdown
-                        </>
-                      )}
-                    </button>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const text = `${r.domain} (${r.verdictLabel} · ${r.passedChecksCount}/${r.totalChecksCount} checks)\nURL: ${r.finalUrl}\nNote: ${r.verdictSummary}`;
+                          await navigator.clipboard.writeText(text);
+                          setFeedback(`Copied vetting summary for ${r.domain}.`);
+                        }}
+                        className={secondaryBtn}
+                      >
+                        <Copy size={14} />
+                        Copy Summary
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setExpandedIds((prev) =>
+                            prev.includes(r.id)
+                              ? prev.filter((id) => id !== r.id)
+                              : [...prev, r.id],
+                          )
+                        }
+                        className={secondaryBtn}
+                      >
+                        {isOpen ? (
+                          <>
+                            <ChevronUp size={15} />
+                            Hide 10-Point Breakdown
+                          </>
+                        ) : (
+                          <>
+                            <ChevronDown size={15} />
+                            Inspect 10-Point Breakdown
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </div>
 
                   {isOpen && (
@@ -699,7 +764,10 @@ export default function LinkPlacementQualityCheckerClient() {
                                 key={`${item.href}-${i}`}
                                 className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs dark:border-slate-700 dark:bg-slate-800"
                               >
-                                <ExternalLink size={12} className="text-slate-400" />
+                                <ExternalLink
+                                  size={12}
+                                  className="text-slate-400"
+                                />
                                 <span className="font-semibold">
                                   {item.anchor}
                                 </span>

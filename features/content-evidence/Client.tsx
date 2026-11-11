@@ -1,4 +1,6 @@
 "use client";
+
+import ToolRunOverlay, { paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
 import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
@@ -21,6 +23,7 @@ import {
   textInput,
   validateReview,
   type Claim,
+  type EvidenceInput,
   type EvidenceReport,
   type Review,
 } from "./analyze";
@@ -32,6 +35,61 @@ const EXAMPLE_HTML = `<main><h1>Illustrative content review</h1>
 <h2>Claims to check</h2><p>This workflow guarantees first-place rankings for every article.</p>
 <p>According to Google's content guidance, clear sourcing helps readers assess trust. <a href="https://developers.google.com/search/docs/fundamentals/creating-helpful-content">Read the original guidance</a>.</p>
 <h2>Measurements</h2><p>In this invented example, editing time fell by 42%. No real experiment was conducted.</p></main>`;
+
+const INITIAL_EVIDENCE_INPUT: EvidenceInput = {
+  url: "https://example.com/illustrative-review",
+  title: "Illustrative content review",
+  author: "Editorial Review Team",
+  scope: "main",
+  partial: false,
+  warnings: [],
+  checkedAt: "2026-04-01T00:00:00.000Z",
+  blocks: [
+    {
+      id: "block:0",
+      tag: "h1",
+      text: "Illustrative content review",
+    },
+    {
+      id: "block:1",
+      tag: "p",
+      text: "Our team tested three writing workflows. This is an illustrative testing claim without supporting records.",
+    },
+    {
+      id: "block:2",
+      tag: "h2",
+      text: "Claims to check",
+    },
+    {
+      id: "block:3",
+      tag: "p",
+      text: "This workflow guarantees first-place rankings for every article.",
+    },
+    {
+      id: "block:4",
+      tag: "p",
+      text: "According to Google's content guidance, clear sourcing helps readers assess trust. Read the original guidance.",
+    },
+    {
+      id: "block:5",
+      tag: "h2",
+      text: "Measurements",
+    },
+    {
+      id: "block:6",
+      tag: "p",
+      text: "In this invented example, editing time fell by 42%. No real experiment was conducted.",
+    },
+  ],
+  links: [
+    {
+      href: "https://developers.google.com/search/docs/fundamentals/creating-helpful-content",
+      text: "Read the original guidance",
+      rel: "",
+      blockId: "block:4",
+    },
+  ],
+};
 
 function ClaimCard({
   claim,
@@ -90,7 +148,7 @@ function ClaimCard({
         {claim.text.length <= 1600 ? (
           claim.text
         ) : (
-          <details>
+          <details open>
             <summary>{claim.text.slice(0, 300)}… Show full passage</summary>
             <p>{claim.text}</p>
           </details>
@@ -113,7 +171,7 @@ function ClaimCard({
             : "Evidence may exist elsewhere, in a reference list, or in your own records. Check before deciding what to change."}
         </p>
         {claim.sources.length > 0 && (
-          <details>
+          <details open>
             <summary>Inspect candidate links</summary>
             <ul>
               {claim.sources.map((source) => (
@@ -200,12 +258,16 @@ function ClaimCard({
 export default function Client() {
   const [mode, setMode] = useState<"url" | "text" | "html">("url");
   const [url, setUrl] = useState("");
-  const [content, setContent] = useState("");
-  const [report, setReport] = useState<EvidenceReport | null>(null);
+  const [content, setContent] = useState(EXAMPLE_HTML);
+  const [report, setReport] = useState<EvidenceReport | null>(() =>
+    analyzeEvidence(INITIAL_EVIDENCE_INPUT),
+  );
   const [reviews, setReviews] = useState<Record<string, Review>>({});
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
+  const [notice, setNotice] = useState(
+    "Illustrative example pre-loaded. Review the 4 detected claim passages on the right or import your own URL / text.",
+  );
   const [filter, setFilter] = useState("all");
   const [decisionFilter, setDecisionFilter] = useState("all");
   const [visible, setVisible] = useState(20);
@@ -227,6 +289,19 @@ export default function Client() {
   }
   async function analyze(event?: FormEvent, example = false) {
     event?.preventDefault();
+    if (example) {
+      setReport(analyzeEvidence(INITIAL_EVIDENCE_INPUT));
+      setReviews({});
+      setVersion((v) => v + 1);
+      setFilter("all");
+      setDecisionFilter("all");
+      setVisible(20);
+      setError("");
+      setNotice(
+        "Illustrative example loaded. Its claims and figures are review exercises, not real findings.",
+      );
+      return;
+    }
     const token = ++requestId.current;
     active.current?.abort();
     const controller = new AbortController();
@@ -237,19 +312,16 @@ export default function Client() {
     setNotice("");
     try {
       let next: EvidenceReport;
-      if (mode === "text" && !example)
-        next = analyzeEvidence(textInput(content, url));
+      if (mode === "text") next = analyzeEvidence(textInput(content, url));
       else {
-        const html = example ? EXAMPLE_HTML : mode === "html" ? content : "";
-        if (mode === "html" && !example && !html.trim())
+        const html = mode === "html" ? content : "";
+        if (mode === "html" && !html.trim())
           throw new Error("Paste the page HTML you want to review.");
         const response = await fetch("/api/ai-tools/on-page/analyze", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            url: example
-              ? "https://example.com/illustrative-review"
-              : url.trim(),
+            url: url.trim(),
             html,
           }),
           signal: controller.signal,
@@ -274,9 +346,7 @@ export default function Client() {
       setDecisionFilter("all");
       setVisible(20);
       setNotice(
-        example
-          ? "Illustrative example. Its claims and figures are review exercises, not real findings."
-          : "Report ready. Review each passage and save your decisions. Nothing is changed on your website.",
+        "Report ready. Review each passage and save your decisions. Nothing is changed on your website.",
       );
     } catch (e) {
       if (token === requestId.current)
@@ -343,6 +413,11 @@ export default function Client() {
     ) || [];
   return (
     <div className={styles.workspace} id="evidence-review-workspace">
+      <ToolRunOverlay
+        active={busy}
+        title="Reviewing content evidence & source citations"
+        description="Inspecting factual claims, outbound references, and passages needing support."
+      />
       <section
         className={styles.inputPanel}
         aria-labelledby="evidence-input-heading"
@@ -550,7 +625,7 @@ export default function Client() {
               {report.sourceCount} distinct source links were retained.
             </p>
           </div>
-          <details className={styles.scope}>
+          <details open className={styles.scope}>
             <summary>What this report checked</summary>
             <p>
               Scope: {report.input.scope}. Detected author metadata:{" "}

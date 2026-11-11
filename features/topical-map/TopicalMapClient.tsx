@@ -1,16 +1,18 @@
 "use client";
+
+import ToolRunOverlay, { paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
 import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 import { readToolResponse } from "@/lib/ai-tools/client-response";
 import { useRef, useState } from "react";
 import Link from "next/link";
 import {
-  GitBranch,
   Copy,
   Download,
   Sparkles,
   Undo2,
   Plus,
   ChevronDown,
+  ZoomIn,
 } from "lucide-react";
 import {
   inputSchema,
@@ -20,6 +22,7 @@ import {
   formats,
   decisions,
   type MapInput,
+  type MapOutput,
 } from "./schema";
 import {
   toTopics,
@@ -39,6 +42,7 @@ import {
   type Topic,
   type Project,
 } from "./workspace";
+
 const field =
   "mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm leading-7 text-slate-900 outline-none focus:border-[#5271ff] focus:ring-4 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:focus:ring-blue-900";
 const button =
@@ -51,25 +55,153 @@ const decisionLabels = {
   page: "Potential separate page",
   existing: "Update an existing page",
 };
+
+const SAMPLE_MAP_INPUT: MapInput = {
+  seed: "SEO with AI",
+  brief:
+    "A website helping writers and small website owners use AI for practical SEO and content creation. Cover useful workflows without promising rankings.",
+  audience: "Writers and website owners",
+  country: "United States",
+  projectType: "website",
+  size: "compact",
+};
+
+const SAMPLE_MAP_OUTPUT: MapOutput = {
+  nodes: [
+    {
+      id: "n1",
+      parentId: null,
+      title: "AI SEO Content & Workflow Hub",
+      keyword: "ai seo workflow for websites",
+      relatedKeywords: [
+        "practical ai seo guide",
+        "how to use ai for seo content",
+      ],
+      intent: "informational",
+      format: "hub",
+      focus:
+        "Introduce the complete AI-assisted research, drafting, technical verification, and editorial review workflow.",
+      why: "Root hub organizing all core pillar themes for writers and site owners.",
+    },
+    {
+      id: "n2",
+      parentId: "n1",
+      title: "Keyword & Topic Architecture",
+      keyword: "ai topical map and keyword clustering",
+      relatedKeywords: [
+        "how to group keywords by intent",
+        "building a topical authority map",
+      ],
+      intent: "informational",
+      format: "guide",
+      focus:
+        "Explain how to organize seed topics into pillars and intent-based clusters without duplicate pages.",
+      why: "First pillar covering upfront topic discovery and site architecture.",
+    },
+    {
+      id: "n3",
+      parentId: "n2",
+      title: "Search Intent Verification Checklist",
+      keyword: "how to verify search intent before writing",
+      relatedKeywords: [
+        "informational vs commercial intent examples",
+        "serp format check for writers",
+      ],
+      intent: "informational",
+      format: "tutorial",
+      focus:
+        "Walk through inspecting live search results so writers match the right page format.",
+      why: "Supporting tutorial under Keyword & Topic Architecture.",
+    },
+    {
+      id: "n4",
+      parentId: "n2",
+      title: "Preventing Keyword Cannibalization",
+      keyword: "how to avoid keyword cannibalization in clusters",
+      relatedKeywords: [
+        "when to combine two seo articles",
+        "section vs separate page decision",
+      ],
+      intent: "informational",
+      format: "guide",
+      focus:
+        "Show when close query variants belong in one comprehensive guide instead of separate URLs.",
+      why: "Supporting guide helping site owners consolidate overlapping topics.",
+    },
+    {
+      id: "n5",
+      parentId: "n1",
+      title: "On-Page Optimization & Snippet Readiness",
+      keyword: "on-page seo and featured snippet optimization",
+      relatedKeywords: [
+        "meta title pixel width guide",
+        "position zero answer box formatting",
+      ],
+      intent: "informational",
+      format: "guide",
+      focus:
+        "Cover concise answer paragraphs, heading hierarchy, internal links, and metadata clarity.",
+      why: "Second pillar focused on structuring pages for readers and search snippets.",
+    },
+    {
+      id: "n6",
+      parentId: "n5",
+      title: "Featured Snippet & AI Overview Formatting",
+      keyword: "how to format h2 answers for featured snippets",
+      relatedKeywords: [
+        "45 to 58 word definition box structure",
+        "ordered list snippet html structure",
+      ],
+      intent: "informational",
+      format: "tutorial",
+      focus:
+        "Demonstrate direct definition paragraphs, ordered step lists, and comparison tables.",
+      why: "Supporting tutorial under On-Page Optimization.",
+    },
+    {
+      id: "n7",
+      parentId: "n5",
+      title: "Contextual Internal Linking Workflow",
+      keyword: "internal linking best practices for topic clusters",
+      relatedKeywords: [
+        "descriptive anchor text examples",
+        "connecting pillar and cluster pages",
+      ],
+      intent: "informational",
+      format: "guide",
+      focus:
+        "Show how to connect supporting articles back to pillar hubs using clear, natural anchor phrases.",
+      why: "Supporting guide strengthening site navigation and crawl paths.",
+    },
+  ],
+  review: [
+    "Check live search results for each representative keyword before deciding between a separate page or a section.",
+    "Audit your existing articles first so you update matching URLs instead of publishing duplicate pages.",
+    "Add first-hand examples, screenshots, and human editorial review to every planned guide.",
+  ],
+};
+
 export default function TopicalMapClient() {
-  const [seed, setSeed] = useState(""),
-    [context, setContext] = useState(""),
-    [audience, setAudience] = useState(""),
-    [country, setCountry] = useState("");
-  const [projectType, setProjectType] =
-      useState<MapInput["projectType"]>("website"),
-    [size, setSize] = useState<MapInput["size"]>("compact");
-  const [source, setSource] = useState<MapInput | null>(null),
-    [nodes, setNodes] = useState<Topic[]>([]),
-    [review, setReview] = useState<string[]>([]),
-    [active, setActive] = useState(""),
+  const [seed, setSeed] = useState(SAMPLE_MAP_INPUT.seed),
+    [context, setContext] = useState(SAMPLE_MAP_INPUT.brief),
+    [audience, setAudience] = useState(SAMPLE_MAP_INPUT.audience),
+    [country, setCountry] = useState(SAMPLE_MAP_INPUT.country);
+  const [projectType, setProjectType] = useState<MapInput["projectType"]>(
+      SAMPLE_MAP_INPUT.projectType,
+    ),
+    [size, setSize] = useState<MapInput["size"]>(SAMPLE_MAP_INPUT.size);
+  const [source, setSource] = useState<MapInput | null>(SAMPLE_MAP_INPUT),
+    [nodes, setNodes] = useState<Topic[]>(() => toTopics(SAMPLE_MAP_OUTPUT)),
+    [review, setReview] = useState<string[]>(SAMPLE_MAP_OUTPUT.review),
+    [active, setActive] = useState("n1"),
     [history, setHistory] = useState<Topic[][]>([]);
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [status, setStatus] = useState(""),
     [name, setName] = useState("My topical map"),
     [collapsed, setCollapsed] = useState<string[]>([]),
-    [armed, setArmed] = useState("");
+    [armed, setArmed] = useState(""),
+    [treeZoom, setTreeZoom] = useState<85 | 100 | 115 | 130>(100);
   const resultsRef = useRef<HTMLElement>(null),
     fileRef = useRef<HTMLInputElement>(null);
   const selected = nodes.find((n) => n.id === active),
@@ -83,6 +215,27 @@ export default function TopicalMapClient() {
       return true;
     }
   })();
+
+  function loadInteractiveExample() {
+    setSeed(SAMPLE_MAP_INPUT.seed);
+    setContext(SAMPLE_MAP_INPUT.brief);
+    setAudience(SAMPLE_MAP_INPUT.audience);
+    setCountry(SAMPLE_MAP_INPUT.country);
+    setProjectType(SAMPLE_MAP_INPUT.projectType);
+    setSize(SAMPLE_MAP_INPUT.size);
+    setSource(SAMPLE_MAP_INPUT);
+    setNodes(toTopics(SAMPLE_MAP_OUTPUT));
+    setReview(SAMPLE_MAP_OUTPUT.review);
+    setActive("n1");
+    setHistory([]);
+    setCollapsed([]);
+    setArmed("");
+    setError("");
+    setStatus(
+      "Loaded interactive 7-node sample topical map. Click any node in the hierarchy below to edit or add child topics.",
+    );
+  }
+
   function mutate(next: Topic[], preferred = active) {
     validateTree(next);
     setHistory((h) => [...h.slice(-19), nodes]);
@@ -265,7 +418,7 @@ export default function TopicalMapClient() {
         type="button"
         data-topic-id={topic.id}
         aria-pressed={active === topic.id}
-        className={`min-h-16 w-full rounded-2xl border p-4 text-left transition focus-visible:ring-4 focus-visible:ring-blue-300 ${active === topic.id ? "border-[#5271ff] bg-blue-50 dark:bg-blue-950" : "border-slate-200 bg-white hover:border-blue-300 dark:border-slate-700 dark:bg-slate-900"}`}
+        className={`min-h-16 w-full rounded-2xl border p-4 text-left transition focus-visible:ring-4 focus-visible:ring-blue-300 ${active === topic.id ? "border-[#4058D0] bg-blue-50 ring-2 ring-[#4058D0]/20 dark:bg-blue-950" : "border-slate-200 bg-white hover:border-blue-300 dark:border-slate-700 dark:bg-slate-900"}`}
         onClick={() => {
           setActive(topic.id);
           setArmed("");
@@ -285,6 +438,11 @@ export default function TopicalMapClient() {
   }
   return (
     <div className="space-y-6 text-slate-900 dark:text-white">
+      <ToolRunOverlay
+        active={busy}
+        title="Building pillar & cluster topical map"
+        description="Mapping pillar hubs, supporting cluster articles, search intent, and internal link flow."
+      />
       <div className={card}>
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
@@ -348,16 +506,10 @@ export default function TopicalMapClient() {
           <button
             type="button"
             className={button}
-            onClick={() => {
-              setSeed("SEO with AI");
-              setContext(
-                "A website helping writers and small website owners use AI for practical SEO and content creation. Cover useful workflows without promising rankings.",
-              );
-              setAudience("Writers and website owners");
-              setProjectType("website");
-            }}
+            onClick={loadInteractiveExample}
           >
-            Try an example
+            <Sparkles size={15} className="text-[#5271ff]" />
+            Load interactive sample map
           </button>
         </div>
         <div className="mt-6 grid gap-5 lg:grid-cols-2">
@@ -474,7 +626,7 @@ export default function TopicalMapClient() {
         <div className="mt-6 flex flex-wrap items-center gap-4">
           <button
             disabled={busy}
-            className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-[#4662df] px-6 py-3 text-sm font-bold text-white hover:bg-blue-700 focus-visible:ring-4 focus-visible:ring-blue-300 disabled:opacity-50"
+            className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-[#3452d1] px-6 py-3 text-sm font-bold text-white hover:bg-[#2943b5] focus-visible:ring-4 focus-visible:ring-blue-300 disabled:opacity-50"
           >
             <Sparkles aria-hidden size={17} />
             {busy
@@ -524,109 +676,154 @@ export default function TopicalMapClient() {
                 human reviews recorded · 3 levels maximum
               </p>
             </div>
-            <button
-              className={button}
-              disabled={!history.length}
-              onClick={() => {
-                const previous = history[history.length - 1];
-                if (previous) {
-                  setNodes(previous);
-                  setHistory(history.slice(0, -1));
-                  setActive(
-                    previous.some((n) => n.id === active)
-                      ? active
-                      : previous[0].id,
-                  );
-                  setArmed("");
-                  setStatus("Last map edit undone.");
+            <div className="flex flex-wrap items-center gap-2">
+              <div
+                className="flex items-center gap-1 rounded-xl border border-slate-200 p-1 dark:border-slate-700"
+                role="group"
+                aria-label="Hierarchy map zoom"
+              >
+                <ZoomIn size={14} className="ml-1.5 text-slate-400" />
+                {([85, 100, 115, 130] as const).map((z) => (
+                  <button
+                    key={z}
+                    type="button"
+                    aria-pressed={treeZoom === z}
+                    onClick={() => setTreeZoom(z)}
+                    className={`rounded-lg px-2 py-1 text-xs font-bold ${
+                      treeZoom === z
+                        ? "bg-[#3452d1] text-white"
+                        : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                    }`}
+                  >
+                    {z}%
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                className={button}
+                onClick={() =>
+                  setCollapsed(
+                    collapsed.length ? [] : pillars.map((p) => p.id),
+                  )
                 }
-              }}
-            >
-              <Undo2 size={15} aria-hidden />
-              Undo last edit
-            </button>
+              >
+                {collapsed.length ? "Expand all pillars" : "Collapse all pillars"}
+              </button>
+              <button
+                className={button}
+                disabled={!history.length}
+                onClick={() => {
+                  const previous = history[history.length - 1];
+                  if (previous) {
+                    setNodes(previous);
+                    setHistory(history.slice(0, -1));
+                    setActive(
+                      previous.some((n) => n.id === active)
+                        ? active
+                        : previous[0].id,
+                    );
+                    setArmed("");
+                    setStatus("Last map edit undone.");
+                  }
+                }}
+              >
+                <Undo2 size={15} aria-hidden />
+                Undo last edit
+              </button>
+            </div>
           </div>
           <div className="mt-5 rounded-xl bg-slate-50 p-4 text-xs leading-6 dark:bg-slate-950">
             <strong>Difficulty: Not verified · Volume: Not verified</strong>
             <p>
               Intent labels are AI suggestions. Review flags record your
-              decisions and do not certify research or content quality.
+              decisions and do not certify research or content quality. Click any node in the hierarchy below to edit its title, keyword, format, or parent topic.
             </p>
           </div>
           <div
             aria-label="Topic hierarchy"
-            className="mt-7 rounded-3xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950 sm:p-6"
+            className="mt-7 overflow-x-auto rounded-3xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950 sm:p-6"
           >
-            <div className="mx-auto max-w-lg">{topicButton(root)}</div>
             <div
-              aria-hidden
-              className="mx-auto h-7 w-px bg-blue-300 dark:bg-blue-800"
-            />
-            <ul className="grid gap-5 lg:grid-cols-3">
-              {pillars.map((pillar) => (
-                <li key={pillar.id} className="min-w-0">
-                  <div className="relative">
-                    {topicButton(pillar)}
-                    <button
-                      type="button"
-                      className={`${button} mt-2 w-full`}
-                      aria-expanded={!collapsed.includes(pillar.id)}
-                      aria-controls={`branch-${pillar.id}`}
-                      onClick={() =>
-                        setCollapsed(
-                          collapsed.includes(pillar.id)
-                            ? collapsed.filter((id) => id !== pillar.id)
-                            : [...collapsed, pillar.id],
-                        )
-                      }
+              style={
+                treeZoom !== 100
+                  ? {
+                      transform: `scale(${treeZoom / 100})`,
+                      transformOrigin: "top center",
+                    }
+                  : undefined
+              }
+            >
+              <div className="mx-auto max-w-lg">{topicButton(root)}</div>
+              <div
+                aria-hidden
+                className="mx-auto h-7 w-px bg-blue-300 dark:bg-blue-800"
+              />
+              <ul className="grid gap-5 lg:grid-cols-2">
+                {pillars.map((pillar) => (
+                  <li key={pillar.id} className="min-w-0">
+                    <div className="relative">
+                      {topicButton(pillar)}
+                      <button
+                        type="button"
+                        className={`${button} mt-2 w-full`}
+                        aria-expanded={!collapsed.includes(pillar.id)}
+                        aria-controls={`branch-${pillar.id}`}
+                        onClick={() =>
+                          setCollapsed(
+                            collapsed.includes(pillar.id)
+                              ? collapsed.filter((id) => id !== pillar.id)
+                              : [...collapsed, pillar.id],
+                          )
+                        }
+                      >
+                        <ChevronDown size={14} aria-hidden />
+                        {collapsed.includes(pillar.id)
+                          ? "Show supporting topics"
+                          : "Hide supporting topics"}
+                      </button>
+                    </div>
+                    <ul
+                      id={`branch-${pillar.id}`}
+                      hidden={collapsed.includes(pillar.id)}
+                      className="ml-4 mt-3 space-y-3 border-l-2 border-blue-200 pl-4 dark:border-blue-900"
                     >
-                      <ChevronDown size={14} aria-hidden />
-                      {collapsed.includes(pillar.id)
-                        ? "Show supporting topics"
-                        : "Hide supporting topics"}
-                    </button>
-                  </div>
-                  <ul
-                    id={`branch-${pillar.id}`}
-                    hidden={collapsed.includes(pillar.id)}
-                    className="ml-4 mt-3 space-y-3 border-l-2 border-blue-200 pl-4 dark:border-blue-900"
-                  >
-                    {nodes
-                      .filter((n) => n.parentId === pillar.id)
-                      .map((n) => (
-                        <li key={n.id}>{topicButton(n)}</li>
-                      ))}
-                  </ul>
-                  <details className="mt-3 rounded-xl border border-slate-200 p-3 text-xs dark:border-slate-700">
-                    <summary className="cursor-pointer font-semibold focus-visible:ring-4 focus-visible:ring-blue-300">
-                      View keyword ideas for this pillar
-                    </summary>
-                    <ul className="mt-3 space-y-2">
-                      {[
-                        ...new Set(
-                          nodes
-                            .filter((n) => n.parentId === pillar.id)
-                            .flatMap((n) => [n.keyword, ...n.relatedKeywords]),
-                        ),
-                      ].map((keyword) => (
-                        <li key={keyword} className="break-words">
-                          {keyword}
-                        </li>
-                      ))}
+                      {nodes
+                        .filter((n) => n.parentId === pillar.id)
+                        .map((n) => (
+                          <li key={n.id}>{topicButton(n)}</li>
+                        ))}
                     </ul>
-                    <p className="mt-3 text-slate-500 dark:text-slate-400">
-                      AI suggestions. Search demand and difficulty are not
-                      verified.
-                    </p>
-                  </details>
-                </li>
-              ))}
-            </ul>
-            {!pillars.length && (
-              <p className="text-center text-sm">
-                Add a child topic to expand this map.
-              </p>
-            )}
+                    <details
+                      open
+                      className="mt-3 rounded-xl border border-slate-200 p-3 text-xs dark:border-slate-700"
+                    >
+                      <summary className="cursor-pointer font-semibold focus-visible:ring-4 focus-visible:ring-blue-300">
+                        Keyword ideas for this pillar
+                      </summary>
+                      <ul className="mt-3 space-y-2">
+                        {[
+                          ...new Set(
+                            nodes
+                              .filter((n) => n.parentId === pillar.id)
+                              .flatMap((n) => [n.keyword, ...n.relatedKeywords]),
+                          ),
+                        ].map((keyword) => (
+                          <li key={keyword} className="break-words">
+                            • {keyword}
+                          </li>
+                        ))}
+                      </ul>
+                    </details>
+                  </li>
+                ))}
+              </ul>
+              {!pillars.length && (
+                <p className="text-center text-sm">
+                  Add a child topic to expand this map.
+                </p>
+              )}
+            </div>
           </div>
           {selected && (
             <div className="mt-7 grid gap-6 lg:grid-cols-[1.3fr_1fr]">
@@ -990,16 +1187,6 @@ export default function TopicalMapClient() {
               Open Article Outline Generator
             </Link>
           </div>
-          <p className="mt-3 text-xs leading-6 text-slate-500 dark:text-slate-400">
-            Copy keyword ideas into the clustering tool or paste a topic brief
-            into the outline tool. Nothing transfers automatically. Large idea
-            lists need smaller batches.
-          </p>
-          <p className="mt-2 text-xs leading-6 text-slate-500 dark:text-slate-400">
-            Unsaved edits disappear on refresh. CSV formula-like cells receive
-            an apostrophe for spreadsheet safety. Metrics stay unverified in
-            every export.
-          </p>
         </section>
       )}
     </div>

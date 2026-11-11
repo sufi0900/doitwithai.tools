@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+} from "react";
 import {
   AlertTriangle,
   BarChart3,
@@ -60,6 +67,31 @@ const primaryBtn =
 const secondaryBtn =
   "inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold hover:bg-slate-100 focus-visible:outline-[#5271ff] dark:border-slate-600 dark:hover:bg-slate-800";
 
+function buildInitialSampleAnchorReport(): AnchorAnalysisReport {
+  const parsed = parseSubmittedBacklinkTable(SAMPLE_CSV_DATA, {
+    targetDomain: "doitwithai.tools",
+    brandTerms: ["DoItWithAI", "DoItWithAI Tools"],
+    targetKeywords: [
+      "anchor text analyzer",
+      "anchor text checker",
+      "backlink anchor ratio",
+    ],
+  });
+  return buildAnchorAnalysisReport({
+    mode: "csv",
+    profile: "commercial",
+    targetDomain: "doitwithai.tools",
+    brandTerms: ["DoItWithAI", "DoItWithAI Tools"],
+    targetKeywords: [
+      "anchor text analyzer",
+      "anchor text checker",
+      "backlink anchor ratio",
+    ],
+    rows: parsed.rows,
+    notes: parsed.notes,
+  });
+}
+
 export default function AnchorTextAnalyzerClient() {
   const [mode, setMode] = useState<"csv" | "live" | "html">("csv");
   const [profile, setProfile] = useState<PageBenchmarkProfile>("commercial");
@@ -70,7 +102,7 @@ export default function AnchorTextAnalyzerClient() {
   const [keywordsInput, setKeywordsInput] = useState(
     "anchor text analyzer, anchor text checker, backlink anchor ratio",
   );
-  const [tableInput, setTableInput] = useState("");
+  const [tableInput, setTableInput] = useState(SAMPLE_CSV_DATA);
   const [liveUrlsInput, setLiveUrlsInput] = useState("");
   const [liveScope, setLiveScope] = useState<
     "all-links" | "external-only" | "target-domain-only"
@@ -80,13 +112,14 @@ export default function AnchorTextAnalyzerClient() {
     "https://publisher.example.com/article",
   );
 
-  const [report, setReport] = useState<AnchorAnalysisReport | null>(null);
+  const [report, setReport] = useState<AnchorAnalysisReport | null>(
+    buildInitialSampleAnchorReport,
+  );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [feedback, setFeedback] = useState("");
   const [revision, setRevision] = useState(0);
 
-  // Filters for the placement table
   const [categoryFilter, setCategoryFilter] = useState<AnchorCategory | "all">(
     "all",
   );
@@ -130,32 +163,31 @@ export default function AnchorTextAnalyzerClient() {
     );
     setTableInput(SAMPLE_CSV_DATA);
     setError("");
-    const parsed = parseSubmittedBacklinkTable(SAMPLE_CSV_DATA, {
-      targetDomain: "doitwithai.tools",
-      brandTerms: ["DoItWithAI", "DoItWithAI Tools"],
-      targetKeywords: [
-        "anchor text analyzer",
-        "anchor text checker",
-        "backlink anchor ratio",
-      ],
-    });
-    const built = buildAnchorAnalysisReport({
-      mode: "csv",
-      profile: "commercial",
-      targetDomain: "doitwithai.tools",
-      brandTerms: ["DoItWithAI", "DoItWithAI Tools"],
-      targetKeywords: [
-        "anchor text analyzer",
-        "anchor text checker",
-        "backlink anchor ratio",
-      ],
-      rows: parsed.rows,
-      notes: parsed.notes,
-    });
-    setReport(built);
+    setReport(buildInitialSampleAnchorReport());
     setRevision((r) => r + 1);
     setFeedback(
-      "Loaded a 12-link sample backlink dataset and calculated anchor distribution.",
+      "Loaded 12-link sample backlink dataset. Edit any anchor text or category in the table below to simulate ratio rebalancing live.",
+    );
+  }
+
+  function updatePlacementRowInline(
+    rowId: string,
+    patch: { anchorText?: string; category?: AnchorCategory },
+  ) {
+    if (!report) return;
+    const nextRows = report.rows.map((r) =>
+      r.id === rowId ? { ...r, ...patch } : r,
+    );
+    setReport(
+      buildAnchorAnalysisReport({
+        mode: report.mode,
+        profile,
+        targetDomain,
+        brandTerms: parsedBrands,
+        targetKeywords: parsedKeywords,
+        rows: nextRows,
+        notes: report.notes,
+      }),
     );
   }
 
@@ -163,13 +195,17 @@ export default function AnchorTextAnalyzerClient() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
-      setError("CSV file exceeds 5 MB limit. Filter or trim rows before uploading.");
+      setError(
+        "CSV file exceeds 5 MB limit. Filter or trim rows before uploading.",
+      );
       return;
     }
     const text = await file.text();
     setTableInput(text);
     setError("");
-    setFeedback(`Loaded ${file.name} (${Math.round(file.size / 1024)} KB). Click Analyze Anchors to inspect.`);
+    setFeedback(
+      `Loaded ${file.name} (${Math.round(file.size / 1024)} KB). Click Analyze Anchors to inspect.`,
+    );
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -412,11 +448,7 @@ export default function AnchorTextAnalyzerClient() {
               or inspect pasted HTML.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={loadSample}
-            className={secondaryBtn}
-          >
+          <button type="button" onClick={loadSample} className={secondaryBtn}>
             <Sparkles size={16} className="text-[#5271ff]" />
             Load Sample Audit (12 Links)
           </button>
@@ -485,17 +517,53 @@ export default function AnchorTextAnalyzerClient() {
           })}
         </div>
 
-        {/* Target Domain, Brand Terms & Target Keywords */}
+        {/* Benchmark Profile Selector */}
+        <fieldset className="mt-6">
+          <legend className="text-sm font-bold">
+            Target Page Type Benchmark (Adjusts Safe Exact-Match & Branded
+            Thresholds)
+          </legend>
+          <div className="mt-2.5 grid gap-2.5 sm:grid-cols-3">
+            {(
+              Object.entries(BENCHMARK_PROFILES) as [
+                PageBenchmarkProfile,
+                (typeof BENCHMARK_PROFILES)["commercial"],
+              ][]
+            ).map(([key, item]) => {
+              const selected = profile === key;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  aria-pressed={selected}
+                  onClick={() => switchBenchmarkProfile(key)}
+                  className={`rounded-xl border p-3.5 text-left transition ${
+                    selected
+                      ? "border-[#3452d1] bg-[#3452d1]/5 ring-2 ring-[#3452d1]/20 dark:border-[#5271ff] dark:bg-[#5271ff]/10"
+                      : "border-slate-200 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800/50"
+                  }`}
+                >
+                  <p className="text-xs font-extrabold">{item.name}</p>
+                  <p className="mt-1 text-[11px] leading-4 text-slate-500 dark:text-slate-400">
+                    {item.subtitle}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+        </fieldset>
+
+        {/* Brand & Target Keyword Calibration */}
         <div className="mt-6 grid gap-5 md:grid-cols-3">
           <div>
             <label
               htmlFor="anchor-target-domain"
               className="block text-sm font-bold"
             >
-              Your Target Domain or URL
+              Your Target Domain
             </label>
             <p className="mb-2 mt-1 text-xs text-slate-500 dark:text-slate-400">
-              Used to detect Naked URL and Brand root anchors.
+              Used to detect naked URLs &amp; domain anchors.
             </p>
             <input
               id="anchor-target-domain"
@@ -506,15 +574,16 @@ export default function AnchorTextAnalyzerClient() {
               className={control}
             />
           </div>
+
           <div>
             <label
               htmlFor="anchor-brand-terms"
               className="block text-sm font-bold"
             >
-              Brand Name Variations (comma-separated)
+              Brand Names (comma-separated)
             </label>
             <p className="mb-2 mt-1 text-xs text-slate-500 dark:text-slate-400">
-              Identifies Branded vs Brand + Keyword anchors.
+              Identifies Branded and Brand + Keyword anchors.
             </p>
             <input
               id="anchor-brand-terms"
@@ -525,15 +594,16 @@ export default function AnchorTextAnalyzerClient() {
               className={control}
             />
           </div>
+
           <div>
             <label
               htmlFor="anchor-target-keywords"
               className="block text-sm font-bold"
             >
-              Target SEO Keywords (comma-separated)
+              Target Money Keywords (comma-separated)
             </label>
             <p className="mb-2 mt-1 text-xs text-slate-500 dark:text-slate-400">
-              Detects Exact Match and Partial Match commercial anchors.
+              Flags Exact-Match and Partial-Match commercial anchors.
             </p>
             <input
               id="anchor-target-keywords"
@@ -546,54 +616,17 @@ export default function AnchorTextAnalyzerClient() {
           </div>
         </div>
 
-        {/* Page Type Benchmark Profile Selector */}
-        <div className="mt-6">
-          <span className="block text-sm font-bold">
-            Target Page Type Benchmark Profile
-          </span>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            Natural anchor distributions differ between a root homepage, a
-            commercial product/service page, and an editorial blog post or tool.
-          </p>
-          <div className="mt-3 grid gap-3 sm:grid-cols-3">
-            {(
-              Object.entries(BENCHMARK_PROFILES) as [
-                PageBenchmarkProfile,
-                (typeof BENCHMARK_PROFILES)["homepage"],
-              ][]
-            ).map(([key, meta]) => (
-              <button
-                key={key}
-                type="button"
-                aria-pressed={profile === key}
-                onClick={() => switchBenchmarkProfile(key)}
-                className={`rounded-xl border p-3.5 text-left transition ${
-                  profile === key
-                    ? "border-[#3452d1] bg-[#3452d1]/5 dark:border-[#5271ff] dark:bg-[#5271ff]/10"
-                    : "border-slate-200 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800/50"
-                }`}
-              >
-                <p className="text-sm font-bold">{meta.name}</p>
-                <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
-                  {meta.subtitle}
-                </p>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Mode-Specific Input Area */}
+        {/* Mode-Specific Input Panel */}
         {mode === "csv" && (
           <div className="mt-6">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <label
-                htmlFor="anchor-csv-input"
+                htmlFor="anchor-table-input"
                 className="block text-sm font-bold"
               >
-                Backlink Anchor List or CSV/TSV Table{" "}
-                <span className="font-normal">(required)</span>
+                Backlink Anchor Rows (CSV, TSV, or 1 Anchor per Line)
               </label>
-              <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold hover:bg-slate-100 dark:border-slate-600 dark:hover:bg-slate-800">
+              <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold hover:bg-slate-100 dark:border-slate-600 dark:hover:bg-slate-800">
                 <Upload size={14} />
                 Upload .CSV / .TSV File
                 <input
@@ -604,17 +637,13 @@ export default function AnchorTextAnalyzerClient() {
                 />
               </label>
             </div>
-            <p className="mb-2 mt-1 text-xs text-slate-500 dark:text-slate-400">
-              Paste one anchor per line, or paste CSV/TSV rows with columns like{" "}
-              <code>Anchor Text, Source URL, Target URL, Rel</code>.
-            </p>
             <textarea
-              id="anchor-csv-input"
+              id="anchor-table-input"
               rows={8}
               value={tableInput}
               onChange={(e) => setTableInput(e.target.value)}
-              placeholder={`Anchor Text,Source URL,Target URL,Rel\nDoItWithAI,https://publisher.com/post,https://doitwithai.tools,dofollow\nanchor text analyzer,https://seo-blog.org/tools,https://doitwithai.tools/tools/anchor-text-analyzer,dofollow`}
-              className={`${control} font-mono text-xs`}
+              placeholder={SAMPLE_CSV_DATA}
+              className={`${control} mt-2 font-mono text-xs`}
             />
           </div>
         )}
@@ -628,49 +657,16 @@ export default function AnchorTextAnalyzerClient() {
               >
                 Public Webpage URLs to Scan (up to 5 URLs, one per line)
               </label>
-              <p className="mb-2 mt-1 text-xs text-slate-500 dark:text-slate-400">
-                Enter your own page URLs to audit internal/outbound anchor
-                distribution, or enter publisher URLs that link to your site.
-              </p>
               <textarea
                 id="anchor-live-urls"
                 rows={4}
                 value={liveUrlsInput}
                 onChange={(e) => setLiveUrlsInput(e.target.value)}
-                placeholder={`https://publisher.example.com/seo-tools-roundup\nhttps://anotherblog.example.org/off-page-guide`}
-                className={control}
+                placeholder={
+                  "https://publisher.com/seo-tools-roundup\nhttps://anotherblog.org/resources"
+                }
+                className={`${control} mt-2`}
               />
-            </div>
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                Link Extraction Filter Scope
-              </label>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {[
-                  { id: "all-links" as const, label: "All Links on Page" },
-                  {
-                    id: "external-only" as const,
-                    label: "External Outbound Links Only",
-                  },
-                  {
-                    id: "target-domain-only" as const,
-                    label: "Links Pointing to My Target Domain Only",
-                  },
-                ].map((opt) => (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    onClick={() => setLiveScope(opt.id)}
-                    className={`rounded-lg border px-3.5 py-2 text-xs font-semibold ${
-                      liveScope === opt.id
-                        ? "border-[#3452d1] bg-[#3452d1] text-white"
-                        : "border-slate-300 dark:border-slate-600"
-                    }`}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
             </div>
           </div>
         )}
@@ -682,13 +678,14 @@ export default function AnchorTextAnalyzerClient() {
                 htmlFor="anchor-html-source"
                 className="block text-sm font-bold"
               >
-                Reference Source Page URL (for resolving relative links)
+                Source Page URL (used to resolve relative links)
               </label>
               <input
                 id="anchor-html-source"
                 type="url"
                 value={htmlSourceUrl}
                 onChange={(e) => setHtmlSourceUrl(e.target.value)}
+                placeholder="https://publisher.example.com/article"
                 className={`${control} mt-1`}
               />
             </div>
@@ -697,14 +694,14 @@ export default function AnchorTextAnalyzerClient() {
                 htmlFor="anchor-html-input"
                 className="block text-sm font-bold"
               >
-                Paste Webpage HTML
+                Paste Page HTML
               </label>
               <textarea
                 id="anchor-html-input"
                 rows={7}
                 value={htmlInput}
                 onChange={(e) => setHtmlInput(e.target.value)}
-                placeholder='<article><p>Read the <a href="https://doitwithai.tools">DoItWithAI</a> guide on <a href="https://doitwithai.tools/tools/anchor-text-analyzer">anchor text analyzer</a>.</p></article>'
+                placeholder='<article><p>Read our <a href="https://doitwithai.tools">DoItWithAI</a> guide...</p></article>'
                 className={`${control} mt-1 font-mono text-xs`}
               />
             </div>
@@ -733,7 +730,7 @@ export default function AnchorTextAnalyzerClient() {
         <div className="mt-6 flex flex-wrap items-center gap-3">
           <button type="submit" disabled={busy} className={primaryBtn}>
             <BarChart3 size={18} />
-            Analyze Anchor Text Distribution
+            {busy ? "Analyzing Anchors…" : "Analyze Anchor Text Distribution"}
           </button>
           {report && (
             <button
@@ -744,37 +741,33 @@ export default function AnchorTextAnalyzerClient() {
               }}
               className={secondaryBtn}
             >
-              <RefreshCw size={15} />
+              <RefreshCw size={16} />
               Clear Report
             </button>
           )}
         </div>
       </form>
 
-      {/* Results Dashboard */}
       {report && (
         <section
           ref={resultRef}
           tabIndex={-1}
-          aria-label="Anchor text analysis results"
+          aria-label="Anchor text audit results"
           className="mt-10 space-y-8 focus:outline-none"
         >
-          {/* Executive KPI Banner */}
+          {/* Executive Summary & Export Bar */}
           <div className={panel}>
             <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200 pb-6 dark:border-slate-700">
               <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-[#5271ff]">
-                  Audit Complete · {BENCHMARK_PROFILES[report.profile].name}
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#5271ff]">
+                  8-Category Semantic Anchor Audit ·{" "}
+                  {BENCHMARK_PROFILES[report.profile].name}
                 </span>
-                <h3 className="mt-1 text-2xl font-black">
-                  Anchor Naturalness & Distribution Scorecard
+                <h3 className="mt-1 text-2xl font-black sm:text-3xl">
+                  Anchor Text Distribution &amp; Over-Optimization Report
                 </h3>
-                <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-                  Analyzed {report.totalLinks} link placements across{" "}
-                  {report.uniqueSources} source(s) with {report.uniqueAnchors}{" "}
-                  unique anchor variations.
-                </p>
               </div>
+
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
@@ -782,7 +775,7 @@ export default function AnchorTextAnalyzerClient() {
                   className={primaryBtn}
                 >
                   <Download size={16} />
-                  Download Full Audit (.CSV)
+                  Download Links (.CSV)
                 </button>
                 <button
                   type="button"
@@ -815,7 +808,7 @@ export default function AnchorTextAnalyzerClient() {
                   </span>
                 </p>
                 <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                  Based on benchmark fit & entropy
+                  Based on benchmark fit &amp; entropy
                 </p>
               </div>
 
@@ -923,7 +916,8 @@ export default function AnchorTextAnalyzerClient() {
                       </div>
                       <div className="flex items-center gap-2 text-xs">
                         <span className="text-slate-500 dark:text-slate-400">
-                          Recommended: {cat.recommendedMin}%–{cat.recommendedMax}%
+                          Recommended: {cat.recommendedMin}%–
+                          {cat.recommendedMax}%
                         </span>
                         <span
                           className={`rounded-md px-2 py-0.5 font-bold ${
@@ -945,7 +939,6 @@ export default function AnchorTextAnalyzerClient() {
                       </div>
                     </div>
 
-                    {/* Visual Progress Bar with Target Window Marker */}
                     <div className="relative mt-3 h-3 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
                       <div
                         aria-hidden="true"
@@ -971,18 +964,6 @@ export default function AnchorTextAnalyzerClient() {
                     <p className="mt-2 text-xs text-slate-600 dark:text-slate-400">
                       {cat.description}
                     </p>
-                    {cat.sampleAnchors.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-1.5">
-                        {cat.sampleAnchors.map((sample) => (
-                          <span
-                            key={sample}
-                            className="rounded bg-slate-100 px-2 py-0.5 font-mono text-xs text-slate-700 dark:bg-slate-800 dark:text-slate-300"
-                          >
-                            &ldquo;{sample}&rdquo;
-                          </span>
-                        ))}
-                      </div>
-                    )}
                   </div>
                 );
               })}
@@ -994,7 +975,7 @@ export default function AnchorTextAnalyzerClient() {
             <div className={panel}>
               <h3 className="flex items-center gap-2 text-xl font-extrabold">
                 <ShieldAlert aria-hidden className="text-[#5271ff]" />
-                Over-Optimization & Footprint Diagnostics
+                Over-Optimization &amp; Footprint Diagnostics
               </h3>
               <div className="mt-4 space-y-4">
                 {report.findings.map((f) => (
@@ -1055,7 +1036,9 @@ export default function AnchorTextAnalyzerClient() {
                       )
                       .join("\n\n");
                     await navigator.clipboard.writeText(text);
-                    setFeedback("Copied anchor diversification plan to clipboard.");
+                    setFeedback(
+                      "Copied anchor diversification plan to clipboard.",
+                    );
                   }}
                   className={secondaryBtn}
                 >
@@ -1063,11 +1046,6 @@ export default function AnchorTextAnalyzerClient() {
                   Copy Plan
                 </button>
               </div>
-              <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
-                Use these natural anchor variations on your upcoming outreach and
-                digital PR placements to balance your ratio.
-              </p>
-
               <div className="mt-4 space-y-4">
                 {report.diversificationPlan.map((plan) => (
                   <div
@@ -1101,62 +1079,20 @@ export default function AnchorTextAnalyzerClient() {
             </div>
           </div>
 
-          {/* Top Repeated Anchors Table */}
-          <div className={panel}>
-            <h3 className="text-xl font-extrabold">
-              Most Frequently Repeated Anchor Phrases
-            </h3>
-            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-              Spot identical commercial anchors repeated across multiple
-              referring sources.
-            </p>
-            <div className="mt-4 overflow-x-auto">
-              <table className="w-full border-collapse text-left text-sm">
-                <thead>
-                  <tr className="border-b border-slate-200 text-xs uppercase text-slate-500 dark:border-slate-700 dark:text-slate-400">
-                    <th className="py-3 pr-4">Anchor Phrase</th>
-                    <th className="px-3 py-3">Category</th>
-                    <th className="px-3 py-3">Occurrences</th>
-                    <th className="px-3 py-3">Share</th>
-                    <th className="px-3 py-3">Dofollow</th>
-                    <th className="py-3 pl-3">Footprint Note</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                  {report.repeatedAnchors.slice(0, 12).map((item) => (
-                    <tr key={`${item.anchor}-${item.category}`}>
-                      <td className="py-3 pr-4 font-mono text-xs font-semibold">
-                        {item.anchor}
-                      </td>
-                      <td className="px-3 py-3">
-                        <span
-                          className={`rounded-full border px-2.5 py-0.5 text-xs font-bold ${CATEGORY_META[item.category].badgeClass}`}
-                        >
-                          {CATEGORY_META[item.category].label}
-                        </span>
-                      </td>
-                      <td className="px-3 py-3 font-bold">{item.count}</td>
-                      <td className="px-3 py-3">{item.percentage}%</td>
-                      <td className="px-3 py-3">{item.dofollowCount}</td>
-                      <td className="py-3 pl-3 text-xs text-slate-600 dark:text-slate-300">
-                        {item.riskNote}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Filterable Individual Link Placements Table */}
+          {/* Filterable & Inline-Editable Individual Link Placements Table */}
           <div className={panel}>
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
                 <h3 className="flex items-center gap-2 text-xl font-extrabold">
                   <Filter size={18} className="text-[#5271ff]" />
-                  Classified Link Placements ({filteredRows.length} of{" "}
+                  Interactive Link Placements ({filteredRows.length} of{" "}
                   {report.rows.length})
                 </h3>
+                <p className="mt-1 text-xs text-slate-500">
+                  Edit any anchor text or category dropdown inline to simulate
+                  how replacing over-optimized anchors changes your Naturalness
+                  Index in real time.
+                </p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <div className="relative">
@@ -1209,10 +1145,9 @@ export default function AnchorTextAnalyzerClient() {
               <table className="w-full border-collapse text-left text-xs">
                 <thead>
                   <tr className="border-b border-slate-200 uppercase text-slate-500 dark:border-slate-700 dark:text-slate-400">
-                    <th className="py-3 pr-3">Anchor Text</th>
-                    <th className="px-3 py-3">Category</th>
+                    <th className="py-3 pr-3">Editable Anchor Text</th>
+                    <th className="px-3 py-3">Category Override</th>
                     <th className="px-3 py-3">Follow</th>
-                    <th className="px-3 py-3">Zone</th>
                     <th className="px-3 py-3">Source / Target</th>
                     <th className="py-3 pl-3">Surrounding Context</th>
                   </tr>
@@ -1220,27 +1155,49 @@ export default function AnchorTextAnalyzerClient() {
                 <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                   {filteredRows.slice(0, 150).map((row) => (
                     <tr key={row.id}>
-                      <td className="py-3 pr-3 font-mono font-semibold">
-                        {row.anchorText}
-                        {row.matchedKeyword && (
-                          <span className="mt-0.5 block text-[11px] font-normal text-slate-500">
-                            Matched: {row.matchedKeyword}
-                          </span>
-                        )}
+                      <td className="min-w-[200px] py-3 pr-3">
+                        <input
+                          type="text"
+                          value={row.anchorText}
+                          onChange={(e) =>
+                            updatePlacementRowInline(row.id, {
+                              anchorText: e.target.value,
+                            })
+                          }
+                          aria-label={`Anchor text for ${row.sourceUrl}`}
+                          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 font-mono text-xs font-semibold text-slate-900 focus:border-[#4058D0] focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                        />
                       </td>
                       <td className="px-3 py-3">
-                        <span
-                          className={`inline-block rounded-full border px-2.5 py-0.5 font-bold ${CATEGORY_META[row.category].badgeClass}`}
+                        <select
+                          aria-label={`Category for ${row.anchorText}`}
+                          value={row.category}
+                          onChange={(e) =>
+                            updatePlacementRowInline(row.id, {
+                              category: e.target.value as AnchorCategory,
+                            })
+                          }
+                          className={`rounded-full border px-2.5 py-1 text-xs font-bold ${CATEGORY_META[row.category].badgeClass}`}
                         >
-                          {CATEGORY_META[row.category].label}
-                        </span>
+                          {Object.entries(CATEGORY_META).map(([k, v]) => (
+                            <option
+                              key={k}
+                              value={k}
+                              className="bg-white text-slate-900 dark:bg-slate-900 dark:text-white"
+                            >
+                              {v.label}
+                            </option>
+                          ))}
+                        </select>
                       </td>
                       <td className="px-3 py-3 uppercase font-semibold">
                         {row.followStatus}
                       </td>
-                      <td className="px-3 py-3 text-slate-500">{row.zone}</td>
                       <td className="max-w-[220px] truncate px-3 py-3">
-                        <div className="truncate font-semibold" title={row.sourceUrl}>
+                        <div
+                          className="truncate font-semibold"
+                          title={row.sourceUrl}
+                        >
                           From: {row.sourceUrl}
                         </div>
                         <div

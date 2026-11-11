@@ -2,6 +2,15 @@
 import { useMemo, useState } from "react";
 import { coverageCsv, EMPTY_FIELDS, keywordCoverage } from "./coverage";
 import type { Token } from "./analyze";
+
+const INITIAL_COVERAGE_FIELDS = {
+  title: "How to Use AI Writing Tools with Human Review",
+  description:
+    "Learn a practical workflow for using AI writing tools while keeping human review and editorial verification at the center.",
+  headings:
+    "How AI Writing Tools Fit Into Your Workflow\nWhy Human Review Still Matters Before Publishing",
+};
+
 export default function CoveragePanel({
   text,
   tokens,
@@ -17,7 +26,7 @@ export default function CoveragePanel({
   error: string;
   onSelect: (phrase: string) => void;
 }) {
-  const [fields, setFields] = useState(EMPTY_FIELDS),
+  const [fields, setFields] = useState(INITIAL_COVERAGE_FIELDS),
     [status, setStatus] = useState("");
   const report = useMemo(
     () => keywordCoverage(text, tokens, targets, fields),
@@ -63,7 +72,7 @@ export default function CoveragePanel({
           type="button"
           disabled={updating || !targets.length || Boolean(error)}
           onClick={download}
-          className="min-h-11 rounded-xl bg-[#4058d0] px-5 py-3 text-sm font-bold text-white focus-visible:ring-2 focus-visible:ring-blue-300 disabled:opacity-50"
+          className="min-h-11 rounded-xl bg-[#4058d0] px-5 py-3 text-sm font-bold text-white hover:bg-[#3452D1] focus-visible:ring-2 focus-visible:ring-blue-300 disabled:opacity-50"
         >
           Export coverage CSV
         </button>
@@ -73,7 +82,10 @@ export default function CoveragePanel({
         supporting phrases. Coverage measures exact normalized matches, not
         topical completeness.
       </p>
-      <details className="mt-6 rounded-xl border border-slate-200 p-5 dark:border-slate-700">
+      <details
+        open
+        className="mt-6 rounded-xl border border-slate-200 p-5 dark:border-slate-700"
+      >
         <summary className="cursor-pointer font-bold">
           Add optional page fields for placement checks
         </summary>
@@ -111,16 +123,28 @@ export default function CoveragePanel({
             </label>
           ))}
         </div>
-        <button
-          type="button"
-          className="mt-4 min-h-11 text-sm font-semibold text-[#4058d0] underline dark:text-blue-200"
-          onClick={() => {
-            setFields(EMPTY_FIELDS);
-            setStatus("Optional page fields cleared.");
-          }}
-        >
-          Clear optional fields
-        </button>
+        <div className="mt-4 flex flex-wrap gap-4">
+          <button
+            type="button"
+            className="min-h-11 text-sm font-semibold text-[#4058d0] underline dark:text-blue-200"
+            onClick={() => {
+              setFields(INITIAL_COVERAGE_FIELDS);
+              setStatus("Sample page fields restored.");
+            }}
+          >
+            Load sample fields
+          </button>
+          <button
+            type="button"
+            className="min-h-11 text-sm font-semibold text-[#4058d0] underline dark:text-blue-200"
+            onClick={() => {
+              setFields(EMPTY_FIELDS);
+              setStatus("Optional page fields cleared.");
+            }}
+          >
+            Clear optional fields
+          </button>
+        </div>
       </details>
       {error ? (
         <p role="alert" className="mt-5 text-sm text-red-700 dark:text-red-200">

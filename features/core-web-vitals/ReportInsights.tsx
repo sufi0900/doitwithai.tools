@@ -3,6 +3,7 @@ import { CORE_METRICS, coreCards, hasMeasurement } from "./presentation";
 import { RATING_STYLE, scoreRating } from "./ratings";
 import type { Metric, PageSpeedResult } from "./types";
 import { secondaryButton } from "@/features/writing-tools/config";
+
 function ComparisonMetric({ metric }: { metric?: Metric }) {
   return (
     <span className={RATING_STYLE[metric?.rating ?? "unknown"].valueClass}>
@@ -10,12 +11,14 @@ function ComparisonMetric({ metric }: { metric?: Metric }) {
     </span>
   );
 }
+
 function score(report: PageSpeedResult | null) {
   return (
     report?.categories.find((c) => c.id === "performance")?.score ??
     "Not checked"
   );
 }
+
 export default function ReportInsights({
   result,
   mobile,
@@ -137,7 +140,7 @@ export default function ReportInsights({
         </p>
         <a
           href="https://web.dev/articles/vitals"
-          className="mt-2 inline-block text-xs font-bold text-[#5271ff] underline"
+          className="mt-2 inline-block text-xs font-bold text-[#4058D0] underline"
         >
           Read Google’s metric guidance
         </a>
@@ -277,7 +280,7 @@ export default function ReportInsights({
                   <h3 className="min-w-0 flex-1 text-sm font-bold text-slate-950 dark:text-white">
                     {i + 1}. {f.title}
                   </h3>
-                  <span className="rounded-full bg-[#5271ff]/10 px-3 py-1 text-[10px] font-bold uppercase text-[#5271ff]">
+                  <span className="rounded-full bg-[#4058D0]/10 px-3 py-1 text-[10px] font-bold uppercase text-[#4058D0]">
                     {f.category.replace("-", " ")}
                   </span>
                 </div>
@@ -287,7 +290,7 @@ export default function ReportInsights({
                   </p>
                 )}
                 {f.savingsMs !== null && (
-                  <p className="mt-2 text-xs font-bold text-[#5271ff]">
+                  <p className="mt-2 text-xs font-bold text-[#4058D0]">
                     Estimated time saving: {(f.savingsMs / 1000).toFixed(2)}{" "}
                     seconds
                   </p>
@@ -306,9 +309,9 @@ export default function ReportInsights({
                   {f.nextStep}
                 </p>
                 {f.resources.length > 0 && (
-                  <details className="mt-3">
-                    <summary className="cursor-pointer text-xs font-bold text-[#5271ff]">
-                      Affected resources
+                  <details open className="mt-3">
+                    <summary className="cursor-pointer text-xs font-bold text-[#4058D0]">
+                      Affected resources ({f.resources.length})
                     </summary>
                     <ul className="mt-2 space-y-2">
                       {f.resources.map((url, j) => (
@@ -336,7 +339,7 @@ export default function ReportInsights({
           href={`https://pagespeed.web.dev/analysis?url=${encodeURIComponent(result.requestedUrl)}&form_factor=${result.strategy}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-5 inline-flex text-sm font-bold text-[#5271ff] underline"
+          className="mt-5 inline-flex text-sm font-bold text-[#4058D0] underline"
         >
           Open the full Google report
         </a>

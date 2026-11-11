@@ -9,6 +9,8 @@ export type ShortFormScriptInput = {
   ctaGoal: string;
 };
 
+export type ShortScriptSegment = ScriptTimelineSegment;
+
 export type ScriptTimelineSegment = {
   timeRange: string;
   beatLabel: string;
@@ -18,51 +20,72 @@ export type ScriptTimelineSegment = {
 };
 
 export type ShortFormScriptPack = {
+  cleanTopicTitle: string;
   hookVariations: Array<{
     angle: "Contrarian Stop-Hook" | "Proof / Number Hook" | "Mistake Callout";
     spokenHook: string;
     onScreenHook: string;
   }>;
   segments: ScriptTimelineSegment[];
+  connectedVoiceoverScript: string;
   totalSpokenWords: number;
   estimatedSecondsAt150Wpm: number;
   captionWithHashtags: string;
 };
 
 export const DEFAULT_SHORT_SCRIPT_INPUT: ShortFormScriptInput = {
-  topic: "Why 90% of blog posts get zero clicks from AI Search & Featured Snippets",
+  topic: "How to optimize URL slugs for SEO and safe URL migrations",
   coreTakeawayOrProof:
-    "Put a 48-word direct definition paragraph immediately below your H2 question heading before adding backstory.",
+    "Keep URL slugs under 5 words using lowercase hyphens, remove stop words and dates, and always set a permanent 301 redirect before changing an indexed URL.",
   platform: "YouTube Shorts",
   durationSeconds: 45,
-  ctaGoal: "Comment 'SNIPPET' or grab the free checklist at the link in bio",
+  ctaGoal: "Comment 'SLUG' or grab the free SEO checklist at the link in bio",
 };
+
+function sanitizePhrase(raw: string): string {
+  return raw
+    .replace(/\s*\|\s*.*$/g, "")
+    .replace(/\btable of contents\.?\s*/gi, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function truncateWords(str: string, maxChars: number): string {
+  const cleaned = sanitizePhrase(str);
+  if (cleaned.length <= maxChars) return cleaned;
+  const sliced = cleaned.slice(0, maxChars);
+  const lastSpace = sliced.lastIndexOf(" ");
+  return (lastSpace > 15 ? sliced.slice(0, lastSpace) : sliced).replace(/[.,;:!?-]+$/, "");
+}
 
 export function buildDeterministicShortScript(
   input: ShortFormScriptInput,
 ): ShortFormScriptPack {
-  const topic = input.topic.trim() || "this SEO strategy";
-  const proof =
-    input.coreTakeawayOrProof.trim() ||
-    "Audit your H2 answer passages and keep them between 40 and 58 words.";
-  const cta =
-    input.ctaGoal.trim() || "Follow for more practical SEO workflows";
+  const cleanTopic = truncateWords(input.topic || "this SEO strategy", 65);
+  const cleanProof =
+    sanitizePhrase(input.coreTakeawayOrProof) ||
+    "Focus on search intent, keep your structure scannable, and verify technical signals before publishing.";
+  const cleanCta =
+    sanitizePhrase(input.ctaGoal) ||
+    "Follow for more practical SEO workflows";
+
+  const shortOverlayCta = truncateWords(cleanCta, 32).toUpperCase();
 
   const hookVariations: ShortFormScriptPack["hookVariations"] = [
     {
       angle: "Contrarian Stop-Hook",
-      spokenHook: `Stop writing 300-word introductions if you want to rank in ${topic.slice(0, 45)}.`,
-      onScreenHook: "STOP WRITING LONG INTROS 🛑",
+      spokenHook: `Stop making this common mistake with "${cleanTopic}"—here is the 30-second fix that actually works.`,
+      onScreenHook: `${truncateWords(cleanTopic, 26).toUpperCase()} FIX 🛑`,
     },
     {
       angle: "Proof / Number Hook",
-      spokenHook: `This 48-word formatting rule is the fastest way to fix: ${topic.slice(0, 50)}.`,
-      onScreenHook: "THE 48-WORD SEO RULE ⚡",
+      spokenHook: `Here is the 80/20 rule for "${cleanTopic}" so you don't have to read a 2,000-word guide.`,
+      onScreenHook: "THE 80/20 CHEAT SHEET ⚡",
     },
     {
       angle: "Mistake Callout",
-      spokenHook: `You are losing free organic clicks every single day because of this 1 mistake.`,
-      onScreenHook: "1 MISTAKE KILLING CLICKS 📉",
+      spokenHook: `Most websites lose free organic traffic every week because they overlook one detail in "${cleanTopic}".`,
+      onScreenHook: "1 MISTAKE KILLING TRAFFIC 📉",
     },
   ];
 
@@ -72,53 +95,59 @@ export function buildDeterministicShortScript(
       beatLabel: "1. Scroll-Stopper Hook (First 3 Seconds)",
       spokenLine: hookVariations[0].spokenHook,
       visualBRollCue:
-        "Tight talking-head framing; lean toward camera and point to screen overlay on beat 1.",
+        "Tight talking-head framing; point to the headline graphic at the top of the screen on beat 1.",
       onScreenTextCaption: hookVariations[0].onScreenHook,
     },
     {
-      timeRange: "0:03 – 0:11",
-      beatLabel: "2. The Problem & Why Most Fail (Pattern Interrupt #1)",
-      spokenLine: `When Google or AI Search scans your page for "${topic}", it skips right past fluffy introductions looking for a clean, extractable answer block.`,
+      timeRange: "0:03 – 0:12",
+      beatLabel: "2. The Core Problem (Pattern Interrupt #1)",
+      spokenLine: `When most people set up ${cleanTopic.toLowerCase()}, they overcomplicate the process instead of focusing on what search engines and users actually scan first.`,
       visualBRollCue:
-        "Zoom cut (110%) + over-the-shoulder screen recording highlighting a bloated paragraph in red.",
-      onScreenTextCaption: "AI SKIPS FLUFFY INTROS ❌",
+        "Quick 1.15x zoom cut + highlight the common mistake on screen in red.",
+      onScreenTextCaption: "WHY MOST SETUPS FAIL ❌",
     },
     {
-      timeRange: "0:11 – 0:24",
-      beatLabel: "3. The Core Fix / Golden Takeaway (Pattern Interrupt #2)",
-      spokenLine: `Here is the exact fix: ${proof}`,
+      timeRange: "0:12 – 0:26",
+      beatLabel: "3. The Exact Actionable Fix (Pattern Interrupt #2)",
+      spokenLine: `Instead, do this right away: ${cleanProof}`,
       visualBRollCue:
-        "Switch to green split-screen showing the clean H2 question followed immediately by a 48-word bold-lead answer.",
-      onScreenTextCaption: "H2 + 48-WORD ANSWER BLOCK ✅",
+        "Switch to green-screen or split-screen showing the clean before-and-after example.",
+      onScreenTextCaption: "THE STEP-BY-STEP FIX ✅",
     },
     {
-      timeRange: "0:24 – 0:37",
-      beatLabel: "4. Real-World Proof & Example",
+      timeRange: "0:26 – 0:37",
+      beatLabel: "4. Quick Verification Checklist",
       spokenLine:
-        "Start your first sentence with a direct '[Topic] is...' definition, bold the key metric, and add a 4-item bulleted list right underneath.",
+        "Test it on one high-priority page first, verify the result in Search Console, and then roll it out across the rest of your site.",
       visualBRollCue:
-        "Pop-up visual card showing the Featured Snippet & AI Overview citation preview.",
-      onScreenTextCaption: "1. DEFINE  2. BOLD  3. LIST 📋",
+        "Show 3 crisp numbered checkmarks popping up on screen.",
+      onScreenTextCaption: "1. TEST  2. VERIFY  3. SCALE 📋",
     },
     {
       timeRange: `0:37 – 0:${input.durationSeconds}`,
-      beatLabel: "5. Loopable CTA & Save Trigger",
-      spokenLine: `Save this video before you publish your next post—and ${cta} because that is exactly why…`,
+      beatLabel: "5. Loopable Call-To-Action",
+      spokenLine: `Save this video so you have the checklist ready for your next post—and ${cleanCta}.`,
       visualBRollCue:
-        "Subtle gesture toward the Save/Bookmark button; final word loops seamlessly back into 0:00.",
-      onScreenTextCaption: `SAVE THIS + ${cta.slice(0, 28).toUpperCase()} 👇`,
+        "Point down toward the Save/Bookmark icon so viewers bookmark the video.",
+      onScreenTextCaption: `SAVE THIS + ${shortOverlayCta} 👇`,
     },
   ];
+
+  const connectedVoiceoverScript = segments
+    .map((s) => s.spokenLine)
+    .join("\n\n");
 
   const allSpoken = segments.map((s) => s.spokenLine).join(" ");
   const totalSpokenWords = allSpoken.trim().split(/\s+/).filter(Boolean).length;
   const estimatedSecondsAt150Wpm = Math.round((totalSpokenWords / 150) * 60);
 
-  const captionWithHashtags = `${hookVariations[0].spokenHook}\n\nHere is the quick breakdown:\n✅ ${proof}\n✅ Keep H2 answer blocks between 40–58 words\n✅ Pair with a 4-item ordered list\n\n👉 ${cta}\n\n#SEO #ContentMarketing #DigitalMarketing #CreatorTips #Shorts`;
+  const captionWithHashtags = `${hookVariations[0].spokenHook}\n\nQuick summary:\n✅ ${cleanProof}\n✅ Test on 1 priority page first & verify in Search Console\n\n👉 ${cleanCta}\n\n#SEO #ContentStrategy #DigitalMarketing #CreatorTips #Shorts`;
 
   return {
+    cleanTopicTitle: cleanTopic,
     hookVariations,
     segments,
+    connectedVoiceoverScript,
     totalSpokenWords,
     estimatedSecondsAt150Wpm,
     captionWithHashtags,

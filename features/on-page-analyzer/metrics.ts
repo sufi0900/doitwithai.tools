@@ -5,7 +5,9 @@ import {
 import type { DocumentBlock } from "@/features/readability/engine/document";
 import type { PageSnapshot } from "./types";
 import { words, phraseCount } from "./text";
+
 const readingCache = new WeakMap<PageSnapshot, Map<number, DocumentAnalysis>>();
+
 export function readabilityReport(
   page: PageSnapshot,
   targetGrade = 9,
@@ -40,6 +42,7 @@ export function readabilityReport(
   readingCache.set(page, entries);
   return report;
 }
+
 export function keywordReport(
   page: PageSnapshot,
   primary: string,
@@ -98,6 +101,7 @@ export function keywordReport(
       };
     });
 }
+
 export function claimPassages(page: PageSnapshot) {
   return page.blocks.filter(
     (b) =>
@@ -107,6 +111,7 @@ export function claimPassages(page: PageSnapshot) {
       ),
   );
 }
+
 export function linkReport(page: PageSnapshot) {
   let base: URL | null = null;
   try {
@@ -128,4 +133,134 @@ export function linkReport(page: PageSnapshot) {
       attributes: l.rel.split(/\s+/).filter(Boolean),
     };
   });
+}
+
+const STOPWORDS = new Set([
+  "the",
+  "and",
+  "for",
+  "that",
+  "this",
+  "with",
+  "from",
+  "your",
+  "are",
+  "have",
+  "not",
+  "can",
+  "will",
+  "into",
+  "more",
+  "when",
+  "what",
+  "how",
+  "why",
+  "who",
+  "where",
+  "which",
+  "their",
+  "they",
+  "them",
+  "been",
+  "has",
+  "had",
+  "were",
+  "was",
+  "also",
+  "than",
+  "then",
+  "only",
+  "some",
+  "such",
+  "each",
+  "over",
+  "both",
+  "most",
+  "other",
+  "about",
+  "after",
+  "before",
+  "between",
+  "through",
+  "during",
+  "without",
+  "within",
+  "using",
+  "used",
+  "use",
+  "make",
+  "made",
+  "does",
+  "did",
+]);
+
+export interface TopicalEntityNgram {
+  phrase: string;
+  count: number;
+  density: string;
+  inTitle: boolean;
+  inH1: boolean;
+  inSubheadings: number;
+}
+
+export function extractTopicalEntitiesAndNgrams(
+  page: PageSnapshot,
+  limit = 10,
+): TopicalEntityNgram[] {
+  const fullText = [page.title, ...page.blocks.map((b) => b.text)].join(" ");
+  const tokenList = fullText
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, " ")
+    .split(/\s+/)
+    .map((w) => w.replace(/^-+|-+$/g, ""))
+    .filter((w) => w.length >= 3 && !/^\d+$/.test(w));
+
+  const totalWords = Math.max(1, tokenList.length);
+  const counts = new Map<string, number>();
+
+  for (let i = 0; i < tokenList.length - 1; i++) {
+    const w1 = tokenList[i];
+    const w2 = tokenList[i + 1];
+    if (!STOPWORDS.has(w1) && !STOPWORDS.has(w2)) {
+      const bigram = `${w1} ${w2}`;
+      counts.set(bigram, (counts.get(bigram) || 0) + 1);
+    }
+    if (i < tokenList.length - 2) {
+      const w3 = tokenList[i + 2];
+      if (!STOPWORDS.has(w1) && !STOPWORDS.has(w3)) {
+        const trigram = `${w1} ${w2} ${w3}`;
+        counts.set(trigram, (counts.get(trigram) || 0) + 1);
+      }
+    }
+  }
+
+  const h1Blocks = page.blocks.filter((b) => b.tag === "h1");
+  const subheadingBlocks = page.blocks.filter((b) => /^h[2-6]$/.test(b.tag));
+
+  return [...counts.entries()]
+    .filter(([, c]) => c >= 2)
+    .map(([phrase, count]) => {
+      const inTitle = phraseCount(page.title, phrase) > 0;
+      const inH1 = h1Blocks.some((b) => phraseCount(b.text, phrase) > 0);
+      const inSubheadings = subheadingBlocks.filter(
+        (b) => phraseCount(b.text, phrase) > 0,
+      ).length;
+      const score =
+        count * (phrase.split(" ").length === 3 ? 1.35 : 1) +
+        (inTitle ? 4 : 0) +
+        (inH1 ? 3 : 0) +
+        inSubheadings * 1.5;
+      return {
+        phrase,
+        count,
+        density: ((100 * count) / totalWords).toFixed(2),
+        inTitle,
+        inH1,
+        inSubheadings,
+        score,
+      };
+    })
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit)
+    .map(({ score: _score, ...rest }) => rest);
 }

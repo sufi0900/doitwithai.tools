@@ -1,3 +1,4 @@
+import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import {
   ToolHeroBackground,
   toolHeroSurface,
@@ -175,70 +176,71 @@ export default function SlugUrlGeneratorPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
 
-      <div
-        className={`relative overflow-hidden ${toolHeroSurface} pb-20 pt-10 text-white sm:pt-16 lg:pb-28`}
+      <div className={`relative overflow-hidden ${toolHeroSurface} text-white`}
       >
         <ToolHeroBackground />
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
           <nav
             aria-label="Breadcrumb"
-            className="mb-10 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-400"
+            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
           >
-            <Link href="/" className="transition hover:text-white">
-              Home
-            </Link>
+            <Link href="/">Home</Link>
             <span>/</span>
-            <Link href="/tools" className="transition hover:text-white">
-              Tools
-            </Link>
+            <Link href="/tools">Tools</Link>
             <span>/</span>
-            <span className="text-blue-200">SEO Slug Generator</span>
+            <span aria-current="page">SEO Slug Generator</span>
           </nav>
 
-          <div className="mx-auto max-w-5xl text-center">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.16em] text-blue-100 backdrop-blur">
-              <Sparkles className="h-4 w-4 text-cyan-300" /> Context-aware AI
-              SEO tool
+          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
+                On-Page SEO · Evergreen URL Slug & Redirect Planner
+              </p>
+              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
+                AI SEO Slug Generator 
+                <span className={toolHeroHeading}>
+                  for Clean, Durable URLs
+                </span>
+              </h1>
+              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
+                Transform long article titles or page briefs into concise, hyphenated, lowercase URL slugs stripped of stop-words and date clutter—with redirect safety checks.
+              </p>
+              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  5 ranked slug strategies
+                </span>
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  Stop-word & length scoring
+                </span>
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  Full URL path preview
+                </span>
+              </div>
+              <PortableToolHeroBar />
             </div>
-            <h1 className="mt-7 text-4xl font-black leading-[1.08] tracking-[-0.04em] sm:text-6xl lg:text-7xl">
-              AI SEO Slug Generator That
-              <span className={`block ${toolHeroHeading}`}>
-                Understands Before It Shortens
-              </span>
-            </h1>
-            <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-slate-300 sm:text-lg">
-              Describe your page in plain English. The tool identifies the
-              durable topic and search intent, removes headline clutter, and
-              recommends a concise URL slug instead of copying your sentence
-              word for word.
-            </p>
-            <div className="mt-7 flex flex-wrap justify-center gap-3 text-xs font-bold text-slate-300">
-              {[
-                [BrainCircuit, "Context analysis"],
-                [Scissors, "Meaning-aware compression"],
-                [Search, "SEO quality checks"],
-              ].map(([Icon, label]) => {
-                const FeatureIcon = Icon as typeof Search;
-                return (
-                  <span
-                    key={label as string}
-                    className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-2"
-                  >
-                    <FeatureIcon className="h-3.5 w-3.5 text-blue-300" />
-                    {label as string}
-                  </span>
-                );
-              })}
+
+            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
+              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
+                4 Qualities of an Evergreen Slug
+              </p>
+              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
+                <li>
+                  <strong className="text-emerald-300">Primary Topic Focus:</strong> Retains the core 3–5 keyword tokens that define the page&apos;s topic.
+                </li>
+                <li>
+                  <strong className="text-indigo-300">Zero Date Clutter:</strong> Strips years and numbers (&apos;2026&apos;, &apos;10-tips&apos;) so updates stay clean.
+                </li>
+                <li>
+                  <strong className="text-sky-300">Hyphen & Case Rules:</strong> Enforces lowercase ASCII words separated by single hyphens.
+                </li>
+                <li>
+                  <strong className="text-amber-300">Migration Safety:</strong> Flags when changing an existing URL requires a 301 redirect.
+                </li>
+              </ul>
             </div>
-            <a
-              href="#slug-url-generator"
-              className="mt-8 inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3.5 text-sm font-extrabold text-slate-950 shadow-xl transition hover:-translate-y-0.5 hover:bg-blue-50"
-            >
-              Generate a smart slug <ArrowRight className="h-4 w-4" />
-            </a>
           </div>
 
-          <div className="mt-14">
+          <div className="mt-8">
             <SlugGeneratorClient />
           </div>
         </div>
@@ -247,7 +249,7 @@ export default function SlugUrlGeneratorPage() {
       <SlugToolEducation />
 
       <section
-        className="mx-auto max-w-5xl px-4 pb-24 sm:px-6 lg:px-8"
+        className="mx-auto max-w-6xl px-4 pb-24 sm:px-6 lg:px-8"
         aria-labelledby="slug-generator-faqs"
       >
         <div className="text-center">

@@ -1,4 +1,6 @@
 "use client";
+
+import ToolRunOverlay, { paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
 import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
@@ -13,6 +15,7 @@ import {
   Share2,
   RotateCcw,
   Sparkles,
+  ZoomIn,
 } from "lucide-react";
 import {
   inputClass,
@@ -31,7 +34,6 @@ import {
   textLayout,
   highlightParts,
   metadataHtml,
-  type Device,
 } from "./preview";
 import { importSerpData } from "./client";
 import SerpCanvas, { type Layouts, type Scene } from "./SerpCanvas";
@@ -141,6 +143,7 @@ export default function SerpPreviewClient() {
   const [layouts, setLayouts] = useState<Layouts | null>(null);
   const [exporting, setExporting] = useState(false);
   const [hiddenBlocks, setHiddenBlocks] = useState<number[]>([]);
+  const [previewZoom, setPreviewZoom] = useState<100 | 125 | 150>(100);
   const active = useRef<AbortController | null>(null);
   const svg = useRef<SVGSVGElement>(null);
   useEffect(
@@ -355,6 +358,32 @@ export default function SerpPreviewClient() {
       });
     }
   }
+  function downloadHtmlFile() {
+    try {
+      const html = metadataHtml(
+        snippet.title,
+        snippet.description,
+        scene.siteName,
+        jsonLdText,
+      );
+      const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "serp-metadata-and-schema.html";
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setMessage({
+        error: false,
+        text: "Downloaded metadata and JSON-LD HTML file.",
+      });
+    } catch {
+      setMessage({
+        error: true,
+        text: "Could not download HTML file. Check that your JSON-LD is valid.",
+      });
+    }
+  }
   function example() {
     setSnippet({
       title: "AI SEO guide for creators and small businesses",
@@ -403,6 +432,11 @@ export default function SerpPreviewClient() {
       aria-label="SERP simulator workspace"
       className={`${panelClass} min-w-0 p-4 sm:p-7`}
     >
+      <ToolRunOverlay
+        active={importing || exporting}
+        title="Processing SERP snippet & pixel width check"
+        description="Measuring title and meta description pixel widths and preparing your SERP preview."
+      />
       <form
         onSubmit={handleImport}
         className="rounded-2xl border border-[#5271ff]/30 bg-[#5271ff]/5 p-4 sm:p-5"
@@ -636,7 +670,7 @@ export default function SerpPreviewClient() {
               </p>
             </div>
           )}
-          <details className="rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+          <details open className="rounded-xl border border-slate-200 p-4 dark:border-slate-700">
             <summary className="cursor-pointer text-sm font-bold text-slate-800 dark:text-slate-100">
               Display options and search context
             </summary>
@@ -804,39 +838,76 @@ export default function SerpPreviewClient() {
             <h2 className="text-sm font-bold text-slate-900 dark:text-white">
               Search appearance studio
             </h2>
-            <div
-              className="flex rounded-xl border border-slate-200 p-1 dark:border-slate-700"
-              role="group"
-              aria-label="Preview device"
-            >
-              {(
-                [
-                  ["desktop", Monitor],
-                  ["mobile", Smartphone],
-                ] as const
-              ).map(([key, Icon]) => (
-                <button
-                  key={key}
-                  type="button"
-                  aria-pressed={scene.device === key}
-                  className={`inline-flex min-h-10 items-center gap-2 rounded-lg px-3 text-xs font-bold ${scene.device === key ? "bg-[#5271ff] text-white" : "text-slate-600 dark:text-slate-300"}`}
-                  onClick={() => changeScene("device", key)}
-                >
-                  <Icon size={15} />
-                  {key === "desktop" ? "Desktop" : "Mobile"}
-                </button>
-              ))}
+            <div className="flex flex-wrap items-center gap-2">
+              <div
+                className="flex items-center gap-1 rounded-xl border border-slate-200 p-1 dark:border-slate-700"
+                role="group"
+                aria-label="Preview zoom"
+              >
+                <ZoomIn size={14} className="ml-1.5 text-slate-400" />
+                {([100, 125, 150] as const).map((z) => (
+                  <button
+                    key={z}
+                    type="button"
+                    aria-pressed={previewZoom === z}
+                    onClick={() => setPreviewZoom(z)}
+                    className={`rounded-lg px-2 py-1.5 text-xs font-bold ${
+                      previewZoom === z
+                        ? "bg-[#3452d1] text-white"
+                        : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                    }`}
+                  >
+                    {z}%
+                  </button>
+                ))}
+              </div>
+              <div
+                className="flex rounded-xl border border-slate-200 p-1 dark:border-slate-700"
+                role="group"
+                aria-label="Preview device"
+              >
+                {(
+                  [
+                    ["desktop", Monitor],
+                    ["mobile", Smartphone],
+                  ] as const
+                ).map(([key, Icon]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    aria-pressed={scene.device === key}
+                    className={`inline-flex min-h-10 items-center gap-2 rounded-lg px-3 text-xs font-bold ${scene.device === key ? "bg-[#5271ff] text-white" : "text-slate-600 dark:text-slate-300"}`}
+                    onClick={() => changeScene("device", key)}
+                  >
+                    <Icon size={15} />
+                    {key === "desktop" ? "Desktop" : "Mobile"}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
-          <div
-            className={`mx-auto overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg dark:border-slate-700 ${scene.device === "mobile" ? "max-w-[388px]" : "w-full"}`}
-          >
-            <SerpCanvas
-              ref={svg}
-              snippet={snippet}
-              scene={scene}
-              layouts={layouts}
-            />
+          <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white p-2 shadow-lg dark:border-slate-700">
+            <div
+              className={`mx-auto origin-top transition-transform ${scene.device === "mobile" ? "max-w-[388px]" : "w-full"}`}
+              style={
+                previewZoom !== 100
+                  ? {
+                      width: `${previewZoom}%`,
+                      maxWidth:
+                        scene.device === "mobile"
+                          ? `${Math.round(388 * (previewZoom / 100))}px`
+                          : `${previewZoom}%`,
+                    }
+                  : undefined
+              }
+            >
+              <SerpCanvas
+                ref={svg}
+                snippet={snippet}
+                scene={scene}
+                layouts={layouts}
+              />
+            </div>
           </div>
           <p className="text-xs leading-6 text-slate-500 dark:text-slate-400">
             The preview scales to fit your screen. Measurements refer to its
@@ -884,6 +955,14 @@ export default function SerpPreviewClient() {
             >
               <Copy size={15} />
               Copy HTML
+            </button>
+            <button
+              type="button"
+              onClick={downloadHtmlFile}
+              className={secondaryButton}
+            >
+              <Download size={15} />
+              Download .HTML
             </button>
             <button
               type="button"

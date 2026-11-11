@@ -1,3 +1,4 @@
+import ArticleTools from "@/features/tool-catalog/ArticleTools";
 // app/ai-code/[slug]/page.jsx
 
 import { getAllArticleSlugs } from "@/features/articles/legacy/articleData";
@@ -63,6 +64,7 @@ export default async function ParentPage({ params }) {
 
           {/* The actual client component that renders the article content */}
           <ArticleChildComp serverData={data} params={params} schemaType="coding" />
+          <ArticleTools slugs={data?.relatedToolSlugs} />
         </main>
       </PageCacheProvider>
     </>

@@ -50,20 +50,20 @@ export const keywordGuides = {
 export default function KeywordGuideCard({ guide }: { guide: KeywordGuide }) {
   return (
     <aside
-      className="my-10 grid min-w-0 overflow-hidden rounded-2xl border border-[#a9b9ff] bg-[#f3f5ff] text-slate-900 dark:border-[#7388e6] dark:bg-[#18243e] dark:text-slate-50 min-[701px]:grid-cols-[0.95fr_1.05fr]"
+      className="my-10 grid min-w-0 overflow-hidden rounded-2xl border border-[#a9b9ff] bg-[#f3f5ff] text-slate-900 shadow-sm transition-shadow hover:shadow-md dark:border-[#7388e6] dark:bg-[#18243e] dark:text-slate-50 min-[768px]:grid-cols-[0.95fr_1.05fr]"
       aria-label={guide.label}
     >
-      <div className="flex min-w-0 items-center bg-[#e6ebff] dark:bg-[#12203c]">
+      <div className="flex min-w-0 items-center justify-center bg-[#e6ebff] p-3 sm:p-5 dark:bg-[#12203c]">
         <Image
           src={guide.image}
           alt={guide.alt}
           width={800}
           height={450}
-          sizes="(max-width: 700px) 100vw, 480px"
-          className="block aspect-video h-auto w-full object-contain"
+          sizes="(max-width: 767px) 100vw, 480px"
+          className="block aspect-video h-auto w-full rounded-xl object-cover shadow-sm"
         />
       </div>
-      <div className="min-w-0 p-6 lg:p-9">
+      <div className="flex min-w-0 flex-col justify-center p-5 sm:p-7 lg:p-9">
         <div className="flex items-center gap-2.5 text-xs font-semibold">
           <Image
             src="/doitwithai-logo-square.png"
@@ -74,21 +74,23 @@ export default function KeywordGuideCard({ guide }: { guide: KeywordGuide }) {
           />
           <span>Do It With AI Tools</span>
         </div>
-        <p className="mb-2.5 mt-5 text-xs font-bold uppercase leading-6 tracking-wider text-[#364cb4] dark:text-[#b7c5ff]">
+        <p className="mb-2 mt-4 text-xs font-bold uppercase leading-6 tracking-wider text-[#364cb4] dark:text-[#b7c5ff]">
           {guide.label}
         </p>
-        <h3 className="text-2xl font-extrabold leading-snug lg:text-3xl">
+        <h3 className="text-xl font-extrabold leading-snug sm:text-2xl lg:text-3xl">
           {guide.title}
         </h3>
-        <p className="mb-6 mt-4 text-base leading-8 text-slate-600 dark:text-slate-300">
+        <p className="mb-6 mt-3 text-base leading-7 text-slate-600 dark:text-slate-300 sm:leading-8">
           {guide.description}
         </p>
-        <Link
-          href={guide.href}
-          className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#4058d0] px-4 py-3 text-sm font-bold leading-6 text-white hover:bg-[#3147b6] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#5271ff] sm:w-auto"
-        >
-          {guide.action} <span aria-hidden="true">↗</span>
-        </Link>
+        <div>
+          <Link
+            href={guide.href}
+            className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#4058d0] px-5 py-3 text-sm font-bold leading-6 text-white shadow-sm transition hover:bg-[#3147b6] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#5271ff] sm:w-auto"
+          >
+            {guide.action} <span aria-hidden="true">↗</span>
+          </Link>
+        </div>
       </div>
     </aside>
   );

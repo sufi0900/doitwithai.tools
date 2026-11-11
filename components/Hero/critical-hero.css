@@ -21,59 +21,59 @@
 .audience-badge,
 .ai-benefit-card,
 .value-indicator {
-    opacity: 0; /* Ensures they are hidden before animation */
-    transform: translateY(20px); /* Sets a common starting point for fade-in/slide-up */
+    opacity: 1; /* Render immediately on SSR to eliminate 4.2s LCP delay on mobile */
+    transform: translateY(0);
 }
 
 
 .hero-animations-active .badge-1 {
-  animation: fadeInSlightlyUp 0.7s ease-out 0.2s both;
+  /* SSR-visible: no opacity:0 delay */ animation: none; --orig-anim: fadeInSlightlyUp 0.7s ease-out 0.2s both;
 }
 
 .hero-animations-active .badge-2 {
-  animation: fadeInSlightlyUp 0.7s ease-out 0.4s both;
+  /* SSR-visible: no opacity:0 delay */ animation: none; --orig-anim: fadeInSlightlyUp 0.7s ease-out 0.4s both;
 }
 
 .hero-animations-active .badge-3 {
-  animation: fadeInSlightlyUp 0.7s ease-out 0.6s both;
+  /* SSR-visible: no opacity:0 delay */ animation: none; --orig-anim: fadeInSlightlyUp 0.7s ease-out 0.6s both;
 }
 
 .hero-animations-active .badge-4 {
-  animation: fadeInSlightlyUp 0.7s ease-out 0.8s both;
+  /* SSR-visible: no opacity:0 delay */ animation: none; --orig-anim: fadeInSlightlyUp 0.7s ease-out 0.8s both;
 }
 
 .hero-animations-active .badge-5 {
-  animation: fadeInSlightlyUp 0.7s ease-out 1.0s both;
+  /* SSR-visible: no opacity:0 delay */ animation: none; --orig-anim: fadeInSlightlyUp 0.7s ease-out 1.0s both;
 }
 
 /* 8. BENEFIT CARDS STAGGERED (Updated with new keyframes and FOUC fix) */
 .hero-animations-active .card-1 {
-  animation: cardFadeInUp 0.9s ease-out 0.6s both;
+  /* SSR-visible: no opacity:0 delay */ animation: none; --orig-anim: cardFadeInUp 0.9s ease-out 0.6s both;
 }
 
 .hero-animations-active .card-2 {
-  animation: cardFadeInUp 0.9s ease-out 0.8s both;
+  /* SSR-visible: no opacity:0 delay */ animation: none; --orig-anim: cardFadeInUp 0.9s ease-out 0.8s both;
 }
 
 .hero-animations-active .card-3 {
-  animation: cardFadeInUp 0.9s ease-out 1.0s both;
+  /* SSR-visible: no opacity:0 delay */ animation: none; --orig-anim: cardFadeInUp 0.9s ease-out 1.0s both;
 }
 
 /* 9. VALUE INDICATORS WAVE (Updated with FOUC fix) */
 .hero-animations-active .value-1 {
-  animation: waveIn 0.6s ease-out 1.2s both;
+  /* SSR-visible: no opacity:0 delay */ animation: none; --orig-anim: waveIn 0.6s ease-out 1.2s both;
 }
 
 .hero-animations-active .value-2 {
-  animation: waveIn 0.6s ease-out 1.4s both;
+  /* SSR-visible: no opacity:0 delay */ animation: none; --orig-anim: waveIn 0.6s ease-out 1.4s both;
 }
 
 .hero-animations-active .value-3 {
-  animation: waveIn 0.6s ease-out 1.6s both;
+  /* SSR-visible: no opacity:0 delay */ animation: none; --orig-anim: waveIn 0.6s ease-out 1.6s both;
 }
 
 .hero-animations-active .value-4 {
-  animation: waveIn 0.6s ease-out 1.8s both;
+  /* SSR-visible: no opacity:0 delay */ animation: none; --orig-anim: waveIn 0.6s ease-out 1.8s both;
 }
 
 /* 10. ICON ENTRANCE ANIMATIONS (iconPop removed) */

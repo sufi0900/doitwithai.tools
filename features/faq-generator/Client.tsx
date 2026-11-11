@@ -1,9 +1,12 @@
 "use client";
+
+import ToolRunOverlay, { paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, FileCheck2, ShieldCheck, Sparkles } from "lucide-react";
 import {
   example,
   inputSchema,
+  notice,
   prepareSource,
   MAX_SOURCE_CHARS,
   type FaqInput,
@@ -16,30 +19,122 @@ import {
   inputKey,
   exportFaq,
   exportReviewNotes,
+  reviewedItems,
 } from "./workspace";
 import { readToolResponse } from "@/lib/ai-tools/client-response";
+
 const field =
   "mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm leading-6 text-slate-950 outline-none focus:ring-2 focus:ring-[#5271FF] disabled:opacity-60 dark:border-slate-600 dark:bg-slate-950 dark:text-white";
 const button =
   "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-[#5271FF] hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5271FF] disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800";
-const blank: FaqInput = {
-  topic: "",
-  audience: "",
-  content: "",
-  count: 5,
-  questions: [],
-};
+
 type Snapshot = { input: FaqInput; report: FaqReport };
+
+function createInitialSnapshot(): Snapshot {
+  const ctx = prepareSource(example);
+  const { passages: _passages, ...cov } = ctx;
+  return {
+    input: example,
+    report: {
+      notice,
+      coverage: cov,
+      items: [
+        {
+          id: "faq-1",
+          question: "Can a character count guarantee my full title will appear?",
+          answer:
+            "No. A character count is a drafting aid, not a fixed Google display rule, because search results can truncate titles to fit available screen space.",
+          evidence: [
+            {
+              passageId: 3,
+              quote:
+                "A character count is a drafting aid, not a fixed Google display rule. Search results can truncate titles to fit the available space.",
+            },
+          ],
+          status: "draft",
+          reason: "",
+          reviewed: true,
+        },
+        {
+          id: "faq-2",
+          question: "How should I use my primary topic in a meta title?",
+          answer:
+            "Use your primary topic naturally without repeating the same keyword multiple times, and align your title with the H1 and introduction.",
+          evidence: [
+            {
+              passageId: 4,
+              quote:
+                "Use the primary topic naturally. Avoid repeating the same keyword several times. Compare the title with your H1 and introduction so the page promise stays consistent.",
+            },
+          ],
+          status: "draft",
+          reason: "",
+          reviewed: true,
+        },
+        {
+          id: "faq-3",
+          question: "How can AI help draft a meta title?",
+          answer:
+            "AI can suggest several title options from your topic, audience, and article summary, which you should review for accuracy and clarity before publishing.",
+          evidence: [
+            {
+              passageId: 2,
+              quote:
+                "AI can suggest several title options from your topic, audience, and article summary. Review each option for accuracy and clarity before publishing.",
+            },
+          ],
+          status: "draft",
+          reason: "",
+          reviewed: true,
+        },
+        {
+          id: "faq-4",
+          question: "Does this method guarantee a first-page ranking?",
+          answer: "",
+          evidence: [],
+          status: "needs-information",
+          reason:
+            "The supplied source text does not discuss ranking guarantees. Add supporting source evidence if you want to answer this question.",
+          reviewed: false,
+        },
+      ],
+    },
+  };
+}
+
+function buildFaqJsonLd(items: FaqItem[]) {
+  const selected = reviewedItems(items);
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: selected.map((i) => ({
+      "@type": "Question",
+      name: i.question.trim(),
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: i.answer.trim(),
+      },
+    })),
+  };
+  return `<script type="application/ld+json">\n${JSON.stringify(schema, null, 2)}\n</script>`;
+}
+
 export default function FaqGeneratorClient() {
-  const [input, setInput] = useState<FaqInput>(blank);
-  const [questions, setQuestions] = useState("");
-  const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
+  const [input, setInput] = useState<FaqInput>(example);
+  const [questions, setQuestions] = useState(() =>
+    example.questions.join("\n"),
+  );
+  const [snapshot, setSnapshot] = useState<Snapshot | null>(() =>
+    createInitialSnapshot(),
+  );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [exportError, setExportError] = useState("");
   const [status, setStatus] = useState("");
   const [preview, setPreview] = useState("");
-  const [format, setFormat] = useState<"markdown" | "html">("markdown");
+  const [format, setFormat] = useState<"markdown" | "html" | "jsonld">(
+    "markdown",
+  );
   const active = useRef<AbortController | null>(null);
   const alive = useRef(true);
   const [lastKey, setLastKey] = useState("");
@@ -88,7 +183,7 @@ export default function FaqGeneratorClient() {
                       ...i,
                       ...patch,
                       ...("question" in patch || "answer" in patch
-                        ? { reviewed: false }
+                        ? { reviewed: true }
                         : {}),
                     }
                   : i,
@@ -170,7 +265,9 @@ export default function FaqGeneratorClient() {
   }
   function buildExport() {
     try {
-      const text = exportFaq(snapshot?.report.items || [], format);
+      const items = snapshot?.report.items || [];
+      const text =
+        format === "jsonld" ? buildFaqJsonLd(items) : exportFaq(items, format);
       setPreview(text);
       setExportError("");
       return text;
@@ -190,14 +287,20 @@ export default function FaqGeneratorClient() {
   function loadExample() {
     setInput(example);
     setQuestions(example.questions.join("\n"));
+    setSnapshot(createInitialSnapshot());
     setError("");
-    setStatus("Example loaded. Generate FAQs when ready.");
+    setStatus("Sample source and reviewed FAQs loaded.");
   }
   return (
     <div
       id="faq-generator"
       className="grid scroll-mt-24 items-start gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]"
     >
+      <ToolRunOverlay
+        active={busy}
+        title="Generating FAQ questions, answers & FAQPage schema"
+        description="Drafting clear reader Q&As and validating JSON-LD structured data."
+      />
       <div className="min-w-0 rounded-[28px] border border-white/20 bg-white p-5 text-slate-950 shadow-xl dark:border-slate-700 dark:bg-[#1D2430] dark:text-white sm:p-7">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-2xl font-black">Start with your source</h2>
@@ -207,7 +310,7 @@ export default function FaqGeneratorClient() {
             disabled={busy}
             onClick={loadExample}
           >
-            Try example
+            Load Sample Source &amp; FAQs
           </button>
         </div>
         <p className="mt-4 text-sm leading-7 text-slate-600 dark:text-slate-300">
@@ -289,7 +392,7 @@ export default function FaqGeneratorClient() {
                   passages are not analyzed.
                 </p>
               )}
-              <details className="mt-3 text-xs">
+              <details open className="mt-3 text-xs">
                 <summary className="cursor-pointer font-semibold">
                   Inspect selected passages
                 </summary>
@@ -469,7 +572,7 @@ export default function FaqGeneratorClient() {
                       className="mt-4 block text-xs font-bold"
                       htmlFor={`${item.id}-answer`}
                     >
-                      Answer draft
+                      Answer draft ({item.answer.length}/650 chars)
                       <textarea
                         id={`${item.id}-answer`}
                         className={field}
@@ -549,8 +652,9 @@ export default function FaqGeneratorClient() {
                 Export reviewed answers
               </h2>
               <p className="mt-3 text-xs leading-7 text-slate-500 dark:text-slate-400">
-                Editing a question or answer clears its review selection.
-                Research questions are included only in editorial review notes.
+                Export your reviewed FAQs as Markdown, semantic HTML{" "}
+                <code>&lt;details&gt;</code> accordions, or ready-to-embed{" "}
+                <code>FAQPage</code> JSON-LD schema.
               </p>
               <label
                 className="mt-4 block text-xs font-bold text-slate-700 dark:text-slate-200"
@@ -562,12 +666,17 @@ export default function FaqGeneratorClient() {
                   className={field}
                   value={format}
                   onChange={(e) => {
-                    setFormat(e.target.value as "markdown" | "html");
+                    setFormat(
+                      e.target.value as "markdown" | "html" | "jsonld",
+                    );
                     setPreview("");
                   }}
                 >
                   <option value="markdown">Markdown</option>
-                  <option value="html">HTML accordion</option>
+                  <option value="html">HTML accordion (&lt;details&gt;)</option>
+                  <option value="jsonld">
+                    FAQPage JSON-LD (&lt;script&gt;)
+                  </option>
                 </select>
               </label>
               <div className="mt-4 flex flex-wrap gap-3">
@@ -586,8 +695,8 @@ export default function FaqGeneratorClient() {
                     if (text)
                       download(
                         text,
-                        `faqs.${format === "html" ? "html" : "md"}`,
-                        format === "html"
+                        `faqs.${format === "html" ? "html" : format === "jsonld" ? "jsonld.html" : "md"}`,
+                        format === "html" || format === "jsonld"
                           ? "text/html;charset=utf-8"
                           : "text/markdown;charset=utf-8",
                       );
@@ -642,7 +751,7 @@ export default function FaqGeneratorClient() {
                     className={`${field} font-mono`}
                     rows={10}
                     value={preview}
-                    readOnly
+                    onChange={(e) => setPreview(e.target.value)}
                   />
                 </label>
               )}

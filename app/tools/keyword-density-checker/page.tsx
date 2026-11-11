@@ -1,23 +1,34 @@
+import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import Link from "next/link";
+import { BarChart3, FileCheck2, ScanText, ShieldCheck } from "lucide-react";
 import {
   ToolHeroBackground,
   toolHeroHeading,
   toolHeroSurface,
 } from "@/features/tool-ui/ToolHero";
 import Client from "@/features/keyword-density/Client";
+import ToolFaq from "@/features/tool-ui/ToolFaq";
 import ToolResources from "@/features/tool-catalog/ToolResources";
+
 const pageUrl = "https://doitwithai.tools/tools/keyword-density-checker";
+const title =
+  "Free Keyword Density & Phrase Coverage Checker | On-Page SEO Tool";
 const description =
-  "Check keyword density, target phrase coverage, and distribution. Compare body matches with page fields, inspect highlighted context, and export reports.";
-const image = `https://doitwithai.tools/api/og?${new URLSearchParams({ title: "Keyword Density Checker", category: "SEO · Content Editing", ctaText: "Count. Inspect. Edit.", features: "Phrase Counts,Context Highlights,Live Counts" })}`;
+  "Check 1-to-4 word phrase frequency, target keyword placement across title/H1/body thirds, and in-context passage repetition. Export clean CSV coverage reports.";
+const image = `https://doitwithai.tools/api/og?${new URLSearchParams({
+  title: "Keyword Density Checker",
+  category: "SEO · Content Editing",
+  ctaText: "Count. Inspect. Edit.",
+  features: "Phrase Counts,Context Highlights,Live Counts",
+})}`;
+
 export const metadata: Metadata = {
-  title: "Free Keyword Density and Coverage Checker",
+  title,
   description,
   alternates: { canonical: pageUrl },
   openGraph: {
-    title: "Keyword Density Checker",
+    title: "Keyword Density & Phrase Coverage Checker",
     description,
     url: pageUrl,
     type: "website",
@@ -25,66 +36,53 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Keyword Density Checker",
+    title: "Keyword Density & Phrase Coverage Checker",
     description,
     images: [image],
   },
 };
+
+const section = "mx-auto max-w-6xl px-4 py-12 sm:px-6";
 const prose = "mt-4 text-base leading-8 text-slate-600 dark:text-slate-300";
+
 const faqs = [
-  [
-    "Does keyword coverage measure topical completeness?",
-    "No. It reports exact normalized matches for the phrases you supply. Synonyms and relevant ideas may communicate the same topic without matching those phrases.",
-  ],
-  [
-    "How is distribution measured?",
-    "The body is divided into thirds by word-token position. Each occurrence belongs to the third where it starts. No particular distribution is required.",
-  ],
-  [
-    "Do page titles and headings change the body density?",
-    "Optional page fields are checked separately. They never enter the body denominator. Leave them blank to mark those fields as not supplied.",
-  ],
-  [
-    "Is there an ideal keyword density?",
-    "This tool does not prescribe a percentage. Use frequency to inspect wording, then judge relevance, accuracy, and readability in context.",
-  ],
-  [
-    "Does a high count mean keyword stuffing?",
-    "No. A technical topic can naturally repeat a term. Counts alone cannot establish intent, quality, or a search policy violation.",
-  ],
-  [
-    "Do I need to create an account?",
-    "No. Paste your text to start checking phrases, inspect highlighted matches, and download your report.",
-  ],
-  [
-    "How are multiword phrases counted?",
-    "Each matching sequence counts once, including overlaps. Occurrences are divided by the total word count. This is not the percentage of words covered.",
-  ],
-  [
-    "Does punctuation affect matching?",
-    "Case differences and common apostrophe or hyphen variants are normalized. Sentence punctuation and line breaks stop multiword matches. Commas do not stop a match.",
-  ],
-  [
-    "What does the stop-word option change?",
-    "It hides discovered phrases starting or ending with common English words. It does not change total words or counts for your supplied targets.",
-  ],
-  [
-    "Can I check a URL?",
-    "This version accepts pasted text only. Copy the article body without menus or footers to keep counts focused on the content you want to edit.",
-  ],
-  [
-    "How long can my article be?",
-    "You can paste up to 150,000 characters. Counts cover the full supplied text. Split longer documents into sections.",
-  ],
-  [
-    "Does keyword frequency measure search demand?",
-    "No. These counts describe your supplied text. They do not measure search volume, keyword difficulty, rankings, or audience demand.",
-  ],
-  [
-    "Which languages work?",
-    "Word matching supports Unicode letters and numbers. The stop-word filter is English only. Languages without word spacing need a language-specific segmenter for reliable counts.",
-  ],
+  {
+    question: "Does keyword coverage measure topical completeness?",
+    answer:
+      "No. It reports exact normalized matches for the phrases you supply. Synonyms, related entities, and clear explanations often communicate the topic without repeating the exact string.",
+  },
+  {
+    question: "How is beginning, middle, and end distribution measured?",
+    answer:
+      "Your article body is divided into three equal thirds by word-token position. Each phrase match belongs to the third where it begins, helping you see whether mentions cluster in a single section.",
+  },
+  {
+    question: "Do page titles and headings change the body density percentage?",
+    answer:
+      "No. Optional title, meta description, H1, and H2 fields are checked separately for placement coverage and never inflate your body word count denominator.",
+  },
+  {
+    question: "Is there an ideal keyword density percentage for Google SEO?",
+    answer:
+      "No universal percentage guarantees rankings. Use phrase frequency to spot unnatural repetition or missing topic cues, then edit for clarity, accuracy, and reader usefulness.",
+  },
+  {
+    question: "How are multi-word phrases (2-word, 3-word, 4-word) counted?",
+    answer:
+      "Each matching word sequence counts as one occurrence and is divided by total source words × 100. Sentence boundaries and line breaks stop multi-word spans, while commas do not.",
+  },
+  {
+    question: "What does the English stop-word filter change?",
+    answer:
+      "It hides discovered n-grams that begin or end with common English function words (like 'the', 'and', 'of') so topical phrases stand out. It never alters your total word count or supplied target counts.",
+  },
+  {
+    question: "What reports can I export from the checker?",
+    answer:
+      "You can download a UTF-8 CSV containing both your target phrase coverage across page fields and the top discovered 1–4 word n-grams.",
+  },
 ];
+
 export default function Page() {
   const schema = {
     "@context": "https://schema.org",
@@ -97,6 +95,8 @@ export default function Page() {
         applicationCategory: "BusinessApplication",
         operatingSystem: "Any",
         browserRequirements: "Requires JavaScript",
+        isAccessibleForFree: true,
+        offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
       },
       {
         "@type": "BreadcrumbList",
@@ -106,348 +106,252 @@ export default function Page() {
           { name: "Keyword Density Checker", item: pageUrl },
         ].map((v, i) => ({ "@type": "ListItem", position: i + 1, ...v })),
       },
+      {
+        "@type": "FAQPage",
+        mainEntity: faqs.map((f) => ({
+          "@type": "Question",
+          name: f.question,
+          acceptedAnswer: { "@type": "Answer", text: f.answer },
+        })),
+      },
     ],
   };
+
   return (
-    <>
+    <div className="bg-white text-slate-900 dark:bg-[#0F1523] dark:text-white">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(schema).replace(/</g, "\\u003c"),
         }}
       />
-      <section
-        className={`relative overflow-hidden ${toolHeroSurface} pb-20 pt-10 sm:pt-16`}
+
+      <header
+        className={`relative overflow-hidden ${toolHeroSurface} text-white`}
       >
         <ToolHeroBackground />
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
           <nav
             aria-label="Breadcrumb"
-            className="flex flex-wrap gap-2 text-xs text-slate-400"
+            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
           >
             <Link href="/">Home</Link>
             <span>/</span>
             <Link href="/tools">Tools</Link>
             <span>/</span>
-            <span aria-current="page" className="text-blue-200">
-              Keyword Density Checker
-            </span>
+            <span aria-current="page">Keyword Density Checker</span>
           </nav>
-          <header className="mx-auto mb-12 mt-12 max-w-5xl text-center text-white">
-            <p className="inline-flex rounded-full border border-[#5271FF]/40 bg-[#5271FF]/15 px-4 py-2 text-xs font-bold uppercase tracking-widest text-[#AEBBFF]">
-              Free content editing tool
-            </p>
-            <h1 className="mt-7 text-4xl font-black tracking-tight sm:text-6xl lg:text-7xl">
-              Keyword Density Checker
-              <span className={`mt-3 block text-balance ${toolHeroHeading}`}>
-                Find Repetition. Keep Your Meaning.
-              </span>
-            </h1>
-            <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-slate-300 sm:text-lg">
-              Count words and phrases, inspect repeated wording in context, and
-              spot paragraphs worth reviewing.
-            </p>
-          </header>
+
+          <div className="mb-8 grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
+                On-Page SEO · Phrase Frequency, Coverage &amp; Context
+              </p>
+              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
+                Keyword Density Checker{" "}
+                <span className={toolHeroHeading}>
+                  &amp; Phrase Coverage Analyzer
+                </span>
+              </h1>
+              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
+                Paste your article draft to inspect 1-to-4 word phrase
+                frequency, check target keyword placement across title, H1, and
+                body thirds, and spot over-repeated passages in context.
+              </p>
+              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  1–4 word n-gram frequency
+                </span>
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  Beginning / middle / end split
+                </span>
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  In-context passage highlights
+                </span>
+              </div>
+              <PortableToolHeroBar />
+            </div>
+
+            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
+              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
+                4 Editorial Signals Measured
+              </p>
+              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
+                <li>
+                  <strong className="text-emerald-300">Target Coverage:</strong>{" "}
+                  Checks exact phrase presence across body text, title, and
+                  H1–H2s.
+                </li>
+                <li>
+                  <strong className="text-indigo-300">N-Gram Discovery:</strong>{" "}
+                  Surfaces top 1-word, 2-word, 3-word, and 4-word phrases.
+                </li>
+                <li>
+                  <strong className="text-sky-300">Section Balance:</strong>{" "}
+                  Shows whether mentions cluster in one paragraph or across
+                  thirds.
+                </li>
+                <li>
+                  <strong className="text-amber-300">Context Preview:</strong>{" "}
+                  Highlights every match in your text so you edit for meaning.
+                </li>
+              </ul>
+            </div>
+          </div>
+
           <Client />
         </div>
-      </section>
-      <div className="mx-auto max-w-5xl space-y-14 px-4 py-16 sm:px-6">
-        <section>
-          <h2 className="text-3xl font-black">
-            Review your phrase plan across the page
-          </h2>
-          <p className={prose}>
-            Add one focus phrase first, followed by supporting phrases. The
-            coverage workspace shows which targets appear in the body and
-            supplied page fields.
-          </p>
-          <p className={prose}>
-            Paste the title, description, and headings into the optional fields.
-            These placement checks stay separate from body frequency.
-          </p>
-          <p className={prose}>
-            Use the distribution cards to inspect the beginning, middle, and
-            end. A technical definition may repeat a phrase naturally within one
-            section.
-          </p>
-          <p className={prose}>
-            Occurrences per 100 words count matches. Matched-word coverage
-            counts distinct body words occupied by your plan, without
-            double-counting overlaps.
-          </p>
-          <p className={prose}>
-            For example, “AI writing tools” occupies three words. A second
-            target such as “writing tools” can overlap those words without
-            increasing their combined coverage.
-          </p>
-          <p className={prose}>
-            Missing exact wording is a prompt to read the passage. It does not
-            prove that a topic is missing or needs another keyword insertion.
-          </p>
-          <p className={prose}>
-            Export the coverage CSV to keep phrase counts, first-match
-            positions, paragraph presence, distribution, and optional field
-            matches together.
-          </p>
-        </section>
-        <section>
-          <h2 className="text-3xl font-black">How to check keyword density</h2>
-          <ol className="mt-6 grid gap-5 sm:grid-cols-3">
-            {[
-              [
-                "1. Paste the main text",
-                "Copy your article or page body. Leave out menus, footers, and unrelated widgets.",
-              ],
-              [
-                "2. Inspect your phrases",
-                "Add target phrases or explore discovered one-word, two-word, and three-word combinations.",
-              ],
-              [
-                "3. Review before editing",
-                "Select a phrase, read its highlighted context, and decide whether repetition helps or distracts.",
-              ],
-            ].map(([h, t]) => (
-              <li
-                key={h}
-                className="rounded-2xl border border-slate-200 p-5 dark:border-slate-700"
+      </header>
+
+      <section
+        className={`${section} border-t border-slate-200 dark:border-slate-800`}
+      >
+        <p className="text-xs font-bold uppercase tracking-wider text-[#5271ff]">
+          Context over arbitrary percentages
+        </p>
+        <h2 className="mt-3 text-3xl font-extrabold">
+          Inspect phrase coverage, section distribution, and paragraph-level
+          repetition
+        </h2>
+        <p className={prose}>
+          A whole-article frequency score can hide the fact that the same phrase
+          repeats four times inside a single paragraph. Checking phrase
+          locations alongside your title, meta description, and headings helps
+          you keep key terminology clear without robotic keyword stuffing.
+        </p>
+
+        <div className="mt-8 grid gap-5 md:grid-cols-3">
+          {[
+            [
+              ScanText,
+              "Highlight Matches in Context",
+              "Select any target or discovered phrase to highlight every occurrence across your paragraphs so you can judge natural flow before editing.",
+            ],
+            [
+              BarChart3,
+              "Track Placement Across Fields",
+              "Compare body occurrences against optional Title, Meta Description, H1, and H2–H3 inputs without distorting your body word denominator.",
+            ],
+            [
+              FileCheck2,
+              "Export Full Coverage CSV",
+              "Download a clean CSV report recording target phrase counts, beginning/middle/end distribution, and top 1–4 word n-gram frequencies.",
+            ],
+          ].map(([Icon, heading, body]) => {
+            const I = Icon as typeof ShieldCheck;
+            return (
+              <div
+                key={String(heading)}
+                className="rounded-2xl border border-slate-200 p-6 dark:border-slate-700"
               >
-                <h3 className="font-bold">{h}</h3>
-                <p className={prose}>{t}</p>
-              </li>
-            ))}
-          </ol>
-        </section>
-        <section>
-          <h2 className="text-3xl font-black">What keyword density measures</h2>
-          <p className={prose}>
-            Keyword density describes how often a word or phrase appears
-            relative to a text’s length. It helps you inspect wording, rather
-            than predict rankings.
-          </p>
-          <div className="mt-5 rounded-2xl bg-slate-100 p-5 dark:bg-slate-800">
-            <p className="font-bold">Occurrences ÷ total source words × 100</p>
-            <p className={prose}>
-              A phrase appearing five times in 500 words has one occurrence per
-              100 words, shown as 1% in this report.
-            </p>
-          </div>
-          <p className={prose}>
-            For a three-word phrase, this percentage still counts occurrences.
-            It does not count all words occupied by the phrase or represent
-            search engine importance.
-          </p>
-          <p className={prose}>
-            The word total includes common words such as “the” and “and.” Hiding
-            stop words changes the discovered phrase list, not the denominator.
-          </p>
-        </section>
-        <section>
-          <h2 className="text-3xl font-black">
-            Find repetition that a whole-article percentage can hide
-          </h2>
-          <p className={prose}>
-            An article can have a modest overall frequency while repeating the
-            same phrase several times in one paragraph. Local context makes that
-            easier to notice.
-          </p>
-          <p className={prose}>
-            Select a phrase to see its matching passages highlighted. The
-            paragraph list shows where that wording is most concentrated.
-          </p>
-          <p className={prose}>
-            A short definition may naturally repeat a technical term. A
-            promotional paragraph may repeat a phrase without adding useful
-            detail. Read both before changing them.
-          </p>
-          <p className={prose}>
-            The context preview shows up to 20,000 characters near the first
-            match, with at most 200 highlighted ranges. Full-text counts remain
-            unchanged.
-          </p>
-          <p className={prose}>
-            Overlapping occurrences count separately. In “very very very,” the
-            phrase “very very” occurs twice. Highlighted ranges merge so the
-            text remains readable.
-          </p>
-        </section>
-        <section>
-          <h2 className="text-3xl font-black">
-            Understand how phrase matching works
-          </h2>
-          <div className="mt-6 overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-700">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-slate-100 dark:bg-slate-800">
-                <tr>
-                  <th scope="col" className="p-4">
-                    Situation
+                <I aria-hidden className="text-[#5271ff]" size={22} />
+                <h3 className="mt-4 text-lg font-bold">{String(heading)}</h3>
+                <p className="mt-2 text-sm leading-7 text-slate-600 dark:text-slate-300">
+                  {String(body)}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      <section
+        className={`${section} border-t border-slate-200 dark:border-slate-800`}
+      >
+        <h2 className="text-2xl font-extrabold">
+          How phrase normalization and token matching work
+        </h2>
+        <p className={prose}>
+          Frequency is calculated as{" "}
+          <code>occurrences ÷ total source words × 100</code>. Punctuation and
+          casing are normalized so you get consistent counts across drafts:
+        </p>
+        <div className="mt-6 overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-700">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-slate-100 dark:bg-slate-800">
+              <tr>
+                <th scope="col" className="p-4 font-bold">
+                  Text Pattern
+                </th>
+                <th scope="col" className="p-4 font-bold">
+                  Counting Behavior
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                [
+                  "Case variations (AI Tools vs. ai tools)",
+                  "Normalized to lowercase so capitalization never splits counts.",
+                ],
+                [
+                  "Internal commas (AI, tools)",
+                  "Commas do not break a multi-word phrase match.",
+                ],
+                [
+                  "Sentence stops (AI. Tools)",
+                  "Periods, question marks, and line breaks stop multi-word spans.",
+                ],
+                [
+                  "Hyphenated words (on-page)",
+                  "Counted as a single normalized word token.",
+                ],
+                [
+                  "Stop-word toggle enabled",
+                  "Filters discovered n-grams starting or ending with common English stop words without changing total word count.",
+                ],
+              ].map(([a, b]) => (
+                <tr
+                  key={a}
+                  className="border-t border-slate-200 dark:border-slate-700"
+                >
+                  <th scope="row" className="p-4 font-semibold">
+                    {a}
                   </th>
-                  <th scope="col" className="p-4">
-                    Counting behavior
-                  </th>
+                  <td className="p-4 leading-7 text-slate-600 dark:text-slate-300">
+                    {b}
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {[
-                  ["AI tools and ai tools", "Case differences are ignored."],
-                  ["AI, tools", "The comma does not stop a phrase match."],
-                  [
-                    "AI. Tools",
-                    "The sentence boundary stops the two-word match.",
-                  ],
-                  [
-                    "An internal hyphen",
-                    "A hyphenated expression counts as one word.",
-                  ],
-                  [
-                    "A blank line",
-                    "Starts a new paragraph for distribution counts.",
-                  ],
-                  [
-                    "A word absent from the text",
-                    "Its supplied target count is zero.",
-                  ],
-                ].map(([a, b]) => (
-                  <tr
-                    key={a}
-                    className="border-t border-slate-200 dark:border-slate-700"
-                  >
-                    <th scope="row" className="p-4 font-medium">
-                      {a}
-                    </th>
-                    <td className="p-4 leading-7">{b}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <p className={prose}>
-            Matching uses Unicode letters and numbers, with common apostrophe
-            and hyphen variants normalized. It does not infer synonyms, plurals,
-            entities, or search intent.
-          </p>
-          <p className={prose}>
-            English stop words can be filtered from discovered phrases. For
-            another language, disable that filter. Languages without word
-            spacing need dedicated segmentation.
-          </p>
-        </section>
-        <section>
-          <h2 className="text-3xl font-black">
-            Avoid editing toward an arbitrary percentage
-          </h2>
-          <p className={prose}>
-            Use frequency to identify passages worth reviewing. Judge each
-            occurrence by clarity, relevance, and usefulness.
-          </p>
-          <p className={prose}>
-            Keep precise terms when readers need them. Remove repeated wording
-            when it makes sentences awkward, distracts from the point, or adds
-            no meaning.
-          </p>
-          <p className={prose}>
-            Google’s{" "}
-            <a
-              href="https://developers.google.com/search/docs/essentials/spam-policies#keyword-stuffing"
-              className="text-primary underline dark:text-blue-300"
-              rel="noopener noreferrer"
-            >
-              spam policies
-            </a>{" "}
-            address unnatural keyword repetition. Use the highlighted context to
-            make an editorial decision, rather than chasing a universal target.
-          </p>
-        </section>
-        <section>
-          <h2 className="text-3xl font-black">
-            Keep a useful record of your edits
-          </h2>
-          <p className={prose}>
-            Counts update as you edit. Inspect the highlighted context to decide
-            which repeated phrases are useful and which need attention.
-          </p>
-          <p className={prose}>
-            Download your report before leaving or refreshing the page. Your
-            draft is not saved between visits.
-          </p>
-          <p className={prose}>
-            The CSV includes target phrases and discovered phrases with their
-            counts, phrase length, and occurrence rate. The interface shows only
-            the top 50 per length.
-          </p>
-          <p className={prose}>
-            Use the export to compare editorial revisions. It records text
-            frequency, not a forecast of traffic or search performance.
-          </p>
-        </section>
-        <section>
-          <h2 className="text-3xl font-black">
-            Connect frequency checks with a reader-focused workflow
-          </h2>
-          <p className={prose}>
-            Start with the reader task using our{" "}
-            <Link
-              href="/tools/search-intent-checker"
-              className="text-primary underline dark:text-blue-300"
-            >
-              Keyword Intent Checker
-            </Link>
-            . Keyword repetition cannot replace a clear purpose or useful
-            evidence.
-          </p>
-          <p className={prose}>
-            Review difficult sentences with the{" "}
-            <Link
-              href="/tools/readability-checker"
-              className="text-primary underline dark:text-blue-300"
-            >
-              Readability Checker
-            </Link>{" "}
-            and explore our{" "}
-            <Link
-              href="/ai-seo/ai-readability-tools"
-              className="text-primary underline dark:text-blue-300"
-            >
-              readability guide
-            </Link>
-            . Keep important terms accurate while improving flow.
-          </p>
-          <p className={prose}>
-            For planning, use the{" "}
-            <Link
-              href="/tools/seo-content-brief-generator"
-              className="text-primary underline dark:text-blue-300"
-            >
-              SEO Content Brief Generator
-            </Link>
-            . Group research queries with the{" "}
-            <Link
-              href="/tools/keyword-clustering-tool"
-              className="text-primary underline dark:text-blue-300"
-            >
-              Keyword Clustering Tool
-            </Link>{" "}
-            before drafting.
-          </p>
-        </section>
-        <section>
-          <h2 className="text-3xl font-black">
-            Keyword density checker questions
-          </h2>
-          <div className="mt-6 divide-y divide-slate-200 rounded-2xl border border-slate-200 px-5 dark:divide-slate-700 dark:border-slate-700">
-            {faqs.map(([q, a]) => (
-              <details key={q} className="py-5">
-                <summary className="cursor-pointer font-bold leading-7">
-                  {q}
-                </summary>
-                <p className={prose}>{a}</p>
-              </details>
-            ))}
-          </div>
-        </section>
-      </div>
-      <Suspense fallback={null}>
-        <ToolResources slug="keyword-density-checker" />
-      </Suspense>
-    </>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section
+        className={`${section} border-t border-slate-200 dark:border-slate-800`}
+      >
+        <h2 className="text-2xl font-extrabold">
+          Related On-Page SEO &amp; Content Editing Tools
+        </h2>
+        <p className={prose}>
+          Verify reader intent before drafting with our{" "}
+          <Link
+            href="/tools/search-intent-checker"
+            className="font-semibold text-[#3452d1] underline dark:text-[#9aabff]"
+          >
+            Search Intent Checker
+          </Link>
+          , compare entity coverage against top-ranking pages in the{" "}
+          <Link
+            href="/tools/semantic-entity-gap-analyzer"
+            className="font-semibold text-[#3452d1] underline dark:text-[#9aabff]"
+          >
+            Semantic Entity &amp; Competitor Gap Analyzer
+          </Link>
+          , and polish complex sentences with the{" "}
+          <Link
+            href="/tools/readability-checker"
+            className="font-semibold text-[#3452d1] underline dark:text-[#9aabff]"
+          >
+            Readability Checker
+          </Link>
+          .
+        </p>
+      </section>
+
+      <ToolResources slug="keyword-density-checker" />
+      <ToolFaq title="Keyword density & phrase coverage questions" faqs={faqs} />
+    </div>
   );
 }

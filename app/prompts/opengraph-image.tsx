@@ -1,4 +1,7 @@
 import { ImageResponse } from "next/og";
+
+export const runtime = "edge";
+
 export const alt =
   "AI prompts for SEO and content writing from Do It With AI Tools";
 export const size = { width: 1200, height: 630 };

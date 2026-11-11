@@ -30,7 +30,9 @@ export default function SeoAndSchemaWrapper({
 }) {
   const currentSlug = params.slug;
   const canonicalUrl = `https://doitwithai.tools/${basePath}/${currentSlug}`;
-  const imageUrl = data?.mainImage ? urlForImage(data.mainImage).url() : null;
+  const imageUrl = data?.mainImage?.localUrl
+    ? (data.mainImage.localUrl.startsWith("http") ? data.mainImage.localUrl : `https://doitwithai.tools${data.mainImage.localUrl}`)
+    : (data?.mainImage?.asset ? urlForImage(data.mainImage).url() : null);
   const readingTime = data ? Math.ceil((data.wordCount || 1000) / 250) : null;
 
   // Memoize schema generation to prevent recalculations on every render
@@ -65,14 +67,14 @@ export default function SeoAndSchemaWrapper({
     return {
       __html: JSON.stringify({
         "@context": "https://schema.org",
-        "@type": ["Article", "TechArticle"], // TechArticle is good for SEO articles
+        "@type": ["Article", "TechArticle", "BlogPosting"], // TechArticle is good for SEO articles
         "@id": `${canonicalUrl}#article`,
         "mainEntityOfPage": {
           "@type": "WebPage",
           "@id": canonicalUrl,
           "url": canonicalUrl
         },
-        "headline": data.metatitle, // Use headline as primary title
+        "headline": data.title || data.metatitle, // Align JSON-LD headline with visible H1
         "name": data.schematitle || data.metatitle, // Redundant if same as headline, but harmless
         "description": data.metadesc,
         "abstract": data.overview, // Good to include if you have an abstract

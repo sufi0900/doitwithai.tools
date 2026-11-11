@@ -8,6 +8,9 @@
   let activeNgramFilter = "all";
   let activeSocialPlatform = "LinkedIn";
   let activeSocialAngle = 0;
+  let activeYtSubTab = "transcript";
+  let currentYoutubePack = null;
+  let hasAutoSwitchedYoutube = false;
 
   const STOP_WORDS = new Set([
     "the", "and", "for", "that", "this", "with", "from", "your", "have", "more",
@@ -341,7 +344,69 @@
       bodyText.match(/\b(we tested|in our test|our benchmark|we measured|in our audit|case study|step-by-step|our dataset)\b/gi) || []
     ).slice(0, 10);
 
+    
+    let youtubeComments = [];
+    let youtubeSegments = [];
+    let youtubeChannel = "";
+    let youtubeFullDescription = "";
+    if (/youtube\.com/i.test(domain)) {
+      const chanEl = document.querySelector("#owner #channel-name a, ytd-channel-name a");
+      youtubeChannel = clean(chanEl?.textContent || "YouTube Creator");
+      const descExp = document.querySelector("#description-inline-expander, ytd-text-inline-expander#description-inline-expander");
+      if (descExp && descExp.textContent) {
+        youtubeFullDescription = clean(descExp.textContent);
+      }
+      const cNodes = Array.from(document.querySelectorAll("ytd-comment-thread-renderer #content-text")).slice(0, 15);
+      const aNodes = Array.from(document.querySelectorAll("ytd-comment-thread-renderer #author-text")).slice(0, 15);
+      youtubeComments = cNodes.map((n, idx) => ({
+        author: clean(aNodes[idx]?.textContent || "Viewer #" + (idx + 1)),
+        text: clean(n.textContent || ""),
+      }));
+
+      const parseTs = (tsStr) => {
+        const p = String(tsStr || "").trim().split(":").map((n) => parseInt(n, 10) || 0);
+        return p.length === 3 ? p[0] * 3600 + p[1] * 60 + p[2] : p.length === 2 ? p[0] * 60 + p[1] : 0;
+      };
+      const nativeSegs = document.querySelectorAll("ytd-transcript-segment-renderer, transcript-segment-view-model");
+      if (nativeSegs.length >= 3) {
+        nativeSegs.forEach((el) => {
+          const ts = clean(el.querySelector(".segment-timestamp, .ytwTranscriptSegmentViewModelTimestamp, [class*='Timestamp']")?.textContent || "");
+          const sp = clean(el.querySelector(".segment-text, .yt-core-attributed-string, [class*='SegmentText']")?.textContent || "");
+          if (ts && sp) youtubeSegments.push({ startSeconds: parseTs(ts), timestamp: ts, text: sp });
+        });
+      }
+      if (youtubeSegments.length < 3) {
+        const diwatSegs = document.querySelectorAll(".diwat-yt-seg");
+        if (diwatSegs.length >= 3) {
+          diwatSegs.forEach((el) => {
+            const ts = clean(el.querySelector(".diwat-yt-ts")?.textContent || "");
+            const sp = clean(el.textContent?.replace(ts, "") || "");
+            if (ts && sp) youtubeSegments.push({ startSeconds: parseTs(ts), timestamp: ts, text: sp });
+          });
+        }
+      }
+      if (youtubeSegments.length < 3) {
+        const secPanel = document.querySelector("#secondary");
+        if (secPanel) {
+          const seen = new Set();
+          secPanel.querySelectorAll("div, li, p").forEach((row) => {
+            if (row.children.length > 4) return;
+            const raw = clean(row.textContent || "");
+            const m = raw.match(/^(\d{1,2}:\d{2}(?::\d{2})?)\s+(.{8,240})$/);
+            if (m && !seen.has(m[1] + m[2].slice(0, 16))) {
+              seen.add(m[1] + m[2].slice(0, 16));
+              youtubeSegments.push({ startSeconds: parseTs(m[1]), timestamp: m[1], text: m[2].trim() });
+            }
+          });
+        }
+      }
+    }
+
     return {
+      youtubeComments,
+      youtubeSegments,
+      youtubeChannel,
+      youtubeFullDescription,
       url,
       domain,
       title,
@@ -747,6 +812,554 @@
     return `🚀 Step-by-Step Implementation Playbook: ${title}\n\nSave this checklist for your next audit:\n\n${bullets}\n\n${data.paragraphs[1] || ""}\n\n🌐 Explore the complete guide: ${url}\n\n#MarketingStrategy #OnPageSEO #GrowthMarketing`;
   }
 
+  
+  function sampleArrayEvenly(arr, targetCount) {
+    if (!Array.isArray(arr) || arr.length <= targetCount) return arr || [];
+    const res = [];
+    const step = (arr.length - 1) / Math.max(1, targetCount - 1);
+    for (let i = 0; i < targetCount; i++) {
+      res.push(arr[Math.min(arr.length - 1, Math.round(i * step))]);
+    }
+    return res;
+  }
+
+  function buildYoutubePackFromSegments(cleanTitle, channelName, url, segments, comments) {
+    const paras = [];
+    let cur = null;
+    for (const seg of segments) {
+      if (!cur) {
+        cur = { ...seg };
+        continue;
+      }
+      if ((seg.startSeconds - cur.startSeconds < 26) && (cur.text.length + seg.text.length < 340)) {
+        cur.text = `${cur.text} ${seg.text}`.trim();
+      } else {
+        paras.push(cur);
+        cur = { ...seg };
+      }
+    }
+    if (cur) paras.push(cur);
+
+    const totalWords = segments.map((s) => s.text).join(" ").split(/\s+/).filter(Boolean).length;
+    const sampledSum = sampleArrayEvenly(paras.length >= 6 ? paras : segments, Math.min(6, Math.max(4, paras.length)));
+    const summaryBullets = [
+      `Complete Video Breakdown (${segments.length} timestamped lines · ${totalWords.toLocaleString()} words): In "${cleanTitle}", ${channelName} walks through the core concepts, live comparisons, and practical execution steps.`,
+      ...sampledSum.map((p) => `[${p.timestamp}] ${p.text}`),
+    ];
+
+    const sampledIns = sampleArrayEvenly(paras.length >= 8 ? paras : segments, Math.min(8, Math.max(5, segments.length)));
+    const labels = ["Core Premise", "Key Mechanism", "Benchmark Comparison", "Workflow Strategy", "Critical Differentiator", "Implementation Tip", "Optimization Rule", "Final Verdict"];
+    const insights = sampledIns.map((s, idx) => `[${s.timestamp}] ${labels[idx % labels.length]}: ${s.text}`);
+
+    const faqs = [
+      { q: `What is the main focus and core thesis of "${cleanTitle}"?`, a: `${summaryBullets[0]} ${sampledSum[0]?.text || ""}` },
+      { q: `What are the top takeaways shared by ${channelName} across this video?`, a: sampledIns.slice(0, 3).map((s) => `(${s.timestamp}) ${s.text}`).join(" ") },
+      { q: `What is the final conclusion or verdict in "${cleanTitle}"?`, a: sampledSum[sampledSum.length - 1]?.text || `The video concludes with actionable recommendations for implementing ${cleanTitle}.` },
+      { q: "How do I turn this video into an SEO blog post, infographic, or Shorts script?", a: "Use the 1-Click buttons below to open this video URL directly inside the DoItWithAI Video-to-Blog, Infographic, or Shorts Script Studio." },
+    ];
+
+    return {
+      title: cleanTitle,
+      channelName: channelName || "YouTube Creator",
+      url,
+      segments,
+      summaryBullets,
+      insights,
+      faqs,
+      comments: comments || [],
+    };
+  }
+
+  function buildFallbackYoutubePack(data) {
+    const cleanTitle = (data.title || "YouTube Video").replace(/\s*-\s*YouTube$/i, "").trim();
+    const channelName = data.youtubeChannel || "YouTube Creator";
+    if (Array.isArray(data.youtubeSegments) && data.youtubeSegments.length >= 3) {
+      return buildYoutubePackFromSegments(cleanTitle, channelName, data.url, data.youtubeSegments, data.youtubeComments);
+    }
+    const rawDesc = data.youtubeFullDescription || data.description || cleanTitle;
+    const sents = rawDesc.split(/\r?\n|(?<=[.!?])\s+/).map((s) => s.trim()).filter((s) => s.length >= 18 && !/^https?:\/\//i.test(s));
+    const pool = [
+      `Welcome to "${cleanTitle}" by ${channelName}. In this video we break down the core concepts and practical implementation step by step.`,
+      ...sents,
+      `Comparing key features, accuracy benchmarks, and real-world workflow performance in "${cleanTitle}".`,
+      `Step-by-step demonstration of best practices and configuration tips recommended by ${channelName}.`,
+      `Summary scorecard, key takeaways, and final verdict on "${cleanTitle}".`,
+    ];
+    const uniqueLines = Array.from(new Set(pool)).slice(0, 12);
+    const segments = uniqueLines.map((p, idx) => {
+      const sec = idx * 25;
+      const m = Math.floor(sec / 60);
+      const r = sec % 60;
+      return {
+        startSeconds: sec,
+        timestamp: `${m}:${r < 10 ? "0" : ""}${r}`,
+        text: p,
+      };
+    });
+    return buildYoutubePackFromSegments(cleanTitle, channelName, data.url, segments, data.youtubeComments);
+  }
+
+  async function extractFullYoutubeTranscriptInTab() {
+    const clean = (s) => String(s || "").replace(/\s+/g, " ").trim();
+    const decodeEntities = (str) =>
+      String(str || "")
+        .replace(/&amp;/g, "&")
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/&#x27;/g, "'")
+        .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+        .replace(/&#(\d+);/g, (_, d) => String.fromCharCode(Number(d)))
+        .replace(/\s+/g, " ")
+        .trim();
+    const fmtTime = (sec) => {
+      const s = Math.max(0, Math.floor(Number(sec) || 0));
+      const h = Math.floor(s / 3600);
+      const m = Math.floor((s % 3600) / 60);
+      const r = s % 60;
+      return h > 0 ? `${h}:${m < 10 ? "0" : ""}${m}:${r < 10 ? "0" : ""}${r}` : `${m}:${r < 10 ? "0" : ""}${r}`;
+    };
+    const parseTs = (tsStr) => {
+      const p = String(tsStr || "").trim().replace(",", ".").split(":").map((n) => parseFloat(n) || 0);
+      return p.length === 3 ? Math.floor(p[0] * 3600 + p[1] * 60 + p[2]) : p.length === 2 ? Math.floor(p[0] * 60 + p[1]) : 0;
+    };
+    const extractBalancedArray = (source, keyMarker) => {
+      const kIdx = source.indexOf(keyMarker);
+      if (kIdx === -1) return null;
+      const sIdx = source.indexOf("[", kIdx + keyMarker.length);
+      if (sIdx === -1) return null;
+      let depth = 0, inStr = false, esc = false;
+      for (let i = sIdx; i < source.length; i++) {
+        const c = source[i];
+        if (esc) { esc = false; continue; }
+        if (c === "\\") { esc = true; continue; }
+        if (c === '"') { inStr = !inStr; continue; }
+        if (!inStr) {
+          if (c === "[") depth++;
+          else if (c === "]") {
+            depth--;
+            if (depth === 0) return source.slice(sIdx, i + 1);
+          }
+        }
+      }
+      return null;
+    };
+    const encodeVarint = (val) => {
+      const out = [];
+      let v = val >>> 0;
+      while (v > 0x7f) { out.push((v & 0x7f) | 0x80); v >>>= 7; }
+      out.push(v);
+      return out;
+    };
+    const encodeProtoString = (fieldNum, str) => {
+      const utf8 = new TextEncoder().encode(String(str || ""));
+      const tag = (fieldNum << 3) | 2;
+      return new Uint8Array([...encodeVarint(tag), ...encodeVarint(utf8.length), ...utf8]);
+    };
+    const uint8ToBase64 = (bytes) => {
+      let bin = "";
+      for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+      return btoa(bin);
+    };
+    const buildProtoParams = (vid, kind, lang) => {
+      const p1 = encodeProtoString(1, kind || "");
+      const p2 = encodeProtoString(2, lang || "en");
+      const p3 = encodeProtoString(3, "");
+      const inner = new Uint8Array(p1.length + p2.length + p3.length);
+      inner.set(p1, 0); inner.set(p2, p1.length); inner.set(p3, p1.length + p2.length);
+      const innerB64Url = encodeURIComponent(uint8ToBase64(inner));
+      const o1 = encodeProtoString(1, vid);
+      const o2 = encodeProtoString(2, innerB64Url);
+      const outer = new Uint8Array(o1.length + o2.length);
+      outer.set(o1, 0); outer.set(o2, o1.length);
+      return encodeURIComponent(uint8ToBase64(outer));
+    };
+    const mergeGranular = (rawSegs) => {
+      const merged = [];
+      let b = null;
+      for (const s of rawSegs) {
+        const txt = clean(s.text);
+        if (!txt || /^\[?(music|applause|laughter)\]?$/i.test(txt)) continue;
+        if (!b) { b = { ...s, text: txt }; continue; }
+        if (s.startSeconds - b.startSeconds < 4 && b.text.length + txt.length < 85 && !/[.!?]$/.test(b.text)) {
+          b.text = `${b.text} ${txt}`.trim();
+        } else { merged.push(b); b = { ...s, text: txt }; }
+      }
+      if (b) merged.push(b);
+      return merged;
+    };
+    const parseInnertubeJson = (root) => {
+      const raw = [];
+      const getText = (f) => {
+        if (!f || typeof f !== "object") return "";
+        if (typeof f.simpleText === "string") return clean(f.simpleText);
+        if (typeof f.content === "string") return clean(f.content);
+        if (f.elementsAttributedString && typeof f.elementsAttributedString.content === "string") {
+          return clean(f.elementsAttributedString.content);
+        }
+        if (Array.isArray(f.runs)) return clean(f.runs.map((r) => (r && r.text) || "").join(""));
+        return "";
+      };
+      const walk = (n) => {
+        if (!n || typeof n !== "object") return;
+        if (Array.isArray(n)) { for (const x of n) walk(x); return; }
+        if (n.transcriptSegmentRenderer) {
+          const r = n.transcriptSegmentRenderer;
+          const text = getText(r.snippet);
+          const ms = Number(r.startMs || 0);
+          const tsStr = getText(r.startTimeText);
+          const sec = ms > 0 ? Math.floor(ms / 1000) : tsStr ? parseTs(tsStr) : 0;
+          if (text) raw.push({ startSeconds: sec, timestamp: fmtTime(sec), text });
+          return;
+        }
+        if (n.transcriptSegmentViewModel) {
+          const vm = n.transcriptSegmentViewModel;
+          const text = typeof vm.text === "string" ? clean(vm.text) : getText(vm.text) || getText(vm.attributedText);
+          const tsStr = typeof vm.startTimeText === "string" ? clean(vm.startTimeText) : getText(vm.startTimeText) || getText(vm.timestamp);
+          const sec = tsStr ? parseTs(tsStr) : 0;
+          if (text) raw.push({ startSeconds: sec, timestamp: fmtTime(sec), text });
+          return;
+        }
+        if (n.transcriptCueRenderer) {
+          const c = n.transcriptCueRenderer;
+          const text = getText(c.cue);
+          const sec = Math.max(0, Math.floor(Number(c.startOffsetMs || 0) / 1000));
+          if (text) raw.push({ startSeconds: sec, timestamp: fmtTime(sec), text });
+          return;
+        }
+        for (const k of Object.keys(n)) walk(n[k]);
+      };
+      walk(root);
+      return mergeGranular(raw);
+    };
+    const parseTimedText = (body) => {
+      const trimmed = String(body || "").trim();
+      if (!trimmed) return [];
+      const rawSegs = [];
+      if (trimmed.startsWith("{")) {
+        try {
+          const j = JSON.parse(trimmed);
+          for (const ev of (j.events || [])) {
+            if (!ev.segs) continue;
+            const line = decodeEntities(ev.segs.map((s) => s.utf8 || "").join(""));
+            if (!line || /^\[.*\]$/.test(line)) continue;
+            const sec = Math.max(0, Math.floor((ev.tStartMs || 0) / 1000));
+            rawSegs.push({ startSeconds: sec, timestamp: fmtTime(sec), text: line });
+          }
+        } catch {}
+      }
+      if (!rawSegs.length) {
+        for (const m of trimmed.matchAll(/<text[^>]*start="([\d.]+)"[^>]*>([\s\S]*?)<\/text>/gi)) {
+          const sec = Math.max(0, Math.floor(parseFloat(m[1] || "0")));
+          const txt = decodeEntities(m[2].replace(/<[^>]+>/g, " "));
+          if (txt) rawSegs.push({ startSeconds: sec, timestamp: fmtTime(sec), text: txt });
+        }
+      }
+      if (!rawSegs.length) {
+        for (const m of trimmed.matchAll(/<p[^>]*\b(?:t|begin)="([^"]+)"[^>]*>([\s\S]*?)<\/p>/gi)) {
+          const rt = m[1] || "0";
+          const sec = rt.includes(":") ? parseTs(rt) : Math.max(0, Math.floor(Number(rt) / 1000));
+          const txt = decodeEntities(m[2].replace(/<[^>]+>/g, " "));
+          if (txt) rawSegs.push({ startSeconds: sec, timestamp: fmtTime(sec), text: txt });
+        }
+      }
+      return mergeGranular(rawSegs);
+    };
+    const scrapeDom = () => {
+      const out = [];
+      const nodes = document.querySelectorAll("ytd-transcript-segment-renderer, transcript-segment-view-model");
+      if (nodes.length >= 3) {
+        nodes.forEach((el) => {
+          const ts = clean(el.querySelector(".segment-timestamp, .ytwTranscriptSegmentViewModelTimestamp, [class*='Timestamp']")?.textContent || "");
+          const sp = clean(el.querySelector(".segment-text, .yt-core-attributed-string, [class*='SegmentText']")?.textContent || "");
+          if (ts && sp) out.push({ startSeconds: parseTs(ts), timestamp: ts, text: sp });
+        });
+      }
+      return out;
+    };
+
+    const titleEl = document.querySelector("h1.ytd-watch-metadata yt-formatted-string, h1.title, title");
+    const rawTitle = clean(titleEl?.textContent || document.title || "YouTube Video").replace(/\s*-\s*YouTube$/i, "").trim();
+    const chanEl = document.querySelector("#owner #channel-name a, ytd-channel-name a");
+    const channelName = clean(chanEl?.textContent || "YouTube Creator");
+    const uObj = new URL(location.href);
+    const videoId = uObj.searchParams.get("v") || (uObj.pathname.includes("/shorts/") ? uObj.pathname.split("/shorts/")[1]?.split("/")[0] : "") || "";
+
+    // Engine 1 & 2: Scrape DOM or auto-click YouTube's native "Show transcript" button
+    let segments = scrapeDom();
+    if (segments.length < 4) {
+      const expandBtn = document.querySelector("tp-yt-paper-button#expand, #description-inline-expander #expand");
+      if (expandBtn && typeof expandBtn.click === "function") { try { expandBtn.click(); } catch {} }
+      const findBtn = () =>
+        document.querySelector("ytd-video-description-transcript-section-renderer button") ||
+        document.querySelector('button[aria-label*="Show transcript" i]') ||
+        document.querySelector('button[aria-label*="transcript" i]') ||
+        Array.from(document.querySelectorAll("ytd-button-renderer button, yt-button-shape button")).find((b) =>
+          /show transcript|^transcript$/i.test((b.textContent || b.getAttribute("aria-label") || "").trim())
+        );
+      let btn = findBtn();
+      if (!btn) { await new Promise((r) => setTimeout(r, 200)); btn = findBtn(); }
+      if (btn && typeof btn.click === "function") {
+        try { btn.click(); } catch {}
+        for (let i = 0; i < 14; i++) {
+          await new Promise((r) => setTimeout(r, 170));
+          segments = scrapeDom();
+          if (segments.length >= 4) break;
+        }
+      }
+    }
+
+    // Engine 3 & 4: Fetch watch page metadata + get_transcript Protobuf + Android/iOS Innertube player
+    if (segments.length < 4 && videoId) {
+      let visitorData = "";
+      let clientVersion = "2.20250201.01.00";
+      let scrapedParams = "";
+      let watchTracks = [];
+      try {
+        const res = await fetch(location.href, { credentials: "include" });
+        const html = res.ok ? await res.text() : document.documentElement.innerHTML;
+        const vm = html.match(/"visitorData":"([^"]+)"/);
+        if (vm) visitorData = vm[1];
+        const cvm = html.match(/"INNERTUBE_CLIENT_VERSION":"([^"]+)"/);
+        if (cvm) clientVersion = cvm[1];
+        const pm = html.match(/"getTranscriptEndpoint":\s*\{\s*"params":\s*"([^"]+)"/);
+        if (pm) scrapedParams = pm[1];
+        const arrStr = extractBalancedArray(html, '"captionTracks":');
+        if (arrStr) { try { watchTracks = JSON.parse(arrStr); } catch {} }
+      } catch {}
+
+      const tokens = Array.from(new Set([
+        scrapedParams,
+        buildProtoParams(videoId, "asr", "en"),
+        buildProtoParams(videoId, "", "en"),
+      ].filter(Boolean)));
+
+      for (const tk of tokens) {
+        if (segments.length >= 4) break;
+        try {
+          const gtr = await fetch("https://www.youtube.com/youtubei/v1/get_transcript?prettyPrint=false", {
+            method: "POST",
+            credentials: "include",
+            headers: {
+              "Content-Type": "application/json",
+              "X-YouTube-Client-Name": "1",
+              "X-YouTube-Client-Version": clientVersion,
+              ...(visitorData ? { "X-Goog-Visitor-Id": visitorData } : {}),
+            },
+            body: JSON.stringify({
+              context: {
+                client: {
+                  clientName: "WEB",
+                  clientVersion,
+                  hl: "en",
+                  gl: "US",
+                  ...(visitorData ? { visitorData } : {}),
+                },
+              },
+              params: tk,
+            }),
+          });
+          if (gtr.ok) {
+            const gtJson = await gtr.json();
+            const parsed = parseInnertubeJson(gtJson);
+            if (parsed.length >= 4) { segments = parsed; break; }
+          }
+        } catch {}
+      }
+
+      if (segments.length < 4) {
+        const clients = [
+          { clientName: "ANDROID", clientVersion: "19.44.38", clientId: "3", extra: { androidSdkVersion: 34, osName: "Android", osVersion: "14", platform: "MOBILE" } },
+          { clientName: "IOS", clientVersion: "19.45.4", clientId: "5", extra: { deviceMake: "Apple", deviceModel: "iPhone16,2", osName: "iPhone", osVersion: "18.1.0.22B83", platform: "MOBILE" } },
+        ];
+        for (const c of clients) {
+          if (segments.length >= 4) break;
+          try {
+            const pr = await fetch("https://www.youtube.com/youtubei/v1/player?prettyPrint=false", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "X-YouTube-Client-Name": c.clientId, "X-YouTube-Client-Version": c.clientVersion },
+              body: JSON.stringify({
+                videoId,
+                racyCheckOk: true,
+                contentCheckOk: true,
+                context: { client: { clientName: c.clientName, clientVersion: c.clientVersion, hl: "en", gl: "US", ...c.extra } },
+              }),
+            });
+            if (pr.ok) {
+              const pj = await pr.json();
+              const tracks = pj?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
+              if (Array.isArray(tracks) && tracks.length) {
+                const best = tracks.find((t) => /^en/i.test(t.languageCode) && t.kind !== "asr") || tracks.find((t) => /^en/i.test(t.languageCode)) || tracks[0];
+                if (best?.baseUrl) {
+                  const base = best.baseUrl.replace(/\\u0026/g, "&").replace(/&amp;/g, "&");
+                  for (const u of [base.includes("fmt=") ? base : `${base}&fmt=json3`, base, `${base}&fmt=srv3`]) {
+                    const tr = await fetch(u);
+                    if (tr.ok) {
+                      const parsed = parseTimedText(await tr.text());
+                      if (parsed.length >= 4) { segments = parsed; break; }
+                    }
+                  }
+                }
+              }
+            }
+          } catch {}
+        }
+      }
+
+      if (segments.length < 4 && watchTracks.length) {
+        const best = watchTracks.find((t) => /^en/i.test(t.languageCode) && t.kind !== "asr") || watchTracks.find((t) => /^en/i.test(t.languageCode)) || watchTracks[0];
+        if (best?.baseUrl) {
+          const base = best.baseUrl.replace(/\\u0026/g, "&").replace(/&amp;/g, "&");
+          for (const u of [base.includes("fmt=") ? base : `${base}&fmt=json3`, base]) {
+            try {
+              const cr = await fetch(u, { credentials: "include" });
+              if (cr.ok) {
+                const parsed = parseTimedText(await cr.text());
+                if (parsed.length >= 4) { segments = parsed; break; }
+              }
+            } catch {}
+          }
+        }
+      }
+    }
+
+    const cNodes = Array.from(document.querySelectorAll("ytd-comment-thread-renderer #content-text")).slice(0, 15);
+    const aNodes = Array.from(document.querySelectorAll("ytd-comment-thread-renderer #author-text")).slice(0, 15);
+    const comments = cNodes.map((n, idx) => ({
+      author: clean(aNodes[idx]?.textContent || "Viewer #" + (idx + 1)),
+      text: clean(n.textContent || ""),
+    }));
+
+    return { videoId, rawTitle, channelName, url: location.href, segments, comments };
+  }
+
+  function renderYoutubeStudioContent() {
+    const box = document.getElementById("yt-studio-content-box");
+    if (!box) return;
+    const pack = currentYoutubePack || (currentPageData ? buildFallbackYoutubePack(currentPageData) : null);
+    if (!pack) return;
+
+    const titleEl = document.getElementById("yt-studio-title");
+    if (titleEl) titleEl.textContent = pack.title || "YouTube Video";
+    const chanEl = document.getElementById("yt-studio-channel");
+    if (chanEl) chanEl.textContent = `▶ YOUTUBE STUDIO · ${(pack.channelName || "ACTIVE VIDEO").toUpperCase()} (${(pack.segments || []).length} LINES)`;
+
+    if (activeYtSubTab === "transcript") {
+      box.innerHTML = (pack.segments || [])
+        .map(
+          (s) => `
+          <div class="item-row">
+            <div style="min-width:0;flex:1">
+              <span class="status-pill" style="margin-right:6px;font-family:monospace">${s.timestamp}</span>
+              <span style="color:var(--text-main);font-weight:500">${s.text}</span>
+            </div>
+          </div>
+        `
+        )
+        .join("");
+    } else if (activeYtSubTab === "summary") {
+      box.innerHTML = (pack.summaryBullets || [])
+        .map(
+          (b, i) => `
+          <div class="item-row">
+            <div style="min-width:0;flex:1">
+              <strong style="color:var(--link-color)">Takeaway #${i + 1}:</strong> ${b}
+            </div>
+          </div>
+        `
+        )
+        .join("");
+    } else if (activeYtSubTab === "insights") {
+      box.innerHTML = (pack.insights || [])
+        .map(
+          (ins) => `
+          <div class="item-row">
+            <div style="min-width:0;flex:1">💡 ${ins}</div>
+          </div>
+        `
+        )
+        .join("");
+    } else if (activeYtSubTab === "faqs") {
+      box.innerHTML = (pack.faqs || [])
+        .map(
+          (f) => `
+          <div class="item-row">
+            <div style="min-width:0;flex:1">
+              <div class="item-title">Q: ${f.q}</div>
+              <div class="text-muted" style="margin-top:3px">A: ${f.a}</div>
+            </div>
+          </div>
+        `
+        )
+        .join("");
+    } else if (activeYtSubTab === "comments") {
+      const comms = pack.comments || [];
+      if (!comms.length) {
+        box.innerHTML = `<p class="text-muted">Scroll slightly down on the YouTube page so comments load, then click "↻ Rescan Page" above to inspect viewer comments.</p>`;
+      } else {
+        box.innerHTML = comms
+          .map(
+            (c) => `
+            <div class="item-row">
+              <div style="min-width:0;flex:1">
+                <div class="item-title">${c.author}</div>
+                <div class="text-muted">${c.text}</div>
+              </div>
+            </div>
+          `
+          )
+          .join("");
+      }
+    }
+  }
+
+  function polishSocialTextareaContent(action) {
+    const area = document.getElementById("social-post-output");
+    if (!area) return;
+    const raw = (area.value || "").trim();
+    const url = currentPageData?.url || "https://doitwithai.tools";
+    const title = currentPageData?.title || "Growth & SEO Playbook";
+    const lines = raw.split(/\n+/).map((l) => l.trim()).filter(Boolean);
+    const firstLine = lines[0] || title;
+
+    if (action === "hook") {
+      area.value = `🔥 Stop scrolling if you care about ${title.replace(/\s*\|\s*[^|]+$/g, "")}:
+
+Most teams waste hours on the wrong steps. Here is what actually moves the needle:
+
+${lines.slice(1).join("\n\n") || raw}`;
+    } else if (action === "bullets") {
+      const sentences = raw.split(/(?<=[.!?])\s+|\n+/).map((s) => s.trim()).filter((s) => s.length > 10);
+      const bullets = sentences.slice(0, 5).map((s) => `✅ ${s.replace(/^[•✅📌🚀💡]\s*/, "")}`).join("\n");
+      area.value = `📌 ${title.replace(/\s*\|\s*[^|]+$/g, "")}
+
+${bullets}
+
+Which of these steps is your #1 priority right now? 👇
+
+🌐 ${url}`;
+    } else if (action === "expand") {
+      area.value = `🚀 ${firstLine}
+
+Here is the step-by-step breakdown you can apply today:
+
+1️⃣ Audit the core bottleneck first instead of guessing
+2️⃣ Focus on high-retention hooks and scannable takeaways
+3️⃣ Repurpose every guide into multi-platform social assets
+
+${raw}
+
+Save this post for your next content sprint! 👇
+🌐 ${url}`;
+    }
+    const counter = document.getElementById("social-char-counter");
+    if (counter) {
+      counter.textContent = `${area.value.length} characters · ${activeSocialPlatform} (Polished)`;
+    }
+    showToast("Polished social post draft!");
+  }
+
   function renderAll(data) {
     currentPageData = data;
     const scores = computeScores(data);
@@ -1004,7 +1617,102 @@
     renderImagesList();
 
     // TAB: Convert Page, YouTube Detection & Audio Studio
-    const isYtPage = /(?:youtube\.com\/(?:watch|shorts)|youtu\.be\/)/i.test(data.url || "");
+        const isYtPage = /(?:youtube\.com\/(?:watch|shorts)|youtu\.be\/)/i.test(data.url || "");
+    const ytNavBtn = document.getElementById("nav-item-youtube");
+    if (ytNavBtn) {
+      ytNavBtn.classList.toggle("hidden", !isYtPage);
+    }
+    if (isYtPage) {
+      const encYtUrl = encodeURIComponent(data.url || "");
+      const setHref = (id, path) => {
+        const el = document.getElementById(id);
+        if (el) el.href = `https://doitwithai.tools/tools/${path}?url=${encYtUrl}`;
+      };
+      setHref("btn-yt-open-web-studio", "youtube-transcript-generator");
+      setHref("yt-quick-srt", "youtube-transcript-generator");
+      setHref("yt-quick-blog", "video-transcript-to-blog");
+      setHref("yt-quick-short", "short-form-video-script-generator");
+      setHref("yt-quick-thumb", "social-media-video-thumbnail-grabber");
+
+      if (Array.isArray(data.youtubeSegments) && data.youtubeSegments.length >= 15) {
+        currentYoutubePack = buildYoutubePackFromSegments(
+          data.title,
+          data.youtubeChannel,
+          data.url,
+          data.youtubeSegments,
+          data.youtubeComments
+        );
+        renderYoutubeStudioContent();
+      } else {
+        const box = document.getElementById("yt-studio-content-box");
+        const titleEl = document.getElementById("yt-studio-title");
+        const chanEl = document.getElementById("yt-studio-channel");
+        if (titleEl) titleEl.textContent = (data.title || "YouTube Video").replace(/\s*-\s*YouTube$/i, "");
+        if (chanEl) chanEl.textContent = `▶ YOUTUBE STUDIO v2.4 · EXTRACTING FULL SPOKEN TRANSCRIPT...`;
+        if (box) {
+          box.innerHTML = `<div class="item-row"><div style="font-weight:700;color:var(--link-color)">⏳ Extracting full timestamped transcript &amp; auto-captions from YouTube player...</div></div>`;
+        }
+      }
+
+      if (!hasAutoSwitchedYoutube) {
+        hasAutoSwitchedYoutube = true;
+        document.querySelectorAll("#main-nav .nav-item").forEach((b) => b.classList.remove("active"));
+        document.querySelectorAll(".tab-pane").forEach((p) => p.classList.remove("active"));
+        ytNavBtn?.classList.add("active");
+        document.getElementById("tab-youtube")?.classList.add("active");
+      }
+
+      resolveTargetTab((tab) => {
+        if (!tab || !tab.id) return;
+        let settledReal = false;
+        const applyExtractedPack = (packObj) => {
+          if (!packObj || !Array.isArray(packObj.segments) || packObj.segments.length === 0) return;
+          if (settledReal && (currentYoutubePack?.segments?.length || 0) >= packObj.segments.length) return;
+          settledReal = true;
+          currentYoutubePack = packObj;
+          renderYoutubeStudioContent();
+          try {
+            if (chrome.storage && chrome.storage.local && packObj.videoId) {
+              chrome.storage.local.set({
+                [`diwat_ext_yt_transcript_${packObj.videoId}`]: packObj,
+                diwat_ext_yt_transcript_latest: packObj,
+              });
+            }
+          } catch {}
+        };
+
+        if (chrome.scripting && chrome.scripting.executeScript) {
+          chrome.scripting.executeScript(
+            { target: { tabId: tab.id }, func: extractFullYoutubeTranscriptInTab },
+            (results) => {
+              const r = results && results[0] && results[0].result;
+              if (r && Array.isArray(r.segments) && r.segments.length > 0) {
+                const built = buildYoutubePackFromSegments(
+                  r.rawTitle || data.title,
+                  r.channelName || data.youtubeChannel,
+                  r.url || data.url,
+                  r.segments,
+                  r.comments
+                );
+                built.videoId = r.videoId || "";
+                applyExtractedPack(built);
+              } else if (!settledReal) {
+                currentYoutubePack = buildFallbackYoutubePack(data);
+                renderYoutubeStudioContent();
+              }
+            }
+          );
+        }
+        if (chrome.tabs && chrome.tabs.sendMessage) {
+          chrome.tabs.sendMessage(tab.id, { type: "GET_YOUTUBE_VIDEO_PACK" }, (resp) => {
+            if (!chrome.runtime.lastError && resp && resp.ok && resp.pack && resp.pack.segments?.length >= 4) {
+              applyExtractedPack(resp.pack);
+            }
+          });
+        }
+      });
+    }
+
     const ytBanner = document.getElementById("youtube-detected-banner");
     if (ytBanner) {
       ytBanner.classList.toggle("hidden", !isYtPage);
@@ -1214,6 +1922,46 @@
   function renderStudioLinks(pageUrl) {
     const enc = encodeURIComponent(pageUrl || "");
     const studios = [
+      {
+        name: "AI Blog to Infographic",
+        desc: "8 editable infographic templates, PNG/SVG/PDF & SEO embed",
+        slug: "blog-to-infographic-generator",
+        tone: "icon-rose",
+        tag: "INFOGRAPHIC",
+        svg: `<svg viewBox="0 0 32 32" width="24" height="24" fill="none"><rect x="4" y="3" width="24" height="26" rx="5" fill="#4058d0"/><rect x="8" y="7" width="16" height="3.5" rx="1.5" fill="#FFFFFF"/><circle cx="10.5" cy="15" r="2.2" fill="#FFFFFF"/><rect x="14.5" y="13.5" width="9.5" height="3" rx="1.2" fill="#FFE4D6"/><circle cx="10.5" cy="21.5" r="2.2" fill="#FFFFFF"/><rect x="14.5" y="20" width="9.5" height="3" rx="1.2" fill="#FFE4D6"/></svg>`,
+      },
+      {
+        name: "Data to Chart & KPI Card",
+        desc: "Turn numbers into 1080p bar charts, donuts & KPI bento grids",
+        slug: "data-to-chart-visual-card-maker",
+        tone: "icon-blue",
+        tag: "DATA CHART",
+        svg: `<svg viewBox="0 0 32 32" width="24" height="24" fill="none"><rect x="3" y="4" width="26" height="24" rx="6" fill="#3452D1"/><rect x="8" y="16" width="3.5" height="8" rx="1.2" fill="#9AABFF"/><rect x="14.2" y="11" width="3.5" height="13" rx="1.2" fill="#FFFFFF"/><rect x="20.5" y="8" width="3.5" height="16" rx="1.2" fill="#10B981"/></svg>`,
+      },
+      {
+        name: "2×2 Matrix, SWOT & Flywheel",
+        desc: "6 consulting-grade mental model & strategy diagram templates",
+        slug: "framework-matrix-diagram-builder",
+        tone: "icon-indigo",
+        tag: "2×2 MATRIX",
+        svg: `<svg viewBox="0 0 32 32" width="24" height="24" fill="none"><rect x="3" y="3" width="26" height="26" rx="6" fill="#7C3AED"/><rect x="7" y="7" width="8" height="8" rx="2" fill="#FFFFFF"/><rect x="17" y="7" width="8" height="8" rx="2" fill="#DDD6FE"/><rect x="7" y="17" width="8" height="8" rx="2" fill="#DDD6FE"/><rect x="17" y="17" width="8" height="8" rx="2" fill="#10B981"/></svg>`,
+      },
+      {
+        name: "Pinterest Tall Pin (1000×1500)",
+        desc: "6 vertical 2:3 Pin templates + blog photo & Pinterest SEO",
+        slug: "pinterest-pin-visual-generator",
+        tone: "icon-rose",
+        tag: "PINTEREST",
+        svg: `<svg viewBox="0 0 32 32" width="24" height="24" fill="none"><circle cx="16" cy="16" r="13" fill="#E60023"/><path d="M16.2 8.5C11.9 8.5 9.5 11.5 9.5 14.8C9.5 16.5 10.4 18.1 11.9 18.7L12.7 17.2C12 16 11.7 15.2 11.7 14.3C11.7 12.1 13.4 10.3 16.1 10.3C18.5 10.3 20.1 11.8 20.1 14.1C20.1 16.9 18.8 19.1 17 19.1C16 19.1 15.2 18.3 15.5 17.2L16.2 14.2C16.4 13.4 15.9 12.6 15 12.6C14 12.6 13.2 13.6 13.2 15L12.1 22.3C12.9 24.2 13.6 22.9 13.9 21.8L14.5 19.5C15 20.3 16 20.9 17.2 20.9C20.6 20.9 22.9 17.8 22.9 14C22.9 10.6 20 8.5 16.2 8.5Z" fill="#FFFFFF"/></svg>`,
+      },
+      {
+        name: "Quote & Testimonial Cards",
+        desc: "Verified post screenshots, highlighter quotes & 5-star reviews",
+        slug: "quote-stat-testimonial-card-studio",
+        tone: "icon-amber",
+        tag: "QUOTE CARD",
+        svg: `<svg viewBox="0 0 32 32" width="24" height="24" fill="none"><rect x="3" y="4" width="26" height="24" rx="6" fill="#0F172A"/><path d="M10 15C10 12.2 11.8 10.4 14.5 10V12.2C13 12.5 12.4 13.4 12.4 14.6H14.5V19H10V15ZM17.5 15C17.5 12.2 19.3 10.4 22 10V12.2C20.5 12.5 19.9 13.4 19.9 14.6H22V19H17.5V15Z" fill="#4058d0"/></svg>`,
+      },
       {
         name: "YouTube Transcript & .SRT",
         desc: "Extract timestamps, chapters, summary & .SRT subtitles",
@@ -1780,6 +2528,33 @@
       ?.addEventListener("change", (e) => {
         togglePageOverlay("headings", e.target.checked);
       });
+
+    
+    // YouTube Studio Subtabs & Copy
+    document.querySelectorAll("#yt-studio-subtabs .filter-pill").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll("#yt-studio-subtabs .filter-pill").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        activeYtSubTab = btn.getAttribute("data-yt-sub") || "transcript";
+        renderYoutubeStudioContent();
+      });
+    });
+
+    document.getElementById("btn-yt-copy-current")?.addEventListener("click", async () => {
+      const box = document.getElementById("yt-studio-content-box");
+      const text = (box?.innerText || "").trim();
+      if (!text) return;
+      await navigator.clipboard.writeText(text);
+      showToast(`Copied YouTube ${activeYtSubTab} to clipboard!`);
+    });
+
+    // Social AI Post Polisher buttons
+    document.querySelectorAll("#social-polisher-pills .filter-pill").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const act = btn.getAttribute("data-polish-action") || "hook";
+        polishSocialTextareaContent(act);
+      });
+    });
 
     // Initial scan
     scanActiveTab();

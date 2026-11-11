@@ -1,24 +1,34 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   CheckCircle2,
   Copy,
   Download,
-  MessageSquare,
+  Image as ImageIcon,
+  Plus,
   Sparkles,
+  Trash2,
 } from "lucide-react";
 import UrlArticleExtractorBar, {
   type ExtractedImageAsset,
 } from "@/features/tool-ui/UrlArticleExtractorBar";
 import { SocialVisualCardBuilder } from "@/features/tool-ui/SocialVisualCardBuilder";
+import ToolRunOverlay, {
+  focusToolSection,
+} from "@/features/tool-ui/ToolRunOverlay";
+import PlatformBrandIcon from "@/features/tool-ui/PlatformBrandIcon";
 import {
   buildDeterministicThread,
   DEFAULT_THREAD_INPUT,
   type ThreadGeneratorInput,
   type ThreadGeneratorResult,
   type ThreadPlatform,
+  type ThreadPostItem,
 } from "./model";
+
+const MIN_THREAD_POSTS = 2;
+const MAX_THREAD_POSTS = 12;
 
 export default function SocialThreadGeneratorClient() {
   const [input, setInput] = useState<ThreadGeneratorInput>(
@@ -26,11 +36,16 @@ export default function SocialThreadGeneratorClient() {
   );
   const [aiThread, setAiThread] = useState<ThreadGeneratorResult | null>(null);
   const [activeHookIndex, setActiveHookIndex] = useState(0);
+  const [editablePosts, setEditablePosts] = useState<ThreadPostItem[]>(
+    () => buildDeterministicThread(DEFAULT_THREAD_INPUT).posts,
+  );
+  const [visualCardPostIndex, setVisualCardPostIndex] = useState<number>(0);
   const [extractedImages, setExtractedImages] = useState<ExtractedImageAsset[]>(
     [],
   );
   const [loadingAi, setLoadingAi] = useState(false);
   const [toast, setToast] = useState("");
+  const resultsRef = useRef<HTMLDivElement | null>(null);
 
   const deterministicThread = useMemo(
     () => buildDeterministicThread(input),
@@ -38,45 +53,12 @@ export default function SocialThreadGeneratorClient() {
   );
   const thread = aiThread || deterministicThread;
 
-  function notify(msg: string) {
-    setToast(msg);
-    setTimeout(() => setToast(""), 2600);
-  }
-
-  function updateField<K extends keyof ThreadGeneratorInput>(
-    key: K,
-    val: ThreadGeneratorInput[K],
-  ) {
-    setAiThread(null);
-    setInput((prev) => ({ ...prev, [key]: val }));
-  }
-
-  async function handleGenerateAiThread() {
-    setLoadingAi(true);
-    try {
-      const res = await fetch("/api/ai-tools/social-thread-generator", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(input),
-      });
-      const data = await res.json();
-      if (data?.thread) {
-        setAiThread(data.thread);
-        notify(`Generated AI ${input.platform} thread!`);
-      }
-    } catch {
-      notify("Updated social thread posts.");
-    } finally {
-      setLoadingAi(false);
-    }
-  }
-
-  const displayedPosts = useMemo(() => {
+  useEffect(() => {
     const selectedHook =
       thread.hookOptions[activeHookIndex]?.hookText ||
       thread.hookOptions[0]?.hookText ||
       "";
-    return thread.posts.map((p, idx) => {
+    const synced = thread.posts.map((p, idx) => {
       if (idx !== 0 || !selectedHook) return p;
       const prefix = input.includeNumbering ? `1/${p.total}\n\n` : "";
       const text = `${prefix}${selectedHook}`;
@@ -87,10 +69,103 @@ export default function SocialThreadGeneratorClient() {
         withinLimit: text.length <= p.maxChars,
       };
     });
+    setEditablePosts(synced);
+    setVisualCardPostIndex(0);
   }, [thread, activeHookIndex, input.includeNumbering]);
 
+  const canAddPost = editablePosts.length < MAX_THREAD_POSTS;
+  const canRemovePost = editablePosts.length > MIN_THREAD_POSTS;
+
+  function notify(msg: string) {
+    setToast(msg);
+    setTimeout(() => setToast(""), 2800);
+  }
+
+  function updateField<K extends keyof ThreadGeneratorInput>(
+    key: K,
+    val: ThreadGeneratorInput[K],
+  ) {
+    setAiThread(null);
+    setInput((prev) => ({ ...prev, [key]: val }));
+  }
+
+  function updatePostText(idx: number, newText: string) {
+    setEditablePosts((prev) =>
+      prev.map((p, i) =>
+        i === idx
+          ? {
+              ...p,
+              text: newText,
+              charCount: newText.length,
+              withinLimit: newText.length <= p.maxChars,
+            }
+          : p,
+      ),
+    );
+  }
+
+  function handleAddThreadPost() {
+    if (!canAddPost) return;
+    const nextTotal = editablePosts.length + 1;
+    const maxChars = thread.maxCharsPerPost;
+    const newPost: ThreadPostItem = {
+      index: nextTotal,
+      total: nextTotal,
+      role: "Body Insight",
+      text: `${input.includeNumbering ? `${nextTotal}/${nextTotal}\n\n` : ""}Add your next actionable point or example here.`,
+      charCount: 54,
+      maxChars,
+      withinLimit: true,
+    };
+    const updated = [...editablePosts, newPost].map((p, i) => ({
+      ...p,
+      index: i + 1,
+      total: nextTotal,
+    }));
+    setEditablePosts(updated);
+    notify(`Added Post #${nextTotal} to thread!`);
+  }
+
+  function handleRemoveThreadPost(idxToRemove: number) {
+    if (!canRemovePost) return;
+    const nextTotal = editablePosts.length - 1;
+    const updated = editablePosts
+      .filter((_, i) => i !== idxToRemove)
+      .map((p, i) => ({
+        ...p,
+        index: i + 1,
+        total: nextTotal,
+      }));
+    setEditablePosts(updated);
+    setVisualCardPostIndex((prev) => Math.min(prev, updated.length - 1));
+    notify(`Removed post (${nextTotal} posts in thread).`);
+  }
+
+  async function runGenerateAiThread(overrideInput?: ThreadGeneratorInput) {
+    const payload = overrideInput || input;
+    setLoadingAi(true);
+    try {
+      const res = await fetch("/api/ai-tools/social-thread-generator", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (data?.thread) {
+        setAiThread(data.thread);
+        notify(`Generated AI ${payload.platform} thread!`);
+      }
+      focusToolSection(resultsRef.current);
+    } catch {
+      notify("Updated social thread posts.");
+      focusToolSection(resultsRef.current);
+    } finally {
+      setLoadingAi(false);
+    }
+  }
+
   function downloadThreadTxt() {
-    const full = displayedPosts
+    const full = editablePosts
       .map((p) => `--- POST ${p.index}/${p.total} (${p.role}) ---\n${p.text}`)
       .join("\n\n");
     const blob = new Blob([full], { type: "text/plain;charset=utf-8" });
@@ -103,61 +178,71 @@ export default function SocialThreadGeneratorClient() {
     notify("Downloaded full thread (.TXT)!");
   }
 
+  const activeVisualPost =
+    editablePosts[visualCardPostIndex] || editablePosts[0];
+
   return (
     <section
       aria-label="X and Threads Viral Thread Splitter Workspace"
-      className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-10 sm:px-6 space-y-6"
+      className="mx-auto w-full max-w-6xl space-y-6 overflow-x-clip px-4 py-10 sm:px-6"
     >
+      <ToolRunOverlay
+        active={loadingAi}
+        title={`Splitting Into ${input.platform} Thread...`}
+        description="Building numbered posts, 3 viral opening hook variations, and character-safe splits."
+      />
+
       <UrlArticleExtractorBar
         label="Fetch Article URL & Auto-Split Multiple Sub-Topics Into Threads (+ Extract Images)"
         placeholder="Paste any blog post or article URL to extract sub-topics, images & generate threads..."
         onExtracted={(data) => {
           setAiThread(null);
-          setInput((prev) => ({
-            ...prev,
-            topicOrHeadline: data.title || prev.topicOrHeadline,
-            sourceContent: data.cleanText || prev.sourceContent,
-            ctaUrl: data.url || prev.ctaUrl,
-          }));
+          const firstSub = data.subTopics?.[0];
+          const nextInput: ThreadGeneratorInput = {
+            ...input,
+            topicOrHeadline:
+              firstSub?.title || data.title || input.topicOrHeadline,
+            sourceContent:
+              firstSub?.content || data.cleanText || input.sourceContent,
+            ctaUrl: data.url || input.ctaUrl,
+          };
+          setInput(nextInput);
           if (data.images?.length) {
             setExtractedImages(data.images);
           }
-          notify(`Extracted ${data.subTopics.length} sub-topics from "${data.title}"!`);
+          void runGenerateAiThread(nextInput);
         }}
         onSelectSubTopic={(sub, data) => {
           setAiThread(null);
-          setInput((prev) => ({
-            ...prev,
+          const nextInput: ThreadGeneratorInput = {
+            ...input,
             topicOrHeadline: sub.title,
             sourceContent: sub.content,
-            ctaUrl: data.url || prev.ctaUrl,
-          }));
-          notify(`Switched thread generator to sub-topic: "${sub.title}"!`);
+            ctaUrl: data.url || input.ctaUrl,
+          };
+          setInput(nextInput);
+          void runGenerateAiThread(nextInput);
         }}
       />
-
-      {toast && (
-        <div
-          role="status"
-          className="flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2.5 text-xs font-bold text-emerald-800 dark:text-emerald-300"
-        >
-          <CheckCircle2 size={15} />
-          <span>{toast}</span>
-        </div>
-      )}
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,0.98fr)_minmax(0,1.02fr)]">
         {/* LEFT COLUMN: SOURCE CONTENT & HOOK SWITCHER */}
         <div className="space-y-6">
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-[#111827] sm:p-6">
+          <div className="shadow-xs rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-[#111827] sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 className="flex items-center gap-2 text-lg font-extrabold">
-                <MessageSquare size={19} className="text-[#5271ff]" />
-                1. Thread Source Notes &amp; Platform Rules
-              </h2>
+              <div className="flex items-center gap-2.5">
+                <PlatformBrandIcon
+                  platform="x"
+                  slug="social-thread-generator"
+                  size={38}
+                />
+                <h2 className="text-lg font-extrabold">
+                  1. Thread Source Notes &amp; Platform Rules
+                </h2>
+              </div>
               <button
                 type="button"
-                onClick={handleGenerateAiThread}
+                onClick={() => void runGenerateAiThread()}
                 disabled={loadingAi}
                 className="inline-flex items-center gap-1.5 rounded-xl bg-[#3452d1] px-4 py-2 text-xs font-extrabold text-white shadow-sm hover:bg-[#2842b5] disabled:opacity-60"
               >
@@ -201,7 +286,7 @@ export default function SocialThreadGeneratorClient() {
                       }
                       className="h-4 w-4 accent-[#3452d1]"
                     />
-                    Include post counter (1/{displayedPosts.length})
+                    Include post counter (1/{editablePosts.length})
                   </label>
                 </div>
               </div>
@@ -261,7 +346,7 @@ export default function SocialThreadGeneratorClient() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-[#111827] sm:p-6">
+          <div className="shadow-xs rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-[#111827] sm:p-6">
             <h3 className="text-base font-extrabold">
               2. Switch Post #1 Viral Hook Angle
             </h3>
@@ -292,30 +377,55 @@ export default function SocialThreadGeneratorClient() {
           </div>
         </div>
 
-        {/* RIGHT COLUMN: NUMBERED MULTI-POST THREAD CARDS */}
-        <div className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-[#111827]">
+        {/* RIGHT COLUMN: LIVE EDITABLE MULTI-POST THREAD CARDS */}
+        <div
+          ref={resultsRef}
+          tabIndex={-1}
+          className="space-y-4 focus:outline-none"
+        >
+          {toast && (
+            <div
+              role="status"
+              className="flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2.5 text-xs font-bold text-emerald-800 dark:text-emerald-300"
+            >
+              <CheckCircle2 size={15} />
+              <span>{toast}</span>
+            </div>
+          )}
+
+          <div className="shadow-xs flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-[#111827]">
             <div>
               <span className="text-xs font-extrabold uppercase tracking-wider text-[#5271ff]">
-                {input.platform} Thread Preview
+                {input.platform} Live Editable Thread
               </span>
               <h3 className="text-base font-black">
-                {displayedPosts.length} Connected Posts ({thread.maxCharsPerPost}{" "}
+                {editablePosts.length} Connected Posts ({thread.maxCharsPerPost}{" "}
                 char limit)
               </h3>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={handleAddThreadPost}
+                disabled={!canAddPost}
+                style={{ cursor: canAddPost ? "pointer" : "not-allowed" }}
+                className="inline-flex items-center gap-1 rounded-xl border border-[#4058d0] bg-[#4058d0]/10 px-3 py-2 text-xs font-extrabold text-[#4058d0] hover:bg-[#4058d0] hover:text-white disabled:opacity-45"
+              >
+                <Plus size={13} /> Add Post
+              </button>
               <button
                 type="button"
                 onClick={async () => {
-                  const all = displayedPosts.map((p) => p.text).join("\n\n---\n\n");
+                  const all = editablePosts
+                    .map((p) => p.text)
+                    .join("\n\n---\n\n");
                   await navigator.clipboard.writeText(all);
                   notify("Copied entire thread to clipboard!");
                 }}
                 className="inline-flex items-center gap-1.5 rounded-xl bg-[#3452d1] px-3.5 py-2 text-xs font-bold text-white hover:bg-[#2842b5]"
               >
                 <Copy size={13} />
-                Copy All {displayedPosts.length} Posts
+                Copy All {editablePosts.length} Posts
               </button>
               <button
                 type="button"
@@ -327,10 +437,10 @@ export default function SocialThreadGeneratorClient() {
             </div>
           </div>
 
-          {displayedPosts.map((post) => (
+          {editablePosts.map((post, idx) => (
             <div
-              key={post.index}
-              className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-[#111827]"
+              key={idx}
+              className="shadow-xs rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-[#111827] sm:p-5"
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
@@ -342,7 +452,7 @@ export default function SocialThreadGeneratorClient() {
                   </strong>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-1.5">
                   <span
                     className={`rounded-full px-2.5 py-0.5 font-mono text-[11px] font-extrabold ${
                       post.withinLimit
@@ -354,20 +464,55 @@ export default function SocialThreadGeneratorClient() {
                   </span>
                   <button
                     type="button"
+                    onClick={() => {
+                      setVisualCardPostIndex(idx);
+                      notify(`Loaded Post #${post.index} into Visual Card Studio below!`);
+                    }}
+                    className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-bold transition ${
+                      visualCardPostIndex === idx
+                        ? "bg-[#4058d0] text-white"
+                        : "border border-slate-300 bg-slate-50 text-slate-700 hover:border-[#4058d0] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                    }`}
+                    title="Send this post to the Visual Card Studio below"
+                  >
+                    <ImageIcon size={11} /> Card
+                  </button>
+                  <button
+                    type="button"
                     onClick={async () => {
                       await navigator.clipboard.writeText(post.text);
                       notify(`Copied Post #${post.index}!`);
                     }}
                     className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-slate-50 px-2.5 py-1 text-xs font-bold hover:border-[#5271ff] dark:border-slate-700 dark:bg-slate-800"
                   >
-                    <Copy size={12} /> Copy Post #{post.index}
+                    <Copy size={12} /> Copy
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveThreadPost(idx)}
+                    disabled={!canRemovePost}
+                    style={{
+                      backgroundColor: "#e11d48",
+                      cursor: canRemovePost ? "pointer" : "not-allowed",
+                    }}
+                    className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-extrabold text-white disabled:opacity-45"
+                    title={
+                      canRemovePost
+                        ? `Remove Post #${post.index}`
+                        : "Minimum 2 posts required"
+                    }
+                  >
+                    <Trash2 size={11} />
                   </button>
                 </div>
               </div>
 
-              <p className="mt-3 whitespace-pre-wrap break-words rounded-xl border border-slate-200/80 bg-slate-50 p-3.5 text-sm leading-6 text-slate-900 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100">
-                {post.text}
-              </p>
+              <textarea
+                rows={4}
+                value={post.text}
+                onChange={(e) => updatePostText(idx, e.target.value)}
+                className="mt-3 w-full rounded-xl border border-slate-200/80 bg-slate-50 p-3 text-sm leading-6 text-slate-900 focus:border-[#4058d0] focus:bg-white focus:outline-none dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
+              />
             </div>
           ))}
         </div>
@@ -376,9 +521,14 @@ export default function SocialThreadGeneratorClient() {
       <SocialVisualCardBuilder
         platformLabel={`${input.platform} Thread Cover`}
         defaultHeadline={input.topicOrHeadline}
-        defaultBody={displayedPosts[1]?.text || displayedPosts[0]?.text || ""}
-        defaultSublabel="THREAD BREAKDOWN"
-        postTextToShare={displayedPosts[0]?.text || ""}
+        defaultBody={
+          activeVisualPost?.text ||
+          editablePosts[1]?.text ||
+          editablePosts[0]?.text ||
+          ""
+        }
+        defaultSublabel={`THREAD POST #${(activeVisualPost?.index || 1)}`}
+        postTextToShare={activeVisualPost?.text || editablePosts[0]?.text || ""}
         extractedImages={extractedImages}
       />
     </section>

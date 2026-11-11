@@ -1,3 +1,4 @@
+import { getAllStaticArticleSitemapEntries } from "@/features/articles/legacy/staticArticles";
 // ../app/lib/sanity - UPDATED VERSION
 import { createClient } from "next-sanity";
 import { groq } from 'next-sanity';
@@ -23,14 +24,22 @@ export async function fetchURLs() {
     publishedAt
   }`;
   
+  const staticEntries = getAllStaticArticleSitemapEntries();
   try {
     const posts = await client.fetch(query);
-    
-    // Filter out posts without slugs to avoid broken URLs
-    return posts.filter(post => post.slug && post.slug.trim() !== '');
+    const combined = [...staticEntries, ...(Array.isArray(posts) ? posts : [])];
+    const seen = new Set();
+    return combined.filter((post) => {
+      const slug = post?.slug?.trim?.();
+      if (!slug) return false;
+      const key = `${post._type}:${slug}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
   } catch (error) {
-    console.error('Error fetching URLs from Sanity:', error);
-    return [];
+    console.error("Error fetching URLs from Sanity, using static entries:", error);
+    return staticEntries;
   }
 }
 

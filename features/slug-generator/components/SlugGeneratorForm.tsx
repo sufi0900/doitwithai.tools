@@ -20,7 +20,7 @@ const emptyForm: SlugInput = {
   timeSensitive: false,
 };
 
-const sampleForm: SlugInput = {
+export const sampleForm: SlugInput = {
   pageContext:
     "A detailed review blog about the Merlin AI Chrome extension. The page explains its core features, real use cases, free and paid plans, strengths, limitations, and whether it is useful for writers, researchers, and marketers.",
   primaryKeyword: "Merlin AI review",
@@ -35,7 +35,7 @@ type Props = {
 };
 
 export default function SlugGeneratorForm({ busy, onSubmit }: Props) {
-  const [form, setForm] = useState<SlugInput>(emptyForm);
+  const [form, setForm] = useState<SlugInput>(sampleForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const readiness = useMemo(() => {

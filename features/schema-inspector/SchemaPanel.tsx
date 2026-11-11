@@ -19,6 +19,7 @@ import {
 } from "./inspect";
 import type { PageSnapshot } from "@/features/on-page-analyzer/types";
 import styles from "./schema.module.css";
+
 export default function SchemaPanel({
   schema,
   pageUrl = "",
@@ -218,7 +219,7 @@ export default function SchemaPanel({
           const errors = item.issues.filter((i) => i.severity === "error"),
             warnings = item.issues.filter((i) => i.severity === "warning");
           return (
-            <details className={styles.card} key={item.key}>
+            <details open className={styles.card} key={item.key}>
               <summary>
                 <span
                   className={`${styles.typeIcon} ${errors.length ? styles.badIcon : warnings.length ? styles.warnIcon : item.covered ? styles.goodIcon : ""}`}
@@ -340,7 +341,7 @@ export default function SchemaPanel({
           </Link>
         </div>
       )}
-      <details className={styles.method}>
+      <details open className={styles.method}>
         <summary>
           What this validation covers <ChevronDown size={14} />
         </summary>

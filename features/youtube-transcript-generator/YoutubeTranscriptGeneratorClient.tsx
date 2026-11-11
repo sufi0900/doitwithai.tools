@@ -1,41 +1,223 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
+  BookOpen,
   CheckCircle2,
+  ClipboardPaste,
   Clock,
   Copy,
   Download,
   ExternalLink,
   FileText,
+  HelpCircle,
+  Lightbulb,
+  ListChecks,
   Play,
   Search,
   Sparkles,
 } from "lucide-react";
+import ToolRunOverlay, {
+  focusToolSection,
+} from "@/features/tool-ui/ToolRunOverlay";
 import {
   buildYoutubeTranscriptPack,
   DEFAULT_YT_SEGMENTS,
   DEFAULT_YT_TRANSCRIPT_URL,
+  extractYoutubeVideoId,
   type TranscriptSegment,
   type YoutubeTranscriptPack,
 } from "./model";
 
+function parseRawPastedTranscript(raw: string): TranscriptSegment[] {
+  const lines = String(raw || "")
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+  const parsed: TranscriptSegment[] = [];
+  let pendingTimestamp = "";
+  let autoSec = 0;
+
+  for (const line of lines) {
+    if (/^\d{1,2}:\d{2}(?::\d{2})?$/.test(line)) {
+      pendingTimestamp = line;
+      continue;
+    }
+    const inlineMatch = line.match(
+      /^\[?(\d{1,2}:\d{2}(?::\d{2})?)\]?\s*[-–—:]?\s*(.+)$/,
+    );
+    if (inlineMatch) {
+      const ts = inlineMatch[1];
+      const txt = inlineMatch[2].trim();
+      const parts = ts.split(":").map(Number);
+      const sec =
+        parts.length === 3
+          ? parts[0] * 3600 + parts[1] * 60 + parts[2]
+          : parts[0] * 60 + parts[1];
+      parsed.push({
+        timestamp: ts,
+        seconds: sec,
+        text: txt,
+      });
+      autoSec = sec + 3;
+      pendingTimestamp = "";
+    } else if (pendingTimestamp) {
+      const parts = pendingTimestamp.split(":").map(Number);
+      const sec =
+        parts.length === 3
+          ? parts[0] * 3600 + parts[1] * 60 + parts[2]
+          : parts[0] * 60 + parts[1];
+      parsed.push({
+        timestamp: pendingTimestamp,
+        seconds: sec,
+        text: line,
+      });
+      autoSec = sec + 3;
+      pendingTimestamp = "";
+    } else {
+      const m = Math.floor(autoSec / 60);
+      const s = autoSec % 60;
+      parsed.push({
+        timestamp: `${m}:${String(s).padStart(2, "0")}`,
+        seconds: autoSec,
+        text: line,
+      });
+      autoSec += 5;
+    }
+  }
+  return parsed;
+}
+
+type ExtensionTranscriptBridgePayload = {
+  videoId?: string;
+  title?: string;
+  channelName?: string;
+  segments?: Array<{
+    timestamp?: string;
+    seconds?: number;
+    startSeconds?: number;
+    text?: string;
+  }>;
+};
+
+function normalizeBridgeSegments(
+  raw?: ExtensionTranscriptBridgePayload["segments"],
+): TranscriptSegment[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((s, idx) => {
+      const sec =
+        typeof s.seconds === "number"
+          ? s.seconds
+          : typeof s.startSeconds === "number"
+            ? s.startSeconds
+            : idx * 3;
+      const m = Math.floor(sec / 60);
+      const r = sec % 60;
+      const ts =
+        s.timestamp && s.timestamp.trim()
+          ? s.timestamp.trim()
+          : `${m}:${String(r).padStart(2, "0")}`;
+      return {
+        timestamp: ts,
+        seconds: sec,
+        text: String(s.text || "").trim(),
+      };
+    })
+    .filter((s) => s.text.length > 0);
+}
+
+function requestTranscriptFromExtensionBridge(
+  targetVideoId: string,
+  targetUrl: string,
+): Promise<ExtensionTranscriptBridgePayload | null> {
+  if (typeof window === "undefined") return Promise.resolve(null);
+
+  // 1. Check localStorage cache populated by the DoItWithAI Chrome Extension content script (require >= 35 lines so partial snippets are ignored)
+  try {
+    const byId = window.localStorage.getItem(
+      `diwat_ext_yt_transcript_${targetVideoId}`,
+    );
+    if (byId) {
+      const parsed = JSON.parse(byId) as ExtensionTranscriptBridgePayload;
+      if (Array.isArray(parsed?.segments) && parsed.segments.length >= 35) {
+        return Promise.resolve(parsed);
+      }
+    }
+    const latest = window.localStorage.getItem(
+      "diwat_ext_yt_transcript_latest",
+    );
+    if (latest) {
+      const parsed = JSON.parse(latest) as ExtensionTranscriptBridgePayload;
+      if (
+        parsed?.videoId === targetVideoId &&
+        Array.isArray(parsed?.segments) &&
+        parsed.segments.length >= 35
+      ) {
+        return Promise.resolve(parsed);
+      }
+    }
+  } catch {}
+
+  // 2. Ask the active DoItWithAI Chrome Extension content script to fetch using residential browser IP
+  return new Promise((resolve) => {
+    let settled = false;
+    const handler = (ev: Event) => {
+      const custom = ev as CustomEvent<ExtensionTranscriptBridgePayload>;
+      if (settled) return;
+      settled = true;
+      window.removeEventListener("diwat:youtube-transcript-response", handler);
+      resolve(custom.detail || null);
+    };
+    window.addEventListener("diwat:youtube-transcript-response", handler);
+    window.dispatchEvent(
+      new CustomEvent("diwat:request-youtube-transcript", {
+        detail: { videoId: targetVideoId, url: targetUrl },
+      }),
+    );
+    setTimeout(() => {
+      if (!settled) {
+        settled = true;
+        window.removeEventListener(
+          "diwat:youtube-transcript-response",
+          handler,
+        );
+        resolve(null);
+      }
+    }, 3200);
+  });
+}
+
+function scoreTranscriptCompleteness(segs: TranscriptSegment[]): number {
+  if (!segs || segs.length === 0) return 0;
+  const maxSec = segs[segs.length - 1]?.seconds || 0;
+  const totalChars = segs.reduce((acc, s) => acc + s.text.length, 0);
+  return maxSec * 4 + segs.length * 10 + Math.floor(totalChars / 20);
+}
+
 export default function YoutubeTranscriptGeneratorClient() {
   const [videoUrl, setVideoUrl] = useState(DEFAULT_YT_TRANSCRIPT_URL);
-  const [videoId, setVideoId] = useState("exampleSEO2026");
+  const [videoId, setVideoId] = useState("cH9LbVH7EI4");
   const [title, setTitle] = useState(
-    "Complete On-Page, Technical & Local SEO Workflow (2026 Guide)",
+    "ChatGPT vs Claude AI: Complete Benchmark & Workflow Guide",
   );
-  const [channelName, setChannelName] = useState("Do It With AI Studio");
+  const [channelName, setChannelName] = useState("Facts with MFB");
   const [segments, setSegments] =
     useState<TranscriptSegment[]>(DEFAULT_YT_SEGMENTS);
   const [aiPack, setAiPack] = useState<YoutubeTranscriptPack | null>(null);
+  const [viewMode, setViewMode] = useState<"lines" | "paragraphs">("lines");
+  const [activeSynthTab, setActiveSynthTab] = useState<
+    "summary" | "insights" | "chapters" | "faqs"
+  >("summary");
   const [showTimestamps, setShowTimestamps] = useState(true);
+  const [showPasteModal, setShowPasteModal] = useState(false);
+  const [rawPasteText, setRawPasteText] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [loadingFetch, setLoadingFetch] = useState(false);
   const [loadingAi, setLoadingAi] = useState(false);
   const [toast, setToast] = useState("");
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   const basePack = useMemo(
     () =>
@@ -51,60 +233,122 @@ export default function YoutubeTranscriptGeneratorClient() {
 
   const pack = aiPack || basePack;
 
+  const displayedSegments =
+    viewMode === "paragraphs" ? pack.paragraphBlocks : pack.segments;
+
   const filteredSegments = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    if (!q) return pack.segments;
-    return pack.segments.filter(
+    if (!q) return displayedSegments;
+    return displayedSegments.filter(
       (s) =>
         s.text.toLowerCase().includes(q) ||
         s.timestamp.toLowerCase().includes(q),
     );
-  }, [pack.segments, searchQuery]);
+  }, [displayedSegments, searchQuery]);
 
   function notify(msg: string) {
     setToast(msg);
-    setTimeout(() => setToast(""), 2600);
+    setTimeout(() => setToast(""), 3200);
   }
 
-  async function handleFetchYoutubeVideo(e?: React.FormEvent) {
-    if (e) e.preventDefault();
-    if (!videoUrl.trim()) return;
+  async function fetchVideoByUrl(targetUrl: string) {
+    const trimmed = targetUrl.trim();
+    if (!trimmed) return;
     setLoadingFetch(true);
     setAiPack(null);
+    const parsedYtId = extractYoutubeVideoId(trimmed);
+
     try {
-      const res = await fetch("/api/ai-tools/universal-extract", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: videoUrl.trim() }),
-      });
-      const data = await res.json();
-      if (data && !data.error) {
-        if (data.videoId) setVideoId(data.videoId);
-        if (data.title) setTitle(data.title);
-        if (data.author) setChannelName(data.author);
-        if (data.transcriptSegments && data.transcriptSegments.length > 0) {
-          setSegments(data.transcriptSegments);
-        } else if (data.paragraphs && data.paragraphs.length > 0) {
-          setSegments(
-            data.paragraphs.map((p: string, idx: number) => ({
-              timestamp: `${String(idx).padStart(2, "0")}:00`,
-              seconds: idx * 60,
-              text: p,
-            })),
-          );
-        }
-        notify(`Extracted transcript & chapters for "${data.title}"!`);
-      } else {
-        notify(
-          data?.error?.message ||
-            "Loaded video metadata. You can also paste custom transcript lines below.",
+      // Run residential Chrome Extension bridge & Server-Side Universal Extract in parallel
+      const [bridgeData, serverRes] = await Promise.all([
+        requestTranscriptFromExtensionBridge(parsedYtId, trimmed),
+        fetch("/api/ai-tools/universal-extract", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: trimmed }),
+        }).catch(() => null),
+      ]);
+
+      const data = serverRes ? await serverRes.json().catch(() => null) : null;
+      const bridgeSegs = normalizeBridgeSegments(bridgeData?.segments);
+      const serverSegs: TranscriptSegment[] =
+        data?.transcriptSegments && data.transcriptSegments.length > 0
+          ? data.transcriptSegments
+          : data?.paragraphs && data.paragraphs.length > 0
+            ? data.paragraphs.map((p: string, idx: number) => ({
+                timestamp: `${Math.floor((idx * 15) / 60)}:${String((idx * 15) % 60).padStart(2, "0")}`,
+                seconds: idx * 15,
+                text: p,
+              }))
+            : [];
+
+      const bridgeScore = scoreTranscriptCompleteness(bridgeSegs);
+      const serverScore = scoreTranscriptCompleteness(serverSegs);
+
+      const nextSegs =
+        bridgeScore > serverScore && bridgeSegs.length > 0
+          ? bridgeSegs
+          : serverSegs.length > 0
+            ? serverSegs
+            : segments;
+
+      const nextVideoId =
+        bridgeData?.videoId || data?.videoId || parsedYtId || videoId;
+      const nextTitle = data?.title || bridgeData?.title || title;
+      const nextAuthor =
+        data?.author || bridgeData?.channelName || channelName;
+
+      setVideoId(nextVideoId);
+      setTitle(nextTitle);
+      setChannelName(nextAuthor);
+      setSegments(nextSegs);
+
+      notify(
+        `Extracted ${nextSegs.length} timestamped lines (0:00 → ${nextSegs[nextSegs.length - 1]?.timestamp || "end"}) — running deep AI synthesis!`,
+      );
+
+      try {
+        const aiRes = await fetch(
+          "/api/ai-tools/youtube-transcript-generator",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              videoId: nextVideoId,
+              videoUrl: trimmed,
+              title: nextTitle,
+              channelName: nextAuthor,
+              segments: nextSegs,
+            }),
+          },
         );
-      }
+        const aiData = await aiRes.json();
+        if (aiData?.pack) {
+          setAiPack(aiData.pack);
+        }
+      } catch {}
+
+      setTimeout(() => focusToolSection(resultsRef.current), 120);
     } catch {
       notify("Loaded video transcript workspace.");
     } finally {
       setLoadingFetch(false);
     }
+  }
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const paramUrl = params.get("url");
+    if (paramUrl && paramUrl.trim()) {
+      setVideoUrl(paramUrl.trim());
+      void fetchVideoByUrl(paramUrl.trim());
+    }
+  }, []);
+
+  async function handleFetchYoutubeVideo(e?: React.FormEvent) {
+    if (e) e.preventDefault();
+    await fetchVideoByUrl(videoUrl);
   }
 
   async function handleGenerateAiSummary() {
@@ -124,10 +368,13 @@ export default function YoutubeTranscriptGeneratorClient() {
       const data = await res.json();
       if (data?.pack) {
         setAiPack(data.pack);
-        notify("Generated AI Executive Summary, Chapters & Key Takeaways!");
+        notify(
+          "Generated Deep 3-Paragraph Summary, 8 Key Insights, Chapters & FAQs!",
+        );
+        setTimeout(() => focusToolSection(resultsRef.current), 120);
       }
     } catch {
-      notify("Updated video summary & chapters.");
+      notify("Updated video synthesis & chapters.");
     } finally {
       setLoadingAi(false);
     }
@@ -145,9 +392,23 @@ export default function YoutubeTranscriptGeneratorClient() {
 
   return (
     <section
-      aria-label="YouTube Transcript, Chapters and AI Summary Generator Workspace"
+      aria-label="YouTube Transcript, Chapters and Deep AI Synthesis Studio"
       className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-10 sm:px-6"
     >
+      <ToolRunOverlay
+        active={loadingFetch || loadingAi}
+        title={
+          loadingFetch
+            ? "Extracting Complete Full-Length YouTube Video Transcript..."
+            : "Synthesizing Multi-Section Executive Summary, Key Insights & Chapters..."
+        }
+        description={
+          loadingFetch
+            ? "Retrieving 100% of spoken lines from 0:00 to the end of the video across YouTube TimedText, Innertube & Gemini..."
+            : "Analyzing the full video timeline from 0:00 to the end to generate deep takeaways, chapters, and FAQs..."
+        }
+      />
+
       {toast && (
         <div
           role="status"
@@ -158,79 +419,158 @@ export default function YoutubeTranscriptGeneratorClient() {
         </div>
       )}
 
-      {/* Top YouTube URL Fetcher Bar */}
+      {/* 1-CLICK YOUTUBE URL FETCHER & PASTE BAR */}
       <form
         onSubmit={handleFetchYoutubeVideo}
-        className="mb-6 rounded-3xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-[#111827] sm:p-6"
+        className="mb-6 rounded-3xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-[#111827] sm:p-6 space-y-4"
       >
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-rose-500/15 text-rose-600 dark:text-rose-400">
-              <Play size={16} className="fill-current" />
+          <div className="flex items-center gap-2.5">
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[#FF0000] text-white shadow-sm">
+              <Play size={18} className="fill-current ml-0.5" />
             </span>
             <div>
-              <h2 className="text-base font-extrabold">
-                Paste Any YouTube Video or Shorts URL
+              <h2 className="text-base font-extrabold text-slate-900 dark:text-white">
+                Paste Any YouTube Video or Shorts URL (1-Click Full Transcript + Deep AI Summary)
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Automatically extracts timestamped captions, video chapters,
-                word count, and AI key takeaways.
+                Extracts complete line-by-line timestamped transcripts from <code>0:00</code> to the end, 8+ deep insights, chapters, and FAQs in a single click.
               </p>
             </div>
           </div>
 
-          <Link
-            href="/tools/video-transcript-to-blog"
-            className="inline-flex items-center gap-1.5 rounded-xl border border-[#3452d1]/30 bg-[#3452d1]/10 px-3.5 py-2 text-xs font-extrabold text-[#3452d1] hover:bg-[#3452d1] hover:text-white dark:text-[#9aabff]"
-          >
-            <FileText size={14} />
-            Turn Transcript Into SEO Blog Post <ExternalLink size={12} />
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowPasteModal((v) => !v)}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-700 hover:border-[#3452d1] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+            >
+              <ClipboardPaste size={13} />
+              Paste Custom Transcript
+            </button>
+            <Link
+              href={`/tools/video-transcript-to-blog?url=${encodeURIComponent(videoUrl)}`}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-[#3452d1]/30 bg-[#3452d1]/10 px-3.5 py-2 text-xs font-extrabold text-[#3452d1] hover:bg-[#3452d1] hover:text-white dark:text-[#9aabff]"
+            >
+              <FileText size={14} />
+              Turn Into SEO Blog Post <ExternalLink size={12} />
+            </Link>
+          </div>
         </div>
 
-        <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+        <div className="flex flex-col gap-3 sm:flex-row">
           <input
             type="text"
             value={videoUrl}
             onChange={(e) => setVideoUrl(e.target.value)}
-            placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..."
-            className="w-full min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-4 py-2.5 font-mono text-xs dark:border-slate-700 dark:bg-slate-900"
+            placeholder="https://www.youtube.com/watch?v=S-AK2ik_fU0 or https://youtu.be/..."
+            className="w-full min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-4 py-2.5 font-mono text-xs sm:text-sm dark:border-slate-700 dark:bg-slate-900"
           />
           <button
             type="submit"
             disabled={loadingFetch}
-            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#3452d1] px-5 py-2.5 text-xs font-extrabold text-white shadow-sm hover:bg-[#2842b5] disabled:opacity-60"
+            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#4058d0] px-5 py-2.5 text-xs sm:text-sm font-extrabold text-white shadow-sm hover:bg-[#3452d1] disabled:opacity-60"
           >
             <Play size={14} />
-            {loadingFetch ? "Fetching Captions…" : "Fetch Transcript & Chapters"}
+            {loadingFetch
+              ? "Extracting Full Transcript…"
+              : "Extract Transcript & AI Summary (1-Click)"}
           </button>
           <button
             type="button"
             onClick={handleGenerateAiSummary}
             disabled={loadingAi}
-            className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-xs font-extrabold text-slate-800 hover:border-[#5271ff] dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+            className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-xs sm:text-sm font-extrabold text-slate-800 hover:border-[#5271ff] dark:border-slate-700 dark:bg-slate-800 dark:text-white"
           >
             <Sparkles size={14} className="text-[#5271ff]" />
-            {loadingAi ? "Summarizing…" : "AI Summary & Chapters"}
+            {loadingAi ? "Synthesizing…" : "Re-Run Deep AI Synthesis"}
           </button>
         </div>
+
+        {showPasteModal && (
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3 dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-extrabold text-slate-800 dark:text-slate-200">
+                Paste Raw YouTube Transcript (Supports copied YouTube sidebar timestamps like 0:00, 0:04, etc.)
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  const parsed = parseRawPastedTranscript(rawPasteText);
+                  if (parsed.length > 0) {
+                    setAiPack(null);
+                    setSegments(parsed);
+                    setShowPasteModal(false);
+                    notify(
+                      `Parsed ${parsed.length} timestamped segments and updated AI synthesis!`,
+                    );
+                  }
+                }}
+                className="rounded-xl bg-[#3452d1] px-3.5 py-1.5 text-xs font-extrabold text-white"
+              >
+                Apply Pasted Transcript
+              </button>
+            </div>
+            <textarea
+              rows={5}
+              value={rawPasteText}
+              onChange={(e) => setRawPasteText(e.target.value)}
+              placeholder={"0:00\nWhen we talk about generative AI, two\n0:02\nheavyweights immediately come to mind..."}
+              className="w-full rounded-xl border border-slate-300 bg-white p-3 font-mono text-xs dark:border-slate-700 dark:bg-slate-950"
+            />
+          </div>
+        )}
       </form>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)]">
-        {/* LEFT COLUMN: INTERACTIVE TIMESTAMPED TRANSCRIPT VIEWER */}
+      <div
+        ref={resultsRef}
+        tabIndex={-1}
+        className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] focus:outline-none"
+      >
+        {/* LEFT COLUMN: FULL GRANULAR TIMESTAMPED TRANSCRIPT VIEWER */}
         <div className="space-y-6">
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-[#111827] sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4 dark:border-slate-800">
               <div>
                 <span className="inline-flex items-center gap-1 text-xs font-extrabold uppercase tracking-wider text-[#5271ff]">
                   <Clock size={13} />
-                  {pack.segments.length} Segments · {pack.wordCount} Words (~
+                  {pack.segments.length} Timestamped Lines · {pack.wordCount.toLocaleString()} Words (~
                   {pack.estimatedReadingMinutes} min read)
                 </span>
-                <h3 className="mt-0.5 text-lg font-black">{pack.title}</h3>
+                <h3 className="mt-0.5 text-lg font-black text-slate-900 dark:text-white">
+                  {pack.title}
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Channel: {pack.channelName}
+                </p>
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
+                <div className="inline-flex rounded-xl border border-slate-200 bg-slate-100 p-0.5 text-[11px] font-bold dark:border-slate-800 dark:bg-slate-900">
+                  <button
+                    type="button"
+                    onClick={() => setViewMode("lines")}
+                    className={`rounded-lg px-2.5 py-1 transition ${
+                      viewMode === "lines"
+                        ? "bg-[#3452d1] text-white"
+                        : "text-slate-600 dark:text-slate-300"
+                    }`}
+                  >
+                    Line-by-Line ({pack.segments.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViewMode("paragraphs")}
+                    className={`rounded-lg px-2.5 py-1 transition ${
+                      viewMode === "paragraphs"
+                        ? "bg-[#3452d1] text-white"
+                        : "text-slate-600 dark:text-slate-300"
+                    }`}
+                  >
+                    Paragraphs ({pack.paragraphBlocks.length})
+                  </button>
+                </div>
+
                 <label className="flex cursor-pointer items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-300">
                   <input
                     type="checkbox"
@@ -248,7 +588,7 @@ export default function YoutubeTranscriptGeneratorClient() {
                       ? pack.timestampedTranscript
                       : pack.plainTextTranscript;
                     await navigator.clipboard.writeText(text);
-                    notify("Copied transcript to clipboard!");
+                    notify("Copied full transcript to clipboard!");
                   }}
                   className="inline-flex items-center gap-1.5 rounded-xl bg-[#3452d1] px-3.5 py-1.5 text-xs font-bold text-white hover:bg-[#2842b5]"
                 >
@@ -269,7 +609,7 @@ export default function YoutubeTranscriptGeneratorClient() {
                   type="search"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search inside transcript…"
+                  placeholder="Search any keyword or timestamp inside transcript…"
                   className="w-full rounded-xl border border-slate-300 bg-slate-50 py-1.5 pl-8 pr-3 text-xs dark:border-slate-700 dark:bg-slate-900"
                 />
               </div>
@@ -280,10 +620,10 @@ export default function YoutubeTranscriptGeneratorClient() {
                   onClick={() => {
                     triggerDownload(
                       pack.timestampedTranscript,
-                      "youtube-transcript.txt",
+                      `transcript-${pack.videoId}.txt`,
                       "text/plain;charset=utf-8",
                     );
-                    notify("Downloaded .TXT transcript!");
+                    notify("Downloaded full .TXT transcript!");
                   }}
                   className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-bold dark:border-slate-700 dark:bg-slate-800"
                 >
@@ -294,7 +634,7 @@ export default function YoutubeTranscriptGeneratorClient() {
                   onClick={() => {
                     triggerDownload(
                       pack.srtSubtitleContent,
-                      "youtube-subtitles.srt",
+                      `subtitles-${pack.videoId}.srt`,
                       "text/plain;charset=utf-8",
                     );
                     notify("Downloaded .SRT subtitle file!");
@@ -306,12 +646,12 @@ export default function YoutubeTranscriptGeneratorClient() {
               </div>
             </div>
 
-            {/* Transcript Segments List */}
-            <div className="mt-4 space-y-2">
+            {/* Scrollable Full Transcript List */}
+            <div className="mt-4 max-h-[640px] overflow-y-auto space-y-2 pr-1">
               {filteredSegments.map((seg, idx) => (
                 <div
                   key={idx}
-                  className="flex items-baseline gap-3 rounded-xl border border-slate-200/80 bg-slate-50/70 p-3 text-xs leading-6 dark:border-slate-800 dark:bg-slate-900/60"
+                  className="flex items-baseline gap-3 rounded-xl border border-slate-200/80 bg-slate-50/70 p-2.5 text-xs leading-6 transition hover:border-[#3452d1]/50 dark:border-slate-800 dark:bg-slate-900/60"
                 >
                   {showTimestamps && (
                     <a
@@ -319,7 +659,7 @@ export default function YoutubeTranscriptGeneratorClient() {
                       target="_blank"
                       rel="noopener noreferrer"
                       className="shrink-0 rounded bg-[#3452d1]/15 px-2 py-0.5 font-mono text-[11px] font-extrabold text-[#3452d1] hover:underline dark:bg-[#5271ff]/25 dark:text-[#9aabff]"
-                      title="Jump to this timestamp on YouTube"
+                      title="Jump to this exact second on YouTube"
                     >
                       {seg.timestamp}
                     </a>
@@ -333,105 +673,225 @@ export default function YoutubeTranscriptGeneratorClient() {
           </div>
         </div>
 
-        {/* RIGHT COLUMN: AI EXECUTIVE SUMMARY, KEY TAKEAWAYS & CHAPTERS */}
+        {/* RIGHT COLUMN: DEEP MULTI-SECTION AI VIDEO SYNTHESIS (SUMMARY, 8+ INSIGHTS, CHAPTERS & FAQS) */}
         <div className="space-y-6">
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-[#111827] sm:p-6">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-extrabold uppercase tracking-wider text-[#5271ff]">
-                AI Video Synthesis
-              </span>
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-[#111827] sm:p-6 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3.5 dark:border-slate-800">
+              <div>
+                <span className="text-xs font-extrabold uppercase tracking-wider text-[#4058d0]">
+                  Deep AI Video Intelligence
+                </span>
+                <h3 className="text-lg font-black text-slate-900 dark:text-white">
+                  Full-Timeline Synthesis, Key Insights &amp; Chapters
+                </h3>
+              </div>
               <button
                 type="button"
                 onClick={async () => {
                   const summaryMd = [
                     `# ${pack.title}`,
-                    `Source: ${pack.videoUrl}`,
+                    `Channel: ${pack.channelName} | Source: ${pack.videoUrl}`,
                     "",
-                    "## Executive Summary",
-                    pack.executiveSummary,
+                    "## Multi-Paragraph Executive Summary",
+                    ...pack.executiveSummaryParagraphs,
                     "",
-                    "## Key Takeaways",
-                    ...pack.keyTakeaways.map((k) => `- ${k}`),
+                    "## Deep Key Insights & Takeaways",
+                    ...pack.deepInsights.map(
+                      (ins) =>
+                        `- **[${ins.timestamp}] ${ins.title}:** ${ins.detail}`,
+                    ),
                     "",
-                    "## Timestamped Chapters",
+                    "## Actionable Implementation Checklist",
+                    ...pack.actionChecklist.map((a) => `- [ ] ${a}`),
+                    "",
+                    "## Timestamped YouTube Chapters",
                     ...pack.chapters.map(
                       (c) => `- **[${c.timestamp}] ${c.heading}:** ${c.summary}`,
                     ),
-                  ].join("\n");
+                    "",
+                    "## Video FAQs",
+                    ...pack.videoFaqs.map(
+                      (f) => `### Q: ${f.question}\n${f.answer}`,
+                    ),
+                  ].join("\n\n");
                   await navigator.clipboard.writeText(summaryMd);
-                  notify("Copied full Markdown video summary!");
+                  notify("Copied Complete Video Intelligence Report (.MD)!");
                 }}
-                className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-bold dark:border-slate-700 dark:bg-slate-800"
+                className="inline-flex items-center gap-1 rounded-xl bg-[#3452d1] px-3 py-1.5 text-xs font-extrabold text-white hover:bg-[#2842b5]"
               >
-                <Copy size={12} /> Copy Summary (.MD)
+                <Copy size={12} /> Copy Full Report (.MD)
               </button>
             </div>
 
-            <h3 className="mt-1 text-base font-extrabold">
-              Executive Summary &amp; Key Takeaways
-            </h3>
-            <p className="mt-2.5 rounded-xl border border-slate-200 bg-slate-50 p-3.5 text-xs leading-6 text-slate-800 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100">
-              {pack.executiveSummary}
-            </p>
-
-            <ul className="mt-3.5 space-y-2 text-xs">
-              {pack.keyTakeaways.map((item, i) => (
-                <li
-                  key={i}
-                  className="flex items-start gap-2 rounded-lg border border-slate-200/70 bg-slate-50/50 p-2.5 dark:border-slate-800 dark:bg-slate-900/40"
-                >
-                  <CheckCircle2
-                    size={15}
-                    className="mt-0.5 shrink-0 text-emerald-500"
-                  />
-                  <span className="text-slate-700 dark:text-slate-200">
-                    {item}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-[#111827] sm:p-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-extrabold">
-                YouTube Description Chapters (Copy-Ready)
-              </h3>
-              <button
-                type="button"
-                onClick={async () => {
-                  const chText = pack.chapters
-                    .map((c) => `${c.timestamp} ${c.heading}`)
-                    .join("\n");
-                  await navigator.clipboard.writeText(chText);
-                  notify("Copied YouTube description chapters!");
-                }}
-                className="inline-flex items-center gap-1 rounded-lg bg-[#3452d1] px-3 py-1 text-xs font-bold text-white"
-              >
-                <Copy size={12} /> Copy Chapters
-              </button>
+            {/* 4 Synthesis Navigation Tabs */}
+            <div className="grid grid-cols-2 gap-1.5 rounded-xl bg-slate-100 p-1 sm:grid-cols-4 dark:bg-slate-900">
+              {[
+                {
+                  id: "summary" as const,
+                  label: "Executive Summary",
+                  icon: BookOpen,
+                },
+                {
+                  id: "insights" as const,
+                  label: `Key Insights (${pack.deepInsights.length})`,
+                  icon: Lightbulb,
+                },
+                {
+                  id: "chapters" as const,
+                  label: `Chapters (${pack.chapters.length})`,
+                  icon: ListChecks,
+                },
+                {
+                  id: "faqs" as const,
+                  label: `Video FAQs (${pack.videoFaqs.length})`,
+                  icon: HelpCircle,
+                },
+              ].map((tab) => {
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setActiveSynthTab(tab.id)}
+                    className={`inline-flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-extrabold transition ${
+                      activeSynthTab === tab.id
+                        ? "bg-[#3452d1] text-white shadow-xs"
+                        : "text-slate-600 hover:text-slate-900 dark:text-slate-300"
+                    }`}
+                  >
+                    <Icon size={13} />
+                    <span>{tab.label}</span>
+                  </button>
+                );
+              })}
             </div>
 
-            <div className="mt-3.5 space-y-2.5">
-              {pack.chapters.map((ch, idx) => (
-                <div
-                  key={idx}
-                  className="rounded-xl border border-slate-200/80 bg-slate-50/70 p-3 text-xs dark:border-slate-800 dark:bg-slate-900/60"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="rounded bg-[#3452d1]/15 px-2 py-0.5 font-mono text-[11px] font-extrabold text-[#3452d1] dark:text-[#9aabff]">
-                      {ch.timestamp}
-                    </span>
-                    <strong className="font-bold text-slate-900 dark:text-white">
-                      {ch.heading}
-                    </strong>
-                  </div>
-                  <p className="mt-1 text-slate-600 dark:text-slate-300">
-                    {ch.summary}
-                  </p>
+            {/* TAB 1: MULTI-PARAGRAPH EXECUTIVE SUMMARY + ACTION CHECKLIST */}
+            {activeSynthTab === "summary" && (
+              <div className="space-y-4">
+                <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900">
+                  {pack.executiveSummaryParagraphs.map((para, idx) => (
+                    <p
+                      key={idx}
+                      className="text-xs leading-6 text-slate-800 dark:text-slate-100"
+                    >
+                      {para}
+                    </p>
+                  ))}
                 </div>
-              ))}
-            </div>
+
+                <div>
+                  <h4 className="text-xs font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                    Actionable Implementation Checklist
+                  </h4>
+                  <ul className="mt-2.5 space-y-2 text-xs">
+                    {pack.actionChecklist.map((item, i) => (
+                      <li
+                        key={i}
+                        className="flex items-start gap-2.5 rounded-xl border border-slate-200/80 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-900/50"
+                      >
+                        <CheckCircle2
+                          size={15}
+                          className="mt-0.5 shrink-0 text-emerald-500"
+                        />
+                        <span className="leading-5 text-slate-700 dark:text-slate-200">
+                          {item}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 2: DEEP KEY INSIGHTS ACROSS FULL VIDEO TIMELINE */}
+            {activeSynthTab === "insights" && (
+              <div className="space-y-2.5">
+                {pack.deepInsights.map((ins, i) => (
+                  <div
+                    key={i}
+                    className="rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 dark:border-slate-800 dark:bg-slate-900/70"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="inline-flex items-center gap-1.5 text-xs font-extrabold text-slate-900 dark:text-white">
+                        <span className="rounded bg-[#3452d1] px-2 py-0.5 font-mono text-[11px] text-white">
+                          {ins.timestamp}
+                        </span>
+                        {ins.title}
+                      </span>
+                      <span className="rounded-full bg-[#3452d1]/10 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-[#3452d1] dark:text-[#9aabff]">
+                        {ins.category}
+                      </span>
+                    </div>
+                    <p className="mt-1.5 text-xs leading-5 text-slate-600 dark:text-slate-300">
+                      {ins.detail}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* TAB 3: TIMESTAMPED YOUTUBE CHAPTERS */}
+            {activeSynthTab === "chapters" && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-500">
+                    Ready to paste into YouTube Description
+                  </span>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const ytChapters = pack.chapters
+                        .map((c) => `${c.timestamp} ${c.heading}`)
+                        .join("\n");
+                      await navigator.clipboard.writeText(ytChapters);
+                      notify("Copied YouTube description chapter timestamps!");
+                    }}
+                    className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-slate-50 px-2.5 py-1 text-[11px] font-bold dark:border-slate-700 dark:bg-slate-800"
+                  >
+                    <Copy size={11} /> Copy Chapter Timestamps
+                  </button>
+                </div>
+
+                {pack.chapters.map((ch, i) => (
+                  <div
+                    key={i}
+                    className="rounded-xl border border-slate-200 bg-slate-50 p-3.5 dark:border-slate-800 dark:bg-slate-900"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="rounded bg-[#3452d1]/15 px-2 py-0.5 font-mono text-xs font-extrabold text-[#3452d1] dark:text-[#9aabff]">
+                        {ch.timestamp}
+                      </span>
+                      <h4 className="text-xs font-extrabold text-slate-900 dark:text-white">
+                        {ch.heading}
+                      </h4>
+                    </div>
+                    <p className="mt-1.5 text-xs leading-5 text-slate-600 dark:text-slate-300">
+                      {ch.summary}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* TAB 4: VIDEO FAQS */}
+            {activeSynthTab === "faqs" && (
+              <div className="space-y-3">
+                {pack.videoFaqs.map((faq, i) => (
+                  <div
+                    key={i}
+                    className="rounded-xl border border-slate-200 bg-slate-50 p-3.5 dark:border-slate-800 dark:bg-slate-900"
+                  >
+                    <h4 className="text-xs font-extrabold text-slate-900 dark:text-white">
+                      Q{i + 1}: {faq.question}
+                    </h4>
+                    <p className="mt-1.5 text-xs leading-5 text-slate-600 dark:text-slate-300">
+                      {faq.answer}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

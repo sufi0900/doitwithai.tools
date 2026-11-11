@@ -4,7 +4,7 @@
   --line: #d7dfef;
   --paper: #fff;
   --soft: #f4f6fc;
-  max-width: 1200px;
+  max-width: 72rem;
   margin: auto;
   padding: 36px 24px 52px;
   color: var(--ink);

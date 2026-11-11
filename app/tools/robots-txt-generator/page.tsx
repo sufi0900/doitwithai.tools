@@ -1,3 +1,4 @@
+import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import {
   ToolHeroBackground,
   toolHeroSurface,
@@ -163,70 +164,71 @@ export default function RobotsTxtGeneratorPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
 
-      <div
-        className={`relative overflow-hidden ${toolHeroSurface} pb-20 pt-10 text-white sm:pt-16 lg:pb-28`}
+      <div className={`relative overflow-hidden ${toolHeroSurface} text-white`}
       >
         <ToolHeroBackground />
-        <div className="relative mx-auto max-w-[1500px] px-4 sm:px-6 lg:px-8">
+        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
           <nav
             aria-label="Breadcrumb"
-            className="mb-10 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-400"
+            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
           >
-            <Link href="/" className="transition hover:text-white">
-              Home
-            </Link>
+            <Link href="/">Home</Link>
             <span>/</span>
-            <Link href="/tools" className="transition hover:text-white">
-              Tools
-            </Link>
+            <Link href="/tools">Tools</Link>
             <span>/</span>
-            <span className="text-blue-200">Robots.txt Generator</span>
+            <span aria-current="page">Robots.txt Generator</span>
           </nav>
 
-          <div className="mx-auto max-w-5xl text-center">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.16em] text-blue-100 backdrop-blur">
-              <Sparkles className="h-4 w-4 text-cyan-300" /> GEO / AI search
-              readiness
+          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
+                Technical SEO & GEO · Crawler Directives & AI Bot Matrix
+              </p>
+              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
+                Robots.txt Generator 
+                <span className={toolHeroHeading}>
+                  & AI Crawler Access Matrix
+                </span>
+              </h1>
+              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
+                Build a clean robots.txt file from scratch or fetch your live domain&apos;s rules. Control Googlebot alongside named AI training, search, and user-fetch bots in one click.
+              </p>
+              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  Live robots.txt import & audit
+                </span>
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  Named AI bot access toggles
+                </span>
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  Sitemap & path-rule validator
+                </span>
+              </div>
+              <PortableToolHeroBar />
             </div>
-            <h1 className="mt-7 text-4xl font-black leading-[1.06] tracking-[-0.045em] sm:text-6xl lg:text-7xl">
-              Robots.txt Generator with an
-              <span className={`block ${toolHeroHeading}`}>
-                AI Crawler Access Matrix
-              </span>
-            </h1>
-            <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-slate-300 sm:text-lg">
-              Build rules from scratch or fetch and validate a live site&apos;s
-              robots.txt. See exactly which named AI crawlers; training, search,
-              and chat-fetch bots; are allowed or blocked, and flip any of them
-              with one click.
-            </p>
-            <div className="mt-7 flex flex-wrap justify-center gap-3 text-xs font-bold text-slate-300">
-              {[
-                [Bot, "14 named AI crawlers tracked"],
-                [Globe, "Validate a live robots.txt"],
-                [ShieldCheck, "Review before publishing"],
-              ].map(([Icon, label]) => {
-                const FeatureIcon = Icon as typeof Bot;
-                return (
-                  <span
-                    key={label as string}
-                    className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-2"
-                  >
-                    <FeatureIcon className="h-3.5 w-3.5 text-blue-300" />
-                    {label as string}
-                  </span>
-                );
-              })}
+
+            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
+              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
+                3 AI & Search Bot Categories
+              </p>
+              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
+                <li>
+                  <strong className="text-emerald-300">Search Indexing:</strong> Googlebot, Bingbot, and core web search indexing crawlers.
+                </li>
+                <li>
+                  <strong className="text-indigo-300">AI Search & Citations:</strong> OAI-SearchBot, PerplexityBot, and chat-citation fetchers.
+                </li>
+                <li>
+                  <strong className="text-sky-300">Model Training:</strong> GPTBot, ClaudeBot, Google-Extended, and CCBot training crawlers.
+                </li>
+                <li>
+                  <strong className="text-amber-300">Rule Validation:</strong> Flags accidental root Disallow: / blocks and syntax errors.
+                </li>
+              </ul>
             </div>
-            <a
-              href="#robots-txt-generator"
-              className="mt-8 inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3.5 text-sm font-extrabold text-slate-950 shadow-xl transition hover:-translate-y-0.5 hover:bg-blue-50"
-            >
-              Build your robots.txt <ArrowRight className="h-4 w-4" />
-            </a>
           </div>
 
-          <div className="mt-14">
+          <div className="mt-8">
             <RobotsClient />
           </div>
         </div>
@@ -235,7 +237,7 @@ export default function RobotsTxtGeneratorPage() {
       <RobotsEducation />
 
       <section className="border-t border-slate-200 bg-white py-20 dark:border-slate-800 dark:bg-slate-950">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <p className="text-xs font-extrabold uppercase tracking-[0.17em] text-[#5271ff]">
               Common questions

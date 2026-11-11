@@ -1,3 +1,4 @@
+import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, FileSearch, Link2, ClipboardCheck } from "lucide-react";
@@ -98,51 +99,78 @@ export default function Page() {
           __html: JSON.stringify(schema).replace(/</g, "\\u003c"),
         }}
       />
-      <section
-        className={`relative overflow-hidden ${toolHeroSurface} px-5 pb-16 pt-10 text-white sm:pt-14`}
+      <section className={`relative overflow-hidden ${toolHeroSurface} text-white`}
       >
         <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl">
+        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
           <nav
             aria-label="Breadcrumb"
-            className="mb-12 flex flex-wrap gap-2 text-xs text-blue-100"
+            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
           >
             <Link href="/">Home</Link>
-            <span aria-hidden="true">/</span>
+            <span>/</span>
             <Link href="/tools">Tools</Link>
-            <span aria-hidden="true">/</span>
+            <span>/</span>
             <span aria-current="page">Content Evidence Review</span>
           </nav>
-          <header className="mx-auto max-w-4xl text-center">
-            <p className="text-xs font-bold uppercase tracking-widest text-blue-200">
-              On-page SEO · Your editorial evidence desk
-            </p>
-            <h1 className="mt-6 text-4xl font-black leading-tight tracking-tight sm:text-6xl">
-              Content Evidence Review
-              <span className={`mt-4 block ${toolHeroHeading}`}>
-                Give your claims a closer look.
-              </span>
-            </h1>
-            <p className="mx-auto mt-6 max-w-2xl text-base leading-8 text-blue-100 sm:text-lg">
-              Find statements worth checking, inspect nearby source links, and
-              keep a clear record of your editorial decisions.
-            </p>
-            <a
-              href="#evidence-review-workspace"
-              className="mt-8 inline-flex min-h-12 items-center gap-2 rounded-xl bg-white px-6 py-3 text-sm font-bold text-[#3048bb]"
-            >
-              Start your review <ArrowRight size={17} aria-hidden="true" />
-            </a>
-          </header>
+
+          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
+                On-Page SEO · Editorial Claim & Citation Audit
+              </p>
+              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
+                Content Evidence Review 
+                <span className={toolHeroHeading}>
+                  & Claim Verification Desk
+                </span>
+              </h1>
+              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
+                Scan any live article URL or HTML draft to flag unsupported statistics, superlatives, and factual claims—then inspect nearby outbound links and export your editorial review.
+              </p>
+              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  Automatic claim detection
+                </span>
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  Nearby source inspection
+                </span>
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  CSV & JSON audit export
+                </span>
+              </div>
+              <PortableToolHeroBar />
+            </div>
+
+            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
+              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
+                4 Claim Types Inspected
+              </p>
+              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
+                <li>
+                  <strong className="text-emerald-300">Numbers & Stats:</strong> Percentages, dates, benchmarks, and quantitative assertions.
+                </li>
+                <li>
+                  <strong className="text-indigo-300">Research & Studies:</strong> References to surveys, reports, and named authorities.
+                </li>
+                <li>
+                  <strong className="text-sky-300">Strong Claims:</strong> Superlatives, guarantees, and universal statements.
+                </li>
+                <li>
+                  <strong className="text-amber-300">First-Hand Proof:</strong> Passages needing original examples or primary source links.
+                </li>
+              </ul>
+            </div>
+          </div>
         </div>
       </section>
-      <section className="scroll-mt-28 bg-slate-50 px-3 py-10 dark:bg-[#0c1422] sm:px-6">
-        <div className="mx-auto max-w-6xl">
+      <section className="scroll-mt-28 bg-slate-50 py-10 dark:bg-[#0c1422]">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <Client />
         </div>
       </section>
-      <section className="bg-white px-5 py-16 dark:bg-slate-950">
-        <div className="mx-auto max-w-6xl">
+      <section className="bg-white py-16 dark:bg-slate-950">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <h2 className="text-3xl font-extrabold tracking-tight text-slate-950 dark:text-white">
             A practical claim and source review workflow
           </h2>

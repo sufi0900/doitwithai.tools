@@ -42,3 +42,7 @@ push-error.txt
 !**/.env*.example
 *.tsbuildinfo
 /.sanity
+
+# Generated portable tool bundles
+/public/portable-tools
+/.portable-build

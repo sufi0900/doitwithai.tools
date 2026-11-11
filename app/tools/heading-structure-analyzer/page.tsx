@@ -20,12 +20,14 @@ export const metadata: Metadata = {
   description:
     "Check a webpage URL for H1 to H6 hierarchy, skipped levels, duplicate headings, and target phrase placement. Explore a visual outline with practical fixes.",
   keywords: [
-    "heading structure checker",
-    "h1 h2 h3 checker",
+    "check h1 h2 tags",
+    "heading structure analyzer",
+    "h1 tag checker",
+    "h1 h2 h3 hierarchy checker",
     "heading hierarchy analyzer",
+    "h1 length checker",
     "seo heading checker",
     "html outline checker",
-    "heading tags audit",
   ],
   alternates: { canonical: pageUrl },
   openGraph: {

@@ -21,6 +21,7 @@ import {
   primaryButton,
   secondaryButton,
 } from "./config";
+
 export default function WritingForm({
   kind,
   busy,
@@ -30,7 +31,7 @@ export default function WritingForm({
   busy: boolean;
   onGenerate: (input: WritingInput) => Promise<void>;
 }) {
-  const [form, setForm] = useState<WritingInput>({ ...emptyBrief });
+  const [form, setForm] = useState<WritingInput>({ ...sampleBrief });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const description = kind === "meta-description";
   const id = (field: string) => `${kind}-${field}`;
@@ -72,7 +73,7 @@ export default function WritingForm({
         <form onSubmit={submit} aria-busy={busy} className="p-5 sm:p-7 lg:p-9">
           <div className="mb-7 flex flex-wrap items-start justify-between gap-4 border-b border-slate-100 pb-6 dark:border-slate-800">
             <div>
-              <p className="inline-flex items-center gap-2 rounded-full bg-[#5271ff]/10 px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#4662df] dark:text-blue-300">
+              <p className="inline-flex items-center gap-2 rounded-full bg-[#4058D0]/10 px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#4058D0] dark:text-blue-300">
                 <WandSparkles className="h-3.5 w-3.5" aria-hidden /> Step 01 ·
                 Page brief
               </p>
@@ -220,7 +221,10 @@ export default function WritingForm({
                 placeholder="e.g. Worked examples and a review checklist"
               />
             </FormField>
-            <details className="group rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-950/50">
+            <details
+              open
+              className="group rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-950/50"
+            >
               <summary className="cursor-pointer text-sm font-bold text-slate-800 dark:text-slate-100">
                 Fine-tune the wording{" "}
                 <span className="ml-2 text-xs font-normal text-slate-500">
@@ -310,7 +314,7 @@ export default function WritingForm({
           </fieldset>
         </form>
         <aside className="border-t border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-950/50 sm:p-7 lg:border-l lg:border-t-0">
-          <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[#5271ff]/10 text-[#5271ff] dark:text-blue-300">
+          <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[#4058D0]/10 text-[#4058D0] dark:text-blue-300">
             <FileText className="h-6 w-6" aria-hidden />
           </div>
           <p className="mt-5 text-xs font-extrabold uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400">

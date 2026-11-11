@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "next dev",
     "generate-sitemap": "next-sitemap",
-    "prebuild": "node scripts/generate-pages-manifest.js",
+    "prebuild": "node scripts/generate-pages-manifest.js && node scripts/build-portable-tools.mjs",
     "build": " next build",
     "generate-manifest": "node scripts/generate-pages-manifest.js",
     "start": "next start",
@@ -57,6 +57,7 @@
     "ioredis": "^5.6.1",
     "jspdf": "4.2.1",
     "jspdf-autotable": "5.0.9",
+    "jszip": "^3.10.2",
     "linkedom": "0.18.12",
     "lodash": "^4.17.21",
     "lucide-react": "^0.511.0",
@@ -89,11 +90,13 @@
   },
   "devDependencies": {
     "@next/bundle-analyzer": "^15.4.0",
+    "@types/jszip": "^3.4.1",
     "@types/node": "^20.8.9",
     "@types/react": "^18.2.33",
     "autoprefixer": "^10.4.16",
     "critical": "^7.2.1",
     "critters": "^0.0.23",
+    "esbuild": "^0.28.2",
     "lighthouse": "^12.8.0",
     "postcss": "^8.5.6",
     "postcss-critical-css": "^3.0.7",
@@ -105,5 +108,12 @@
     "typescript": "^5.2.2",
     "web-vitals": "^5.0.3",
     "webpack-bundle-analyzer": "^4.10.2"
-  }
+  },
+  "browserslist": [
+    "chrome >= 105",
+    "edge >= 105",
+    "firefox >= 105",
+    "safari >= 16",
+    "ios_saf >= 16"
+  ]
 }
