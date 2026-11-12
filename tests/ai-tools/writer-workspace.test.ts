@@ -11,10 +11,15 @@ import {
   articleRevision,
   blankProject,
   bodyOf,
+  buildArticleSchemaJsonLd,
+  defaultFeaturedBanner,
+  evaluateAltText,
   inputRevision,
   makeSection,
   markdownNodes,
+  nodeMarkdown,
   parseBrief,
+  parseBriefDirectives,
   patchWorkspace,
   projectDocument,
   readiness,
@@ -28,6 +33,11 @@ import {
   generationContext,
 } from "../../features/writer-workspace/useGeneration";
 import { createGenerationHandler } from "../../features/writer-workspace/generation.server";
+import { createResearchHandler } from "../../features/writer-workspace/research.server";
+import {
+  buildChannelCarouselSlides,
+  getSocialChannelSpec,
+} from "../../features/writer-workspace/adapters/socialVisualRegistry";
 import {
   htmlArticle,
   newsletter,
@@ -533,4 +543,133 @@ test("writer DOCX can include ten images while the standalone six-image default 
   );
   assert.equal(full.warnings.length, 0);
   assert.equal(base.warnings.length, 2);
+});
+
+test("parseBriefDirectives extracts website URL, visual hints, FAQ and conclusion cues cleanly", () => {
+  const directives = parseBriefDirectives(
+    "Topic: Technical SEO\nWebsite: https://example.org/blog\nInclude a comparison infographic here.\nAdd FAQ at the end and close with a checklist conclusion.",
+  );
+  assert.equal(directives.websiteUrl, "https://example.org/blog");
+  assert.equal(directives.faqRequested, true);
+  assert.match(directives.conclusionStyle, /checklist conclusion/i);
+  assert.ok(directives.visualHints.some((h) => /infographic/i.test(h)));
+});
+
+test("H1 through H6 heading levels round trip cleanly across editor nodes, HTML and EPUB", async () => {
+  const { htmlArticle, epubBytes } =
+    await import("../../features/writer-workspace/assets");
+  const md = "#### Deep Subtopic H4\n\n##### Micro Detail H5\n\n###### Technical Note H6\n\nConcise paragraph explanation.";
+  const nodes = markdownNodes(md);
+  assert.equal(nodes[0]?.attrs?.level, 4);
+  assert.equal(nodes[1]?.attrs?.level, 5);
+  assert.equal(nodes[2]?.attrs?.level, 6);
+  assert.match(nodeMarkdown(nodes[2]!), /^###### Technical Note H6$/);
+
+  const p = setSectionBody(makeSection({ heading: "Architecture", subheadings: [] }, 0), md);
+  let proj = applyPlan(
+    blankProject(),
+    {
+      title: "Heading Fidelity Test",
+      metaTitle: "Heading Fidelity Test Guide",
+      metaDescription:
+        "Validating H1 through H6 heading hierarchy inside HTML and EPUB article exports.",
+      slug: "heading-fidelity-test",
+      introduction: "Summary lead.",
+      titles: ["Heading Fidelity Test", "H1 to H6 Check"],
+      descriptions: [
+        "Validating H1 through H6 heading hierarchy inside HTML exports.",
+      ],
+      sections: [{ heading: p.h2Text, subheadings: [] }],
+    },
+    [],
+  );
+  proj = { ...proj, sections: [{ ...p, id: proj.sections[0].id }] };
+  const html = htmlArticle(proj);
+  assert.match(html, /<h4>Deep Subtopic H4<\/h4>/);
+  assert.match(html, /<h5>Micro Detail H5<\/h5>/);
+  assert.match(html, /<h6>Technical Note H6<\/h6>/);
+
+  const epub = await epubBytes(proj);
+  const zip = await JSZip.loadAsync(epub.bytes);
+  const allXhtml = await Promise.all(
+    Object.keys(zip.files)
+      .filter((n) => n.endsWith(".xhtml") || n.endsWith(".html"))
+      .map((n) => zip.file(n)!.async("string")),
+  );
+  const combinedXhtml = allXhtml.join("\n");
+  assert.match(combinedXhtml, /<h4[^>]*>Deep Subtopic H4<\/h4>/);
+  assert.match(combinedXhtml, /<h5[^>]*>Micro Detail H5<\/h5>/);
+  assert.match(combinedXhtml, /<h6[^>]*>Technical Note H6<\/h6>/);
+});
+
+test("Featured Banner, WCAG Alt Text Sub-Agent and JSON-LD Schema avoid fabricated claims", () => {
+  const p = draft();
+  p.faqs = [{ id: "f1", question: "How do clusters work?", answer: "By grouping shared search intent." }];
+  const banner = defaultFeaturedBanner(p);
+  assert.equal(banner.width, 1200);
+  assert.equal(banner.height, 630);
+  assert.equal(banner.aspectRatio, "16:9");
+
+  const goodAlt = evaluateAltText(banner.altText, banner.headline);
+  const badAlt = evaluateAltText("image of guaranteed best photo.png", banner.headline);
+  assert.ok(goodAlt.score > badAlt.score);
+  assert.ok(badAlt.cues.length >= 2);
+
+  const schema = buildArticleSchemaJsonLd(p);
+  assert.equal(schema.articleSchema["@type"], "Article");
+  assert.equal(schema.faqSchema?.["@type"], "FAQPage");
+});
+
+test("SocialVisualRegistry adapters use 2026 platform aspect ratios and build grounded carousels", async () => {
+  const { CHANNELS, sizes } =
+    await import("../../features/writer-workspace/assets");
+  assert.equal(CHANNELS.length, 9);
+  assert.deepEqual(sizes.Instagram, [1080, 1350]);
+  assert.deepEqual(sizes.LinkedIn, [1080, 1350]);
+  assert.deepEqual(sizes.X, [1600, 900]);
+  assert.deepEqual(sizes.Pinterest, [1000, 1500]);
+  assert.deepEqual(sizes.YouTube, [1280, 720]);
+
+  const yt = getSocialChannelSpec("YouTube");
+  assert.equal(yt.isVideoChannel, true);
+  const ig = getSocialChannelSpec("Instagram");
+  assert.equal(ig.supportsCarousel, true);
+
+  const slides = buildChannelCarouselSlides("SEO Workflow", ["Audit crawl depth carefully."]);
+  assert.equal(slides.length, 2);
+  assert.equal(slides[0].headline, "SEO Workflow");
+});
+
+test("research handler validates payload and handles offline deterministic fallback cleanly", async () => {
+  const handler = createResearchHandler({
+    configured: () => false,
+    limit: async () => ({
+      allowed: true,
+      remaining: 99,
+      retryAfterSeconds: 0,
+      release: async () => {},
+    }),
+  });
+  const badReq = new NextRequest("http://localhost/api/writer-workspace/research", {
+    method: "POST",
+    body: JSON.stringify({ requestId: "req123456", brief: "a" }),
+  });
+  assert.equal((await handler(badReq)).status, 422);
+
+  const okReq = new NextRequest("http://localhost/api/writer-workspace/research", {
+    method: "POST",
+    body: JSON.stringify({
+      requestId: "req123456",
+      brief: "Topic: AI Content Audit\nKeyword: content audit",
+      websiteUrl: "",
+      includeWebResearch: false,
+    }),
+  });
+  const res = await handler(okReq);
+  assert.equal(res.status, 200);
+  const json = await res.json();
+  assert.equal(json.ok, true);
+  assert.equal(json.provider, "deterministic");
+  assert.deepEqual(json.packet.internalLinks, []);
+  assert.deepEqual(json.packet.externalLinks, []);
 });

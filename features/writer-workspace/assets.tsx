@@ -20,6 +20,10 @@ import { articlePdf, loadFonts } from "@/features/article-conversion/pdf";
 import { articleDocx, docxMime } from "@/features/article-conversion/docx";
 import { mixColor } from "@/lib/blog-infographic-studio/appearance";
 import { defaults } from "@/features/article-conversion/model";
+import {
+  getSocialChannelSpec,
+  SOCIAL_VISUAL_REGISTRY,
+} from "./adapters/socialVisualRegistry";
 import type { Project, SocialOverride, RichNode } from "./types";
 import {
   projectDocument,
@@ -46,19 +50,19 @@ export const CHANNELS = [
 ] as const;
 export type Channel = (typeof CHANNELS)[number];
 export const sizes: Record<Channel, [number, number]> = {
-  Facebook: [1200, 630],
-  Instagram: [1080, 1080],
-  LinkedIn: [1200, 627],
-  X: [1200, 675],
-  Pinterest: [1000, 1500],
-  Threads: [1080, 1080],
-  Reddit: [1200, 630],
-  Quora: [1200, 630],
-  YouTube: [1280, 720],
+  Facebook: [SOCIAL_VISUAL_REGISTRY.Facebook.width, SOCIAL_VISUAL_REGISTRY.Facebook.height],
+  Instagram: [SOCIAL_VISUAL_REGISTRY.Instagram.width, SOCIAL_VISUAL_REGISTRY.Instagram.height],
+  LinkedIn: [SOCIAL_VISUAL_REGISTRY.LinkedIn.width, SOCIAL_VISUAL_REGISTRY.LinkedIn.height],
+  X: [SOCIAL_VISUAL_REGISTRY.X.width, SOCIAL_VISUAL_REGISTRY.X.height],
+  Pinterest: [SOCIAL_VISUAL_REGISTRY.Pinterest.width, SOCIAL_VISUAL_REGISTRY.Pinterest.height],
+  Threads: [SOCIAL_VISUAL_REGISTRY.Threads.width, SOCIAL_VISUAL_REGISTRY.Threads.height],
+  Reddit: [SOCIAL_VISUAL_REGISTRY.Reddit.width, SOCIAL_VISUAL_REGISTRY.Reddit.height],
+  Quora: [SOCIAL_VISUAL_REGISTRY.Quora.width, SOCIAL_VISUAL_REGISTRY.Quora.height],
+  YouTube: [SOCIAL_VISUAL_REGISTRY.YouTube.width, SOCIAL_VISUAL_REGISTRY.YouTube.height],
 };
 const plain = (s: string) =>
   s
-    .replace(/\*\*|__|`|#{1,3}\s*/g, "")
+    .replace(/\*\*|__|`|#{1,6}\s*/g, "")
     .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
     .replace(/\s+/g, " ")
     .trim();
@@ -118,7 +122,8 @@ export function socialDrafts(p: Project) {
       "Which part would you approach differently?",
     ].join("\n\n") + link;
   return CHANNELS.map((channel) => {
-    const selected = workspace(p).social[channel] || {},
+    const w = workspace(p);
+    const selected = w.social[channel] || {},
       video = (mode: "shorts" | "youtube") =>
         videoScriptTxt(
           a,
@@ -135,7 +140,13 @@ export function socialDrafts(p: Project) {
     const variants =
       channel === "YouTube"
         ? [
+            ...(w.videoScripts?.shortForm
+              ? [{ label: "AI Short script", content: w.videoScripts.shortForm }]
+              : []),
             { label: "Short video", content: video("shorts") },
+            ...(w.videoScripts?.youtubeLong
+              ? [{ label: "AI Long outline", content: w.videoScripts.youtubeLong }]
+              : []),
             { label: "Long-form script", content: video("youtube") },
           ]
         : channel === "X"
@@ -163,11 +174,15 @@ export function socialDrafts(p: Project) {
               { label: "Key takeaways", content: takeaways },
               { label: "Discussion", content: discussion },
             ];
+    const defaultHeadline =
+      channel === "YouTube" && w.videoScripts?.thumbnailHeadline
+        ? short(w.videoScripts.thumbnailHeadline, 90)
+        : short(a.title, 100);
     return {
       channel,
       revision,
       caption: selected.caption ?? variants[0].content,
-      headline: selected.headline ?? short(a.title, 100),
+      headline: selected.headline ?? defaultHeadline,
       body: selected.body ?? short(lead, 240),
       variants,
       settings: selected,
@@ -202,6 +217,7 @@ export function SocialPoster({
     accent = dark
       ? mixColor(brand.color, "#FFFFFF", 0.58)
       : mixColor(brand.color, "#14213D", 0.28),
+    spec = getSocialChannelSpec(channel),
     gradientId = `writer-poster-${hash(`${channel}|${brand.color}|${settings.theme}`)}`;
   return (
     <svg
@@ -240,8 +256,30 @@ export function SocialPoster({
         fontWeight={700}
         fill={muted}
       >
-        {String(channel).toUpperCase()}
+        {String(channel).toUpperCase()} · {width}×{height}
       </text>
+      {spec.supportsCarousel ? (
+        <g transform={`translate(${width - 210}, 62)`}>
+          <rect width={150} height={36} rx={18} fill={accent} fillOpacity={0.18} />
+          <text
+            x={75}
+            y={23}
+            textAnchor="middle"
+            fontFamily="Arial, sans-serif"
+            fontSize={14}
+            fontWeight={700}
+            fill={ink}
+          >
+            CAROUSEL 01 →
+          </text>
+        </g>
+      ) : null}
+      {spec.isVideoChannel ? (
+        <g transform={`translate(${width - 170}, 56)`}>
+          <rect width={110} height={46} rx={12} fill="#ef4444" fillOpacity={0.92} />
+          <polygon points="48,14 48,32 68,23" fill="#ffffff" />
+        </g>
+      ) : null}
       <SocialCardArtwork
         kind={settings.variant || "executive-minimal"}
         headline={headline}
@@ -417,7 +455,7 @@ export function htmlArticle(p: Project) {
     if (n.type === "hardBreak") return "<br>";
     const tag =
       n.type === "heading"
-        ? `h${Math.min(3, Math.max(1, Number(n.attrs?.level) || 2))}`
+        ? `h${Math.min(6, Math.max(1, Number(n.attrs?.level) || 2))}`
         : tags[n.type];
     return tag
       ? `<${tag}>${(n.content || []).map(render).join("")}</${tag}>`
@@ -470,7 +508,7 @@ export async function epubBytes(p: Project) {
     .map((b, index) => {
       const text = escapeHtml(b.text);
       if (b.kind === "heading") {
-        const level = Math.min(3, Math.max(2, b.level || 2));
+        const level = Math.min(6, Math.max(2, b.level || 2));
         return `<h${level} id="sec-${index + 1}">${text}</h${level}>`;
       }
       if (b.kind === "image" && b.included) {

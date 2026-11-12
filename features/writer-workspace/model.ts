@@ -1,5 +1,6 @@
 import { createNewBlogProjectState } from "@/lib/blog-writer/project-storage-db";
 import type { BlogSectionNode } from "@/lib/blog-writer/canonical-state";
+import { reviewAlt } from "@/features/alt-text/review";
 import { analyzeReadability } from "@/features/readability/analyzer";
 import {
   measureTitlePixelWidth,
@@ -13,6 +14,8 @@ import {
 import { brandColors } from "@/lib/blog-infographic-studio/appearance";
 import type { Article, Block } from "@/features/article-conversion/model";
 import type {
+  BriefDirectives,
+  FeaturedBannerState,
   OutlineItem,
   Plan,
   Project,
@@ -129,6 +132,45 @@ export function parseBrief(text: string): {
     .replace(/^write (?:an? )?(?:article|blog post) (?:about|on) /i, "")
     .slice(0, 140);
   return { keyword, outline: outline.slice(0, 10), topic };
+}
+
+export function parseBriefDirectives(text: string): BriefDirectives {
+  const labeledUrl = text.match(
+    /(?:^|\n)\s*(?:website|site|domain|target\s*site|brand\s*url|url)\s*:\s*([^\s,\n]+)/i,
+  )?.[1];
+  const inlineUrl = text.match(/\bhttps?:\/\/[^\s)>"']+/i)?.[0];
+  const bareDomain = text.match(
+    /(?:for|on|website|site)\s+([a-z0-9-]+(?:\.[a-z0-9-]+)+\.[a-z]{2,})/i,
+  )?.[1];
+  const rawCandidate = (labeledUrl || inlineUrl || (bareDomain ? `https://${bareDomain}` : "")).trim();
+  const normalizedUrl =
+    safeUrl(rawCandidate) ||
+    safeUrl(rawCandidate && !/^https?:\/\//i.test(rawCandidate) ? `https://${rawCandidate}` : "") ||
+    "";
+
+  const conclusionMatch = text.match(
+    /(?:^|\n|\.)\s*([^.\n]*(?:conclusion|key takeaways|summary|final verdict|wrap[- ]?up)[^.\n]*)/i,
+  )?.[1];
+
+  const visualHints: string[] = [];
+  for (const line of text.split(/\r?\n/)) {
+    if (/(?:infographic|diagram|visual|chart|comparison table|table here|flowchart|timeline)/i.test(line)) {
+      const cleaned = line.trim();
+      if (cleaned && visualHints.length < 6) visualHints.push(cleaned);
+    }
+  }
+
+  const toneOverride = text
+    .match(/(?:^|\n)\s*tone\s*:\s*([^\n]+)/i)?.[1]
+    ?.trim();
+
+  return {
+    websiteUrl: normalizedUrl,
+    conclusionStyle: conclusionMatch?.trim() || "",
+    visualHints,
+    faqRequested: /\b(?:faq|frequently asked|q\s*&\s*a|questions)\b/i.test(text),
+    ...(toneOverride ? { toneOverride } : {}),
+  };
 }
 export function inputRevision(p: Project) {
   const w = workspace(p);
@@ -352,7 +394,7 @@ export function markdownNodes(md: string): RichNode[] {
       out.push({ type: "table", content: rows });
       continue;
     }
-    const h = line.match(/^(#{1,3})\s+(.+)/);
+    const h = line.match(/^(#{1,6})\s+(.+)/);
     if (h) {
       out.push({
         type: "heading",
@@ -398,7 +440,7 @@ export function markdownNodes(md: string): RichNode[] {
     while (
       i < lines.length &&
       lines[i].trim() &&
-      !/^(?:#{1,3}\s|[-*+]\s|\d+[.)]\s|```|\|)/.test(lines[i])
+      !/^(?:#{1,6}\s|[-*+]\s|\d+[.)]\s|```|\|)/.test(lines[i])
     )
       para.push(lines[i++]);
     out.push({ type: "paragraph", content: inline(para.join(" ")) });
@@ -458,8 +500,10 @@ export function nodeMarkdown(node: RichNode): string {
                 : s,
       node.text || "",
     );
-  if (node.type === "heading")
-    return `${"#".repeat(node.attrs?.level || 2)} ${inside}`;
+  if (node.type === "heading") {
+    const level = Math.min(6, Math.max(1, node.attrs?.level || 2));
+    return `${"#".repeat(level)} ${inside}`;
+  }
   if (node.type === "hardBreak") return "\n";
   if (node.type === "sectionVisual") return "";
   if (node.type === "bulletList" || node.type === "orderedList")
@@ -713,4 +757,90 @@ export function readiness(p: Project) {
     readability: r,
     text,
   };
+}
+
+export function defaultFeaturedBanner(p: Project): FeaturedBannerState {
+  const w = workspace(p);
+  const existing = w.featuredBanner;
+  const headline =
+    existing?.headline ||
+    p.metaPack.h1Title ||
+    p.metaPack.metaTitle ||
+    p.projectTitle ||
+    "Untitled Article";
+  const kw = p.keywordCluster.primaryKeyword?.trim();
+  const subheadline =
+    existing?.subheadline ||
+    (p.metaPack.aeoDirectAnswer50Words
+      ? p.metaPack.aeoDirectAnswer50Words.split(/(?<=[.!?])\s+/)[0]?.slice(0, 140) || ""
+      : p.metaPack.metaDescription.slice(0, 140));
+  const altText =
+    existing?.altText ||
+    `Editorial featured banner illustrating ${headline}${kw ? `, covering ${kw}` : ""}`.slice(0, 125);
+  return {
+    headline,
+    subheadline,
+    badge: existing?.badge || (kw ? kw.toUpperCase().slice(0, 28) : w.brand.name ? w.brand.name.toUpperCase() : "EDITORIAL GUIDE"),
+    theme: existing?.theme || w.brand.color || "Indigo",
+    altText,
+    altScore: existing?.altScore,
+    altVerdict: existing?.altVerdict,
+    aspectRatio: "16:9",
+    width: 1200,
+    height: 630,
+    sourceRevision: existing?.sourceRevision,
+  };
+}
+
+export function buildArticleSchemaJsonLd(p: Project): {
+  articleSchema: Record<string, unknown>;
+  faqSchema: Record<string, unknown> | null;
+  combinedGraph: Record<string, unknown>;
+} {
+  const url = safeUrl(p.metaPack.canonicalUrl) || safeUrl(p.brandSiteUrl) || "";
+  const title = p.metaPack.metaTitle || p.metaPack.h1Title || p.projectTitle || "Article";
+  const description = p.metaPack.metaDescription || p.metaPack.aeoDirectAnswer50Words || "";
+  const w = workspace(p);
+  const articleSchema: Record<string, unknown> = {
+    "@type": "Article",
+    headline: title,
+    description,
+    ...(url ? { mainEntityOfPage: { "@type": "WebPage", "@id": url } } : {}),
+    ...(p.keywordCluster.primaryKeyword ? { keywords: [p.keywordCluster.primaryKeyword, ...p.keywordCluster.secondaryKeywords].filter(Boolean).join(", ") } : {}),
+    ...(p.authorName ? { author: { "@type": "Person", name: p.authorName } } : {}),
+    ...(w.brand.name ? { publisher: { "@type": "Organization", name: w.brand.name } } : {}),
+    inLanguage: w.language || "en",
+  };
+  const faqPairs = (p.faqs || []).filter((f) => f.question?.trim() && f.answer?.trim());
+  const faqSchema = faqPairs.length
+    ? {
+        "@type": "FAQPage",
+        mainEntity: faqPairs.map((f) => ({
+          "@type": "Question",
+          name: f.question.trim(),
+          acceptedAnswer: { "@type": "Answer", text: f.answer.trim() },
+        })),
+      }
+    : null;
+  return {
+    articleSchema,
+    faqSchema,
+    combinedGraph: {
+      "@context": "https://schema.org",
+      "@graph": faqSchema ? [articleSchema, faqSchema] : [articleSchema],
+    },
+  };
+}
+
+export function evaluateAltText(text: string, nearbyHeading = "") {
+  const res = reviewAlt(text, "", nearbyHeading, "informative");
+  const score = text.trim()
+    ? Math.max(25, Math.min(100, 100 - res.cues.length * 22 - (res.count < 20 ? 15 : 0)))
+    : 0;
+  const verdict = !text.trim()
+    ? "Needs descriptive alt text"
+    : res.cues.length === 0
+      ? "WCAG & SEO Ready"
+      : res.cues[0];
+  return { ...res, score, verdict };
 }

@@ -23,12 +23,17 @@ import type { Project, SocialOverride } from "./types";
 import {
   articleRevision,
   bodyOf,
+  evaluateAltText,
   hash,
   patchWorkspace,
   refreshVisual,
   workspace,
   wordCount,
 } from "./model";
+import {
+  buildChannelCarouselSlides,
+  getSocialChannelSpec,
+} from "./adapters/socialVisualRegistry";
 import {
   CHANNELS,
   sizes,
@@ -270,14 +275,19 @@ export default function AssetDeck({
                         ? buildInfographicScene(s.infographicConfig)
                         : null,
                       stale = w.visualRevisions?.[s.id] !== hash(bodyOf(s)),
-                      available = scene && !scene.issues.length;
+                      available = scene && !scene.issues.length,
+                      altTextVal =
+                        w.sectionAltTexts?.[s.id]?.altText ||
+                        s.infographicConfig.altText ||
+                        s.h2Text,
+                      altEval = evaluateAltText(altTextVal, s.h2Text);
                     return (
                       <article className={styles.imageCard} key={s.id}>
                         <div className={styles.imageCanvas}>
                           {available ? (
                             <img
                               src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(scene.svg)}`}
-                              alt={s.infographicConfig.altText || s.h2Text}
+                              alt={altTextVal}
                             />
                           ) : (
                             <div className={styles.assetEmpty}>
@@ -291,10 +301,49 @@ export default function AssetDeck({
                         </div>
                         <div className={styles.imageInfo}>
                           <p className={styles.eyebrow}>
-                            Section {i + 1}
+                            Section {i + 1} · Alt Score {altEval.score}/100
                             {stale && scene ? " · Review after edits" : ""}
                           </p>
                           <h3>{s.h2Text}</h3>
+                          <label className={styles.inlineAltBox}>
+                            <span>WCAG Alt Text:</span>
+                            <input
+                              value={altTextVal}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                const nextCheck = evaluateAltText(val, s.h2Text);
+                                onChange((now) => {
+                                  const nw = workspace(now);
+                                  return {
+                                    ...now,
+                                    sections: now.sections.map((sec) =>
+                                      sec.id === s.id
+                                        ? {
+                                            ...sec,
+                                            infographicConfig: {
+                                              ...sec.infographicConfig,
+                                              altText: val,
+                                            },
+                                          }
+                                        : sec,
+                                    ),
+                                    writerWorkspace: {
+                                      ...nw,
+                                      sectionAltTexts: {
+                                        ...(nw.sectionAltTexts || {}),
+                                        [s.id]: {
+                                          altText: val,
+                                          score: nextCheck.score,
+                                          verdict: nextCheck.verdict,
+                                        },
+                                      },
+                                    },
+                                  };
+                                });
+                              }}
+                              placeholder={`Describe visual for ${s.h2Text}`}
+                            />
+                          </label>
                           <div className={styles.buttonRow}>
                             <button
                               type="button"
@@ -393,15 +442,15 @@ export default function AssetDeck({
                   <div className={styles.formStack}>
                     <div>
                       <p className={styles.eyebrow}>
-                        {channel === "YouTube"
-                          ? "Video script studio"
-                          : `${channel} post & visual studio`}
+                        {getSocialChannelSpec(channel).aspectLabel}
                       </p>
-                      <h3>A starting point for {channel}</h3>
+                      <h3>
+                        A starting point for {channel} ({post.caption.length}/{getSocialChannelSpec(channel).safeCharLimit} chars)
+                      </h3>
                       <p className={styles.muted}>
                         {channel === "YouTube"
-                          ? "Choose a short script or a longer video outline. Review before recording."
-                          : "Switch between caption angles below, then customize the wording and visual card for your audience."}
+                          ? "Choose a short script or longer video outline, plus customize your 1280×720 thumbnail poster."
+                          : getSocialChannelSpec(channel).ctaLabel}
                       </p>
                     </div>
                     {post.stale && (
@@ -581,6 +630,27 @@ export default function AssetDeck({
                     </button>
                   </div>
                 </div>
+                {getSocialChannelSpec(channel).supportsCarousel ? (
+                  <div className={styles.slideDeckStrip}>
+                    <div className={styles.slideDeckHeader}>
+                      <strong>{channel} Multi-Slide Deck Preview</strong>
+                      <span>{getSocialChannelSpec(channel).aspectLabel}</span>
+                    </div>
+                    <div className={styles.slideDeckCards}>
+                      {buildChannelCarouselSlides(
+                        post.headline,
+                        p.sections.map((sec) => `${sec.h2Text}: ${bodyOf(sec)}`),
+                        5,
+                      ).map((slide) => (
+                        <div key={slide.index} className={styles.slideCardMini}>
+                          <span className={styles.slideBadge}>{slide.badge}</span>
+                          <strong>{slide.headline}</strong>
+                          <p>{slide.body}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
                 <div className={styles.carouselRow}>
                   <div>
                     <h3>LinkedIn &amp; Instagram Carousel Slider Deck</h3>

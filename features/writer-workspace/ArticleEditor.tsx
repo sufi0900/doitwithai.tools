@@ -29,16 +29,23 @@ import {
   Quote,
   Table2,
   ImageIcon,
+  Sparkles,
+  Trash2,
 } from "lucide-react";
 import { SafeLink } from "@/features/readability/components/rich-text";
-import { analyzeReadability } from "@/features/readability/analyzer";
+import {
+  annotate,
+  scoreSentences,
+} from "@/features/readability/engine";
 import { buildInfographicScene } from "@/lib/blog-infographic-studio/canvas-renderer";
 import { projectDocument, safeUrl } from "./model";
+import type { ReadabilityHighlightToggles } from "./LeftStudioPanel";
 import type { Project, RichNode } from "./types";
 import styles from "./workspace.module.css";
 export type EditorHandle = {
   selection: () => { from: number; to: number; text: string };
   replace: (from: number, to: number, text: string) => void;
+  insertLink: (anchor: string, url: string) => void;
   section: (id: string) => void;
   insertVisual: (id: string) => void;
 };
@@ -58,13 +65,32 @@ type Props = {
   onChange: (doc: RichNode) => void;
   onEditVisual: (id: string) => void;
   highlights: boolean;
+  highlightToggles?: ReadabilityHighlightToggles;
+  targetGrade?: number;
   onSelection: (text: string) => void;
+  onTellAi?: (
+    instruction: string,
+    range: { from: number; to: number; text: string },
+    openHelperTab?: boolean,
+  ) => void;
 };
 const ArticleEditor = forwardRef<EditorHandle, Props>(
   function ArticleEditor(props, ref) {
     const latest = useRef(props);
     latest.current = props;
     const [notice, setNotice] = useState("");
+    const [contextMenu, setContextMenu] = useState<{
+      x: number;
+      y: number;
+      from: number;
+      to: number;
+      text: string;
+    } | null>(null);
+    const [floatingSelection, setFloatingSelection] = useState<{
+      from: number;
+      to: number;
+      text: string;
+    } | null>(null);
     const extensions = useMemo(() => {
       const table = Node.create({
         name: "table",
@@ -201,19 +227,41 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
                       "\n",
                       "\n",
                     );
-                    for (const sentence of analyzeReadability(text)
-                      .longSentences) {
-                      list.push(
-                        Decoration.inline(
-                          pos + 1 + sentence.start,
-                          pos + 1 + sentence.end,
-                          {
-                            class: styles.longSentence,
-                            title:
-                              "Long sentence: consider splitting it for readability",
-                          },
-                        ),
-                      );
+                    if (!text.trim()) return;
+                    const grade = latest.current.targetGrade || 9;
+                    const toggles = latest.current.highlightToggles || {
+                      veryHard: true,
+                      hard: true,
+                      passive: true,
+                      simpler: true,
+                    };
+                    const maxPos = pos + 1 + node.content.size;
+                    const anns = annotate(text, scoreSentences(text, grade));
+                    for (const ann of anns) {
+                      const band =
+                        ann.type === "veryHard" && toggles.veryHard
+                          ? styles.hlSpanVeryHard
+                          : ann.type === "hard" && toggles.hard
+                            ? styles.hlSpanHard
+                            : ann.type === "passive" && toggles.passive
+                              ? styles.hlSpanPassive
+                              : (ann.type === "simpler" ||
+                                    ann.type === "weakener" ||
+                                    ann.type === "adverb") &&
+                                  toggles.simpler
+                                ? styles.hlSpanSimpler
+                                : null;
+                      if (!band) continue;
+                      const from = Math.min(maxPos, pos + 1 + ann.start);
+                      const to = Math.min(maxPos, pos + 1 + ann.end);
+                      if (to > from) {
+                        list.push(
+                          Decoration.inline(from, to, {
+                            class: band,
+                            title: ann.message,
+                          }),
+                        );
+                      }
                     }
                   });
                   return DecorationSet.create(state.doc, list);
@@ -246,7 +294,7 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
         },
       });
       return [
-        StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
+        StarterKit.configure({ heading: { levels: [1, 2, 3, 4, 5, 6] } }),
         SafeLink,
         headingIDs,
         table,
@@ -273,7 +321,13 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
         latest.current.onChange(editor.getJSON() as RichNode),
       onSelectionUpdate: ({ editor }) => {
         const { from, to } = editor.state.selection;
-        latest.current.onSelection(editor.state.doc.textBetween(from, to, " "));
+        const selected = editor.state.doc.textBetween(from, to, " ");
+        latest.current.onSelection(selected);
+        if (selected.trim().length >= 6) {
+          setFloatingSelection({ from, to, text: selected });
+        } else {
+          setFloatingSelection(null);
+        }
       },
     });
     useEffect(() => {
@@ -289,7 +343,19 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
           });
       }
       editor.view.dispatch(editor.state.tr.setMeta("writerDisplay", true));
-    }, [editor, props.project, props.highlights]);
+    }, [
+      editor,
+      props.project,
+      props.highlights,
+      props.highlightToggles,
+      props.targetGrade,
+    ]);
+    useEffect(() => {
+      if (!contextMenu) return;
+      const close = () => setContextMenu(null);
+      window.addEventListener("click", close);
+      return () => window.removeEventListener("click", close);
+    }, [contextMenu]);
     useImperativeHandle(
       ref,
       () => ({
@@ -316,6 +382,28 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
                 ]),
             )
             .run(),
+        insertLink: (anchor, url) => {
+          const valid = safeUrl(url);
+          if (!editor || !valid) return;
+          const { from, to } = editor.state.selection;
+          if (to > from) {
+            editor
+              .chain()
+              .focus()
+              .setMark("link", { href: valid })
+              .run();
+          } else {
+            editor
+              .chain()
+              .focus()
+              .insertContent({
+                type: "text",
+                text: anchor || valid,
+                marks: [{ type: "link", attrs: { href: valid } }],
+              })
+              .run();
+          }
+        },
         section: (sid) => {
           if (!editor) return;
           let found = -1;
@@ -399,7 +487,7 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
                     ?.chain()
                     .focus()
                     .toggleHeading({
-                      level: Number(e.target.value) as 1 | 2 | 3,
+                      level: Number(e.target.value) as 1 | 2 | 3 | 4 | 5 | 6,
                     })
                     .run()
             }
@@ -408,6 +496,9 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
             <option value="1">Heading 1</option>
             <option value="2">Heading 2</option>
             <option value="3">Heading 3</option>
+            <option value="4">Heading 4</option>
+            <option value="5">Heading 5</option>
+            <option value="6">Heading 6</option>
           </select>
           {action(
             "Bold",
@@ -469,6 +560,57 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
             editor?.chain().focus().redo().run(),
           )}
         </div>
+        {floatingSelection && latest.current.onTellAi ? (
+          <div className={styles.floatingSelectionBar} role="toolbar" aria-label="Selection AI actions">
+            <span className={styles.floatingSelLabel}>
+              Selected ({floatingSelection.text.trim().split(/\s+/).length}w)
+            </span>
+            <button
+              type="button"
+              onClick={() =>
+                latest.current.onTellAi?.(
+                  "Rewrite this clearly and improve flow.",
+                  floatingSelection,
+                  true,
+                )
+              }
+            >
+              <Sparkles size={13} /> Rewrite
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                latest.current.onTellAi?.(
+                  "Simplify dense wording and shorten sentences.",
+                  floatingSelection,
+                  true,
+                )
+              }
+            >
+              Simplify
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                latest.current.onTellAi?.(
+                  "Add one concrete practical example here.",
+                  floatingSelection,
+                  true,
+                )
+              }
+            >
+              Add Example
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                latest.current.onTellAi?.("", floatingSelection, true)
+              }
+            >
+              Tell AI about it…
+            </button>
+          </div>
+        ) : null}
         {notice && (
           <p role="status" className={styles.notice}>
             {notice}
@@ -480,7 +622,145 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
             your idea in the brief.
           </div>
         )}
-        <EditorContent editor={editor} />
+        <div
+          onContextMenu={(e) => {
+            if (!editor || !latest.current.onTellAi) return;
+            const { from, to } = editor.state.selection;
+            let rangeFrom = from;
+            let rangeTo = to;
+            let selected = editor.state.doc.textBetween(from, to, " ");
+            if (!selected.trim()) {
+              const $pos = editor.state.doc.resolve(from);
+              if ($pos.parent && $pos.depth >= 1) {
+                rangeFrom = $pos.start($pos.depth);
+                rangeTo = $pos.end($pos.depth);
+                selected = editor.state.doc.textBetween(rangeFrom, rangeTo, " ");
+              }
+            }
+            if (!selected.trim()) return;
+            e.preventDefault();
+            setContextMenu({
+              x: Math.min(e.clientX, window.innerWidth - 260),
+              y: Math.min(e.clientY, window.innerHeight - 320),
+              from: rangeFrom,
+              to: rangeTo,
+              text: selected,
+            });
+          }}
+        >
+          <EditorContent editor={editor} />
+        </div>
+        {contextMenu ? (
+          <div
+            className={styles.contextMenu}
+            style={{ top: contextMenu.y, left: contextMenu.x }}
+            role="menu"
+            aria-label="Tell AI about this passage"
+          >
+            <div className={styles.contextMenuTitle}>
+              <Sparkles size={13} /> Tell AI about it
+            </div>
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                latest.current.onTellAi?.(
+                  "Rewrite this clearly and make it engaging.",
+                  { from: contextMenu.from, to: contextMenu.to, text: contextMenu.text },
+                  true,
+                );
+                setContextMenu(null);
+              }}
+            >
+              Rewrite &amp; polish
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                latest.current.onTellAi?.(
+                  "Simplify complex phrasing and split long sentences.",
+                  { from: contextMenu.from, to: contextMenu.to, text: contextMenu.text },
+                  true,
+                );
+                setContextMenu(null);
+              }}
+            >
+              Simplify wording
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                latest.current.onTellAi?.(
+                  "Expand this point with a concrete real-world example.",
+                  { from: contextMenu.from, to: contextMenu.to, text: contextMenu.text },
+                  true,
+                );
+                setContextMenu(null);
+              }}
+            >
+              Expand with example
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                latest.current.onTellAi?.(
+                  "Convert this text into clean, scannable bullet points.",
+                  { from: contextMenu.from, to: contextMenu.to, text: contextMenu.text },
+                  true,
+                );
+                setContextMenu(null);
+              }}
+            >
+              Convert to bullets
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                latest.current.onTellAi?.(
+                  "Structure these items into a concise Markdown comparison table.",
+                  { from: contextMenu.from, to: contextMenu.to, text: contextMenu.text },
+                  true,
+                );
+                setContextMenu(null);
+              }}
+            >
+              Convert to table
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                latest.current.onTellAi?.(
+                  "",
+                  { from: contextMenu.from, to: contextMenu.to, text: contextMenu.text },
+                  true,
+                );
+                setContextMenu(null);
+              }}
+            >
+              Open custom AI prompt…
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              className={styles.contextDeleteBtn}
+              onClick={() => {
+                editor
+                  ?.chain()
+                  .focus()
+                  .deleteRange({ from: contextMenu.from, to: contextMenu.to })
+                  .run();
+                setContextMenu(null);
+              }}
+            >
+              <Trash2 size={13} /> Remove block / text
+            </button>
+          </div>
+        ) : null}
       </div>
     );
   },

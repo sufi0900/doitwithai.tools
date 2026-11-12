@@ -3,59 +3,55 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { createPortal } from "react-dom";
 import {
-  ArrowDown,
-  ArrowUp,
-  BookOpen,
-  Check,
   CheckCircle2,
-  ChevronRight,
   Download,
   FileDown,
   FileText,
   Focus,
   FolderOpen,
-  ImageIcon,
-  LayoutDashboard,
   ListTree,
   Loader2,
   Moon,
   Plus,
-  SearchCheck,
-  Settings2,
   Sparkles,
-  Square,
   Sun,
+  Trash2,
   Upload,
   Wand2,
   X,
 } from "lucide-react";
 import type { BlogInfographicConfig } from "@/lib/blog-writer/canonical-state";
-import {
-  measureMetaDescriptionPixelWidth,
-  measureTitlePixelWidth,
-  normalizeSeoSlug,
-} from "@/lib/blog-writer/deterministic-analyzers";
 import { useWorkspace } from "./useWorkspace";
 import { useGeneration } from "./useGeneration";
 import {
+  articleMarkdown,
   articleRevision,
   bodyOf,
   hash,
   id,
-  makeSection,
+  markdownNodes,
   parseBrief,
+  parseBriefDirectives,
   patchWorkspace,
   readiness,
   refreshVisual,
   safeUrl,
   syncDocument,
   workspace,
-  wordCount,
 } from "./model";
-import type { Project, RichNode } from "./types";
+import type { Project, ResearchPacket, RichNode } from "./types";
 import ArticleEditor, { type EditorHandle } from "./ArticleEditor";
 import AssetDeck from "./AssetDeck";
-import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
+import { OnboardingGate } from "./OnboardingGate";
+import { AgentPipelineTheatre } from "./AgentPipelineTheatre";
+import {
+  LeftStudioPanel,
+  type ReadabilityHighlightToggles,
+  type StudioLeftTab,
+} from "./LeftStudioPanel";
+import { SearchAppearancePanel } from "./SearchAppearancePanel";
+import { FeaturedBannerArtwork } from "./FeaturedBannerArtwork";
+import { BriefSettingsModal } from "./BriefSettingsModal";
 import { downloadArticle, saveBlob } from "./assets";
 import styles from "./workspace.module.css";
 
@@ -66,9 +62,6 @@ const InfographicStudio = dynamic(
     loading: () => <p className={styles.loading}>Opening image studio…</p>,
   },
 );
-
-const EXAMPLE =
-  "Write a practical guide to what to do after keyword research for small business owners. Explain how to clean a keyword list, match search intent, group related queries, map them to pages, and choose what to write first. Use a running example, avoid keyword stuffing, and end with an actionable checklist.";
 
 function errorText(e: unknown) {
   return e instanceof Error
@@ -89,22 +82,31 @@ export default function WriterWorkspace() {
       s.bodyMarkdown.trim() || s.subHeadings.some((h) => h.bodyMarkdown.trim()),
   );
 
-  const [tab, setTab] = useState("brief"),
-    [studioUnlocked, setStudioUnlocked] = useState(false),
+  const [leftTab, setLeftTab] = useState<StudioLeftTab>("helper"),
+    [briefModalOpen, setBriefModalOpen] = useState(false),
+    [researchBusy, setResearchBusy] = useState(false),
+    [highlightToggles, setHighlightToggles] =
+      useState<ReadabilityHighlightToggles>({
+        veryHard: true,
+        hard: true,
+        passive: false,
+        simpler: false,
+      }),
+    [targetGrade, setTargetGrade] = useState(9),
+    [studioUnlocked, setStudioUnlocked] = useState(Boolean(w.studioUnlocked)),
     [darkStudio, setDarkStudio] = useState(true),
     [focus, setFocus] = useState(false),
-    [highlights, setHighlights] = useState(false),
     [selection, setSelection] = useState(""),
-    [instruction, setInstruction] = useState(
-      "Make this clearer and more concise.",
-    ),
     [rewrite, setRewrite] = useState<{
-      text: string;
+      original: string;
+      proposed: string;
       from: number;
       to: number;
+      scope: "selection" | "article";
       revision: string;
     } | null>(null),
     [rewriteBusy, setRewriteBusy] = useState(false),
+    [rewriteError, setRewriteError] = useState(""),
     [exportBusy, setExportBusy] = useState(""),
     [message, setMessage] = useState(""),
     [sourceUrl, setSourceUrl] = useState(""),
@@ -121,35 +123,36 @@ export default function WriterWorkspace() {
   useEffect(() => {
     setVisualId(null);
     setFocus(false);
+    setBriefModalOpen(false);
     const hasDraft =
+      Boolean(workspace(p).studioUnlocked) ||
       p.sections.some(
         (s) =>
           s.bodyMarkdown.trim() ||
           s.subHeadings.some((h) => h.bodyMarkdown.trim()),
-      ) || Boolean(workspace(p).document && readiness(p).words > 0);
+      ) ||
+      Boolean(workspace(p).document && readiness(p).words > 0);
     setStudioUnlocked(hasDraft);
-    setTab(hasDraft ? "outline" : "brief");
+    setLeftTab("helper");
     setRewrite(null);
+    setRewriteError("");
     setSelection("");
     setMessage("");
     rewriteAbort.current?.abort();
     setRewriteBusy(false);
   }, [p.projectId]);
 
-  // Automatically unlock the full Studio Dashboard and focus Outline/Review once drafting completes
   useEffect(() => {
-    if (bodyPresent || manualDraft || w.run.status === "done") {
+    if (bodyPresent || manualDraft || w.run.status === "done" || w.studioUnlocked) {
       setStudioUnlocked(true);
-      if (tab === "brief" && p.sections.length > 0) {
-        setTab("outline");
-      }
     }
-  }, [bodyPresent, manualDraft, w.run.status, p.sections.length]);
+  }, [bodyPresent, manualDraft, w.run.status, w.studioUnlocked]);
 
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         setVisualId(null);
+        setBriefModalOpen(false);
         setFocus(false);
         setMenu(false);
       }
@@ -195,20 +198,14 @@ export default function WriterWorkspace() {
     };
   }, [visualId]);
 
-  const meta = (field: keyof Project["metaPack"], value: string) =>
+  const meta = (k: keyof Project["metaPack"], value: string) =>
     update((now) => ({
       ...now,
-      metaPack: { ...now.metaPack, [field]: value },
+      metaPack: { ...now.metaPack, [k]: value },
     }));
 
-  const field = (field: keyof Project, value: string) =>
-    update((now) => ({ ...now, [field]: value }));
-
-  const keyword = (field: string, value: string) =>
-    update((now) => ({
-      ...now,
-      keywordCluster: { ...now.keywordCluster, [field]: value },
-    }));
+  const field = (k: keyof Project, value: string) =>
+    update((now) => ({ ...now, [k]: value }));
 
   const editOutline = (sid: string, title: string) =>
     update((now) => {
@@ -339,14 +336,22 @@ export default function WriterWorkspace() {
     }
   };
 
-  const requestRewrite = async () => {
-    const picked = editor.current?.selection();
-    if (!picked?.text.trim()) {
-      setMessage("Select a passage in the article first.");
+  const requestRewrite = async (
+    customInstruction: string,
+    scope: "selection" | "article",
+    explicitRange?: { from: number; to: number; text: string },
+  ) => {
+    const picked = explicitRange || editor.current?.selection();
+    const targetText =
+      scope === "selection" && picked?.text.trim()
+        ? picked.text
+        : articleMarkdown(current.current).slice(0, 14000);
+    if (!targetText.trim()) {
+      setRewriteError("Add or select text in the article first.");
       return;
     }
-    if (picked.text.length > 12000) {
-      setMessage("Select up to 12,000 characters at a time.");
+    if (!customInstruction.trim()) {
+      setLeftTab("helper");
       return;
     }
     const revision = articleRevision(current.current),
@@ -354,26 +359,119 @@ export default function WriterWorkspace() {
       c = new AbortController();
     rewriteAbort.current = c;
     setRewriteBusy(true);
-    setMessage("");
+    setRewriteError("");
     try {
-      const res = await gen.rewrite(picked.text, instruction, c.signal);
+      const res = await gen.rewrite(
+        targetText.slice(0, 18000),
+        customInstruction,
+        c.signal,
+      );
       if (current.current.projectId !== pid) return;
       setRewrite({
-        text: res.data.text,
-        from: picked.from,
-        to: picked.to,
+        original: targetText,
+        proposed: res.data.text,
+        from: scope === "selection" && picked ? picked.from : 0,
+        to: scope === "selection" && picked ? picked.to : 0,
+        scope,
         revision,
       });
     } catch (e) {
-      setMessage(errorText(e));
+      setRewriteError(errorText(e));
     } finally {
       setRewriteBusy(false);
     }
   };
 
-  const openVisual = (sid: string) => {
-    setVisualId(sid);
+  const applyRewriteProposal = () => {
+    if (!rewrite) return;
+    if (articleRevision(current.current) !== rewrite.revision) {
+      setRewriteError(
+        "The article changed after this revision was generated. Run the helper again.",
+      );
+      return;
+    }
+    if (rewrite.scope === "selection" && rewrite.to > rewrite.from) {
+      editor.current?.replace(rewrite.from, rewrite.to, rewrite.proposed);
+    } else {
+      update((now) =>
+        syncDocument(now, {
+          type: "doc",
+          content: markdownNodes(rewrite.proposed),
+        }),
+      );
+    }
+    setRewrite(null);
   };
+
+  const refreshResearchPacket = async () => {
+    if (researchBusy) return;
+    setResearchBusy(true);
+    setMessage("");
+    const directives = parseBriefDirectives(
+      current.current.rawUserBriefOrSourceText,
+    );
+    const site = (current.current.brandSiteUrl || directives.websiteUrl || "").trim();
+    try {
+      const res = await fetch("/api/writer-workspace/research", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: AbortSignal.timeout(35000),
+        body: JSON.stringify({
+          requestId: id(),
+          brief:
+            current.current.rawUserBriefOrSourceText ||
+            current.current.metaPack.h1Title ||
+            "Article topic",
+          keyword: current.current.keywordCluster.primaryKeyword,
+          websiteUrl: site,
+          audience: current.current.keywordCluster.targetAudience,
+          tone: current.current.keywordCluster.toneOfVoice,
+          language: workspace(current.current).language,
+          includeWebResearch: true,
+        }),
+      });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.ok || !json.packet) {
+        throw new Error(json?.error || "Could not refresh research links.");
+      }
+      const packet = json.packet as ResearchPacket;
+      update((now) => ({
+        ...now,
+        brandSiteUrl: now.brandSiteUrl || packet.siteScanned || site,
+        keywordCluster: {
+          ...now.keywordCluster,
+          primaryKeyword:
+            now.keywordCluster.primaryKeyword || packet.primaryKeyword || "",
+          secondaryKeywords: packet.secondaryKeywords?.length
+            ? packet.secondaryKeywords
+            : now.keywordCluster.secondaryKeywords,
+          lsiEntities: packet.lsiEntities?.length
+            ? packet.lsiEntities
+            : now.keywordCluster.lsiEntities,
+        },
+        internalLinks: (packet.internalLinks || []).map((l) => ({
+          id: id(),
+          anchorText: l.anchorText || l.title,
+          targetTitle: l.title,
+          targetUrl: l.url,
+          category: "pillar-guide" as const,
+        })),
+        writerWorkspace: {
+          ...workspace(now),
+          research: packet,
+        },
+      }));
+      setMessage(
+        `Research refreshed: ${packet.internalLinks.length} internal links & ${packet.externalLinks.length} authority references ready.`,
+      );
+    } catch (e) {
+      setMessage(errorText(e));
+    } finally {
+      setResearchBusy(false);
+    }
+  };
+
+  const openVisual = (sid: string) => setVisualId(sid);
 
   const saveVisual = (config: BlogInfographicConfig) => {
     const sid = visualId;
@@ -402,40 +500,9 @@ export default function WriterWorkspace() {
       s.bodyMarkdown.trim() || s.subHeadings.some((h) => h.bodyMarkdown.trim()),
   ).length;
   const missing = p.sections.length - completedCount;
-  const activeSectionIdx = p.sections.findIndex((s) => s.id === w.run.current);
-  const progressPercent = gen.busy
-    ? w.run.status === "planning"
-      ? 22
-      : p.sections.length > 0
-        ? Math.min(
-            95,
-            Math.round(
-              28 +
-                ((completedCount + 0.35) / Math.max(1, p.sections.length)) * 67,
-            ),
-          )
-        : 35
-    : bodyPresent && !missing
-      ? 100
-      : p.sections.length > 0
-        ? 25
-        : 0;
 
-  const statusLabel = gen.busy
-    ? w.run.status === "planning"
-      ? "Planning your outline & metadata options"
-      : `Writing section ${activeSectionIdx >= 0 ? activeSectionIdx + 1 : completedCount + 1} of ${p.sections.length}`
-    : w.run.status === "done" || (bodyPresent && !missing)
-      ? "Draft complete · ready for your review"
-      : w.run.status === "failed"
-        ? "This step needs another try"
-        : w.run.status === "paused"
-          ? "Writing paused"
-          : p.sections.length
-            ? "Outline ready"
-            : "Start with your idea";
-
-  const showOnboardingHero = !studioUnlocked && !bodyPresent && !manualDraft;
+  const showOnboardingHero =
+    !studioUnlocked && !bodyPresent && !manualDraft && !w.studioUnlocked;
 
   const handleQuickExport = async (format: string) => {
     if (exportBusy) return;
@@ -465,16 +532,36 @@ export default function WriterWorkspace() {
       </div>
     );
 
-  const titlePx = Math.round(measureTitlePixelWidth(p.metaPack.metaTitle));
-  const descPx = Math.round(
-    measureMetaDescriptionPixelWidth(p.metaPack.metaDescription),
-  );
+  const launchGeneration = async (mode: "all" | "plan") => {
+    const parsed = parseBrief(current.current.rawUserBriefOrSourceText);
+    const directives = parseBriefDirectives(
+      current.current.rawUserBriefOrSourceText,
+    );
+    if (
+      (parsed.keyword && !current.current.keywordCluster.primaryKeyword) ||
+      (directives.websiteUrl && !current.current.brandSiteUrl)
+    ) {
+      update((now) => ({
+        ...now,
+        brandSiteUrl: now.brandSiteUrl || directives.websiteUrl,
+        keywordCluster: {
+          ...now.keywordCluster,
+          primaryKeyword:
+            now.keywordCluster.primaryKeyword || parsed.keyword,
+        },
+      }));
+    }
+    if (mode === "all") {
+      await gen.generateAll();
+    } else {
+      await gen.plan();
+    }
+  };
 
   return (
     <div
       className={`${styles.shell} ${darkStudio ? styles.darkShell : ""} ${focus ? styles.focusMode : ""}`}
     >
-      {/* Top Studio Header Bar */}
       <header className={styles.workspaceHeader}>
         <div className={styles.projectTitle}>
           <span className={styles.appIcon}>
@@ -528,7 +615,6 @@ export default function WriterWorkspace() {
               gen.stop();
               await store.create();
               setStudioUnlocked(false);
-              setTab("brief");
             }}
           >
             <Wand2 size={15} />
@@ -552,7 +638,6 @@ export default function WriterWorkspace() {
                     await store.create();
                     setMenu(false);
                     setStudioUnlocked(false);
-                    setTab("brief");
                   }}
                 >
                   <Plus size={14} />
@@ -606,28 +691,26 @@ export default function WriterWorkspace() {
               </div>
             )}
           </div>
-          <button
-            type="button"
-            aria-pressed={focus}
-            onClick={() => {
-              setStudioUnlocked(true);
-              setFocus(!focus);
-            }}
-          >
-            <Focus size={15} />
-            <span>{focus ? "Exit focus" : "Focus"}</span>
-          </button>
-          <a
-            href="#writer-assets"
-            className={styles.primary}
-            onClick={() => {
-              setStudioUnlocked(true);
-              setFocus(false);
-            }}
-          >
-            <Download size={15} />
-            Publishing kit
-          </a>
+          {!showOnboardingHero && !gen.busy ? (
+            <>
+              <button
+                type="button"
+                aria-pressed={focus}
+                onClick={() => setFocus(!focus)}
+              >
+                <Focus size={15} />
+                <span>{focus ? "Exit focus" : "Focus"}</span>
+              </button>
+              <a
+                href="#writer-assets"
+                className={styles.primary}
+                onClick={() => setFocus(false)}
+              >
+                <Download size={15} />
+                Publishing kit
+              </a>
+            </>
+          ) : null}
         </div>
       </header>
 
@@ -672,1520 +755,350 @@ export default function WriterWorkspace() {
         </div>
       )}
 
-      {/* =====================================================================
-          PHASE 1: GUIDED ONBOARDING & LIVE STEP-BY-STEP GENERATION PIPELINE
-         ===================================================================== */}
-      {showOnboardingHero && (
-        <section
-          className={styles.onboardingCard}
-          aria-label="Article onboarding wizard"
-        >
-          <div className={styles.onboardingHeader}>
-            <div>
-              <span className={styles.onboardingBadge}>
-                <Sparkles size={14} />
-                Step-by-Step Guided Onboarding · AI Content, Blog &amp; Article
-                Studio
-              </span>
-              <h2>Start with a topic, prompt, outline, or reference URL</h2>
-              <p className={styles.muted}>
-                Share your rough idea, keywords, or custom H2/H3 outline below.
-                Our studio will plan your search metadata, engineer your outline,
-                write each section with live progress, render inline section
-                infographics, and unlock the full editing &amp; social studio
-                once your draft is ready.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setStudioUnlocked(true)}
-              className={styles.skipOnboardingBtn}
-            >
-              <LayoutDashboard size={15} />
-              Open Full Studio Editor Directly →
-            </button>
-          </div>
+      {/* PHASE 1: ANIMATED 11-AGENT PIPELINE THEATRE (HIDES DASHBOARD WHILE RUNNING) */}
+      {gen.busy ? (
+        <AgentPipelineTheatre
+          project={p}
+          busy={gen.busy}
+          onStop={gen.stop}
+        />
+      ) : showOnboardingHero ? (
+        <OnboardingGate
+          project={p}
+          busy={gen.busy}
+          errorMessage={w.run.error}
+          onPatchProject={(patch) => update((now) => ({ ...now, ...patch }))}
+          onPatchWorkspace={(patch) => update((now) => patchWorkspace(now, patch))}
+          onGenerateAll={() => void launchGeneration("all")}
+          onPlanFirst={() => void launchGeneration("plan")}
+          onOpenStudioManually={() => {
+            setStudioUnlocked(true);
+            update((now) => patchWorkspace(now, { studioUnlocked: true }));
+          }}
+        />
+      ) : (
+        <>
+          {/* FULL 4-ZONE STUDIO DASHBOARD */}
+          <div className={styles.workspaceGrid}>
+            <LeftStudioPanel
+              project={p}
+              selection={selection}
+              activeTab={leftTab}
+              highlightToggles={highlightToggles}
+              targetGrade={targetGrade}
+              aiRevisionState={{
+                busy: rewriteBusy,
+                original: rewrite?.original || "",
+                proposed: rewrite?.proposed || "",
+                scope: rewrite?.scope || "selection",
+                error: rewriteError,
+              }}
+              onChangeTab={setLeftTab}
+              onToggleHighlight={(k) =>
+                setHighlightToggles((prev) => ({ ...prev, [k]: !prev[k] }))
+              }
+              onChangeTargetGrade={setTargetGrade}
+              onOpenBriefModal={() => setBriefModalOpen(true)}
+              onRunAiHelper={(inst, scope) =>
+                void requestRewrite(inst, scope)
+              }
+              onApplyRevision={applyRewriteProposal}
+              onDiscardRevision={() => setRewrite(null)}
+              onInsertLink={(anchor, url) =>
+                editor.current?.insertLink(anchor, url)
+              }
+              onRunResearch={() => void refreshResearchPacket()}
+              researchBusy={researchBusy}
+            />
 
-          <div className={styles.onboardingGrid}>
-            <div className={styles.formStack}>
-              <label htmlFor="onboarding-brief-input">
-                1. Your Topic, Detailed Prompt, or Custom Outline (H2: / H3:)
-              </label>
-              <textarea
-                id="onboarding-brief-input"
-                rows={6}
-                maxLength={16000}
-                value={p.rawUserBriefOrSourceText}
-                onChange={(e) =>
-                  field("rawUserBriefOrSourceText", e.target.value)
-                }
-                placeholder={
-                  "Example: Write a comprehensive guide on 'What is AI SEO for Blogs?' covering how AI search overviews work, practical optimization steps, common pitfalls, and a pre-publish checklist.\n\n(Optional: Include 'Keyword: ...' or 'H2: ...' / 'H3: ...' headings right here!)"
+            <main className={styles.editorColumn} aria-label="Article workspace">
+              {/* ZONE 1: SEARCH APPEARANCE, SERP SIMULATOR & SCHEMA */}
+              <SearchAppearancePanel
+                project={p}
+                onUpdateMeta={(patch) =>
+                  update((now) => ({
+                    ...now,
+                    metaPack: { ...now.metaPack, ...patch },
+                  }))
                 }
               />
-              <div className={styles.inputFooter}>
-                <button
-                  type="button"
-                  className={styles.textButton}
-                  onClick={() => field("rawUserBriefOrSourceText", EXAMPLE)}
-                >
-                  ✨ Load sample prompt &amp; topic
-                </button>
-                <span>
-                  {p.rawUserBriefOrSourceText.length.toLocaleString()} / 16,000
-                  chars
-                </span>
-              </div>
 
-              <div className={styles.onboardingPrefsGrid}>
-                <label>
-                  Focus keyword (optional)
-                  <input
-                    maxLength={160}
-                    value={p.keywordCluster.primaryKeyword}
-                    onChange={(e) => keyword("primaryKeyword", e.target.value)}
-                    placeholder="e.g. AI SEO for blogs"
-                  />
-                </label>
-                <label>
-                  Target audience
-                  <input
-                    maxLength={500}
-                    value={p.keywordCluster.targetAudience}
-                    onChange={(e) => keyword("targetAudience", e.target.value)}
-                    placeholder="e.g. Content marketers & founders"
-                  />
-                </label>
-                <label>
-                  Tone of voice
-                  <input
-                    maxLength={100}
-                    value={p.keywordCluster.toneOfVoice}
-                    onChange={(e) => keyword("toneOfVoice", e.target.value)}
-                    placeholder="Authoritative & Human"
-                  />
-                </label>
-                <label>
-                  Target article length
-                  <select
-                    value={w.targetWords}
-                    onChange={(e) =>
-                      update((now) =>
-                        patchWorkspace(now, {
-                          targetWords: Number(e.target.value),
-                        }),
-                      )
-                    }
-                  >
-                    {[800, 1200, 1600, 2400, 3200, 4000].map((n) => (
-                      <option key={n} value={n}>
-                        {n.toLocaleString()} words
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-
-              <div className={styles.onboardingActionRow}>
-                <button
-                  type="button"
-                  className={styles.primary}
-                  disabled={
-                    gen.busy ||
-                    sourceBusy ||
-                    p.rawUserBriefOrSourceText.trim().length < 3
-                  }
-                  onClick={async () => {
-                    const parsed = parseBrief(
-                      current.current.rawUserBriefOrSourceText,
-                    );
-                    if (
-                      parsed.keyword &&
-                      !current.current.keywordCluster.primaryKeyword
-                    )
-                      keyword("primaryKeyword", parsed.keyword);
-                    await gen.generateAll();
-                    if (
-                      current.current.sections.some(
-                        (s) =>
-                          s.bodyMarkdown.trim() ||
-                          s.subHeadings.some((h) => h.bodyMarkdown.trim()),
-                      )
-                    ) {
-                      setStudioUnlocked(true);
-                      setTab("outline");
-                    }
-                  }}
-                >
-                  {gen.busy ? (
-                    <Loader2 size={16} className={styles.spinIcon} />
-                  ) : (
-                    <Sparkles size={16} />
-                  )}
-                  Generate Complete Article, Visuals &amp; Unlock Studio
-                  <ChevronRight size={15} />
-                </button>
-
-                <button
-                  type="button"
-                  disabled={
-                    gen.busy ||
-                    sourceBusy ||
-                    p.rawUserBriefOrSourceText.trim().length < 3
-                  }
-                  onClick={async () => {
-                    const parsed = parseBrief(
-                      current.current.rawUserBriefOrSourceText,
-                    );
-                    if (
-                      parsed.keyword &&
-                      !current.current.keywordCluster.primaryKeyword
-                    )
-                      keyword("primaryKeyword", parsed.keyword);
-                    await gen.plan();
-                    if (current.current.sections.length) setTab("outline");
-                  }}
-                >
-                  <ListTree size={15} />
-                  Step 1 Only: Build &amp; Review Outline First
-                </button>
-              </div>
-            </div>
-
-            {/* Right Column of Onboarding: Live Outline Preview or Pipeline Overview */}
-            <div className={styles.onboardingSideCard}>
-              {p.sections.length > 0 ? (
-                <div className={styles.formStack}>
-                  <div className={styles.outlineLabel}>
-                    <span>STEP 2 READY · REVIEW YOUR OUTLINE</span>
-                    <span>{p.sections.length} H2 Sections</span>
+              {w.run.error ? (
+                <div className={styles.error} role="alert">
+                  <div>
+                    <strong>Writing checkpoint</strong>
+                    <p>{w.run.error}</p>
                   </div>
-                  <h3>{p.metaPack.h1Title || p.projectTitle}</h3>
-                  <p className={styles.muted}>
-                    Your outline and metadata are ready! Review the sections
-                    below or click{" "}
-                    <strong>Write Complete Article &amp; Unlock Studio</strong>{" "}
-                    to generate the full draft and section infographics.
-                  </p>
-                  <div className={styles.onboardingOutlineList}>
-                    {p.sections.map((s, idx) => (
-                      <div key={s.id} className={styles.onboardingOutlineRow}>
-                        <strong>
-                          H2 · {String(idx + 1).padStart(2, "0")}: {s.h2Text}
-                        </strong>
-                        {s.subHeadings.length > 0 && (
-                          <span>
-                            {s.subHeadings.map((h) => h.h3Text).join(" · ")}
-                          </span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                  <div className={styles.buttonRow}>
-                    <button
-                      type="button"
-                      className={styles.primary}
-                      disabled={gen.busy || !missing}
-                      onClick={async () => {
-                        await gen.draft();
-                        setStudioUnlocked(true);
-                        setTab("outline");
-                      }}
-                    >
-                      <Sparkles size={15} />
-                      Write Complete Article &amp; Unlock Studio →
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setStudioUnlocked(true);
-                        setTab("outline");
-                      }}
-                    >
-                      Customize Outline in Studio
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className={styles.formStack}>
-                  <p className={styles.eyebrow}>
-                    How the 5-Stage Studio Pipeline Works
-                  </p>
-                  <h3>From One Prompt to a Complete Publishing Package</h3>
-                  <ul className={styles.onboardingStepList}>
-                    <li>
-                      <span>01</span>
-                      <div>
-                        <strong>Intent, Focus Keyword &amp; SERP Meta</strong>
-                        <p>
-                          Generates your H1 headline plus 4 selectable Meta
-                          Title and Meta Description variations.
-                        </p>
-                      </div>
-                    </li>
-                    <li>
-                      <span>02</span>
-                      <div>
-                        <strong>Structured H2 &amp; H3 Outline</strong>
-                        <p>
-                          Builds a logical heading hierarchy (or preserves your
-                          exact custom outline verbatim).
-                        </p>
-                      </div>
-                    </li>
-                    <li>
-                      <span>03</span>
-                      <div>
-                        <strong>Auto-Healing Section Drafting</strong>
-                        <p>
-                          Writes each section step-by-step with live progress
-                          and zero subheading mismatch errors.
-                        </p>
-                      </div>
-                    </li>
-                    <li>
-                      <span>04</span>
-                      <div>
-                        <strong>Inline Blog Section Infographics</strong>
-                        <p>
-                          Automatically pairs every H2 section with an editable
-                          vector infographic from our visual engine.
-                        </p>
-                      </div>
-                    </li>
-                    <li>
-                      <span>05</span>
-                      <div>
-                        <strong>
-                          Social Studio, Carousel, Newsletter &amp; ZIP
-                        </strong>
-                        <p>
-                          Prepares Facebook, Instagram, LinkedIn, X, Pinterest,
-                          YouTube scripts, PDF, DOCX, EPUB, and MP3 exports.
-                        </p>
-                      </div>
-                    </li>
-                  </ul>
-                </div>
-              )}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* =====================================================================
-          LIVE STEP-BY-STEP GENERATION PROGRESS & SHIMMER SKELETON THEATRE
-         ===================================================================== */}
-      {gen.busy && (
-        <section
-          className={styles.pipelineTheatre}
-          role="status"
-          aria-live="polite"
-        >
-          <div className={styles.pipelineHeader}>
-            <div className={styles.pipelineTitleGroup}>
-              <span className={styles.pipelinePulse}>
-                <Loader2 size={18} className={styles.spinIcon} />
-              </span>
-              <div>
-                <p className={styles.eyebrow}>
-                  Live Step-by-Step AI Production Pipeline · {progressPercent}%
-                  Complete
-                </p>
-                <h3>{statusLabel}</h3>
-                <p className={styles.muted}>
-                  {w.run.status === "planning"
-                    ? "Analyzing your topic, search intent, 4 meta title/description options, and H2/H3 outline structure…"
-                    : `Drafting H2 section "${p.sections[activeSectionIdx]?.h2Text || "current section"}" and composing its inline section infographic…`}
-                </p>
-              </div>
-            </div>
-            <button type="button" onClick={gen.stop}>
-              <Square size={13} />
-              Pause generation
-            </button>
-          </div>
-
-          <div className={styles.pipelineProgressBar}>
-            <div
-              className={styles.pipelineProgressFill}
-              style={{ width: `${progressPercent}%` }}
-            />
-          </div>
-
-          <div className={styles.pipelineStepsGrid}>
-            <div
-              className={`${styles.pipelineStepCard} ${w.run.status === "planning" ? styles.pipelineStepActive : styles.pipelineStepDone}`}
-            >
-              <span>01</span>
-              <div>
-                <strong>Topic &amp; Meta Options</strong>
-                <p>H1 + 4 Title &amp; Description variations</p>
-              </div>
-            </div>
-            <div
-              className={`${styles.pipelineStepCard} ${w.run.status === "planning" ? styles.pipelineStepActive : p.sections.length > 0 ? styles.pipelineStepDone : ""}`}
-            >
-              <span>02</span>
-              <div>
-                <strong>H2/H3 Outline Tree</strong>
-                <p>
-                  {p.sections.length
-                    ? `${p.sections.length} structured sections ready`
-                    : "Structuring headings…"}
-                </p>
-              </div>
-            </div>
-            <div
-              className={`${styles.pipelineStepCard} ${w.run.status === "drafting" ? styles.pipelineStepActive : completedCount > 0 && !missing ? styles.pipelineStepDone : ""}`}
-            >
-              <span>03</span>
-              <div>
-                <strong>Section-by-Section Drafting</strong>
-                <p>
-                  {completedCount} of {p.sections.length || "?"} sections
-                  written
-                </p>
-              </div>
-            </div>
-            <div
-              className={`${styles.pipelineStepCard} ${w.run.status === "drafting" ? styles.pipelineStepActive : ""}`}
-            >
-              <span>04</span>
-              <div>
-                <strong>Inline Section Visuals &amp; Kit</strong>
-                <p>Auto-rendering section infographics &amp; social cards</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Animated Shimmer Skeleton Placeholder while Fetching */}
-          <div className={styles.skeletonContainer}>
-            <div className={styles.skeletonHeaderRow}>
-              <div className={styles.skeletonPill} />
-              <div className={styles.skeletonTitleBar} />
-            </div>
-            <div className={styles.skeletonParagraph}>
-              <div className={styles.skeletonLineFull} />
-              <div className={styles.skeletonLineFull} />
-              <div className={styles.skeletonLineMedium} />
-            </div>
-            {p.sections.length > 0 && (
-              <div className={styles.skeletonSectionChips}>
-                {p.sections.map((sec, idx) => {
-                  const isDone =
-                    Boolean(sec.bodyMarkdown.trim()) ||
-                    sec.subHeadings.some((h) => Boolean(h.bodyMarkdown.trim()));
-                  const isCurrent = sec.id === w.run.current;
-                  return (
-                    <div
-                      key={sec.id}
-                      className={`${styles.skeletonChip} ${isDone ? styles.skeletonChipDone : isCurrent ? styles.skeletonChipCurrent : ""}`}
-                    >
-                      {isDone ? (
-                        <Check size={13} />
-                      ) : isCurrent ? (
-                        <Loader2 size={13} className={styles.spinIcon} />
-                      ) : (
-                        <span>{idx + 1}</span>
-                      )}
-                      <span>{sec.h2Text}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </section>
-      )}
-
-      {/* =====================================================================
-          PHASE 2: THE 4-ZONE STUDIO DASHBOARD (LEFT PANEL + TOP META + BIG EDITOR + BOTTOM SUITE)
-         ===================================================================== */}
-      <div className={styles.workspaceGrid}>
-        {/* ZONE 2: LEFT STUDIO PANEL (Unified Score Banner + Brief / Outline / Review) */}
-        <aside className={styles.sidebar} aria-label="Writing assistant">
-          {/* Compact Live Readiness & Word Count Summary Bar Always Visible */}
-          <div className={styles.sidebarScoreBanner}>
-            <div
-              className={styles.miniScoreBadge}
-              style={{
-                background:
-                  report.score >= 80
-                    ? "#10b981"
-                    : report.score >= 50
-                      ? "#f59e0b"
-                      : "#6366f1",
-              }}
-            >
-              {report.score}
-            </div>
-            <div className={styles.sidebarScoreMeta}>
-              <strong>Readiness &amp; SEO Score</strong>
-              <span>
-                {report.words.toLocaleString()} words · {report.minutes} min
-                read
-              </span>
-            </div>
-            <button
-              type="button"
-              className={styles.textButton}
-              onClick={() => setTab("review")}
-            >
-              Details
-            </button>
-          </div>
-
-          <div
-            role="tablist"
-            aria-label="Writing steps"
-            className={styles.sideTabs}
-          >
-            {[
-              ["brief", "Brief", BookOpen],
-              ["outline", "Outline", ListTree],
-              ["review", "Review", SearchCheck],
-            ].map(([key, label, Icon]: any) => (
-              <button
-                type="button"
-                role="tab"
-                aria-selected={tab === key}
-                aria-controls={`writer-panel-${key}`}
-                id={`writer-tab-${key}`}
-                onClick={() => setTab(key)}
-                key={key}
-              >
-                <Icon size={16} />
-                {label}
-                {key === "outline" && p.sections.length > 0 ? (
-                  <span>{p.sections.length}</span>
-                ) : null}
-              </button>
-            ))}
-          </div>
-
-          <div
-            role="tabpanel"
-            aria-labelledby={`writer-tab-${tab}`}
-            id={`writer-panel-${tab}`}
-            className={styles.sideBody}
-          >
-            {tab === "brief" && (
-              <div className={styles.formStack}>
-                <div>
-                  <p className={styles.eyebrow}>01 · Tell your story</p>
-                  <h2>What are you writing?</h2>
-                  <p className={styles.muted}>
-                    A rough idea is enough. Or include your keywords, outline,
-                    audience, and specific instructions.
-                  </p>
-                </div>
-                <label className={styles.srOnly} htmlFor="writer-brief">
-                  Your article brief
-                </label>
-                <textarea
-                  id="writer-brief"
-                  rows={8}
-                  maxLength={16000}
-                  value={p.rawUserBriefOrSourceText}
-                  onChange={(e) =>
-                    field("rawUserBriefOrSourceText", e.target.value)
-                  }
-                  placeholder={
-                    "For example: write a practical guide to starting a balcony garden. For beginners, with an affordable setup and a month-by-month plan.\n\nAlready have an outline? Paste H2: and H3: headings here."
-                  }
-                />
-                <div className={styles.inputFooter}>
                   <button
                     type="button"
-                    className={styles.textButton}
-                    onClick={() => field("rawUserBriefOrSourceText", EXAMPLE)}
-                  >
-                    Try an example
-                  </button>
-                  <span>
-                    {p.rawUserBriefOrSourceText.length.toLocaleString()} /
-                    16,000
-                  </span>
-                </div>
-
-                {/* 1-Click Full Article Generation Button */}
-                <button
-                  type="button"
-                  className={styles.primary}
-                  disabled={
-                    gen.busy ||
-                    sourceBusy ||
-                    p.rawUserBriefOrSourceText.trim().length < 3 ||
-                    bodyPresent ||
-                    manualDraft
-                  }
-                  onClick={async () => {
-                    const parsed = parseBrief(
-                      current.current.rawUserBriefOrSourceText,
-                    );
-                    if (
-                      parsed.keyword &&
-                      !current.current.keywordCluster.primaryKeyword
-                    )
-                      keyword("primaryKeyword", parsed.keyword);
-                    await gen.generateAll();
-                    if (current.current.sections.length) {
-                      setStudioUnlocked(true);
-                      setTab("outline");
+                    onClick={() =>
+                      missing && p.sections.length
+                        ? void gen.draft()
+                        : void gen.plan()
                     }
-                  }}
-                >
-                  {gen.busy ? (
-                    <Loader2 size={16} className={styles.spinIcon} />
-                  ) : (
-                    <Sparkles size={16} />
-                  )}
-                  Generate full article &amp; visuals
-                  <ChevronRight size={15} />
-                </button>
-
-                <button
-                  type="button"
-                  disabled={
-                    gen.busy ||
-                    sourceBusy ||
-                    p.rawUserBriefOrSourceText.trim().length < 3 ||
-                    bodyPresent ||
-                    manualDraft
-                  }
-                  onClick={async () => {
-                    const parsed = parseBrief(
-                      current.current.rawUserBriefOrSourceText,
-                    );
-                    if (
-                      parsed.keyword &&
-                      !current.current.keywordCluster.primaryKeyword
-                    )
-                      keyword("primaryKeyword", parsed.keyword);
-                    await gen.plan();
-                    if (current.current.sections.length) setTab("outline");
-                  }}
-                >
-                  {gen.busy ? (
-                    <Loader2 size={16} className={styles.spinIcon} />
-                  ) : (
-                    <ListTree size={16} />
-                  )}
-                  Build my outline
-                  <ChevronRight size={15} />
-                </button>
-
-                {bodyPresent || manualDraft ? (
-                  <p className={styles.muted}>
-                    This project has a draft. Start a new article to plan a
-                    different topic, or edit this outline directly.
-                  </p>
-                ) : (
-                  <p className={styles.muted}>
-                    Generate the full article in one click, or build and review
-                    the outline first.
-                  </p>
-                )}
-
-                <details className={styles.details} open>
-                  <summary>
-                    <Settings2 size={15} />
-                    Writing preferences<span>Optional</span>
-                  </summary>
-                  <div className={styles.formStack}>
-                    <label>
-                      Focus keyword
-                      <input
-                        maxLength={160}
-                        value={p.keywordCluster.primaryKeyword}
-                        onChange={(e) =>
-                          keyword("primaryKeyword", e.target.value)
-                        }
-                        placeholder="e.g. balcony vegetable garden"
-                      />
-                    </label>
-                    <label>
-                      Audience
-                      <input
-                        maxLength={500}
-                        value={p.keywordCluster.targetAudience}
-                        onChange={(e) =>
-                          keyword("targetAudience", e.target.value)
-                        }
-                        placeholder="Who should this help?"
-                      />
-                    </label>
-                    <label>
-                      Tone
-                      <input
-                        maxLength={100}
-                        value={p.keywordCluster.toneOfVoice}
-                        onChange={(e) => keyword("toneOfVoice", e.target.value)}
-                      />
-                    </label>
-                    <div className={styles.twoCols}>
-                      <label>
-                        Target words
-                        <select
-                          value={w.targetWords}
-                          onChange={(e) =>
-                            update((now) =>
-                              patchWorkspace(now, {
-                                targetWords: Number(e.target.value),
-                              }),
-                            )
-                          }
-                        >
-                          {[800, 1200, 1600, 2400, 3200, 4000].map((n) => (
-                            <option key={n} value={n}>
-                              {n.toLocaleString()}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                      <label>
-                        Language
-                        <select
-                          value={w.language}
-                          onChange={(e) =>
-                            update((now) =>
-                              patchWorkspace(now, { language: e.target.value }),
-                            )
-                          }
-                        >
-                          {[
-                            "English",
-                            "Urdu",
-                            "Hindi",
-                            "Spanish",
-                            "French",
-                            "German",
-                            "Arabic",
-                          ].map((s) => (
-                            <option key={s}>{s}</option>
-                          ))}
-                        </select>
-                      </label>
-                    </div>
-                    <label>
-                      Additional instructions
-                      <textarea
-                        maxLength={2000}
-                        rows={3}
-                        value={p.customUserInstructions}
-                        onChange={(e) =>
-                          field("customUserInstructions", e.target.value)
-                        }
-                        placeholder="Facts to include, phrases to avoid, your own experience…"
-                      />
-                    </label>
-                  </div>
-                </details>
-
-                <details className={styles.details}>
-                  <summary>
-                    <BookOpen size={15} />
-                    Reference material<span>{w.references.length} / 4</span>
-                  </summary>
-                  <div className={styles.formStack}>
-                    <p className={styles.muted}>
-                      Import useful source passages. The writer uses these as
-                      reference material; check facts before publishing.
-                    </p>
-                    <label>
-                      Article URL
-                      <ToolUrlInput
-                        type="url"
-                        value={sourceUrl}
-                        onChange={(e) => setSourceUrl(e.target.value)}
-                        placeholder="https://example.com/article"
-                      />
-                    </label>
-                    <button
-                      type="button"
-                      disabled={
-                        sourceBusy || gen.busy || w.references.length >= 4
-                      }
-                      onClick={() => void source()}
-                    >
-                      {sourceBusy ? (
-                        <Loader2 size={14} className={styles.spinIcon} />
-                      ) : (
-                        <Plus size={14} />
-                      )}
-                      Import reference
-                    </button>
-                    {w.references.map((r) => (
-                      <div className={styles.reference} key={r.id}>
-                        <a
-                          href={safeUrl(r.url)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          {r.title}
-                        </a>
-                        <span>
-                          {r.text.length.toLocaleString()} characters imported
-                        </span>
-                        <button
-                          type="button"
-                          aria-label={`Remove reference ${r.title}`}
-                          onClick={() =>
-                            update((now) =>
-                              patchWorkspace(now, {
-                                references: workspace(now).references.filter(
-                                  (x) => x.id !== r.id,
-                                ),
-                              }),
-                            )
-                          }
-                        >
-                          <X size={14} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </details>
-
-                <details className={styles.details}>
-                  <summary>
-                    <Settings2 size={15} />
-                    Brand &amp; author<span>Optional</span>
-                  </summary>
-                  <div className={styles.formStack}>
-                    <label>
-                      Website / brand name
-                      <input
-                        maxLength={100}
-                        value={w.brand.name}
-                        onChange={(e) =>
-                          update((now) =>
-                            patchWorkspace(now, {
-                              brand: {
-                                ...workspace(now).brand,
-                                name: e.target.value,
-                              },
-                            }),
-                          )
-                        }
-                      />
-                    </label>
-                    <label>
-                      Brand color
-                      <div className={styles.colorInput}>
-                        <input
-                          type="color"
-                          value={w.brand.color}
-                          onChange={(e) =>
-                            update((now) =>
-                              patchWorkspace(now, {
-                                brand: {
-                                  ...workspace(now).brand,
-                                  color: e.target.value,
-                                },
-                              }),
-                            )
-                          }
-                        />
-                        <span>{w.brand.color.toUpperCase()}</span>
-                      </div>
-                    </label>
-                    <div className={styles.logoRow}>
-                      {w.brand.logo && (
-                        <img src={w.brand.logo} alt="Your brand logo" />
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => logoInput.current?.click()}
-                      >
-                        <Upload size={14} />
-                        {w.brand.logo ? "Replace logo" : "Upload logo"}
-                      </button>
-                      {w.brand.logo && (
-                        <button
-                          type="button"
-                          aria-label="Remove logo"
-                          onClick={() =>
-                            update((now) =>
-                              patchWorkspace(now, {
-                                brand: {
-                                  ...workspace(now).brand,
-                                  logo: undefined,
-                                },
-                              }),
-                            )
-                          }
-                        >
-                          <X size={14} />
-                        </button>
-                      )}
-                    </div>
-                    <label>
-                      Author name
-                      <input
-                        maxLength={100}
-                        value={p.authorName}
-                        onChange={(e) => field("authorName", e.target.value)}
-                      />
-                    </label>
-                    <label>
-                      Website URL
-                      <ToolUrlInput
-                        type="url"
-                        maxLength={1500}
-                        value={p.brandSiteUrl}
-                        onChange={(e) => field("brandSiteUrl", e.target.value)}
-                        placeholder="https://your-site.com"
-                      />
-                    </label>
-                    <p className={styles.muted}>
-                      Branding applies to new visuals. Refresh existing images
-                      to update their branding.
-                    </p>
-                  </div>
-                </details>
-              </div>
-            )}
-
-            {tab === "outline" && (
-              <div className={styles.formStack}>
-                <div>
-                  <p className={styles.eyebrow}>02 · Shape the article</p>
-                  <h2>Your outline &amp; sections</h2>
-                  <p className={styles.muted}>
-                    Click any section to jump to it in the editor, edit
-                    headings, or generate remaining sections.
-                  </p>
-                </div>
-                {p.sections.length === 0 ? (
-                  <div className={styles.assetEmpty}>
-                    <ListTree size={28} />
-                    <p>
-                      Build an outline from your brief, or add your own section.
-                    </p>
-                  </div>
-                ) : (
-                  p.sections.map((s, i) => {
-                    const isWritten =
-                      Boolean(s.bodyMarkdown.trim()) ||
-                      s.subHeadings.some((h) => Boolean(h.bodyMarkdown.trim()));
-                    return (
-                      <div className={styles.outlineItem} key={s.id}>
-                        <div className={styles.outlineLabel}>
-                          <span>H2 · {String(i + 1).padStart(2, "0")}</span>
-                          <span>
-                            {isWritten ? (
-                              <>
-                                <Check size={13} /> Written
-                              </>
-                            ) : (
-                              "To write"
-                            )}
-                          </span>
-                        </div>
-                        <input
-                          aria-label={`Section ${i + 1} heading`}
-                          value={s.h2Text}
-                          maxLength={180}
-                          disabled={gen.busy}
-                          onChange={(e) => editOutline(s.id, e.target.value)}
-                        />
-                        <label className={styles.outlineSub}>
-                          H3 subheadings, one per line
-                          <textarea
-                            rows={Math.max(2, s.subHeadings.length)}
-                            disabled={gen.busy || Boolean(s.bodyMarkdown.trim())}
-                            value={s.subHeadings
-                              .map((h) => h.h3Text)
-                              .join("\n")}
-                            onChange={(e) =>
-                              update((now) =>
-                                patchWorkspace(
-                                  {
-                                    ...now,
-                                    sections: now.sections.map((x) =>
-                                      x.id === s.id
-                                        ? {
-                                            ...x,
-                                            subHeadings: e.target.value
-                                              .split("\n")
-                                              .slice(0, 8)
-                                              .map((h, n) => ({
-                                                id:
-                                                  x.subHeadings[n]?.id || id(),
-                                                h3Text: h,
-                                                keyPoints: [],
-                                                bodyMarkdown:
-                                                  x.subHeadings[n]
-                                                    ?.bodyMarkdown || "",
-                                              })),
-                                          }
-                                        : x,
-                                    ),
-                                  },
-                                  { document: undefined },
-                                ),
-                              )
-                            }
-                          />
-                        </label>
-                        <div className={styles.outlineActions}>
-                          <button
-                            type="button"
-                            aria-label={`Go to section ${i + 1}`}
-                            onClick={() => {
-                              setStudioUnlocked(true);
-                              editor.current?.section(s.id);
-                            }}
-                          >
-                            Go to section
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => openVisual(s.id)}
-                            title="Customize this section's infographic"
-                          >
-                            <ImageIcon size={12} />
-                            Visual
-                          </button>
-                          {[-1, 1].map((d) => (
-                            <button
-                              type="button"
-                              key={d}
-                              aria-label={`Move section ${i + 1} ${d < 0 ? "up" : "down"}`}
-                              disabled={
-                                gen.busy ||
-                                bodyPresent ||
-                                i + d < 0 ||
-                                i + d >= p.sections.length
-                              }
-                              onClick={() =>
-                                update((now) => {
-                                  const sections = [...now.sections];
-                                  [sections[i], sections[i + d]] = [
-                                    sections[i + d],
-                                    sections[i],
-                                  ];
-                                  return patchWorkspace(
-                                    {
-                                      ...now,
-                                      sections: sections.map((s, j) => ({
-                                        ...s,
-                                        orderIndex: j + 1,
-                                      })),
-                                    },
-                                    { document: undefined },
-                                  );
-                                })
-                              }
-                            >
-                              {d < 0 ? (
-                                <ArrowUp size={13} />
-                              ) : (
-                                <ArrowDown size={13} />
-                              )}
-                            </button>
-                          ))}
-                          <button
-                            type="button"
-                            aria-label={`Remove section ${i + 1}`}
-                            disabled={gen.busy || bodyPresent}
-                            onClick={() =>
-                              update((now) =>
-                                patchWorkspace(
-                                  {
-                                    ...now,
-                                    sections: now.sections.filter(
-                                      (x) => x.id !== s.id,
-                                    ),
-                                  },
-                                  { document: undefined },
-                                ),
-                              )
-                            }
-                          >
-                            <X size={13} />
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-                <button
-                  type="button"
-                  disabled={gen.busy || bodyPresent || p.sections.length >= 10}
-                  onClick={() =>
-                    update((now) =>
-                      patchWorkspace(
-                        {
-                          ...now,
-                          sections: [
-                            ...now.sections,
-                            makeSection(
-                              {
-                                heading: `New section ${now.sections.length + 1}`,
-                                subheadings: [],
-                              },
-                              now.sections.length,
-                            ),
-                          ],
-                        },
-                        { document: undefined },
-                      ),
-                    )
-                  }
-                >
-                  <Plus size={15} />
-                  Add section
-                </button>
-                <button
-                  type="button"
-                  className={styles.primary}
-                  disabled={
-                    gen.busy ||
-                    !missing ||
-                    p.sections.some((s) => s.h2Text.trim().length < 2)
-                  }
-                  onClick={async () => {
-                    await gen.draft();
-                    setStudioUnlocked(true);
-                  }}
-                >
-                  <Sparkles size={16} />
-                  {bodyPresent
-                    ? "Write remaining sections"
-                    : "Write my article"}
-                  <ChevronRight size={15} />
-                </button>
-                {bodyPresent && (
-                  <p className={styles.muted}>
-                    Your written sections are kept. Change structure directly in
-                    the editor to preserve your text.
-                  </p>
-                )}
-              </div>
-            )}
-
-            {tab === "review" && (
-              <div className={styles.formStack}>
-                <div>
-                  <p className={styles.eyebrow}>
-                    03 · Unified SEO &amp; Readability Scorecard
-                  </p>
-                  <h2>Article review</h2>
-                  <p className={styles.muted}>
-                    Live readability, structure, metadata, keyword, and visual
-                    checks to guide your edits.
-                  </p>
-                </div>
-                <div className={styles.scoreCard}>
-                  <div
-                    className={styles.scoreRing}
-                    style={{
-                      background: `conic-gradient(#10b981 ${report.score * 3.6}deg, rgba(148,163,184,0.2) 0)`,
-                    }}
                   >
-                    <span>
-                      {report.score}
-                      <small>/100</small>
-                    </span>
-                  </div>
-                  <div>
-                    <strong>Editorial &amp; SEO readiness</strong>
-                    <p>
-                      {report.words.toLocaleString()} words · {report.minutes}{" "}
-                      min read
-                    </p>
-                  </div>
+                    Retry step
+                  </button>
                 </div>
-                {report.checks.map((c) => (
-                  <div className={styles.checkRow} key={c.id}>
-                    <span
-                      className={c.ok ? styles.checkOk : styles.checkPending}
-                    >
-                      {c.ok ? <Check size={12} /> : <span>•</span>}
-                    </span>
-                    <div>
-                      <strong>{c.label}</strong>
-                      <p>{c.detail}</p>
-                    </div>
-                    <span>
-                      {c.ok ? c.weight : 0}/{c.weight}
-                    </span>
-                  </div>
-                ))}
-                <label className={styles.toggle}>
-                  <input
-                    type="checkbox"
-                    checked={highlights}
-                    onChange={(e) => setHighlights(e.target.checked)}
-                  />
-                  Highlight long sentences in the editor
-                </label>
-                <details className={styles.details}>
-                  <summary>How this score works</summary>
-                  <p className={styles.muted}>
-                    Readability 35 points, structure 20, metadata 20, topic
-                    alignment 10, reference presence 10, visuals 5. Source
-                    presence does not verify a claim. English readability
-                    heuristics may be less useful in other languages. No
-                    AI-detection or plagiarism score is claimed.
-                  </p>
-                </details>
-              </div>
-            )}
-          </div>
+              ) : null}
 
-          <div className={styles.sidebarFooter}>
-            <span className={styles.statusDot} />
-            <span>{statusLabel}</span>
-            {gen.busy && (
-              <button type="button" onClick={gen.stop}>
-                <Square size={12} />
-                Stop
-              </button>
-            )}
-          </div>
-        </aside>
-
-        {/* ZONE 1 (TOP META) + ZONE 3 (BIG RICH-TEXT & VISUAL EDITOR) */}
-        <main className={styles.editorColumn} aria-label="Article workspace">
-          {/* ZONE 1: Search Appearance (Recommended Meta Title & Description + Multiple Selectable Options) */}
-          <section className={styles.metaPanel} aria-label="Search appearance">
-            <div className={styles.metaTop}>
-              <div>
-                <p className={styles.eyebrow}>
-                  Search appearance · Recommended &amp; AI Alternatives
-                </p>
-                <h2>Meta Title, Meta Description &amp; URL Slug</h2>
-              </div>
-              <span className={styles.subtleTag}>
-                {p.metaPack.titleVariations.length
-                  ? `${p.metaPack.titleVariations.length} Title Options Ready`
-                  : "Editable"}
-              </span>
-            </div>
-
-            <div className={styles.metaFieldsGrid}>
-              <label>
-                Meta title (Recommended)
-                <span>
-                  {p.metaPack.metaTitle.length} chars · {titlePx}/580 px
-                </span>
-                <input
-                  maxLength={100}
-                  placeholder="Your search result title"
-                  value={p.metaPack.metaTitle}
-                  onChange={(e) => meta("metaTitle", e.target.value)}
-                />
-              </label>
-
-              <label>
-                URL slug
-                <span>Canonical path</span>
-                <input
-                  maxLength={180}
-                  value={p.metaPack.urlSlug}
-                  onChange={(e) =>
-                    meta("urlSlug", normalizeSeoSlug(e.target.value))
-                  }
-                  placeholder="your-article-slug"
-                />
-              </label>
-            </div>
-
-            <label>
-              Meta description (Recommended)
-              <span>
-                {p.metaPack.metaDescription.length} chars · {descPx}/920 px
-              </span>
-              <textarea
-                rows={2}
-                maxLength={220}
-                placeholder="A useful, honest summary of the article"
-                value={p.metaPack.metaDescription}
-                onChange={(e) => meta("metaDescription", e.target.value)}
-              />
-            </label>
-
-            <details
-              className={styles.metaDetails}
-              open={p.metaPack.titleVariations.length > 1}
-            >
-              <summary>
-                ✨ Switch Meta Title or Description Option (
-                {p.metaPack.titleVariations.length || 0} Title Options ·{" "}
-                {w.metaDescriptions.length || 0} Description Options) &amp;
-                Canonical URL
-              </summary>
-              <div className={styles.metaOptions}>
-                <div>
-                  <p className={styles.eyebrow}>
-                    Select a Meta Title Variation
-                  </p>
-                  {p.metaPack.titleVariations.length ? (
-                    p.metaPack.titleVariations.map((v, i) => (
-                      <button
-                        type="button"
-                        className={styles.option}
-                        aria-pressed={v.title === p.metaPack.metaTitle}
-                        key={i}
-                        onClick={() => meta("metaTitle", v.title)}
-                      >
-                        {v.title === p.metaPack.metaTitle && (
-                          <Check size={14} />
-                        )}
-                        <span>
-                          {i === 0 ? "★ Recommended: " : `Option ${i + 1}: `}
-                          {v.title}
-                        </span>
-                      </button>
-                    ))
-                  ) : (
-                    <p className={styles.muted}>
-                      Build an outline to get tailored title suggestions.
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <p className={styles.eyebrow}>
-                    Select a Meta Description Variation
-                  </p>
-                  {w.metaDescriptions.length ? (
-                    w.metaDescriptions.map((s, i) => (
-                      <button
-                        type="button"
-                        className={styles.option}
-                        aria-pressed={s === p.metaPack.metaDescription}
-                        key={i}
-                        onClick={() => meta("metaDescription", s)}
-                      >
-                        {s === p.metaPack.metaDescription && (
-                          <Check size={14} />
-                        )}
-                        <span>
-                          {i === 0 ? "★ Recommended: " : `Option ${i + 1}: `}
-                          {s}
-                        </span>
-                      </button>
-                    ))
-                  ) : (
-                    <p className={styles.muted}>
-                      Build an outline to get tailored meta description
-                      suggestions.
-                    </p>
-                  )}
-                </div>
-              </div>
-              <div className={styles.twoCols}>
-                <label>
-                  Canonical URL, if known
-                  <ToolUrlInput
-                    type="url"
-                    maxLength={1500}
-                    value={p.metaPack.canonicalUrl}
-                    onChange={(e) => meta("canonicalUrl", e.target.value)}
-                    placeholder="https://your-site.com/article"
-                  />
-                </label>
-                <div className={styles.serpPreviewMini}>
-                  <p className={styles.eyebrow}>Live Google SERP Preview</p>
-                  <strong>
-                    {p.metaPack.metaTitle ||
-                      p.metaPack.h1Title ||
-                      "Your Article Title"}
-                  </strong>
-                  <span>
-                    {safeUrl(p.metaPack.canonicalUrl) ||
-                      `https://doitwithai.tools/${p.metaPack.urlSlug || "article-slug"}`}
+              {/* PHASE 5: CONTENT ORGANIZER — CLICKABLE TOC & 50-WORD AEO DIRECT ANSWER */}
+              {p.sections.length > 0 ? (
+                <div className={styles.tocStrip} aria-label="Table of contents">
+                  <span className={styles.tocLabel}>
+                    <ListTree size={14} /> Contents:
                   </span>
-                  <p>
-                    {p.metaPack.metaDescription ||
-                      "Your meta description will appear here in search results."}
-                  </p>
-                </div>
-              </div>
-            </details>
-          </section>
-
-          {w.run.error && !gen.busy && (
-            <div className={styles.error} role="alert">
-              <div>
-                <strong>{statusLabel}</strong>
-                <p>{w.run.error}</p>
-              </div>
-              <button
-                type="button"
-                onClick={() =>
-                  missing && p.sections.length
-                    ? void gen.draft()
-                    : void gen.plan()
-                }
-              >
-                Retry step
-              </button>
-            </div>
-          )}
-
-          {/* ZONE 3: BIG RICH TEXT & INLINE VISUAL ARTICLE EDITOR HEADER */}
-          <div className={styles.editorLabel}>
-            <span>
-              <FileText size={15} />
-              Rich Article &amp; Inline Visual Editor
-            </span>
-            <div className={styles.editorQuickBar}>
-              <span className={styles.wordCountPill}>
-                {report.words.toLocaleString()} words · {report.minutes} min
-                read
-              </span>
-              {report.words > 0 && (
-                <div
-                  className={styles.quickDownloadRow}
-                  aria-label="Quick article downloads"
-                >
-                  {["pdf", "docx", "html", "markdown"].map((fmt) => (
+                  {p.sections.map((sec, idx) => (
                     <button
-                      key={fmt}
+                      key={sec.id}
                       type="button"
-                      disabled={Boolean(exportBusy)}
-                      onClick={() => void handleQuickExport(fmt)}
-                      title={`Download article as ${fmt.toUpperCase()}`}
+                      className={styles.tocPill}
+                      onClick={() => editor.current?.section(sec.id)}
                     >
-                      <FileDown size={12} />
-                      {fmt === "markdown" ? "MD" : fmt.toUpperCase()}
+                      {idx + 1}. {sec.h2Text}
                     </button>
                   ))}
                 </div>
-              )}
-              <button
-                type="button"
-                className={styles.textButton}
-                onClick={() => {
-                  setTab("review");
-                  setFocus(false);
-                }}
-              >
-                Review checks ({report.score}/100)
-                <ChevronRight size={13} />
-              </button>
-            </div>
-          </div>
+              ) : null}
 
-          <ArticleEditor
-            key={p.projectId}
-            ref={editor}
-            project={p}
-            highlights={highlights}
-            onChange={(doc: RichNode) =>
-              update((now) => syncDocument(now, doc))
-            }
-            onEditVisual={openVisual}
-            onSelection={setSelection}
-          />
-
-          <div className={styles.assistantBar}>
-            <span>
-              <Sparkles size={15} />
-              Revise a passage
-            </span>
-            <input
-              aria-label="Revision instruction"
-              maxLength={2000}
-              value={instruction}
-              onChange={(e) => setInstruction(e.target.value)}
-            />
-            <button
-              type="button"
-              disabled={
-                !selection.trim() ||
-                !instruction.trim() ||
-                rewriteBusy ||
-                gen.busy
-              }
-              onClick={() => void requestRewrite()}
-            >
-              {rewriteBusy ? (
-                <Loader2 size={14} className={styles.spinIcon} />
-              ) : (
-                <Sparkles size={14} />
-              )}
-              Suggest revision
-            </button>
-          </div>
-
-          {rewrite && (
-            <section
-              className={styles.rewritePreview}
-              aria-label="Suggested revision"
-            >
-              <div>
-                <h3>Review the suggested revision</h3>
-                <button
-                  type="button"
-                  aria-label="Dismiss revision"
-                  onClick={() => setRewrite(null)}
+              {(p.metaPack.aeoDirectAnswer50Words || w.quickAnswerBox) && (
+                <section
+                  className={styles.aeoAnswerCard}
+                  aria-label="50-word quick answer box"
                 >
-                  <X size={15} />
-                </button>
-              </div>
-              <textarea
-                aria-label="Suggested text"
-                rows={5}
-                value={rewrite.text}
-                onChange={(e) =>
-                  setRewrite({ ...rewrite, text: e.target.value })
+                  <div className={styles.aeoAnswerHeader}>
+                    <span>
+                      <Sparkles size={13} /> 50-Word AEO Direct Answer Box
+                    </span>
+                    <small>Featured Snippet / Direct Answer Summary</small>
+                  </div>
+                  <textarea
+                    rows={2}
+                    className={styles.aeoAnswerInput}
+                    value={
+                      p.metaPack.aeoDirectAnswer50Words || w.quickAnswerBox || ""
+                    }
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      update((now) =>
+                        patchWorkspace(
+                          {
+                            ...now,
+                            metaPack: {
+                              ...now.metaPack,
+                              aeoDirectAnswer50Words: val,
+                            },
+                          },
+                          { quickAnswerBox: val },
+                        ),
+                      );
+                    }}
+                  />
+                </section>
+              )}
+
+              {/* PHASE 5: 16:9 HORIZONTAL FEATURED BANNER & WCAG ALT TEXT AGENT */}
+              <FeaturedBannerArtwork
+                project={p}
+                onUpdateBanner={(patch) =>
+                  update((now) =>
+                    patchWorkspace(now, {
+                      featuredBanner: {
+                        ...(workspace(now).featuredBanner || {
+                          headline: now.metaPack.h1Title || now.projectTitle,
+                          subheadline: now.metaPack.metaDescription,
+                          altText: now.metaPack.h1Title || now.projectTitle,
+                          aspectRatio: "16:9",
+                          width: 1200,
+                          height: 630,
+                        }),
+                        ...patch,
+                      },
+                    }),
+                  )
                 }
               />
-              <div className={styles.buttonRow}>
-                <button
-                  type="button"
-                  className={styles.primary}
-                  onClick={() => {
-                    if (articleRevision(current.current) !== rewrite.revision) {
-                      setMessage(
-                        "The article changed after this suggestion. Select the passage again to request a fresh revision.",
-                      );
-                      return;
-                    }
-                    editor.current?.replace(
-                      rewrite.from,
-                      rewrite.to,
-                      rewrite.text,
-                    );
-                    setRewrite(null);
-                  }}
-                >
-                  Apply to selection
-                </button>
-                <button type="button" onClick={() => setRewrite(null)}>
-                  Keep original
-                </button>
+
+              {/* ZONE 3: RICH H1-H6 ARTICLE EDITOR WITH EMBEDDED READABILITY & RIGHT-CLICK TELL AI */}
+              <div className={styles.editorLabel}>
+                <span>
+                  <FileText size={15} />
+                  Rich H1–H6 Article &amp; Inline Visual Editor
+                </span>
+                <div className={styles.editorQuickBar}>
+                  <span className={styles.wordCountPill}>
+                    {report.words.toLocaleString()} words · {report.minutes} min
+                    read
+                  </span>
+                  {report.words > 0 && (
+                    <div
+                      className={styles.quickDownloadRow}
+                      aria-label="Quick article downloads"
+                    >
+                      {["pdf", "docx", "html", "markdown"].map((fmt) => (
+                        <button
+                          key={fmt}
+                          type="button"
+                          disabled={Boolean(exportBusy)}
+                          onClick={() => void handleQuickExport(fmt)}
+                          title={`Download article as ${fmt.toUpperCase()}`}
+                        >
+                          <FileDown size={12} />
+                          {fmt === "markdown" ? "MD" : fmt.toUpperCase()}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-            </section>
+
+              <ArticleEditor
+                key={p.projectId}
+                ref={editor}
+                project={p}
+                highlights={Object.values(highlightToggles).some(Boolean)}
+                highlightToggles={highlightToggles}
+                targetGrade={targetGrade}
+                onChange={(doc: RichNode) =>
+                  update((now) => syncDocument(now, doc))
+                }
+                onEditVisual={openVisual}
+                onSelection={setSelection}
+                onTellAi={(inst, range, openTab) => {
+                  if (openTab) setLeftTab("helper");
+                  setFocus(false);
+                  if (range.text.trim()) setSelection(range.text);
+                  if (inst.trim()) {
+                    void requestRewrite(inst, "selection", range);
+                  }
+                }}
+              />
+
+              {/* PHASE 5: STRUCTURED FAQ SECTION & SCHEMA ORGANIZER */}
+              <section
+                className={styles.faqOrganizerCard}
+                aria-label="Structured FAQ accordion"
+              >
+                <div className={styles.faqOrganizerHeader}>
+                  <div>
+                    <p className={styles.eyebrow}>FAQPage Rich Schema</p>
+                    <h3>Frequently Asked Questions ({p.faqs.length})</h3>
+                  </div>
+                  <button
+                    type="button"
+                    className={styles.inlineToggleBtn}
+                    onClick={() =>
+                      update((now) => ({
+                        ...now,
+                        faqs: [
+                          ...now.faqs,
+                          {
+                            id: id(),
+                            question: "What should readers know next?",
+                            answer: "Add a clear, direct 2-sentence answer here.",
+                          },
+                        ],
+                      }))
+                    }
+                  >
+                    <Plus size={13} /> Add FAQ Item
+                  </button>
+                </div>
+                {p.faqs.length ? (
+                  <div className={styles.faqList}>
+                    {p.faqs.map((faq, idx) => (
+                      <div key={faq.id || idx} className={styles.faqItemBox}>
+                        <div className={styles.faqItemTop}>
+                          <input
+                            className={styles.input}
+                            value={faq.question}
+                            aria-label={`FAQ question ${idx + 1}`}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              update((now) => ({
+                                ...now,
+                                faqs: now.faqs.map((f, i) =>
+                                  i === idx ? { ...f, question: val } : f,
+                                ),
+                              }));
+                            }}
+                          />
+                          <button
+                            type="button"
+                            className={styles.iconDangerBtn}
+                            aria-label={`Delete FAQ ${idx + 1}`}
+                            onClick={() =>
+                              update((now) => ({
+                                ...now,
+                                faqs: now.faqs.filter((_, i) => i !== idx),
+                              }))
+                            }
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                        <textarea
+                          rows={2}
+                          className={styles.area}
+                          value={faq.answer}
+                          aria-label={`FAQ answer ${idx + 1}`}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            update((now) => ({
+                              ...now,
+                              faqs: now.faqs.map((f, i) =>
+                                i === idx ? { ...f, answer: val } : f,
+                              ),
+                            }));
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className={styles.leftMetaSub}>
+                    FAQs are auto-generated after drafting and populate FAQPage JSON-LD schema automatically.
+                  </p>
+                )}
+              </section>
+
+              <p className={styles.editorFootnote}>
+                Right-click any paragraph or highlight text to &ldquo;Tell AI about it&rdquo;. Click any inline section infographic to customize its layout and WCAG alt text.
+              </p>
+            </main>
+          </div>
+
+          {!focus && (
+            <AssetDeck
+              key={p.projectId}
+              project={p}
+              onChange={update}
+              onEditVisual={openVisual}
+              onInsertVisual={(sid) => {
+                editor.current?.insertVisual(sid);
+                editor.current?.section(sid);
+              }}
+            />
           )}
-
-          <p className={styles.editorFootnote}>
-            Your draft stays editable. Click any inline section infographic to
-            customize its layout, explanations, or color palette, or scroll
-            below for social media cards, carousels, newsletters, and downloads.
-          </p>
-        </main>
-      </div>
-
-      {/* ZONE 4 (BOTTOM): OMNICHANNEL SOCIAL, VISUALS, CAROUSEL, NEWSLETTER & DOWNLOADS SUITE */}
-      {!focus && (
-        <AssetDeck
-          key={p.projectId}
-          project={p}
-          onChange={update}
-          onEditVisual={openVisual}
-          onInsertVisual={(sid) => {
-            editor.current?.insertVisual(sid);
-            editor.current?.section(sid);
-          }}
-        />
+        </>
       )}
+
+      <BriefSettingsModal
+        open={briefModalOpen}
+        project={p}
+        sourceUrl={sourceUrl}
+        sourceBusy={sourceBusy}
+        onChangeSourceUrl={setSourceUrl}
+        onAddSource={() => void source()}
+        onClose={() => setBriefModalOpen(false)}
+        onPatchProject={(patch) => update((now) => ({ ...now, ...patch }))}
+        onPatchWorkspace={(patch) => update((now) => patchWorkspace(now, patch))}
+        onEditSectionTitle={editOutline}
+        onTriggerLogoUpload={() => logoInput.current?.click()}
+        onRebuildPlan={() => void gen.plan()}
+        onDraftMissing={() => void gen.draft()}
+        busy={gen.busy}
+      />
 
       {visualSection &&
         typeof document !== "undefined" &&
