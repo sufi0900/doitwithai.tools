@@ -267,19 +267,22 @@
 }
 .workspaceGrid {
   display: grid;
-  grid-template-columns: 312px minmax(0, 1fr);
+  grid-template-columns: 356px minmax(0, 1fr);
   gap: 0;
   align-items: start;
+  position: relative;
 }
 .sidebar {
   background: #fafbfe;
   border-right: 1px solid var(--line);
   position: sticky;
-  top: 96px;
+  top: 84px;
   display: flex;
   flex-direction: column;
-  max-height: calc(100dvh - 112px);
-  min-height: 650px;
+  max-height: calc(100dvh - 100px);
+  min-height: 520px;
+  overflow: hidden;
+  z-index: 8;
 }
 .sideTabs {
   display: flex;
@@ -1310,10 +1313,10 @@
 }
 @media (min-width: 1600px) {
   .workspaceGrid {
-    grid-template-columns: 340px minmax(0, 1fr);
+    grid-template-columns: 376px minmax(0, 1fr);
   }
   .sidebar {
-    min-height: 730px;
+    min-height: 540px;
   }
   .sideBody {
     padding: 24px;
@@ -1340,7 +1343,7 @@
     gap: 6px;
   }
   .workspaceGrid {
-    grid-template-columns: 280px minmax(0, 1fr);
+    grid-template-columns: 300px minmax(0, 1fr);
   }
   .sideBody {
     padding: 20px 16px;
@@ -1665,6 +1668,9 @@
 }
 .assetDeck {
   scroll-margin-top: 100px;
+  position: relative;
+  z-index: 12;
+  clear: both;
 }
 
 /* ============================================================================
@@ -2285,8 +2291,7 @@
 }
 
 .darkShell .skeletonContainer {
-  background: rgba(9, 15, 29, 0.65);
-}
+  background: rgba(9, 15, 29, 0.65);\n}
 
 .skeletonHeaderRow {
   display: flex;
@@ -2512,7 +2517,8 @@
   .onboardingAdvancedGrid,
   .metaGrid,
   .variationsGrid,
-  .theatreGrid {
+  .theatreGrid,
+  .theatreWorkbenchGrid {
     grid-template-columns: 1fr;
   }
 }
@@ -2938,11 +2944,153 @@
 /* Redesigned Left Studio Panel (AI Helper / Readability / SEO & Links) */
 .leftHeaderBar {
   display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+}
+.leftScoreHeaderTop {
+  display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 12px 14px;
-  border-bottom: 1px solid var(--line);
+}
+.leftScoreProgressWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.leftScoreProgressLabels {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--muted);
+}
+.leftScoreProgressLabels strong {
+  color: var(--ink);
+  font-weight: 800;
+}
+.scoreGaugeTrack {
+  width: 100%;
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.22);
+  overflow: hidden;
+}
+.scoreGaugeFillGood {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #10b981, #06b6d4);
+  transition: width 300ms ease;
+}
+.scoreGaugeFillWarn {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #f59e0b, #eab308);
+  transition: width 300ms ease;
+}
+.scoreGaugeFillLow {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #6366f1, #8b5cf6);
+  transition: width 300ms ease;
+}
+.checkItemCard {
+  padding: 9px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: rgba(148, 163, 184, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.darkShell .checkItemCard {
+  border-color: #243352;
+  background: #0d1629;
+}
+.checkItemHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 11px;
+}
+.checkItemTitleWrap {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.checkPtsGood {
+  font-size: 10px;
+  font-weight: 800;
+  color: #10b981;
+}
+.checkPtsWarn {
+  font-size: 10px;
+  font-weight: 700;
+  color: #f59e0b;
+}
+.checkItemDetail {
+  font-size: 10px;
+  color: var(--muted);
+  display: block;
+}
+.checkMiniBarTrack {
+  width: 100%;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.2);
+  overflow: hidden;
+}
+.theatreWorkbenchGrid {
+  display: grid;
+  grid-template-columns: 1fr 1.25fr;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+.theatreSpotlightCard {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(99, 102, 241, 0.45);
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.16), rgba(6, 182, 212, 0.08));
+}
+.theatreSpotlightIconWrap {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: rgba(99, 102, 241, 0.24);
+  color: #818cf8;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.theatreOrbitDot {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 11px;
+  height: 11px;
+  border-radius: 999px;
+  background: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.28);
+}
+.theatreSpotlightBody {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.theatreSpotlightBody strong {
+  font-size: 15px;
+}
+.theatreSpotlightBody p {
+  font-size: 12px;
+  color: var(--muted);
 }
 .darkShell .leftHeaderBar {
   border-bottom-color: #23324f;
@@ -3007,10 +3155,15 @@
   background: rgba(99, 102, 241, 0.16) !important;
 }
 .panelSection {
-  padding: 14px;
+  padding: 14px 16px 28px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
 }
 .helperScopeRow {
   display: flex;
