@@ -12,6 +12,7 @@ import {
   Wand2,
   X,
   AlertTriangle,
+  Zap,
 } from "lucide-react";
 import {
   analyzeDocument,
@@ -39,8 +40,8 @@ export type ReadabilityHighlightToggles = {
 };
 
 const QUICK_AI_CHIPS = [
-  { label: "Tighten & clarify", prompt: "Make this clearer, tighter, and eliminate filler words while preserving every fact." },
-  { label: "Shorten hard sentences", prompt: "Break long complex sentences into short, direct, high-readability sentences." },
+  { label: "Tighten & clarify", prompt: "Make this clearer, tighter, and eliminate filler words while preserving every fact and Markdown heading." },
+  { label: "Shorten hard sentences", prompt: "Break long complex sentences into short, direct, high-readability 14-word sentences and keep all headings on separate lines." },
   { label: "Convert to bullets", prompt: "Convert dense prose here into crisp scannable bullet points with bold lead-ins." },
   { label: "Add concrete example", prompt: "Keep the meaning intact and add one clear practical example to make it actionable." },
   { label: "Convert to table", prompt: "Organize this comparison or structured criteria into a clean Markdown table." },
@@ -59,6 +60,7 @@ export function LeftStudioPanel({
   onChangeTargetGrade,
   onOpenBriefModal,
   onRunAiHelper,
+  onQuickReadabilityPolish,
   onApplyRevision,
   onDiscardRevision,
   onInsertLink,
@@ -82,6 +84,7 @@ export function LeftStudioPanel({
   onChangeTargetGrade: (grade: number) => void;
   onOpenBriefModal: () => void;
   onRunAiHelper: (instruction: string, scope: "selection" | "article") => void;
+  onQuickReadabilityPolish?: () => void;
   onApplyRevision: () => void;
   onDiscardRevision: () => void;
   onInsertLink: (title: string, url: string) => void;
@@ -158,28 +161,73 @@ export function LeftStudioPanel({
   );
 
   const countFlagged = (type: IssueType) => docAnalysis.counts[type] || 0;
+  const totalSentences = Math.max(1, r.readability.sentences.length);
+  const readableSentencePct =
+    r.words > 0
+      ? Math.max(
+          0,
+          Math.min(
+            100,
+            Math.round(
+              ((totalSentences - r.readability.longSentences.length) /
+                totalSentences) *
+                100,
+            ),
+          ),
+        )
+      : 0;
+  const keywordHitsCount = secondaryKws.filter((t) =>
+    lowerMd.includes(t.toLowerCase()),
+  ).length;
+  const keywordCoveragePct = secondaryKws.length
+    ? Math.round((keywordHitsCount / Math.min(14, secondaryKws.length)) * 100)
+    : kw && lowerMd.includes(kw.toLowerCase())
+      ? 100
+      : 0;
 
   return (
     <aside className={s.sidebar} aria-label="Editorial studio controls">
       <div className={s.leftHeaderBar}>
-        <div className={s.scoreBar}>
-          <span className={s.scoreNum}>{r.score}</span>
-          <div>
-            <strong>Readiness &amp; SEO Score</strong>
-            <div className={s.leftMetaSub}>
-              {r.words.toLocaleString()} words · {formatDuration(docAnalysis.readingSeconds)} read
+        <div className={s.leftScoreHeaderTop}>
+          <div className={s.scoreBar}>
+            <span className={s.scoreNum}>{r.score}</span>
+            <div>
+              <strong>Readiness &amp; SEO Score</strong>
+              <div className={s.leftMetaSub}>
+                {r.words.toLocaleString()} words · {formatDuration(docAnalysis.readingSeconds)} read
+              </div>
             </div>
           </div>
+          <button
+            type="button"
+            className={s.briefTriggerBtn}
+            onClick={onOpenBriefModal}
+            title="Edit onboarding brief, outline headings, brand & references"
+          >
+            <SlidersHorizontal className="w-3.5 h-3.5" aria-hidden />
+            Brief
+          </button>
         </div>
-        <button
-          type="button"
-          className={s.briefTriggerBtn}
-          onClick={onOpenBriefModal}
-          title="Edit onboarding brief, outline headings, brand & references"
-        >
-          <SlidersHorizontal className="w-3.5 h-3.5" aria-hidden />
-          Brief
-        </button>
+
+        {/* Visual Overall Readiness Progress Bar */}
+        <div className={s.leftScoreProgressWrap}>
+          <div className={s.leftScoreProgressLabels}>
+            <span>Editorial &amp; Technical Readiness</span>
+            <strong>{r.score}/100</strong>
+          </div>
+          <div className={s.scoreGaugeTrack} aria-hidden>
+            <div
+              className={
+                r.score >= 80
+                  ? s.scoreGaugeFillGood
+                  : r.score >= 55
+                    ? s.scoreGaugeFillWarn
+                    : s.scoreGaugeFillLow
+              }
+              style={{ width: `${Math.max(4, Math.min(100, r.score))}%` }}
+            />
+          </div>
+        </div>
       </div>
 
       <div className={s.tabs3} role="tablist" aria-label="Studio assistant panels">
@@ -344,6 +392,23 @@ export function LeftStudioPanel({
             </div>
           </div>
 
+          <div className={s.leftScoreProgressWrap}>
+            <div className={s.leftScoreProgressLabels}>
+              <span>Sentence Clarity Rate (&le;25w)</span>
+              <strong>{readableSentencePct}%</strong>
+            </div>
+            <div className={s.scoreGaugeTrack} aria-hidden>
+              <div
+                className={
+                  readableSentencePct >= 80
+                    ? s.scoreGaugeFillGood
+                    : s.scoreGaugeFillWarn
+                }
+                style={{ width: `${Math.max(5, readableSentencePct)}%` }}
+              />
+            </div>
+          </div>
+
           <div>
             <label className={s.label} htmlFor="readability-target-grade">
               Target Reading Audience
@@ -407,6 +472,16 @@ export function LeftStudioPanel({
             <div>Longest sentence: <strong>{docAnalysis.longestSentenceWords}w</strong></div>
           </div>
 
+          {onQuickReadabilityPolish ? (
+            <button
+              type="button"
+              className={`${s.btn} ${s.primary} ${s.fullWidthBtn}`}
+              onClick={onQuickReadabilityPolish}
+            >
+              <Zap className="w-4 h-4" aria-hidden /> Instant Auto-Split Long Sentences &amp; Headings
+            </button>
+          ) : null}
+
           {countFlagged("veryHard") + countFlagged("hard") > 0 ? (
             <button
               type="button"
@@ -415,7 +490,7 @@ export function LeftStudioPanel({
               onClick={() => {
                 onChangeTab("helper");
                 onRunAiHelper(
-                  `Improve readability to Grade ${targetGrade}: shorten sentences over 20 words, replace passive voice with active verbs, and keep paragraphs scannable without losing facts.`,
+                  `Improve readability to Grade ${targetGrade}: shorten sentences over 18 words, add bullet points with bold lead-ins, keep all ## and ### headings on their own lines, and preserve all facts.`,
                   "article",
                 );
               }}
@@ -457,6 +532,23 @@ export function LeftStudioPanel({
               <div className={s.leftMetaSub}>No focus keyword set yet.</div>
             )}
 
+            <div className={s.leftScoreProgressWrap}>
+              <div className={s.leftScoreProgressLabels}>
+                <span>Semantic Entity Coverage</span>
+                <strong>{keywordCoveragePct}%</strong>
+              </div>
+              <div className={s.scoreGaugeTrack} aria-hidden>
+                <div
+                  className={
+                    keywordCoveragePct >= 65
+                      ? s.scoreGaugeFillGood
+                      : s.scoreGaugeFillWarn
+                  }
+                  style={{ width: `${Math.max(6, keywordCoveragePct)}%` }}
+                />
+              </div>
+            </div>
+
             {secondaryKws.length ? (
               <div className={s.entityCloud}>
                 {secondaryKws.slice(0, 14).map((term) => {
@@ -484,7 +576,7 @@ export function LeftStudioPanel({
               </strong>
               <span className={s.leftMetaSub}>
                 {(() => {
-                  if (!project.brandSiteUrl) return "Add site in Brief";
+                  if (!project.brandSiteUrl) return "doitwithai.tools";
                   try {
                     return new URL(
                       /^https?:\/\//i.test(project.brandSiteUrl)
@@ -523,7 +615,7 @@ export function LeftStudioPanel({
               </div>
             ) : (
               <p className={s.leftMetaSub}>
-                Add your website URL in Brief &amp; Settings and click Refresh Research to discover real internal pages to interlink.
+                Click <strong>Refresh Research</strong> above to discover verified internal pages to interlink.
               </p>
             )}
           </div>
@@ -537,23 +629,31 @@ export function LeftStudioPanel({
             </div>
             {externalLinks.length ? (
               <div className={s.linkSuggestionList}>
-                {externalLinks.slice(0, 6).map((ext) => (
-                  <div key={ext.url} className={s.linkCard}>
-                    <strong>{ext.title}</strong>
-                    <div className={s.linkUrlText}>{ext.url}</div>
-                    <button
-                      type="button"
-                      className={s.insertLinkBtn}
-                      onClick={() => onInsertLink(ext.title, ext.url)}
-                    >
-                      Cite reference in editor
-                    </button>
-                  </div>
-                ))}
+                {externalLinks.slice(0, 6).map((ext) => {
+                  const alreadyCited = md.includes(ext.url);
+                  return (
+                    <div key={ext.url} className={s.linkCard}>
+                      <div className={s.linkCardTop}>
+                        <strong>{ext.title}</strong>
+                        <span className={alreadyCited ? s.kwHitBadge : s.linkNewBadge}>
+                          {alreadyCited ? "Cited" : "Verified"}
+                        </span>
+                      </div>
+                      <div className={s.linkUrlText}>{ext.url}</div>
+                      <button
+                        type="button"
+                        className={s.insertLinkBtn}
+                        onClick={() => onInsertLink(ext.title, ext.url)}
+                      >
+                        Cite reference in editor
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             ) : (
               <p className={s.leftMetaSub}>
-                Public reference citations and custom source URLs appear here.
+                Click <strong>Refresh Research</strong> to load verified authority citations.
               </p>
             )}
           </div>
@@ -564,15 +664,29 @@ export function LeftStudioPanel({
               <span>{r.score}/100</span>
             </div>
             <div className={s.checklist}>
-              {r.checks.map((c) => (
-                <div key={c.id} className={s.checkItem}>
-                  <span className={c.ok ? s.okDot : s.warnDot} />
-                  <div>
-                    <strong>{c.label}</strong>
-                    <small>{c.detail}</small>
+              {r.checks.map((c) => {
+                const itemPct = c.ok ? 100 : r.words > 0 ? 38 : 0;
+                return (
+                  <div key={c.id} className={s.checkItemCard}>
+                    <div className={s.checkItemHeader}>
+                      <div className={s.checkItemTitleWrap}>
+                        <span className={c.ok ? s.okDot : s.warnDot} />
+                        <strong>{c.label}</strong>
+                      </div>
+                      <span className={c.ok ? s.checkPtsGood : s.checkPtsWarn}>
+                        {c.ok ? `${c.weight}/${c.weight} pts` : `0/${c.weight} pts`}
+                      </span>
+                    </div>
+                    <small className={s.checkItemDetail}>{c.detail}</small>
+                    <div className={s.checkMiniBarTrack} aria-hidden>
+                      <div
+                        className={c.ok ? s.scoreGaugeFillGood : s.scoreGaugeFillWarn}
+                        style={{ width: `${itemPct}%` }}
+                      />
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>

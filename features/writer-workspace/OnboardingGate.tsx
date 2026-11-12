@@ -259,11 +259,11 @@ export function OnboardingGate({
                   onPatchWorkspace({ brand: { ...w.brand, color: e.target.value } })
                 }
               >
-                <option value="Indigo">Royal Indigo</option>
-                <option value="Emerald">Emerald Data</option>
-                <option value="Amber">Warm Editorial Amber</option>
-                <option value="Rose">Vibrant Rose</option>
-                <option value="Slate">Executive Slate</option>
+                <option value="#5271FF">Royal Indigo</option>
+                <option value="#10B981">Emerald Data</option>
+                <option value="#F59E0B">Warm Editorial Amber</option>
+                <option value="#F43F5E">Vibrant Rose</option>
+                <option value="#475569">Executive Slate</option>
               </select>
             </div>
           </div>

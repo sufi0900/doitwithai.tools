@@ -259,11 +259,11 @@ export function BriefSettingsModal({
                       })
                     }
                   >
-                    <option value="Indigo">Indigo</option>
-                    <option value="Emerald">Emerald</option>
-                    <option value="Amber">Amber</option>
-                    <option value="Rose">Rose</option>
-                    <option value="Slate">Slate</option>
+                    <option value="#5271FF">Indigo</option>
+                    <option value="#10B981">Emerald</option>
+                    <option value="#F59E0B">Amber</option>
+                    <option value="#F43F5E">Rose</option>
+                    <option value="#475569">Slate</option>
                   </select>
                   <button
                     type="button"

@@ -20,6 +20,7 @@ import {
   Instagram,
   Linkedin,
   Facebook,
+  Sparkles,
 } from "lucide-react";
 import { workspace } from "./model";
 import type { PipelineStageId, Project } from "./types";
@@ -55,12 +56,17 @@ export function AgentPipelineTheatre({
   const doneCount = stages.filter(
     (st) => st.status === "done" || st.status === "skipped",
   ).length;
+  const activeStage =
+    stages.find((st) => st.status === "active") ||
+    stages[Math.min(stages.length - 1, doneCount)];
+  const ActiveIcon = activeStage ? STAGE_ICONS[activeStage.id] || Sparkles : Sparkles;
   const totalSections = project.sections.length;
   const completedSections = run.completed?.length || 0;
+  const currentSecObj = project.sections.find((sec) => sec.id === run.current);
   const progressPct = Math.min(
     98,
     Math.max(
-      8,
+      10,
       Math.round(
         ((doneCount + (totalSections ? completedSections / totalSections : 0)) /
           (stages.length + 1)) *
@@ -81,18 +87,18 @@ export function AgentPipelineTheatre({
         <div>
           <div className={s.theatrePulseBadge}>
             <span className={s.pulseDot} aria-hidden />
-            {busy ? "Multi-Agent Pipeline Active" : "Pipeline Checkpoint"}
+            {busy ? `Multi-Agent Pipeline Active · ${progressPct}% Complete` : "Pipeline Checkpoint"}
           </div>
           <h2 className={s.theatreTitle}>
             {run.stageLabel || "Orchestrating specialized AI editorial agents..."}
           </h2>
-          {run.current ? (
+          {currentSecObj ? (
             <p className={s.theatreSub}>
-              Currently drafting section: <strong>{run.current}</strong> ({completedSections}/{Math.max(1, totalSections)})
+              ✍️ Writing H2 section: <strong>{currentSecObj.h2Text}</strong> ({completedSections + 1} of {Math.max(1, totalSections)}) &amp; composing its inline section infographic…
             </p>
           ) : (
             <p className={s.theatreSub}>
-              Your studio unlocks automatically with your article, 16:9 banner, alt texts, internal links, and 9 social adapters ready.
+              Your studio unlocks automatically with your H1–H6 article, 16:9 hero banner, inline infographics, internal/external links, and 9 social adapters ready.
             </p>
           )}
         </div>
@@ -109,8 +115,73 @@ export function AgentPipelineTheatre({
         />
       </div>
 
+      {/* Active Sub-Agent Spotlight & Shimmer Writing Canvas */}
+      <div className={s.theatreWorkbenchGrid}>
+        <div className={s.theatreSpotlightCard}>
+          <div className={s.theatreSpotlightIconWrap}>
+            <ActiveIcon className="w-6 h-6" aria-hidden />
+            <span className={s.theatreOrbitDot} aria-hidden />
+          </div>
+          <div className={s.theatreSpotlightBody}>
+            <span className={s.eyebrow}>
+              Active Sub-Agent ({Math.min(stages.length, doneCount + 1)} of {stages.length})
+            </span>
+            <strong>{activeStage?.label || "AI Content Writer Agent"}</strong>
+            <p>
+              {activeStage?.detail ||
+                (currentSecObj
+                  ? `Structuring "${currentSecObj.h2Text}" with short sentences, bullet points & section visual`
+                  : "Analyzing search intent, verified links, and editorial hierarchy")}
+            </p>
+          </div>
+        </div>
+
+        <div className={s.skeletonContainer} aria-hidden>
+          <div className={s.skeletonHeaderRow}>
+            <div className={s.skeletonPill} />
+            <div className={s.skeletonTitleBar} />
+          </div>
+          <div className={s.skeletonParagraph}>
+            <div className={s.skeletonLineFull} />
+            <div className={s.skeletonLineFull} />
+            <div className={s.skeletonLineMedium} />
+          </div>
+          {project.sections.length > 0 ? (
+            <div className={s.skeletonSectionChips}>
+              {project.sections.map((sec, idx) => {
+                const isDone =
+                  Boolean(sec.bodyMarkdown.trim()) ||
+                  sec.subHeadings.some((h) => Boolean(h.bodyMarkdown.trim()));
+                const isCurrent = sec.id === run.current;
+                return (
+                  <div
+                    key={sec.id}
+                    className={`${s.skeletonChip} ${
+                      isDone
+                        ? s.skeletonChipDone
+                        : isCurrent
+                          ? s.skeletonChipCurrent
+                          : ""
+                    }`}
+                  >
+                    {isDone ? (
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                    ) : isCurrent ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <span>{idx + 1}</span>
+                    )}
+                    <span>{sec.h2Text}</span>
+                  </div>
+                );
+              })}
+            </div>
+          ) : null}
+        </div>
+      </div>
+
       <div className={s.theatreGrid}>
-        {stages.map((stage) => {
+        {stages.map((stage, idx) => {
           const Icon = STAGE_ICONS[stage.id] || BrainCircuit;
           const active = stage.status === "active";
           const done = stage.status === "done";
@@ -138,11 +209,13 @@ export function AgentPipelineTheatre({
                 )}
               </div>
               <div className={s.theatreStageBody}>
-                <div className={s.theatreStageTitle}>{stage.label}</div>
+                <div className={s.theatreStageTitle}>
+                  {String(idx + 1).padStart(2, "0")} · {stage.label}
+                </div>
                 <div className={s.theatreStageMeta}>
                   {stage.detail ||
                     (active
-                      ? "Running now..."
+                      ? "Working now..."
                       : done
                         ? "Completed"
                         : skipped
@@ -167,7 +240,7 @@ export function AgentPipelineTheatre({
         <div className={s.theatrePacketPreview}>
           <div className={s.theatrePacketHeader}>
             <CircleDashed className="w-3.5 h-3.5" aria-hidden />
-            Live Research Packet Ready
+            Live Research &amp; Link Discovery Packet Active
           </div>
           <div className={s.theatrePacketRow}>
             <span>
@@ -177,13 +250,16 @@ export function AgentPipelineTheatre({
               <strong>Focus Keyword:</strong> {research.primaryKeyword || "—"}
             </span>
             <span>
-              <strong>Secondary / LSI:</strong> {research.secondaryKeywords.length + research.lsiEntities.length} mapped
+              <strong>Secondary / LSI:</strong>{" "}
+              {research.secondaryKeywords.length + research.lsiEntities.length} mapped
             </span>
             <span>
-              <strong>Verified Site Links:</strong> {research.internalLinks.length}
+              <strong>Verified Internal Links:</strong>{" "}
+              {research.internalLinks.length}
             </span>
             <span>
-              <strong>Authority Sources:</strong> {research.externalLinks.length}
+              <strong>Authority Citations:</strong>{" "}
+              {research.externalLinks.length}
             </span>
           </div>
         </div>
