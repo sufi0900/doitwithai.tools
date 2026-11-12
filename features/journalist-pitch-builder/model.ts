@@ -116,6 +116,102 @@ export const SAMPLE_PITCH_INPUT: JournalistPitchInput = {
     "Segment your anchor audit by target page type first—use branded and naked URLs for your homepage trust baseline, and use descriptive partial-match phrases in editorial body paragraphs.",
 };
 
+export interface PitchSamplePreset {
+  id: string;
+  badge: string;
+  title: string;
+  outlet: string;
+  input: JournalistPitchInput;
+}
+
+export const PITCH_SAMPLE_PRESETS: PitchSamplePreset[] = [
+  {
+    id: "sej-anchor-audit",
+    badge: "Connectively / HARO",
+    title: "SEO Anchor Audit",
+    outlet: "Search Engine Journal",
+    input: SAMPLE_PITCH_INPUT,
+  },
+  {
+    id: "forbes-ai-overview",
+    badge: "Featured.com / Q&A",
+    title: "AI Search Citations",
+    outlet: "Forbes Technology Council",
+    input: {
+      platform: "featured-qa",
+      publicationOrOutlet: "Forbes Technology Council",
+      journalistName: "Marcus Vance",
+      queryTopic: "How SaaS companies win citations in Google AI Overviews & Perplexity",
+      journalistQuery:
+        "Looking for AI engineers, founders, and technical SEO leaders: What is 1 concrete structural change you made to your blog or documentation that directly resulted in frequent AI Overview citations? Please include your exact answer without PR fluff in under 180 words.",
+      expertName: "Sufian Ahmad",
+      expertRole: "Founder & AI Systems Architect",
+      brandName: "DoItWithAI.tools",
+      brandUrl: "https://doitwithai.tools",
+      linkedinUrl: "https://www.linkedin.com/in/sufian-seo",
+      headshotUrl: "https://doitwithai.tools/ogimage.png",
+      coreThesis:
+        "AI answer engines favor self-contained 45–55 word benchmark definitions placed immediately below descriptive H2s, backed by exact numeric claims rather than vague marketing prose.",
+      proofOrMetric:
+        "After refactoring 32 tool resource pages with standalone 50-word answer boxes and explicit methodology tables, our clients observed a 4.2x increase in Perplexity and Gemini citations within 4 weeks.",
+      practicalTakeaway:
+        "Structure each core paragraph to answer who, what, and exact quantitative impact in the first two sentences so LLM retrieval agents parse it as verified ground truth.",
+    },
+  },
+  {
+    id: "techcrunch-llm-costs",
+    badge: "Qwoted / Expert",
+    title: "SaaS LLM Cost Optimization",
+    outlet: "TechCrunch",
+    input: {
+      platform: "qwoted-expert",
+      publicationOrOutlet: "TechCrunch",
+      journalistName: "Elena Rostova",
+      queryTopic: "How early-stage AI startups cut API inference costs by 60%+ in 2026",
+      journalistQuery:
+        "Seeking CTOs and technical founders: What specific multi-tier LLM routing or caching strategy saved your startup the most money on API bills this quarter? Provide real percentages and technical architecture in under 200 words.",
+      expertName: "Sufian Ahmad",
+      expertRole: "CTO & Technical Architect",
+      brandName: "DoItWithAI.tools",
+      brandUrl: "https://doitwithai.tools",
+      linkedinUrl: "https://www.linkedin.com/in/sufian-seo",
+      headshotUrl: "https://doitwithai.tools/ogimage.png",
+      coreThesis:
+        "A 4-tier cascade routing simple classification to local deterministic heuristics, intermediate tasks to high-throughput flash models, and reserving frontier LLMs for final synthesis cuts inference spend by 68%.",
+      proofOrMetric:
+        "Implementing an in-memory SHA-256 prompt response cache alongside 4-tier provider failover dropped our monthly token consumption from $4,800 to $1,450 while preserving 99.8% uptime.",
+      practicalTakeaway:
+        "Never send raw prompt text directly to flagship models; pre-sanitize and extract parameters client-side first so the generative payload remains under 500 tokens.",
+    },
+  },
+  {
+    id: "inc-founder-branding",
+    badge: "Digital PR Data",
+    title: "B2B LinkedIn Pipeline",
+    outlet: "Inc. Magazine",
+    input: {
+      platform: "digital-pr-data",
+      publicationOrOutlet: "Inc. Magazine",
+      journalistName: "Devon Miller",
+      queryTopic: "How founder thought leadership on LinkedIn replaces cold outbound",
+      journalistQuery:
+        "Writing a feature on founder-led sales: What is 1 non-obvious content formula that converts LinkedIn comments and carousels into warm B2B qualified pipeline? Looking for founders with direct attribution metrics in under 220 words.",
+      expertName: "Sufian Ahmad",
+      expertRole: "Founder & Product Lead",
+      brandName: "DoItWithAI.tools",
+      brandUrl: "https://doitwithai.tools",
+      linkedinUrl: "https://www.linkedin.com/in/sufian-seo",
+      headshotUrl: "https://doitwithai.tools/ogimage.png",
+      coreThesis:
+        "Replacing generic 'broetry' with swipeable 7-slide technical teardowns and ending with a 1-page summary cheat sheet drives high-intent saves and reposts that convert readers into inbound DMs.",
+      proofOrMetric:
+        "Carousels formatted with 140-character mobile fold tension and zero generic fluff drove 84 inbound customer conversations and 12 enterprise pilots over 90 days with $0 ad spend.",
+      practicalTakeaway:
+        "Treat each LinkedIn post as a standalone micro-product: put the key takeaway in the first slide, and provide a downloadable companion tool or cheat sheet in your profile link.",
+    },
+  },
+];
+
 export function extractQueryRequirements(query: string): QueryRequirements {
   const sentences = query
     .split(/(?<=[.?!])\s+|\r?\n/)

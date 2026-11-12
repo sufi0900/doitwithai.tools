@@ -18,13 +18,25 @@ import {
 
 const pageUrl = "https://doitwithai.tools/tools/journalist-pitch-builder";
 const title =
-  "Free HARO & Journalist Pitch Response Builder | Digital PR Quote Generator";
+  "Free Connectively & HARO Journalist Pitch Builder | Digital PR Quote Generator";
 const description =
-  "Draft quote-ready responses for HARO, Connectively, Qwoted, Featured, and journalist queries. Build 3 editorial soundbite angles with scannability checks and DOCX/TXT exports.";
+  "Draft quote-ready responses for Connectively (HARO replacement), Qwoted, Featured.com, and top journalists. Build 3 editorial soundbite angles with scannability checks and DOCX/TXT pitch packets.";
 
 export const metadata: Metadata = {
   title,
   description,
+  keywords: [
+    "Connectively pitch generator",
+    "HARO pitch response builder",
+    "journalist pitch template",
+    "digital PR quote generator",
+    "Featured.com response writer",
+    "Qwoted expert pitch tool",
+    "HARO alternative pitch tool",
+    "media query response generator",
+    "editorial soundbite builder",
+    "Do It With AI Tools",
+  ],
   alternates: { canonical: pageUrl },
   openGraph: {
     title,
@@ -116,6 +128,34 @@ export default function JournalistPitchBuilderPage() {
           name: f.question,
           acceptedAnswer: { "@type": "Answer", text: f.answer },
         })),
+      },
+      {
+        "@type": "HowTo",
+        name: "How to Draft a Winning Journalist Pitch for Connectively, HARO & Qwoted",
+        description:
+          "Follow this 4-step framework to write concise, quote-ready responses that reporters can drop straight into publication drafts.",
+        step: [
+          {
+            "@type": "HowToStep",
+            name: "Step 1: Extract Core Questions and Word Limits",
+            text: "Parse the journalist query to detect exact questions, deadline, and formatting constraints.",
+          },
+          {
+            "@type": "HowToStep",
+            name: "Step 2: Lead with a 1-Sentence Credential Hook",
+            text: "Establish instant domain authority with your real role and direct experience without introductory PR fluff.",
+          },
+          {
+            "@type": "HowToStep",
+            name: "Step 3: Deliver a 40–80 Word Quotable Soundbite",
+            text: "Provide a self-contained, punchy insight backed by a concrete metric or practitioner takeaway.",
+          },
+          {
+            "@type": "HowToStep",
+            name: "Step 4: Attach a Clean 4-Item Attribution Bio Block",
+            text: "Include your Full Name, Title, Company Website URL, LinkedIn Profile, and optional headshot link.",
+          },
+        ],
       },
     ],
   };
