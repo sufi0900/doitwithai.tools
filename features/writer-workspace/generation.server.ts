@@ -357,7 +357,7 @@ export function createGenerationHandler(deps: Deps = {}) {
             format: geminiTextFormat(schema, `writer_${data.operation}`),
           },
         },
-        { timeout: 45000, maxRetries: deps.generate ? 0 : 1 },
+        { timeout: 45000, maxRetries: 0 },
       );
       const rawParsed =
         data.operation === "plan"

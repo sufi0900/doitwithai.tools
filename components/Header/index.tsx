@@ -439,6 +439,7 @@ const Header = () => {
                   {menuData.map((menuItem, index) => {
                     const active = isMenuActive(menuItem.path);
                     const isToolsItem = menuItem.id === 100;
+                    const isWriterItem = menuItem.id === 108;
                     const isAgentsItem = menuItem.id === 107;
                     const isSeoHubItem = menuItem.id === 2;
                     const isPromptsItem = menuItem.id === 102;
@@ -471,6 +472,17 @@ const Header = () => {
                           >
                             <span className="relative z-10 flex items-center gap-1.5">
                               <span>{menuItem.title}</span>
+                              {isWriterItem && (
+                                <span
+                                  className={`rounded-full px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider ${
+                                    active
+                                      ? "bg-white/20 text-white"
+                                      : "border border-purple-500/30 bg-purple-500/10 text-purple-600 dark:border-purple-400/40 dark:bg-purple-500/20 dark:text-purple-300"
+                                  }`}
+                                >
+                                  Studio
+                                </span>
+                              )}
                               {isAgentsItem && (
                                 <span
                                   className={`rounded-full px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider ${
@@ -1599,6 +1611,11 @@ const Header = () => {
                           >
                             <span className="relative z-10 flex items-center gap-2">
                               {menuItem.title}
+                              {menuItem.id === 108 && (
+                                <span className="rounded-full bg-purple-500/15 px-1.5 py-0.5 text-[9px] font-extrabold uppercase text-purple-600 dark:text-purple-300">
+                                  Studio
+                                </span>
+                              )}
                               {menuItem.id === 107 && (
                                 <span className="rounded-full bg-[#5271FF]/15 px-1.5 py-0.5 text-[9px] font-extrabold uppercase text-[#5271FF] dark:text-[#b4c2ff]">
                                   AI

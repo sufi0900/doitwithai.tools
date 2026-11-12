@@ -14,6 +14,12 @@ const menuData: Menu[] = [
     newTab: false,
   },
   {
+    id: 108,
+    title: "AI Content Writer",
+    path: "/ai-content-writer",
+    newTab: false,
+  },
+  {
     id: 107,
     title: "AI Agents",
     path: "/agents",
@@ -44,7 +50,7 @@ const menuData: Menu[] = [
       },
       {
         id: 111,
-        title: "Download & Embed 90+ Tools",
+        title: "Download & Embed 125+ Tools",
         path: "/tools/downloadable-ai-tools",
         newTab: false,
       },
