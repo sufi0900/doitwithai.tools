@@ -180,3 +180,26 @@ Manual acceptance checklist on the deployed branch:
 9. In `/tools/ai-content-writer`, build from a finished section, open its visual editor, change layout/colors/depth/signature, save, and compare exported HTML/ZIP visuals and dimension attributes. Other shared writer routes must still prerender.
 
 Known limits: native glyph widths are estimated; brand detection is a hint, not a full site style extraction; summarization is extractive; comparison pairing requires meaningful input; classic layouts do not gain editorial-only depth/signature controls. This phase does not roll the new engine into unrelated social-card tools or add Canva/image-model APIs.
+
+## 12. Platform-Wide Standalone Content & Visual Extraction Standard
+
+To ensure every visual and non-visual tool across `doitwithai.tools` produces coherent, story-complete takeaways when extracting from an article URL or pasted text, all extractors and visual brief builders follow five mandatory rules:
+
+1. **Pre-H2 Lead-In vs. Substantive Section Classification (`article-source.ts`)**:
+   - Paragraphs appearing before the first `<h2>` heading represent the article’s opening narrative hook and are classified as `role: "introduction"` whenever substantive `<h2>` sections exist (unless the lead-in itself contains structured `<h3>` subheadings or `Term — Definition` lists).
+   - Section recommendation ranking prioritizes structured `<h2>` sections containing `<h3>` subheadings, `Term — Definition` lists, and framework/process headings so the default visual always represents a complete topic rather than an introductory hook.
+
+2. **Conversational & Rhetorical Filler Filtering (`visual-brief.ts`)**:
+   - Conversational transitions, rhetorical hooks, and second-person filler sentences (e.g., *"We have seen a huge change in how..."*, *"You have probably noticed it yourself..."*, *"But this does not mean traditional SEO is dead."*, *"Let’s take a look at..."*) are stripped before building concept cards.
+   - Blocks consisting solely of conversational transitions are excluded (`excludedBlocks++`) rather than turned into disconnected cards.
+
+3. **Compound Definition Decomposition (`visual-brief.ts`)**:
+   - When a lead paragraph explicitly defines dual meanings or pillars (e.g., *"AI SEO has two meanings: Using AI tools to... and optimizing pages so..."*) inside a section without `<h3>` subheadings, the extractor decomposes each pillar into its own standalone concept card (*"AI-Assisted SEO Workflows"* and *"AI Search Citation Optimization"*) so the visual tells a complete, connected story.
+
+4. **Standalone 2–6 Word Conceptual Titles & Zero Cliffhangers (`visual-brief.ts`)**:
+   - Never slice the first 8 words of a prose sentence to form a card title.
+   - Extract defined terms (*"described as zero-click search"* -> *"Zero-Click Search Behavior"*), quantitative findings (*"58 to 60 percent of Google searches now end without a click"* -> *"58–60% Zero-Click Searches"*), or core subject noun phrases, and strip trailing prepositions, auxiliaries, conjunctions, and pronouns so titles never end mid-clause.
+
+5. **Non-Redundant Explanations & Adaptive Layout Fit (`prism-renderer.ts`)**:
+   - A card’s `detail` must add explanatory substance distinct from its `title` rather than repeating the title verbatim.
+   - The native SVG renderer (`prism-renderer.ts`) runs a multi-pass adaptive typography and spacing solver (`candidateScales`) paired with proportional slack distribution and a single-band footer/signature bar (`clipPath` guarded), ensuring 2–6 points fill their canvas without empty voids, never overlap the optional/removable `Source / footer` credit, and never block downloads on real article sections.

@@ -37,6 +37,7 @@ import {
   getInfographicDimensions,
   lockInfographicGeometry,
 } from "@/lib/blog-infographic-studio/layout-registry";
+import { PRISM_LAYOUT_THEMES } from "@/lib/blog-infographic-studio/samples";
 import {
   brandColors,
   normalizeSignature,
@@ -130,12 +131,32 @@ function PrismTemplateCard({
   onSelect: () => void;
 }) {
   const spec = PRISM_LAYOUTS.find((l) => l.id === layout)!;
-  const scene = useMemo(
-    () => buildInfographicScene(withPrismLayout(config, layout)),
-    [config, layout],
-  );
   const selected =
     config.visualEngine === "prism-antv" && config.prismLayout === layout;
+  const hasCustomColors = Boolean(
+    Object.keys(config.brand?.customColors || {}).length,
+  );
+  const cardPalette = selected
+    ? config.paletteId
+    : PRISM_LAYOUT_THEMES[layout] || config.paletteId;
+  const scene = useMemo(() => {
+    const previewNodes =
+      layout === "comparison" &&
+      config.nodes.length > 2 &&
+      config.nodes.length % 2 !== 0
+        ? config.nodes.slice(0, config.nodes.length - 1)
+        : config.nodes;
+    return buildInfographicScene(
+      withPrismLayout(
+        {
+          ...config,
+          paletteId: hasCustomColors ? config.paletteId : cardPalette,
+          nodes: previewNodes,
+        },
+        layout,
+      ),
+    );
+  }, [config, layout, hasCustomColors, cardPalette]);
   return (
     <button
       type="button"
@@ -737,8 +758,7 @@ export function BlogInfographicStudio({
             ))}
           </div>
           <div
-            id={`infographic-panel-${panel}`}
-            role="tabpanel"
+            id={`infographic-panel-${panel}`}\n            role="tabpanel"
             aria-labelledby={`infographic-tab-${panel}`}
             className="space-y-6 p-4 sm:p-5 lg:max-h-[calc(100vh-190px)] lg:overflow-y-auto"
           >
@@ -992,7 +1012,7 @@ export function BlogInfographicStudio({
                             />
                           </label>
                           <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400">
-                            Explanation
+                            Detail
                             <textarea
                               className={field}
                               rows={3}
@@ -1073,17 +1093,29 @@ export function BlogInfographicStudio({
                   </div>
                 </div>
                 <label className="block text-xs font-bold text-slate-600 dark:text-slate-300">
-                  Source / footer
+                  <span className="flex items-center justify-between">
+                    <span>Source / footer (optional)</span>
+                    {active.footerSourceLabel.trim() && (
+                      <button
+                        type="button"
+                        onClick={() => update({ footerSourceLabel: "" })}
+                        className="text-[11px] font-semibold text-indigo-600 hover:underline dark:text-indigo-400"
+                      >
+                        Remove source
+                      </button>
+                    )}
+                  </span>
                   <input
                     className={field}
                     value={active.footerSourceLabel}
                     maxLength={180}
+                    placeholder="Optional source credit (leave blank to hide)"
                     onChange={(e) =>
                       update({ footerSourceLabel: e.target.value })
                     }
                   />
                   <span className="mt-1 block text-[11px] font-normal text-slate-500">
-                    Credit the actual source of any figures.
+                    Edit or clear this line anytime. Leave blank to hide the footer source credit.
                   </span>
                 </label>
                 <label className="block text-xs font-bold text-slate-600 dark:text-slate-300">
@@ -1712,7 +1744,30 @@ export function BlogInfographicStudio({
                   key={layout.id}
                   config={deferred}
                   layout={layout.id}
-                  onSelect={() => update(withPrismLayout(active, layout.id))}
+                  onSelect={() => {
+                    const hasCustom = Boolean(
+                      Object.keys(active.brand?.customColors || {}).length,
+                    );
+                    const nextNodes =
+                      layout.id === "comparison" &&
+                      active.nodes.length > 2 &&
+                      active.nodes.length % 2 !== 0
+                        ? active.nodes.slice(0, active.nodes.length - 1)
+                        : active.nodes;
+                    update(
+                      withPrismLayout(
+                        {
+                          ...active,
+                          paletteId: hasCustom
+                            ? active.paletteId
+                            : PRISM_LAYOUT_THEMES[layout.id] ||
+                              active.paletteId,
+                          nodes: nextNodes,
+                        },
+                        layout.id,
+                      ),
+                    );
+                  }}
                 />
               ))}
             </div>
