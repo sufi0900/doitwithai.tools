@@ -58,6 +58,12 @@ export default async function PrismForgeHandbookPage() {
           >
             Read formatted handbook on GitHub
           </a>
+          <a
+            className="rounded-xl border border-slate-700 px-4 py-3"
+            href="/founder-hub/prism-writer"
+          >
+            Writer workspace handbook
+          </a>
         </div>
         <pre className="mt-8 whitespace-pre-wrap break-words rounded-2xl border border-slate-800 bg-slate-900 p-5 font-mono text-xs leading-7 text-slate-200 sm:p-8 sm:text-sm">
           {handbook}

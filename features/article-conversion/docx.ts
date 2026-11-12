@@ -74,6 +74,8 @@ export async function articleDocx(
   settings: Settings,
   options: {
     images?: Record<string, string>;
+    /** Bounded opt-in for multi-section writer documents; standalone converters keep six. */
+    maxImages?: number;
     signal?: AbortSignal;
     yield?: () => Promise<unknown>;
   } = {},
@@ -140,7 +142,13 @@ export async function articleDocx(
     if (block.kind === "image") {
       if (!block.included) continue;
       try {
-        if (++imageCount > 6) throw Error("Image limit");
+        if (
+          ++imageCount >
+          (Number.isFinite(options.maxImages)
+            ? Math.min(12, Math.max(1, Math.floor(options.maxImages!)))
+            : 6)
+        )
+          throw Error("Image limit");
         const img = imageBytes(options.images?.[block.id] || "");
         const id = `rImage${imageCount}`,
           path = `media/image${imageCount}.${img.extension}`;
