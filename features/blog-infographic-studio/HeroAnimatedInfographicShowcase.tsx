@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight, Pause, Play } from "lucide-react";
-import { buildInfographicScene } from "@/lib/blog-infographic-studio/canvas-renderer";
+import { buildPrismScene } from "@/lib/blog-infographic-studio/prism-renderer";
 import { PRISM_LAYOUTS } from "@/lib/blog-infographic-studio/layout-registry";
 import { createLayoutSample } from "@/lib/blog-infographic-studio/samples";
 import { infographicColors } from "@/lib/blog-infographic-studio/appearance";
@@ -38,7 +38,7 @@ export default function HeroAnimatedInfographicShowcase() {
       PRISM_LAYOUTS.map((l) => {
         const config = createLayoutSample(l.id);
         return {
-          src: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(buildInfographicScene(config).svg)}`,
+          src: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(buildPrismScene(config, { showcaseDimensions: { width: 1080, height: 1350 } }).svg)}`,
           alt: config.altText,
           bg: infographicColors(config).bg,
         };
@@ -68,7 +68,7 @@ export default function HeroAnimatedInfographicShowcase() {
             src={slide.src}
             alt={i === index ? slide.alt : ""}
             aria-hidden={i !== index}
-            className={`absolute inset-0 h-full w-full object-contain motion-safe:transition-opacity motion-safe:duration-300 ${i === index ? "opacity-100" : "opacity-0"}`}
+            className={`absolute inset-0 h-full w-full object-cover motion-safe:transition-opacity motion-safe:duration-300 ${i === index ? "opacity-100" : "opacity-0"}`}
           />
         ))}
       </div>

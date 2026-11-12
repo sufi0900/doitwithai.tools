@@ -29,7 +29,7 @@ const excluded =
   'nav, aside, footer, script, style, [hidden], [aria-hidden="true"], [role="navigation"], .toc, .table-of-contents, .related-posts, .author-bio, .newsletter, .share-buttons';
 export function classifySection(title: string): ArticleSourceSection["role"] {
   if (
-    /about (?:the |this )?author|note before|before we begin|my (?:story|journey)|how i (?:wrote|created)|meet the founder/i.test(
+    /about (?:the |this )?author|note before|before we begin|my (?:story|journey)|how i (?:wrote|created)|meet the founder|^introduction$/i.test(
       title,
     )
   )
@@ -58,12 +58,13 @@ export function extractArticleSource(document: Document, title: string) {
     candidates.sort((a, b) => score(b) - score(a))[0] || document.body;
   const sections: ArticleSourceSection[] = [];
   let current: ArticleSourceSection | undefined,
+    preH2Section: ArticleSourceSection | undefined,
     h3 = "",
     blocksFound = 0,
     blocksIncluded = 0,
     chars = 0,
     sectionsFound = 0;
-  const begin = (heading: string) => {
+  const begin = (heading: string, isPreH2 = false) => {
     sectionsFound++;
     current = {
       id: `section-${sourceId(`${sectionsFound}:${heading}`)}`,
@@ -71,6 +72,7 @@ export function extractArticleSource(document: Document, title: string) {
       role: classifySection(heading),
       blocks: [],
     };
+    if (isPreH2) preH2Section = current;
     if (sections.length < 36) sections.push(current);
     h3 = "";
   };
@@ -83,10 +85,10 @@ export function extractArticleSource(document: Document, title: string) {
     let text = tidy(el.textContent);
     if (!text) continue;
     if (el.tagName === "H2") {
-      begin(text);
+      begin(text, false);
       continue;
     }
-    if (!current) begin(title);
+    if (!current) begin(title, true);
     const kind: ArticleSourceBlock["kind"] =
       el.tagName === "H3"
         ? "heading"
@@ -125,9 +127,28 @@ export function extractArticleSource(document: Document, title: string) {
   const useful = sections.filter((s) =>
     s.blocks.some((b) => b.kind !== "heading"),
   );
+  // If the article has real H2 content sections, classify the pre-H2 lead-in hook as introduction
+  // unless it already contains structured H3 subheadings or definition lists.
+  if (
+    preH2Section &&
+    useful.some((s) => s !== preH2Section && s.role === "content")
+  ) {
+    const hasStructuredSubheadings = preH2Section.blocks.some(
+      (b) => b.kind === "heading" || Boolean(b.heading),
+    );
+    const hasDefinitionList = preH2Section.blocks.some(
+      (b) => b.kind === "list" && /\s[—–:]\s/.test(b.text),
+    );
+    if (!hasStructuredSubheadings && !hasDefinitionList) {
+      preH2Section.role = "introduction";
+    }
+  }
   const substantive = useful.filter((s) => s.role === "content");
   const rank = (s: ArticleSourceSection) => {
     const body = s.blocks.filter((b) => b.kind !== "heading");
+    const defLists = body.filter(
+      (b) => b.kind === "list" && /^.{3,76}\s[—–:]\s.{20,}$/.test(b.text),
+    ).length;
     return (
       Math.min(
         body.reduce((n, b) => n + b.text.length, 0),
@@ -136,12 +157,16 @@ export function extractArticleSource(document: Document, title: string) {
         120 +
       Math.min(new Set(body.map((b) => b.heading).filter(Boolean)).size, 5) *
         5 +
-      (/framework|how .*works|key (?:steps|components)|process/i.test(s.title)
+      Math.min(defLists, 5) * 4 +
+      (/framework|how .*works|key (?:steps|components|pillars)|process|explained/i.test(
+        s.title,
+      )
         ? 10
         : 0)
     );
   };
-  const recommended = [...substantive].sort((a, b) => rank(b) - rank(a))[0];
+  const pool = substantive.length ? substantive : useful;
+  const recommended = [...pool].sort((a, b) => rank(b) - rank(a))[0];
   return {
     sections: useful,
     recommendedSectionId: recommended?.id,

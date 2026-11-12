@@ -2,19 +2,23 @@ import { createPrismSample, withPrismLayout } from "./visual-brief";
 import type { PrismLayout } from "./layout-registry";
 import type { BlogInfographicConfig } from "@/lib/blog-writer/canonical-state";
 
+export const PRISM_LAYOUT_THEMES: Record<
+  PrismLayout,
+  BlogInfographicConfig["paletteId"]
+> = {
+  editorial: "indigo-cyber",
+  constellation: "violet-saas",
+  ribbon: "emerald-growth",
+  timeline: "blue-trust",
+  comparison: "amber-executive",
+  checklist: "rose-editorial",
+};
+
 /** Curated examples are only for the showcase and QA. Never mix them into extracted article data. */
 export function createLayoutSample(layout: PrismLayout): BlogInfographicConfig {
   const sample = withPrismLayout(createPrismSample(), layout);
   sample.footerSourceLabel = "DoItWithAI.tools · Example, not measured results";
-  const themes: Record<PrismLayout, BlogInfographicConfig["paletteId"]> = {
-    editorial: "indigo-cyber",
-    constellation: "violet-saas",
-    ribbon: "emerald-growth",
-    timeline: "blue-trust",
-    comparison: "amber-executive",
-    checklist: "rose-editorial",
-  };
-  sample.paletteId = themes[layout];
+  sample.paletteId = PRISM_LAYOUT_THEMES[layout];
   sample.depth = {
     preset:
       layout === "ribbon"
@@ -24,8 +28,66 @@ export function createLayoutSample(layout: PrismLayout): BlogInfographicConfig {
           : "soft",
     strength: 65,
   };
-  if (["timeline", "checklist", "comparison"].includes(layout)) {
+  if (
+    ["constellation", "ribbon", "timeline", "checklist", "comparison"].includes(
+      layout,
+    )
+  ) {
     const sets = {
+      constellation: {
+        headline: "Four pillars of AI search visibility",
+        subheadline:
+          "How direct answers, citations, structure and review work together.",
+        items: [
+          [
+            "Answer the question",
+            "Answer engine optimization makes useful answers easy to find and understand. Lead with a direct explanation, then add context.",
+            "answer",
+          ],
+          [
+            "Make claims supportable",
+            "Generative engine optimization focuses on content that can inform AI-generated answers with original explanations and verifiable sources.",
+            "evidence",
+          ],
+          [
+            "Structure topic hubs",
+            "Group closely related questions and connect supporting guides so search engines and readers understand the full subject.",
+            "target",
+          ],
+          [
+            "Review the workflow",
+            "AI-assisted SEO supports research, drafting and analysis while human editors verify accuracy and usefulness before publishing.",
+            "workflow",
+          ],
+        ],
+      },
+      ribbon: {
+        headline: "Four layers of a modern SEO workflow",
+        subheadline:
+          "Combine structured research, clear answers, cited evidence and human review.",
+        items: [
+          [
+            "Answer the question",
+            "Answer engine optimization makes useful answers easy to find and understand. Lead with a direct explanation, then add context.",
+            "answer",
+          ],
+          [
+            "Make the answer supportable",
+            "Generative engine optimization focuses on content that can inform AI-generated answers. Use original explanations and verifiable sources.",
+            "evidence",
+          ],
+          [
+            "Align search intent",
+            "Match every section to the specific problem the reader is trying to solve rather than repeating broad keywords.",
+            "search",
+          ],
+          [
+            "Improve the workflow",
+            "AI-assisted SEO supports research, drafting and analysis. Review its output for accuracy and usefulness before publishing.",
+            "workflow",
+          ],
+        ],
+      },
       timeline: {
         headline: "From keyword list to useful content",
         subheadline:

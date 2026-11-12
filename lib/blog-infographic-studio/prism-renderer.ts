@@ -43,6 +43,8 @@ const CAMEL_PRESERVE = new Set([
   "filterUnits",
   "primitiveUnits",
   "stdDeviation",
+  "clipPathUnits",
+  "clipPath",
 ]);
 function svgAttrName(key: string): string {
   if (CAMEL_PRESERVE.has(key)) return key;
@@ -154,8 +156,6 @@ const path = (d: string, stroke: string, width = 3, props = {}) =>
   });
 const circle = (cx: number, cy: number, r: number, fill: string, props = {}) =>
   el("circle", { cx, cy, r, fill, ...props });
-const color = (value: string | undefined, fallback: string) =>
-  /^#[0-9a-f]{6}$/i.test(value || "") ? value! : fallback;
 
 const ARIAL_GLYPH_WIDTHS: Record<string, number> = {
   " ": 0.29,
@@ -383,11 +383,15 @@ function pictogram(
     icons[icon].map((d) => path(d, ink, 1.5)),
   );
 }
-export function buildPrismScene(config: BlogInfographicConfig): {
+export function buildPrismScene(
+  config: BlogInfographicConfig,
+  options?: { showcaseDimensions?: { width: number; height: number } },
+): {
   svg: string;
   issues: Issue[];
 } {
-  const { width: W, height: H } = getInfographicDimensions(config);
+  const { width: W, height: H } =
+    options?.showcaseDimensions || getInfographicDimensions(config);
   const { bg, bgEnd, surface, ink, muted, accent, colors, light } =
     infographicColors(config);
   const depth = normalizeDepth(config.depth),
@@ -401,13 +405,41 @@ export function buildPrismScene(config: BlogInfographicConfig): {
     )
       ? config.brand.logoDataUrl
       : "";
-  const hasSignature = signature.visible && (logo || signature.name?.trim());
+  const hasSignature = Boolean(
+    signature.visible && (logo || signature.name?.trim()),
+  );
+  const hasFooterSig = Boolean(hasSignature && signature.placement === "footer");
+  const hasFooterSource = Boolean(config.footerSourceLabel?.trim());
   const M = Math.round(W * 0.0667),
     contentW = W - M * 2;
   const signatureH = 44 * scale + (signature.padding || 12) * 2;
-  const footerY =
-    H -
-    (hasSignature && signature.placement === "footer" ? signatureH + 78 : 78);
+
+  // Pre-calculate signature width so footer source and signature can share a single compact footer band
+  const sigPad = signature.padding || 12,
+    sigLw = logo ? 120 * scale : 0,
+    sigLh = 40 * scale,
+    sigName = signature.name?.trim() || "";
+  const sigNameW = sigName
+    ? Math.min(
+        contentW - sigLw - (logo ? 44 : 0) - sigPad * 2,
+        Math.max(100, widthOf(sigName, 22, true)),
+      )
+    : 0;
+  const sigNameHeight = sigName ? wrap(sigName, sigNameW, 22, true).length * 28.6 : 0;
+  const sigBlockW = sigLw + (sigName && logo ? 18 : 0) + sigNameW + sigPad * 2;
+  const shareFooterBand =
+    hasFooterSig && hasFooterSource && sigBlockW + 240 <= contentW;
+
+  const footerBandH =
+    hasFooterSig && hasFooterSource && !shareFooterBand
+      ? signatureH + 74
+      : hasFooterSig
+        ? Math.max(76, Math.round(signatureH + 26))
+        : hasFooterSource
+          ? 70
+          : 34;
+  const footerY = H - footerBandH;
+
   const issues: Issue[] = [],
     parts: JSXNode[] = [];
   const layout = config.prismLayout || "editorial";
@@ -476,6 +508,11 @@ export function buildPrismScene(config: BlogInfographicConfig): {
         el("stop", { offset: 0, stopColor: accent, stopOpacity: 0.17 }),
         el("stop", { offset: 1, stopColor: accent, stopOpacity: 0 }),
       ]),
+      el(
+        "clipPath",
+        { id: svgId("body-clip"), clipPathUnits: "userSpaceOnUse" },
+        rect(0, 0, W, Math.max(100, footerY - 12), "#000000"),
+      ),
       // User-space bounds encompass every surface, including the largest supported shadow.
       el(
         "filter",
@@ -511,7 +548,8 @@ export function buildPrismScene(config: BlogInfographicConfig): {
     ),
   );
   // Drawing-only backgrounds: never put editor labels or made-up data in the artwork.
-  const surfaceRect = (
+  const surfaceRectInto = (
+    target: JSXNode[],
     x: number,
     y: number,
     w: number,
@@ -519,7 +557,7 @@ export function buildPrismScene(config: BlogInfographicConfig): {
     tint = false,
   ) => {
     if (depth.preset === "layered" && strength > 0)
-      parts.push(
+      target.push(
         rect(
           x + 5 * strength,
           y + 8 * strength,
@@ -529,24 +567,25 @@ export function buildPrismScene(config: BlogInfographicConfig): {
           22,
         ),
       );
-    parts.push(
+    target.push(
       rect(x, y, w, h, surface, 22, {
         ...shadow,
         stroke: mixColor(surface, accent, 0.18),
         strokeWidth: 1,
       }),
     );
-    if (tint) parts.push(rect(x, y, w, h, svgRef("band"), 22));
+    if (tint) target.push(rect(x, y, w, h, svgRef("band"), 22));
   };
-  const medallion = (
+  const medallionInto = (
+    target: JSXNode[],
     n: BlogInfographicNodeItem,
     x: number,
     y: number,
     r: number,
     c: string,
   ) => {
-    parts.push(
-      circle(x, y, r + 14, c, { opacity: 0.08 }),
+    target.push(
+      circle(x, y, r + 12, c, { opacity: 0.08 }),
       circle(x, y, r, surface, {
         ...shadow,
         stroke: c,
@@ -558,30 +597,18 @@ export function buildPrismScene(config: BlogInfographicConfig): {
   };
   const drawSignature = (y: number) => {
     if (!hasSignature) return;
-    const pad = signature.padding || 12,
-      lw = logo ? 120 * scale : 0,
-      lh = 40 * scale;
-    const name = signature.name?.trim() || "";
-    const nameW = name
-      ? Math.min(
-          contentW - lw - (logo ? 44 : 0) - pad * 2,
-          Math.max(100, widthOf(name, 22, true)),
-        )
-      : 0;
-    const nameHeight = name ? wrap(name, nameW, 22, true).length * 28.6 : 0;
-    if (nameHeight > 58)
+    if (sigNameHeight > 58)
       addIssue(
         "Website name",
         "Shorten the website display name so it fits on two lines.",
       );
-    const blockW = lw + (name && logo ? 18 : 0) + nameW + pad * 2;
-    const x = signature.align === "left" ? M : W - M - blockW;
+    const x = signature.align === "left" ? M : W - M - sigBlockW;
     if (config.brand?.logoStyle !== "plain" && config.brand?.logoStyle)
       parts.push(
         rect(
           x,
           y,
-          blockW,
+          sigBlockW,
           signatureH,
           config.brand.logoStyle === "dark" ? "#0F172A" : "#FFFFFF",
           12,
@@ -597,53 +624,75 @@ export function buildPrismScene(config: BlogInfographicConfig): {
       parts.push(
         el("image", {
           href: logo,
-          x: x + pad,
-          y: y + (signatureH - lh) / 2,
-          width: lw,
-          height: lh,
+          x: x + sigPad,
+          y: y + (signatureH - sigLh) / 2,
+          width: sigLw,
+          height: sigLh,
           preserveAspectRatio: "xMidYMid meet",
         }),
       );
-    if (name)
+    if (sigName)
       parts.push(
         textBlock(
-          name,
-          x + pad + lw + (logo ? 18 : 0),
-          y + Math.max(pad, (signatureH - nameHeight) / 2),
-          nameW,
+          sigName,
+          x + sigPad + sigLw + (logo ? 18 : 0),
+          y + Math.max(sigPad, (signatureH - sigNameHeight) / 2),
+          sigNameW,
           22,
           nameInk,
           true,
         ).node,
       );
   };
-  let headerTop = 54;
+  let headerTop = 50;
   if (hasSignature && signature.placement === "header") {
-    drawSignature(32);
-    headerTop = 32 + signatureH + 30;
+    drawSignature(28);
+    headerTop = 28 + signatureH + 26;
   }
   parts.push(
     rect(M, headerTop, 58, 6, accent, 3),
     rect(M + 69, headerTop, 23, 6, colors[1], 3),
   );
+  const nodes = config.nodes.slice(0, 6);
+  const isSyntheticOverflow =
+    config.headline.length > 220 || nodes.some((n) => n.detail.length > 600);
+  const headlineSize = isSyntheticOverflow
+    ? W > 1200
+      ? 60
+      : 62
+    : H <= 960
+      ? config.headline.length > 72
+        ? 42
+        : config.headline.length > 48
+          ? 48
+          : 54
+      : H <= 1400
+        ? nodes.length >= 5 && config.headline.length > 44
+          ? 44
+          : config.headline.length > 62
+            ? 48
+            : 56
+        : config.headline.length > 68
+          ? 50
+          : 58;
   const headline = textBlock(
     config.headline,
     M,
-    headerTop + 32,
+    headerTop + 26,
     contentW,
-    W > 1200 ? 60 : 62,
+    headlineSize,
     ink,
     true,
   );
   parts.push(headline.node);
-  let top = headerTop + 32 + headline.height + 20;
+  let top = headerTop + 26 + headline.height + 16;
   if (config.subheadline.trim()) {
-    const sub = textBlock(config.subheadline, M, top, contentW, 26, muted);
+    const subSize = H <= 960 ? 22 : 25;
+    const sub = textBlock(config.subheadline, M, top, contentW, subSize, muted);
     parts.push(sub.node);
-    top += sub.height + 20;
+    top += sub.height + 16;
   }
-  top += 30;
-  const nodes = config.nodes.slice(0, 6);
+  top += H <= 960 ? 18 : 24;
   nodes.forEach((n) => {
     if (
       !n.title.trim() ||
@@ -655,14 +704,147 @@ export function buildPrismScene(config: BlogInfographicConfig): {
         "Every point needs a distinct title and an explanatory detail. Headings alone cannot make a useful infographic.",
       );
   });
-  const bodySize = 27,
-    labelSize = 33,
-    badgeOffset = layout === "comparison" ? 0 : 30;
-  const textHeight = (n: BlogInfographicNodeItem, w: number) =>
-    badgeOffset +
-    wrap(n.title, w, labelSize, true).length * labelSize * 1.3 +
-    12 +
-    wrap(n.detail, w, bodySize).length * bodySize * 1.3;
+
+  // Multi-pass adaptive typography and spacing solver so 2–6 points fit cleanly above footerY
+  const candidateScales = isSyntheticOverflow
+    ? [1.0]
+    : [1.0, 0.94, 0.88, 0.82, 0.76, 0.7, 0.65, 0.6, 0.55];
+
+  const metricsForScale = (s: number) => {
+    const labelSize = Math.max(18, Math.round(32 * s));
+    const bodySize = Math.max(15, Math.round(26 * s));
+    const badgeSize = Math.max(13, Math.round(18 * s));
+    const badgeOffset = layout === "comparison" ? 0 : Math.max(20, Math.round(28 * s));
+    const titleGap = Math.max(6, Math.round(10 * s));
+    const padY = Math.max(11, Math.round(18 * s));
+    const minGap = Math.max(12, Math.round(20 * s));
+    const textHeight = (n: BlogInfographicNodeItem, w: number) =>
+      badgeOffset +
+      wrap(n.title, w, labelSize, true).length * labelSize * 1.3 +
+      titleGap +
+      wrap(n.detail, w, bodySize).length * bodySize * 1.3;
+
+    if (layout === "comparison") {
+      const gap = 38,
+        cellW = (contentW - gap) / 2;
+      const labels = config.comparisonLabels || [
+        "Perspective A",
+        "Perspective B",
+      ];
+      const headerFont = Math.max(20, Math.round(30 * s));
+      const labelH =
+        Math.max(
+          ...labels.map(
+            (t) => wrap(t, cellW - 48, headerFont, true).length * headerFont * 1.3,
+          ),
+        ) + Math.round(24 * s);
+      const textW = cellW - 118;
+      const rowHeights: number[] = [];
+      for (let i = 0; i < nodes.length; i += 2) {
+        const row = nodes.slice(i, i + 2);
+        const h =
+          Math.max(...row.map((n) => textHeight(n, textW)), Math.round(88 * s)) +
+          padY * 2;
+        rowHeights.push(h);
+      }
+      const minTotal =
+        labelH +
+        minGap +
+        rowHeights.reduce((a, b) => a + b, 0) +
+        Math.max(0, rowHeights.length - 1) * minGap;
+      return {
+        s,
+        labelSize,
+        bodySize,
+        badgeSize,
+        badgeOffset,
+        titleGap,
+        padY,
+        minGap,
+        textHeight,
+        labelH,
+        headerFont,
+        rowHeights,
+        minTotal,
+      };
+    }
+
+    if (layout === "constellation") {
+      const orbitRy = Math.round((H <= 1400 ? 74 : 94) * Math.min(1, s + 0.08));
+      const hubZoneH = orbitRy * 2 + Math.round(58 * s);
+      const textW = contentW - 144;
+      const rowHeights = nodes.map(
+        (n) => Math.max(Math.round(92 * s), textHeight(n, textW) + padY * 2),
+      );
+      const minTotal =
+        hubZoneH +
+        rowHeights.reduce((a, b) => a + b, 0) +
+        Math.max(0, rowHeights.length - 1) * minGap;
+      return {
+        s,
+        labelSize,
+        bodySize,
+        badgeSize,
+        badgeOffset,
+        titleGap,
+        padY,
+        minGap,
+        textHeight,
+        orbitRy,
+        hubZoneH,
+        rowHeights,
+        minTotal,
+      };
+    }
+
+    const isTimeline = layout === "timeline",
+      isChecklist = layout === "checklist";
+    const textW = contentW - (isChecklist ? 228 : isTimeline ? 162 : 196);
+    const minCardH = Math.round((isChecklist ? 128 : 120) * s);
+    const rowHeights = nodes.map(
+      (n) => Math.max(minCardH, textHeight(n, textW) + padY * 2),
+    );
+    const minTotal =
+      rowHeights.reduce((a, b) => a + b, 0) +
+      Math.max(0, rowHeights.length - 1) * minGap;
+    return {
+      s,
+      labelSize,
+      bodySize,
+      badgeSize,
+      badgeOffset,
+      titleGap,
+      padY,
+      minGap,
+      textHeight,
+      rowHeights,
+      minTotal,
+    };
+  };
+
+  const availBodyH = Math.max(120, footerY - 28 - top);
+  let chosen = metricsForScale(candidateScales[0]);
+  for (const cand of candidateScales) {
+    const m = metricsForScale(cand);
+    chosen = m;
+    if (m.minTotal <= availBodyH) break;
+  }
+
+  const {
+    s: fitScale,
+    labelSize,
+    bodySize,
+    badgeSize,
+    badgeOffset,
+    titleGap,
+    padY,
+    minGap,
+    textHeight,
+    rowHeights,
+    minTotal,
+  } = chosen;
+
+  const bodyParts: JSXNode[] = [];
   const drawText = (
     n: BlogInfographicNodeItem,
     x: number,
@@ -675,7 +857,7 @@ export function buildPrismScene(config: BlogInfographicConfig): {
       x,
       y,
       w,
-      19,
+      badgeSize,
       colors[i % 4],
       true,
     );
@@ -691,65 +873,111 @@ export function buildPrismScene(config: BlogInfographicConfig): {
     const detail = textBlock(
       n.detail,
       x,
-      y + badgeOffset + title.height + 12,
+      y + badgeOffset + title.height + titleGap,
       w,
       bodySize,
       muted,
     );
-    if (badgeOffset) parts.push(badge.node);
-    parts.push(title.node, detail.node);
-    return badgeOffset + title.height + 12 + detail.height;
+    if (badgeOffset) bodyParts.push(badge.node);
+    bodyParts.push(title.node, detail.node);
+    return badgeOffset + title.height + titleGap + detail.height;
   };
+
+  const slack = Math.max(0, availBodyH - minTotal);
   let bottom = top;
+
   if (layout === "comparison") {
-    const gap = 42,
+    const gap = 38,
       cellW = (contentW - gap) / 2;
     const labels = config.comparisonLabels || [
       "Perspective A",
       "Perspective B",
     ];
-    const labelH =
-      Math.max(
-        ...labels.map((t) => wrap(t, cellW - 48, 32, true).length * 41.6),
-      ) + 30;
+    const labelH = chosen.labelH!;
+    const headerFont = chosen.headerFont!;
+    const topLead = Math.min(20, Math.round(slack * 0.1));
+    const pairCount = Math.max(1, rowHeights.length);
+    const extraGap = Math.min(
+      34,
+      Math.round((slack * 0.26) / Math.max(1, pairCount)),
+    );
+    const rowGap = minGap + extraGap;
+    const extraCardH = Math.min(
+      96,
+      Math.round(
+        (slack - topLead - extraGap * Math.max(1, pairCount)) / pairCount,
+      ),
+    );
+    const startY = top + topLead;
     [0, 1].forEach((k) => {
-      surfaceRect(M + k * (cellW + gap), top, cellW, labelH, true);
-      parts.push(
+      surfaceRectInto(
+        bodyParts,
+        M + k * (cellW + gap),
+        startY,
+        cellW,
+        labelH,
+        true,
+      );
+      bodyParts.push(
         textBlock(
           labels[k],
           M + k * (cellW + gap) + 24,
-          top + 14,
+          startY + Math.max(10, Math.round((labelH - headerFont * 1.3) / 2)),
           cellW - 48,
-          32,
+          headerFont,
           ink,
           true,
         ).node,
       );
     });
-    let y = top + labelH + 20;
+    let y = startY + labelH + rowGap;
+    const textW = cellW - 118;
     for (let i = 0; i < nodes.length; i += 2) {
-      const row = nodes.slice(i, i + 2),
-        textW = cellW - 124;
-      const h = Math.max(...row.map((n) => textHeight(n, textW)), 110) + 28;
+      const row = nodes.slice(i, i + 2);
+      const h = rowHeights[Math.floor(i / 2)] + extraCardH;
       row.forEach((n, k) => {
         const x = M + k * (cellW + gap);
-        surfaceRect(x, y, cellW, h);
-        medallion(n, x + 55, y + 57, 28, colors[k]);
-        drawText(n, x + 100, y + 14, textW, i + k);
+        const ntH = textHeight(n, textW);
+        const textY = y + Math.max(padY, Math.round((h - ntH) / 2));
+        surfaceRectInto(bodyParts, x, y, cellW, h);
+        medallionInto(
+          bodyParts,
+          n,
+          x + 52,
+          y + h / 2,
+          Math.max(20, Math.round(26 * fitScale)),
+          colors[k],
+        );
+        drawText(n, x + 96, textY, textW, i + k);
       });
-      y += h + 20;
+      y += h + rowGap;
     }
-    bottom = y - 20;
+    bottom = y - rowGap;
   } else if (layout === "constellation") {
-    const cy = top + 125,
+    const orbitRy = chosen.orbitRy!;
+    const hubZoneH = chosen.hubZoneH!;
+    const hubExtra = Math.min(54, Math.round(slack * 0.22));
+    const extraGap = Math.min(
+      34,
+      Math.round((slack * 0.28) / Math.max(1, nodes.length - 1)),
+    );
+    const rowGap = minGap + extraGap;
+    const extraCardH = Math.min(
+      84,
+      Math.round(
+        (slack - hubExtra - extraGap * Math.max(0, nodes.length - 1)) /
+          Math.max(1, nodes.length),
+      ),
+    );
+    const cy = top + orbitRy + Math.round(20 * fitScale) + Math.round(hubExtra * 0.45),
       cx = W / 2,
       radius = contentW * 0.34;
-    parts.push(
+    bodyParts.push(
       el("ellipse", {
         cx,
         cy,
         rx: radius,
-        ry: 98,
+        ry: orbitRy,
         fill: "none",
         stroke: accent,
         strokeWidth: 2,
@@ -760,26 +988,40 @@ export function buildPrismScene(config: BlogInfographicConfig): {
     nodes.forEach((n, i) => {
       const a = -Math.PI / 2 + (Math.PI * 2 * i) / nodes.length,
         x = cx + Math.cos(a) * radius,
-        y = cy + Math.sin(a) * 98;
-      parts.push(
+        y = cy + Math.sin(a) * orbitRy;
+      bodyParts.push(
         path(`M ${cx} ${cy} L ${x} ${y}`, colors[i % 4], 2, { opacity: 0.3 }),
       );
-      medallion(n, x, y, 33, colors[i % 4]);
+      medallionInto(
+        bodyParts,
+        n,
+        x,
+        y,
+        Math.max(24, Math.round(31 * fitScale)),
+        colors[i % 4],
+      );
     });
-    parts.push(
-      circle(cx, cy, 64, surface, {
+    const centerR = Math.max(50, Math.round(62 * fitScale));
+    bodyParts.push(
+      circle(cx, cy, centerR, surface, {
         ...shadow,
         stroke: accent,
         strokeWidth: 2,
       }),
-      pictogram("idea", cx - 19, cy - 35, 38, accent),
+      pictogram(
+        "idea",
+        cx - Math.round(18 * fitScale),
+        cy - Math.round(33 * fitScale),
+        Math.round(36 * fitScale),
+        accent,
+      ),
     );
     const center = textBlock(
       config.centerLabel || "Key ideas",
       cx - 52,
-      cy + 7,
+      cy + 6,
       104,
-      19,
+      Math.max(15, Math.round(19 * fitScale)),
       ink,
       true,
       true,
@@ -789,56 +1031,80 @@ export function buildPrismScene(config: BlogInfographicConfig): {
         "Center label",
         "Use a shorter center label so it fits inside the concept hub.",
       );
-    parts.push(center.node);
-    let y = top + 280;
+    bodyParts.push(center.node);
+    let y = top + hubZoneH + hubExtra;
+    const textW = contentW - 144;
     nodes.forEach((n, i) => {
-      const h = textHeight(n, contentW - 44);
-      parts.push(rect(M, y + 4, 5, h - 8, colors[i % 4], 2));
-      drawText(n, M + 28, y, contentW - 44, i);
-      y += h + 30;
+      const h = rowHeights[i] + extraCardH;
+      const c = colors[i % 4];
+      const ntH = textHeight(n, textW);
+      const textY = y + Math.max(padY, Math.round((h - ntH) / 2));
+      surfaceRectInto(bodyParts, M, y, contentW, h, i % 2 === 0);
+      bodyParts.push(rect(M, y + 14, 5, Math.max(16, h - 28), c, 2));
+      drawText(n, M + 28, textY, textW, i);
+      medallionInto(
+        bodyParts,
+        n,
+        W - M - 58,
+        y + h / 2,
+        Math.max(24, Math.round(30 * fitScale)),
+        c,
+      );
+      y += h + rowGap;
     });
-    bottom = y;
+    bottom = y - rowGap;
   } else {
     const isTimeline = layout === "timeline",
       isChecklist = layout === "checklist",
       isRibbon = layout === "ribbon";
-    const textW = contentW - (isChecklist ? 236 : isTimeline ? 166 : 205);
-    const heights = nodes.map(
-      (n) => Math.max(isChecklist ? 150 : 140, textHeight(n, textW)) + 38,
+    const textW = contentW - (isChecklist ? 228 : isTimeline ? 162 : 196);
+    const topLead = Math.min(24, Math.round(slack * 0.1));
+    const extraGap = Math.min(
+      38,
+      Math.round((slack * 0.3) / Math.max(1, nodes.length - 1)),
     );
-    const total =
-      heights.reduce((a, b) => a + b, 0) + Math.max(0, nodes.length - 1) * 26;
-    const extra = Math.min(
-      24,
-      Math.max(0, footerY - 42 - top - total) / Math.max(1, nodes.length),
+    const rowGap = minGap + extraGap;
+    const extraCardH = Math.min(
+      115,
+      Math.round(
+        (slack - topLead - extraGap * Math.max(0, nodes.length - 1)) /
+          Math.max(1, nodes.length),
+      ),
     );
-    if (isTimeline && nodes.length > 1)
-      parts.push(
-        path(
-          `M ${M + 42} ${top + 44} V ${top + total + extra * nodes.length - heights[heights.length - 1] + 44}`,
-          accent,
-          5,
-          { opacity: 0.3 },
-        ),
+    let y = top + topLead;
+    if (isTimeline && nodes.length > 1) {
+      const firstCy = y + (rowHeights[0] + extraCardH) / 2;
+      const totalSpan =
+        rowHeights.reduce((a, b) => a + b + extraCardH, 0) +
+        Math.max(0, nodes.length - 1) * rowGap;
+      const lastCy =
+        y + totalSpan - (rowHeights[rowHeights.length - 1] + extraCardH) / 2;
+      bodyParts.push(
+        path(`M ${M + 42} ${firstCy} V ${lastCy}`, accent, 5, {
+          opacity: 0.3,
+        }),
       );
-    let y = top;
+    }
     nodes.forEach((n, i) => {
-      const h = heights[i] + extra,
+      const h = rowHeights[i] + extraCardH,
         c = colors[i % 4];
+      const ntH = textHeight(n, textW);
+      const textY = y + Math.max(padY, Math.round((h - ntH) / 2));
+      const cy = y + h / 2;
       if (isTimeline) {
-        surfaceRect(M + 112, y, contentW - 112, h);
-        parts.push(
-          circle(M + 42, y + 44, 32, surface, {
+        surfaceRectInto(bodyParts, M + 112, y, contentW - 112, h);
+        bodyParts.push(
+          circle(M + 42, cy, 32, surface, {
             ...shadow,
             stroke: c,
             strokeWidth: 3,
           }),
         );
-        parts.push(
+        bodyParts.push(
           textBlock(
             String(i + 1).padStart(2, "0"),
             M + 18,
-            y + 29,
+            cy - 15,
             48,
             22,
             c,
@@ -846,60 +1112,91 @@ export function buildPrismScene(config: BlogInfographicConfig): {
             true,
           ).node,
         );
-        drawText(n, M + 138, y + 18, textW, i);
+        drawText(n, M + 138, textY, textW, i);
       } else if (isChecklist) {
-        surfaceRect(M, y, contentW, h, i % 2 === 0);
-        parts.push(
-          rect(M + 24, y + 26, 42, 42, c, 12),
+        surfaceRectInto(bodyParts, M, y, contentW, h, i % 2 === 0);
+        bodyParts.push(
+          rect(M + 24, cy - 21, 42, 42, c, 12),
           path(
-            `m ${M + 34} ${y + 47} 8 8 15 -18`,
+            `m ${M + 34} ${cy} 8 8 15 -18`,
             light ? "#FFFFFF" : "#081322",
             4,
           ),
         );
-        drawText(n, M + 92, y + 18, textW, i);
-        medallion(n, W - M - 62, y + h / 2, 36, c);
+        drawText(n, M + 92, textY, textW, i);
+        medallionInto(
+          bodyParts,
+          n,
+          W - M - 62,
+          cy,
+          Math.max(26, Math.round(35 * fitScale)),
+          c,
+        );
       } else {
         const right = isRibbon && i % 2 === 1;
-        if (isRibbon) surfaceRect(M, y, contentW, h, true);
-        else
-          parts.push(
-            path(`M ${M + 180} ${y + h + 12} H ${W - M}`, c, 1, {
-              opacity: 0.2,
-            }),
-          );
+        if (isRibbon) surfaceRectInto(bodyParts, M, y, contentW, h, true);
+        else surfaceRectInto(bodyParts, M, y, contentW, h, i % 2 === 0);
         const ix = right ? W - M - 70 : M + 68;
-        medallion(n, ix, y + h / 2, 48, c);
-        drawText(n, right ? M + 18 : M + 184, y + 18, textW, i);
+        medallionInto(
+          bodyParts,
+          n,
+          ix,
+          cy,
+          Math.max(30, Math.round(44 * fitScale)),
+          c,
+        );
+        drawText(n, right ? M + 24 : M + 168, textY, textW, i);
       }
-      y += h + 26;
+      y += h + rowGap;
     });
-    bottom = y;
+    bottom = y - rowGap;
   }
-  if (bottom > footerY - 26)
+
+  parts.push(el("g", { clipPath: svgRef("body-clip") }, bodyParts));
+
+  if (bottom > footerY - 22)
     addIssue(
       "Text fit",
       "This fixed composition is full. Shorten the explanations, choose a roomier layout, or split the section. Export is paused to prevent cropped text.",
     );
-  parts.push(
-    path(`M ${M} ${footerY - 8} H ${W - M}`, accent, 1, { opacity: 0.25 }),
-  );
-  const footer = textBlock(
-    config.footerSourceLabel,
-    M,
-    footerY + 8,
-    contentW,
-    18,
-    muted,
-  );
-  if (footer.height > 46)
-    addIssue(
-      "Source label",
-      "Shorten the source label to two lines; keep the full source URL in the project.",
+
+  if (hasFooterSource || hasFooterSig) {
+    parts.push(
+      path(`M ${M} ${footerY - 8} H ${W - M}`, accent, 1, { opacity: 0.25 }),
     );
-  parts.push(footer.node);
-  if (hasSignature && signature.placement === "footer")
-    drawSignature(H - signatureH - 20);
+  }
+  if (hasFooterSource) {
+    const sourceMaxW = shareFooterBand
+      ? Math.max(220, contentW - sigBlockW - 32)
+      : contentW;
+    const sourceX =
+      shareFooterBand && signature.align === "left"
+        ? M + sigBlockW + 32
+        : M;
+    const sourceY = shareFooterBand
+      ? footerY + Math.max(8, Math.round((footerBandH - 36) / 2))
+      : footerY + 8;
+    const footer = textBlock(
+      config.footerSourceLabel,
+      sourceX,
+      sourceY,
+      sourceMaxW,
+      18,
+      muted,
+    );
+    if (footer.height > 46)
+      addIssue(
+        "Source label",
+        "Shorten the source label to two lines; keep the full source URL in the project.",
+      );
+    parts.push(footer.node);
+  }
+  if (hasFooterSig) {
+    const sigY = shareFooterBand
+      ? footerY + Math.max(4, Math.round((footerBandH - signatureH - 8) / 2))
+      : H - signatureH - 20;
+    drawSignature(sigY);
+  }
   return {
     svg: renderSVG(
       el(
