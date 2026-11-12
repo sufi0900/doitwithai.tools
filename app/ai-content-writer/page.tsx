@@ -25,7 +25,7 @@ const description =
  * `codex/infographic-studio-redesign`) so the Founder and QA can test all 6 stages
  * of the AI Content Writer Studio immediately without a compulsory sign-in gate.
  */
-export const REQUIRE_AUTH_FOR_CONTENT_WRITER_STUDIO = false;
+const REQUIRE_AUTH_FOR_CONTENT_WRITER_STUDIO = false;
 
 export const metadata: Metadata = {
   title,

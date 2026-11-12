@@ -292,10 +292,10 @@ export function buildSectionVisual(
     (b) =>
       !b.heading && b.kind === "list" && /^.{3,76}\s[—–]\s.{25,}$/.test(b.text),
   );
-  const expanded =
+  const expanded: { block: ArticleSourceBlock; presetTitle?: string }[] =
     overviewList.length < 2 && headings.length < 2
       ? expandCompoundBlocks(eligible)
-      : eligible.map((block) => ({ block }));
+      : eligible.map((block) => ({ block, presetTitle: undefined }));
 
   const groups: { title?: string; blocks: ArticleSourceBlock[] }[] =
     overviewList.length >= 2 && overviewList.length <= 6
