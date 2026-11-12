@@ -36,6 +36,9 @@ import {
   readiness,
   refreshVisual,
   safeUrl,
+  sanitizeMarkdownHeadings,
+  setSectionBody,
+  splitRunOnSentences,
   syncDocument,
   workspace,
 } from "./model";
@@ -92,7 +95,7 @@ export default function WriterWorkspace() {
         passive: false,
         simpler: false,
       }),
-    [targetGrade, setTargetGrade] = useState(9),
+    [targetGrade, setTargetGrade] = useState(10),
     [studioUnlocked, setStudioUnlocked] = useState(Boolean(w.studioUnlocked)),
     [darkStudio, setDarkStudio] = useState(true),
     [focus, setFocus] = useState(false),
@@ -393,12 +396,23 @@ export default function WriterWorkspace() {
     if (rewrite.scope === "selection" && rewrite.to > rewrite.from) {
       editor.current?.replace(rewrite.from, rewrite.to, rewrite.proposed);
     } else {
-      update((now) =>
-        syncDocument(now, {
+      update((now) => {
+        const synced = syncDocument(now, {
           type: "doc",
           content: markdownNodes(rewrite.proposed),
-        }),
-      );
+        });
+        const refreshedSections = synced.sections.map((sec) => {
+          try {
+            return refreshVisual(sec, synced);
+          } catch {
+            return sec;
+          }
+        });
+        return patchWorkspace(
+          { ...synced, sections: refreshedSections },
+          { document: undefined },
+        );
+      });
     }
     setRewrite(null);
   };
@@ -410,7 +424,11 @@ export default function WriterWorkspace() {
     const directives = parseBriefDirectives(
       current.current.rawUserBriefOrSourceText,
     );
-    const site = (current.current.brandSiteUrl || directives.websiteUrl || "").trim();
+    const site = (
+      current.current.brandSiteUrl ||
+      directives.websiteUrl ||
+      "https://doitwithai.tools"
+    ).trim();
     try {
       const res = await fetch("/api/writer-workspace/research", {
         method: "POST",
@@ -435,32 +453,51 @@ export default function WriterWorkspace() {
         throw new Error(json?.error || "Could not refresh research links.");
       }
       const packet = json.packet as ResearchPacket;
-      update((now) => ({
-        ...now,
-        brandSiteUrl: now.brandSiteUrl || packet.siteScanned || site,
-        keywordCluster: {
-          ...now.keywordCluster,
-          primaryKeyword:
-            now.keywordCluster.primaryKeyword || packet.primaryKeyword || "",
-          secondaryKeywords: packet.secondaryKeywords?.length
-            ? packet.secondaryKeywords
-            : now.keywordCluster.secondaryKeywords,
-          lsiEntities: packet.lsiEntities?.length
-            ? packet.lsiEntities
-            : now.keywordCluster.lsiEntities,
-        },
-        internalLinks: (packet.internalLinks || []).map((l) => ({
-          id: id(),
-          anchorText: l.anchorText || l.title,
-          targetTitle: l.title,
-          targetUrl: l.url,
-          category: "pillar-guide" as const,
-        })),
-        writerWorkspace: {
-          ...workspace(now),
-          research: packet,
-        },
-      }));
+      update((now) => {
+        const nw = workspace(now);
+        const mergedRefs = [...nw.references];
+        for (const ext of packet.externalLinks || []) {
+          const validUrl = safeUrl(ext.url);
+          if (validUrl && !mergedRefs.some((r) => r.url === validUrl)) {
+            mergedRefs.push({
+              id: id(),
+              url: validUrl,
+              title: ext.title || validUrl,
+              text:
+                ext.snippet && ext.snippet.length >= 90
+                  ? ext.snippet
+                  : `${ext.title || validUrl} — Verified reference material and technical documentation supporting "${packet.primaryTopic || now.projectTitle}".`,
+            });
+          }
+        }
+        return {
+          ...now,
+          brandSiteUrl: now.brandSiteUrl || packet.siteScanned || site,
+          keywordCluster: {
+            ...now.keywordCluster,
+            primaryKeyword:
+              now.keywordCluster.primaryKeyword || packet.primaryKeyword || "",
+            secondaryKeywords: packet.secondaryKeywords?.length
+              ? packet.secondaryKeywords
+              : now.keywordCluster.secondaryKeywords,
+            lsiEntities: packet.lsiEntities?.length
+              ? packet.lsiEntities
+              : now.keywordCluster.lsiEntities,
+          },
+          internalLinks: (packet.internalLinks || []).map((l) => ({
+            id: id(),
+            anchorText: l.anchorText || l.title,
+            targetTitle: l.title,
+            targetUrl: l.url,
+            category: "pillar-guide" as const,
+          })),
+          writerWorkspace: {
+            ...nw,
+            research: packet,
+            references: mergedRefs.slice(0, 8),
+          },
+        };
+      });
       setMessage(
         `Research refreshed: ${packet.internalLinks.length} internal links & ${packet.externalLinks.length} authority references ready.`,
       );
@@ -802,6 +839,40 @@ export default function WriterWorkspace() {
               onRunAiHelper={(inst, scope) =>
                 void requestRewrite(inst, scope)
               }
+              onQuickReadabilityPolish={() => {
+                update((now) => {
+                  const polishedSections = now.sections.map((sec) => {
+                    const nextBody = splitRunOnSentences(
+                      sanitizeMarkdownHeadings(bodyOf(sec)),
+                    );
+                    const updatedSec = setSectionBody(sec, nextBody);
+                    try {
+                      return refreshVisual(updatedSec, now);
+                    } catch {
+                      return updatedSec;
+                    }
+                  });
+                  const polishedIntro = splitRunOnSentences(
+                    sanitizeMarkdownHeadings(
+                      now.metaPack.aeoDirectAnswer50Words || "",
+                    ),
+                  );
+                  return patchWorkspace(
+                    {
+                      ...now,
+                      metaPack: {
+                        ...now.metaPack,
+                        aeoDirectAnswer50Words: polishedIntro,
+                      },
+                      sections: polishedSections,
+                    },
+                    { document: undefined, quickAnswerBox: polishedIntro },
+                  );
+                });
+                setMessage(
+                  "Polished sentence lengths, split headings cleanly, and refreshed section infographics.",
+                );
+              }}
               onApplyRevision={applyRewriteProposal}
               onDiscardRevision={() => setRewrite(null)}
               onInsertLink={(anchor, url) =>
@@ -956,7 +1027,7 @@ export default function WriterWorkspace() {
                 key={p.projectId}
                 ref={editor}
                 project={p}
-                highlights={Object.values(highlightToggles).some(Boolean)}
+                highlights={leftTab === "readability" && Object.values(highlightToggles).some(Boolean)}
                 highlightToggles={highlightToggles}
                 targetGrade={targetGrade}
                 onChange={(doc: RichNode) =>

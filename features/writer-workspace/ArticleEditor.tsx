@@ -38,7 +38,7 @@ import {
   scoreSentences,
 } from "@/features/readability/engine";
 import { buildInfographicScene } from "@/lib/blog-infographic-studio/canvas-renderer";
-import { projectDocument, safeUrl } from "./model";
+import { inline, markdownNodes, projectDocument, safeUrl } from "./model";
 import type { ReadabilityHighlightToggles } from "./LeftStudioPanel";
 import type { Project, RichNode } from "./types";
 import styles from "./workspace.module.css";
@@ -228,7 +228,7 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
                       "\n",
                     );
                     if (!text.trim()) return;
-                    const grade = latest.current.targetGrade || 9;
+                    const grade = latest.current.targetGrade || 10;
                     const toggles = latest.current.highlightToggles || {
                       veryHard: true,
                       hard: true,
@@ -368,20 +368,25 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
             text: editor.state.doc.textBetween(from, to, " "),
           };
         },
-        replace: (from, to, text) =>
-          editor
-            ?.chain()
-            .focus()
-            .insertContentAt(
-              { from, to },
-              text
+        replace: (from, to, text) => {
+          if (!editor) return;
+          const hasBlockMd = /(?:^|\n)\s*(?:#{1,6}\s|[-*+]\s|\d+[.)]\s|>|\|)|\n\s*\n/.test(
+            text,
+          );
+          const contentNodes = hasBlockMd
+            ? markdownNodes(text)
+            : text
                 .split("\n")
                 .flatMap((t, i) => [
                   ...(i ? [{ type: "hardBreak" }] : []),
-                  ...(t ? [{ type: "text", text: t }] : []),
-                ]),
-            )
-            .run(),
+                  ...(t ? inline(t) : []),
+                ]);
+          editor
+            .chain()
+            .focus()
+            .insertContentAt({ from, to }, contentNodes)
+            .run();
+        },
         insertLink: (anchor, url) => {
           const valid = safeUrl(url);
           if (!editor || !valid) return;
