@@ -13,6 +13,7 @@ import {
 import type { useWorkspace } from "./useWorkspace";
 import { canApplyResponse, draftPendingSections } from "./jobs";
 export { canApplyResponse } from "./jobs";
+
 export function generationContext(p: Project) {
   const w = workspace(p);
   return {
@@ -38,6 +39,7 @@ export function generationContext(p: Project) {
     instruction: p.customUserInstructions.slice(0, 2000),
   };
 }
+
 async function request(
   p: Project,
   operation: "plan" | "section" | "rewrite",
@@ -48,7 +50,7 @@ async function request(
   const res = await fetch("/api/writer-workspace/generate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    signal: AbortSignal.any([signal, AbortSignal.timeout(50000)]),
+    signal: AbortSignal.any([signal, AbortSignal.timeout(55000)]),
     body: JSON.stringify({
       ...generationContext(p),
       operation,
@@ -68,6 +70,25 @@ async function request(
     );
   return data;
 }
+
+async function requestWithAutoRetry(
+  p: Project,
+  operation: "plan" | "section" | "rewrite",
+  signal: AbortSignal,
+  extra: Record<string, unknown> = {},
+) {
+  try {
+    return await request(p, operation, signal, extra);
+  } catch (err) {
+    if (signal.aborted) throw err;
+    const msg = err instanceof Error ? err.message : "";
+    if (/not configured|usage limit/i.test(msg)) throw err;
+    await new Promise((r) => setTimeout(r, 900));
+    if (signal.aborted) throw err;
+    return await request(p, operation, signal, extra);
+  }
+}
+
 export function useGeneration(store: ReturnType<typeof useWorkspace>) {
   const [busy, setBusy] = useState(false);
   const controller = useRef<AbortController | null>(null),
@@ -75,10 +96,12 @@ export function useGeneration(store: ReturnType<typeof useWorkspace>) {
     active = useRef(""),
     locked = useRef(false);
   const { current, update, save } = store;
+
   const status = (patch: Partial<ReturnType<typeof workspace>["run"]>) =>
     update((p) =>
       patchWorkspace(p, { run: { ...workspace(p).run, ...patch } }),
     );
+
   const stop = () => {
     locked.current = false;
     controller.current?.abort();
@@ -97,6 +120,7 @@ export function useGeneration(store: ReturnType<typeof useWorkspace>) {
       void save(p);
     }
   };
+
   useEffect(
     () => () => {
       controller.current?.abort();
@@ -104,6 +128,7 @@ export function useGeneration(store: ReturnType<typeof useWorkspace>) {
     },
     [],
   );
+
   useEffect(() => {
     if (active.current && active.current !== store.project.projectId) {
       controller.current?.abort();
@@ -112,6 +137,7 @@ export function useGeneration(store: ReturnType<typeof useWorkspace>) {
       setBusy(false);
     }
   }, [store.project.projectId]);
+
   const start = () => {
     locked.current = true;
     const abort = new AbortController();
@@ -121,6 +147,7 @@ export function useGeneration(store: ReturnType<typeof useWorkspace>) {
     setBusy(true);
     return { abort, ticket, pid: active.current };
   };
+
   const fail = (error: unknown, ticket: number) => {
     if (ticket !== epoch.current) return;
     const message =
@@ -130,9 +157,12 @@ export function useGeneration(store: ReturnType<typeof useWorkspace>) {
     const p = status({ status: "failed", error: message, current: undefined });
     void save(p);
   };
-  const plan = async () => {
-    if (locked.current) return;
-    const { abort, ticket, pid } = start();
+
+  const runPlanStep = async (
+    abort: AbortController,
+    ticket: number,
+    pid: string,
+  ) => {
     const p = current.current,
       fingerprint = inputRevision(p),
       revision = articleRevision(p);
@@ -142,41 +172,34 @@ export function useGeneration(store: ReturnType<typeof useWorkspace>) {
       error: undefined,
       completed: [],
     });
-    try {
-      const supplied = p.sections.length
-        ? generationContext(p).outline
-        : parseBrief(p.rawUserBriefOrSourceText).outline;
-      const res = await request(p, "plan", abort.signal, { outline: supplied });
-      if (ticket !== epoch.current) return;
-      if (!canApplyResponse(current.current, pid, fingerprint, revision))
-        throw new Error(
-          "Your brief or article changed while planning. The response was left unapplied; review your changes and retry.",
-        );
-      const next = applyPlan(current.current, res.data as Plan, supplied);
-      next.sections = next.sections.map((s) => ({
-        ...s,
-        targetWordCount: Math.max(
-          100,
-          Math.min(
-            800,
-            Math.round(workspace(next).targetWords / next.sections.length),
-          ),
+    const supplied = p.sections.length
+      ? generationContext(p).outline
+      : parseBrief(p.rawUserBriefOrSourceText).outline;
+    const res = await requestWithAutoRetry(p, "plan", abort.signal, {
+      outline: supplied,
+    });
+    if (ticket !== epoch.current) return false;
+    if (!canApplyResponse(current.current, pid, fingerprint, revision))
+      throw new Error(
+        "Your brief or article changed while planning. The response was left unapplied; review your changes and retry.",
+      );
+    const next = applyPlan(current.current, res.data as Plan, supplied);
+    next.sections = next.sections.map((s) => ({
+      ...s,
+      targetWordCount: Math.max(
+        100,
+        Math.min(
+          800,
+          Math.round(workspace(next).targetWords / next.sections.length),
         ),
-      }));
-      update(next);
-      await save(current.current);
-    } catch (e) {
-      fail(e, ticket);
-    } finally {
-      if (ticket === epoch.current) {
-        locked.current = false;
-        setBusy(false);
-      }
-    }
+      ),
+    }));
+    update(next);
+    await save(current.current);
+    return true;
   };
-  const draft = async () => {
-    if (locked.current || !current.current.sections.length) return;
-    const { abort, ticket, pid } = start();
+
+  const runDraftStep = async (abort: AbortController, ticket: number) => {
     update((now) => ({
       ...now,
       sections: now.sections.map((s) => ({
@@ -199,31 +222,79 @@ export function useGeneration(store: ReturnType<typeof useWorkspace>) {
         )
         .map((s) => s.id),
     });
-    try {
-      await draftPendingSections({
-        get: () => current.current,
-        commit: update,
-        save,
-        signal: abort.signal,
-        active: () => ticket === epoch.current,
-        request: (p, section, previousEnding) =>
-          request(p, "section", abort.signal, {
-            section: {
-              id: section.id,
-              heading: section.h2Text,
-              subheadings: section.subHeadings.map((h) => h.h3Text),
-              words: Math.max(100, Math.min(800, section.targetWordCount)),
-            },
-            previousEnding,
-          }),
+    await draftPendingSections({
+      get: () => current.current,
+      commit: update,
+      save,
+      signal: abort.signal,
+      active: () => ticket === epoch.current,
+      request: (p, section, previousEnding) =>
+        requestWithAutoRetry(p, "section", abort.signal, {
+          section: {
+            id: section.id,
+            heading: section.h2Text,
+            subheadings: section.subHeadings.map((h) => h.h3Text),
+            words: Math.max(100, Math.min(800, section.targetWordCount)),
+          },
+          previousEnding,
+        }),
+    });
+    if (ticket === epoch.current) {
+      const p = status({
+        status: "done",
+        current: undefined,
+        error: undefined,
       });
+      await save(p);
+    }
+  };
+
+  const plan = async () => {
+    if (locked.current) return;
+    const { abort, ticket, pid } = start();
+    try {
+      await runPlanStep(abort, ticket, pid);
+    } catch (e) {
+      fail(e, ticket);
+    } finally {
       if (ticket === epoch.current) {
-        const p = status({
-          status: "done",
-          current: undefined,
-          error: undefined,
-        });
-        await save(p);
+        locked.current = false;
+        setBusy(false);
+      }
+    }
+  };
+
+  const draft = async () => {
+    if (locked.current || !current.current.sections.length) return;
+    const { abort, ticket } = start();
+    try {
+      await runDraftStep(abort, ticket);
+    } catch (e) {
+      fail(e, ticket);
+    } finally {
+      if (ticket === epoch.current) {
+        locked.current = false;
+        setBusy(false);
+      }
+    }
+  };
+
+  /**
+   * 1-Click Full Onboarding-to-Dashboard Pipeline:
+   * Automatically plans the outline & metadata (if not already planned) and
+   * immediately drafts all sections + inline section infographics before
+   * unlocking the full Studio Dashboard.
+   */
+  const generateAll = async () => {
+    if (locked.current) return;
+    const { abort, ticket, pid } = start();
+    try {
+      if (!current.current.sections.length) {
+        const planned = await runPlanStep(abort, ticket, pid);
+        if (!planned || ticket !== epoch.current) return;
+      }
+      if (current.current.sections.length) {
+        await runDraftStep(abort, ticket);
       }
     } catch (e) {
       fail(e, ticket);
@@ -234,6 +305,7 @@ export function useGeneration(store: ReturnType<typeof useWorkspace>) {
       }
     }
   };
+
   const rewrite = async (
     text: string,
     instruction: string,
@@ -243,5 +315,6 @@ export function useGeneration(store: ReturnType<typeof useWorkspace>) {
       selection: text,
       instruction,
     });
-  return { busy, plan, draft, stop, rewrite };
+
+  return { busy, plan, draft, generateAll, stop, rewrite };
 }
