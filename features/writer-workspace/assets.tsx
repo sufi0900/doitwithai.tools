@@ -192,6 +192,23 @@ export function socialDrafts(p: Project) {
     };
   });
 }
+function wrapPosterLines(text: string, maxChars: number, maxLines: number): string[] {
+  const words = (text || "").trim().split(/\s+/).filter(Boolean);
+  const lines: string[] = [];
+  let line = "";
+  for (const word of words) {
+    if (line && `${line} ${word}`.length > maxChars) {
+      lines.push(line);
+      line = word;
+      if (lines.length === maxLines) break;
+    } else {
+      line = line ? `${line} ${word}` : word;
+    }
+  }
+  if (line && lines.length < maxLines) lines.push(line);
+  return lines.length ? lines : ["Key Takeaway"];
+}
+
 export function SocialPoster({
   p,
   channel,
@@ -211,14 +228,45 @@ export function SocialPoster({
 }) {
   const brand = workspace(p).brand,
     dark = settings.theme !== "paper",
-    bg = dark ? "#101B37" : "#F1F4FF",
-    ink = dark ? "#FFFFFF" : "#152342",
-    muted = dark ? "#D2DBF0" : "#475569",
-    accent = dark
-      ? mixColor(brand.color, "#FFFFFF", 0.58)
-      : mixColor(brand.color, "#14213D", 0.28),
     spec = getSocialChannelSpec(channel),
-    gradientId = `writer-poster-${hash(`${channel}|${brand.color}|${settings.theme}`)}`;
+    excerpts = storyExcerpts(p).points.slice(0, 3);
+
+  const channelAccentMap: Record<string, string> = {
+    Facebook: "#2563EB",
+    Instagram: "#E11D48",
+    LinkedIn: "#0284C7",
+    X: "#6366F1",
+    Pinterest: "#DC2626",
+    Threads: "#8B5CF6",
+    Reddit: "#EA580C",
+    Quora: "#B91C1C",
+    YouTube: "#EF4444",
+  };
+  const baseColor =
+    brand.color && brand.color !== "#5271FF"
+      ? brand.color
+      : channelAccentMap[String(channel)] || "#5271FF";
+
+  const bg = dark ? "#0C152B" : "#F4F7FF",
+    surface = dark ? "#142242" : "#FFFFFF",
+    ink = dark ? "#F8FAFC" : "#0F172A",
+    muted = dark ? "#CBD5E1" : "#475569",
+    accent = dark
+      ? mixColor(baseColor, "#FFFFFF", 0.42)
+      : mixColor(baseColor, "#0F172A", 0.18),
+    gradientId = `writer-poster-${hash(`${channel}|${baseColor}|${settings.theme}`)}`;
+
+  const isTallPin = spec.layoutStyle === "tall-pin";
+  const isThumbnail = spec.layoutStyle === "thumbnail-bold";
+  const isCarousel = spec.layoutStyle === "carousel-deck";
+  const isThread = spec.layoutStyle === "thread-card";
+
+  const headLines = wrapPosterLines(
+    headline,
+    isTallPin ? 22 : isThumbnail ? 24 : 30,
+    3,
+  );
+
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -229,71 +277,247 @@ export function SocialPoster({
       aria-label={`${channel}: ${headline}`}
     >
       <defs>
-        <linearGradient id={gradientId} x2="1" y2="1">
-          <stop stopColor={bg} />
+        <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor={bg} />
           <stop
-            offset="1"
-            stopColor={brand.color}
-            stopOpacity={dark ? 0.34 : 0.1}
+            offset="100%"
+            stopColor={baseColor}
+            stopOpacity={dark ? 0.36 : 0.14}
           />
         </linearGradient>
       </defs>
       <rect width={width} height={height} fill={bg} />
       <rect width={width} height={height} fill={`url(#${gradientId})`} />
       <circle
-        cx={width}
-        cy={0}
-        r={width * 0.48}
-        fill={brand.color}
-        opacity={0.1}
+        cx={width * 0.92}
+        cy={height * 0.12}
+        r={width * 0.36}
+        fill={baseColor}
+        opacity={0.14}
       />
-      <rect x={60} y={54} width={48} height={5} rx={2} fill={accent} />
+      <rect x={60} y={48} width={64} height={6} rx={3} fill={accent} />
       <text
         x={60}
-        y={99}
+        y={92}
         fontFamily="Arial, sans-serif"
-        fontSize={19}
-        fontWeight={700}
+        fontSize={18}
+        fontWeight={800}
+        letterSpacing="1.2"
         fill={muted}
       >
-        {String(channel).toUpperCase()} · {width}×{height}
+        {String(channel).toUpperCase()} · {width}×{height} · {spec.layoutStyle.toUpperCase()}
       </text>
+
       {spec.supportsCarousel ? (
-        <g transform={`translate(${width - 210}, 62)`}>
-          <rect width={150} height={36} rx={18} fill={accent} fillOpacity={0.18} />
+        <g transform={`translate(${width - 220}, 56)`}>
+          <rect width={160} height={38} rx={19} fill={accent} fillOpacity={0.22} />
           <text
-            x={75}
-            y={23}
+            x={80}
+            y={24}
             textAnchor="middle"
             fontFamily="Arial, sans-serif"
             fontSize={14}
-            fontWeight={700}
+            fontWeight={800}
             fill={ink}
           >
-            CAROUSEL 01 →
+            SLIDE 01 / 05 →
           </text>
         </g>
       ) : null}
+
       {spec.isVideoChannel ? (
-        <g transform={`translate(${width - 170}, 56)`}>
-          <rect width={110} height={46} rx={12} fill="#ef4444" fillOpacity={0.92} />
-          <polygon points="48,14 48,32 68,23" fill="#ffffff" />
+        <g transform={`translate(${width - 190}, 52)`}>
+          <rect width={130} height={48} rx={14} fill="#EF4444" />
+          <polygon points="54,14 54,34 78,24" fill="#FFFFFF" />
         </g>
       ) : null}
-      <SocialCardArtwork
-        kind={settings.variant || "executive-minimal"}
-        headline={headline}
-        body={body}
-        width={width}
-        height={height}
-        palette={{
-          textPrimary: ink,
-          textSecondary: muted,
-          accent,
-          accentSecondary: accent,
-          cardSurface: dark ? "#1B2A4A" : "#FFFFFF",
-        }}
-      />
+
+      {/* Platform-Specific Structural Overlay */}
+      {isTallPin ? (
+        <g>
+          {headLines.map((line, idx) => (
+            <text
+              key={idx}
+              x={60}
+              y={175 + idx * 54}
+              fontFamily="Arial, sans-serif"
+              fontSize={44}
+              fontWeight={800}
+              fill={ink}
+            >
+              {line}
+            </text>
+          ))}
+          {(excerpts.length
+            ? excerpts
+            : [{ heading: "Core Strategy", text: body }]
+          )
+            .slice(0, 3)
+            .map((pt, idx) => {
+              const cardY = 390 + idx * 310;
+              const ptLines = wrapPosterLines(pt.text, 40, 3);
+              return (
+                <g key={idx} transform={`translate(60, ${cardY})`}>
+                  <rect
+                    width={width - 120}
+                    height={270}
+                    rx={22}
+                    fill={surface}
+                    fillOpacity={dark ? 0.88 : 0.96}
+                    stroke={accent}
+                    strokeOpacity={0.45}
+                  />
+                  <circle cx={52} cy={56} r={24} fill={accent} fillOpacity={0.25} />
+                  <text
+                    x={52}
+                    y={63}
+                    textAnchor="middle"
+                    fontFamily="Arial, sans-serif"
+                    fontSize={20}
+                    fontWeight={800}
+                    fill={ink}
+                  >
+                    0{idx + 1}
+                  </text>
+                  <text
+                    x={94}
+                    y={64}
+                    fontFamily="Arial, sans-serif"
+                    fontSize={25}
+                    fontWeight={800}
+                    fill={ink}
+                  >
+                    {short(pt.heading, 34)}
+                  </text>
+                  {ptLines.map((ln, li) => (
+                    <text
+                      key={li}
+                      x={40}
+                      y={122 + li * 36}
+                      fontFamily="Arial, sans-serif"
+                      fontSize={21}
+                      fill={muted}
+                    >
+                      {ln}
+                    </text>
+                  ))}
+                </g>
+              );
+            })}
+        </g>
+      ) : isThumbnail ? (
+        <g>
+          <rect
+            x={60}
+            y={136}
+            width={width - 120}
+            height={height - 236}
+            rx={26}
+            fill={surface}
+            fillOpacity={dark ? 0.82 : 0.95}
+            stroke={accent}
+            strokeWidth={2}
+          />
+          {headLines.map((line, idx) => (
+            <text
+              key={idx}
+              x={104}
+              y={248 + idx * 72}
+              fontFamily="Arial, sans-serif"
+              fontSize={58}
+              fontWeight={900}
+              fill={ink}
+            >
+              {line}
+            </text>
+          ))}
+          <rect
+            x={104}
+            y={height - 178}
+            width={280}
+            height={46}
+            rx={23}
+            fill="#EF4444"
+          />
+          <text
+            x={244}
+            y={height - 148}
+            textAnchor="middle"
+            fontFamily="Arial, sans-serif"
+            fontSize={19}
+            fontWeight={800}
+            fill="#FFFFFF"
+          >
+            WATCH FULL BREAKDOWN ▶
+          </text>
+        </g>
+      ) : isCarousel || isThread ? (
+        <g>
+          <SocialCardArtwork
+            kind={settings.variant || (isThread ? "quote-spotlight" : "stat-spotlight")}
+            headline={headline}
+            body={body}
+            width={width}
+            height={height}
+            palette={{
+              textPrimary: ink,
+              textSecondary: muted,
+              accent,
+              accentSecondary: accent,
+              cardSurface: surface,
+            }}
+          />
+          {excerpts.length > 0 ? (
+            <g transform={`translate(60, ${height - 210})`}>
+              <rect
+                width={width - 120}
+                height={104}
+                rx={16}
+                fill={surface}
+                fillOpacity={0.92}
+                stroke={accent}
+                strokeOpacity={0.4}
+              />
+              <text
+                x={28}
+                y={42}
+                fontFamily="Arial, sans-serif"
+                fontSize={17}
+                fontWeight={800}
+                fill={accent}
+              >
+                KEY SECTION TAKEAWAY
+              </text>
+              <text
+                x={28}
+                y={74}
+                fontFamily="Arial, sans-serif"
+                fontSize={20}
+                fontWeight={700}
+                fill={ink}
+              >
+                {short(`${excerpts[0].heading}: ${excerpts[0].text}`, 68)}
+              </text>
+            </g>
+          ) : null}
+        </g>
+      ) : (
+        <SocialCardArtwork
+          kind={settings.variant || "executive-minimal"}
+          headline={headline}
+          body={body}
+          width={width}
+          height={height}
+          palette={{
+            textPrimary: ink,
+            textSecondary: muted,
+            accent,
+            accentSecondary: accent,
+            cardSurface: surface,
+          }}
+        />
+      )}
+
       {brand.logo && (
         <image
           href={brand.logo}
@@ -309,9 +533,10 @@ export function SocialPoster({
         y={height - 45}
         fontFamily="Arial, sans-serif"
         fontSize={19}
+        fontWeight={700}
         fill={muted}
       >
-        {short(brand.name || "", 60)}
+        {short(brand.name || p.brandSiteUrl || "DoItWithAI Studio", 60)}
       </text>
     </svg>
   );
