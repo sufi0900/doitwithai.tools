@@ -60,7 +60,8 @@
 }
 .shell .primary {
   background: var(--blue);
-  border-color: var(--blue);\n  color: #fff;
+  border-color: var(--blue);
+  color: #fff;
   box-shadow: 0 3px 8px #4867ff1f;
 }
 .shell .primary:hover {
