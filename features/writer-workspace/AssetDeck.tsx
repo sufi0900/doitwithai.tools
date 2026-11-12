@@ -11,6 +11,7 @@ import {
   Volume2,
   X,
   Check,
+  Sparkles,
 } from "lucide-react";
 import JSZip from "jszip";
 import {
@@ -44,6 +45,7 @@ import {
 } from "./assets";
 import type { Channel } from "./assets";
 import styles from "./workspace.module.css";
+
 export default function AssetDeck({
   project: p,
   onChange,
@@ -71,7 +73,9 @@ export default function AssetDeck({
       () => (posts.length ? newsletter(p) : null),
       [p, posts.length],
     );
+
   useEffect(() => () => abort.current?.abort(), []);
+
   const run = async (label: string, task: () => Promise<unknown>) => {
     if (busy) return;
     setBusy(label);
@@ -93,6 +97,7 @@ export default function AssetDeck({
       setBusy("");
     }
   };
+
   const social = (patch: SocialOverride) =>
     onChange((now) => {
       const nw = workspace(now);
@@ -107,6 +112,7 @@ export default function AssetDeck({
         },
       });
     });
+
   const refresh = (sid: string) =>
     onChange((now) => {
       const s = now.sections.find((s) => s.id === sid);
@@ -126,6 +132,7 @@ export default function AssetDeck({
         },
       );
     });
+
   const downloadPost = async () => {
     if (!post) return;
     const svg = await posterSvg(
@@ -144,6 +151,7 @@ export default function AssetDeck({
       `${channel.toLowerCase()}-post.zip`,
     );
   };
+
   const audioZip = async () => {
     if (!audio) return;
     const zip = new JSZip();
@@ -153,7 +161,9 @@ export default function AssetDeck({
       "article-narration.zip",
     );
   };
+
   const hasContent = posts.length > 0;
+
   return (
     <section
       className={styles.assetDeck}
@@ -162,10 +172,15 @@ export default function AssetDeck({
     >
       <div className={styles.assetHeader}>
         <div>
-          <p className={styles.eyebrow}>Beyond the article</p>
-          <h2>Your publishing kit</h2>
+          <p className={styles.eyebrow}>
+            Beyond the article · Omnichannel Visuals, Social Studio &amp;
+            Conversions
+          </p>
+          <h2>Your publishing &amp; social distribution kit</h2>
           <p>
-            Turn the current draft into images, posts, and downloadable files.
+            Customize section infographics, preview and edit social media cards
+            with multiple caption angles, export carousels and newsletters, or
+            download the complete publishing ZIP.
           </p>
         </div>
         <button
@@ -179,9 +194,10 @@ export default function AssetDeck({
           }
         >
           <Download size={16} />
-          Download everything
+          Download everything (.ZIP)
         </button>
       </div>
+
       <div
         role="tablist"
         aria-label="Publishing assets"
@@ -210,6 +226,7 @@ export default function AssetDeck({
           </button>
         ))}
       </div>
+
       {busy && (
         <p className={styles.progress} role="status">
           {busy}…
@@ -220,6 +237,7 @@ export default function AssetDeck({
           {message}
         </p>
       )}
+
       <div
         role="tabpanel"
         id={`asset-panel-${tab}`}
@@ -231,8 +249,10 @@ export default function AssetDeck({
             <ImageIcon size={30} />
             <h3>Write first. Repurpose next.</h3>
             <p>
-              Your section images and publishing drafts will appear here as the
-              article takes shape.
+              Your section infographics, Facebook/Instagram/LinkedIn social
+              cards, YouTube video scripts, email newsletter, and downloadable
+              files will appear here automatically once your article draft is
+              generated.
             </p>
           </div>
         ) : (
@@ -240,9 +260,9 @@ export default function AssetDeck({
             {tab === "images" && (
               <>
                 <p className={styles.muted}>
-                  Images use the same infographic studio as the standalone tool.
-                  Review the source content and refresh a visual after changing
-                  its section.
+                  Every H2 section pairs with our Blog Section Infographic
+                  Generator. Click <strong>Customize</strong> on any card to
+                  switch layout compositions, color themes, or explanations.
                 </p>
                 <div className={styles.imageGrid}>
                   {p.sections.map((s, i) => {
@@ -351,6 +371,7 @@ export default function AssetDeck({
                 )}
               </>
             )}
+
             {tab === "social" && post && (
               <>
                 <div
@@ -373,14 +394,14 @@ export default function AssetDeck({
                     <div>
                       <p className={styles.eyebrow}>
                         {channel === "YouTube"
-                          ? "Video script"
-                          : "Post caption"}
+                          ? "Video script studio"
+                          : `${channel} post & visual studio`}
                       </p>
                       <h3>A starting point for {channel}</h3>
                       <p className={styles.muted}>
                         {channel === "YouTube"
                           ? "Choose a short script or a longer video outline. Review before recording."
-                          : "Choose an angle, then adjust the wording and visual for your audience."}
+                          : "Switch between caption angles below, then customize the wording and visual card for your audience."}
                       </p>
                     </div>
                     {post.stale && (
@@ -389,6 +410,32 @@ export default function AssetDeck({
                         Review it or reset to the current draft.
                       </p>
                     )}
+
+                    {/* Visible 1-Click Caption / Script Option Pills */}
+                    <div className={styles.variantPillsBlock}>
+                      <span className={styles.eyebrow}>
+                        <Sparkles size={11} /> Click an Option to Switch{" "}
+                        {channel === "YouTube" ? "Script" : "Caption"} Angle:
+                      </span>
+                      <div className={styles.variantPillsRow}>
+                        {post.variants.map((v, i) => {
+                          const isCurrent = post.caption === v.content;
+                          return (
+                            <button
+                              type="button"
+                              key={i}
+                              aria-pressed={isCurrent}
+                              className={styles.variantPill}
+                              onClick={() => social({ caption: v.content })}
+                            >
+                              {isCurrent && <Check size={12} />}
+                              {i === 0 ? `★ ${v.label}` : v.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
                     <label>
                       Suggested angle
                       <select
@@ -414,7 +461,7 @@ export default function AssetDeck({
                     <label>
                       {channel === "YouTube" ? "Script" : "Caption"}
                       <textarea
-                        rows={11}
+                        rows={10}
                         maxLength={18000}
                         value={post.caption}
                         onChange={(e) => social({ caption: e.target.value })}
@@ -463,11 +510,12 @@ export default function AssetDeck({
                     <div className={styles.buttonRow}>
                       <button
                         type="button"
+                        className={styles.primary}
                         disabled={Boolean(busy)}
                         onClick={() => void run("Preparing post", downloadPost)}
                       >
                         <Download size={14} />
-                        Download post ZIP
+                        Download {channel} post ZIP
                       </button>
                       <button
                         type="button"
@@ -497,8 +545,8 @@ export default function AssetDeck({
                   </div>
                   <div className={styles.socialPreview}>
                     <div className={styles.previewChrome}>
-                      <span>{channel} image</span>
-                      <span>{sizes[channel].join(" × ")}</span>
+                      <span>{channel} visual card preview</span>
+                      <span>{sizes[channel].join(" × ")} px</span>
                     </div>
                     <SocialPoster
                       p={p}
@@ -529,19 +577,21 @@ export default function AssetDeck({
                       }
                     >
                       <Download size={15} />
-                      Image only
+                      Download {channel} image (PNG)
                     </button>
                   </div>
                 </div>
                 <div className={styles.carouselRow}>
                   <div>
-                    <h3>LinkedIn carousel</h3>
+                    <h3>LinkedIn &amp; Instagram Carousel Slider Deck</h3>
                     <p className={styles.muted}>
-                      A portrait slide deck built from this article’s sections.
+                      A multi-slide portrait carousel deck built automatically
+                      from this article’s H1 and H2 takeaways.
                     </p>
                   </div>
                   <button
                     type="button"
+                    className={styles.primary}
                     disabled={Boolean(busy)}
                     onClick={() =>
                       void run("Rendering carousel", async () => {
@@ -560,16 +610,17 @@ export default function AssetDeck({
                 </div>
               </>
             )}
+
             {tab === "email" && email && (
               <div className={styles.emailGrid}>
                 <div className={styles.formStack}>
-                  <h3>Your email edition</h3>
+                  <h3>Your email newsletter edition</h3>
                   <p className={styles.muted}>
-                    Select a subject, then edit the newsletter. Your changes are
-                    saved with this project.
+                    Select a recommended subject line below, then edit the
+                    newsletter body. Your changes are saved with this project.
                   </p>
                   <label>
-                    Subject line
+                    Subject line (Selected)
                     <input
                       value={w.email?.subject ?? email.draft.selectedSubject}
                       maxLength={180}
@@ -591,33 +642,43 @@ export default function AssetDeck({
                       }
                     />
                   </label>
-                  <details className={styles.details}>
-                    <summary>Try another subject</summary>
-                    {email.draft.subjectOptions.map((subject, i) => (
-                      <button
-                        type="button"
-                        className={styles.option}
-                        key={i}
-                        onClick={() =>
-                          onChange((now) =>
-                            patchWorkspace(now, {
-                              email: {
-                                subject,
-                                body:
-                                  workspace(now).email?.body ??
-                                  newsletter(now).text.replace(
-                                    /^Subject:[^\n]*\n*/i,
-                                    "",
-                                  ),
-                                sourceRevision: articleRevision(now),
-                              },
-                            }),
-                          )
-                        }
-                      >
-                        {subject}
-                      </button>
-                    ))}
+                  <details className={styles.details} open>
+                    <summary>Try another subject line option</summary>
+                    {email.draft.subjectOptions.map((subject, i) => {
+                      const activeSubj =
+                        (w.email?.subject ?? email.draft.selectedSubject) ===
+                        subject;
+                      return (
+                        <button
+                          type="button"
+                          className={styles.option}
+                          aria-pressed={activeSubj}
+                          key={i}
+                          onClick={() =>
+                            onChange((now) =>
+                              patchWorkspace(now, {
+                                email: {
+                                  subject,
+                                  body:
+                                    workspace(now).email?.body ??
+                                    newsletter(now).text.replace(
+                                      /^Subject:[^\n]*\n*/i,
+                                      "",
+                                    ),
+                                  sourceRevision: articleRevision(now),
+                                },
+                              }),
+                            )
+                          }
+                        >
+                          {activeSubj && <Check size={14} />}
+                          <span>
+                            {i === 0 ? "★ Recommended: " : `Option ${i + 1}: `}
+                            {subject}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </details>
                   {w.email && w.email.sourceRevision !== revision && (
                     <p className={styles.notice}>
@@ -628,6 +689,7 @@ export default function AssetDeck({
                   <div className={styles.buttonRow}>
                     <button
                       type="button"
+                      className={styles.primary}
                       onClick={() => saveBlob(email.text, "newsletter.txt")}
                     >
                       Text
@@ -680,15 +742,17 @@ export default function AssetDeck({
                 </label>
               </div>
             )}
+
             {tab === "downloads" && (
               <>
                 <div className={styles.downloadGrid}>
                   <div className={styles.downloadCard}>
                     <FileDown />
-                    <h3>Article files</h3>
+                    <h3>Article files (Individual Downloads)</h3>
                     <p>
-                      Download the current editor content in the format you
-                      need.
+                      Download the current editor content in PDF, Word (.DOCX),
+                      Clean HTML, Markdown, or EPUB format with embedded section
+                      infographics.
                     </p>
                     <div className={styles.buttonRow}>
                       {["pdf", "docx", "html", "markdown", "epub"].map(
@@ -713,10 +777,10 @@ export default function AssetDeck({
                   </div>
                   <div className={styles.downloadCard}>
                     <Download />
-                    <h3>Project backup</h3>
+                    <h3>Project backup (.JSON)</h3>
                     <p>
                       Includes the editable article, outline, branding, and your
-                      saved asset customizations.
+                      saved social &amp; visual customizations.
                     </p>
                     <button
                       type="button"
@@ -734,10 +798,10 @@ export default function AssetDeck({
                   </div>
                   <div className={styles.downloadCard}>
                     <Volume2 />
-                    <h3>Article narration</h3>
+                    <h3>Article audio narration (MP3)</h3>
                     <p>
-                      Optional speech service. Generates complete MP3 chapters;
-                      availability and limits depend on the configured provider.
+                      Optional speech service. Generates complete MP3 audio
+                      chapters from your article draft.
                     </p>
                     {audio && (
                       <p className={styles.notice}>
