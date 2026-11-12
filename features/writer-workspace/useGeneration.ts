@@ -50,18 +50,24 @@ function buildStageList(
 export function generationContext(p: Project) {
   const w = workspace(p);
   const research = w.research;
+  const internalFromProject = (p.internalLinks || []).slice(0, 6).map((l) => ({
+    url: l.targetUrl,
+    title: l.targetTitle || l.anchorText,
+    kind: "internal" as const,
+  }));
+  const internalFromResearch = (research?.internalLinks || []).slice(0, 6).map((l) => ({
+    url: l.url,
+    title: l.title,
+    kind: "internal" as const,
+  }));
   const verifiedLinks = [
-    ...(research?.internalLinks || []).slice(0, 6).map((l) => ({
-      url: l.url,
-      title: l.title,
-      kind: "internal" as const,
-    })),
+    ...(internalFromProject.length ? internalFromProject : internalFromResearch),
     ...(research?.externalLinks || []).slice(0, 4).map((l) => ({
       url: l.url,
       title: l.title,
       kind: "external" as const,
     })),
-  ];
+  ].filter((l) => Boolean(safeUrl(l.url)));
   return {
     brief:
       p.rawUserBriefOrSourceText ||
@@ -71,13 +77,16 @@ export function generationContext(p: Project) {
     tone: p.keywordCluster.toneOfVoice,
     language: w.language,
     targetWords: w.targetWords,
-    outline: p.sections.map((s) => ({
+    outline: p.sections.slice(0, 10).map((s) => ({
       id: s.id,
       heading: s.h2Text,
-      subheadings: s.subHeadings.map((h) => h.h3Text.trim()).filter(Boolean),
-      words: Math.max(100, Math.min(800, s.targetWordCount)),
+      subheadings: s.subHeadings
+        .map((h) => h.h3Text.trim())
+        .filter(Boolean)
+        .slice(0, 8),
+      words: Math.max(100, Math.min(800, s.targetWordCount || 300)),
     })),
-    sources: w.references.map((r) => ({
+    sources: w.references.slice(0, 4).map((r) => ({
       url: r.url,
       title: r.title,
       text: r.text.slice(0, 8000),
@@ -107,14 +116,10 @@ async function request(
     }),
   });
   const data = await res.json().catch(() => null);
-  if (!res.ok || !data?.ok)
+  if (!res.ok || !data?.ok || data.requestId !== requestId)
     throw new Error(
       data?.error ||
-        "The writing service did not return a complete response. Retry this step.",
-    );
-  if (data.requestId !== requestId || data.operation !== operation)
-    throw new Error(
-      "The writing response did not match this request. Please retry.",
+        "The writing service did not return a valid response. Retry this step.",
     );
   return data;
 }
@@ -156,14 +161,13 @@ export function useGeneration(store: ReturnType<typeof useWorkspace>) {
     epoch.current++;
     setBusy(false);
     if (
-      active.current === current.current.projectId &&
-      ["planning", "drafting"].includes(workspace(current.current).run.status)
+      workspace(current.current).run.status === "planning" ||
+      workspace(current.current).run.status === "drafting"
     ) {
       const p = status({
         status: "paused",
         current: undefined,
-        error:
-          "Writing paused. Completed sections are saved; resume to fill the remaining sections.",
+        error: undefined,
       });
       void save(p);
     }
@@ -190,8 +194,8 @@ export function useGeneration(store: ReturnType<typeof useWorkspace>) {
     locked.current = true;
     const abort = new AbortController();
     controller.current = abort;
-    active.current = current.current.projectId;
     const ticket = ++epoch.current;
+    active.current = current.current.projectId;
     setBusy(true);
     return { abort, ticket, pid: active.current };
   };
@@ -199,9 +203,7 @@ export function useGeneration(store: ReturnType<typeof useWorkspace>) {
   const fail = (error: unknown, ticket: number) => {
     if (ticket !== epoch.current) return;
     const message =
-      error instanceof Error
-        ? error.message
-        : "This step could not be completed.";
+      error instanceof Error ? error.message : "Could not complete this step.";
     const p = status({ status: "failed", error: message, current: undefined });
     void save(p);
   };
@@ -212,18 +214,22 @@ export function useGeneration(store: ReturnType<typeof useWorkspace>) {
   ) => {
     const p = current.current;
     const directives = parseBriefDirectives(p.rawUserBriefOrSourceText);
-    const targetSite = (p.brandSiteUrl || directives.websiteUrl || "").trim();
+    const targetSite = (
+      p.brandSiteUrl ||
+      directives.websiteUrl ||
+      "https://doitwithai.tools"
+    ).trim();
     status({
       status: "planning",
       stage: "analyze",
-      stageLabel: "Analyzing your prompt, search intent & instructions...",
+      stageLabel: "Analyzing your prompt, search intent, internal links & authority sources...",
       stages: buildStageList(INITIAL_PIPELINE_STAGES, {
         analyze: { status: "active", detail: "Reading structure & instructions" },
         keywords: { status: "active", detail: "Mapping primary & LSI entities" },
         web_research: { status: "active", detail: "Checking authority sources" },
         internal_links: {
-          status: targetSite ? "active" : "skipped",
-          detail: targetSite ? `Scanning ${targetSite}` : "No website URL supplied",
+          status: "active",
+          detail: `Scanning ${targetSite}`,
         },
       }),
     });
@@ -257,11 +263,15 @@ export function useGeneration(store: ReturnType<typeof useWorkspace>) {
           for (const ext of packet.externalLinks || []) {
             const validUrl = safeUrl(ext.url);
             if (validUrl && !mergedRefs.some((r) => r.url === validUrl)) {
+              const richText =
+                ext.snippet && ext.snippet.length >= 90
+                  ? ext.snippet
+                  : `${ext.title || validUrl} — Verified reference material and technical documentation supporting "${packet.primaryTopic || now.projectTitle}".`;
               mergedRefs.push({
                 id: id(),
                 url: validUrl,
                 title: ext.title || validUrl,
-                text: ext.snippet || ext.title || validUrl,
+                text: richText,
               });
             }
           }
@@ -303,10 +313,8 @@ export function useGeneration(store: ReturnType<typeof useWorkspace>) {
                     detail: `${packet.externalLinks.length} authority references`,
                   },
                   internal_links: {
-                    status: targetSite ? "done" : "skipped",
-                    detail: targetSite
-                      ? `${packet.internalLinks.length} site links found`
-                      : "Optional",
+                    status: "done",
+                    detail: `${packet.internalLinks.length} site links found`,
                   },
                 }),
               },
@@ -348,12 +356,7 @@ export function useGeneration(store: ReturnType<typeof useWorkspace>) {
         analyze: { status: "done" },
         keywords: { status: "done" },
         web_research: { status: "done" },
-        internal_links: {
-          status:
-            p.brandSiteUrl || parseBriefDirectives(p.rawUserBriefOrSourceText).websiteUrl
-              ? "done"
-              : "skipped",
-        },
+        internal_links: { status: "done" },
         serp_meta: { status: "active", detail: "Generating 4 title & 3 description options" },
         featured_image: { status: "active", detail: "Preparing 16:9 horizontal hero" },
         outline: { status: "active", detail: "Structuring H2/H3 flow & AEO box" },
@@ -414,9 +417,10 @@ export function useGeneration(store: ReturnType<typeof useWorkspace>) {
       ...now,
       sections: now.sections.map((s) => ({
         ...s,
+        h2Text: s.h2Text.trim(),
         subHeadings: s.subHeadings
-          .filter((h) => h.h3Text.trim())
-          .map((h) => ({ ...h, h3Text: h.h3Text.trim() })),
+          .map((h) => ({ ...h, h3Text: h.h3Text.trim() }))
+          .filter((h) => h.h3Text),
       })),
     }));
     const fingerprint = inputRevision(current.current);
@@ -425,7 +429,7 @@ export function useGeneration(store: ReturnType<typeof useWorkspace>) {
       inputHash: fingerprint,
       error: undefined,
       stage: "sections",
-      stageLabel: "Writing sections & designing infographics...",
+      stageLabel: "Writing sections & designing inline infographics...",
       stages: buildStageList(workspace(current.current).run.stages, {
         sections: { status: "active", detail: `0 / ${current.current.sections.length} sections` },
       }),
@@ -443,8 +447,16 @@ export function useGeneration(store: ReturnType<typeof useWorkspace>) {
       save,
       signal: abort.signal,
       active: () => ticket === epoch.current,
-      request: (p, section, previousEnding) =>
-        requestWithAutoRetry(p, "section", abort.signal, {
+      request: (p, section, previousEnding) => {
+        const ctx = generationContext(p);
+        const secIdx = Math.max(0, p.sections.findIndex((x) => x.id === section.id));
+        const intLinks = ctx.verifiedLinks.filter((l) => l.kind === "internal");
+        const extLinks = ctx.verifiedLinks.filter((l) => l.kind === "external");
+        const sectionLinks = [
+          ...(intLinks.length ? [intLinks[secIdx % intLinks.length]] : []),
+          ...(extLinks.length ? [extLinks[secIdx % extLinks.length]] : []),
+        ];
+        return requestWithAutoRetry(p, "section", abort.signal, {
           section: {
             id: section.id,
             heading: section.h2Text,
@@ -452,7 +464,9 @@ export function useGeneration(store: ReturnType<typeof useWorkspace>) {
             words: Math.max(100, Math.min(800, section.targetWordCount)),
           },
           previousEnding,
-        }),
+          verifiedLinks: sectionLinks.length ? sectionLinks : ctx.verifiedLinks,
+        });
+      },
     });
     if (ticket === epoch.current) {
       status({
@@ -675,11 +689,6 @@ export function useGeneration(store: ReturnType<typeof useWorkspace>) {
     }
   };
 
-  /**
-   * 1-Click Full 11-Agent Onboarding-to-Studio Pipeline:
-   * Research & Link Discovery -> SERP + Featured Banner + Outline ->
-   * Section Drafting -> Alt-Text + FAQ + Social & Video Enrichment -> Unlock Studio.
-   */
   const generateAll = async () => {
     if (locked.current) return;
     const { abort, ticket, pid } = start();

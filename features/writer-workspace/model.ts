@@ -37,7 +37,10 @@ export const wordCount = (s: string) =>
   (s.match(/[\p{L}\p{N}]+(?:['’-][\p{L}\p{N}]+)*/gu) || []).length;
 export const safeUrl = (raw: unknown) => {
   try {
-    const u = new URL(String(raw));
+    const cleaned = String(raw || "")
+      .trim()
+      .replace(/[.,;:'")\]}>]+$/, "");
+    const u = new URL(cleaned);
     return /^https?:$/.test(u.protocol) && !u.username && !u.password
       ? u.href
       : "";
@@ -53,20 +56,37 @@ export const escapeHtml = (s: string) =>
         c
       ]!,
   );
+
+const NAMED_BRAND_COLORS: Record<string, string> = {
+  indigo: "#5271FF",
+  emerald: "#10B981",
+  amber: "#F59E0B",
+  rose: "#F43F5E",
+  slate: "#475569",
+};
+
+function resolveBrandColor(rawColor?: string): string {
+  if (!rawColor) return "#5271FF";
+  const trimmed = rawColor.trim();
+  if (/^#[a-f\d]{6}$/i.test(trimmed)) return trimmed;
+  return NAMED_BRAND_COLORS[trimmed.toLowerCase()] || "#5271FF";
+}
+
 export function workspace(p: Project): WriterWorkspaceState {
   const raw = p.writerWorkspace;
   return {
     version: 1,
+    studioUnlocked: raw?.studioUnlocked,
     references: Array.isArray(raw?.references) ? raw.references : [],
     targetWords: raw?.targetWords || 1600,
     language: raw?.language || "English",
     metaDescriptions: raw?.metaDescriptions || [],
+    serpTitles: raw?.serpTitles,
+    quickAnswerBox: raw?.quickAnswerBox,
     run: raw?.run || { status: "idle", inputHash: "", completed: [] },
     brand: {
       name: raw?.brand?.name || "",
-      color: /^#[a-f\d]{6}$/i.test(raw?.brand?.color || "")
-        ? raw!.brand.color
-        : "#5271FF",
+      color: resolveBrandColor(raw?.brand?.color),
       logo:
         /^data:image\/(png|jpeg|webp);base64,[a-zA-Z0-9+/=]+$/.test(
           raw?.brand?.logo || "",
@@ -75,6 +95,11 @@ export function workspace(p: Project): WriterWorkspaceState {
           : undefined,
     },
     social: raw?.social || {},
+    socialCarousels: raw?.socialCarousels,
+    videoScripts: raw?.videoScripts,
+    featuredBanner: raw?.featuredBanner,
+    sectionAltTexts: raw?.sectionAltTexts,
+    research: raw?.research,
     visualRevisions: raw?.visualRevisions || {},
     email: raw?.email,
     document: raw?.document,
@@ -117,21 +142,38 @@ export function parseBrief(text: string): {
     else if (h3 && outline.length)
       outline[outline.length - 1].subheadings.push(h3[1].trim());
   }
-  const keyword =
+  const explicitKeyword =
     text
       .match(
         /(?:^|\n)\s*(?:primary |main |focus )?keyword\s*:\s*([^\n,]+)/i,
       )?.[1]
       ?.trim() || "";
-  const topic = (
-    text.match(/(?:^|\n)\s*(?:topic|title)\s*:\s*([^\n]+)/i)?.[1] ||
-    lines.find((l) => l.trim() && !/^\s*#/.test(l)) ||
-    ""
-  )
-    .trim()
+  const explicitTopic = text
+    .match(/(?:^|\n)\s*(?:topic|title)\s*:\s*([^\n]+)/i)?.[1]
+    ?.trim();
+  const quotedTopic = text
+    .match(
+      /(?:on\s+the\s+topic(?:\s+of)?|about|titled|called|covering|topic)\s+["'“”‘’]([^"'“”‘’\n]{3,140})["'“”‘’]/i,
+    )?.[1]
+    ?.trim();
+
+  const firstLine = lines.find((l) => l.trim() && !/^\s*#/.test(l)) || "";
+  const cleanedLine = firstLine
+    .replace(/\bhttps?:\/\/[^\s)>"']+/gi, " ")
+    .replace(
+      /^(?:i\s+want\s+to\s+write|please\s+write|can\s+you\s+write|write|create|draft|generate)\s+(?:an?\s+)?(?:comprehensive\s+|detailed\s+|complete\s+|practical\s+|seo\s+)?(?:article|blog\s*post|guide|post|piece)?\s*(?:for\s+(?:my\s+)?(?:website|site|blog|company|brand)\s*)?(?:on\s+the\s+topic(?:\s+of)?|about|on|for|titled|covering)?\s*/i,
+      "",
+    )
+    .replace(/^write (?:an? )?(?:article|blog post) (?:about|on) /i, "")
+    .replace(/^["'“”‘’:\-\s]+|["'“”‘’\s]+$/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const topic = (explicitTopic || quotedTopic || cleanedLine || firstLine.trim())
     .replace(/^write (?:an? )?(?:article|blog post) (?:about|on) /i, "")
     .slice(0, 140);
-  return { keyword, outline: outline.slice(0, 10), topic };
+
+  return { keyword: explicitKeyword, outline: outline.slice(0, 10), topic };
 }
 
 export function parseBriefDirectives(text: string): BriefDirectives {
@@ -142,11 +184,22 @@ export function parseBriefDirectives(text: string): BriefDirectives {
   const bareDomain = text.match(
     /(?:for|on|website|site)\s+([a-z0-9-]+(?:\.[a-z0-9-]+)+\.[a-z]{2,})/i,
   )?.[1];
-  const rawCandidate = (labeledUrl || inlineUrl || (bareDomain ? `https://${bareDomain}` : "")).trim();
-  const normalizedUrl =
+  const rawCandidate = (
+    labeledUrl ||
+    inlineUrl ||
+    (bareDomain ? `https://${bareDomain}` : "")
+  )
+    .trim()
+    .replace(/[.,;:'")\]}>]+$/, "");
+  const normalizedUrl = (
     safeUrl(rawCandidate) ||
-    safeUrl(rawCandidate && !/^https?:\/\//i.test(rawCandidate) ? `https://${rawCandidate}` : "") ||
-    "";
+    safeUrl(
+      rawCandidate && !/^https?:\/\//i.test(rawCandidate)
+        ? `https://${rawCandidate}`
+        : "",
+    ) ||
+    ""
+  ).replace(/\/+$/, "");
 
   const conclusionMatch = text.match(
     /(?:^|\n|\.)\s*([^.\n]*(?:conclusion|key takeaways|summary|final verdict|wrap[- ]?up)[^.\n]*)/i,
@@ -154,7 +207,11 @@ export function parseBriefDirectives(text: string): BriefDirectives {
 
   const visualHints: string[] = [];
   for (const line of text.split(/\r?\n/)) {
-    if (/(?:infographic|diagram|visual|chart|comparison table|table here|flowchart|timeline)/i.test(line)) {
+    if (
+      /(?:infographic|diagram|visual|chart|comparison table|table here|flowchart|timeline)/i.test(
+        line,
+      )
+    ) {
       const cleaned = line.trim();
       if (cleaned && visualHints.length < 6) visualHints.push(cleaned);
     }
@@ -238,7 +295,8 @@ export function applyPlan(
   outline: OutlineItem[],
 ): Project {
   const supplied = outline.length ? outline : plan.sections;
-  const next = {
+  const wPrev = workspace(p);
+  const next: Project = {
     ...p,
     projectTitle: plan.title,
     metaPack: {
@@ -258,26 +316,117 @@ export function applyPlan(
       ),
     },
     sections: supplied.map(makeSection),
-    faqs: [],
-    quizQuestions: [],
-    internalLinks: [],
-    eeatCitations: [],
+    faqs: p.faqs || [],
+    quizQuestions: p.quizQuestions || [],
+    internalLinks: p.internalLinks || [],
+    eeatCitations: p.eeatCitations || [],
   };
   next.writerWorkspace = {
-    ...workspace(p),
+    ...wPrev,
     document: undefined,
     metaDescriptions: [
       ...new Set([plan.metaDescription, ...plan.descriptions]),
     ],
-    run: { status: "idle", inputHash: "", completed: [] },
+    run: {
+      status: "idle",
+      inputHash: "",
+      completed: [],
+      stages: wPrev.run?.stages,
+    },
   };
   return next;
 }
+
+/**
+ * Ensures any inline `## ` or `### ` markers that an LLM emitted mid-line
+ * (e.g. `...sentence. ## New Heading` or `### Subheading Body text...`) are
+ * separated onto clean Markdown heading lines so raw `#` hashes never leak
+ * into paragraph nodes.
+ */
+export function sanitizeMarkdownHeadings(md: string): string {
+  if (!md) return "";
+  return md
+    .replace(/([^\n])\s+(#{2,6}\s+)/g, "$1\n\n$2")
+    .replace(/^[ \t]+(#{1,6}\s+)/gm, "$1");
+}
+
+/**
+ * Splits overly long compound sentences (> 24 words) at natural clause breaks
+ * so generated prose stays crisp and avoids triggering red/amber readability
+ * walls while leaving normal <=24-word sentences completely unchanged.
+ */
+export function splitRunOnSentences(text: string): string {
+  return text
+    .split(/\n/)
+    .map((line) => {
+      const trimmed = line.trim();
+      if (
+        !trimmed ||
+        /^(?:#{1,6}\s|[-*+]\s|\d+[.)]\s|>|\||```)/.test(trimmed)
+      ) {
+        return line;
+      }
+      const sentences = line.match(/[^.!?]+[.!?]+(?:\s+|$)|[^.!?]+$/g) || [line];
+      return sentences
+        .map((sent) => {
+          const words = sent.trim().split(/\s+/).filter(Boolean);
+          if (words.length <= 24) return sent.trim();
+          const clauseRegex =
+            /,\s+(?:which|while|whereas|because|although|since|so\s+that|allowing|enabling|ensuring|making|where|and|but|so)\s+|;\s+|\s+—\s+/gi;
+          let bestMatch: RegExpExecArray | null = null;
+          let m: RegExpExecArray | null;
+          const midChar = Math.floor(sent.length / 2);
+          while ((m = clauseRegex.exec(sent))) {
+            const leftWords = sent.slice(0, m.index).trim().split(/\s+/).length;
+            const rightWords = sent
+              .slice(m.index + m[0].length)
+              .trim()
+              .split(/\s+/).length;
+            if (leftWords >= 7 && rightWords >= 6) {
+              if (
+                !bestMatch ||
+                Math.abs(m.index - midChar) < Math.abs(bestMatch.index - midChar)
+              ) {
+                bestMatch = m;
+              }
+            }
+          }
+          if (!bestMatch) return sent.trim();
+          const left = sent.slice(0, bestMatch.index).trim().replace(/[,;—]+$/, "");
+          const connectorRaw = bestMatch[0]
+            .replace(/^[,;—\s]+/, "")
+            .trim();
+          const rightBody = sent
+            .slice(bestMatch.index + bestMatch[0].length)
+            .trim();
+          let secondSentence = rightBody;
+          if (/^(?:which|allowing|enabling|ensuring|making)$/i.test(connectorRaw)) {
+            secondSentence = `This ${
+              /ing$/i.test(connectorRaw)
+                ? connectorRaw.toLowerCase().replace(/ing$/i, "s")
+                : ""
+            } ${rightBody}`.replace(/\s+/g, " ").trim();
+          } else if (/^(?:while|whereas|because|although|since)$/i.test(connectorRaw)) {
+            secondSentence = `${
+              connectorRaw.charAt(0).toUpperCase() + connectorRaw.slice(1)
+            } ${rightBody}`;
+          } else if (secondSentence) {
+            secondSentence =
+              secondSentence.charAt(0).toUpperCase() + secondSentence.slice(1);
+          }
+          return `${left}. ${secondSentence}`;
+        })
+        .join(" ");
+    })
+    .join("\n");
+}
+
 export function setSectionBody(
   section: BlogSectionNode,
   markdown: string,
 ): BlogSectionNode {
-  const blocks = markdown.split(/^###\s+(.+)$/m),
+  const cleaned = sanitizeMarkdownHeadings(markdown);
+  const blocks = cleaned.split(/^###\s+(.+)$/m),
     subHeadings =
       blocks.length > 1
         ? blocks
@@ -296,9 +445,9 @@ export function setSectionBody(
         : section.subHeadings.map((h) => ({ ...h, bodyMarkdown: "" }));
   return {
     ...section,
-    bodyMarkdown: blocks[0].replace(/^##\s+[^\n]+\n/, "").trim(),
+    bodyMarkdown: blocks[0].replace(/^##\s+[^\n]+\n?/, "").trim(),
     subHeadings,
-    actualWordCount: wordCount(markdown),
+    actualWordCount: wordCount(cleaned),
   };
 }
 export function refreshVisual(
@@ -319,7 +468,9 @@ export function refreshVisual(
   };
   c.footerSourceLabel = p.metaPack.canonicalUrl
     ? `Source: ${new URL(safeUrl(p.metaPack.canonicalUrl) || "https://example.com").hostname}`
-    : "Source: article draft";
+    : p.brandSiteUrl && safeUrl(p.brandSiteUrl)
+      ? `Source: ${new URL(safeUrl(p.brandSiteUrl)).hostname}`
+      : "Source: article draft";
   return { ...section, infographicConfig: c };
 }
 export function inline(text: string): RichNode[] {
@@ -347,18 +498,20 @@ export function inline(text: string): RichNode[] {
   return out;
 }
 export function markdownNodes(md: string): RichNode[] {
-  const lines = md.split(/\r?\n/),
+  const sanitized = sanitizeMarkdownHeadings(md);
+  const lines = sanitized.split(/\r?\n/),
     out: RichNode[] = [];
   for (let i = 0; i < lines.length;) {
     const line = lines[i];
-    if (!line.trim()) {
+    const trimmed = line.trim();
+    if (!trimmed) {
       i++;
       continue;
     }
-    if (line.startsWith("```")) {
+    if (trimmed.startsWith("```")) {
       const body: string[] = [];
       i++;
-      while (i < lines.length && !lines[i].startsWith("```"))
+      while (i < lines.length && !lines[i].trim().startsWith("```"))
         body.push(lines[i++]);
       i++;
       out.push({
@@ -370,7 +523,7 @@ export function markdownNodes(md: string): RichNode[] {
       continue;
     }
     if (
-      line.trim().startsWith("|") &&
+      trimmed.startsWith("|") &&
       lines[i + 1]?.match(/^\s*\|?[\s:|-]+\|/)
     ) {
       const rows: RichNode[] = [];
@@ -394,12 +547,12 @@ export function markdownNodes(md: string): RichNode[] {
       out.push({ type: "table", content: rows });
       continue;
     }
-    const h = line.match(/^(#{1,6})\s+(.+)/);
+    const h = trimmed.match(/^(#{1,6})\s+(.+)/);
     if (h) {
       out.push({
         type: "heading",
         attrs: { level: h[1].length },
-        content: inline(h[2]),
+        content: inline(h[2].trim()),
       });
       i++;
       continue;
@@ -425,24 +578,24 @@ export function markdownNodes(md: string): RichNode[] {
       });
       continue;
     }
-    if (/^>\s?/.test(line)) {
+    if (/^>\s?/.test(trimmed)) {
       out.push({
         type: "blockquote",
         content: [
-          { type: "paragraph", content: inline(line.replace(/^>\s?/, "")) },
+          { type: "paragraph", content: inline(trimmed.replace(/^>\s?/, "")) },
         ],
       });
       i++;
       continue;
     }
-    const para = [line];
+    const para = [trimmed];
     i++;
     while (
       i < lines.length &&
       lines[i].trim() &&
-      !/^(?:#{1,6}\s|[-*+]\s|\d+[.)]\s|```|\|)/.test(lines[i])
+      !/^\s*(?:#{1,6}\s|[-*+]\s|\d+[.)]\s|```|\||>)/.test(lines[i])
     )
-      para.push(lines[i++]);
+      para.push(lines[i++].trim());
     out.push({ type: "paragraph", content: inline(para.join(" ")) });
   }
   return out;
@@ -780,8 +933,14 @@ export function defaultFeaturedBanner(p: Project): FeaturedBannerState {
   return {
     headline,
     subheadline,
-    badge: existing?.badge || (kw ? kw.toUpperCase().slice(0, 28) : w.brand.name ? w.brand.name.toUpperCase() : "EDITORIAL GUIDE"),
-    theme: existing?.theme || w.brand.color || "Indigo",
+    badge:
+      existing?.badge ||
+      (kw
+        ? kw.toUpperCase().slice(0, 28)
+        : w.brand.name
+          ? w.brand.name.toUpperCase()
+          : "EDITORIAL GUIDE"),
+    theme: existing?.theme || w.brand.color || "#5271FF",
     altText,
     altScore: existing?.altScore,
     altVerdict: existing?.altVerdict,
@@ -798,20 +957,37 @@ export function buildArticleSchemaJsonLd(p: Project): {
   combinedGraph: Record<string, unknown>;
 } {
   const url = safeUrl(p.metaPack.canonicalUrl) || safeUrl(p.brandSiteUrl) || "";
-  const title = p.metaPack.metaTitle || p.metaPack.h1Title || p.projectTitle || "Article";
-  const description = p.metaPack.metaDescription || p.metaPack.aeoDirectAnswer50Words || "";
+  const title =
+    p.metaPack.metaTitle || p.metaPack.h1Title || p.projectTitle || "Article";
+  const description =
+    p.metaPack.metaDescription || p.metaPack.aeoDirectAnswer50Words || "";
   const w = workspace(p);
   const articleSchema: Record<string, unknown> = {
     "@type": "Article",
     headline: title,
     description,
     ...(url ? { mainEntityOfPage: { "@type": "WebPage", "@id": url } } : {}),
-    ...(p.keywordCluster.primaryKeyword ? { keywords: [p.keywordCluster.primaryKeyword, ...p.keywordCluster.secondaryKeywords].filter(Boolean).join(", ") } : {}),
-    ...(p.authorName ? { author: { "@type": "Person", name: p.authorName } } : {}),
-    ...(w.brand.name ? { publisher: { "@type": "Organization", name: w.brand.name } } : {}),
+    ...(p.keywordCluster.primaryKeyword
+      ? {
+          keywords: [
+            p.keywordCluster.primaryKeyword,
+            ...p.keywordCluster.secondaryKeywords,
+          ]
+            .filter(Boolean)
+            .join(", "),
+        }
+      : {}),
+    ...(p.authorName
+      ? { author: { "@type": "Person", name: p.authorName } }
+      : {}),
+    ...(w.brand.name
+      ? { publisher: { "@type": "Organization", name: w.brand.name } }
+      : {}),
     inLanguage: w.language || "en",
   };
-  const faqPairs = (p.faqs || []).filter((f) => f.question?.trim() && f.answer?.trim());
+  const faqPairs = (p.faqs || []).filter(
+    (f) => f.question?.trim() && f.answer?.trim(),
+  );
   const faqSchema = faqPairs.length
     ? {
         "@type": "FAQPage",
@@ -835,7 +1011,10 @@ export function buildArticleSchemaJsonLd(p: Project): {
 export function evaluateAltText(text: string, nearbyHeading = "") {
   const res = reviewAlt(text, "", nearbyHeading, "informative");
   const score = text.trim()
-    ? Math.max(25, Math.min(100, 100 - res.cues.length * 22 - (res.count < 20 ? 15 : 0)))
+    ? Math.max(
+        25,
+        Math.min(100, 100 - res.cues.length * 22 - (res.count < 20 ? 15 : 0)),
+      )
     : 0;
   const verdict = !text.trim()
     ? "Needs descriptive alt text"
