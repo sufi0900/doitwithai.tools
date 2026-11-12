@@ -758,7 +758,8 @@ export function BlogInfographicStudio({
             ))}
           </div>
           <div
-            id={`infographic-panel-${panel}`}\n            role="tabpanel"
+            id={`infographic-panel-${panel}`}
+            role="tabpanel"
             aria-labelledby={`infographic-tab-${panel}`}
             className="space-y-6 p-4 sm:p-5 lg:max-h-[calc(100vh-190px)] lg:overflow-y-auto"
           >
@@ -1012,7 +1013,7 @@ export function BlogInfographicStudio({
                             />
                           </label>
                           <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400">
-                            Detail
+                            Explanation
                             <textarea
                               className={field}
                               rows={3}
