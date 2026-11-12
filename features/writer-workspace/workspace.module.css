@@ -336,7 +336,7 @@
   margin-top: 7px;
 }
 .formStack > textarea {
-  background: #fff !important;
+  background: #fff;
   min-height: 210px;
   box-shadow: 0 4px 14px #16233c03;
 }
@@ -1769,10 +1769,17 @@
   color: #cbd5e1;
 }
 
-.darkShell :where(input:not([type="checkbox"]):not([type="color"]), select, textarea) {
+.darkShell :where(input:not([type="checkbox"]):not([type="color"]), select, textarea),
+.darkShell .formStack > textarea,
+.darkShell .newsletter {
   background: #0d1629 !important;
   border-color: #283756 !important;
   color: #f8fafc !important;
+}
+
+.darkShell select option {
+  background: #0f172a;
+  color: #f8fafc;
 }
 
 .darkShell input::placeholder,

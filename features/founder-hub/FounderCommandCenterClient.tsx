@@ -8,6 +8,7 @@ import {
   FIVE_FEEDER_TOOLS_BUILD_QUEUE,
   EXECUTIVE_KPI_CARDS,
   GRAND_AI_CONTENT_WRITER_PIPELINE,
+  AI_CONTENT_WRITER_V3_BLUEPRINT,
   H1_CLUSTER_DOMINATION_BLUEPRINT,
   WEEKLY_EXECUTION_SEQUENCE,
   SYSTEM_ARCHITECTURE_DEPENDENCY_MAP,
@@ -1600,6 +1601,77 @@ export default function FounderCommandCenterClient({
           {/* TAB 3: GRAND AI CONTENT WRITER, 5-TOOL QUEUE & H1 DOMINATION BLUEPRINTS */}
           {activeTab === "flagship-blueprints" && (
             <div className="space-y-8">
+              <div className="rounded-3xl border border-indigo-500/40 bg-gradient-to-br from-indigo-950/40 via-slate-900 to-slate-950 p-6 sm:p-8 space-y-6 shadow-2xl">
+                <div>
+                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-400/30">
+                    Sprint 14 · V3 Multi-Agent Studio Blueprint &amp; 7-Phase Execution Plan
+                  </span>
+                  <h2 className="text-xl sm:text-2xl font-extrabold text-white mt-2">
+                    {AI_CONTENT_WRITER_V3_BLUEPRINT.title}
+                  </h2>
+                  <p className="text-xs sm:text-sm text-slate-300 mt-1">
+                    {AI_CONTENT_WRITER_V3_BLUEPRINT.subtitle}
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-extrabold text-white uppercase tracking-wider mb-3">
+                    1. Standalone Tool &amp; Feature Gap Audit (DoItWithAI Tools -&gt; /ai-content-writer)
+                  </h3>
+                  <div className="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950/90">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead className="border-b border-slate-800 bg-slate-900">
+                        <tr>
+                          <th className="py-3 px-4 font-bold text-slate-200">Capability</th>
+                          <th className="py-3 px-4 font-bold text-slate-200">Standalone Reference</th>
+                          <th className="py-3 px-4 font-bold text-slate-200">Identified Gap &amp; Target Fix</th>
+                          <th className="py-3 px-4 font-bold text-slate-200">Phase</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800/70">
+                        {AI_CONTENT_WRITER_V3_BLUEPRINT.gapAudit.map((row) => (
+                          <tr key={row.area} className="hover:bg-slate-900/50">
+                            <td className="py-3 px-4 font-bold text-white">{row.area}</td>
+                            <td className="py-3 px-4 font-mono text-indigo-300">{row.standaloneRef}</td>
+                            <td className="py-3 px-4 text-slate-300 leading-relaxed">{row.gap}</td>
+                            <td className="py-3 px-4 font-mono font-bold text-emerald-300 whitespace-nowrap">{row.targetPhase}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-extrabold text-white uppercase tracking-wider mb-3">
+                    2. Sequential 7-Phase Implementation Roadmap &amp; Execution CTAs
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {AI_CONTENT_WRITER_V3_BLUEPRINT.phases.map((ph) => (
+                      <div
+                        key={ph.phase}
+                        className="rounded-2xl border border-slate-800 bg-slate-950/85 p-4 flex flex-col justify-between space-y-2.5"
+                      >
+                        <div>
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 text-[11px] font-extrabold">
+                              {ph.phase}
+                            </span>
+                            <span className="text-[11px] font-semibold text-amber-300">
+                              {ph.status}
+                            </span>
+                          </div>
+                          <div className="text-sm font-bold text-white mt-2">{ph.name}</div>
+                        </div>
+                        <div className="pt-2 border-t border-slate-800/80 text-[11px] text-emerald-300 leading-relaxed">
+                          <strong>CTA:</strong> {ph.cta}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
               <FiveFeederToolsQueueTracker />
 
               <div className="rounded-3xl border border-emerald-500/40 bg-slate-900/95 p-6 sm:p-8 space-y-6 shadow-2xl">
