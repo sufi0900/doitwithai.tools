@@ -58,6 +58,12 @@ import {
 import type { Project, ResearchPacket, RichNode } from "./types";
 import ArticleEditor, { type EditorHandle } from "./ArticleEditor";
 import AssetDeck from "./AssetDeck";
+import { ConnectedWebsitePublishBar } from "./ConnectedWebsitePublishBar";
+import { authorizedWebsiteFetch } from "@/features/website-builder/lib/supabase/browser";
+import type {
+  ConnectedWebsiteSummary,
+  WriterArticleBridgeInput,
+} from "@/features/website-builder/ecosystem-bridge";
 import { OnboardingGate } from "./OnboardingGate";
 import { AgentPipelineTheatre } from "./AgentPipelineTheatre";
 import {
@@ -128,7 +134,97 @@ export default function WriterWorkspace() {
     [sourceUrl, setSourceUrl] = useState(""),
     [sourceBusy, setSourceBusy] = useState(false),
     [visualId, setVisualId] = useState<string | null>(null),
-    [menu, setMenu] = useState(false);
+    [menu, setMenu] = useState(false),
+    [connectedWebsites, setConnectedWebsites] = useState<
+      ConnectedWebsiteSummary[]
+    >([]),
+    [websiteInternalLinks, setWebsiteInternalLinks] = useState<
+      Array<{
+        siteProjectId: string;
+        siteName: string;
+        publicSlug: string;
+        title: string;
+        slug: string;
+        url: string;
+      }>
+    >([]),
+    [targetSiteId, setTargetSiteId] = useState<string>("");
+
+  const syncSiteInternalLinks = React.useCallback(
+    (
+      siteId: string,
+      linksSource = websiteInternalLinks,
+    ) => {
+      if (!siteId || !linksSource.length) return;
+      const matching = linksSource.filter((l) => l.siteProjectId === siteId);
+      if (!matching.length) return;
+      update((now) => {
+        const existingUrls = new Set(now.internalLinks.map((l) => l.targetUrl));
+        const additions = matching
+          .filter((item) => !existingUrls.has(item.url))
+          .map((item) => ({
+            id: `site-${siteId.slice(0, 8)}-${item.slug}`,
+            anchorText: item.title,
+            targetTitle: item.title,
+            targetUrl: item.url,
+            category: "pillar-guide" as const,
+          }));
+        if (!additions.length) return now;
+        return {
+          ...now,
+          internalLinks: [...additions, ...now.internalLinks].slice(0, 24),
+        };
+      });
+    },
+    [update, websiteInternalLinks],
+  );
+
+  const loadConnectedWebsites = React.useCallback(async () => {
+    try {
+      const res = await authorizedWebsiteFetch("/api/website-builder/overview", {
+        cache: "no-store",
+      });
+      if (!res.ok) return;
+      const data = (await res.json()) as {
+        websites?: ConnectedWebsiteSummary[];
+        internalLinks?: Array<{
+          siteProjectId: string;
+          siteName: string;
+          publicSlug: string;
+          title: string;
+          slug: string;
+          url: string;
+        }>;
+      };
+      const sites = Array.isArray(data.websites) ? data.websites : [];
+      const links = Array.isArray(data.internalLinks) ? data.internalLinks : [];
+      setConnectedWebsites(sites);
+      setWebsiteInternalLinks(links);
+      const preferredId =
+        (typeof window !== "undefined"
+          ? new URLSearchParams(window.location.search).get("targetSiteId")
+          : "") ||
+        sites[0]?.projectId ||
+        "";
+      if (preferredId) {
+        setTargetSiteId(preferredId);
+        syncSiteInternalLinks(preferredId, links);
+      }
+    } catch {
+      /* Website bridge metadata is optional when offline or unauthenticated. */
+    }
+  }, [syncSiteInternalLinks]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const fromQuery =
+        new URLSearchParams(window.location.search).get("targetSiteId") || "";
+      if (fromQuery) setTargetSiteId(fromQuery);
+    }
+    void loadConnectedWebsites();
+    // Load once on mount; re-synced explicitly after publish.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const dialog = useRef<HTMLDivElement>(null);
   const editor = useRef<EditorHandle>(null),
@@ -1330,6 +1426,76 @@ export default function WriterWorkspace() {
                   </div>
                 )}
               </section>
+
+              <ConnectedWebsitePublishBar
+                article={{
+                  articleProjectId: p.projectId,
+                  title: p.metaPack.h1Title || p.projectTitle || "Untitled Article",
+                  slug:
+                    p.metaPack.urlSlug ||
+                    (p.projectTitle || "article")
+                      .toLowerCase()
+                      .replace(/[^a-z0-9]+/g, "-")
+                      .replace(/^-+|-+$/g, "")
+                      .slice(0, 80) ||
+                    "article",
+                  seoTitle: (p.metaPack.metaTitle || p.metaPack.h1Title || p.projectTitle).slice(0, 70),
+                  seoDescription: (
+                    p.metaPack.metaDescription ||
+                    p.metaPack.aeoDirectAnswer50Words ||
+                    p.rawUserBriefOrSourceText
+                  ).slice(0, 170),
+                  excerpt: (
+                    p.metaPack.aeoDirectAnswer50Words ||
+                    p.metaPack.metaDescription ||
+                    p.rawUserBriefOrSourceText ||
+                    "Published from DoItWithAI Content Writer Studio."
+                  ).slice(0, 320),
+                  tags: [
+                    p.keywordCluster.primaryKeyword,
+                    ...p.keywordCluster.secondaryKeywords,
+                  ]
+                    .filter(Boolean)
+                    .slice(0, 8),
+                  markdownBody: articleMarkdown(p),
+                  publishImmediately: false,
+                }}
+                connectedWebsites={connectedWebsites}
+                initialSelectedSiteId={targetSiteId}
+                onSelectWebsite={(siteId) => {
+                  setTargetSiteId(siteId);
+                  syncSiteInternalLinks(siteId);
+                }}
+                onSyncToWebsite={async (websiteId, payload, publishImmediately) => {
+                  const res = await authorizedWebsiteFetch(
+                    "/api/website-builder/publish-from-writer",
+                    {
+                      method: "POST",
+                      headers: { "content-type": "application/json" },
+                      body: JSON.stringify({
+                        websiteId,
+                        payload,
+                        publishImmediately,
+                      }),
+                    },
+                  );
+                  const data = (await res.json().catch(() => ({}))) as {
+                    ok?: boolean;
+                    liveUrl?: string;
+                    message?: string;
+                    error?: string;
+                  };
+                  if (!res.ok || !data.ok) {
+                    return {
+                      ok: false,
+                      error: data.error || "Failed to publish article to website.",
+                    };
+                  }
+                  if (data.message) setMessage(data.message);
+                  void loadConnectedWebsites();
+                  return { ok: true, liveUrl: data.liveUrl };
+                }}
+              />
 
               <p className={styles.editorFootnote}>
                 Right-click any paragraph or highlight text to &ldquo;Tell AI about it&rdquo;. Click any inline section infographic to customize its layout and WCAG alt text.

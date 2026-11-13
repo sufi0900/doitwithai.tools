@@ -3,7 +3,13 @@ type Item = SiteDocument["publishing"]["pages"][number] | SiteDocument["publishi
 export function missingPublicationFields(item: Item, kind: "page" | "post", document: SiteDocument) {
   const collection = kind === "page" ? document.publishing.pages : document.publishing.posts;
   const missing = [!item.title.trim() && "title", (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(item.slug) || collection.some(other => other.id !== item.id && other.slug === item.slug)) && "unique public URL", !item.seoTitle.trim() && "SEO title", !item.seoDescription.trim() && "SEO description", !item.blocks.some(b => b.type === "image" ? document.media.assets.some(a => a.id === b.mediaId) : b.type === "list" || b.type === "ordered-list" ? b.items.some(t => t.trim()) : b.text.trim()) && "content"];
-  if (kind === "post" && "excerpt" in item) missing.push(!item.excerpt.trim() && "excerpt", !document.media.assets.some(a => a.id === item.coverMediaId) && "cover image");
+  if (kind === "post" && "excerpt" in item) {
+    missing.push(!item.excerpt.trim() && "excerpt");
+    const isWriterBridgePost = Boolean("sourceArticleProjectId" in item && item.sourceArticleProjectId);
+    if (!isWriterBridgePost) {
+      missing.push(!document.media.assets.some(a => a.id === item.coverMediaId) && "cover image");
+    }
+  }
   return missing.filter(Boolean) as string[];
 }
 export const homePublicationGroups = ["hero", "about", "experience", "education", "skills", "projects", "contact", "design", "structure", "visitor"] as const;

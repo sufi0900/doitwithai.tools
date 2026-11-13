@@ -53,7 +53,7 @@ export function applyUpsertFromWriterStudioCommand(
     ? existing.slug
     : uniquePostSlug(current, command.slug || command.title);
   const richContent = legacyRichDocument({ blocks: command.blocks }, current);
-  const canMarkPublished = Boolean(command.publishImmediately && existing?.coverMediaId);
+  const canMarkPublished = Boolean(command.publishImmediately);
   const nextStatus = canMarkPublished ? ("published" as const) : ("draft" as const);
 
   const updatedPost = {

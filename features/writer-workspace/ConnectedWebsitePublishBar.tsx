@@ -12,6 +12,7 @@ export interface ConnectedWebsitePublishBarProps {
   article: WriterArticleBridgeInput;
   connectedWebsites: ConnectedWebsiteSummary[];
   initialSelectedSiteId?: string;
+  onSelectWebsite?: (websiteId: string) => void;
   onSyncToWebsite?: (
     websiteId: string,
     payload: ReturnType<typeof convertWriterArticleToSitePostPayload>,
@@ -29,11 +30,27 @@ export function ConnectedWebsitePublishBar({
   article,
   connectedWebsites,
   initialSelectedSiteId,
+  onSelectWebsite,
   onSyncToWebsite,
 }: ConnectedWebsitePublishBarProps) {
   const [selectedSiteId, setSelectedSiteId] = useState<string>(
     initialSelectedSiteId || connectedWebsites[0]?.projectId || ""
   );
+
+  React.useEffect(() => {
+    if (
+      initialSelectedSiteId &&
+      connectedWebsites.some((w) => w.projectId === initialSelectedSiteId)
+    ) {
+      setSelectedSiteId(initialSelectedSiteId);
+      onSelectWebsite?.(initialSelectedSiteId);
+      return;
+    }
+    if (!selectedSiteId && connectedWebsites[0]?.projectId) {
+      setSelectedSiteId(connectedWebsites[0].projectId);
+      onSelectWebsite?.(connectedWebsites[0].projectId);
+    }
+  }, [initialSelectedSiteId, connectedWebsites, selectedSiteId, onSelectWebsite]);
   const [pillarSlug, setPillarSlug] = useState<string>("");
   const [busy, setBusy] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string>("");
@@ -50,6 +67,7 @@ export function ConnectedWebsitePublishBar({
     try {
       const payload = convertWriterArticleToSitePostPayload({
         ...article,
+        pillarClusterSlug: pillarSlug.trim() || undefined,
         publishImmediately,
       });
       if (onSyncToWebsite) {
@@ -158,7 +176,11 @@ export function ConnectedWebsitePublishBar({
               <span>Target Connected Website</span>
               <select
                 value={selectedSiteId}
-                onChange={(e) => setSelectedSiteId(e.target.value)}
+                onChange={(e) => {
+                  const nextId = e.target.value;
+                  setSelectedSiteId(nextId);
+                  onSelectWebsite?.(nextId);
+                }}
                 style={{
                   padding: "9px 11px",
                   borderRadius: "9px",

@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-11-12T15:26:48.825Z",
+  "generated": "2026-11-13T19:02:08.725Z",
   "static_pages": [
     {
       "url": "/",
@@ -837,6 +837,12 @@
       "type": "static"
     },
     {
+      "url": "/tools/ai-website-builder",
+      "title": "AI Website Builder & Blogging Studio (16 Templates + 3D Portfolio)",
+      "priority": "high",
+      "type": "static"
+    },
+    {
       "url": "/tools/categories/ai-seo",
       "title": "AI SEO",
       "priority": "medium",
@@ -861,5 +867,5 @@
       "type": "static"
     }
   ],
-  "total_pages": 143
+  "total_pages": 144
 }

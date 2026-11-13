@@ -11,6 +11,7 @@ import {
 import { tools as catalogTools } from "@/features/tool-catalog/catalog";
 import { useWorkspace } from "@/features/tools-workspace/WorkspaceProvider";
 import { browserAccounts } from "@/features/tools-workspace/supabase";
+import { WorkspaceMasterHub } from "./WorkspaceMasterHub";
 import type { RichToolExecutionResult } from "@/app/api/do-it-ai/route";
 
 type VisualCard = {
@@ -753,6 +754,17 @@ export default function DoItAiDashboardClient() {
   const [lightboxVisual, setLightboxVisual] = useState<VisualCard | null>(null);
   const [copiedPromptId, setCopiedPromptId] = useState<string | null>(null);
   const [cloudSynced, setCloudSynced] = useState(false);
+  const [workspaceView, setWorkspaceView] = useState<"chat" | "hub">("chat");
+  const [connectedWebsitesCount, setConnectedWebsitesCount] = useState(0);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const view = new URLSearchParams(window.location.search).get("view");
+      if (view === "hub" || view === "websites") {
+        setWorkspaceView("hub");
+      }
+    }
+  }, []);
 
   const chatScrollContainerRef = useRef<HTMLDivElement>(null);
   const latestMessageRef = useRef<HTMLDivElement>(null);
@@ -1225,6 +1237,24 @@ export default function DoItAiDashboardClient() {
 
           <button
             type="button"
+            onClick={() => {
+              setWorkspaceView((prev) => (prev === "hub" ? "chat" : "hub"));
+              setShowMobileSidebar(false);
+            }}
+            className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-xs font-semibold transition ${
+              workspaceView === "hub"
+                ? "border-indigo-400 bg-indigo-600/25 text-white"
+                : "border-indigo-500/35 bg-indigo-500/10 text-indigo-200 hover:bg-indigo-500/20"
+            }`}
+          >
+            <span>🌐 Websites &amp; Writer Hub</span>
+            <span className="rounded bg-indigo-600/40 px-1.5 py-0.5 text-[10px] text-white">
+              {connectedWebsitesCount}
+            </span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => setShowToolsModal(true)}
             className="flex w-full items-center justify-between rounded-xl border border-blue-500/30 bg-blue-500/10 px-3 py-2 text-xs font-semibold text-blue-300 hover:bg-blue-500/20 transition"
           >
@@ -1233,6 +1263,20 @@ export default function DoItAiDashboardClient() {
               92
             </span>
           </button>
+          <div className="grid grid-cols-2 gap-1.5">
+            <Link
+              href="/ai-website-builder"
+              className="flex items-center justify-center rounded-lg border border-slate-800 bg-slate-900/90 px-2.5 py-1.5 text-[11px] font-medium text-slate-300 hover:border-indigo-500/40 hover:text-white transition"
+            >
+              Website Builder
+            </Link>
+            <Link
+              href="/ai-content-writer"
+              className="flex items-center justify-center rounded-lg border border-slate-800 bg-slate-900/90 px-2.5 py-1.5 text-[11px] font-medium text-slate-300 hover:border-sky-500/40 hover:text-white transition"
+            >
+              Content Writer
+            </Link>
+          </div>
           <div className="grid grid-cols-2 gap-1.5">
             <Link
               href="/prompts"
@@ -1273,6 +1317,21 @@ export default function DoItAiDashboardClient() {
           <div className="flex items-center gap-2">
             <button
               type="button"
+              onClick={() =>
+                setWorkspaceView((prev) => (prev === "hub" ? "chat" : "hub"))
+              }
+              className={`rounded-xl border px-3 py-1.5 text-xs font-semibold transition ${
+                workspaceView === "hub"
+                  ? "border-indigo-400 bg-indigo-600/25 text-white"
+                  : "border-indigo-500/40 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-200"
+              }`}
+            >
+              {workspaceView === "hub"
+                ? "💬 Back to Do It AI Chat"
+                : `🌐 Websites & Writer Hub (${connectedWebsitesCount})`}
+            </button>
+            <button
+              type="button"
               onClick={() => setShowToolsModal(true)}
               className="rounded-xl border border-slate-700 bg-slate-900 hover:border-blue-500/50 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:text-white transition"
             >
@@ -1293,9 +1352,17 @@ export default function DoItAiDashboardClient() {
           ref={chatScrollContainerRef}
           className="relative flex-1 overflow-y-auto px-4 py-4 sm:px-6"
         >
-          <div className="mx-auto max-w-4xl h-full">
-            {!activeSession || activeSession.messages.length === 0 ? (
-              <div className="flex h-full flex-col items-center justify-center py-2 space-y-5">
+          <div className="mx-auto max-w-4xl min-h-full">
+            {workspaceView === "hub" ? (
+              <WorkspaceMasterHub
+                authenticated={Boolean(googleUser)}
+                userEmail={googleUser?.email}
+                onSignIn={() => workspace?.signIn()}
+                signingIn={workspace?.signingIn}
+                onWebsitesCountChange={setConnectedWebsitesCount}
+              />
+            ) : !activeSession || activeSession.messages.length === 0 ? (
+              <div className="flex min-h-full flex-col items-center justify-center py-2 space-y-5">
                 <div className="text-center max-w-2xl mx-auto space-y-2.5">
                   <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-[11px] font-semibold text-blue-300">
                     <span>
@@ -1316,6 +1383,16 @@ export default function DoItAiDashboardClient() {
                     or click a prompt below to send it directly to chat:
                   </p>
                 </div>
+
+                <WorkspaceMasterHub
+                  compact
+                  authenticated={Boolean(googleUser)}
+                  userEmail={googleUser?.email}
+                  onSignIn={() => workspace?.signIn()}
+                  signingIn={workspace?.signingIn}
+                  onOpenFullHub={() => setWorkspaceView("hub")}
+                  onWebsitesCountChange={setConnectedWebsitesCount}
+                />
 
                 {/* Frontier-Model (ChatGPT-Style) Single-Line Starter Prompt Pills */}
                 <div className="w-full max-w-3xl grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -1786,6 +1863,7 @@ export default function DoItAiDashboardClient() {
         </div>
 
         {/* PINNED BOTTOM INPUT BAR */}
+        {workspaceView === "chat" && (
         <div className="shrink-0 border-t border-slate-800/80 bg-[#080F23]/95 px-4 py-3 sm:px-6">
           <form
             onSubmit={(e) => {
@@ -1810,6 +1888,7 @@ export default function DoItAiDashboardClient() {
             </button>
           </form>
         </div>
+        )}
       </main>
 
       {/* MODAL 1: 92-TOOL DIRECTORY DRAWER */}

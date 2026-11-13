@@ -1090,6 +1090,54 @@ export interface ChangelogEntry {
 
 export const FOUNDER_AI_CHANGELOG: ChangelogEntry[] = [
   {
+    id: "log-sprint-16-flagship-website-builder-and-voxfolio-bridge",
+    sprintNumber: 16,
+    date: "2026-11-13",
+    title: "Unified Flagship AI Website Builder (Phases 1–6 Complete): Voxfolio Migration, 16 2D/3D Templates, Do It AI Agent Voice Studio, Writer-to-Website Bridge & /do-it-ai Master Command Center",
+    category: "Flagship Tool Overhaul",
+    founderRequestSummary:
+      "Execute all 6 Phases of UNIFIED_AI_WEBSITE_BUILDER_AND_ECOSYSTEM_ARCHITECTURE.md: integrate the Voxfolio 3D/2D voice-directed portfolio and website builder under isolated website_* Supabase tables without rewriting core governed engines, expand templates into 16 categorized archetypes led by DoItWithAI Editorial Flagship, remove the duplicate standalone blog writer in favor of a live bidirectional bridge with /ai-content-writer, rebrand the studio assistant to Do It AI Agent, add voice open_in_content_writer navigation, and turn /do-it-ai into the unified multi-website and writer workspace.",
+    aiStrategicBlueprint:
+      "Executed a zero-rewrite modular port under features/website-builder/ paired with unified browserAccounts() Google OAuth + Authorization Bearer header forwarding, 28 isolated API routes complying with Next.js 14 sync params and Vercel Hobby maxDuration <= 60s, standalone CSS layout scoping across /ai-website-builder, /do-it-ai/website-studio, /p/[slug], and /s/[token], bidirectional /api/website-builder/overview + /api/website-builder/publish-from-writer routes, an idempotent consolidated SQL migration (20261114_website_builder_projects.sql), and WorkspaceMasterHub inside /do-it-ai.",
+    aiImplementationDetails: [
+      "Phases 1–2: Registered ai-website-builder in features/tool-catalog/registry.json, created ecosystem-bridge.ts (16 curated 2D & 3D templates across Blogging & SEO Media, Personal Brand & Creator, Startup & SaaS Product, and 3D Interactive & Spatial), added writerPublishing commands + WriterStudioBridgeCard, and extended site-document.ts with sourceArticleProjectId & pillarClusterSlug.",
+      "Phase 3: Migrated domain, scene (Three.js + drei), portfolio, Tiptap v2 content editor, manual controls, and studio reducer into features/website-builder/, wired unified Google OAuth session forwarding (browser.ts + server.ts), created EditorialFlagshipHero + obsidian/indigo styling, and removed Voxfolio's duplicate blog writer.",
+      "Phase 4: Rebranded Vox to Do It AI Agent with public/pcm-processor.js + open_in_content_writer voice tool, ported all 28 API routes with website_* / website-media isolation, configured ClientLayoutShell standalone chrome for /p/, /s/, and /do-it-ai/website-studio/, and built App Router pages for /ai-website-builder, /tools/ai-website-builder, /ai-website-builder/start, /ai-website-builder/claim, /do-it-ai/website-studio/[projectId](/settings), /p/[slug]/**, and /s/[token]/[[...path]].",
+      "Phase 5: Shipped GET /api/website-builder/overview and POST /api/website-builder/publish-from-writer, enabled zero-blocker live blog publishing from Writer Studio synced posts, mounted ConnectedWebsitePublishBar in WriterWorkspace.tsx with ?targetSiteId= preselection, and auto-synced published website blog URLs into Writer Studio internal link suggestions.",
+      "Phase 6: Authored idempotent supabase/migrations/20261114_website_builder_projects.sql (all 14 website_* tables, website-media bucket, RLS policies, and 13 security-checked RPCs), added WorkspaceMasterHub to /do-it-ai for switching between AI Chat and Saved Websites + Writer Articles, added unit tests in tests/ai-tools/website-builder.test.ts, and logged progress on /founder-hub.",
+    ],
+    blogPostDraftMarkdown: `# Unifying AI Website Creation, 3D WebGL Studios & SEO Content Publishing Into One Platform
+
+In **Sprint 16**, we merged our flagship voice-and-3D **AI Website Builder** directly with the **AI Content Writer Studio** and **/do-it-ai Master Workspace**:
+
+1. **16 Purpose-Built 2D & 3D Templates**: Launch with our default **DoItWithAI Editorial Flagship** blog-first layout or switch live between 2D editorial publications, SaaS product sites, and interactive Three.js 3D stages.
+2. **Do It AI Agent Voice + Governed Editing**: Update copy, switch templates or dark/light themes, undo/redo revisions, and jump straight into AI Content Writer by voice or manual controls.
+3. **Zero-Copy-Paste Writer-to-Website Bridge**: Draft SEO-optimized articles with section infographics in \`/ai-content-writer\`, pull same-site internal links automatically, and push posts straight to your website's live \`/p/[slug]/blog\` journal in one click.`,
+    filesTouched: [
+      "features/website-builder/**",
+      "app/ai-website-builder/**",
+      "app/tools/ai-website-builder/**",
+      "app/do-it-ai/website-studio/**",
+      "app/p/**",
+      "app/s/**",
+      "app/api/website-builder/**",
+      "app/api/projects/**",
+      "app/api/shares/**",
+      "app/api/visitor/**",
+      "app/api/connect/**",
+      "app/api/assemblyai/**",
+      "features/writer-workspace/ConnectedWebsitePublishBar.tsx",
+      "features/writer-workspace/WriterWorkspace.tsx",
+      "features/do-it-ai/WorkspaceMasterHub.tsx",
+      "features/do-it-ai/DoItAiDashboardClient.tsx",
+      "supabase/migrations/20261114_website_builder_projects.sql",
+      "tests/ai-tools/website-builder.test.ts",
+      "lib/founder-hub/data.ts",
+    ],
+    commits: ["codex/infographic-studio-redesign"],
+    status: "Completed & Live",
+  },
+  {
     id: "log-sprint-15-ai-content-writer-v3-phases-1-to-7-shipped",
     sprintNumber: 15,
     date: "2026-11-12",

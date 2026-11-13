@@ -458,6 +458,7 @@ export interface WriterArticleBridgeInput {
   coverImageAlt?: string;
   faqItems?: Array<{ question: string; answer: string }>;
   jsonLdGraph?: Record<string, unknown>;
+  pillarClusterSlug?: string;
   publishImmediately?: boolean;
 }
 
@@ -672,6 +673,14 @@ export function convertWriterArticleToSitePostPayload(
   const blocks = convertWriterMarkdownToSiteBlocks(input.markdownBody, input.faqItems);
   const status = input.publishImmediately ? "published" : "draft";
 
+  const combinedTags = Array.from(
+    new Set(
+      [...input.tags, ...(input.pillarClusterSlug ? [input.pillarClusterSlug] : [])]
+        .map((t) => t.trim().slice(0, 32))
+        .filter(Boolean)
+    )
+  ).slice(0, 8);
+
   return {
     id: `post-${input.articleProjectId.slice(0, 24)}`,
     sourceArticleProjectId: input.articleProjectId,
@@ -680,7 +689,7 @@ export function convertWriterArticleToSitePostPayload(
     seoTitle: (input.seoTitle || input.title).trim().slice(0, 70),
     seoDescription: (input.seoDescription || input.excerpt).trim().slice(0, 170),
     excerpt: input.excerpt.trim().slice(0, 320),
-    tags: input.tags.map((t) => t.trim().slice(0, 32)).filter(Boolean).slice(0, 8),
+    tags: combinedTags,
     status,
     publishedAt: status === "published" ? new Date().toISOString() : null,
     blocks,
@@ -696,7 +705,9 @@ export interface ConnectedWebsiteSummary {
   projectId: string;
   name: string;
   templateId: UnifiedTemplateId;
+  templateName?: string;
   templateCategory: WebsiteTemplateCategory;
+  mode?: "2d" | "3d";
   revision: number;
   updatedAt: string;
   publicSlug: string | null;

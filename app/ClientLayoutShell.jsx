@@ -100,8 +100,13 @@ export default function ClientLayoutShell({ children }) {
   }, [hydrated]);
 
   const isHomePage = pathname === "/";
+  const isStandaloneWebsiteRoute =
+    pathname.startsWith("/p/") ||
+    pathname.startsWith("/s/") ||
+    pathname.startsWith("/do-it-ai/website-studio/");
   const isDoItAiPage =
-    pathname === "/do-it-ai" || pathname.startsWith("/do-it-ai/");
+    (pathname === "/do-it-ai" || pathname.startsWith("/do-it-ai/")) &&
+    !isStandaloneWebsiteRoute;
   const isFounderHubPage =
     pathname === "/founder-hub" || pathname.startsWith("/founder-hub/");
   const [isEmbeddedView, setIsEmbeddedView] = useState(false);
@@ -179,12 +184,13 @@ export default function ClientLayoutShell({ children }) {
         <WorkspaceProvider>
           {!isEmbeddedView &&
             !isFounderHubPage &&
+            !isStandaloneWebsiteRoute &&
             (isSlugPage ? <ConditionalGlobalHeader /> : <Header />)}
 
           <CacheProvider>
             <main
               className={
-                isEmbeddedView || isFounderHubPage
+                isEmbeddedView || isFounderHubPage || isStandaloneWebsiteRoute
                   ? "min-h-screen"
                   : isDoItAiPage
                     ? "h-dvh pt-[80px] overflow-hidden"
@@ -196,9 +202,9 @@ export default function ClientLayoutShell({ children }) {
               {children}
             </main>
 
-            {!isDoItAiPage && !isEmbeddedView && !isFounderHubPage && <Footer />}
-            {!isDoItAiPage && !isEmbeddedView && !isFounderHubPage && <ScrollToTop />}
-            {!isDoItAiPage && !isEmbeddedView && !isFounderHubPage && <SiteAssistant />}
+            {!isDoItAiPage && !isEmbeddedView && !isFounderHubPage && !isStandaloneWebsiteRoute && <Footer />}
+            {!isDoItAiPage && !isEmbeddedView && !isFounderHubPage && !isStandaloneWebsiteRoute && <ScrollToTop />}
+            {!isDoItAiPage && !isEmbeddedView && !isFounderHubPage && !isStandaloneWebsiteRoute && <SiteAssistant />}
           </CacheProvider>
 
           <Toaster position="bottom-center" />
