@@ -1,161 +1,145 @@
-# DoItWithAI Unified Website Builder, AI Content Writer & Ecosystem Architecture Blueprint
+# DoItWithAI Unified Website Builder, AI Content Writer & Ecosystem Architecture Blueprint (Master Handoff Document)
 
 > **Document Owner**: Aegis-Prime (Founder's Master AI Strategist & Lead Ecosystem Architect)  
 > **Target Repository**: `sufi0900/doitwithai.tools` (`codex/infographic-studio-redesign`)  
 > **Source Codebase Migrated**: `sufi0900/voice-directed-3d-portfolio-builder` (`Voxfolio V26 / V27.12`)  
-> **Status**: Phase 1 Foundation Shipped (`features/website-builder/ecosystem-bridge.ts`)
+> **Current Implementation State**: **Phase 1 & Phase 2 COMPLETED & PUSHED** — Ready for **Phase 3** Pickup by Next AI Engineer
 
 ---
 
-## 1. Executive Vision & Core Ecosystem Principle
+## 0. Founder's Core Strategic Mandate & Non-Negotiable Rules (Read First!)
 
-Instead of launching the **AI Content Writer Studio** and **Voxfolio Website Builder** as disconnected products—or competing head-on with generic drag-and-drop website builders like [Wix](https://www.wix.com/website/templates), [Squarespace](https://www.squarespace.com/), or [WordPress](https://readdy.ai/blog/best-website-builders-for-startups)—`doitwithai.tools` unifies them into a single **Build -> Write -> Optimize -> Publish Growth Engine**:
+Every AI engineer or developer working on **Phase 3 through Phase 6** must adhere strictly to the Founder's architectural decisions recorded below:
 
-1. **Build the Website (`AI + Voice-Directed Website Builder`)**: Users create a fast, schema-native blog, personal brand, startup/tool launchpad, or interactive 3D portfolio using guided AI interviews, voice commands, and live canvas controls.
-2. **Write & Optimize Content (`AI Content Writer Studio`)**: All blog writing, E-E-A-T information-gain research, Grade 7–9 readability tuning, SVG infographic generation, and `@graph` JSON-LD creation happen exclusively inside our dedicated **AI Content Writer Studio** (`/ai-content-writer`).
-3. **1-Click Publish to Connected Website (`Ecosystem Bridge`)**: When an article is ready in the AI Content Writer Studio, the user can publish it directly into the `/blog` collection of any website they built on `doitwithai.tools` in 1 click (or export it to external CMS platforms).
-4. **Optimize with 100+ Backend SEO Tools**: Every SEO, AEO, and GEO tool on `doitwithai.tools` (`/tools/*`) connects directly to the user's hosted website(s) to audit and repair meta tags, internal links, schema markup, and `llms.txt` rules.
+1. **Hold Public Launch of AI Content Writer Until Unified Ecosystem Is Ready**:
+   - The **AI Content Writer Studio** (`/ai-content-writer`) has completed its V3.1–V3.14 quality upgrades and will be publicly launched alongside the integrated **AI Website Builder** as one cohesive platform.
+2. **Zero-Rewrite Migration of Voxfolio (`voice-directed-3d-portfolio-builder`)**:
+   - Do **NOT** rewrite Voxfolio's tested core from scratch. Migrate Voxfolio's existing governed command pipeline (`Manual edit -> validation -> revision -> undo` and `Voice tool -> validation -> revision -> undo`), snapshot publishing engine, 3D Three.js scenes, and opportunity variants directly into `features/website-builder/`.
+3. **Strict Separation of Responsibilities (Website Building vs. Blog Writing & SEO)**:
+   - **Inside the Website Builder Studio**: Users **ONLY** build, design, and structure their website. All rudimentary inline blog-writing or SEO-helper tools from Voxfolio (`blog-writing-assistant.tsx`, `blog-writing.ts`, `/api/content/blog-draft`) are **removed** and replaced by `WriterStudioBridgeCard.tsx`.
+   - **Inside the AI Content Writer Studio (`/ai-content-writer`) & Backend SEO Tools (`/tools/*`)**: All blog post creation, E-E-A-T information-gain research, `<25`-word readability polishing, custom SVG infographics, `@graph` JSON-LD generation, and on-page SEO audits happen exclusively through our dedicated **AI Content Writer Studio** and our **100+ backend SEO tools**.
+4. **Two-Way Connection (`1-Click Publish to Connected Website`)**:
+   - When an authenticated user finishes an article in the **AI Content Writer Studio**, the bottom publish bar (`ConnectedWebsitePublishBar.tsx`) gives them two choices:
+     - **Choice A**: Standard Export / Download (HTML + JSON-LD, Markdown, PDF, Word) for external websites.
+     - **Choice B**: **1-Click "Publish to My Connected Website"**—which dispatches `publishing.upsertFromWriterStudio` (`applyUpsertFromWriterStudioCommand()` in `features/website-builder/domain/writer-publishing-commands.ts`) to push the article directly into the `/blog` collection of the website(s) they built on `doitwithai.tools`.
+5. **Theme Alignment & Expanded Template Categories (`doitwithai-flagship` Default)**:
+   - The Website Builder studio chrome (`website-studio.module.css`) and the **default user website template (`doitwithai-flagship`)** match `doitwithai.tools`'s own obsidian-glass, electric indigo (`#6366f1`) & cyan (`#38bdf8`) design language so it never feels like an unrelated, bolted-on tool.
+   - Expand templates beyond 3D portfolios into **16 templates across 4 categories**:
+     1. **Blogging, Editorial & SEO Publishing (`blog-editorial`)** — *Primary focus*
+     2. **Personal Branding, Consulting & Creator Authority (`personal-brand`)**
+     3. **Startup, Micro-SaaS & AI Tool Launchpads (`startup-saas`)**
+     4. **Interactive 3D & Cinematic Portfolios (`interactive-3d-portfolio`)**
+6. **Niche Target Audience & SEO Positioning (Never Compete Head-On with Wix/WordPress)**:
+   - Do not target generic broad keywords where Wix, WordPress, and Squarespace dominate. Target **Bloggers, Content Creators, Personal Brand Builders, SEO Practitioners, Beginners, and Micro-SaaS / Small Service Startups** who want an integrated **AI + Voice Website & Blog Builder with Built-In SEO Tools**.
+7. **Unified Brand Agent (`Do It AI Agent`) & Single Sign-On Workspace (`/do-it-ai`)**:
+   - Unify Voxfolio's `"Vox"` voice/chat assistant with our main brand agent (**`Do It AI Agent`** in `features/site-assistant`).
+   - Provide a single unified login (`/auth`) and a **Master User Workspace Dashboard (`/do-it-ai`)** where users see all of their websites, total articles written, website & SEO performance scores, and tailored onboarding (New User vs. Returning User views).
 
 ---
 
-## 2. Target Audience, Niche Positioning & SEO Slug Strategy
+## 1. Target Audience, Niche SEO Positioning & Canonical Route Architecture
 
-### 2.1 Why Niche Positioning Beats Generic Website Builders
-2026 market analyses ([Superapp Oct 2026](https://superapp.dev/blog/best-ai-blog-website-builders), [Kleap Jul 2026](https://kleap.co/blog/ai-blog-builder-seo-features), [Rocket Jun 2026](https://www.rocket.new/blog/best-ai-blog-website-builder-compared-reviewed), [Atalay AI Oct 2026](https://atalay.ai/en/blog/best-ai-website-builders), [Sonary Sep 2026](https://sonary.com/website-builders/ai-website-builders/)) highlight two critical market gaps:
-- Traditional website builders treat technical SEO, AEO passage structure, and entity schema as an afterthought.
-- Fully automated auto-bloggers (such as SEObot/Unicorn Platform) publish unreviewed AI text that triggers Google's 2026 scaled content abuse policies ([Superapp](https://superapp.dev/blog/best-ai-blog-website-builders)).
-- **Our Differentiated Moat**: A **Voice & AI-Directed Blog, Brand & Startup Website Builder** with **human-in-the-loop governed publishing** and native integration with our **AI Content Writer Studio** and **100+ SEO tools**.
+### 1.1 Market & SEO Positioning Grounding (2026 Benchmarks)
+- **Why Niche Positioning Wins**: 2026 industry analyses ([Superapp Oct 2026](https://superapp.dev/blog/best-ai-blog-website-builders), [Kleap Jul 2026](https://kleap.co/blog/ai-blog-builder-seo-features), [Rocket Jun 2026](https://www.rocket.new/blog/best-ai-blog-website-builder-compared-reviewed), [Atalay AI Oct 2026](https://atalay.ai/en/blog/best-ai-website-builders), [Readdy May 2026](https://readdy.ai/blog/best-website-builders-for-startups), [Sonary Sep 2026](https://sonary.com/website-builders/ai-website-builders/)) show that generic website builders lack deep AEO/GEO structured data and topical clustering, while unreviewed auto-bloggers violate Google's scaled content abuse policy ([Superapp](https://superapp.dev/blog/best-ai-blog-website-builders)).
+- **Hub-and-Spoke Topic Cluster Advantage**: In 2026, AI crawlers (`GPTBot`, `ClaudeBot`, `PerplexityBot`, `Google-Extended`) prioritize hub-and-spoke topic clusters (1 pillar page + 5–15 supporting spoke articles linked bidirectionally with 3–5 contextual anchors per post, `BreadcrumbList` JSON-LD, XML sitemaps, and `llms.txt`) ([AliceLabs May 2026](https://alicelabs.ai/en/insights/site-architecture-for-ai-crawlers), [Averi AI Apr 2026](https://www.averi.ai/how-to/b2b-saas-blog-strategy-the-2026-playbook), [UpliftAI Jun 2026](https://www.upliftai.co/blog/best-automated-seo-tools), [Sight AI Jul 2026](https://www.trysight.ai/blog/topic-cluster-automation-tools), [Gemeos Agency Aug 2026](https://www.gemeosagency.com/en/blog/seo-internal-linking), [Kokil Technical Guide Aug 2026](https://kokil.com.np/blog/seo-content-strategy-for-new-sites-in-2026)).
 
-### 2.2 Four Primary Target Audience Segments
-| Segment | Primary Goal | Recommended Default Template | Monetization / Growth Path |
-| :--- | :--- | :--- | :--- |
-| **1. SEO Bloggers, Niche Publishers & Beginners** | Launch a topical authority blog to earn via SEO, affiliates, sponsorships, or AdSense without managing WordPress plugins. | `doitwithai-flagship` or `authority-niche-blog` | Topical cluster articles written in AI Content Writer Studio + comparison matrices. |
-| **2. Personal Brand Builders, Consultants & Creators** | Build personal authority, share expertise, grow a newsletter, and capture consulting/coaching leads. | `founder-authority-brand` or `creator-newsletter-hub` | Thought-leadership blog + Opportunity Variants (`/s/[token]`) for tailored client pitches. |
-| **3. Indie Hackers, Micro-SaaS & AI Tool Startups** | Launch a product, directory, or SaaS landing page paired with an organic SEO blog engine. | `micro-saas-launchpad` or `midnight-bento` | Product showcase + programmatic 'X vs Y' comparison and use-case blog posts. |
-| **4. Creative Technologists & 3D Portfolio Owners** | Showcase interactive 3D scenes, engineering case studies, and tailored job/grant applications. | `cinematic-orbit` or `architectural-grid` | Interactive 3D canvas + CV ingestion + private Opportunity Variant pages. |
-
-### 2.3 Canonical Route & Slug Architecture on `doitwithai.tools`
-| Surface | Route / Slug | Purpose & SEO Role |
+### 1.2 Canonical Routes & URL Slugs on `doitwithai.tools`
+| Surface | Route / URL Slug | Target SEO Intent & Role |
 | :--- | :--- | :--- |
-| **Primary SEO Tool Landing Page** | `/tools/ai-website-builder` *(alias `/ai-website-builder`)* | Ranks for *"AI blog website builder"*, *"AI website builder for bloggers & creators"*, *"voice-directed AI website builder"*, and *"AI startup & personal brand website builder"*. |
-| **Guided Onboarding & Template Chooser** | `/ai-website-builder/start` | Voice/form guided onboarding + CV/brand ingestion + 4-category template preview & confirmation (`RELEASE_V27_12`). |
-| **Website Builder Live Studio** | `/do-it-ai/website-studio/[projectId]` | 3-column studio (Left: Content/Design/3D Scene/Opportunities; Center: Live Canvas; Right: Unified **Do It AI Agent** Voice & Chat Co-Pilot). |
-| **Master User Workspace Dashboard** | `/do-it-ai` | Unified post-login command center showing all user websites, articles written, SEO health scores, and quick actions. |
-| **Public Hosted User Websites** | `/p/[slug]`, `/p/[slug]/blog`, `/p/[slug]/blog/[postSlug]`, `/p/[slug]/pages/[pageSlug]` | Fast SSR public rendering of user websites, blog indices, individual SEO articles, and case studies (plus custom domain mapping in Phase 5). |
-| **Tailored Opportunity Share Links** | `/s/[token]/[[...path]]` | Time-bounded, reviewable private/shared opportunity variants for client pitches and partnerships. |
+| **SEO Landing Page & Tool Entry** | `/tools/ai-website-builder` *(alias `/ai-website-builder`)* | Targets *"AI blog website builder"*, *"AI website builder for bloggers and creators"*, *"voice-directed AI website builder"*, *"SEO website builder for startups"*. |
+| **Guided Onboarding & Template Picker** | `/ai-website-builder/start` | Voice/form guided interview + CV/brand ingestion + 4-category template preview & explicit confirmation (`RELEASE_V27_12`). |
+| **Live 3-Column Website Studio** | `/do-it-ai/website-studio/[projectId]` | Left: Content/Design/3D Scene/Opportunity controls; Center: Live Canvas; Right: **Do It AI Agent** (Voice + Text Director). |
+| **Unified Master User Dashboard** | `/do-it-ai` | Single Sign-On dashboard displaying user websites, articles written, SEO health scores, and 1-click tool launchers. |
+| **Public Hosted User Websites** | `/p/[slug]`, `/p/[slug]/blog`, `/p/[slug]/blog/[postSlug]`, `/p/[slug]/pages/[pageSlug]`, `/p/[slug]/projects/[projectSlug]` | SSR public rendering with `Article`, `FAQPage`, `Person`, `Organization`, and `BreadcrumbList` JSON-LD + `/s/[token]` private opportunity share links. |
 
 ---
 
-## 3. Zero-Rewrite Code Migration Map (`Voxfolio` -> `doitwithai.tools`)
+## 2. Completed Phases Ledger (Phase 1 & Phase 2 — Already Shipped on `codex/infographic-studio-redesign`)
 
-Both `voice-directed-3d-portfolio-builder` (`Next.js 15.5 / React 19 / Three.js / TipTap / Supabase / Zod`) and `doitwithai.tools` share the same core stack. We migrate the entire Voxfolio codebase into `features/website-builder/` without rewriting its tested core:
+### Phase 1 (Shipped in Commit `a3e1fad126f4220a688b842aca55cda44e79b8f9`)
+- **`features/website-builder/ecosystem-bridge.ts`**:
+  - Defines `WebsiteTemplateCategory` (`blog-editorial`, `personal-brand`, `startup-saas`, `interactive-3d-portfolio`) and `UnifiedTemplateId` (all 16 templates, with `DEFAULT_WEBSITE_TEMPLATE_ID = "doitwithai-flagship"`).
+  - Exports `UNIFIED_WEBSITE_TEMPLATES` (`readonly UnifiedWebsiteTemplateContract[]`) and `getTemplatesByCategory()`.
+  - Exports `convertWriterMarkdownToSiteBlocks(markdown, faqItems)` and `convertWriterArticleToSitePostPayload(input)` to convert AI Content Writer Studio articles into governed Website Builder blog posts (`max 200 blocks`).
+  - Exports `ConnectedWebsiteSummary`, `ConnectedArticleSummary`, and `UnifiedUserWorkspaceOverview` interfaces for `/do-it-ai`.
 
-| Voxfolio Source Path | Target Path in `doitwithai.tools` | Migration Action |
-| :--- | :--- | :--- |
-| `src/domain/site-document.ts`, `commands.ts`, `publication*.ts`, `revision-history.ts`, `rich-document.ts`, `opportunity*.ts`, `guided-interview.ts`, `cv-ingestion.ts` | `features/website-builder/domain/*` | **Preserve 100%** of the governed command pipeline (`Manual edit -> validation -> revision -> undo` and `Voice tool -> validation -> revision -> undo`). Extend `templateOptions` to include the 7 new Blogging, Brand, and Startup templates. |
-| `src/domain/template-contracts.ts` & `templates.ts` | `features/website-builder/domain/template-contracts.ts` & `features/website-builder/ecosystem-bridge.ts` | **Expand from 9 to 16 templates** organized into 4 categories (`blog-editorial`, `personal-brand`, `startup-saas`, `interactive-3d-portfolio`) with `doitwithai-flagship` set as the default template. |
-| `src/features/studio/portfolio-studio.tsx`, `manual-controls.tsx`, `studio-reducer.ts`, `use-draft-save.ts`, `drain-draft-queue.ts` | `features/website-builder/studio/*` | **Preserve studio engine**; replace global `globals.css` selectors with scoped `website-studio.module.css` aligned to `doitwithai.tools` design tokens (`workspace.module.css`). |
-| `src/features/studio/blog-writing-assistant.tsx` & `src/app/api/content/blog-draft/route.ts` | **Removed / Replaced by `WriterStudioBridgeCard.tsx`** | **Strict Separation of Responsibilities**: Remove the basic inline blog generator from the Website Builder studio. Replace it with a **"Write & Optimize in AI Content Writer Studio"** bridge card + synced article manager. |
-| `src/features/voice/*` (`voice-panel.tsx`, `voice-tools.ts`, `use-assemblyai-agent.ts`) | `features/website-builder/voice/*` + `features/site-assistant/*` | **Unify with `Do It AI Agent`**: Rebrand `"Vox"` in the right-hand studio panel to **`Do It AI Agent (Voice & Studio Director)`** while preserving AssemblyAI streaming voice + governed `runVoiceTool()` execution. |
-| `src/features/scene/*`, `src/features/portfolio/*`, `src/features/public/*`, `src/features/content/*` | `features/website-builder/{scene,portfolio,public,content}/*` | **Preserve all 3D Three.js scenes & 2D collection renderers**, adding the new `doitwithai-editorial-grid` layout for blog-first and micro-SaaS websites. |
-| `supabase/migrations/001..017` | `supabase/migrations/20261114_website_builder_projects.sql` | Consolidate into a single idempotent Supabase migration sharing `auth.users(id)` with `20261021_tool_accounts.sql`. |
-
----
-
-## 4. Theme Alignment & 16 Curated Website Templates (4 Categories)
-
-### 4.1 Studio Chrome & Default Theme Alignment
-- **Studio Chrome**: Replaces the standalone `VOXFOLIO` header with the unified **DoItWithAI Website Studio** topbar (matching `/ai-content-writer`'s obsidian-glass surface, indigo/cyan accents, and light/dark theme toggle).
-- **Default User Website Theme (`doitwithai-flagship`)**: When a user creates a website or opens the live demo, the default template is **`DoItWithAI Flagship Publication`**—modeled directly on `doitwithai.tools`'s own editorial & tool-hub aesthetic so the default experience feels 100% cohesive with our main platform.
-
-### 4.2 The 16 Templates Across 4 Categories (Defined in `features/website-builder/ecosystem-bridge.ts`)
-1. **Blogging, Editorial & SEO Publishing (`blog-editorial`)**:
-   - `doitwithai-flagship` (**Default**): Dark-glass & electric-cyan editorial hub with featured pillar articles, topical category pills, interactive tool cards, and newsletter capture.
-   - `authority-niche-blog`: High-readability review & niche blog with sticky ToC, comparison table highlights, and author E-E-A-T byline cards.
-   - `olive-journal`: Warm paper and olive ink masthead for long-form essays and research publications.
-   - `creator-newsletter-hub`: Newsletter-first publication with issue archives, lead-magnet signup hero, and audio/video embed cards.
-2. **Personal Branding, Consulting & Creator Authority (`personal-brand`)**:
-   - `founder-authority-brand`: Executive/founder personal brand combining keynote topics, verified metrics, and an integrated thought-leadership blog.
-   - `consultant-lead-engine`: Service & consulting lead engine with ROI case studies, service packages, and an SEO resource blog.
-   - `rose-studio`: Expressive serif creative studio showcase with visual project gallery.
-   - `professional-2d`: Clean editorial profile with portrait-led About, career record, and blog.
-3. **Startup, Micro-SaaS & AI Tool Launchpads (`startup-saas`)**:
-   - `micro-saas-launchpad`: AI tool / micro-SaaS product landing page with feature bento grid, comparison matrix slot, and organic SEO blog engine.
-   - `midnight-bento`: Midnight-blue modular bento hub for developers, product builders, and technical startups.
-   - `startup-service-agency`: Small business & digital service startup template with service tiers, testimonials, and local/national SEO pages.
-4. **Interactive 3D & Cinematic Portfolios (`interactive-3d-portfolio`)**:
-   - `cinematic-orbit` (3D Orbital Showcase), `architectural-grid` (3D Constellation Field), `editorial-depth` (3D Minimal Constellation), `kinetic-gallery` (3D Monolith Gallery), and `velocity-atelier` (3D Night-Showroom GT Coupe).
+### Phase 2 (Shipped in Current Commit)
+- **Migrated & Upgraded Core Domain (`features/website-builder/domain/*`)**:
+  - `features/website-builder/domain/rich-document.ts`: Restricted TipTap JSON schema (`richNodeSchema`), `safeLink()`, and `richText()`.
+  - `features/website-builder/domain/legacy-rich-document.ts`: Deterministic converter (`legacyRichDocument()`) from structured blocks to TipTap `RichNode` trees.
+  - `features/website-builder/domain/site-document.ts`: Full Zod `siteDocumentSchema` upgraded with:
+    - All **16 `templateOptions`** (`doitwithai-flagship` default), `indigo` in `accentOptions`, `obsidian` in `backgroundOptions`, and `doitwithai-editorial-grid` in `sceneFamilyOptions`.
+    - `sourceArticleProjectId` and `pillarClusterSlug` on `blogPostSchema` to track AI Content Writer provenance and Hub-and-Spoke Topic Cluster relationships.
+    - `DEFAULT_SITE_DOCUMENT` configured to open in `doitwithai-flagship` (`indigo` / `obsidian` / `doitwithai-editorial-grid`).
+  - `features/website-builder/domain/template-contracts.ts`: Maps all 16 `UNIFIED_WEBSITE_TEMPLATES` into `TEMPLATE_CONTRACTS` and exports `getTemplateContract()`, `applyTemplatePresentation()`, `isFlatTemplate()`, `isBlogFirstTemplate()`, `isCollectionTemplate()`, and `isLightTemplate()`.
+  - `features/website-builder/domain/writer-publishing-commands.ts`: Governed command handler (`upsertFromWriterStudioCommandSchema`, `applyUpsertFromWriterStudioCommand()`, `describeWriterPublishingCommand()`) that inserts or updates a blog post from the AI Content Writer Studio, builds its `richContent` tree, and increments `revision`.
+  - `features/website-builder/domain/publication.ts`, `publication-selection.ts`, `revision-history.ts`, & `opportunity-review.ts`: Selective snapshot builder (`buildPublicationSnapshot()`, `publicationChoices()`, `missingPublicationFields()`, `hasPublicationChanges()`) and deterministic revision/opportunity diffing.
+- **Bridge UI Components & Scoped Studio Theme**:
+  - `features/website-builder/studio/WriterStudioBridgeCard.tsx`: Replaces Voxfolio's removed `blog-writing-assistant.tsx` inside the Website Builder studio, routing blog creation to `/ai-content-writer?targetSiteId=...` and exposing 1-click links to `On-Page AI SEO Repair Agent` and `Internal Link Opportunity Finder`.
+  - `features/writer-workspace/ConnectedWebsitePublishBar.tsx`: Bottom publish bar for the AI Content Writer Studio offering 1-click Draft or Live push to any connected user website.
+  - `features/website-builder/studio/website-studio.module.css`: Scoped CSS module matching `doitwithai.tools`'s dark obsidian glassmorphism + electric indigo/cyan palette.
 
 ---
 
-## 5. Two-Way Connection: AI Content Writer Studio <-> Website Builder
+## 3. Detailed Handoff Runbook for Next AI Engineer (Phases 3, 4, 5 & 6)
 
-```
-┌────────────────────────────────────────────────────────────────────────────┐
-│                   AI CONTENT WRITER STUDIO (/ai-content-writer)            │
-│  Research (V3.12 Fan-Out) -> Draft (V3.13 <25w + 4-Col Matrix) ->          │
-│  Visuals (V3.14 <figure>/<figcaption> + SVG Banner) -> Schema (@graph)     │
-└───────────────────────────────────┬────────────────────────────────────────┘
-                                    │
-         [Publish Drawer: 2 Choices for Authenticated User]
-         ├── Choice A: Export HTML / Markdown / PDF / Word / External Webhook
-         └── Choice B: "1-Click Publish to My Connected Website"
-                                    │
-                                    ▼
-┌────────────────────────────────────────────────────────────────────────────┐
-│        ECOSYSTEM BRIDGE (`convertWriterArticleToSitePostPayload`)          │
-│  Converts Writer Markdown + FAQ + Hero SVG + Meta Title/Desc + JSON-LD     │
-│  into Governed `SiteDocument["publishing"]["posts"]` Revision Snapshot     │
-└───────────────────────────────────┬────────────────────────────────────────┘
-                                    │
-                                    ▼
-┌────────────────────────────────────────────────────────────────────────────┐
-│       USER'S HOSTED WEBSITE (`/p/[slug]/blog/[postSlug]` & `/p/[slug]`)    │
-│  Automatically updates Blog Index, Homepage Featured Journal Cards,        │
-│  XML Sitemap, Internal Link Catalog, and Visitor AI Knowledge Base         │
-└────────────────────────────────────────────────────────────────────────────┘
-```
+> **Instructions for the Next AI Engineer Starting at Phase 3**:  
+> Phase 1 (`features/website-builder/ecosystem-bridge.ts`) and Phase 2 (`features/website-builder/domain/*`, `features/website-builder/studio/WriterStudioBridgeCard.tsx`, `website-studio.module.css`, and `features/writer-workspace/ConnectedWebsitePublishBar.tsx`) are already committed on branch `codex/infographic-studio-redesign`. Follow Phases 3 -> 6 below in order.
 
-- **Inside the Website Builder (`PublishingEditor`)**: When a user selects `Content -> Blog posts` inside the Website Builder studio, they manage existing posts' publication state and click **"Write New Article in AI Content Writer Studio"** (which opens `/ai-content-writer?targetSiteId=<projectId>` with the website's niche, existing post URLs for internal linking, and brand voice pre-loaded).
-- **Inside the AI Content Writer Studio (`ArticleEditor` / `SearchAppearancePanel`)**: When an article is complete, the bottom publish bar checks if the user has any websites in `website_projects`. If connected, it renders a **"Publish to Connected Website"** selector allowing instant Draft push or Live Snapshot publication.
+### Phase 3: Migrate Studio UI, 3D/2D Scene Renderers & Build the 7 New Blog/Brand/Startup Template Renderers
+1. **Migrate Remaining Studio & Content Components into `features/website-builder/`**:
+   - Copy Voxfolio's `src/domain/commands.ts` and `src/domain/site-wide-replace.ts` into `features/website-builder/domain/`, and wire `upsertFromWriterStudioCommandSchema` + `applyUpsertFromWriterStudioCommand` from `./writer-publishing-commands` into `commands.ts`.
+   - Copy Voxfolio's `src/features/content/{document-editor.tsx,inline-text.tsx,rich-document-view.tsx,rich-text.tsx}` into `features/website-builder/content/` and update `@/domain/*` imports to `../domain/*`.
+   - Copy Voxfolio's `src/features/studio/{portfolio-studio.tsx,manual-controls.tsx,publishing-editor.tsx,revision-history.tsx,studio-reducer.ts,use-draft-save.ts,drain-draft-queue.ts,preview-navigation.ts,opportunity-planner.tsx,opportunity-share.tsx,opportunity-share-consent.tsx,opportunity-source-review.tsx,professional-memory.tsx,agent-health.tsx,visitor-knowledge.tsx}` into `features/website-builder/studio/`.
+   - **CRITICAL CHANGE in `publishing-editor.tsx`**:
+     - Do **NOT** import or render `<BlogWritingAssistant />` (`blog-writing-assistant.tsx` is intentionally removed).
+     - Instead, import and render `<WriterStudioBridgeCard document={document} post={item as SiteDocument["publishing"]["posts"][number]} />` from `./WriterStudioBridgeCard`!
+   - **CRITICAL CHANGE in `manual-controls.tsx`**:
+     - In the `design` panel template picker, group `TEMPLATE_CONTRACTS` by `template.categoryLabel` (`Blogging & SEO Media`, `Personal Brand & Creator`, `Startup, SaaS & Tools`, `3D Interactive Portfolio`) so users can filter templates by category.
+2. **Migrate 3D Scenes & Build the New 2D Blog/Brand/Startup Renderers**:
+   - Copy `src/features/scene/*` into `features/website-builder/scene/` and `src/features/portfolio/*` + `src/features/public/*` into `features/website-builder/portfolio/` and `features/website-builder/public/`.
+   - In `features/website-builder/portfolio/collection-templates.tsx`, add layout variants for the 7 new 2D templates defined in `UNIFIED_WEBSITE_TEMPLATES`:
+     - `doitwithai-flagship` (Default): Dark-glass hero + featured pillar articles grid + topical category pills + tool/project cards + newsletter signup bar.
+     - `authority-niche-blog`: Editorial masthead + sticky ToC blog layout + comparison table highlight slot + author E-E-A-T card.
+     - `creator-newsletter-hub`: Centered newsletter subscription hero + numbered issue archive + audio/video note cards.
+     - `founder-authority-brand`: Executive split hero + keynote/advisory topics + verified metrics + thought-leadership blog feed.
+     - `consultant-lead-engine`: Service packages grid + ROI case study cards + discovery call CTA + SEO resource blog.
+     - `micro-saas-launchpad`: Product showcase hero + feature bento grid + 4-column comparison matrix + changelog/blog feed.
+     - `startup-service-agency`: Agency value proposition + service tiers + client testimonials + FAQ + blog.
 
----
+### Phase 4: Unify `Vox` into `Do It AI Agent` (Voice + Chat Studio Co-Pilot) & App Routes
+1. **Migrate Voice & Agent Modules (`features/website-builder/voice/*`)**:
+   - Copy `src/features/voice/{voice-panel.tsx,voice-tools.ts,use-assemblyai-agent.ts,local-assistant.ts,assistant-steps.ts,assistant-sounds.ts,task-context.ts}` into `features/website-builder/voice/`.
+   - In `voice-panel.tsx`, update the UI labels from `"VOICE ASSISTANT / Vox / Message Vox"` to **`"DO IT AI AGENT · VOICE & STUDIO DIRECTOR / Do It AI / Message Do It AI"`**.
+   - In `voice-tools.ts`, add a new tool `open_in_content_writer` that returns a navigation/redirect action to `/ai-content-writer?targetSiteId=${document.projectId}` whenever the user asks the voice/chat agent to write a full SEO blog post.
+   - Connect `features/site-assistant/` (`Do It AI Agent`) so when a user is on `/do-it-ai/website-studio/[projectId]`, the global floating assistant defers to the embedded right-hand Studio Director panel.
+2. **Wire Next.js App Router Pages (`app/`)**:
+   - `app/tools/ai-website-builder/page.tsx` (and `app/ai-website-builder/page.tsx`): SEO-optimized tool landing page introducing the **AI & Voice Blog, Brand & Startup Website Builder** with interactive template previews across all 4 categories.
+   - `app/ai-website-builder/start/page.tsx`: Guided onboarding & template confirmation flow (migrated from Voxfolio `src/app/start/*`).
+   - `app/do-it-ai/website-studio/[projectId]/page.tsx`: Authenticated 3-column Website Builder Studio page.
+   - `app/p/[slug]/page.tsx`, `app/p/[slug]/blog/page.tsx`, `app/p/[slug]/blog/[postSlug]/page.tsx`, `app/p/[slug]/pages/[pageSlug]/page.tsx`, `app/p/[slug]/projects/page.tsx`, `app/p/[slug]/projects/[projectSlug]/page.tsx`, and `app/s/[token]/[[...path]]/page.tsx`: Public SSR routes for hosted user websites and private opportunity share links.
 
-## 6. Unified Single Sign-On & Master User Dashboard (`/do-it-ai`)
+### Phase 5: Wire 1-Click Writer-to-Website API & Backend SEO Tools Integration
+1. **Create `/api/website-builder/publish-from-writer/route.ts`**:
+   - Accepts `POST { websiteProjectId, articleInput: WriterArticleBridgeInput, publishImmediately: boolean }` from the authenticated user.
+   - Loads the user's `SiteDocument` from Supabase (`website_projects`), runs `convertWriterArticleToSitePostPayload(articleInput)`, applies `applyUpsertFromWriterStudioCommand(doc, ...)`, saves the new revision, and (if `publishImmediately === true`) updates the live publication snapshot (`buildPublicationSnapshot()`).
+2. **Mount `<ConnectedWebsitePublishBar />` in `features/writer-workspace/ArticleEditor.tsx` & `SearchAppearancePanel.tsx`**:
+   - Import `ConnectedWebsitePublishBar` from `./ConnectedWebsitePublishBar`.
+   - Read `?targetSiteId=` from `useSearchParams()` if the user arrived from the Website Builder Studio, and pass the user's `connectedWebsites` list so they can push any finished article to their website in 1 click.
+3. **Dynamic Topic-Cluster Internal Link Sync (`features/writer-workspace/model.ts` & `research.server.ts`)**:
+   - When `targetSiteId` is active, merge the user's published blog post slugs (`/p/${siteSlug}/blog/${post.slug}`) into the Writer Studio's internal link recommendations so every new article automatically links to its pillar page and 2–4 sibling cluster posts ([AliceLabs](https://alicelabs.ai/en/insights/site-architecture-for-ai-crawlers)).
 
-When a user signs in once via `/auth`, `/do-it-ai` (`DoItAiDashboardClient.tsx`) serves as their **Unified Workspace Dashboard**:
-
-### 6.1 New User First-Login Experience (`isNewUser === true`)
-- Greets the user with a streamlined 2-path onboarding launcher:
-  1. **"Build My Website or Blog (Voice & AI Studio)"** -> launches `/ai-website-builder/start` to pick a category (Blog, Personal Brand, Startup, or 3D Portfolio) and generate their site in under 60 seconds.
-  2. **"Write an SEO-Optimized Article (AI Content Writer)"** -> launches `/ai-content-writer` with guided topic research.
-
-### 6.2 Returning User Command Center (`5 Integrated Workspace Panels`)
-1. **Top KPI Telemetry Row**:
-   - **Active Websites**: Count of live & draft websites (`e.g., 2 Live · 1 Opportunity Variant`).
-   - **Articles Written**: Total articles created in AI Content Writer (`e.g., 14 Articles · 9 Published on Site`).
-   - **Average SEO & AEO Health Score**: Real-time readiness across published pages (`0–100%`).
-   - **Visitor AI Engagement**: Questions answered by the embedded Visitor AI agent on the user's live website(s).
-2. **My Websites Grid**: Cards for each website showing Live URL (`/p/[slug]`), template badge, published blog count, revision number, and 1-click buttons: **Edit Website Studio**, **Write Blog Post for This Site**, **Run SEO Audit**, **Create Opportunity Page**, and **View Live**.
-3. **My Articles & Publishing Queue**: Lists all AI Content Writer projects with their readability grade, citation count, and a 1-click **"Publish / Sync to Website"** action.
-4. **Connected SEO & Repair Tools**: Direct launchers to run `On-Page AI SEO Repair Agent`, `Internal Link Opportunity Finder`, `Schema Markup Validator`, and `LLMs.txt Generator` directly against the user's hosted website.
-5. **Do It AI Agent & API Connections**: Unified settings for Visitor AI knowledge documents and external connection keys.
-
----
-
-## 7. Phased Implementation Roadmap (6 Execution Phases)
-
-- **Phase 1 — Ecosystem Architecture & Bridge Contracts (Completed in This Commit)**:
-  - Ship `docs/UNIFIED_AI_WEBSITE_BUILDER_AND_ECOSYSTEM_ARCHITECTURE.md` and `features/website-builder/ecosystem-bridge.ts` (16-template catalog across 4 categories with `doitwithai-flagship` default, `convertWriterArticleToSitePostPayload()` converter, and `UnifiedUserWorkspaceOverview` dashboard types).
-- **Phase 2 — Core Domain, Studio & Scoped Theme Migration**:
-  - Migrate `src/domain/*`, `src/features/studio/*`, `src/features/scene/*`, `src/features/portfolio/*`, `src/features/public/*`, and `src/features/content/*` from `voice-directed-3d-portfolio-builder` into `features/website-builder/`, scoping `globals.css` into `website-studio.module.css` to match `doitwithai.tools` tokens.
-  - Remove `blog-writing-assistant.tsx` from the Website Builder and replace it with `WriterStudioBridgeCard.tsx`.
-- **Phase 3 — 7 New Blogging, Personal Brand & Startup Templates**:
-  - Implement the 2D layout renderers for `doitwithai-flagship` (default), `authority-niche-blog`, `creator-newsletter-hub`, `founder-authority-brand`, `consultant-lead-engine`, `micro-saas-launchpad`, and `startup-service-agency`.
-- **Phase 4 — Unified `Do It AI Agent` (Voice + Chat Studio Co-Pilot)**:
-  - Connect `features/website-builder/voice/*` with `features/site-assistant/*` so **Do It AI Agent** powers both global tool assistance and real-time voice/text website directing.
-- **Phase 5 — 1-Click Writer-to-Website Publishing & Backend SEO Tool Wiring**:
-  - Add `/api/website-builder/publish-from-writer` and wire the **"Publish to My Connected Website"** bar inside `features/writer-workspace/ArticleEditor.tsx` & `SearchAppearancePanel.tsx`.
-  - Automatically feed the user's published website URLs into the AI Content Writer's `INTERNAL_LINK_CATALOG` so every new article automatically interlinks with the user's existing blog posts!
-- **Phase 6 — Unified `/do-it-ai` Master User Dashboard & Supabase Migration**:
-  - Apply `supabase/migrations/20261114_website_builder_projects.sql` and upgrade `features/do-it-ai/DoItAiDashboardClient.tsx` to display the unified Websites + Articles + SEO Performance command center.
+### Phase 6: Consolidated Supabase Migration & Unified `/do-it-ai` Master User Dashboard
+1. **Create `supabase/migrations/20261114_website_builder_projects.sql`**:
+   - Consolidate Voxfolio's `supabase/migrations/001_projects.sql` through `017_vox_interview_demo_sessions.sql` into a single idempotent migration using `website_projects`, `website_revisions`, `website_publications`, `website_media`, and `website_opportunity_shares` tables keyed by `auth.users(id)` (sharing the exact same Supabase Auth user session as `20261021_tool_accounts.sql`).
+2. **Upgrade `features/do-it-ai/DoItAiDashboardClient.tsx` (`/do-it-ai` Unified User Workspace)**:
+   - Consume `UnifiedUserWorkspaceOverview` from `features/website-builder/ecosystem-bridge.ts`.
+   - Render:
+     - **First-Time User State (`isNewUser === true`)**: 2-card guided chooser (**"Build My Blog / Brand Website"** vs. **"Write My First SEO Article"**).
+     - **Returning User Command Center**:
+       1. **KPI Row**: Total Websites (`Live` / `Draft`), Total Articles Written (`Draft` / `Published on Site`), Average Website SEO & AEO Score (`0–100%`), and Visitor AI inquiries.
+       2. **My Websites Grid**: Multi-website cards with template badges, live URLs (`/p/[slug]`), post counts, and 1-click actions (**Open Website Studio**, **Write Blog Post for This Site**, **Run On-Page SEO Audit**, **Create Opportunity Page**, **View Live**).
+       3. **My Articles & Publishing Pipeline**: All AI Content Writer articles with 1-click **"Publish / Sync to Website"** buttons.
+       4. **Connected Backend SEO Tools**: Direct launchers to run `On-Page AI SEO Repair Agent`, `Internal Link Opportunity Finder`, `Schema Markup Validator`, and `LLMs.txt Generator` against any hosted website.
+3. **Update `/founder-hub` (`lib/founder-hub/data.ts`)**:
+   - Record the Phase 1–Phase 6 Unified Website Builder + Content Studio + `/do-it-ai` Dashboard milestones in the Founder Hub telemetry log.
