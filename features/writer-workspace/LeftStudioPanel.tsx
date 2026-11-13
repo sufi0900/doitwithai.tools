@@ -26,6 +26,7 @@ import {
   articleMarkdown,
   auditBurstinessRhythm,
   auditClaimVerification,
+  auditContentFreshnessAndDecay,
   auditContextualLinkOpportunities,
   auditEntitySalienceAndQuestions,
   auditFaqPaaReadiness,
@@ -76,6 +77,8 @@ export function LeftStudioPanel({
   onAutoWeaveInternalLinks,
   onNormalizeFaqsPaa,
   onInjectUncoveredQuestions,
+  onConvertH2sToQuestions,
+  onApplyContentRefresh,
   onRunResearch,
   researchBusy,
 }: {
@@ -103,6 +106,8 @@ export function LeftStudioPanel({
   onAutoWeaveInternalLinks?: () => void;
   onNormalizeFaqsPaa?: () => void;
   onInjectUncoveredQuestions?: () => void;
+  onConvertH2sToQuestions?: () => void;
+  onApplyContentRefresh?: () => void;
   onRunResearch?: () => void;
   researchBusy?: boolean;
 }) {
@@ -136,6 +141,10 @@ export function LeftStudioPanel({
   );
   const subtopicGaps = useMemo(
     () => auditSubtopicCoverageGaps(project),
+    [project],
+  );
+  const freshnessAudit = useMemo(
+    () => auditContentFreshnessAndDecay(project),
     [project],
   );
   const infoGainAngles = useMemo(() => {
@@ -739,6 +748,65 @@ export function LeftStudioPanel({
                 H2 Questions: {salienceAudit.questionH2Count}/{salienceAudit.totalH2Count} ({salienceAudit.questionHeadingRatioPct}%)
               </span>
             </div>
+            {onConvertH2sToQuestions &&
+            salienceAudit.totalH2Count > 0 &&
+            salienceAudit.questionHeadingRatioPct < 35 ? (
+              <button
+                type="button"
+                className={`${s.btn} ${s.primary} ${s.fullWidthBtn}`}
+                onClick={onConvertH2sToQuestions}
+              >
+                <Zap className="w-3.5 h-3.5" aria-hidden /> Convert H2s to AEO Question Headings (0 Tokens)
+              </button>
+            ) : null}
+          </div>
+
+          <div className={s.seoBlock}>
+            <div className={s.seoBlockHeader}>
+              <strong>Content Freshness &amp; Anti-Decay Audit</strong>
+              <span>{freshnessAudit.freshnessScore}/100 fresh</span>
+            </div>
+            <div className={s.leftScoreProgressWrap}>
+              <div className={s.leftScoreProgressLabels}>
+                <span>AI Citation Recency &amp; First-30% Extractability</span>
+                <strong>{freshnessAudit.freshnessScore}%</strong>
+              </div>
+              <div className={s.scoreGaugeTrack} aria-hidden>
+                <div
+                  className={
+                    freshnessAudit.freshnessScore >= 80
+                      ? s.scoreGaugeFillGood
+                      : s.scoreGaugeFillWarn
+                  }
+                  style={{ width: `${Math.max(8, freshnessAudit.freshnessScore)}%` }}
+                />
+              </div>
+            </div>
+            <div className={s.snippetBadgeRow}>
+              <span className={`${s.snippetFormatPill} ${freshnessAudit.frontLoadedCitationReady ? s.snippetFormatPillOn : ""}`}>
+                {freshnessAudit.frontLoadedCitationReady ? "✓ First-30% Answer" : "○ First-30% Answer"}
+              </span>
+              <span className={`${s.snippetFormatPill} ${freshnessAudit.hasCurrentYearSignal ? s.snippetFormatPillOn : ""}`}>
+                {freshnessAudit.hasCurrentYearSignal ? "✓ 2026 Recency" : "○ 2026 Recency"}
+              </span>
+              <span className={`${s.snippetFormatPill} ${freshnessAudit.hasComparisonTable ? s.snippetFormatPillOn : ""}`}>
+                {freshnessAudit.hasComparisonTable ? "✓ Matrix Table" : "○ Matrix Table"}
+              </span>
+              <span className={`${s.snippetFormatPill} ${freshnessAudit.staleYearsFound.length === 0 ? s.snippetFormatPillOn : ""}`}>
+                {freshnessAudit.staleYearsFound.length === 0
+                  ? "✓ Zero Stale Years"
+                  : `Stale: ${freshnessAudit.staleYearsFound.join(", ")}`}
+              </span>
+            </div>
+            {onApplyContentRefresh && freshnessAudit.freshnessScore < 100 ? (
+              <button
+                type="button"
+                className={`${s.btn} ${s.primary} ${s.fullWidthBtn}`}
+                onClick={onApplyContentRefresh}
+              >
+                <Zap className="w-3.5 h-3.5" aria-hidden /> Run 1-Click Content Refresh &amp; Decay Upgrade
+              </button>
+            ) : null}
           </div>
 
           <div className={s.seoBlock}>

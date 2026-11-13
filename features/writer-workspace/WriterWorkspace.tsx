@@ -26,8 +26,10 @@ import { useGeneration } from "./useGeneration";
 import {
   articleMarkdown,
   articleRevision,
+  applyContentRefreshUpgrade,
   autoWeaveContextualInternalLinks,
   bodyOf,
+  convertStatementHeadingsToQuestions,
   injectUncoveredQuestionsIntoFaqs,
   normalizeFaqPaaLengths,
   hash,
@@ -916,6 +918,32 @@ export default function WriterWorkspace() {
                   count > 0
                     ? `Added ${count} uncovered research question${count === 1 ? "" : "s"} with 40–50w PAA answers to your FAQPage schema.`
                     : "All research questions are already covered in your article or FAQs.",
+                );
+              }}
+              onConvertH2sToQuestions={() => {
+                let count = 0;
+                update((now) => {
+                  const res = convertStatementHeadingsToQuestions(now, 50);
+                  count = res.convertedCount;
+                  return res.project;
+                });
+                setMessage(
+                  count > 0
+                    ? `Converted ${count} statement H2 heading${count === 1 ? "" : "s"} into AEO question headings for higher AI citation eligibility.`
+                    : "Your H2 headings already meet the 35%–75% AEO question-heading benchmark.",
+                );
+              }}
+              onApplyContentRefresh={() => {
+                let count = 0;
+                update((now) => {
+                  const res = applyContentRefreshUpgrade(now);
+                  count = res.changesApplied;
+                  return res.project;
+                });
+                setMessage(
+                  count > 0
+                    ? `Applied ${count} content refresh & anti-decay upgrade${count === 1 ? "" : "s"} (2026 recency signals, decision matrix & editorial verification note).`
+                    : "Your article already meets all 2026 content freshness and anti-decay benchmarks.",
                 );
               }}
               onRunResearch={() => void refreshResearchPacket()}
