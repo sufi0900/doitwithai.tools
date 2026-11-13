@@ -148,7 +148,7 @@ export function SearchAppearancePanel({
                 urlSlug: optimized.project.metaPack.urlSlug,
               });
             }}
-            title="Auto-fit Meta Title (<=580px) and Meta Description (<=920px) to prevent Google SERP rewrites"
+            title="Auto-fit Meta Title (<=580px) and Meta Description (<=920px) as an estimated preview; Google may display different text"
           >
             <Sparkles className="w-3.5 h-3.5" aria-hidden />
             Auto-Fit SERP Pixels ({serpAudit.serpScore}/100)

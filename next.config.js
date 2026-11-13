@@ -1,5 +1,15 @@
 // next.config.js — Optimized by Apex-CWV (Phase 4: AVIF/WebP Image Pipeline & Immutable Cache-Control Headers)
 const nextConfig = {
+  webpack(config) {
+    // Extraction needs DOM parsing, not the optional native canvas adapter.
+    // Keep normal imports for CommonJS test runners; bundle the DOM-only build.
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      "linkedom$": require.resolve("linkedom/package.json").replace(/package\.json$/, "worker.js"),
+    };
+    return config;
+  },
+
   async redirects() {
     const registry = require('./features/tool-catalog/registry.json');
     const tools = Array.isArray(registry) ? registry : registry.tools || [];

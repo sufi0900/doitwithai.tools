@@ -166,3 +166,22 @@ Remaining limits: human review is required for factual accuracy and brand voice;
    - **Internal Link Anchor Context Previewer & Auto-Linker**: Scan existing paragraphs for unlinked mentions of internal tool topics and offer 1-click in-place anchor wrapping.
    - **FAQ-to-PAA Coverage & Answer Length Validator**: Score each FAQ answer in `p.faqs` against the 35–55 word People Also Ask (PAA) voice-search & AI Overview sweet spot.
    - **Content Refresh & Decay Diff Workflow**: Allow pasting an existing published URL or Markdown draft to benchmark before/after Readiness, Claim Grounding, and AEO Snippet scores.
+
+## Build repair — 2026-11-13
+
+Contributor: **Prism Forge (Codex)** · **PF::WRITER-BUILD-REPAIR::2026-11-13**
+
+The latest V3.7–V3.10 UI imported eight model exports that were never delivered. Restored `auditSerpPixelAndCtrReadiness`, `optimizeSerpMetaPixelFit`, `auditQuickAnswerBoxReadiness`, `optimizeQuickAnswerBox50Words`, `optimizeVisualAltTexts`, `weaveSectionTakeawayCallouts`, `generateArticleComprehensionQuiz`, and `runMasterAeoAndReadinessPolish` without removing the corresponding UI.
+
+Behavior contract for future contributors:
+
+- Metadata fitting uses existing pixel estimators and word boundaries. These are preview estimates, not promises that Google will retain the title or description.
+- Direct-answer shortening selects complete existing sentences. It does not pad an answer to exactly 50 words or invent facts to satisfy a word-count target. If a complete sentence cannot fit, the source remains unchanged.
+- Visual descriptions use actual banner headlines and infographic node labels. Manual accessibility review remains necessary; no automatic WCAG certification or forced 100 score.
+- Takeaway boxes quote an existing prose sentence, skip empty sections, and do not duplicate existing takeaways. Body changes invalidate the rich-document projection for synchronization.
+- The local quiz requires three distinct explained sections. It generates section-recall questions from actual sentences and headings, with no fabricated factual distractors. Insufficient source content leaves any existing quiz intact.
+- Master polish applies metadata, answer, and alt-description helpers only. It deliberately does not call the older refresh helper that changes years or adds verification claims. Its UI describes its actual scope.
+- Citation auditing preserves Markdown URLs during sentence segmentation, and correctly recognizes percentage claims followed by whitespace. This fixes the pre-existing writer regression test as well as the compile-time missing section-index test argument.
+- Next bundles exact `linkedom` imports using the package’s DOM-only `worker.js` build. Standard imports remain compatible with CommonJS test runners (the package exposes its worker subpath only to ESM imports). HTML parsing and Readability do not need native canvas. No blanket webpack fallback or native canvas installation is introduced.
+
+Regression coverage includes every restored export, empty drafts, estimated pixel bounds, repeat application, complete-sentence preservation, quiz grounding, takeover avoidance, and image-label descriptions. Run the writer test suite, extraction/infographic suites, TypeScript, and a production build before wiring new model exports into UI. Provider-backed generation and deployment configuration remain separate concerns.

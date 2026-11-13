@@ -974,8 +974,8 @@ export default function WriterWorkspace() {
                 });
                 setMessage(
                   count > 0
-                    ? `Master AEO Polish complete: applied ${count} deterministic optimization${count === 1 ? "" : "s"} across SERP pixels, 50w direct answer, H2 questions, internal links, takeaways, and PAA FAQs.`
-                    : "Your article already meets all Master AEO, SERP, and Readiness benchmarks.",
+                    ? `Master AEO Polish complete: applied ${count} deterministic optimization${count === 1 ? "" : "s"} across metadata, the direct answer, and visual descriptions. Review the edits before publishing.`
+                    : "No automatic changes were needed. Review facts, accessibility, and search intent manually.",
                 );
               }}
               onRunResearch={() => void refreshResearchPacket()}
@@ -1055,7 +1055,7 @@ export default function WriterWorkspace() {
                         );
                       }}
                     >
-                      <Wand2 size={12} /> Optimize 50w Answer
+                      <Wand2 size={12} /> Shorten Answer
                     </button>
                   </div>
                   <textarea
@@ -1095,8 +1095,8 @@ export default function WriterWorkspace() {
                   });
                   setMessage(
                     count > 0
-                      ? `Optimized ${count} visual alt text${count === 1 ? "" : "s"} (Featured Banner + Section Infographics) to 100/100 WCAG 2.2 & Multimodal SEO standards.`
-                      : "All Featured Banner and Section Infographic alt texts already score 100/100 WCAG & SEO Ready.",
+                      ? `Optimized ${count} visual alt text${count === 1 ? "" : "s"} from the featured banner and infographic labels. Review each description against its image.`
+                      : "The generated descriptions are unchanged. Check them against the actual images.",
                   );
                 }}
                 onUpdateBanner={(patch) =>
@@ -1196,7 +1196,7 @@ export default function WriterWorkspace() {
                         });
                         if (summaryText) setMessage(summaryText);
                       }}
-                      title="Deterministically generate 3 grounded multiple-choice comprehension questions in 0ms"
+                      title="Create three section-recall questions using the article’s own text"
                     >
                       ⚡ Generate 3-Q Reader Quiz ({(w.quizQuestions || []).length})
                     </button>

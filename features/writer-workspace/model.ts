@@ -1031,12 +1031,18 @@ export function auditClaimVerification(md: string): {
   unverifiedClaims: Array<{ sentence: string; cue: string }>;
 } {
   const clean = (md || "").replace(/^#{1,6}\s+[^\n]+$/gm, " ");
-  const sentences = clean.match(/[^.!?\n]+[.!?]+/g) || [];
+  const links: string[] = [];
+  const masked = clean.replace(/\[[^\]]+\]\(https?:\/\/[^)]+\)/g, link => {
+    links.push(link);
+    return `CITATIONTOKEN${links.length - 1}END`;
+  });
+  const sentences = (masked.match(/[^.!?\n]+(?:[.!?]+|$)/g) || []).map(sentence =>
+    sentence.replace(/CITATIONTOKEN(\d+)END/g, (_, index) => links[Number(index)]));
   const unverifiedClaims: Array<{ sentence: string; cue: string }> = [];
   let totalClaims = 0;
   let citedClaims = 0;
 
-  const statPattern = /\b(?:\d+(?:\.\d+)?%|\d+x\b|studies\s+show|research\s+indicates|according\s+to|survey\s+(?:of|found)|report\s+by|benchmark\s+shows)\b/i;
+  const statPattern = /\b(?:\d+(?:\.\d+)?%|\d+x\b|studies\s+show|research\s+indicates|according\s+to|survey\s+(?:of|found)|report\s+by|benchmark\s+shows)(?![\w%])/i;
   const linkPattern = /\[[^\]]+\]\(https?:\/\/[^)]+\)/i;
 
   for (const raw of sentences) {
@@ -2173,4 +2179,112 @@ export function applyContentRefreshUpgrade(p: Project): {
     project: nextProject,
     changesApplied,
   };
+}
+
+/** Local editorial helpers. These checks are estimates, never ranking or compliance guarantees. */
+export function auditSerpPixelAndCtrReadiness(p: Project) {
+  const title = p.metaPack.metaTitle.trim();
+  const description = p.metaPack.metaDescription.trim();
+  const titlePixels = measureTitlePixelWidth(title);
+  const descriptionPixels = measureMetaDescriptionPixelWidth(description);
+  return { titlePixels, descriptionPixels, serpScore:
+    (title && titlePixels <= 580 ? 50 : 0) +
+    (description && descriptionPixels <= 920 ? 50 : 0) };
+}
+
+function fitEditorialText(text: string, limit: number, measure: (s: string) => number) {
+  const clean = text.trim().replace(/\s+/g, " ");
+  if (measure(clean) <= limit) return clean;
+  const words = clean.split(" ");
+  while (words.length > 1 && measure(words.join(" ")) > limit) words.pop();
+  let result = words.join(" ");
+  while (result && measure(result) > limit) result = Array.from(result).slice(0, -1).join("");
+  return result.replace(/[,:;\-–—]+$/, "").trim();
+}
+
+export function optimizeSerpMetaPixelFit(p: Project) {
+  const metaTitle = fitEditorialText(p.metaPack.metaTitle, 580, measureTitlePixelWidth);
+  const metaDescription = fitEditorialText(p.metaPack.metaDescription, 920, measureMetaDescriptionPixelWidth);
+  const urlSlug = normalizeSeoSlug(p.metaPack.urlSlug || metaTitle);
+  const changesApplied = Number(metaTitle !== p.metaPack.metaTitle) + Number(metaDescription !== p.metaPack.metaDescription) + Number(urlSlug !== p.metaPack.urlSlug);
+  return { project: { ...p, metaPack: { ...p.metaPack, metaTitle, metaDescription, urlSlug } }, changesApplied };
+}
+
+function proseSentences(markdown: string): string[] {
+  return markdown.split(/\n\s*\n/).filter(block => !/^\s*(?:#|>|\||[-*+]\s|\d+\.\s)/.test(block))
+    .flatMap(block => block.replace(/\[([^\]]+)\]\([^)]+\)/g, "$1").replace(/[*_`]/g, "").replace(/\s+/g, " ").trim().match(/[^.!?]+(?:[.!?]+|$)/g) || [])
+    .map(s => s.trim()).filter(s => wordCount(s) >= 5);
+}
+
+export function auditQuickAnswerBoxReadiness(p: Project) {
+  const words = wordCount(workspace(p).quickAnswerBox || p.metaPack.aeoDirectAnswer50Words || "");
+  return { words, status: words >= 35 && words <= 65 ? "optimal" : words < 35 ? "short" : "long" };
+}
+
+export function optimizeQuickAnswerBox50Words(p: Project) {
+  const existing = workspace(p).quickAnswerBox || p.metaPack.aeoDirectAnswer50Words || "";
+  const source = existing || p.sections.map(bodyOf).join("\n\n");
+  const sentences = proseSentences(source);
+  let answer = "";
+  for (const sentence of sentences) {
+    if (wordCount(`${answer} ${sentence}`) > 65) break;
+    answer = `${answer} ${sentence}`.trim();
+    if (wordCount(answer) >= 40) break;
+  }
+  // Keep the author's text when shortening would require cutting a sentence or inventing copy.
+  if (!answer) return { project: p, changesApplied: 0 };
+  const changesApplied = Number(answer !== existing || answer !== p.metaPack.aeoDirectAnswer50Words);
+  return { project: patchWorkspace({ ...p, metaPack: { ...p.metaPack, aeoDirectAnswer50Words: answer } }, { quickAnswerBox: answer }), changesApplied };
+}
+
+export function optimizeVisualAltTexts(p: Project) {
+  const w = workspace(p);
+  const banner = defaultFeaturedBanner(p);
+  const altText = `Featured banner: ${banner.headline}`;
+  let optimizedCount = Number(banner.altText !== altText);
+  const sectionAltTexts = { ...w.sectionAltTexts };
+  const sections = p.sections.map(section => {
+    const nodes = section.infographicConfig.nodes || [];
+    if (!nodes.length) return section;
+    const labels = nodes.map(node => node.title).filter(Boolean).join("; ");
+    const text = `${section.h2Text}: ${labels}`;
+    if (section.infographicConfig.altText !== text) optimizedCount++;
+    sectionAltTexts[section.id] = { altText: text, verdict: "Review against the rendered image" };
+    return { ...section, infographicConfig: { ...section.infographicConfig, altText: text } };
+  });
+  return { project: patchWorkspace({ ...p, sections }, { featuredBanner: { ...banner, altText, altScore: undefined, altVerdict: "Review against the rendered image" }, sectionAltTexts }), optimizedCount };
+}
+
+export function weaveSectionTakeawayCallouts(p: Project) {
+  let addedCount = 0;
+  const sections = p.sections.map(section => {
+    const body = bodyOf(section);
+    if (/key takeaway/i.test(body)) return section;
+    const sentence = proseSentences(body).find(s => wordCount(s) <= 60);
+    if (!sentence) return section;
+    addedCount++;
+    return setSectionBody(section, `${body.trim()}\n\n> **Key Takeaway:** ${sentence}`);
+  });
+  return { project: addedCount ? patchWorkspace({ ...p, sections }, { document: undefined }) : p, addedCount };
+}
+
+export function generateArticleComprehensionQuiz(p: Project) {
+  const candidates = p.sections.map(section => ({ heading: section.h2Text.trim(), sentence: proseSentences(bodyOf(section))[0] }))
+    .filter(item => item.heading && item.sentence);
+  const unique = candidates.filter((item, i) => candidates.findIndex(other => other.heading === item.heading || other.sentence === item.sentence) === i);
+  if (unique.length < 3) return { project: p, summary: "Add explanatory text to at least three distinct sections before creating a source-based quiz." };
+  const quizQuestions = unique.slice(0, 3).map((item, index) => {
+    const options = [item.heading, ...unique.filter(other => other !== item).slice(0, 2).map(other => other.heading)];
+    const correctIndex = index % options.length;
+    [options[0], options[correctIndex]] = [options[correctIndex], options[0]];
+    return { id: `quiz-${hash(item.heading + item.sentence)}`, question: `Which section contains this statement? “${item.sentence}”`, options, correctIndex, explanation: `From “${item.heading}”: ${item.sentence}` };
+  });
+  return { project: patchWorkspace(p, { quizQuestions }), summary: "Created three source-based section recall questions. Review them before publishing." };
+}
+
+export function runMasterAeoAndReadinessPolish(p: Project) {
+  const meta = optimizeSerpMetaPixelFit(p);
+  const answer = optimizeQuickAnswerBox50Words(meta.project);
+  const alt = optimizeVisualAltTexts(answer.project);
+  return { project: alt.project, totalUpgrades: meta.changesApplied + answer.changesApplied + alt.optimizedCount };
 }

@@ -712,7 +712,7 @@ test("V3.2 and V3.3 quality auditors evaluate claim citations, burstiness rhythm
     heading: "How to Optimize for AI Overviews",
     subheadings: ["Use Structured Data"],
     words: 250,
-  });
+  }, 0);
   const updatedSec = setSectionBody(
     sec,
     "Optimizing your website for AI Overviews requires placing a direct forty to sixty word answer paragraph immediately beneath each question-based H2 heading, pairing key concepts with clean HTML tables or bullet lists, and grounding quantitative claims with verified primary documentation links so generative search engines extract accurate citations.\n\n### Use Structured Data\n- **Validate Schema:** Implement Article and FAQPage JSON-LD.\n\n> **Key Takeaway:** Clear structure wins citations.",
@@ -901,4 +901,51 @@ test("V3.6 H2 statement-to-question converter, content freshness auditor, and 1-
   assert.equal(afterFreshness.hasComparisonTable, true);
   assert.equal(afterFreshness.hasMethodologyDisclosure, true);
   assert.equal(afterFreshness.freshnessScore, 100);
+});
+
+test("repair helpers are exported and preserve source facts and empty drafts", async () => {
+  const m = await import("../../features/writer-workspace/model");
+  for (const name of ["auditSerpPixelAndCtrReadiness", "optimizeSerpMetaPixelFit", "auditQuickAnswerBoxReadiness", "optimizeQuickAnswerBox50Words", "optimizeVisualAltTexts", "weaveSectionTakeawayCallouts", "generateArticleComprehensionQuiz", "runMasterAeoAndReadinessPolish"]) {
+    assert.equal(typeof m[name], "function", name);
+  }
+  const blank = m.blankProject();
+  assert.equal(m.auditSerpPixelAndCtrReadiness(blank).serpScore, 0);
+  assert.equal(m.optimizeQuickAnswerBox50Words(blank).project, blank);
+  assert.equal(m.generateArticleComprehensionQuiz(blank).project, blank);
+  const p = { ...blank, metaPack: { ...blank.metaPack, metaTitle: "Wide metadata title ".repeat(30), metaDescription: "A source description with useful words. ".repeat(30) } };
+  const fitted = m.optimizeSerpMetaPixelFit(p).project;
+  const audit = m.auditSerpPixelAndCtrReadiness(fitted);
+  assert.ok(audit.titlePixels <= 580);
+  assert.ok(audit.descriptionPixels <= 920);
+  assert.equal(m.optimizeSerpMetaPixelFit(fitted).changesApplied, 0);
+  assert.deepEqual(fitted.sections, p.sections);
+  const answer = "This is a complete source sentence about growing herbs in a sunny window. This second sentence explains why careful watering helps the roots remain healthy. This third sentence describes how the leaves can be checked each morning before adding more water to the pot.";
+  const source = { ...blank, metaPack: { ...blank.metaPack, aeoDirectAnswer50Words: answer } };
+  const shortened = m.optimizeQuickAnswerBox50Words(source).project.metaPack.aeoDirectAnswer50Words;
+  assert.ok(answer.startsWith(shortened));
+  assert.match(shortened, /[.!?]$/);
+  assert.ok(m.wordCount(shortened) <= 65);
+});
+
+test("quiz and image descriptions come from the actual sections", async () => {
+  const m = await import("../../features/writer-workspace/model");
+  let p = m.blankProject();
+  p.sections = ["Light", "Water", "Soil"].map((heading, index) => {
+    const section = m.makeSection({ heading, subheadings: [] }, index);
+    return m.setSectionBody(section, `The ${heading.toLowerCase()} section explains a distinct part of caring for plants at home.`);
+  });
+  const quiz = m.generateArticleComprehensionQuiz(p).project.writerWorkspace.quizQuestions;
+  assert.equal(quiz.length, 3);
+  quiz.forEach((question, index) => {
+    assert.equal(question.options[question.correctIndex], p.sections[index].h2Text);
+    assert.ok(question.explanation.includes(m.bodyOf(p.sections[index])));
+  });
+  const callouts = m.weaveSectionTakeawayCallouts(p);
+  assert.equal(callouts.addedCount, 3);
+  assert.equal(m.weaveSectionTakeawayCallouts(callouts.project).addedCount, 0);
+  p.sections[0].infographicConfig.nodes = [{ id: "light", title: "Bright window", detail: "Place near light", badge: "1" }];
+  const images = m.optimizeVisualAltTexts(p).project;
+  assert.match(images.sections[0].infographicConfig.altText, /Bright window/);
+  assert.equal(m.bodyOf(images.sections[0]), m.bodyOf(p.sections[0]));
+  assert.equal(images.writerWorkspace.featuredBanner.altScore, undefined);
 });
