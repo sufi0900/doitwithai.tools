@@ -27,8 +27,10 @@ import {
   auditBurstinessRhythm,
   auditClaimVerification,
   auditContextualLinkOpportunities,
+  auditEntitySalienceAndQuestions,
   auditFaqPaaReadiness,
   auditSectionSnippetReadiness,
+  auditSubtopicCoverageGaps,
   readiness,
   workspace,
 } from "./model";
@@ -72,6 +74,8 @@ export function LeftStudioPanel({
   onDiscardRevision,
   onInsertLink,
   onAutoWeaveInternalLinks,
+  onNormalizeFaqsPaa,
+  onInjectUncoveredQuestions,
   onRunResearch,
   researchBusy,
 }: {
@@ -97,6 +101,8 @@ export function LeftStudioPanel({
   onDiscardRevision: () => void;
   onInsertLink: (title: string, url: string) => void;
   onAutoWeaveInternalLinks?: () => void;
+  onNormalizeFaqsPaa?: () => void;
+  onInjectUncoveredQuestions?: () => void;
   onRunResearch?: () => void;
   researchBusy?: boolean;
 }) {
@@ -122,6 +128,14 @@ export function LeftStudioPanel({
   );
   const faqPaaAudit = useMemo(
     () => auditFaqPaaReadiness(project),
+    [project],
+  );
+  const salienceAudit = useMemo(
+    () => auditEntitySalienceAndQuestions(project),
+    [project],
+  );
+  const subtopicGaps = useMemo(
+    () => auditSubtopicCoverageGaps(project),
     [project],
   );
   const infoGainAngles = useMemo(() => {
@@ -692,6 +706,43 @@ export function LeftStudioPanel({
 
           <div className={s.seoBlock}>
             <div className={s.seoBlockHeader}>
+              <strong>Entity Salience &amp; Question-Heading AEO</strong>
+              <span>{salienceAudit.salienceScore}% salience</span>
+            </div>
+            <div className={s.leftScoreProgressWrap}>
+              <div className={s.leftScoreProgressLabels}>
+                <span>Google NLP Subject Salience &amp; Entity Spread</span>
+                <strong>{salienceAudit.salienceScore}/100</strong>
+              </div>
+              <div className={s.scoreGaugeTrack} aria-hidden>
+                <div
+                  className={
+                    salienceAudit.salienceScore >= 75
+                      ? s.scoreGaugeFillGood
+                      : s.scoreGaugeFillWarn
+                  }
+                  style={{ width: `${Math.max(8, salienceAudit.salienceScore)}%` }}
+                />
+              </div>
+            </div>
+            <div className={s.snippetBadgeRow}>
+              <span className={`${s.snippetFormatPill} ${salienceAudit.inH1 ? s.snippetFormatPillOn : ""}`}>
+                {salienceAudit.inH1 ? "✓ H1 Entity" : "○ H1 Entity"}
+              </span>
+              <span className={`${s.snippetFormatPill} ${salienceAudit.inOpeningSentence ? s.snippetFormatPillOn : ""}`}>
+                {salienceAudit.inOpeningSentence ? "✓ 1st Sentence SPO" : "○ 1st Sentence SPO"}
+              </span>
+              <span className={`${s.snippetFormatPill} ${salienceAudit.inFirst60Words ? s.snippetFormatPillOn : ""}`}>
+                {salienceAudit.inFirst60Words ? "✓ First 60w" : "○ First 60w"}
+              </span>
+              <span className={`${s.snippetFormatPill} ${salienceAudit.questionRatioOptimal ? s.snippetFormatPillOn : ""}`}>
+                H2 Questions: {salienceAudit.questionH2Count}/{salienceAudit.totalH2Count} ({salienceAudit.questionHeadingRatioPct}%)
+              </span>
+            </div>
+          </div>
+
+          <div className={s.seoBlock}>
+            <div className={s.seoBlockHeader}>
               <strong>
                 <Link2 className="w-3.5 h-3.5 inline mr-1" aria-hidden />
                 Verified Internal Links ({internalLinks.length})
@@ -832,7 +883,37 @@ export function LeftStudioPanel({
           <div className={s.seoBlock}>
             <div className={s.seoBlockHeader}>
               <strong>Information Gain &amp; E-E-A-T Angles ({infoGainAngles.length})</strong>
+              <span>{subtopicGaps.coverageScore}% subtopics</span>
             </div>
+            {subtopicGaps.totalTargets > 0 ? (
+              <div className={s.leftScoreProgressWrap}>
+                <div className={s.leftScoreProgressLabels}>
+                  <span>Research Subtopic &amp; Question Coverage</span>
+                  <strong>
+                    {subtopicGaps.coveredCount}/{subtopicGaps.totalTargets} covered
+                  </strong>
+                </div>
+                <div className={s.scoreGaugeTrack} aria-hidden>
+                  <div
+                    className={
+                      subtopicGaps.coverageScore >= 75
+                        ? s.scoreGaugeFillGood
+                        : s.scoreGaugeFillWarn
+                    }
+                    style={{ width: `${Math.max(8, subtopicGaps.coverageScore)}%` }}
+                  />
+                </div>
+              </div>
+            ) : null}
+            {onInjectUncoveredQuestions && subtopicGaps.uncoveredQuestions.length > 0 ? (
+              <button
+                type="button"
+                className={`${s.btn} ${s.primary} ${s.fullWidthBtn}`}
+                onClick={onInjectUncoveredQuestions}
+              >
+                <Zap className="w-3.5 h-3.5" aria-hidden /> + Add {subtopicGaps.uncoveredQuestions.length} Uncovered Research Question{subtopicGaps.uncoveredQuestions.length === 1 ? "" : "s"} to FAQ
+              </button>
+            ) : null}
             {infoGainAngles.length ? (
               <div className={s.infoGainList}>
                 {infoGainAngles.map((item, idx) => (
@@ -1046,6 +1127,17 @@ export function LeftStudioPanel({
                 ? "Add FAQ items below the editor to capture Google People Also Ask and FAQPage rich results."
                 : `${faqPaaAudit.optimalCount} of ${faqPaaAudit.totalFaqs} FAQ answers are in the 30–60 word PAA extraction window.`}
             </div>
+            {onNormalizeFaqsPaa &&
+            faqPaaAudit.totalFaqs > 0 &&
+            faqPaaAudit.optimalCount < faqPaaAudit.totalFaqs ? (
+              <button
+                type="button"
+                className={`${s.btn} ${s.primary} ${s.fullWidthBtn}`}
+                onClick={onNormalizeFaqsPaa}
+              >
+                <Zap className="w-3.5 h-3.5" aria-hidden /> Normalize FAQs to 35–55w PAA Window
+              </button>
+            ) : null}
           </div>
 
           <div className={s.seoBlock}>

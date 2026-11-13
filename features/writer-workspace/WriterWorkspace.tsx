@@ -28,6 +28,8 @@ import {
   articleRevision,
   autoWeaveContextualInternalLinks,
   bodyOf,
+  injectUncoveredQuestionsIntoFaqs,
+  normalizeFaqPaaLengths,
   hash,
   id,
   markdownNodes,
@@ -888,6 +890,32 @@ export default function WriterWorkspace() {
                   count > 0
                     ? `Wove ${count} verified internal link${count === 1 ? "" : "s"} into relevant body sections.`
                     : "All top internal links are already woven into your article.",
+                );
+              }}
+              onNormalizeFaqsPaa={() => {
+                let count = 0;
+                update((now) => {
+                  const res = normalizeFaqPaaLengths(now);
+                  count = res.normalizedCount;
+                  return res.project;
+                });
+                setMessage(
+                  count > 0
+                    ? `Normalized ${count} FAQ item${count === 1 ? "" : "s"} into the 35–55 word Google PAA & voice-search extraction window.`
+                    : "All FAQ answers are already within the optimal 35–55 word PAA window.",
+                );
+              }}
+              onInjectUncoveredQuestions={() => {
+                let count = 0;
+                update((now) => {
+                  const res = injectUncoveredQuestionsIntoFaqs(now, 3);
+                  count = res.addedCount;
+                  return res.project;
+                });
+                setMessage(
+                  count > 0
+                    ? `Added ${count} uncovered research question${count === 1 ? "" : "s"} with 40–50w PAA answers to your FAQPage schema.`
+                    : "All research questions are already covered in your article or FAQs.",
                 );
               }}
               onRunResearch={() => void refreshResearchPacket()}
