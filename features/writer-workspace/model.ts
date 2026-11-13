@@ -1067,3 +1067,253 @@ export function auditClaimVerification(md: string): {
     unverifiedClaims,
   };
 }
+
+
+const AI_CLICHE_PATTERNS: Array<{ pattern: RegExp; replacement: string; label: string }> = [
+  {
+    pattern: /\b[Ii]n today['’]s fast-paced digital (?:landscape|world|era|age),?\s*/g,
+    replacement: "",
+    label: "in today's fast-paced digital...",
+  },
+  {
+    pattern: /\b[Ii]n today['’]s digital (?:landscape|world|era|age),?\s*/g,
+    replacement: "",
+    label: "in today's digital landscape",
+  },
+  {
+    pattern: /\b[Ii]t is (?:important|worth|crucial|essential) to note that\s+/g,
+    replacement: "",
+    label: "it is important to note that",
+  },
+  {
+    pattern: /\b[Ii]t['’]s worth noting that\s+/g,
+    replacement: "",
+    label: "it's worth noting that",
+  },
+  {
+    pattern: /\b[Ww]hen it comes to\s+/g,
+    replacement: "For ",
+    label: "when it comes to",
+  },
+  {
+    pattern: /\b[Ii]n order to\b/g,
+    replacement: "to",
+    label: "in order to",
+  },
+  {
+    pattern: /\b[Dd]ue to the fact that\b/g,
+    replacement: "because",
+    label: "due to the fact that",
+  },
+  {
+    pattern: /\b[Dd]elving into\b/g,
+    replacement: "Examining",
+    label: "delving into",
+  },
+  {
+    pattern: /\b[Dd]elve into\b/g,
+    replacement: "explore",
+    label: "delve into",
+  },
+  {
+    pattern: /\b[Uu]tiliz(?:e|es|ed|ing)\b/g,
+    replacement: "use",
+    label: "utilize",
+  },
+  {
+    pattern: /\b[Ll]everag(?:e|es|ed|ing)\b/g,
+    replacement: "use",
+    label: "leverage",
+  },
+];
+
+/**
+ * Deterministically strips robotic AI throat-clearing clichés, simplifies pompous
+ * verbs, separates inline Markdown headings, and splits >24-word compound sentences.
+ */
+export function stripAiClichesAndPolishRhythm(md: string): string {
+  if (!md) return "";
+  let text = sanitizeMarkdownHeadings(md);
+  for (const rule of AI_CLICHE_PATTERNS) {
+    text = text.replace(rule.pattern, rule.replacement);
+  }
+  // Ensure sentence starts after stripped openers are capitalized cleanly
+  text = text.replace(/(^|[.!?]\s+)([a-z])/gm, (_, prefix: string, ch: string) => `${prefix}${ch.toUpperCase()}`);
+  return splitRunOnSentences(text);
+}
+
+/**
+ * Evaluates sentence-length burstiness (variation across short, medium, and long
+ * sentences), standard deviation (sigma), monotone runs, and AI cliché presence.
+ */
+export function auditBurstinessRhythm(md: string): {
+  burstinessScore: number;
+  stdDev: number;
+  shortPct: number;
+  mediumPct: number;
+  longPct: number;
+  monotoneRuns: number;
+  clichesFound: string[];
+} {
+  const clean = (md || "")
+    .replace(/^#{1,6}\s+[^\n]+$/gm, " ")
+    .replace(/^\s*\|.+\|\s*$/gm, " ")
+    .replace(/```[\s\S]*?```/g, " ");
+  const rawSentences = clean.match(/[^.!?\n]+[.!?]+/g) || [];
+  const lengths = rawSentences
+    .map((s) => s.trim().split(/\s+/).filter(Boolean).length)
+    .filter((len) => len >= 4);
+
+  const lower = (md || "").toLowerCase();
+  const clicheWatchlist = [
+    "in today's fast-paced",
+    "in today's digital",
+    "it is important to note",
+    "it is worth noting",
+    "delve into",
+    "delving into",
+    "tapestry",
+    "testament to",
+    "game-changer",
+    "paradigm shift",
+  ];
+  const clichesFound = clicheWatchlist.filter((phrase) => lower.includes(phrase));
+
+  if (lengths.length === 0) {
+    return {
+      burstinessScore: 100,
+      stdDev: 0,
+      shortPct: 35,
+      mediumPct: 50,
+      longPct: 15,
+      monotoneRuns: 0,
+      clichesFound,
+    };
+  }
+
+  const total = lengths.length;
+  const shortCount = lengths.filter((n) => n <= 11).length;
+  const mediumCount = lengths.filter((n) => n >= 12 && n <= 20).length;
+  const longCount = lengths.filter((n) => n >= 21).length;
+
+  const shortPct = Math.round((shortCount / total) * 100);
+  const mediumPct = Math.round((mediumCount / total) * 100);
+  const longPct = Math.max(0, 100 - shortPct - mediumPct);
+
+  const mean = lengths.reduce((a, b) => a + b, 0) / total;
+  const variance =
+    lengths.reduce((acc, n) => acc + Math.pow(n - mean, 2), 0) / total;
+  const stdDev = Math.round(Math.sqrt(variance) * 10) / 10;
+
+  let monotoneRuns = 0;
+  for (let i = 0; i + 2 < lengths.length; i++) {
+    const a = lengths[i];
+    const b = lengths[i + 1];
+    const c = lengths[i + 2];
+    if (Math.max(a, b, c) - Math.min(a, b, c) <= 2) {
+      monotoneRuns += 1;
+      i += 1;
+    }
+  }
+
+  const sigmaScore = Math.min(100, Math.round((stdDev / 5.2) * 88) + 12);
+  const penalty = clichesFound.length * 12 + monotoneRuns * 6;
+  const burstinessScore = Math.max(30, Math.min(100, sigmaScore - penalty));
+
+  return {
+    burstinessScore,
+    stdDev,
+    shortPct,
+    mediumPct,
+    longPct,
+    monotoneRuns,
+    clichesFound,
+  };
+}
+
+/**
+ * Audits every H2 section for Google Featured Snippet & AI Overview extraction
+ * readiness: opening paragraph word count (optimal 35–65 words, targeting the
+ * 40–60 word direct-answer window) and structural format signals (lists, tables,
+ * callouts, and inline citations).
+ */
+export function auditSectionSnippetReadiness(p: Project): {
+  averageScore: number;
+  snippetReadyCount: number;
+  totalSections: number;
+  sections: Array<{
+    id: string;
+    h2: string;
+    leadWords: number;
+    leadStatus: "optimal" | "short" | "long";
+    hasList: boolean;
+    hasTable: boolean;
+    hasCallout: boolean;
+    hasCitation: boolean;
+    snippetScore: number;
+  }>;
+} {
+  const secItems = (p.sections || []).map((sec) => {
+    const fullMd = bodyOf(sec);
+    const introBlock = (sec.bodyMarkdown || "").trim();
+    const firstPara =
+      introBlock
+        .split(/\n\s*\n/)
+        .map((blk) => blk.trim())
+        .find(
+          (blk) =>
+            blk.length > 0 &&
+            !/^(?:#{1,6}\s|[-*+]\s|\d+[.)]\s|\||>)/.test(blk),
+        ) || "";
+    const leadWords = wordCount(
+      firstPara.replace(/\[([^\]]+)\]\([^)]+\)/g, "$1"),
+    );
+    const leadStatus: "optimal" | "short" | "long" =
+      leadWords >= 35 && leadWords <= 65
+        ? "optimal"
+        : leadWords < 35
+          ? "short"
+          : "long";
+    const hasList = /^\s*(?:[-*+]\s+|\d+[.)]\s+)/m.test(fullMd);
+    const hasTable = /^\s*\|.+\|\s*$/m.test(fullMd);
+    const hasCallout = /^\s*>\s+/m.test(fullMd);
+    const hasCitation = /\[[^\]]+\]\(https?:\/\/[^)]+\)/i.test(fullMd);
+
+    let snippetScore = leadStatus === "optimal" ? 55 : leadWords >= 20 ? 32 : 15;
+    if (hasList) snippetScore += 15;
+    if (hasTable) snippetScore += 15;
+    if (hasCallout) snippetScore += 10;
+    if (hasCitation) snippetScore += 15;
+    snippetScore = Math.min(100, snippetScore);
+
+    return {
+      id: sec.id,
+      h2: sec.h2Text || "Untitled Section",
+      leadWords,
+      leadStatus,
+      hasList,
+      hasTable,
+      hasCallout,
+      hasCitation,
+      snippetScore,
+    };
+  });
+
+  const totalSections = secItems.length;
+  const snippetReadyCount = secItems.filter(
+    (s) => s.leadStatus === "optimal" || s.snippetScore >= 75,
+  ).length;
+  const averageScore =
+    totalSections === 0
+      ? 100
+      : Math.round(
+          secItems.reduce((acc, s) => acc + s.snippetScore, 0) / totalSections,
+        );
+
+  return {
+    averageScore,
+    snippetReadyCount,
+    totalSections,
+    sections: secItems,
+  };
+}

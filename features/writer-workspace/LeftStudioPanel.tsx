@@ -24,7 +24,9 @@ import {
 } from "@/features/readability/engine";
 import {
   articleMarkdown,
+  auditBurstinessRhythm,
   auditClaimVerification,
+  auditSectionSnippetReadiness,
   readiness,
   workspace,
 } from "./model";
@@ -105,6 +107,11 @@ export function LeftStudioPanel({
   const md = useMemo(() => articleMarkdown(project), [project]);
   const r = useMemo(() => readiness(project), [project]);
   const claimAudit = useMemo(() => auditClaimVerification(md), [md]);
+  const burstiness = useMemo(() => auditBurstinessRhythm(md), [md]);
+  const snippetAudit = useMemo(
+    () => auditSectionSnippetReadiness(project),
+    [project],
+  );
   const infoGainAngles = useMemo(() => {
     const angles = [
       ...(w.research?.competitorAngles || []).map((text) => ({ tag: "Info Gain", text })),
@@ -184,9 +191,7 @@ export function LeftStudioPanel({
               ((totalSentences - r.readability.longSentences.length) /
                 totalSentences) *
                 100,
-            ),
-          ),
-        )
+            ),\n          ),\n        )
       : 0;
   const keywordHitsCount = secondaryKws.filter((t) =>
     lowerMd.includes(t.toLowerCase()),
@@ -346,6 +351,63 @@ export function LeftStudioPanel({
             {aiRevisionState.busy ? "Revising with AI..." : "Run AI Revision"}
           </button>
 
+          <div className={s.seoBlock}>
+            <div className={s.seoBlockHeader}>
+              <strong>Instant Markdown Block Generators (0 Tokens)</strong>
+              <span>1-Click Insert</span>
+            </div>
+            <div className={s.blockGenGrid}>
+              <button
+                type="button"
+                className={s.blockGenBtn}
+                onClick={() =>
+                  onInsertLink(
+                    `__MD_BLOCK__:| Evaluation Criterion | Baseline Approach | Optimized ${kw || "AI SEO"} Workflow |\n| --- | --- | --- |\n| Primary Objective | Manual section drafting | Intent-aligned 40–60w answer blocks |\n| Verification Standard | Unchecked claims | Grounded citations & schema markup |\n| Reader Scannability | Dense text walls | Grade 8 rhythm, tables & visuals |`,
+                    "https://doitwithai.tools",
+                  )
+                }
+              >
+                + Comparison Table
+              </button>
+              <button
+                type="button"
+                className={s.blockGenBtn}
+                onClick={() =>
+                  onInsertLink(
+                    `__MD_BLOCK__:- **Verify Search Intent Alignment:** Confirm the H2 heading and opening 40–60 word answer directly resolve the reader's primary question.\n- **Audit Quantitative Claims:** Attach a verified primary documentation link to every benchmark or statistic.\n- **Check Mobile Scannability:** Keep paragraphs to 2–3 crisp sentences with bold lead-ins.`,
+                    "https://doitwithai.tools",
+                  )
+                }
+              >
+                + Action Checklist
+              </button>
+              <button
+                type="button"
+                className={s.blockGenBtn}
+                onClick={() =>
+                  onInsertLink(
+                    `__MD_BLOCK__:> **Key Takeaway:** Focusing on a direct 40–60 word opening answer beneath each heading, supported by comparison tables and verified citations, maximizes both reader comprehension and AI Overview citation eligibility.`,
+                    "https://doitwithai.tools",
+                  )
+                }
+              >
+                + Key Takeaway Box
+              </button>
+              <button
+                type="button"
+                className={s.blockGenBtn}
+                onClick={() =>
+                  onInsertLink(
+                    `__MD_BLOCK__:1. **Define the Core Question:** Frame the section heading around the exact problem your audience needs to solve.\n2. **Lead with a 50-Word Answer:** State the direct takeaway in the opening two sentences before expanding.\n3. **Validate with Evidence:** Pair every recommendation with a concrete example or verified source link.\n4. **Review Readability Rhythm:** Keep sentences under 20 words on average for effortless scanning.`,
+                    "https://doitwithai.tools",
+                  )
+                }
+              >
+                + 4-Step Framework
+              </button>
+            </div>
+          </div>
+
           {aiRevisionState.error ? (
             <div className={s.helperError}>{aiRevisionState.error}</div>
           ) : null}
@@ -477,6 +539,40 @@ export function LeftStudioPanel({
             </button>
           </div>
 
+          <div className={s.seoBlock}>
+            <div className={s.seoBlockHeader}>
+              <strong>Human Burstiness &amp; Sentence Rhythm</strong>
+              <span>{burstiness.burstinessScore}/100 · &sigma;={burstiness.stdDev}w</span>
+            </div>
+            <div className={s.rhythmBandBar} aria-hidden>
+              <div
+                className={s.rhythmBandShort}
+                style={{ width: `${Math.max(8, burstiness.shortPct)}%` }}
+                title={`Short sentences (<=11w): ${burstiness.shortPct}%`}
+              />
+              <div
+                className={s.rhythmBandMed}
+                style={{ width: `${Math.max(8, burstiness.mediumPct)}%` }}
+                title={`Medium sentences (12-20w): ${burstiness.mediumPct}%`}
+              />
+              <div
+                className={s.rhythmBandLong}
+                style={{ width: `${Math.max(4, burstiness.longPct)}%` }}
+                title={`Long sentences (>=21w): ${burstiness.longPct}%`}
+              />
+            </div>
+            <div className={s.rhythmLegendRow}>
+              <span>Short (&le;11w): <strong>{burstiness.shortPct}%</strong></span>
+              <span>Med (12–20w): <strong>{burstiness.mediumPct}%</strong></span>
+              <span>Long (&ge;21w): <strong>{burstiness.longPct}%</strong></span>
+            </div>
+            <div className={s.leftMetaSub}>
+              {burstiness.clichesFound.length === 0
+                ? `Zero AI clichés detected · ${burstiness.monotoneRuns} monotone runs`
+                : `Flagged clichés: ${burstiness.clichesFound.join(", ")}`}
+            </div>
+          </div>
+
           <div className={s.readabilityStructureList}>
             <div>Paragraphs: <strong>{docAnalysis.paragraphs}</strong></div>
             <div>Lists: <strong>{docAnalysis.listItems}</strong></div>
@@ -490,7 +586,7 @@ export function LeftStudioPanel({
               className={`${s.btn} ${s.primary} ${s.fullWidthBtn}`}
               onClick={onQuickReadabilityPolish}
             >
-              <Zap className="w-4 h-4" aria-hidden /> Instant Auto-Split Long Sentences &amp; Headings
+              <Zap className="w-4 h-4" aria-hidden /> Instant Auto-Polish Rhythm, Clichés &amp; Headings
             </button>
           ) : null}
 
@@ -798,6 +894,93 @@ export function LeftStudioPanel({
                 Zero unlinked statistical or research claims detected in your draft.
               </p>
             )}
+          </div>
+
+          <div className={s.seoBlock}>
+            <div className={s.seoBlockHeader}>
+              <strong>Section AEO Snippet &amp; Format Readiness</strong>
+              <span>{snippetAudit.snippetReadyCount}/{snippetAudit.totalSections} ready</span>
+            </div>
+            <div className={s.leftScoreProgressWrap}>
+              <div className={s.leftScoreProgressLabels}>
+                <span>40–60w Direct Answer &amp; Structural Format Score</span>
+                <strong>{snippetAudit.averageScore}%</strong>
+              </div>
+              <div className={s.scoreGaugeTrack} aria-hidden>
+                <div
+                  className={
+                    snippetAudit.averageScore >= 75
+                      ? s.scoreGaugeFillGood
+                      : s.scoreGaugeFillWarn
+                  }
+                  style={{ width: `${Math.max(8, snippetAudit.averageScore)}%` }}
+                />
+              </div>
+            </div>
+            {snippetAudit.sections.length ? (
+              <div className={s.infoGainList}>
+                {snippetAudit.sections.map((sec, idx) => (
+                  <div key={sec.id || idx} className={s.snippetSectionCard}>
+                    <div className={s.linkCardTop}>
+                      <strong>H2 #{idx + 1}: {sec.h2}</strong>
+                      <span
+                        className={
+                          sec.leadStatus === "optimal" ? s.kwHitBadge : s.linkNewBadge
+                        }
+                      >
+                        {sec.leadWords}w lead ·{" "}
+                        {sec.leadStatus === "optimal"
+                          ? "Optimal 40-60w"
+                          : sec.leadStatus === "short"
+                            ? "Expand to 40-60w"
+                            : "Trim to 40-60w"}
+                      </span>
+                    </div>
+                    <div className={s.snippetBadgeRow}>
+                      <span className={`${s.snippetFormatPill} ${sec.hasList ? s.snippetFormatPillOn : ""}`}>
+                        {sec.hasList ? "✓ List" : "○ List"}
+                      </span>
+                      <span className={`${s.snippetFormatPill} ${sec.hasTable ? s.snippetFormatPillOn : ""}`}>
+                        {sec.hasTable ? "✓ Table" : "○ Table"}
+                      </span>
+                      <span className={`${s.snippetFormatPill} ${sec.hasCallout ? s.snippetFormatPillOn : ""}`}>
+                        {sec.hasCallout ? "✓ Callout" : "○ Callout"}
+                      </span>
+                      <span className={`${s.snippetFormatPill} ${sec.hasCitation ? s.snippetFormatPillOn : ""}`}>
+                        {sec.hasCitation ? "✓ Cited" : "○ Cited"}
+                      </span>
+                    </div>
+                    <div className={s.linkActionDualRow}>
+                      <button
+                        type="button"
+                        className={s.insertLinkBtn}
+                        onClick={() => {
+                          onChangeTab("helper");
+                          onRunAiHelper(
+                            `In H2 section "${sec.h2}", rewrite the opening paragraph immediately beneath the H2 into a direct, self-contained 45 to 55 word answer paragraph (inverted pyramid, zero throat-clearing) while keeping all ### subheadings, bullet lists, and links intact.`,
+                            "article",
+                          );
+                        }}
+                      >
+                        Optimize 40–60w Lead
+                      </button>
+                      <button
+                        type="button"
+                        className={s.insertLinkBtn}
+                        onClick={() =>
+                          onInsertLink(
+                            `__MD_BLOCK__:| ${sec.h2.slice(0, 32)} Dimension | Common Pitfall | Snippet-Ready Best Practice |\n| --- | --- | --- |\n| Opening Answer | Burying the answer after filler | State a 40–60 word direct answer first |\n| Structural Format | Long unstructured paragraphs | Pair bullet lists with a comparison table |\n| Proof & Grounding | Unlinked claims | Cite verified primary documentation |`,
+                            "https://doitwithai.tools",
+                          )
+                        }
+                      >
+                        + Comparison Table
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : null}
           </div>
 
           <div className={s.seoBlock}>
