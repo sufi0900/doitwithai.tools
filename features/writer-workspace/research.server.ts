@@ -11,7 +11,7 @@ import {
 import { checkAiToolRateLimit } from "@/lib/ai-tools/rate-limit";
 import { readBoundedJson, BodyError } from "@/lib/ai-tools/request-body";
 import { parseBrief, parseBriefDirectives } from "./model";
-import type { ResearchLinkItem, ResearchPacket } from "./types";
+import type { OutlineItem, ResearchLinkItem, ResearchPacket } from "./types";
 
 export const researchRequestSchema = z.object({
   requestId: z.string().min(6).max(100),
@@ -193,11 +193,32 @@ const VERIFIED_AUTHORITY_REFERENCES: Array<{
     keywords: "ai seo ai overviews generative search aeo geo citation optimize website",
   },
   {
+    url: "https://developers.google.com/search/docs/crawling-indexing/robots-meta-tag",
+    title: "Google Search Central: Robots Meta Tag & max-snippet Specifications",
+    snippet:
+      "Official Google specification for robots meta directives including max-snippet:-1, max-image-preview:large, and max-video-preview:-1 for search and AI snippet extraction.",
+    keywords: "robots meta tag max-snippet max-image-preview indexing crawling snippet preview",
+  },
+  {
+    url: "https://developers.google.com/search/docs/appearance/structured-data/sd-policies",
+    title: "Google Search Central: General Structured Data Guidelines",
+    snippet:
+      "Official technical and quality policies for JSON-LD structured data eligibility, entity accuracy, and content parity in Google Search rich results.",
+    keywords: "structured data json-ld schema policies rich results google search",
+  },
+  {
     url: "https://schema.org/Article",
     title: "Schema.org: Article Structured Data Specification",
     snippet:
       "Standard Schema.org vocabulary specification for Article, BlogPosting, author attribution, publisher metadata, and machine-readable entity relationships.",
     keywords: "schema markup json-ld structured data article entity seo",
+  },
+  {
+    url: "https://schema.org/FAQPage",
+    title: "Schema.org: FAQPage Structured Data Specification",
+    snippet:
+      "Standard Schema.org specification for FAQPage, Question, and acceptedAnswer structured data nodes used by search and answer engines.",
+    keywords: "faqpage schema question answer structured data paa people also ask",
   },
   {
     url: "https://www.w3.org/WAI/tutorials/images/decision-tree/",
@@ -221,6 +242,13 @@ const VERIFIED_AUTHORITY_REFERENCES: Array<{
     keywords: "generative ai optimization geo aeo structured content google search",
   },
   {
+    url: "https://developer.mozilla.org/en-US/docs/Web/HTML/Element/article",
+    title: "MDN Web Docs: The Semantic <article> HTML Element",
+    snippet:
+      "Canonical MDN specification for self-contained semantic <article>, <section>, and <table> HTML markup for assistive technologies and machine parsers.",
+    keywords: "semantic html article table accessibility dom extraction",
+  },
+  {
     url: "https://web.dev/articles/vitals",
     title: "web.dev: Core Web Vitals & Page Experience Benchmarks",
     snippet:
@@ -228,6 +256,41 @@ const VERIFIED_AUTHORITY_REFERENCES: Array<{
     keywords: "technical seo core web vitals performance speed website optimization",
   },
 ];
+
+/**
+ * V3.12: Synthesizes a 6-dimension Query Fan-Out sub-query set covering:
+ * (1) Definitional/Mechanism, (2) Comparative/Alternatives, (3) Step-by-Step Implementation,
+ * (4) Cost/Latency Trade-offs, (5) Failure Modes/Edge Cases, and (6) Verification Benchmarks.
+ */
+export function buildQueryFanOutQuestions(
+  focusKw: string,
+  outline: OutlineItem[] = [],
+): string[] {
+  const cleanKw = (focusKw || "this workflow").trim();
+  const fromOutline = outline
+    .slice(0, 3)
+    .map((o) => {
+      const h = o.heading.trim().replace(/[.!?:]+$/, "");
+      return /\?$/.test(h) ? h : `How does ${h.toLowerCase()} work in practice?`;
+    });
+  const fanOutPool = [
+    ...fromOutline,
+    `What is ${cleanKw} and how does it work in practice?`,
+    `How does ${cleanKw} compare to traditional alternatives and when should you switch?`,
+    `How do you implement ${cleanKw} step by step without breaking existing workflows?`,
+    `What are the real cost, latency, and maintenance trade-offs of ${cleanKw}?`,
+    `What common edge cases or failure modes should teams avoid with ${cleanKw}?`,
+    `How do practitioners audit and verify ${cleanKw} results in 2026?`,
+  ];
+  const unique: string[] = [];
+  for (const q of fanOutPool) {
+    if (!unique.some((u) => u.toLowerCase() === q.toLowerCase())) {
+      unique.push(q);
+    }
+    if (unique.length >= 6) break;
+  }
+  return unique;
+}
 
 function tokenize(text: string): Set<string> {
   return new Set(
@@ -631,6 +694,7 @@ export function createResearchHandler(deps: ResearchDeps = {}) {
 
       const model = getGeminiModel("CONTENT_WRITER");
       const warnings = [...siteResult.warnings, ...webResult.warnings];
+      const fanOutQuestions = buildQueryFanOutQuestions(focusKw, parsed.outline);
 
       if (!(deps.configured || isAiConfigured)(model)) {
         const packet: ResearchPacket = {
@@ -642,32 +706,28 @@ export function createResearchHandler(deps: ResearchDeps = {}) {
             ? parsed.outline.map((o) => o.heading).slice(0, 5)
             : [
                 `${focusKw} strategy`,
-                `${focusKw} checklist`,
-                `${focusKw} best practices`,
+                `${focusKw} decision matrix`,
+                `${focusKw} trade-offs and edge cases`,
+                `${focusKw} verification checklist`,
               ],
           lsiEntities: [
+            "query fan-out",
             "search intent",
             "structured data",
             "internal linking",
             "E-E-A-T signals",
           ],
-          questionsToAnswer: parsed.outline.length
-            ? parsed.outline
-                .slice(0, 4)
-                .map((o) => `How does ${o.heading.toLowerCase()} work?`)
-            : [
-                `What is ${focusKw} and why does it matter?`,
-                `How do you implement ${focusKw} step by step?`,
-              ],
+          questionsToAnswer: fanOutQuestions,
           competitorAngles: [
-            `Include a side-by-side decision matrix comparing traditional vs. modern ${focusKw} workflows`,
-            `Address common implementation failure modes and how practitioners verify ${focusKw} results`,
-            `Provide a 50-word self-contained answer summary for query fan-out and AI Overviews`,
+            `Include a side-by-side decision matrix comparing baseline vs. optimized ${focusKw} workflows`,
+            `Document explicit use-case boundaries: who ${focusKw} fits best and when to choose a simpler alternative`,
+            `Address common implementation failure modes, edge cases, and how practitioners verify ${focusKw} results`,
+            `Provide a 50-word self-contained answer capsule for Google AI Mode query fan-out and AI Overviews`,
           ],
           eeatSignals: [
-            "Cite primary technical documentation (Google Search Central, Schema.org, W3C WAI) instead of unverified claims",
+            "Cite primary technical documentation (Google Search Central, Schema.org, W3C WAI, MDN) instead of unverified claims",
             "Document concrete before-and-after verification steps and measurable audit thresholds",
-            "Highlight real operational trade-offs and edge cases rather than generic summaries",
+            "Highlight real operational trade-offs, cost/latency constraints, and edge cases rather than generic summaries",
           ],
           conclusionDirective: directives.conclusionStyle || undefined,
           visualDirectives: directives.visualHints,
@@ -709,7 +769,7 @@ export function createResearchHandler(deps: ResearchDeps = {}) {
             {
               role: "system",
               content:
-                "You are an SEO, AEO & Information Gain editorial research strategist. Deeply analyze the user's brief, custom headings, visual/conclusion requests, and verified web snippets to build an actionable keyword/intent/E-E-A-T research packet. Ensure primaryKeyword is a clean 2-6 word search query (never a full sentence or URL), phrase questionsToAnswer as natural People Also Ask (PAA) questions ending with '?', and ensure competitorAngles surface concrete Information Gain subtopic gaps (decision matrices, cost/latency trade-offs, and implementation edge cases). Never fabricate external URLs or statistics. Return only requested JSON.",
+                "You are an SEO, AEO, Query Fan-Out & Information Gain editorial research strategist. Deeply analyze the user's brief, custom headings, visual/conclusion requests, and verified web snippets to build an actionable keyword/intent/E-E-A-T research packet. Ensure primaryKeyword is a clean 2-6 word search query (never a full sentence or URL). In questionsToAnswer, generate 5-6 natural People Also Ask (PAA) & Query Fan-Out sub-questions ending with '?' that span definitional, comparative ('vs.'), step-by-step implementation, cost/latency trade-offs, and failure-mode/edge-case intents. In competitorAngles, surface concrete Information Gain subtopic gaps (decision matrices, explicit use-case boundaries, and implementation edge cases). Never fabricate external URLs or statistics. Return only requested JSON.",
             },
             {
               role: "user",
@@ -735,12 +795,25 @@ export function createResearchHandler(deps: ResearchDeps = {}) {
       );
 
       const parsedAi = aiResearchSchema.parse(aiRes.output_parsed);
+      const mergedQuestions = [
+        ...parsedAi.questionsToAnswer,
+        ...fanOutQuestions,
+      ]
+        .filter(
+          (q, idx, arr) =>
+            Boolean(q.trim()) &&
+            arr.findIndex((other) => other.toLowerCase() === q.toLowerCase()) ===
+              idx,
+        )
+        .slice(0, 6);
+
       const packet: ResearchPacket = {
         ...parsedAi,
         primaryKeyword:
           parsedAi.primaryKeyword.length <= 75
             ? parsedAi.primaryKeyword
             : focusKw,
+        questionsToAnswer: mergedQuestions,
         conclusionDirective: directives.conclusionStyle || undefined,
         visualDirectives: directives.visualHints,
         internalLinks: siteResult.links,
