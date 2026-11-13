@@ -26,6 +26,8 @@ import {
   articleMarkdown,
   auditBurstinessRhythm,
   auditClaimVerification,
+  auditContextualLinkOpportunities,
+  auditFaqPaaReadiness,
   auditSectionSnippetReadiness,
   readiness,
   workspace,
@@ -69,6 +71,7 @@ export function LeftStudioPanel({
   onApplyRevision,
   onDiscardRevision,
   onInsertLink,
+  onAutoWeaveInternalLinks,
   onRunResearch,
   researchBusy,
 }: {
@@ -93,6 +96,7 @@ export function LeftStudioPanel({
   onApplyRevision: () => void;
   onDiscardRevision: () => void;
   onInsertLink: (title: string, url: string) => void;
+  onAutoWeaveInternalLinks?: () => void;
   onRunResearch?: () => void;
   researchBusy?: boolean;
 }) {
@@ -110,6 +114,14 @@ export function LeftStudioPanel({
   const burstiness = useMemo(() => auditBurstinessRhythm(md), [md]);
   const snippetAudit = useMemo(
     () => auditSectionSnippetReadiness(project),
+    [project],
+  );
+  const linkOpportunities = useMemo(
+    () => auditContextualLinkOpportunities(project),
+    [project],
+  );
+  const faqPaaAudit = useMemo(
+    () => auditFaqPaaReadiness(project),
     [project],
   );
   const infoGainAngles = useMemo(() => {
@@ -699,10 +711,23 @@ export function LeftStudioPanel({
                 })()}
               </span>
             </div>
+            {onAutoWeaveInternalLinks &&
+            internalLinks.some((l) => !md.includes(l.url)) ? (
+              <button
+                type="button"
+                className={`${s.btn} ${s.primary} ${s.fullWidthBtn}`}
+                onClick={onAutoWeaveInternalLinks}
+              >
+                <Zap className="w-3.5 h-3.5" aria-hidden /> Auto-Weave Unlinked Internal Links in Body
+              </button>
+            ) : null}
             {internalLinks.length ? (
               <div className={s.linkSuggestionList}>
                 {internalLinks.map((link) => {
                   const alreadyInDraft = md.includes(link.url);
+                  const contextOpp = linkOpportunities.find(
+                    (o) => o.url === link.url,
+                  );
                   return (
                     <div key={link.url} className={s.linkCard}>
                       <div className={s.linkCardTop}>
@@ -712,6 +737,14 @@ export function LeftStudioPanel({
                         </span>
                       </div>
                       <div className={s.linkUrlText}>{link.url}</div>
+                      {!alreadyInDraft && contextOpp ? (
+                        <div className={s.linkContextMatchBox}>
+                          <span>
+                            Context match in <strong>{contextOpp.sectionHeading}</strong>:
+                          </span>
+                          <em>&ldquo;{contextOpp.sentencePreview}&rdquo;</em>
+                        </div>
+                      ) : null}
                       <div className={s.linkActionDualRow}>
                         <button
                           type="button"
@@ -983,6 +1016,36 @@ export function LeftStudioPanel({
                 ))}
               </div>
             ) : null}
+          </div>
+
+          <div className={s.seoBlock}>
+            <div className={s.seoBlockHeader}>
+              <strong>FAQ &amp; People Also Ask (PAA) Readiness</strong>
+              <span>
+                {faqPaaAudit.optimalCount}/{faqPaaAudit.totalFaqs} PAA-ready
+              </span>
+            </div>
+            <div className={s.leftScoreProgressWrap}>
+              <div className={s.leftScoreProgressLabels}>
+                <span>35–55w Voice &amp; AI Overview Answer Score</span>
+                <strong>{faqPaaAudit.paaReadyScore}%</strong>
+              </div>
+              <div className={s.scoreGaugeTrack} aria-hidden>
+                <div
+                  className={
+                    faqPaaAudit.paaReadyScore >= 75
+                      ? s.scoreGaugeFillGood
+                      : s.scoreGaugeFillWarn
+                  }
+                  style={{ width: `${Math.max(6, faqPaaAudit.paaReadyScore)}%` }}
+                />
+              </div>
+            </div>
+            <div className={s.leftMetaSub}>
+              {faqPaaAudit.totalFaqs === 0
+                ? "Add FAQ items below the editor to capture Google People Also Ask and FAQPage rich results."
+                : `${faqPaaAudit.optimalCount} of ${faqPaaAudit.totalFaqs} FAQ answers are in the 30–60 word PAA extraction window.`}
+            </div>
           </div>
 
           <div className={s.seoBlock}>

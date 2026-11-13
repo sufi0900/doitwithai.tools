@@ -26,6 +26,7 @@ import { useGeneration } from "./useGeneration";
 import {
   articleMarkdown,
   articleRevision,
+  autoWeaveContextualInternalLinks,
   bodyOf,
   hash,
   id,
@@ -41,6 +42,7 @@ import {
   splitRunOnSentences,
   stripAiClichesAndPolishRhythm,
   syncDocument,
+  wordCount,
   workspace,
 } from "./model";
 import type { Project, ResearchPacket, RichNode } from "./types";
@@ -875,6 +877,19 @@ export default function WriterWorkspace() {
               onInsertLink={(anchor, url) =>
                 editor.current?.insertLink(anchor, url)
               }
+              onAutoWeaveInternalLinks={() => {
+                let count = 0;
+                update((now) => {
+                  const res = autoWeaveContextualInternalLinks(now, 4);
+                  count = res.linkedCount;
+                  return res.project;
+                });
+                setMessage(
+                  count > 0
+                    ? `Wove ${count} verified internal link${count === 1 ? "" : "s"} into relevant body sections.`
+                    : "All top internal links are already woven into your article.",
+                );
+              }}
               onRunResearch={() => void refreshResearchPacket()}
               researchBusy={researchBusy}
             />
@@ -1074,8 +1089,22 @@ export default function WriterWorkspace() {
                 </div>
                 {p.faqs.length ? (
                   <div className={styles.faqList}>
-                    {p.faqs.map((faq, idx) => (
+                    {p.faqs.map((faq, idx) => {
+                      const faqWords = wordCount(faq.answer || "");
+                      const faqOptimal = faqWords >= 30 && faqWords <= 60;
+                      return (
                       <div key={faq.id || idx} className={styles.faqItemBox}>
+                        <div className={styles.linkCardTop}>
+                          <span className={styles.eyebrow}>FAQ #{idx + 1} · People Also Ask</span>
+                          <span className={faqOptimal ? styles.kwHitBadge : styles.linkNewBadge}>
+                            {faqWords}w ·{" "}
+                            {faqOptimal
+                              ? "PAA Optimal (35–55w)"
+                              : faqWords < 30
+                                ? "Expand to 35–55w"
+                                : "Trim to 35–55w"}
+                          </span>
+                        </div>
                         <div className={styles.faqItemTop}>
                           <input
                             className={styles.input}
@@ -1121,7 +1150,8 @@ export default function WriterWorkspace() {
                           }}
                         />
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   <p className={styles.leftMetaSub}>

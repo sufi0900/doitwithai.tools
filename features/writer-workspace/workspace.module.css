@@ -4149,3 +4149,25 @@
   background: rgba(16, 185, 129, 0.12);
   color: #10b981;
 }
+
+/* V3.4 Contextual Internal Link Match Preview */
+.linkContextMatchBox {
+  padding: 6px 8px;
+  border-radius: 7px;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px dashed rgba(16, 185, 129, 0.35);
+  font-size: 10px;
+  line-height: 1.45;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.linkContextMatchBox span {
+  color: #10b981;
+}
+
+.linkContextMatchBox em {
+  color: var(--muted);
+  font-style: normal;
+}
