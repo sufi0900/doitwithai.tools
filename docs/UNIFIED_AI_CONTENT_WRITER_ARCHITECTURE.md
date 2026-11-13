@@ -1,4 +1,4 @@
-# Unified AI Content Writer Studio V3.1 — Multi-Agent Pipeline, Research Engine, Readability & Layout Architecture
+# Unified AI Content Writer Studio V3.2 — Multi-Agent Pipeline, Research Engine, Readability & Layout Architecture
 
 **Signed by:** Aegis-Prime (Founder's Master AI Strategist & Lead Ecosystem Architect)
 
@@ -28,12 +28,23 @@ Following the initial V3 multi-agent integration (`3f9cf9f8`), our deep code and
    - Displays real-time progress across all 11 specialized sub-agents, an active sub-agent spotlight card, a shimmer article skeleton with per-section drafting chips, and a live `ResearchPacket` counter bar.
 3. **3-Tab Scroll-Contained Left Studio Panel (`LeftStudioPanel.tsx`)**:
    - **Header**: Overall Readiness & SEO Score (`0–100`) with animated horizontal progress bar + `Brief` modal trigger (`BriefSettingsModal.tsx`).
-   - **Tab 1 — AI Helper**: Selection-aware or full-article AI revision box, 6 quick-action chips, and side-by-side proposed revision preview that preserves inline section infographics on apply.
+   - **Tab 1 — AI Helper**: Selection-aware or full-article AI revision box, 8 quick-action chips (including Decision Matrix & E-E-A-T Pro Tip), and side-by-side proposed revision preview that preserves inline section infographics on apply.
    - **Tab 2 — Readability**: Grade Level, Flesch Ease, Sentence Clarity (`%`) progress bar, 4 toggleable ProseMirror highlight bands (`veryHard`, `hard`, `passive`, `simpler`), 1-click **Instant Auto-Split Long Sentences & Headings**, and AI prose simplification.
-   - **Tab 3 — SEO & Links**: Primary keyword status, Semantic Entity Coverage (`%`) progress bar, **Verified Internal Links** with 1-click editor insertion, **Authority External References** with 1-click citation insertion, and **Readiness & Schema Checklist** with per-item point badges and progress bars.
+   - **Tab 3 — SEO & Links**: Primary keyword status, Semantic Entity Coverage (`%`) progress bar, **Verified Internal Links** (18-route catalog + live crawl) with dual inline/callout insertion, **Authority External References** with dual inline/callout citation insertion, **Information Gain & E-E-A-T Angles** inspector, **Claim & Citation Fact-Check Guardrail**, and **Readiness & Schema Checklist**.
 4. **Main Editorial & Visual Column (`SearchAppearancePanel.tsx`, `FeaturedBannerArtwork.tsx`, `ArticleEditor.tsx`, `AssetDeck.tsx`)**:
    - Interactive Google Desktop/Mobile SERP & FAQ Rich Result simulator + `Article` & `FAQPage` JSON-LD copy drawer.
    - Clickable Table of Contents jump pills + editable **50-Word AEO Direct Answer Box**.
    - **16:9 Horizontal Featured Image (`1200×630`)** with live WCAG Alt Text Sub-Agent scoring and 1-click PNG export.
    - **H1–H6 Tiptap Rich Editor** with zero-gap **Inline Blog Section Infographics**, floating selection toolbar, and right-click **"Tell AI about it"** context menu.
    - **Omnichannel Distribution Kit (`AssetDeck.tsx`)** with Section Infographics, 9 distinct platform-native Social & Video studios, Email Newsletter, and 1-click PDF / DOCX / HTML / Markdown / EPUB / MP3 / `.ZIP` exports.
+
+## 3. V3.2 Hourly Autonomous Research & Feature Expansion Log (Run #1 — Nov 13, 2026)
+
+1. **Vercel Build Hotfix (`workspace.module.css:2294`)**:
+   - Repaired the literal `\n}` sequence inside `.darkShell .skeletonContainer` on line 2294 of `features/writer-workspace/workspace.module.css` and verified all 715 CSS rule blocks for balanced braces and zero escaped newline literals.
+2. **Information Gain & E-E-A-T Subtopic Matrix (`research.server.ts`, `LeftStudioPanel.tsx`)**:
+   - Grounded in [Google Search Central: Creating Helpful, Reliable, People-First Content](https://developers.google.com/search/docs/fundamentals/creating-helpful-content), [Google Search Central: AI Features and Your Website](https://developers.google.com/search/docs/appearance/ai-features), and [Google Search Central: AI Optimization Guide](https://developers.google.com/search/docs/fundamentals/ai-optimization-guide), upgraded the research engine and `SEO & Links` panel with an interactive **Information Gain & E-E-A-T Angles** inspector offering 1-click `+ Insert Callout` and `Weave with AI` actions.
+3. **Claim & Citation Fact-Check Guardrail (`model.ts`, `LeftStudioPanel.tsx`)**:
+   - Added `auditClaimVerification()` in `features/writer-workspace/model.ts` to scan drafted prose for percentages, multipliers, and research attributions (`studies show`, `according to`, `survey found`) lacking an inline `[Source](https://...)` link, surfacing a live `0–100%` **Citation Grounding Score** bar and 1-click **Verify or Soften Claim with AI** action.
+4. **Contextual Link Callout Weaver & 18-Route Internal Catalog (`research.server.ts`, `ArticleEditor.tsx`, `LeftStudioPanel.tsx`)**:
+   - Expanded `DOITWITHAI_INTERNAL_CATALOG` with all 5 newly launched Feeder Tools (`/tools/seo-content-pricing-calculator`, `/tools/article-to-quiz-test-generator`, `/tools/source-pdf-to-article-generator`, `/tools/ai-article-summarizer`, `/tools/seo-originality-plagiarism-checker`) and added dual insertion buttons (`Insert [anchor]` + `+ Context Callout`) on every internal and external reference card.

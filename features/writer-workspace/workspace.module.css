@@ -2291,7 +2291,8 @@
 }
 
 .darkShell .skeletonContainer {
-  background: rgba(9, 15, 29, 0.65);\n}
+  background: rgba(9, 15, 29, 0.65);
+}
 
 .skeletonHeaderRow {
   display: flex;
@@ -3977,4 +3978,72 @@
   padding: 6px 10px;
   border-radius: 8px;
   background: rgba(148, 163, 184, 0.12);
+}
+/* V3.2 Information Gain, Contextual Link Weaver & Claim Fact-Check Guardrail */
+.linkActionDualRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.infoGainList {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.infoGainCard {
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: rgba(99, 102, 241, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 11px;
+}
+
+.darkShell .infoGainCard {
+  border-color: #243352;
+  background: #0d1629;
+}
+
+.infoGainTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.infoGainTag {
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(99, 102, 241, 0.18);
+  color: #4f46e5;
+}
+
+.darkShell .infoGainTag {
+  color: #a5b4fc;
+}
+
+.claimAuditCard {
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(245, 158, 11, 0.38);
+  background: rgba(245, 158, 11, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+}
+
+.claimAuditQuote {
+  font-size: 10px;
+  color: var(--muted);
+  line-height: 1.45;
 }
