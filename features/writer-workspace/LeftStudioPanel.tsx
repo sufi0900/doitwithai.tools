@@ -79,6 +79,8 @@ export function LeftStudioPanel({
   onInjectUncoveredQuestions,
   onConvertH2sToQuestions,
   onApplyContentRefresh,
+  onWeaveSectionTakeaways,
+  onRunMasterAeoPolish,
   onRunResearch,
   researchBusy,
 }: {
@@ -108,6 +110,8 @@ export function LeftStudioPanel({
   onInjectUncoveredQuestions?: () => void;
   onConvertH2sToQuestions?: () => void;
   onApplyContentRefresh?: () => void;
+  onWeaveSectionTakeaways?: () => void;
+  onRunMasterAeoPolish?: () => void;
   onRunResearch?: () => void;
   researchBusy?: boolean;
 }) {
@@ -1101,6 +1105,16 @@ export function LeftStudioPanel({
                 />
               </div>
             </div>
+            {onWeaveSectionTakeaways &&
+            snippetAudit.sections.some((sec) => !sec.hasCallout) ? (
+              <button
+                type="button"
+                className={`${s.btn} ${s.primary} ${s.fullWidthBtn}`}
+                onClick={onWeaveSectionTakeaways}
+              >
+                <Zap className="w-3.5 h-3.5" aria-hidden /> + Weave Key Takeaway Callouts in All Sections
+              </button>
+            ) : null}
             {snippetAudit.sections.length ? (
               <div className={s.infoGainList}>
                 {snippetAudit.sections.map((sec, idx) => (
@@ -1213,6 +1227,15 @@ export function LeftStudioPanel({
               <strong>Readiness &amp; Schema Checklist</strong>
               <span>{r.score}/100</span>
             </div>
+            {onRunMasterAeoPolish ? (
+              <button
+                type="button"
+                className={`${s.btn} ${s.primary} ${s.fullWidthBtn}`}
+                onClick={onRunMasterAeoPolish}
+              >
+                <Zap className="w-3.5 h-3.5" aria-hidden /> 1-Click Master AEO, SERP &amp; Readiness Polish
+              </button>
+            ) : null}
             <div className={s.checklist}>
               {r.checks.map((c) => {
                 const itemPct = c.ok ? 100 : r.words > 0 ? 38 : 0;

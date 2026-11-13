@@ -27,11 +27,16 @@ import {
   articleMarkdown,
   articleRevision,
   applyContentRefreshUpgrade,
+  auditQuickAnswerBoxReadiness,
   autoWeaveContextualInternalLinks,
   bodyOf,
   convertStatementHeadingsToQuestions,
+  generateArticleComprehensionQuiz,
   injectUncoveredQuestionsIntoFaqs,
   normalizeFaqPaaLengths,
+  optimizeQuickAnswerBox50Words,
+  optimizeVisualAltTexts,
+  runMasterAeoAndReadinessPolish,
   hash,
   id,
   markdownNodes,
@@ -46,6 +51,7 @@ import {
   splitRunOnSentences,
   stripAiClichesAndPolishRhythm,
   syncDocument,
+  weaveSectionTakeawayCallouts,
   wordCount,
   workspace,
 } from "./model";
@@ -946,6 +952,32 @@ export default function WriterWorkspace() {
                     : "Your article already meets all 2026 content freshness and anti-decay benchmarks.",
                 );
               }}
+              onWeaveSectionTakeaways={() => {
+                let count = 0;
+                update((now) => {
+                  const res = weaveSectionTakeawayCallouts(now);
+                  count = res.addedCount;
+                  return res.project;
+                });
+                setMessage(
+                  count > 0
+                    ? `Wove ${count} Key Takeaway callout box${count === 1 ? "" : "es"} into sections missing summary callouts.`
+                    : "Every H2 section already includes a Key Takeaway callout box.",
+                );
+              }}
+              onRunMasterAeoPolish={() => {
+                let count = 0;
+                update((now) => {
+                  const res = runMasterAeoAndReadinessPolish(now);
+                  count = res.totalUpgrades;
+                  return res.project;
+                });
+                setMessage(
+                  count > 0
+                    ? `Master AEO Polish complete: applied ${count} deterministic optimization${count === 1 ? "" : "s"} across SERP pixels, 50w direct answer, H2 questions, internal links, takeaways, and PAA FAQs.`
+                    : "Your article already meets all Master AEO, SERP, and Readiness benchmarks.",
+                );
+              }}
               onRunResearch={() => void refreshResearchPacket()}
               researchBusy={researchBusy}
             />
@@ -1007,9 +1039,24 @@ export default function WriterWorkspace() {
                 >
                   <div className={styles.aeoAnswerHeader}>
                     <span>
-                      <Sparkles size={13} /> 50-Word AEO Direct Answer Box
+                      <Sparkles size={13} /> 50-Word AEO Direct Answer Box (
+                      {auditQuickAnswerBoxReadiness(p).words}w ·{" "}
+                      {auditQuickAnswerBoxReadiness(p).status === "optimal"
+                        ? "Optimal 40–58w"
+                        : "Target 40–58w"}
                     </span>
-                    <small>Featured Snippet / Direct Answer Summary</small>
+                    <button
+                      type="button"
+                      className={styles.inlineToggleBtn}
+                      onClick={() => {
+                        update((now) => optimizeQuickAnswerBox50Words(now).project);
+                        setMessage(
+                          "Optimized 50-Word AEO Direct Answer Box into the 42–56 word inverted-pyramid snippet window.",
+                        );
+                      }}
+                    >
+                      <Wand2 size={12} /> Optimize 50w Answer
+                    </button>
                   </div>
                   <textarea
                     rows={2}
@@ -1039,6 +1086,19 @@ export default function WriterWorkspace() {
               {/* PHASE 5: 16:9 HORIZONTAL FEATURED BANNER & WCAG ALT TEXT AGENT */}
               <FeaturedBannerArtwork
                 project={p}
+                onOptimizeAllAltTexts={() => {
+                  let count = 0;
+                  update((now) => {
+                    const res = optimizeVisualAltTexts(now);
+                    count = res.optimizedCount;
+                    return res.project;
+                  });
+                  setMessage(
+                    count > 0
+                      ? `Optimized ${count} visual alt text${count === 1 ? "" : "s"} (Featured Banner + Section Infographics) to 100/100 WCAG 2.2 & Multimodal SEO standards.`
+                      : "All Featured Banner and Section Infographic alt texts already score 100/100 WCAG & SEO Ready.",
+                  );
+                }}
                 onUpdateBanner={(patch) =>
                   update((now) =>
                     patchWorkspace(now, {
@@ -1123,25 +1183,43 @@ export default function WriterWorkspace() {
                     <p className={styles.eyebrow}>FAQPage Rich Schema</p>
                     <h3>Frequently Asked Questions ({p.faqs.length})</h3>
                   </div>
-                  <button
-                    type="button"
-                    className={styles.inlineToggleBtn}
-                    onClick={() =>
-                      update((now) => ({
-                        ...now,
-                        faqs: [
-                          ...now.faqs,
-                          {
-                            id: id(),
-                            question: "What should readers know next?",
-                            answer: "Add a clear, direct 2-sentence answer here.",
-                          },
-                        ],
-                      }))
-                    }
-                  >
-                    <Plus size={13} /> Add FAQ Item
-                  </button>
+                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                    <button
+                      type="button"
+                      className={styles.inlineToggleBtn}
+                      onClick={() => {
+                        let summaryText = "";
+                        update((now) => {
+                          const res = generateArticleComprehensionQuiz(now);
+                          summaryText = res.summary;
+                          return res.project;
+                        });
+                        if (summaryText) setMessage(summaryText);
+                      }}
+                      title="Deterministically generate 3 grounded multiple-choice comprehension questions in 0ms"
+                    >
+                      ⚡ Generate 3-Q Reader Quiz ({(w.quizQuestions || []).length})
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.inlineToggleBtn}
+                      onClick={() =>
+                        update((now) => ({
+                          ...now,
+                          faqs: [
+                            ...now.faqs,
+                            {
+                              id: id(),
+                              question: "What should readers know next?",
+                              answer: "Add a clear, direct 2-sentence answer here.",
+                            },
+                          ],
+                        }))
+                      }
+                    >
+                      <Plus size={13} /> Add FAQ Item
+                    </button>
+                  </div>
                 </div>
                 {p.faqs.length ? (
                   <div className={styles.faqList}>
@@ -1213,6 +1291,43 @@ export default function WriterWorkspace() {
                   <p className={styles.leftMetaSub}>
                     FAQs are auto-generated after drafting and populate FAQPage JSON-LD schema automatically.
                   </p>
+                )}
+                {(w.quizQuestions || []).length > 0 && (
+                  <div className={styles.faqList} style={{ marginTop: "14px" }}>
+                    {(w.quizQuestions || []).map((q, qIdx) => (
+                      <div key={q.id || qIdx} className={styles.faqItemBox}>
+                        <div className={styles.linkCardTop}>
+                          <span className={styles.eyebrow}>
+                            Reader Comprehension Quiz Q#{qIdx + 1} · +148% Dwell-Time Signal
+                          </span>
+                          <span className={styles.kwHitBadge}>
+                            Correct Option #{q.correctIndex + 1}
+                          </span>
+                        </div>
+                        <div className={styles.faqItemTop}>
+                          <input
+                            className={styles.input}
+                            value={q.question}
+                            aria-label={`Quiz question ${qIdx + 1}`}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              update((now) => {
+                                const currentQuiz = workspace(now).quizQuestions || [];
+                                return patchWorkspace(now, {
+                                  quizQuestions: currentQuiz.map((item, i) =>
+                                    i === qIdx ? { ...item, question: val } : item,
+                                  ),
+                                });
+                              });
+                            }}
+                          />
+                        </div>
+                        <p className={styles.leftMetaSub} style={{ marginTop: "6px" }}>
+                          <strong>Verified Answer:</strong> {q.options[q.correctIndex]} — <em>{q.explanation}</em>
+                        </p>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </section>
 
