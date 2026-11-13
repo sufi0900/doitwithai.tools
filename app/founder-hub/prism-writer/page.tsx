@@ -22,6 +22,14 @@ export default async function WriterHandbook() {
     path.join(process.cwd(), "docs", "PRISM_FORGE_WRITER_WORKSPACE.md"),
     "utf8",
   );
+  const architecture = fs.existsSync(
+    path.join(process.cwd(), "docs", "UNIFIED_AI_CONTENT_WRITER_ARCHITECTURE.md"),
+  )
+    ? fs.readFileSync(
+        path.join(process.cwd(), "docs", "UNIFIED_AI_CONTENT_WRITER_ARCHITECTURE.md"),
+        "utf8",
+      )
+    : "";
   return (
     <main className="min-h-screen bg-slate-950 px-5 py-10 text-slate-100">
       <article className="mx-auto max-w-5xl">
@@ -44,6 +52,11 @@ export default async function WriterHandbook() {
         >
           Open the writer
         </a>
+        {architecture ? (
+          <pre className="mt-8 whitespace-pre-wrap break-words rounded-xl border border-indigo-500/30 bg-slate-900/90 p-6 font-mono text-xs leading-7 text-slate-100">
+            {architecture}
+          </pre>
+        ) : null}
         <pre className="mt-8 whitespace-pre-wrap break-words rounded-xl border border-slate-800 bg-slate-900 p-6 font-mono text-xs leading-7 text-slate-200">
           {handbook}
         </pre>

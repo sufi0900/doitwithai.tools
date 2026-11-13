@@ -7,6 +7,9 @@ import JSZip from "jszip";
 import {
   applyPlan,
   articleMarkdown,
+  auditBurstinessRhythm,
+  auditClaimVerification,
+  auditSectionSnippetReadiness,
   articleModel,
   articleRevision,
   blankProject,
@@ -25,6 +28,7 @@ import {
   readiness,
   refreshVisual,
   setSectionBody,
+  stripAiClichesAndPolishRhythm,
   syncDocument,
   workspace,
 } from "../../features/writer-workspace/model";
@@ -672,4 +676,41 @@ test("research handler validates payload and handles offline deterministic fallb
   assert.equal(json.provider, "deterministic");
   assert.deepEqual(json.packet.internalLinks, []);
   assert.deepEqual(json.packet.externalLinks, []);
+});
+
+test("V3.2 and V3.3 quality auditors evaluate claim citations, burstiness rhythm, cliché stripping, and 40-60w section snippets", () => {
+  const rawProse =
+    "In today's fast-paced digital landscape, it is important to note that 68% of marketers utilize structured data. According to [Google Search Central](https://developers.google.com/search/docs/fundamentals/creating-helpful-content), 82% of helpful pages prioritize clarity.";
+  const claimAudit = auditClaimVerification(rawProse);
+  assert.equal(claimAudit.totalClaims, 2);
+  assert.equal(claimAudit.citedClaims, 1);
+  assert.equal(claimAudit.unverifiedClaims.length, 1);
+
+  const polished = stripAiClichesAndPolishRhythm(rawProse);
+  assert.equal(/in today's fast-paced/i.test(polished), false);
+  assert.equal(/it is important to note/i.test(polished), false);
+  assert.equal(/\butilize\b/i.test(polished), false);
+
+  const rhythm = auditBurstinessRhythm(
+    "Short sentences create impact. Next, pair a medium-length analytical sentence with concrete examples so readers stay engaged across every section. Finally, verify every claim against primary documentation before publishing your article.",
+  );
+  assert.ok(rhythm.burstinessScore >= 60);
+  assert.equal(rhythm.clichesFound.length, 0);
+
+  let proj = blankProject();
+  const sec = makeSection({
+    heading: "How to Optimize for AI Overviews",
+    subheadings: ["Use Structured Data"],
+    words: 250,
+  });
+  const updatedSec = setSectionBody(
+    sec,
+    "Optimizing your website for AI Overviews requires placing a direct forty to sixty word answer paragraph immediately beneath each question-based H2 heading, pairing key concepts with clean HTML tables or bullet lists, and grounding quantitative claims with verified primary documentation links so generative search engines extract accurate citations.\n\n### Use Structured Data\n- **Validate Schema:** Implement Article and FAQPage JSON-LD.\n\n> **Key Takeaway:** Clear structure wins citations.",
+  );
+  proj = { ...proj, sections: [updatedSec] };
+  const snippetReport = auditSectionSnippetReadiness(proj);
+  assert.equal(snippetReport.totalSections, 1);
+  assert.equal(snippetReport.sections[0].leadStatus, "optimal");
+  assert.equal(snippetReport.sections[0].hasList, true);
+  assert.equal(snippetReport.sections[0].hasCallout, true);
 });

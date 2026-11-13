@@ -8,7 +8,11 @@ import {
 } from "@/lib/ai-tools/gemini";
 import { checkAiToolRateLimit } from "@/lib/ai-tools/rate-limit";
 import { readBoundedJson, BodyError } from "@/lib/ai-tools/request-body";
-import { sanitizeMarkdownHeadings, splitRunOnSentences } from "./model";
+import {
+  sanitizeMarkdownHeadings,
+  splitRunOnSentences,
+  stripAiClichesAndPolishRhythm,
+} from "./model";
 
 const item = z.object({
   id: z.string().max(100).optional(),
@@ -194,7 +198,7 @@ function normalizeAndValidateSectionMarkdown(
   verifiedLinks: Array<{ url: string; title: string; kind: "internal" | "external" }> = [],
   enrichStructure = false,
 ): string {
-  let body = splitRunOnSentences(sanitizeMarkdownHeadings(rawMarkdown.trim()));
+  let body = stripAiClichesAndPolishRhythm(rawMarkdown.trim());
   const expected = (expectedSubheadings || [])
     .map((s) => s.trim())
     .filter(Boolean);
@@ -411,7 +415,7 @@ export function createGenerationHandler(deps: Deps = {}) {
         data.operation === "plan"
           ? "Propose a clear article outline and SEO metadata. Follow the user's brief carefully, retaining supplied H2/H3 wording and respecting any custom section, visual, or conclusion requests. Write a natural ~50-word direct-answer introduction in introduction (using short 12-18 word sentences). Suggest 4 diverse SEO meta titles (50-60 chars) and 3 meta descriptions (140-160 chars), putting your strongest option in metaTitle/metaDescription. Do not draft full body sections yet."
           : data.operation === "section"
-            ? `Write only the specified section body in Markdown for H2 "${data.section?.heading || ""}". Do not repeat its H2 heading or include an H1. Keep every sentence concise and easy to read (12 to 20 words max per sentence) so Grade 8 readers can scan it effortlessly. Use short 2-sentence paragraphs, bulleted or numbered lists with **bold lead-ins**, a Markdown comparison table or > **Key Takeaway:** blockquote callout where helpful, and put a blank line before and after every ### subheading.${expectedSubheadingsList}${verifiedLinkHint}`
+            ? `Write only the specified section body in Markdown for H2 "${data.section?.heading || ""}". Do not repeat its H2 heading or include an H1. Open immediately with a 40 to 60 word direct-answer paragraph before the first ### subheading so search engines can extract a clean featured snippet. Vary sentence length naturally (mix punchy 8-11 word sentences with clear 14-20 word explanations for human burstiness) and never use AI clichés ("delve", "in today's digital landscape", "it is important to note"). Use bulleted or numbered lists with **bold lead-ins**, a Markdown comparison table or > **Key Takeaway:** blockquote callout where helpful, and put a blank line before and after every ### subheading.${expectedSubheadingsList}${verifiedLinkHint}`
             : data.operation === "enrichment"
               ? "Generate the editorial enrichment pack for the drafted article: (1) a ~50-word AEO direct-answer summary box with short crisp sentences, (2) a horizontal 16:9 Featured Banner headline/subheadline/badge plus a concise descriptive <=125-char WCAG altText, (3) 3-5 realistic FAQ Q&A pairs, (4) descriptive altText for each section infographic heading, and (5) genuine social hooks, takeaway, discussion prompt, thumbnail headline, short video script, and YouTube outline strictly grounded in the article."
               : "Rewrite or restructure the selected text/article segment according to the user's instruction. Always place a blank newline before and after any ## or ### Markdown heading, keep sentences short and crisp (12-18 words), use bullet lists and bold lead-ins where helpful, preserve verified Markdown links [anchor](url), and never insert fabricated statistics. Return the updated Markdown/text.";
@@ -454,9 +458,8 @@ export function createGenerationHandler(deps: Deps = {}) {
           );
       } else if (data.operation === "rewrite") {
         const rawText = (output as z.infer<typeof rewriteSchema>).text;
-        (output as z.infer<typeof rewriteSchema>).text = splitRunOnSentences(
-          sanitizeMarkdownHeadings(rawText),
-        );
+        (output as z.infer<typeof rewriteSchema>).text =
+          stripAiClichesAndPolishRhythm(rawText);
       }
       return NextResponse.json(
         {

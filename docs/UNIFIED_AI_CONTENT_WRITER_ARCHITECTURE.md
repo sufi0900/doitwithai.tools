@@ -1,4 +1,4 @@
-# Unified AI Content Writer Studio V3.2 — Multi-Agent Pipeline, Research Engine, Readability & Layout Architecture
+# Unified AI Content Writer Studio V3.1 — Multi-Agent Pipeline, Research Engine, Readability & Layout Architecture
 
 **Signed by:** Aegis-Prime (Founder's Master AI Strategist & Lead Ecosystem Architect)
 
@@ -28,15 +28,16 @@ Following the initial V3 multi-agent integration (`3f9cf9f8`), our deep code and
    - Displays real-time progress across all 11 specialized sub-agents, an active sub-agent spotlight card, a shimmer article skeleton with per-section drafting chips, and a live `ResearchPacket` counter bar.
 3. **3-Tab Scroll-Contained Left Studio Panel (`LeftStudioPanel.tsx`)**:
    - **Header**: Overall Readiness & SEO Score (`0–100`) with animated horizontal progress bar + `Brief` modal trigger (`BriefSettingsModal.tsx`).
-   - **Tab 1 — AI Helper**: Selection-aware or full-article AI revision box, 8 quick-action chips (including Decision Matrix & E-E-A-T Pro Tip), and side-by-side proposed revision preview that preserves inline section infographics on apply.
+   - **Tab 1 — AI Helper**: Selection-aware or full-article AI revision box, 6 quick-action chips, and side-by-side proposed revision preview that preserves inline section infographics on apply.
    - **Tab 2 — Readability**: Grade Level, Flesch Ease, Sentence Clarity (`%`) progress bar, 4 toggleable ProseMirror highlight bands (`veryHard`, `hard`, `passive`, `simpler`), 1-click **Instant Auto-Split Long Sentences & Headings**, and AI prose simplification.
-   - **Tab 3 — SEO & Links**: Primary keyword status, Semantic Entity Coverage (`%`) progress bar, **Verified Internal Links** (18-route catalog + live crawl) with dual inline/callout insertion, **Authority External References** with dual inline/callout citation insertion, **Information Gain & E-E-A-T Angles** inspector, **Claim & Citation Fact-Check Guardrail**, and **Readiness & Schema Checklist**.
+   - **Tab 3 — SEO & Links**: Primary keyword status, Semantic Entity Coverage (`%`) progress bar, **Verified Internal Links** with 1-click editor insertion, **Authority External References** with 1-click citation insertion, and **Readiness & Schema Checklist** with per-item point badges and progress bars.
 4. **Main Editorial & Visual Column (`SearchAppearancePanel.tsx`, `FeaturedBannerArtwork.tsx`, `ArticleEditor.tsx`, `AssetDeck.tsx`)**:
    - Interactive Google Desktop/Mobile SERP & FAQ Rich Result simulator + `Article` & `FAQPage` JSON-LD copy drawer.
    - Clickable Table of Contents jump pills + editable **50-Word AEO Direct Answer Box**.
    - **16:9 Horizontal Featured Image (`1200×630`)** with live WCAG Alt Text Sub-Agent scoring and 1-click PNG export.
    - **H1–H6 Tiptap Rich Editor** with zero-gap **Inline Blog Section Infographics**, floating selection toolbar, and right-click **"Tell AI about it"** context menu.
    - **Omnichannel Distribution Kit (`AssetDeck.tsx`)** with Section Infographics, 9 distinct platform-native Social & Video studios, Email Newsletter, and 1-click PDF / DOCX / HTML / Markdown / EPUB / MP3 / `.ZIP` exports.
+
 
 ## 3. V3.2 Hourly Autonomous Research & Feature Expansion Log (Run #1 — Nov 13, 2026)
 
@@ -48,3 +49,18 @@ Following the initial V3 multi-agent integration (`3f9cf9f8`), our deep code and
    - Added `auditClaimVerification()` in `features/writer-workspace/model.ts` to scan drafted prose for percentages, multipliers, and research attributions (`studies show`, `according to`, `survey found`) lacking an inline `[Source](https://...)` link, surfacing a live `0–100%` **Citation Grounding Score** bar and 1-click **Verify or Soften Claim with AI** action.
 4. **Contextual Link Callout Weaver & 18-Route Internal Catalog (`research.server.ts`, `ArticleEditor.tsx`, `LeftStudioPanel.tsx`)**:
    - Expanded `DOITWITHAI_INTERNAL_CATALOG` with all 5 newly launched Feeder Tools (`/tools/seo-content-pricing-calculator`, `/tools/article-to-quiz-test-generator`, `/tools/source-pdf-to-article-generator`, `/tools/ai-article-summarizer`, `/tools/seo-originality-plagiarism-checker`) and added dual insertion buttons (`Insert [anchor]` + `+ Context Callout`) on every internal and external reference card.
+
+## 4. V3.3 Hourly Autonomous Research & Feature Expansion Log (Run #2 — Nov 13, 2026)
+
+1. **Section-Level AEO Answer Snippet & Structural Format Inspector (`model.ts`, `LeftStudioPanel.tsx`)**:
+   - Grounded in [Digital Applied: Featured Snippets in the AI Overview Era (2026 Guide)](https://www.digitalapplied.com/blog/featured-snippets-ai-overview-era-optimization-2026), [Discovered Labs: Google AI Overviews vs. Featured Snippets](https://discoveredlabs.com/blog/google-ai-overviews-vs-featured-snippets-the-new-rules-of-search-visibility), [Semrush: How to Optimize Content for AI Search Engines](https://www.semrush.com/blog/how-to-optimize-content-for-ai-search-engines/), and [AI Tools: Snippet-Ready Answer Formats](https://aitools.sh/blog/ai-friendly-content-for-featured-snippet/), engineered `auditSectionSnippetReadiness(p)` in `features/writer-workspace/model.ts`.
+   - Audits every H2 section's opening paragraph against the **40–60 word direct-answer extraction window** (`optimal` 35–65w vs `short` <35w vs `long` >65w) and tracks per-section format diversity (`List`, `Table`, `Callout`, `Cited`), paired with 1-click **`Optimize 40–60w Lead`** and **`+ Comparison Table`** actions in `LeftStudioPanel.tsx`.
+2. **Human Burstiness & Sentence Rhythm Inspector + Anti-Cliché Polisher (`model.ts`, `generation.server.ts`, `WriterWorkspace.tsx`, `LeftStudioPanel.tsx`)**:
+   - Grounded in [Readable: Flesch Reading Ease & Grade Level](https://readable.com/readability/flesch-reading-ease-flesch-kincaid-grade-level/) and [Victorious: Flesch-Kincaid Readability for SEO](https://victorious.com/blog/flesch-kincaid-readability/), engineered `auditBurstinessRhythm(md)` and `stripAiClichesAndPolishRhythm(md)` in `features/writer-workspace/model.ts`.
+   - Measures sentence-length standard deviation ($\sigma$ in words), 3-band sentence distribution (`Short <=11w`, `Medium 12–20w`, `Long >=21w`), monotone runs, and AI cliché phrases, while automatically stripping robotic AI throat-clearing (`"In today's fast-paced digital landscape"`, `"It is important to note that"`, `"Delving into"`) during both section generation and 1-click readability polishing.
+3. **Instant Zero-Token Markdown Block Generators (`LeftStudioPanel.tsx`)**:
+   - Added a 4-button studio block generator grid (`+ Comparison Table`, `+ Action Checklist`, `+ Key Takeaway Box`, `+ 4-Step Framework`) in the `AI Helper` tab so editors can inject snippet-ready structured Markdown blocks at the cursor in 0ms without consuming API tokens.
+4. **Next Hourly Expansion Queue (Run #3+)**:
+   - **Internal Link Anchor Context Previewer & Auto-Linker**: Scan existing paragraphs for unlinked mentions of internal tool topics and offer 1-click in-place anchor wrapping.
+   - **FAQ-to-PAA Coverage & Answer Length Validator**: Score each FAQ answer in `p.faqs` against the 35–55 word People Also Ask (PAA) voice-search & AI Overview sweet spot.
+   - **Content Refresh & Decay Diff Workflow**: Allow pasting an existing published URL or Markdown draft to benchmark before/after Readiness, Claim Grounding, and AEO Snippet scores.
