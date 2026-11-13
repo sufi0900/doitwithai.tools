@@ -94,3 +94,24 @@ Following the initial V3 multi-agent integration (`3f9cf9f8`), our deep code and
   - Cross-checks discovered `research.questionsToAnswer` and `research.secondaryKeywords` against the drafted article and FAQs, surfacing uncovered subtopics/questions and providing a 1-click **Add Uncovered Questions to FAQ** action.
 - **1-Click PAA FAQ Answer Length Normalizer (`normalizeFaqPaaLengths` in `model.ts`)**:
   - Deterministically expands short FAQ answers (`<30` words) and trims overly long answers (`>58` words) into the **32–56 word Google People Also Ask (PAA) & Voice Search extraction window** while ensuring every FAQ heading ends with `?`.
+
+
+---
+
+## 14. V3.6 Hourly Optimization Cycle (Run #5): Content Freshness & Anti-Decay Audit, First-30% Citation Extractability & 1-Click H2 Question-Heading Converter
+
+### 14.1 Research Benchmarks Applied
+1. **AI Search Recency Bias & Content Decay Prevention**:
+   - AI-cited URLs are **25.7% fresher** on average than traditional organic search results, with **65% of AI bot hits** targeting content updated within the past year ([The Digital Bloom: 2026 AI Citation Report](https://thedigitalbloom.com/learn/ai-citation-position-revenue-report-2026/)). Across freshness-sensitive queries, **76.4% of ChatGPT's top-cited pages** were updated within 30 days and **50% of Perplexity citations** originate from content under 13 weeks old ([Demand Local: Content Freshness AI Rankings 2026](https://www.demandlocal.com/blog/content-freshness-ai-rankings/), [Growth Lessons: Content Refresh Playbook 2026](https://growthlessons.vercel.app/blog/content-refresh-seo-ai-visibility)).
+2. **Front-Loaded Extractability (First 30% of the Page)**:
+   - **44.2% of all LLM citations** originate from the first 30% of a document, and substantive content deltas (updated year benchmarks, structured decision matrices, and explicit verification disclosures) outperform cosmetic timestamp changes ([PromotEdge Digital: Optimize Content for Google AI Overviews 2026](https://www.promotedgedigital.com/blog/optimize-content-google-ai-overviews/), [Demand Local](https://www.demandlocal.com/blog/content-freshness-ai-rankings/)).
+3. **H2 Question Framing vs. H3 Statement Sub-Points**:
+   - Framing H2 headings as natural user questions (while keeping H3 subheadings as supporting statement sub-points) matches how answer engines decompose queries and doubles AI citation rates from **8.9% to 18.0%** ([Salespeak: AEO Tactical Playbook 2026](https://salespeak.ai/aeo-news/how-to-structure-content-for-ai-search/), [Digital Applied: Featured Snippets in the AI Overview Era 2026](https://www.digitalapplied.com/blog/featured-snippets-ai-overview-era-optimization-2026)).
+
+### 14.2 Engineered V3.6 Capabilities
+- **Content Freshness & Anti-Decay Auditor (`auditContentFreshnessAndDecay` in `model.ts`)**:
+  - Audits drafts for stale year tokens (`2019–2024`), current `2025/2026` temporal benchmarks, first-30% front-loaded extractability, comparison matrix presence, and editorial methodology disclosures.
+- **1-Click Content Refresh & Decay Upgrader (`applyContentRefreshUpgrade` in `model.ts`)**:
+  - Deterministically upgrades stale year references to `2026`, injects a **2026 Decision & Benchmark Matrix** table into Section 1 when missing, and appends an **Editorial Verification & 2026 Refresh Note** callout in 0ms.
+- **1-Click H2 Statement-to-Question Converter (`convertStatementHeadingsToQuestions` in `model.ts`)**:
+  - Converts statement H2 headings into natural AEO question headings until at least 50% of H2 sections are question-framed, while preserving H3 subheadings and refreshing section infographic headlines.

@@ -9,8 +9,11 @@ import {
   articleMarkdown,
   auditBurstinessRhythm,
   auditClaimVerification,
+  applyContentRefreshUpgrade,
+  auditContentFreshnessAndDecay,
   auditContextualLinkOpportunities,
   auditEntitySalienceAndQuestions,
+  convertStatementHeadingsToQuestions,
   auditFaqPaaReadiness,
   auditSubtopicCoverageGaps,
   injectUncoveredQuestionsIntoFaqs,
@@ -850,4 +853,52 @@ test("V3.5 entity salience, question-heading ratio, subtopic gap injector, and 1
   const afterAudit = auditFaqPaaReadiness(normalized.project);
   assert.equal(afterAudit.optimalCount, 2);
   assert.equal(afterAudit.paaReadyScore, 100);
+});
+
+
+test("V3.6 H2 statement-to-question converter, content freshness auditor, and 1-click content refresh upgrader work deterministically", () => {
+  let proj = blankProject();
+  const s1 = setSectionBody(
+    makeSection({ heading: "Benefits of Technical SEO Audits in 2023", subheadings: ["Crawl Budget Efficiency"] }, 0),
+    "Technical SEO audits in 2023 helped teams identify broken links and slow pages across large sites.",
+  );
+  const s2 = setSectionBody(
+    makeSection({ heading: "Common Mistakes in Schema Implementation", subheadings: [] }, 1),
+    "Skipping validation leads to structured data warnings.",
+  );
+  proj = {
+    ...proj,
+    projectTitle: "Technical SEO Audits Guide (2023)",
+    keywordCluster: {
+      ...proj.keywordCluster,
+      primaryKeyword: "Technical SEO Audits",
+    },
+    metaPack: {
+      ...proj.metaPack,
+      h1Title: "Technical SEO Audits Guide (2023)",
+      metaTitle: "Technical SEO Audits Guide 2023",
+      metaDescription: "Learn how technical SEO audits work in 2023.",
+      aeoDirectAnswer50Words:
+        "Technical SEO audits evaluate crawlability, indexing, and structured data so search engines can index your site cleanly.",
+    },
+    sections: [s1, s2],
+  };
+
+  const beforeFreshness = auditContentFreshnessAndDecay(proj);
+  assert.ok(beforeFreshness.staleYearsFound.includes("2023"));
+  assert.equal(beforeFreshness.hasComparisonTable, false);
+
+  const qConverted = convertStatementHeadingsToQuestions(proj, 50);
+  assert.ok(qConverted.convertedCount >= 1);
+  assert.match(qConverted.project.sections[0].h2Text, /^What Are the Key Benefits of/i);
+  assert.match(qConverted.project.sections[0].h2Text, /\?$/);
+
+  const refreshed = applyContentRefreshUpgrade(qConverted.project);
+  assert.ok(refreshed.changesApplied >= 2);
+  const afterFreshness = auditContentFreshnessAndDecay(refreshed.project);
+  assert.equal(afterFreshness.staleYearsFound.length, 0);
+  assert.equal(afterFreshness.hasCurrentYearSignal, true);
+  assert.equal(afterFreshness.hasComparisonTable, true);
+  assert.equal(afterFreshness.hasMethodologyDisclosure, true);
+  assert.equal(afterFreshness.freshnessScore, 100);
 });

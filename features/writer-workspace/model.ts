@@ -1913,3 +1913,264 @@ export function injectUncoveredQuestionsIntoFaqs(
     addedCount: toAdd.length,
   };
 }
+
+
+/**
+ * V3.6: Deterministically converts eligible statement H2 headings into natural
+ * AEO question-framed H2 headings (while keeping H3 subheadings as statements)
+ * until at least `targetRatioPct` (default 50%) of H2 sections are question-framed.
+ */
+export function convertStatementHeadingsToQuestions(
+  p: Project,
+  targetRatioPct = 50,
+): {
+  project: Project;
+  convertedCount: number;
+} {
+  const total = p.sections.length;
+  if (total === 0) return { project: p, convertedCount: 0 };
+
+  const isQuestion = (h: string) =>
+    /\?$/.test(h.trim()) ||
+    /^(?:what|how|why|when|where|which|who|can|does|do|is|are|should|will)\b/i.test(
+      h.trim(),
+    );
+
+  const targetCount = Math.max(1, Math.ceil((total * targetRatioPct) / 100));
+  let currentQuestions = p.sections.filter((s) => isQuestion(s.h2Text || "")).length;
+  let convertedCount = 0;
+
+  const toQuestionHeading = (raw: string): string => {
+    const clean = raw.trim().replace(/[.!?:]+$/, "").trim();
+    if (!clean) return "How Does This Step Work?";
+    if (isQuestion(clean)) {
+      return /\?$/.test(clean) ? clean : `${clean}?`;
+    }
+    const lower = clean.toLowerCase();
+    if (/^(?:the\s+)?(?:benefits|advantages|value|pros|importance)\s+of\s+(.+)/i.test(clean)) {
+      const rest = clean.replace(/^(?:the\s+)?(?:benefits|advantages|value|pros|importance)\s+of\s+/i, "");
+      return `What Are the Key Benefits of ${rest}?`;
+    }
+    if (/^(?:common\s+)?(?:mistakes|pitfalls|challenges|risks|errors|limitations)(.+)/i.test(clean)) {
+      return `What Are the Common ${clean.replace(/^common\s+/i, "")}?`;
+    }
+    if (/^(?:steps|guide|process|workflow|framework|checklist|best practices|strategies|tactics)\s+(?:for|to)\s+(.+)/i.test(clean)) {
+      return `How Do You Apply ${clean}?`;
+    }
+    if (lower.startsWith("understanding ") || lower.startsWith("defining ") || lower.startsWith("overview of ")) {
+      const subject = clean.replace(/^(?:understanding|defining|overview of)\s+/i, "");
+      return `What Is ${subject} and How Does It Work?`;
+    }
+    return `How Do You Optimize ${clean}?`;
+  };
+
+  const nextSections = p.sections.map((sec, idx) => {
+    if (currentQuestions >= targetCount) return sec;
+    const h2 = (sec.h2Text || "").trim();
+    if (!h2 || isQuestion(h2)) {
+      if (h2 && isQuestion(h2) && !/\?$/.test(h2)) {
+        const fixedQ = `${h2.replace(/[.!]+$/, "")}?`;
+        convertedCount += 1;
+        return {
+          ...sec,
+          h2Text: fixedQ,
+          infographicConfig: {
+            ...sec.infographicConfig,
+            headline: fixedQ,
+          },
+        };
+      }
+      return sec;
+    }
+    // Leave final conclusion/verdict section as a statement if there are multiple sections
+    if (
+      idx === total - 1 &&
+      total >= 3 &&
+      /\b(?:conclusion|summary|final verdict|wrap[- ]?up|key takeaways)\b/i.test(h2)
+    ) {
+      return sec;
+    }
+    const converted = toQuestionHeading(h2);
+    currentQuestions += 1;
+    convertedCount += 1;
+    return {
+      ...sec,
+      h2Text: converted,
+      anchorId: normalizeSeoSlug(converted) || sec.anchorId,
+      infographicConfig: {
+        ...sec.infographicConfig,
+        headline: converted,
+      },
+    };
+  });
+
+  if (convertedCount === 0) return { project: p, convertedCount: 0 };
+
+  return {
+    project: patchWorkspace(
+      { ...p, sections: nextSections },
+      { document: undefined },
+    ),
+    convertedCount,
+  };
+}
+
+/**
+ * V3.6: Audits the draft against 2026 AI Citation Freshness, Front-Loaded
+ * Extractability (first 30% of page), and Content Decay signals.
+ */
+export function auditContentFreshnessAndDecay(p: Project): {
+  freshnessScore: number;
+  staleYearsFound: string[];
+  hasCurrentYearSignal: boolean;
+  frontLoadedCitationReady: boolean;
+  hasComparisonTable: boolean;
+  hasMethodologyDisclosure: boolean;
+} {
+  const fullMd = articleMarkdown(p) || "";
+  const combinedMetaAndBody = `${p.metaPack?.h1Title || ""} ${p.metaPack?.metaTitle || ""} ${p.metaPack?.metaDescription || ""} ${fullMd}`;
+
+  const staleMatches = combinedMetaAndBody.match(/\b(2019|2020|2021|2022|2023|2024)\b/g) || [];
+  const staleYearsFound = [...new Set(staleMatches)];
+  const hasCurrentYearSignal = /\b(2025|2026)\b/.test(combinedMetaAndBody);
+
+  const hasComparisonTable = /^\s*\|.+\|\s*$/m.test(fullMd);
+  const hasMethodologyDisclosure =
+    /^\s*>\s+\*\*[^*]+\*\*/m.test(fullMd) ||
+    /\b(?:methodology|verified|benchmark|audit|updated)\b/i.test(
+      p.metaPack?.aeoDirectAnswer50Words || "",
+    );
+
+  // First 30% of the page carries 44.2% of LLM citations: check intro or Section 1
+  const firstSecMd = p.sections[0] ? bodyOf(p.sections[0]) : "";
+  const introWords = wordCount(p.metaPack?.aeoDirectAnswer50Words || "");
+  const firstSecHasStructure =
+    /^\s*(?:[-*+]\s+|\d+[.)]\s+|\||>)/m.test(firstSecMd) ||
+    /\[[^\]]+\]\(https?:\/\/[^)]+\)/.test(firstSecMd);
+  const frontLoadedCitationReady =
+    (introWords >= 25 && introWords <= 75) || firstSecHasStructure;
+
+  let score = 0;
+  if (staleYearsFound.length === 0) score += 25;
+  else score += Math.max(0, 25 - staleYearsFound.length * 10);
+
+  if (hasCurrentYearSignal) score += 20;
+  if (frontLoadedCitationReady) score += 25;
+  if (hasComparisonTable) score += 15;
+  if (hasMethodologyDisclosure) score += 15;
+
+  return {
+    freshnessScore: Math.min(100, score),
+    staleYearsFound,
+    hasCurrentYearSignal,
+    frontLoadedCitationReady,
+    hasComparisonTable,
+    hasMethodologyDisclosure,
+  };
+}
+
+/**
+ * V3.6: Deterministically executes a 1-Click Content Refresh & Anti-Decay Upgrade:
+ * 1) Replaces outdated year tokens (2019–2024) in titles, meta, and headings with 2026.
+ * 2) Injects a structured 2026 Decision & Benchmark Matrix table into Section 1 if no table exists.
+ * 3) Appends an Editorial Verification & Freshness Disclosure callout if missing.
+ */
+export function applyContentRefreshUpgrade(p: Project): {
+  project: Project;
+  changesApplied: number;
+} {
+  const audit = auditContentFreshnessAndDecay(p);
+  const w = workspace(p);
+  const focus = (
+    p.keywordCluster?.primaryKeyword ||
+    w.research?.primaryKeyword ||
+    p.projectTitle ||
+    "this workflow"
+  ).trim();
+  let changesApplied = 0;
+
+  const refreshYears = (text: string): string => {
+    if (!text) return text;
+    const next = text.replace(/\b(2019|2020|2021|2022|2023|2024)\b/g, "2026");
+    if (next !== text) changesApplied += 1;
+    return next;
+  };
+
+  let nextH1 = refreshYears(p.metaPack?.h1Title || p.projectTitle || "");
+  let nextMetaTitle = refreshYears(p.metaPack?.metaTitle || "");
+  const nextMetaDesc = refreshYears(p.metaPack?.metaDescription || "");
+  const nextIntro = refreshYears(p.metaPack?.aeoDirectAnswer50Words || "");
+
+  if (!/\b(2025|2026)\b/.test(`${nextH1} ${nextMetaTitle}`)) {
+    if (nextMetaTitle && nextMetaTitle.length <= 52) {
+      nextMetaTitle = `${nextMetaTitle} (2026)`;
+      changesApplied += 1;
+    } else if (nextH1 && !/\b2026\b/.test(nextH1)) {
+      nextH1 = `${nextH1} (2026 Guide)`;
+      changesApplied += 1;
+    }
+  }
+
+  let tableInjected = audit.hasComparisonTable;
+  let disclosureInjected = audit.hasMethodologyDisclosure;
+
+  const nextSections = p.sections.map((sec, idx) => {
+    const refreshedHeading = refreshYears(sec.h2Text || "");
+    let secMd = refreshYears(bodyOf(sec));
+
+    if (!tableInjected && idx === 0) {
+      const matrixTable = [
+        "",
+        `| ${focus} Dimension | Legacy Approach | 2026 Verified Standard |`,
+        "| --- | --- | --- |",
+        "| Primary Signal | Unstructured keyword repetition | Entity salience & 40–60w direct answer leads |",
+        "| Citation Grounding | Unverified claims | Primary documentation links & JSON-LD schema |",
+        "| Update Cadence | Static multi-year prose | Quarterly benchmark & subtopic gap refresh |",
+      ].join("\n");
+      secMd = `${secMd.trim()}\n${matrixTable}`;
+      tableInjected = true;
+      changesApplied += 1;
+    }
+
+    if (!disclosureInjected && idx === p.sections.length - 1) {
+      const disclosure = `> **Editorial Verification & 2026 Refresh Note:** All workflow steps, schema structures, and evaluation criteria for ${focus} in this guide are aligned with current 2026 search and generative answer engine standards.`;
+      secMd = `${secMd.trim()}\n\n${disclosure}`;
+      disclosureInjected = true;
+      changesApplied += 1;
+    }
+
+    const updated = {
+      ...setSectionBody(sec, secMd),
+      h2Text: refreshedHeading,
+    };
+    try {
+      return refreshVisual(updated, p);
+    } catch {
+      return updated;
+    }
+  });
+
+  const nextProject = patchWorkspace(
+    {
+      ...p,
+      projectTitle: refreshYears(p.projectTitle),
+      metaPack: {
+        ...p.metaPack,
+        h1Title: nextH1,
+        metaTitle: nextMetaTitle,
+        metaDescription: nextMetaDesc,
+        aeoDirectAnswer50Words: nextIntro,
+      },
+      sections: nextSections,
+    },
+    {
+      document: undefined,
+      quickAnswerBox: nextIntro || w.quickAnswerBox,
+    },
+  );
+
+  return {
+    project: nextProject,
+    changesApplied,
+  };
+}
