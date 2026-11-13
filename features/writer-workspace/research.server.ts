@@ -128,6 +128,36 @@ const DOITWITHAI_INTERNAL_CATALOG: Array<{
     keywords: "readability tools comprehension clarity editorial review",
   },
   {
+    path: "/tools/seo-content-pricing-calculator",
+    title: "AI SEO Content Writing Cost & Per-Article ROI Calculator",
+    anchorText: "SEO content pricing and ROI calculator",
+    keywords: "content writing pricing cost per article roi agency vs ai calculator",
+  },
+  {
+    path: "/tools/article-to-quiz-test-generator",
+    title: "AI Article-to-Quiz & Interactive Lead Magnet Generator",
+    anchorText: "article-to-quiz generator",
+    keywords: "quiz generator interactive assessment lead magnet reader engagement",
+  },
+  {
+    path: "/tools/source-pdf-to-article-generator",
+    title: "Source, PDF, Interview & NotebookLM-to-Article Studio",
+    anchorText: "source and PDF to article converter",
+    keywords: "pdf to article notebooklm interview transcript research synthesis",
+  },
+  {
+    path: "/tools/ai-article-summarizer",
+    title: "AI Article Summarizer & 50-Word AI Overview Box Builder",
+    anchorText: "50-word AI Overview summary builder",
+    keywords: "article summarizer 50 word quick answer box tldr ai overviews",
+  },
+  {
+    path: "/tools/seo-originality-plagiarism-checker",
+    title: "AI Content Burstiness Grader & Human-Like Article Polisher",
+    anchorText: "AI burstiness and originality grader",
+    keywords: "burstiness humanize ai text originality sentence variety",
+  },
+  {
     path: "/ai-seo/h1-heading",
     title: "H1 Heading & Tag Structure Guide",
     anchorText: "H1 heading optimization guide",
@@ -175,6 +205,20 @@ const VERIFIED_AUTHORITY_REFERENCES: Array<{
     snippet:
       "Official W3C WCAG accessibility standard for writing descriptive alternative text for informative diagrams, infographics, and editorial images.",
     keywords: "alt text accessibility wcag images infographics visual seo",
+  },
+  {
+    url: "https://developers.google.com/search/docs/appearance/ai-features",
+    title: "Google Search Central: AI Features and Your Website (AI Overviews & AI Mode)",
+    snippet:
+      "Official Google Search Central documentation explaining query fan-out, technical indexing eligibility, and how AI Overviews and AI Mode select supporting links.",
+    keywords: "ai features ai overviews ai mode query fan-out google search citations",
+  },
+  {
+    url: "https://developers.google.com/search/docs/fundamentals/ai-optimization-guide",
+    title: "Google Search Central: Optimizing Your Website for Generative AI Features",
+    snippet:
+      "Official Google guide on structuring helpful people-first content, clear headings, and verifiable E-E-A-T context for generative AI search experiences.",
+    keywords: "generative ai optimization geo aeo structured content google search",
   },
   {
     url: "https://web.dev/articles/vitals",
@@ -615,8 +659,16 @@ export function createResearchHandler(deps: ResearchDeps = {}) {
                 `What is ${focusKw} and why does it matter?`,
                 `How do you implement ${focusKw} step by step?`,
               ],
-          competitorAngles: [],
-          eeatSignals: [],
+          competitorAngles: [
+            `Include a side-by-side decision matrix comparing traditional vs. modern ${focusKw} workflows`,
+            `Address common implementation failure modes and how practitioners verify ${focusKw} results`,
+            `Provide a 50-word self-contained answer summary for query fan-out and AI Overviews`,
+          ],
+          eeatSignals: [
+            "Cite primary technical documentation (Google Search Central, Schema.org, W3C WAI) instead of unverified claims",
+            "Document concrete before-and-after verification steps and measurable audit thresholds",
+            "Highlight real operational trade-offs and edge cases rather than generic summaries",
+          ],
           conclusionDirective: directives.conclusionStyle || undefined,
           visualDirectives: directives.visualHints,
           internalLinks: siteResult.links,

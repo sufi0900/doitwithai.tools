@@ -1023,3 +1023,47 @@ export function evaluateAltText(text: string, nearbyHeading = "") {
       : res.cues[0];
   return { ...res, score, verdict };
 }
+
+export function auditClaimVerification(md: string): {
+  totalClaims: number;
+  citedClaims: number;
+  groundingScore: number;
+  unverifiedClaims: Array<{ sentence: string; cue: string }>;
+} {
+  const clean = (md || "").replace(/^#{1,6}\s+[^\n]+$/gm, " ");
+  const sentences = clean.match(/[^.!?\n]+[.!?]+/g) || [];
+  const unverifiedClaims: Array<{ sentence: string; cue: string }> = [];
+  let totalClaims = 0;
+  let citedClaims = 0;
+
+  const statPattern = /\b(?:\d+(?:\.\d+)?%|\d+x\b|studies\s+show|research\s+indicates|according\s+to|survey\s+(?:of|found)|report\s+by|benchmark\s+shows)\b/i;
+  const linkPattern = /\[[^\]]+\]\(https?:\/\/[^)]+\)/i;
+
+  for (const raw of sentences) {
+    const sent = raw.trim();
+    if (sent.length < 24) continue;
+    const match = sent.match(statPattern);
+    if (!match) continue;
+    totalClaims += 1;
+    if (linkPattern.test(sent)) {
+      citedClaims += 1;
+    } else if (unverifiedClaims.length < 5) {
+      unverifiedClaims.push({
+        sentence: sent.replace(/\[([^\]]+)\]\([^)]+\)/g, "$1").slice(0, 150),
+        cue: `Contains "${match[0]}" without an inline [source](https://...) citation`,
+      });
+    }
+  }
+
+  const groundingScore =
+    totalClaims === 0
+      ? 100
+      : Math.max(25, Math.round((citedClaims / totalClaims) * 100));
+
+  return {
+    totalClaims,
+    citedClaims,
+    groundingScore,
+    unverifiedClaims,
+  };
+}

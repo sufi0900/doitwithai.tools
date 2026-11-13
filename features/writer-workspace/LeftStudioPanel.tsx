@@ -24,6 +24,7 @@ import {
 } from "@/features/readability/engine";
 import {
   articleMarkdown,
+  auditClaimVerification,
   readiness,
   workspace,
 } from "./model";
@@ -45,6 +46,8 @@ const QUICK_AI_CHIPS = [
   { label: "Convert to bullets", prompt: "Convert dense prose here into crisp scannable bullet points with bold lead-ins." },
   { label: "Add concrete example", prompt: "Keep the meaning intact and add one clear practical example to make it actionable." },
   { label: "Convert to table", prompt: "Organize this comparison or structured criteria into a clean Markdown table." },
+  { label: "Decision matrix", prompt: "Add a 3-column Markdown decision matrix (Approach | Best For | Key Tradeoff) comparing the options in this section." },
+  { label: "E-E-A-T pro tip", prompt: "Add a concise '> **Practitioner Pro Tip:**' blockquote highlighting a real-world implementation edge case or pitfall to avoid." },
   { label: "Stronger conclusion", prompt: "Rewrite this closing section with an actionable takeaway checklist and zero fluff." },
 ];
 
@@ -101,6 +104,15 @@ export function LeftStudioPanel({
   const w = workspace(project);
   const md = useMemo(() => articleMarkdown(project), [project]);
   const r = useMemo(() => readiness(project), [project]);
+  const claimAudit = useMemo(() => auditClaimVerification(md), [md]);
+  const infoGainAngles = useMemo(() => {
+    const angles = [
+      ...(w.research?.competitorAngles || []).map((text) => ({ tag: "Info Gain", text })),
+      ...(w.research?.eeatSignals || []).map((text) => ({ tag: "E-E-A-T", text })),
+      ...(w.research?.questionsToAnswer || []).slice(0, 3).map((text) => ({ tag: "User Query", text })),
+    ];
+    return angles.slice(0, 6);
+  }, [w.research]);
   const docAnalysis: DocumentAnalysis = useMemo(
     () => analyzeDocument(md, { longThreshold: 22, targetGrade }),
     [md, targetGrade],
@@ -602,13 +614,27 @@ export function LeftStudioPanel({
                         </span>
                       </div>
                       <div className={s.linkUrlText}>{link.url}</div>
-                      <button
-                        type="button"
-                        className={s.insertLinkBtn}
-                        onClick={() => onInsertLink(link.anchor || link.title, link.url)}
-                      >
-                        Insert [{link.anchor || link.title}] into editor
-                      </button>
+                      <div className={s.linkActionDualRow}>
+                        <button
+                          type="button"
+                          className={s.insertLinkBtn}
+                          onClick={() => onInsertLink(link.anchor || link.title, link.url)}
+                        >
+                          Insert [{link.anchor || link.title}]
+                        </button>
+                        <button
+                          type="button"
+                          className={s.insertLinkBtn}
+                          onClick={() =>
+                            onInsertLink(
+                              `__MD_BLOCK__:> **Related Tool:** Explore [${link.title}](${link.url}) to apply this workflow step by step.`,
+                              link.url,
+                            )
+                          }
+                        >
+                          + Context Callout
+                        </button>
+                      </div>
                     </div>
                   );
                 })}
@@ -640,13 +666,27 @@ export function LeftStudioPanel({
                         </span>
                       </div>
                       <div className={s.linkUrlText}>{ext.url}</div>
-                      <button
-                        type="button"
-                        className={s.insertLinkBtn}
-                        onClick={() => onInsertLink(ext.title, ext.url)}
-                      >
-                        Cite reference in editor
-                      </button>
+                      <div className={s.linkActionDualRow}>
+                        <button
+                          type="button"
+                          className={s.insertLinkBtn}
+                          onClick={() => onInsertLink(ext.title, ext.url)}
+                        >
+                          Cite inline link
+                        </button>
+                        <button
+                          type="button"
+                          className={s.insertLinkBtn}
+                          onClick={() =>
+                            onInsertLink(
+                              `__MD_BLOCK__:> **Authority Citation:** According to [${ext.title}](${ext.url}), aligning technical structure and people-first clarity strengthens search visibility.`,
+                              ext.url,
+                            )
+                          }
+                        >
+                          + Cited Callout
+                        </button>
+                      </div>
                     </div>
                   );
                 })}
@@ -654,6 +694,108 @@ export function LeftStudioPanel({
             ) : (
               <p className={s.leftMetaSub}>
                 Click <strong>Refresh Research</strong> to load verified authority citations.
+              </p>
+            )}
+          </div>
+
+          <div className={s.seoBlock}>
+            <div className={s.seoBlockHeader}>
+              <strong>Information Gain &amp; E-E-A-T Angles ({infoGainAngles.length})</strong>
+            </div>
+            {infoGainAngles.length ? (
+              <div className={s.infoGainList}>
+                {infoGainAngles.map((item, idx) => (
+                  <div key={`${item.tag}-${idx}`} className={s.infoGainCard}>
+                    <div className={s.infoGainTop}>
+                      <span className={s.infoGainTag}>{item.tag}</span>
+                    </div>
+                    <div>{item.text}</div>
+                    <div className={s.linkActionDualRow}>
+                      <button
+                        type="button"
+                        className={s.insertLinkBtn}
+                        onClick={() =>
+                          onInsertLink(
+                            `__MD_BLOCK__:> **${item.tag} Insight:** ${item.text}`,
+                            "https://doitwithai.tools",
+                          )
+                        }
+                      >
+                        + Insert Callout
+                      </button>
+                      <button
+                        type="button"
+                        className={s.insertLinkBtn}
+                        onClick={() => {
+                          onChangeTab("helper");
+                          onRunAiHelper(
+                            `Weave this specific Information Gain / E-E-A-T angle naturally into the article with a concrete practical example: "${item.text}"`,
+                            "article",
+                          );
+                        }}
+                      >
+                        Weave with AI
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className={s.leftMetaSub}>
+                Click <strong>Refresh Research</strong> to generate unique Information Gain angles and E-E-A-T proof cues.
+              </p>
+            )}
+          </div>
+
+          <div className={s.seoBlock}>
+            <div className={s.seoBlockHeader}>
+              <strong>Claim &amp; Citation Fact-Check Guardrail</strong>
+              <span>{claimAudit.groundingScore}% grounded</span>
+            </div>
+            <div className={s.leftScoreProgressWrap}>
+              <div className={s.leftScoreProgressLabels}>
+                <span>Quantitative &amp; Research Claim Grounding</span>
+                <strong>
+                  {claimAudit.citedClaims}/{claimAudit.totalClaims} cited
+                </strong>
+              </div>
+              <div className={s.scoreGaugeTrack} aria-hidden>
+                <div
+                  className={
+                    claimAudit.groundingScore >= 80
+                      ? s.scoreGaugeFillGood
+                      : s.scoreGaugeFillWarn
+                  }
+                  style={{ width: `${Math.max(8, claimAudit.groundingScore)}%` }}
+                />
+              </div>
+            </div>
+            {claimAudit.unverifiedClaims.length ? (
+              <div className={s.infoGainList}>
+                {claimAudit.unverifiedClaims.map((uc, idx) => (
+                  <div key={idx} className={s.claimAuditCard}>
+                    <strong>Unlinked Claim #{idx + 1}</strong>
+                    <span className={s.claimAuditQuote}>&ldquo;{uc.sentence}&rdquo;</span>
+                    <small className={s.checkItemDetail}>{uc.cue}</small>
+                    <button
+                      type="button"
+                      className={s.insertLinkBtn}
+                      onClick={() => {
+                        onChangeTab("helper");
+                        onRunAiHelper(
+                          `Review this sentence for E-E-A-T accuracy: "${uc.sentence}". Either attribute it to one of our verified external references via Markdown [Source](url) or rephrase it into an honest, verifiable practitioner observation without invented statistics.`,
+                          "article",
+                        );
+                      }}
+                    >
+                      Verify or Soften Claim with AI
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className={s.leftMetaSub}>
+                Zero unlinked statistical or research claims detected in your draft.
               </p>
             )}
           </div>

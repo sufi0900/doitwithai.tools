@@ -388,8 +388,16 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
             .run();
         },
         insertLink: (anchor, url) => {
+          if (!editor) return;
+          if (anchor.startsWith("__MD_BLOCK__:")) {
+            const mdPayload = anchor.slice("__MD_BLOCK__:".length).trim();
+            if (!mdPayload) return;
+            const nodes = markdownNodes(mdPayload);
+            editor.chain().focus().insertContent(nodes).run();
+            return;
+          }
           const valid = safeUrl(url);
-          if (!editor || !valid) return;
+          if (!valid) return;
           const { from, to } = editor.state.selection;
           if (to > from) {
             editor
