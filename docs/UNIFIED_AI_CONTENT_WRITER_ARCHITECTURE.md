@@ -89,11 +89,11 @@ Following the initial V3 multi-agent integration (`3f9cf9f8`), our deep code and
 
 ### 13.2 Engineered V3.5 Capabilities
 - **Entity Salience & Question-Heading Auditor (`auditEntitySalienceAndQuestions` in `model.ts`)**:
-  - Audits primary entity presence in `H1`, `Opening Sentence`, `First 60 Words`, and `H2 Section Entity Distribution`, computing a `0–100` Entity Salience score alongside the live `H2 Question-Heading Ratio` (`25%–75%` optimal window).
+   - Audits primary entity presence in `H1`, `Opening Sentence`, `First 60 Words`, and `H2 Section Entity Distribution`, computing a `0–100` Entity Salience score alongside the live `H2 Question-Heading Ratio` (`25%–75%` optimal window).
 - **Subtopic & Question Gap Auditor + 1-Click FAQ Gap Injector (`auditSubtopicCoverageGaps` & `injectUncoveredQuestionsIntoFaqs` in `model.ts`)**:
-  - Cross-checks discovered `research.questionsToAnswer` and `research.secondaryKeywords` against the drafted article and FAQs, surfacing uncovered subtopics/questions and providing a 1-click **Add Uncovered Questions to FAQ** action.
+   - Cross-checks discovered `research.questionsToAnswer` and `research.secondaryKeywords` against the drafted article and FAQs, surfacing uncovered subtopics/questions and providing a 1-click **Add Uncovered Questions to FAQ** action.
 - **1-Click PAA FAQ Answer Length Normalizer (`normalizeFaqPaaLengths` in `model.ts`)**:
-  - Deterministically expands short FAQ answers (`<30` words) and trims overly long answers (`>58` words) into the **32–56 word Google People Also Ask (PAA) & Voice Search extraction window** while ensuring every FAQ heading ends with `?`.
+   - Deterministically expands short FAQ answers (`<30` words) and trims overly long answers (`>58` words) into the **32–56 word Google People Also Ask (PAA) & Voice Search extraction window** while ensuring every FAQ heading ends with `?`.
 
 
 ---
@@ -110,8 +110,78 @@ Following the initial V3 multi-agent integration (`3f9cf9f8`), our deep code and
 
 ### 14.2 Engineered V3.6 Capabilities
 - **Content Freshness & Anti-Decay Auditor (`auditContentFreshnessAndDecay` in `model.ts`)**:
-  - Audits drafts for stale year tokens (`2019–2024`), current `2025/2026` temporal benchmarks, first-30% front-loaded extractability, comparison matrix presence, and editorial methodology disclosures.
+   - Audits drafts for stale year tokens (`2019–2024`), current `2025/2026` temporal benchmarks, first-30% front-loaded extractability, comparison matrix presence, and editorial methodology disclosures.
 - **1-Click Content Refresh & Decay Upgrader (`applyContentRefreshUpgrade` in `model.ts`)**:
-  - Deterministically upgrades stale year references to `2026`, injects a **2026 Decision & Benchmark Matrix** table into Section 1 when missing, and appends an **Editorial Verification & 2026 Refresh Note** callout in 0ms.
+   - Deterministically upgrades stale year references to `2026`, injects a **2026 Decision & Benchmark Matrix** table into Section 1 when missing, and appends an **Editorial Verification & 2026 Refresh Note** callout in 0ms.
 - **1-Click H2 Statement-to-Question Converter (`convertStatementHeadingsToQuestions` in `model.ts`)**:
-  - Converts statement H2 headings into natural AEO question headings until at least 50% of H2 sections are question-framed, while preserving H3 subheadings and refreshing section infographic headlines.
+   - Converts statement H2 headings into natural AEO question headings until at least 50% of H2 sections are question-framed, while preserving H3 subheadings and refreshing section infographic headlines.
+
+
+---
+
+## 15. V3.7 Hourly Optimization Cycle (Run #6): SERP Pixel & Title-Rewrite Prevention, Auto-Fit Meta Optimizer & Section Takeaway Callout Weaver
+
+### 15.1 Research Benchmarks Applied
+1. **Google Title-Link Rewrite Prevention (51–60 Chars / <=580px & H1 Alignment)**:
+   - Google rewrites up to 76% of title tags when they exceed 600px, exceed 60 characters (99.9% rewrite rate above 70 chars), or diverge from the on-page H1; keeping titles in the **50–60 character (`<=580px`)** window and aligned with the H1 carries the lowest rewrite rate ([Neil Patel: SEO Title Tags 2026](https://neilpatel.com/blog/title-tags-seo/), [Sink or Swim: Google Search Central Title Links 2026](https://sink-or-swim-marketing.com/search-engine-optimisation-ireland/google-search-central-title-links-best-practices-2026/), [NitroSERP: 2026 SERP Pixel Limits](https://www.nitroserp.com/blog/serp-pixel-width-height-character-limits-2026)).
+2. **Meta Description Pixel Truncation (`<=920px` Desktop / `<=680px` Mobile)**:
+   - Google truncates meta descriptions by pixel width (~920px on desktop / ~155–158 characters); descriptions under 430px are frequently rewritten because they provide insufficient context ([Conductor: Meta Description Guide 2026](https://www.conductor.com/academy/meta-description/), [MetaGenius: 2026 Pixel Rules](https://metagenius-ai-seo.com/blog/shopify-meta-description-character-limit-the-2026-rules/), [Google Search Central: Snippets](https://developers.google.com/search/docs/appearance/snippet)).
+3. **Key Takeaway Callout Boxes for AI Overview Extraction**:
+   - Structured `> **Key Takeaway:**` callout blocks surface supported conclusions for both human skimmers and RAG/AI Overview extraction pipelines ([AmICited: Key Takeaways Box SEO Playbook](https://www.amicited.com/seo-playbook/elements/key-takeaways/), [SEO-Kreativ: AI Overviews 2026](https://www.seo-kreativ.de/en/blog/google-ai-overviews-updates-2026-en/)).
+
+### 15.2 Engineered V3.7 Capabilities
+- **SERP Pixel & Rewrite Risk Auditor + 1-Click Auto-Fit Optimizer (`auditSerpPixelAndCtrReadiness` & `optimizeSerpMetaPixelFit` in `model.ts` & `SearchAppearancePanel.tsx`)**:
+   - Audits title pixel width (`<=580px`), H1 token alignment, description pixel width (`430–920px`), and title rewrite risk (`low` / `medium` / `high`), paired with a 1-click **Auto-Fit SERP Pixels** button directly in the `Search Appearance & Rich Results` header.
+- **1-Click Section Key Takeaway Callout Weaver (`weaveSectionTakeawayCallouts` in `model.ts`, `LeftStudioPanel.tsx` & `WriterWorkspace.tsx`)**:
+   - Automatically weaves a grounded `> **Key Takeaway:**` blockquote callout into any H2 section lacking a callout box in 0ms.
+
+
+---
+
+## 16. V3.8 Hourly Optimization Cycle (Run #7): 50-Word AEO Direct Answer Box Normalizer & 1-Click Master AEO Polish
+
+### 16.1 Research Benchmarks Applied
+1. **Top-of-Page 40–58 Word Direct Answer Block / TL;DR Extraction**:
+   - AI Overviews appear on **58% of queries**, and pages holding featured snippets are cited in AI Overviews at roughly **2× the rate of non-snippet pages** ([Digital Applied: Featured Snippets in the AI Overview Era 2026](https://www.digitalapplied.com/blog/featured-snippets-ai-overview-era-optimization-2026)).
+   - Placing a self-contained **40 to 58 word** inverted-pyramid direct answer block at the top of the page—opening with a definitional subject-first statement (`"[Primary Entity] is..."`)—gives Google AI Overviews, Perplexity, and ChatGPT Search a pre-formed passage to quote verbatim ([AHA Technocrats: TL;DR in SEO 2026](https://ahatechnocrats.com/blog/tldr-in-seo-ai-overviews), [Citation Hawk: AEO, GEO and SEO 2026 Guide](https://www.citationhawk.com/aeo-geo-seo-explained), [Gen-Optima: Direct Answer Blocks 2026](https://www.gen-optima.com/geo/best-answer-engine-optimization-techniques-2026/), [The VC Corner: GEO & AEO 2026](https://www.thevccorner.com/p/geo-aeo-how-to-rank-when-ai-answers)).
+
+### 16.2 Engineered V3.8 Capabilities
+- **50-Word AEO Direct Answer Auditor & 1-Click Normalizer (`auditQuickAnswerBoxReadiness` & `optimizeQuickAnswerBox50Words` in `model.ts` & `WriterWorkspace.tsx`)**:
+   - Audits word count (`38–60` words optimal), primary entity subject positioning in the opening sentence, and cliché-free clarity, paired with a live word-count badge and 1-click **Optimize 50w Answer** button on the `50-Word AEO Direct Answer Box`.
+- **1-Click Master AEO, SERP & Readiness Polish (`runMasterAeoAndReadinessPolish` in `model.ts`, `LeftStudioPanel.tsx` & `WriterWorkspace.tsx`)**:
+   - Chains all 7 deterministic zero-token optimizers (50w Direct Answer Box, SERP Pixel Fit, H2 Question Ratio, Contextual Internal Link Auto-Weaving, Section Takeaway Callouts, 2026 Content Refresh & Decision Matrix, and PAA FAQ 35–55w Normalization) into a single 1-click action in the `Readiness & Schema Checklist`.
+
+
+---
+
+## 17. V3.9 Hourly Optimization Cycle (Run #8): Schema.org `about`/`mentions` Entity Linking, `ImageObject` Discover Metadata & 1-Click WCAG Visual Alt-Text Optimizer
+
+### 17.1 Research Benchmarks Applied
+1. **Schema.org `about` and `mentions` Entity Linking (+19.72% AI Overview Visibility)**:
+   - Declaring explicit `about` (primary `Thing`) and `mentions` (secondary/LSI `Thing[]`) properties inside `Article` structured data increases AI Overview visibility by **19.72%** by disambiguating topical entities for Google's Knowledge Graph and AI Mode synthesis ([Schema App Case Study: Entity Linking Increases AIO Visibility by 19.72%](https://www.schemaapp.com/schema-markup/case-study-entity-linking-increases-aio-visibility/), [GoGoChimp: Schema Markup for AI SEO 2026](https://www.gogochimp.com/blog/schema-markup-for-ai-seo-2026), [CrawlVision: Schema Markup 2026](https://www.crawlvision.com/blog/schema-markup-2026-how-ai-understand-your-content/)).
+2. **Google Discover & Multimodal AI `ImageObject` Structured Data (`1200×630` 16:9)**:
+   - Google's updated March 2026 Discover & Search documentation uses `schema.org/ImageObject` (`width: 1200`, `height: 630`, `caption`, `description`) alongside `max-image-preview:large` to select high-CTR 16:9 preview images ([SEO-Kreativ: Google Discover SEO 2026](https://www.seo-kreativ.de/en/blog/google-discover-seo-everything-you-need-to-know/), [Growth Marketing AI: Image Metadata for AI Overviews 2026](https://growthmarketing.ai/image-metadata-for-google-ai-overviews), [Digital Applied: Google Discover Core Update 2026](https://www.digitalapplied.com/blog/google-discover-core-update-february-2026-seo-guide)).
+3. **WCAG 2.2 & Multimodal Visual Search Alt Text (<125 Characters)**:
+   - Across 800+ audited sites, **73.4% gained organic traffic** after accessibility upgrades; optimal alt text runs **65–122 characters (8–16 words)** naming the diagram type, core entity, and relationship without `"image of"` prefixes or file extensions ([AccessibilityChecker: SEO Alt Text Guide 2026](https://www.accessibilitychecker.org/blog/alt-text-for-seo/), [Surnex: Alt Text Best Practices 2026](https://surnex.io/blog/alt-text-best-practices), [MetaGenius: Alt Text Length 2026](https://metagenius-ai-seo.com/blog/alt-text-character-limit/)).
+
+### 17.2 Engineered V3.9 Capabilities
+- **Entity-Linked `Article` + `ImageObject` JSON-LD Graph (`buildArticleSchemaJsonLd` in `model.ts`)**:
+   - Automatically populates `image` (`@type: "ImageObject"`, `1200×630`), `about` (`@type: "Thing"`), and `mentions` (`@type: "Thing"[]`) inside `Article` JSON-LD.
+- **1-Click WCAG 2.2 & Multimodal Alt-Text Optimizer (`optimizeVisualAltTexts` in `model.ts`, `FeaturedBannerArtwork.tsx` & `WriterWorkspace.tsx`)**:
+   - Deterministically rewrites weak, over-long, or prefix-stuffed alt texts across both the 16:9 Featured Banner and all H2 Section Infographics to score **100/100 WCAG & SEO Ready**.
+
+---
+
+## 18. V3.10 Upgrade Cycle (Hourly Run #9): Semantic HTML `<head>` Robots Directives (`max-snippet:-1`, `max-image-preview:large`), Embedded Schema Graph & 0-Token Reader Comprehension Quiz Generator
+
+### 18.1 Research Grounding
+1. **Google Search Central Robots Meta Directives (`max-snippet:-1, max-image-preview:large, max-video-preview:-1`)**: Per Google Search Central's official Robots Meta Tag specification (`developers.google.com/search/docs/crawling-indexing/robots-meta-tag`), SiteSpeakAI (`sitespeak.ai/ai-overview-glossary/max-snippet-meta-tag`), and NexOper's 2026 AI Overviews study (`nexoper.in/blog/google-ai-overviews-seo`), explicitly declaring `<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">` alongside a complete `Article` + `ImageObject` + `FAQPage` JSON-LD `@graph` in `<head>` grants Google Search, Google Discover, and AI Overviews full permission to extract multi-sentence answer passages and high-resolution 1200px+ visuals.
+2. **Semantic HTML `<article>` & Microdata Extraction (+47% Perplexity Citation Rate)**: Per Digital Abetka's 2026 LLM Content Engineering study (`dev.to/digital-abetka/llm-content-engineering-how-to-write-for-ai-search-in-2026-3fom`), pages exported with semantic `<article>`, `<table>`, and `Question`/`Answer` schema microdata are cited in Perplexity **47% more often** than unstructured markup while keeping `<head>` metadata cleanly separated from `<body>` content.
+3. **Interactive Reader Comprehension Quizzes (+148% Dwell-Time Lift)**: Per Amra & Elma (`amraandelma.com/interactive-quiz-statistics-marketing/`) and Outgrow's 2026 Interactive Engagement Benchmarks (`outgrow.co/blog/user-engagement-benchmarks/`), embedding a concise 3-question comprehension / self-assessment quiz increases average on-page dwell time from 1m 52s to **4m 38s (+148% lift)** and achieves a **65% GA4 engagement rate** (3.1x the 54-second static page average).
+
+### 18.2 V3.10 Engineered Features
+- **Upgraded `htmlArticle(p)` Semantic HTML Export (`features/writer-workspace/assets.tsx`)**:
+  - Injects `<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">` and `<script type="application/ld+json">${JSON.stringify(buildArticleSchemaJsonLd(p).combinedGraph).replace(/</g, "\\u003c")}</script>` directly inside `<head>`, while keeping `<head>` metadata strictly separated from `<body><article>...</article></body>` so CMS body-only importers never leak raw meta description strings into the visible article body.
+  - Appends an accessible `<section aria-label="Reader Comprehension Quiz" data-dwell-widget="comprehension-quiz">` when `workspace(p).quizQuestions` are present.
+- **Deterministic 0-Token Comprehension Quiz Generator (`generateArticleComprehensionQuiz` in `features/writer-workspace/model.ts` + `WriterWorkspace.tsx`)**:
+  - Generates 3 grounded multiple-choice reader comprehension questions (`id`, `question`, `options`, `correctIndex`, `explanation`) from the article's H2 headings, primary keyword/entity, and linked internal tools in 0ms with zero LLM token cost, and chains directly into `runMasterAeoAndReadinessPolish(p)`.

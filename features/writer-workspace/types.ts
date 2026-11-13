@@ -105,6 +105,14 @@ export type SocialOverride = {
   sourceRevision?: string;
 };
 
+export type ComprehensionQuizQuestion = {
+  id: string;
+  question: string;
+  options: string[];
+  correctIndex: number;
+  explanation: string;
+};
+
 export interface WriterWorkspaceState {
   version: 1;
   studioUnlocked?: boolean;
@@ -125,6 +133,7 @@ export interface WriterWorkspaceState {
   research?: ResearchPacket;
   visualRevisions?: Record<string, string>;
   email?: { subject: string; body: string; sourceRevision: string };
+  quizQuestions?: ComprehensionQuizQuestion[];
 }
 declare module "@/lib/blog-writer/canonical-state" {
   interface CanonicalBlogProjectState {

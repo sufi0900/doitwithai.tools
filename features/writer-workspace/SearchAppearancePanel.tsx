@@ -17,7 +17,13 @@ import {
   measureTitlePixelWidth,
   normalizeSeoSlug,
 } from "@/lib/blog-writer/deterministic-analyzers";
-import { buildArticleSchemaJsonLd, safeUrl, workspace } from "./model";
+import {
+  auditSerpPixelAndCtrReadiness,
+  buildArticleSchemaJsonLd,
+  optimizeSerpMetaPixelFit,
+  safeUrl,
+  workspace,
+} from "./model";
 import type { Project } from "./types";
 import s from "./workspace.module.css";
 
@@ -52,6 +58,7 @@ export function SearchAppearancePanel({
 
   const titlePx = Math.round(measureTitlePixelWidth(title));
   const descPx = Math.round(measureMetaDescriptionPixelWidth(description));
+  const serpAudit = useMemo(() => auditSerpPixelAndCtrReadiness(project), [project]);
 
   const titleOptions = useMemo(() => {
     const list = [
@@ -130,6 +137,22 @@ export function SearchAppearancePanel({
         </div>
 
         <div className={s.serpHeaderActions}>
+          <button
+            type="button"
+            className={s.inlineToggleBtn}
+            onClick={() => {
+              const optimized = optimizeSerpMetaPixelFit(project);
+              onUpdateMeta({
+                metaTitle: optimized.project.metaPack.metaTitle,
+                metaDescription: optimized.project.metaPack.metaDescription,
+                urlSlug: optimized.project.metaPack.urlSlug,
+              });
+            }}
+            title="Auto-fit Meta Title (<=580px) and Meta Description (<=920px) to prevent Google SERP rewrites"
+          >
+            <Sparkles className="w-3.5 h-3.5" aria-hidden />
+            Auto-Fit SERP Pixels ({serpAudit.serpScore}/100)
+          </button>
           <button
             type="button"
             className={s.inlineToggleBtn}

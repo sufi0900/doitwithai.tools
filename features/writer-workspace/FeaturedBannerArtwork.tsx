@@ -31,9 +31,11 @@ function wrapTextLines(text: string, maxChars: number, maxLines: number): string
 export function FeaturedBannerArtwork({
   project,
   onUpdateBanner,
+  onOptimizeAllAltTexts,
 }: {
   project: Project;
   onUpdateBanner: (patch: Partial<FeaturedBannerState>) => void;
+  onOptimizeAllAltTexts?: () => void;
 }) {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const uid = useId().replace(/:/g, "");
@@ -109,6 +111,17 @@ export function FeaturedBannerArtwork({
         </div>
 
         <div className={s.featuredBannerActions}>
+          {onOptimizeAllAltTexts ? (
+            <button
+              type="button"
+              className={s.inlineToggleBtn}
+              onClick={onOptimizeAllAltTexts}
+              title="Auto-optimize Featured Banner and all H2 Section Infographic alt texts for WCAG 2.2 (<125 chars) and Multimodal SEO"
+            >
+              <ShieldCheck className="w-3.5 h-3.5" aria-hidden />
+              Auto-Optimize All Alt Texts
+            </button>
+          ) : null}
           <button
             type="button"
             className={s.inlineToggleBtn}
