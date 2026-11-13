@@ -1317,3 +1317,278 @@ export function auditSectionSnippetReadiness(p: Project): {
     sections: secItems,
   };
 }
+
+
+const LINK_STOPWORDS = new Set([
+  "the", "and", "for", "with", "from", "that", "this", "your", "into", "guide",
+  "tool", "tools", "free", "online", "best", "how", "what", "why", "when", "ai",
+  "seo", "content", "article", "blog", "studio", "generator", "checker", "analyzer",
+]);
+
+/**
+ * Scans drafted H2 sections for unlinked sentences that topically match
+ * available Verified Internal Links, surfacing a sentence context preview
+ * and natural anchor phrase for 1-click contextual interlinking.
+ */
+export function auditContextualLinkOpportunities(p: Project): Array<{
+  url: string;
+  title: string;
+  anchor: string;
+  sectionId: string;
+  sectionHeading: string;
+  sentencePreview: string;
+  matchedPhrase: string;
+}> {
+  const w = workspace(p);
+  const fullMd = articleMarkdown(p);
+  const candidates = [
+    ...(p.internalLinks || []).map((l) => ({
+      url: l.targetUrl,
+      title: l.targetTitle || l.anchorText,
+      anchor: l.anchorText || l.targetTitle,
+    })),
+    ...(w.research?.internalLinks || []).map((l) => ({
+      url: l.url,
+      title: l.title,
+      anchor: l.anchorText || l.title,
+    })),
+  ].filter(
+    (item, idx, arr) =>
+      Boolean(safeUrl(item.url)) &&
+      arr.findIndex((x) => x.url === item.url) === idx &&
+      !fullMd.includes(item.url),
+  );
+
+  const opportunities: Array<{
+    url: string;
+    title: string;
+    anchor: string;
+    sectionId: string;
+    sectionHeading: string;
+    sentencePreview: string;
+    matchedPhrase: string;
+  }> = [];
+
+  for (const link of candidates) {
+    const rawTokens = `${link.anchor} ${link.title}`
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]+/g, " ")
+      .split(/\s+/)
+      .filter((t) => t.length >= 3 && !LINK_STOPWORDS.has(t));
+    const tokens = [...new Set(rawTokens)];
+
+    let bestHit: {
+      sectionId: string;
+      sectionHeading: string;
+      sentencePreview: string;
+      matchedPhrase: string;
+      score: number;
+    } | null = null;
+
+    for (const sec of p.sections || []) {
+      const secMd = bodyOf(sec);
+      const sentences = secMd.match(/[^.!?\n]+[.!?]+/g) || [];
+      for (const rawSent of sentences) {
+        const sent = rawSent.trim();
+        if (
+          sent.length < 30 ||
+          /\[[^\]]+\]\(https?:\/\/[^)]+\)/.test(sent) ||
+          /^(?:#{1,6}\s|\|)/.test(sent)
+        ) {
+          continue;
+        }
+        const lowerSent = sent.toLowerCase();
+        const anchorLower = link.anchor.toLowerCase().trim();
+        if (anchorLower.length >= 5 && lowerSent.includes(anchorLower)) {
+          const idx = lowerSent.indexOf(anchorLower);
+          const exactSlice = sent.slice(idx, idx + anchorLower.length);
+          bestHit = {
+            sectionId: sec.id,
+            sectionHeading: sec.h2Text,
+            sentencePreview: sent.slice(0, 145),
+            matchedPhrase: exactSlice,
+            score: 10,
+          };
+          break;
+        }
+        const matchedTokens = tokens.filter((tk) => lowerSent.includes(tk));
+        if (matchedTokens.length >= 1) {
+          const firstTk = matchedTokens[0];
+          const phraseMatch = sent.match(
+            new RegExp(`\\b([A-Za-z0-9-]+(?:\\s+[A-Za-z0-9-]+){0,2}?\\s*${firstTk}(?:\\s+[A-Za-z0-9-]+){0,1})\\b`, "i"),
+          );
+          const matchedPhrase = phraseMatch ? phraseMatch[1].trim() : link.anchor;
+          const score = matchedTokens.length;
+          if (!bestHit || score > bestHit.score) {
+            bestHit = {
+              sectionId: sec.id,
+              sectionHeading: sec.h2Text,
+              sentencePreview: sent.slice(0, 145),
+              matchedPhrase,
+              score,
+            };
+          }
+        }
+      }
+      if (bestHit && bestHit.score >= 10) break;
+    }
+
+    if (bestHit) {
+      opportunities.push({
+        url: link.url,
+        title: link.title,
+        anchor: link.anchor,
+        sectionId: bestHit.sectionId,
+        sectionHeading: bestHit.sectionHeading,
+        sentencePreview: bestHit.sentencePreview,
+        matchedPhrase: bestHit.matchedPhrase,
+      });
+    }
+  }
+
+  return opportunities.slice(0, 6);
+}
+
+/**
+ * Deterministically weaves up to `maxToLink` unlinked internal links into
+ * matching H2 section sentences (or appends a natural contextual reference bullet
+ * when no exact phrase match is present) in 0ms with zero API token cost.
+ */
+export function autoWeaveContextualInternalLinks(
+  p: Project,
+  maxToLink = 4,
+): { project: Project; linkedCount: number } {
+  const opportunities = auditContextualLinkOpportunities(p);
+  const w = workspace(p);
+  const fullMd = articleMarkdown(p);
+  const fallbackLinks = [
+    ...(p.internalLinks || []).map((l) => ({
+      url: l.targetUrl,
+      title: l.targetTitle || l.anchorText,
+      anchor: l.anchorText || l.targetTitle,
+    })),
+    ...(w.research?.internalLinks || []).map((l) => ({
+      url: l.url,
+      title: l.title,
+      anchor: l.anchorText || l.title,
+    })),
+  ].filter(
+    (item, idx, arr) =>
+      Boolean(safeUrl(item.url)) &&
+      arr.findIndex((x) => x.url === item.url) === idx &&
+      !fullMd.includes(item.url),
+  );
+
+  if (opportunities.length === 0 && fallbackLinks.length === 0) {
+    return { project: p, linkedCount: 0 };
+  }
+
+  let linkedCount = 0;
+  const usedUrls = new Set<string>();
+  const nextSections = p.sections.map((sec, secIdx) => {
+    if (linkedCount >= maxToLink) return sec;
+    let secMd = bodyOf(sec);
+    const secOpps = opportunities.filter(
+      (o) => o.sectionId === sec.id && !usedUrls.has(o.url),
+    );
+    for (const opp of secOpps) {
+      if (linkedCount >= maxToLink) break;
+      if (
+        opp.matchedPhrase &&
+        opp.matchedPhrase.length >= 4 &&
+        secMd.includes(opp.matchedPhrase) &&
+        !secMd.includes(opp.url)
+      ) {
+        secMd = secMd.replace(
+          opp.matchedPhrase,
+          `[${opp.matchedPhrase}](${opp.url})`,
+        );
+        usedUrls.add(opp.url);
+        linkedCount += 1;
+      }
+    }
+    if (linkedCount < maxToLink) {
+      const candidate = fallbackLinks.find(
+        (fl) => !usedUrls.has(fl.url) && !secMd.includes(fl.url),
+      );
+      if (candidate && secIdx < maxToLink) {
+        secMd = `${secMd.trim()}\n\n- **Related Workflow Tool:** Use [${candidate.anchor || candidate.title}](${candidate.url}) to audit and implement this step.`;
+        usedUrls.add(candidate.url);
+        linkedCount += 1;
+      }
+    }
+    const updated = setSectionBody(sec, secMd);
+    try {
+      return refreshVisual(updated, p);
+    } catch {
+      return updated;
+    }
+  });
+
+  const nextProject = patchWorkspace(
+    { ...p, sections: nextSections },
+    { document: undefined },
+  );
+  return { project: nextProject, linkedCount };
+}
+
+/**
+ * Audits every FAQ item in `p.faqs` against Google People Also Ask (PAA),
+ * AI Overviews, and voice-search extraction benchmarks (question-phrased
+ * heading + 35 to 60 word self-contained answer).
+ */
+export function auditFaqPaaReadiness(p: Project): {
+  totalFaqs: number;
+  optimalCount: number;
+  paaReadyScore: number;
+  items: Array<{
+    id: string;
+    question: string;
+    words: number;
+    isQuestionHeading: boolean;
+    status: "optimal" | "short" | "long";
+  }>;
+} {
+  const items = (p.faqs || []).map((faq, idx) => {
+    const q = (faq.question || "").trim();
+    const a = (faq.answer || "").trim();
+    const words = wordCount(a);
+    const isQuestionHeading =
+      /\?$/.test(q) ||
+      /^(?:what|how|why|when|where|which|who|can|does|do|is|are|should|will)\b/i.test(
+        q,
+      );
+    const status: "optimal" | "short" | "long" =
+      words >= 30 && words <= 60 ? "optimal" : words < 30 ? "short" : "long";
+    return {
+      id: faq.id || `faq-${idx}`,
+      question: q || `Question #${idx + 1}`,
+      words,
+      isQuestionHeading,
+      status,
+    };
+  });
+
+  const totalFaqs = items.length;
+  const optimalCount = items.filter(
+    (it) => it.status === "optimal" && it.isQuestionHeading,
+  ).length;
+  const paaReadyScore =
+    totalFaqs === 0
+      ? 0
+      : Math.round(
+          items.reduce((acc, it) => {
+            const lenPts =
+              it.status === "optimal" ? 80 : it.words >= 18 ? 50 : 20;
+            const qPts = it.isQuestionHeading ? 20 : 0;
+            return acc + lenPts + qPts;
+          }, 0) / totalFaqs,
+        );
+
+  return {
+    totalFaqs,
+    optimalCount,
+    paaReadyScore,
+    items,
+  };
+}

@@ -9,7 +9,10 @@ import {
   articleMarkdown,
   auditBurstinessRhythm,
   auditClaimVerification,
+  auditContextualLinkOpportunities,
+  auditFaqPaaReadiness,
   auditSectionSnippetReadiness,
+  autoWeaveContextualInternalLinks,
   articleModel,
   articleRevision,
   blankProject,
@@ -713,4 +716,49 @@ test("V3.2 and V3.3 quality auditors evaluate claim citations, burstiness rhythm
   assert.equal(snippetReport.sections[0].leadStatus, "optimal");
   assert.equal(snippetReport.sections[0].hasList, true);
   assert.equal(snippetReport.sections[0].hasCallout, true);
+});
+
+test("V3.4 contextual internal link matcher, 1-click auto-weaver, and PAA FAQ auditor work deterministically", () => {
+  let proj = blankProject();
+  const sec = setSectionBody(
+    makeSection({ heading: "Audit Readability and Schema", subheadings: [] }, 0),
+    "Teams should run an on-page AI SEO audit tool before publishing new guides so every heading and schema block aligns with search intent.",
+  );
+  proj = {
+    ...proj,
+    sections: [sec],
+    internalLinks: [
+      {
+        id: "il-1",
+        anchorText: "on-page AI SEO audit tool",
+        targetTitle: "On-Page AI SEO Analyzer",
+        targetUrl: "https://doitwithai.tools/tools/on-page-ai-seo-analyzer",
+        category: "pillar-guide",
+      },
+    ],
+    faqs: [
+      {
+        id: "faq-1",
+        question: "How long should a People Also Ask FAQ answer be for AI Overviews?",
+        answer:
+          "A People Also Ask FAQ answer should run forty to fifty-five words across two to three concise sentences, opening immediately with the direct answer so Google PAA boxes, voice assistants, and AI Overviews can extract the complete passage without truncation.",
+      },
+    ],
+  };
+
+  const opps = auditContextualLinkOpportunities(proj);
+  assert.equal(opps.length, 1);
+  assert.equal(opps[0].url, "https://doitwithai.tools/tools/on-page-ai-seo-analyzer");
+
+  const woven = autoWeaveContextualInternalLinks(proj, 2);
+  assert.equal(woven.linkedCount, 1);
+  assert.match(
+    articleMarkdown(woven.project),
+    /\[on-page AI SEO audit tool\]\(https:\/\/doitwithai\.tools\/tools\/on-page-ai-seo-analyzer\)/,
+  );
+
+  const faqReport = auditFaqPaaReadiness(proj);
+  assert.equal(faqReport.totalFaqs, 1);
+  assert.equal(faqReport.optimalCount, 1);
+  assert.equal(faqReport.paaReadyScore, 100);
 });
