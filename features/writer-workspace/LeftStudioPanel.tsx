@@ -191,7 +191,9 @@ export function LeftStudioPanel({
               ((totalSentences - r.readability.longSentences.length) /
                 totalSentences) *
                 100,
-            ),\n          ),\n        )
+            ),
+          ),
+        )
       : 0;
   const keywordHitsCount = secondaryKws.filter((t) =>
     lowerMd.includes(t.toLowerCase()),

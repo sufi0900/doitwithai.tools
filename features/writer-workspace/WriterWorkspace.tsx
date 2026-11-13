@@ -39,6 +39,7 @@ import {
   sanitizeMarkdownHeadings,
   setSectionBody,
   splitRunOnSentences,
+  stripAiClichesAndPolishRhythm,
   syncDocument,
   workspace,
 } from "./model";
@@ -842,9 +843,7 @@ export default function WriterWorkspace() {
               onQuickReadabilityPolish={() => {
                 update((now) => {
                   const polishedSections = now.sections.map((sec) => {
-                    const nextBody = splitRunOnSentences(
-                      sanitizeMarkdownHeadings(bodyOf(sec)),
-                    );
+                    const nextBody = stripAiClichesAndPolishRhythm(bodyOf(sec));
                     const updatedSec = setSectionBody(sec, nextBody);
                     try {
                       return refreshVisual(updatedSec, now);
@@ -852,10 +851,8 @@ export default function WriterWorkspace() {
                       return updatedSec;
                     }
                   });
-                  const polishedIntro = splitRunOnSentences(
-                    sanitizeMarkdownHeadings(
-                      now.metaPack.aeoDirectAnswer50Words || "",
-                    ),
+                  const polishedIntro = stripAiClichesAndPolishRhythm(
+                    now.metaPack.aeoDirectAnswer50Words || "",
                   );
                   return patchWorkspace(
                     {
@@ -870,7 +867,7 @@ export default function WriterWorkspace() {
                   );
                 });
                 setMessage(
-                  "Polished sentence lengths, split headings cleanly, and refreshed section infographics.",
+                  "Polished sentence rhythm, stripped AI clichés, split headings cleanly, and refreshed section infographics.",
                 );
               }}
               onApplyRevision={applyRewriteProposal}
