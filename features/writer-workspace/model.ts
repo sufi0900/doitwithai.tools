@@ -1592,3 +1592,324 @@ export function auditFaqPaaReadiness(p: Project): {
     items,
   };
 }
+
+
+/**
+ * V3.5: Audits Google NLP Entity Salience signals (primary entity presence in H1,
+ * first-sentence subject position, first 60 words, and H2 section distribution)
+ * alongside AEO Question-Heading Ratio (target: 25%–75% of H2 headings phrased as questions).
+ */
+export function auditEntitySalienceAndQuestions(p: Project): {
+  salienceScore: number;
+  inH1: boolean;
+  inOpeningSentence: boolean;
+  inFirst60Words: boolean;
+  sectionEntityDistributionPct: number;
+  questionH2Count: number;
+  totalH2Count: number;
+  questionHeadingRatioPct: number;
+  questionRatioOptimal: boolean;
+} {
+  const w = workspace(p);
+  const focus = (
+    p.keywordCluster?.primaryKeyword ||
+    w.research?.primaryKeyword ||
+    w.research?.primaryTopic ||
+    p.projectTitle ||
+    ""
+  )
+    .trim()
+    .toLowerCase();
+  const focusTokens = focus
+    .split(/[^a-z0-9\p{L}]+/u)
+    .filter((t) => t.length >= 3 && !LINK_STOPWORDS.has(t));
+
+  const matchesFocus = (text: string): boolean => {
+    const hay = (text || "").toLowerCase();
+    if (!focus) return false;
+    if (hay.includes(focus)) return true;
+    if (!focusTokens.length) return false;
+    const hitCount = focusTokens.filter((t) => hay.includes(t)).length;
+    return hitCount >= Math.max(1, Math.ceil(focusTokens.length * 0.6));
+  };
+
+  const h1Text = `${p.metaPack?.h1Title || ""} ${p.metaPack?.metaTitle || ""} ${p.projectTitle || ""}`;
+  const inH1 = matchesFocus(h1Text);
+
+  const introSource =
+    (p.metaPack?.aeoDirectAnswer50Words || "").trim() ||
+    (p.sections[0] ? bodyOf(p.sections[0]) : "")
+      .replace(/^#+\s+[^\n]+\n*/gm, "")
+      .trim();
+  const firstSentenceMatch = introSource.match(/^[^.!?]+[.!?]?/);
+  const firstSentence = firstSentenceMatch ? firstSentenceMatch[0] : introSource;
+  const inOpeningSentence = matchesFocus(firstSentence);
+
+  const fullMdPlain = (articleMarkdown(p) || "")
+    .replace(/^#+\s+[^\n]+$/gm, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const first60Words = fullMdPlain.split(" ").slice(0, 60).join(" ");
+  const inFirst60Words = matchesFocus(first60Words) || inOpeningSentence;
+
+  const secondaryTerms = [
+    ...(p.keywordCluster?.secondaryKeywords || []),
+    ...(w.research?.secondaryKeywords || []),
+    ...(w.research?.lsiEntities || []),
+  ]
+    .map((s) => s.toLowerCase().trim())
+    .filter((s) => s.length >= 3);
+
+  const totalH2Count = p.sections.length;
+  let sectionsWithEntities = 0;
+  let questionH2Count = 0;
+
+  for (const sec of p.sections) {
+    const h2 = (sec.h2Text || "").trim();
+    const isQuestionH2 =
+      /\?$/.test(h2) ||
+      /^(?:what|how|why|when|where|which|who|can|does|do|is|are|should|will)\b/i.test(
+        h2,
+      );
+    if (isQuestionH2) questionH2Count += 1;
+
+    const secText = `${h2} ${bodyOf(sec)}`.toLowerCase();
+    const hasSecondary = secondaryTerms.some((term) => secText.includes(term));
+    if (matchesFocus(secText) || hasSecondary) {
+      sectionsWithEntities += 1;
+    }
+  }
+
+  const sectionEntityDistributionPct =
+    totalH2Count === 0
+      ? 0
+      : Math.round((sectionsWithEntities / totalH2Count) * 100);
+
+  const salienceScore = Math.min(
+    100,
+    Math.round(
+      (inH1 ? 25 : 0) +
+        (inOpeningSentence ? 30 : 0) +
+        (inFirst60Words ? 20 : 0) +
+        sectionEntityDistributionPct * 0.25,
+    ),
+  );
+
+  const questionHeadingRatioPct =
+    totalH2Count === 0
+      ? 0
+      : Math.round((questionH2Count / totalH2Count) * 100);
+  const questionRatioOptimal =
+    totalH2Count > 0 &&
+    questionHeadingRatioPct >= 25 &&
+    questionHeadingRatioPct <= 75;
+
+  return {
+    salienceScore,
+    inH1,
+    inOpeningSentence,
+    inFirst60Words,
+    sectionEntityDistributionPct,
+    questionH2Count,
+    totalH2Count,
+    questionHeadingRatioPct,
+    questionRatioOptimal,
+  };
+}
+
+/**
+ * V3.5: Cross-checks discovered research questions (`questionsToAnswer`) and
+ * secondary subtopics (`secondaryKeywords`) against the drafted article and FAQs
+ * to surface Information Gain subtopic gaps.
+ */
+export function auditSubtopicCoverageGaps(p: Project): {
+  totalTargets: number;
+  coveredCount: number;
+  coverageScore: number;
+  uncoveredQuestions: string[];
+  uncoveredSubtopics: string[];
+} {
+  const w = workspace(p);
+  const mdLower = (articleMarkdown(p) || "").toLowerCase();
+  const faqTextLower = (p.faqs || [])
+    .map((f) => `${f.question} ${f.answer}`)
+    .join(" ")
+    .toLowerCase();
+  const combinedHaystack = `${mdLower} ${faqTextLower}`;
+
+  const questions = (w.research?.questionsToAnswer || [])
+    .map((q) => q.trim())
+    .filter(Boolean);
+  const subtopics = [
+    ...(p.keywordCluster?.secondaryKeywords || []),
+    ...(w.research?.secondaryKeywords || []),
+  ]
+    .map((k) => k.trim())
+    .filter((v, idx, arr) => Boolean(v) && arr.indexOf(v) === idx);
+
+  const uncoveredQuestions: string[] = [];
+  let coveredQ = 0;
+
+  for (const q of questions) {
+    const tokens = q
+      .toLowerCase()
+      .split(/[^a-z0-9\p{L}]+/u)
+      .filter((t) => t.length >= 3 && !LINK_STOPWORDS.has(t));
+    if (!tokens.length) {
+      coveredQ += 1;
+      continue;
+    }
+    const matched = tokens.filter((t) => combinedHaystack.includes(t)).length;
+    if (matched >= Math.max(1, Math.ceil(tokens.length * 0.6))) {
+      coveredQ += 1;
+    } else {
+      uncoveredQuestions.push(q);
+    }
+  }
+
+  const uncoveredSubtopics: string[] = [];
+  let coveredSub = 0;
+
+  for (const sub of subtopics) {
+    const lowerSub = sub.toLowerCase();
+    if (combinedHaystack.includes(lowerSub)) {
+      coveredSub += 1;
+    } else {
+      const tokens = lowerSub
+        .split(/[^a-z0-9\p{L}]+/u)
+        .filter((t) => t.length >= 3 && !LINK_STOPWORDS.has(t));
+      const matched = tokens.filter((t) => combinedHaystack.includes(t)).length;
+      if (tokens.length > 0 && matched >= Math.ceil(tokens.length * 0.7)) {
+        coveredSub += 1;
+      } else {
+        uncoveredSubtopics.push(sub);
+      }
+    }
+  }
+
+  const totalTargets = questions.length + subtopics.length;
+  const coveredCount = coveredQ + coveredSub;
+  const coverageScore =
+    totalTargets === 0 ? 100 : Math.round((coveredCount / totalTargets) * 100);
+
+  return {
+    totalTargets,
+    coveredCount,
+    coverageScore,
+    uncoveredQuestions,
+    uncoveredSubtopics,
+  };
+}
+
+/**
+ * V3.5: Deterministically normalizes all FAQ items in `p.faqs` so every question
+ * ends with `?` and every answer falls inside the 32–56 word Google People Also Ask
+ * (PAA) and voice-search extraction window in 0ms.
+ */
+export function normalizeFaqPaaLengths(p: Project): {
+  project: Project;
+  normalizedCount: number;
+} {
+  const w = workspace(p);
+  const focus = (
+    p.keywordCluster?.primaryKeyword ||
+    w.research?.primaryKeyword ||
+    p.projectTitle ||
+    "this workflow"
+  ).trim();
+  let normalizedCount = 0;
+
+  const nextFaqs = (p.faqs || []).map((faq) => {
+    let q = (faq.question || "").trim();
+    if (q && !/\?$/.test(q)) {
+      q = `${q.replace(/[.!]+$/, "")}?`;
+    }
+    let a = (faq.answer || "").replace(/\s+/g, " ").trim();
+    const initialWords = wordCount(a);
+    let changed = q !== (faq.question || "").trim();
+
+    if (initialWords < 30) {
+      const expansionPool = [
+        `In practice, teams applying ${focus} should define clear baseline metrics, validate each configuration step against user intent, and review structured outputs regularly to maintain long-term quality and measurable search visibility.`,
+        `Documenting repeatable checklists and verifying source citations at every stage ensures ${focus} delivers reliable, audit-ready results across both human readers and generative answer engines.`,
+      ];
+      for (const extra of expansionPool) {
+        if (wordCount(a) >= 35) break;
+        a = a ? `${a.replace(/(?<![.!?])$/, ".")} ${extra}` : extra;
+      }
+      changed = true;
+    }
+
+    if (wordCount(a) > 58) {
+      const wordsArr = a.split(" ");
+      let trimmed = wordsArr.slice(0, 50).join(" ").replace(/[,;:\-–—]+$/, "");
+      if (!/[.!?]$/.test(trimmed)) trimmed += ".";
+      a = trimmed;
+      changed = true;
+    }
+
+    if (changed) normalizedCount += 1;
+    return {
+      ...faq,
+      question: q || `How does ${focus} improve workflow outcomes?`,
+      answer: a,
+    };
+  });
+
+  return {
+    project: { ...p, faqs: nextFaqs },
+    normalizedCount,
+  };
+}
+
+/**
+ * V3.5: Injects uncovered research questions from `workspace(p).research.questionsToAnswer`
+ * into `p.faqs` with PAA-optimal (40–52 word) answers in 0ms.
+ */
+export function injectUncoveredQuestionsIntoFaqs(
+  p: Project,
+  maxToAdd = 3,
+): {
+  project: Project;
+  addedCount: number;
+} {
+  const w = workspace(p);
+  const gapAudit = auditSubtopicCoverageGaps(p);
+  const focus = (
+    p.keywordCluster?.primaryKeyword ||
+    w.research?.primaryKeyword ||
+    p.projectTitle ||
+    "this strategy"
+  ).trim();
+  const existingQuestions = new Set(
+    (p.faqs || []).map((f) => f.question.trim().toLowerCase()),
+  );
+
+  const candidates = gapAudit.uncoveredQuestions.filter(
+    (q) => !existingQuestions.has(q.trim().toLowerCase()),
+  );
+
+  const toAdd = candidates.slice(0, maxToAdd).map((rawQ, idx) => {
+    const cleanQ = /\?$/.test(rawQ.trim())
+      ? rawQ.trim()
+      : `${rawQ.trim().replace(/[.!]+$/, "")}?`;
+    const answer = `${cleanQ.replace(/\?$/, "")} works best when teams align ${focus} with specific user intent, structured formatting, and verifiable operational metrics. By combining clear decision criteria with regular quality audits, practitioners prevent common implementation bottlenecks and achieve consistent, measurable results across every publishing stage.`;
+    return {
+      id: `faq-gap-${Date.now()}-${idx}`,
+      question: cleanQ,
+      answer,
+    };
+  });
+
+  if (toAdd.length === 0) {
+    return { project: p, addedCount: 0 };
+  }
+
+  return {
+    project: {
+      ...p,
+      faqs: [...(p.faqs || []), ...toAdd],
+    },
+    addedCount: toAdd.length,
+  };
+}

@@ -10,7 +10,11 @@ import {
   auditBurstinessRhythm,
   auditClaimVerification,
   auditContextualLinkOpportunities,
+  auditEntitySalienceAndQuestions,
   auditFaqPaaReadiness,
+  auditSubtopicCoverageGaps,
+  injectUncoveredQuestionsIntoFaqs,
+  normalizeFaqPaaLengths,
   auditSectionSnippetReadiness,
   autoWeaveContextualInternalLinks,
   articleModel,
@@ -761,4 +765,89 @@ test("V3.4 contextual internal link matcher, 1-click auto-weaver, and PAA FAQ au
   assert.equal(faqReport.totalFaqs, 1);
   assert.equal(faqReport.optimalCount, 1);
   assert.equal(faqReport.paaReadyScore, 100);
+});
+
+
+test("V3.5 entity salience, question-heading ratio, subtopic gap injector, and 1-click PAA FAQ normalizer work deterministically", () => {
+  let proj = blankProject();
+  const s1 = setSectionBody(
+    makeSection({ heading: "How Does Technical Schema Improve Entity Salience?", subheadings: [] }, 0),
+    "Technical schema improves entity salience by placing your primary topic in the grammatical subject position of the opening sentence and linking related concepts clearly across structured H2 sections.",
+  );
+  const s2 = setSectionBody(
+    makeSection({ heading: "Core Implementation Checklist", subheadings: [] }, 1),
+    "Teams validate structured data and internal linking across every published guide.",
+  );
+  proj = patchWorkspace(
+    {
+      ...proj,
+      projectTitle: "Technical Schema Guide: How to Build Entity Salience",
+      keywordCluster: {
+        ...proj.keywordCluster,
+        primaryKeyword: "technical schema",
+        secondaryKeywords: ["structured data", "voice search optimization"],
+      },
+      metaPack: {
+        ...proj.metaPack,
+        h1Title: "Technical Schema Guide: How to Build Entity Salience",
+        metaTitle: "Technical Schema Guide: Entity Salience",
+        aeoDirectAnswer50Words:
+          "Technical schema is the practice of structuring content, entities, and markup so generative search engines extract accurate citations.",
+      },
+      sections: [s1, s2],
+      faqs: [
+        {
+          id: "faq-short",
+          question: "Why does entity salience matter",
+          answer: "It helps search engines identify the main topic quickly.",
+        },
+      ],
+    },
+    {
+      research: {
+        analyzedIntent: "Informational guide on technical schema",
+        searchIntent: "informational",
+        primaryTopic: "technical schema",
+        primaryKeyword: "technical schema",
+        secondaryKeywords: ["structured data", "voice search optimization"],
+        lsiEntities: ["entity salience"],
+        questionsToAnswer: [
+          "How does technical schema improve entity salience?",
+          "What JSON-LD properties help voice search extraction?",
+        ],
+        competitorAngles: ["Include a decision matrix"],
+        eeatSignals: ["Cite primary documentation"],
+        internalLinks: [],
+        externalLinks: [],
+        quickAnswerTargetWords: 50,
+        fetchedAt: new Date().toISOString(),
+        warnings: [],
+      },
+    },
+  );
+
+  const salience = auditEntitySalienceAndQuestions(proj);
+  assert.equal(salience.inH1, true);
+  assert.equal(salience.inOpeningSentence, true);
+  assert.equal(salience.questionH2Count, 1);
+  assert.equal(salience.totalH2Count, 2);
+  assert.equal(salience.questionHeadingRatioPct, 50);
+  assert.equal(salience.questionRatioOptimal, true);
+  assert.ok(salience.salienceScore >= 85);
+
+  const gaps = auditSubtopicCoverageGaps(proj);
+  assert.equal(gaps.uncoveredQuestions.length, 1);
+  assert.match(gaps.uncoveredQuestions[0], /JSON-LD properties/i);
+  assert.equal(gaps.uncoveredSubtopics.length, 1);
+  assert.equal(gaps.uncoveredSubtopics[0], "voice search optimization");
+
+  const injected = injectUncoveredQuestionsIntoFaqs(proj, 2);
+  assert.equal(injected.addedCount, 1);
+  assert.equal(injected.project.faqs.length, 2);
+
+  const normalized = normalizeFaqPaaLengths(injected.project);
+  assert.ok(normalized.normalizedCount >= 1);
+  const afterAudit = auditFaqPaaReadiness(normalized.project);
+  assert.equal(afterAudit.optimalCount, 2);
+  assert.equal(afterAudit.paaReadyScore, 100);
 });

@@ -709,7 +709,7 @@ export function createResearchHandler(deps: ResearchDeps = {}) {
             {
               role: "system",
               content:
-                "You are an SEO & editorial research strategist. Deeply analyze the user's human-language brief, custom headings, visual/conclusion requests, and verified web snippets to build an actionable keyword/intent/E-E-A-T research packet. Ensure primaryKeyword is a clean 2-6 word search query (never a full conversational sentence or URL). Never fabricate external URLs or statistics. Return only requested JSON.",
+                "You are an SEO, AEO & Information Gain editorial research strategist. Deeply analyze the user's brief, custom headings, visual/conclusion requests, and verified web snippets to build an actionable keyword/intent/E-E-A-T research packet. Ensure primaryKeyword is a clean 2-6 word search query (never a full sentence or URL), phrase questionsToAnswer as natural People Also Ask (PAA) questions ending with '?', and ensure competitorAngles surface concrete Information Gain subtopic gaps (decision matrices, cost/latency trade-offs, and implementation edge cases). Never fabricate external URLs or statistics. Return only requested JSON.",
             },
             {
               role: "user",

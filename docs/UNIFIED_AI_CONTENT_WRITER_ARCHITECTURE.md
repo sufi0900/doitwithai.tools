@@ -60,6 +60,10 @@ Following the initial V3 multi-agent integration (`3f9cf9f8`), our deep code and
    - Measures sentence-length standard deviation ($\sigma$ in words), 3-band sentence distribution (`Short <=11w`, `Medium 12–20w`, `Long >=21w`), monotone runs, and AI cliché phrases, while automatically stripping robotic AI throat-clearing (`"In today's fast-paced digital landscape"`, `"It is important to note that"`, `"Delving into"`) during both section generation and 1-click readability polishing.
 3. **Instant Zero-Token Markdown Block Generators (`LeftStudioPanel.tsx`)**:
    - Added a 4-button studio block generator grid (`+ Comparison Table`, `+ Action Checklist`, `+ Key Takeaway Box`, `+ 4-Step Framework`) in the `AI Helper` tab so editors can inject snippet-ready structured Markdown blocks at the cursor in 0ms without consuming API tokens.
+4. **Next Hourly Expansion Queue (Run #3+)**:
+   - **Internal Link Anchor Context Previewer & Auto-Linker**: Scan existing paragraphs for unlinked mentions of internal tool topics and offer 1-click in-place anchor wrapping.
+   - **FAQ-to-PAA Coverage & Answer Length Validator**: Score each FAQ answer in `p.faqs` against the 35–55 word People Also Ask (PAA) voice-search & AI Overview sweet spot.
+   - **Content Refresh & Decay Diff Workflow**: Allow pasting an existing published URL or Markdown draft to benchmark before/after Readiness, Claim Grounding, and AEO Snippet scores.
 
 ## 5. V3.4 Hourly Autonomous Research & Feature Expansion Log (Run #3 — Nov 13, 2026)
 
@@ -69,3 +73,24 @@ Following the initial V3 multi-agent integration (`3f9cf9f8`), our deep code and
 2. **People Also Ask (PAA) & Voice-Search FAQ Readiness Auditor (`model.ts`, `generation.server.ts`, `LeftStudioPanel.tsx`, `WriterWorkspace.tsx`)**:
    - Grounded in [Snoika: How to Rank in Google's PAA Box (Nov 2026)](https://snoika.com/blog/people-also-ask-how-to-rank-in-googles-paa-box), [AmICited: People Also Ask (PAA) Optimization](https://www.amicited.com/glossary/people-also-ask-paa/), [EasyAccordion: The 40-60 Word Rule for FAQ Answers](https://easyaccordion.io/the-40-60-word-rule/), and [Surfer: Google AI Overviews Study Across 405,576 Searches](https://surfer.ai/blog/ai-overviews-study/), engineered `auditFaqPaaReadiness(p)` in `features/writer-workspace/model.ts`.
    - Scores every FAQ item against the **30–60 word PAA & voice-search extraction window** and question-heading structure, adds a live **FAQ & People Also Ask (PAA) Readiness** progress card in `LeftStudioPanel.tsx`, and displays per-FAQ word-count status badges (`PAA Optimal (35–55w)`) directly inside the `FAQPage Rich Schema` editor in `WriterWorkspace.tsx`.
+
+
+---
+
+## 13. V3.5 Hourly Optimization Cycle (Run #4): Entity Salience, Question-Heading AEO Ratio, Subtopic Gap Matrix & 1-Click PAA Normalizer
+
+### 13.1 Research Benchmarks Applied
+1. **Google NLP Entity Salience & First-Sentence Subject-Predicate-Object (SPO) Positioning**:
+   - Entity salience (`0.00–1.00`) measures how central the primary topic entity is to the document, weighted heavily by grammatical role (subject position in the H1, first sentence, and first 60 words) and consistent co-occurrence of secondary LSI entities across H2 sections rather than raw keyword repetition ([Szymon Slowik: Entity Salience in SEO](https://www.szymonslowik.com/entity-salience-in-seo/), [HighSalience: Entity Salience Scoring](https://highsalience.com/blog/entity-salience/), [Google Research: Entity Salience Task](https://research.google/pubs/a-new-entity-salience-task-with-millions-of-training-examples/)).
+2. **Question-Framed H2/H3 Heading Ratio for AEO Citations**:
+   - Question-framed headings earn an **18.0% citation rate vs. 8.9% for statement headings** in AI answers (a **2.02× citation lift**) when paired with a direct 40–60 word opening answer ([Salespeak: Question-Based AEO Study](https://salespeak.ai/aeo-news/from-keywords-to-questions-aeo/), [Instant Press: Best AEO Techniques 2026](https://www.instantpress.co/blog/best-answer-engine-optimization-techniques), [Fahrenheit Marketing: 4-Pillar AEO Guide](https://fahrenheitmarketing.com/services/seo/how-to-optimize-content-for-ai-answer-engines-2026)).
+3. **Information Gain & Subtopic Gap Coverage**:
+   - Pages ranking #1 score **3.2× higher on Information Gain** than position #10 and maintain rankings **2.1× longer** after core updates ([The Stacc: SEO Ranking Factors 2026](https://thestacc.com/blog/seo-ranking-factors-study/), [Similarweb: Information Gain for AI Search](https://aisearch.similarweb.com/blog/information-gain/), [Yotpo: Content Gap Analysis 2026](https://www.yotpo.com/blog/modern-content-gap-analysis/)).
+
+### 13.2 Engineered V3.5 Capabilities
+- **Entity Salience & Question-Heading Auditor (`auditEntitySalienceAndQuestions` in `model.ts`)**:
+  - Audits primary entity presence in `H1`, `Opening Sentence`, `First 60 Words`, and `H2 Section Entity Distribution`, computing a `0–100` Entity Salience score alongside the live `H2 Question-Heading Ratio` (`25%–75%` optimal window).
+- **Subtopic & Question Gap Auditor + 1-Click FAQ Gap Injector (`auditSubtopicCoverageGaps` & `injectUncoveredQuestionsIntoFaqs` in `model.ts`)**:
+  - Cross-checks discovered `research.questionsToAnswer` and `research.secondaryKeywords` against the drafted article and FAQs, surfacing uncovered subtopics/questions and providing a 1-click **Add Uncovered Questions to FAQ** action.
+- **1-Click PAA FAQ Answer Length Normalizer (`normalizeFaqPaaLengths` in `model.ts`)**:
+  - Deterministically expands short FAQ answers (`<30` words) and trims overly long answers (`>58` words) into the **32–56 word Google People Also Ask (PAA) & Voice Search extraction window** while ensuring every FAQ heading ends with `?`.
