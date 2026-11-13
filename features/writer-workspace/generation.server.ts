@@ -294,6 +294,35 @@ function normalizeAndValidateSectionMarkdown(
     ].join("\n\n");
   }
 
+  // V3.11: Ground unlinked statistical/research claims in verified external references when available
+  if (enrichStructure && verifiedLinks.length > 0) {
+    const externalPick = verifiedLinks.find(
+      (l) => l.kind === "external" && !body.includes(l.url),
+    );
+    const statCue =
+      /\b(?:\d+(?:\.\d+)?%|\d+x\b|studies\s+show|research\s+indicates|according\s+to|survey\s+(?:of|found)|report\s+by|benchmark\s+shows)(?![\w%])/i;
+    if (externalPick && statCue.test(body)) {
+      const lines = body.split(/\r?\n/);
+      let attributed = false;
+      body = lines
+        .map((line) => {
+          if (
+            attributed ||
+            !statCue.test(line) ||
+            /\[[^\]]+\]\(https?:\/\/[^)]+\)/.test(line) ||
+            /^(?:#{1,6}\s|\||```)/.test(line.trim())
+          ) {
+            return line;
+          }
+          attributed = true;
+          const cleanLine = line.trim().replace(/[.!?]+$/, "");
+          const punct = (line.trim().match(/([.!?]+)$/) || ["."])[0];
+          return `${cleanLine} ([${externalPick.title}](${externalPick.url}))${punct}`;
+        })
+        .join("\n");
+    }
+  }
+
   if (verifiedLinks.length > 0 && !/\[[^\]]+\]\(https?:\/\/[^)]+\)/.test(body)) {
     const internalPick = verifiedLinks.find((l) => l.kind === "internal");
     const externalPick = verifiedLinks.find((l) => l.kind === "external");
@@ -406,18 +435,18 @@ export function createGenerationHandler(deps: Deps = {}) {
           : "";
       const verifiedLinkHint =
         data.verifiedLinks?.length && data.operation === "section"
-          ? `\nVerified links available — weave at least 1 internal link and 1 external authority link naturally into this section using Markdown [anchor text](url) (never invent other URLs):\n${data.verifiedLinks
+          ? `\nVerified links available — weave at least 1 internal link and 1 external authority link naturally into this section using Markdown [anchor text](url), and attribute any empirical claims to these verified sources (never invent other URLs):\n${data.verifiedLinks
               .slice(0, 6)
               .map((l) => `- [${l.kind}] ${l.title}: ${l.url}`)
               .join("\n")}`
           : "";
       const task =
         data.operation === "plan"
-          ? "Propose a clear article outline and SEO metadata. Follow the user's brief carefully, retaining supplied H2/H3 wording and respecting any custom section, visual, or conclusion requests. When generating new H2 headings, phrase 35% to 50% of H2 headings as natural user questions (What, How, Why, Which) for AEO citation readiness. Write a natural ~50-word direct-answer introduction in introduction (using short 12-18 word sentences) that places the primary topic/keyword in the grammatical subject position of the opening sentence for high entity salience. Suggest 4 diverse SEO meta titles (50-60 chars) and 3 meta descriptions (140-160 chars), putting your strongest option in metaTitle/metaDescription. Do not draft full body sections yet."
+          ? "Propose a clear article outline and SEO metadata. Follow the user's brief carefully, retaining supplied H2/H3 wording and respecting any custom section, visual, or conclusion requests. When generating new H2 headings, phrase 40% to 60% of H2 headings as natural user questions (What, How, Why, Which) for AEO citation readiness. Write a standalone 42 to 58 word direct-answer introduction in introduction (using short 12-18 word sentences) that places the primary topic/keyword in the grammatical subject position of the opening sentence for high entity salience. Suggest 4 diverse SEO meta titles (48-58 chars, <=580px) and 3 meta descriptions (135-156 chars, <=920px), putting your strongest option in metaTitle/metaDescription. Do not draft full body sections yet."
           : data.operation === "section"
-            ? `Write only the specified section body in Markdown for H2 "${data.section?.heading || ""}". Do not repeat its H2 heading or include an H1. Open immediately with a 40 to 60 word direct-answer paragraph before the first ### subheading so search engines can extract a clean featured snippet. Vary sentence length naturally (mix punchy 8-11 word sentences with clear 14-20 word explanations for human burstiness) and never use AI clichés ("delve", "in today's digital landscape", "it is important to note"). Use bulleted or numbered lists with **bold lead-ins**, a Markdown comparison table or > **Key Takeaway:** blockquote callout where helpful, and put a blank line before and after every ### subheading.${expectedSubheadingsList}${verifiedLinkHint}`
+            ? `Write only the specified section body in Markdown for H2 "${data.section?.heading || ""}". Do not repeat its H2 heading or include an H1. Open immediately with a 40 to 58 word standalone direct-answer paragraph before the first ### subheading so search and answer engines can extract a complete passage. Vary sentence length naturally (mix punchy 8-11 word sentences with clear 14-20 word explanations for human burstiness) and never use AI clichés ("delve", "in today's digital landscape", "it is important to note"). Attribute any statistics or research references directly to provided sources/verifiedLinks via inline Markdown [Source](url) links. Use bulleted or numbered lists with **bold lead-ins**, a Markdown comparison table or > **Key Takeaway:** blockquote callout where helpful, and put a blank line before and after every ### subheading.${expectedSubheadingsList}${verifiedLinkHint}`
             : data.operation === "enrichment"
-              ? "Generate the editorial enrichment pack for the drafted article: (1) a ~50-word AEO direct-answer summary box with short crisp sentences, (2) a horizontal 16:9 Featured Banner headline/subheadline/badge plus a concise descriptive <=125-char WCAG altText, (3) 4 realistic People Also Ask (PAA) FAQ Q&A pairs where each question ends with '?' and each answer is 40 to 55 words (2-3 crisp sentences opening with the direct answer), (4) descriptive altText for each section infographic heading, and (5) genuine social hooks, takeaway, discussion prompt, thumbnail headline, short video script, and YouTube outline strictly grounded in the article."
+              ? "Generate the editorial enrichment pack for the drafted article: (1) a 42 to 56 word AEO direct-answer summary box with short crisp sentences opening with the primary topic in subject position, (2) a horizontal 16:9 Featured Banner headline/subheadline/badge plus a concise descriptive <=120-char WCAG altText (never starting with 'image of' or 'picture of'), (3) 4 realistic People Also Ask (PAA) FAQ Q&A pairs where each question ends with '?' and each answer is 38 to 54 words (2-3 crisp sentences opening with the direct answer), (4) descriptive altText for each section infographic heading, and (5) genuine social hooks, takeaway, discussion prompt, thumbnail headline, short video script, and YouTube outline strictly grounded in the article."
               : "Rewrite or restructure the selected text/article segment according to the user's instruction. Always place a blank newline before and after any ## or ### Markdown heading, keep sentences short and crisp (12-18 words), use bullet lists and bold lead-ins where helpful, preserve verified Markdown links [anchor](url), and never insert fabricated statistics. Return the updated Markdown/text.";
       const { requestId, ...context } = data;
       const result = await (deps.generate || getGeminiClient)().generate(
@@ -460,6 +489,17 @@ export function createGenerationHandler(deps: Deps = {}) {
         const rawText = (output as z.infer<typeof rewriteSchema>).text;
         (output as z.infer<typeof rewriteSchema>).text =
           stripAiClichesAndPolishRhythm(rawText);
+      } else if (data.operation === "enrichment" && !deps.generate) {
+        const enrichOut = output as z.infer<typeof enrichmentSchema>;
+        enrichOut.quickAnswer50Words = stripAiClichesAndPolishRhythm(
+          enrichOut.quickAnswer50Words,
+        );
+        enrichOut.faqs = enrichOut.faqs.map((faq) => ({
+          question: /\?$/.test(faq.question.trim())
+            ? faq.question.trim()
+            : `${faq.question.trim().replace(/[.!]+$/, "")}?`,
+          answer: stripAiClichesAndPolishRhythm(faq.answer),
+        }));
       }
       return NextResponse.json(
         {
