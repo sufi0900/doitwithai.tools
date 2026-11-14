@@ -17,6 +17,8 @@ import {
   type SiteDocument,
 } from "./site-document";
 import { applyTemplatePresentation } from "./template-contracts";
+import { getTemplateDefaultDocument, isUsingDefaultTemplateIdentity } from "./template-defaults";
+import { legacyRichDocument } from "./legacy-rich-document";
 import { reviewOpportunity } from "./opportunity-review";
 import { previewSiteWideReplace } from "./site-wide-replace";
 import {
@@ -35,6 +37,21 @@ export const siteCommandSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("design.setBackground"), value: z.enum(backgroundOptions) }),
   z.object({ type: z.literal("design.setHeroAlignment"), value: z.enum(alignmentOptions) }),
   z.object({ type: z.literal("design.setTemplate"), value: z.enum(templateOptions) }),
+  z.object({ type: z.literal("design.applyTemplateDefaults"), value: z.enum(templateOptions) }),
+  z.object({
+    type: z.literal("project.installCatalogTool"),
+    slug: z.string().trim().min(1).max(80),
+    title: z.string().trim().min(1).max(100),
+    summary: z.string().trim().max(500),
+    technologies: z.array(z.string().trim().min(1).max(32)).max(8).default([]),
+    link: z.union([z.literal(""), z.string().url()]).default(""),
+    role: z.string().trim().max(100).default("Interactive AI Web Utility"),
+    period: z.string().trim().max(80).default("Live on DoItWithAI · Free Utility"),
+    challenge: z.string().trim().max(1200).default(""),
+    approach: z.string().trim().max(1800).default(""),
+    outcome: z.string().trim().max(1200).default(""),
+    includeCompanionPost: z.boolean().default(true),
+  }),
   z.object({ type: z.literal("scene.setFamily"), value: z.enum(sceneFamilyOptions) }),
   z.object({ type: z.literal("scene.setPreset"), value: z.enum(scenePresetOptions) }),
   z.object({ type: z.literal("scene.setMotion"), value: z.enum(motionOptions) }),
@@ -146,10 +163,122 @@ export function applySiteCommand(current: SiteDocument, candidate: unknown): Sit
     case "design.setHeroAlignment":
       next = { ...current, design: { ...current.design, heroAlignment: command.value }, ...nextRevision(current) };
       break;
-    case "design.setTemplate":
+    case "design.setTemplate": {
       if (current.design.template === command.value) return current;
-      next = { ...applyTemplatePresentation(current, command.value), ...nextRevision(current) };
+      if (isUsingDefaultTemplateIdentity(current)) {
+        const seeded = getTemplateDefaultDocument(command.value);
+        next = {
+          ...seeded,
+          projectId: current.projectId,
+          ...nextRevision(current),
+        };
+      } else {
+        next = { ...applyTemplatePresentation(current, command.value), ...nextRevision(current) };
+      }
       break;
+    }
+    case "design.applyTemplateDefaults": {
+      const seeded = getTemplateDefaultDocument(command.value);
+      next = {
+        ...seeded,
+        projectId: current.projectId,
+        ...nextRevision(current),
+      };
+      break;
+    }
+    case "project.installCatalogTool": {
+      if (current.content.projects.length >= 8) {
+        throw new Error("A website can showcase up to 8 tools/projects on the homepage. Remove one first before adding another.");
+      }
+      const slug = uniqueProjectSlug(current, command.slug || command.title);
+      const newProject = {
+        id: crypto.randomUUID(),
+        title: command.title.slice(0, 100),
+        summary: command.summary.slice(0, 500),
+        technologies: command.technologies.map((t) => t.slice(0, 32)).slice(0, 8),
+        link: command.link,
+        caseStudySlug: slug,
+        role: command.role.slice(0, 100),
+        period: command.period.slice(0, 80),
+        challenge: command.challenge.slice(0, 1200),
+        approach: command.approach.slice(0, 1800),
+        outcome: command.outcome.slice(0, 1200),
+        mediaIds: [] as string[],
+      };
+      let nextPosts = current.publishing.posts;
+      if (command.includeCompanionPost && current.publishing.posts.length < 24) {
+        const postTitle = `How to Use ${command.title}: Complete 2026 Workflow & SEO Guide`.slice(0, 120);
+        const postSlug = uniquePublishingSlug(current, "post", `${slug}-guide`);
+        const blocks = [
+          {
+            id: crypto.randomUUID(),
+            type: "heading" as const,
+            text: `What ${command.title} Solves for Practitioners`,
+            headingLevel: "h2" as const,
+            items: [] as string[],
+            mediaId: "",
+          },
+          {
+            id: crypto.randomUUID(),
+            type: "paragraph" as const,
+            text: `${command.summary} ${command.challenge}`.trim().slice(0, 2800),
+            headingLevel: "h2" as const,
+            items: [] as string[],
+            mediaId: "",
+          },
+          {
+            id: crypto.randomUUID(),
+            type: "heading" as const,
+            text: "Step-by-Step Workflow & Key Capabilities",
+            headingLevel: "h2" as const,
+            items: [] as string[],
+            mediaId: "",
+          },
+          {
+            id: crypto.randomUUID(),
+            type: "list" as const,
+            text: "",
+            headingLevel: "h2" as const,
+            items: [
+              command.approach || `Open ${command.title} in your browser with zero setup.`,
+              command.outcome || "Export structured, copy-ready outputs in one click.",
+              command.link ? `Launch directly at ${command.link}` : "Integrated into our AI tool directory.",
+            ].map((item) => item.slice(0, 290)),
+            mediaId: "",
+          },
+        ];
+        const newPost = {
+          id: crypto.randomUUID(),
+          sourceArticleProjectId: `catalog-tool-${slug}`.slice(0, 120),
+          pillarClusterSlug: slug.slice(0, 80),
+          title: postTitle,
+          slug: postSlug,
+          seoTitle: `${command.title} Guide & Walkthrough (2026)`.slice(0, 70),
+          seoDescription: command.summary.slice(0, 170),
+          coverMediaId: "",
+          status: "published" as const,
+          publishedAt: new Date().toISOString(),
+          excerpt: command.summary.slice(0, 320),
+          tags: command.technologies.slice(0, 6),
+          blocks,
+          richContent: legacyRichDocument({ blocks }, current),
+        };
+        nextPosts = [newPost, ...current.publishing.posts];
+      }
+      next = {
+        ...current,
+        content: {
+          ...current.content,
+          projects: [...current.content.projects, newProject],
+        },
+        publishing: {
+          ...current.publishing,
+          posts: nextPosts,
+        },
+        ...nextRevision(current),
+      };
+      break;
+    }
     case "scene.setFamily":
       if (current.scene.family === command.value) return current;
       next = { ...current, scene: { ...current.scene, family: command.value }, ...nextRevision(current) };
@@ -487,7 +616,9 @@ export function describeCommand(command: SiteCommand, document: SiteDocument) {
     case "design.setAccent": return `Changed the accent to ${command.value}.`;
     case "design.setBackground": return `Changed the background to ${command.value}.`;
     case "design.setHeroAlignment": return `Aligned the hero ${command.value}.`;
-    case "design.setTemplate": return `Applied the ${command.value} template without changing portfolio content.`;
+    case "design.setTemplate": return `Switched to the ${command.value} template.`;
+    case "design.applyTemplateDefaults": return `Loaded default tools, pages, and 5 SEO blog posts for ${command.value}.`;
+    case "project.installCatalogTool": return `Installed "${command.title}" from the DoItWithAI Tool Catalog (0 AI tokens).`;
     case "scene.setFamily": return `Changed the 3D scene family to ${command.value}.`;
     case "scene.setPreset": return `Applied the ${command.value} 3D preset.`;
     case "scene.setMotion": return `Set scene motion to ${command.value}.`;
@@ -580,7 +711,8 @@ function uniquePublishingSlug(document: SiteDocument, kind: PublishingKind, valu
   return candidate;
 }
 
-function updatePublishable(document: SiteDocument, kind: PublishingKind, id: string, update: (item: Publishable) => Publishable): SiteDocument["publishing"] {
-  if (kind === "page") return { ...document.publishing, pages: document.publishing.pages.map((item) => item.id === id ? update(item) as CustomPage : item) };
-  return { ...document.publishing, posts: document.publishing.posts.map((item) => item.id === id ? update(item) as BlogPost : item) };
+function updatePublishable(document: SiteDocument, kind: PublishingKind, id: string, update: (entry: Publishable) => Publishable): SiteDocument["publishing"] {
+  return kind === "page"
+    ? { ...document.publishing, pages: document.publishing.pages.map((item) => item.id === id ? update(item) as CustomPage : item) }
+    : { ...document.publishing, posts: document.publishing.posts.map((item) => item.id === id ? update(item) as BlogPost : item) };
 }

@@ -26,26 +26,46 @@ export type TemplateContract = {
   };
 };
 
-export const TEMPLATE_CONTRACTS: readonly TemplateContract[] = UNIFIED_WEBSITE_TEMPLATES.map((t) => ({
-  id: t.id,
-  name: t.name,
-  category: t.category,
-  categoryLabel: t.categoryLabel,
-  isDefault: t.isDefault,
-  mode: t.mode,
-  description: t.description,
-  audience: t.audience,
-  seoUseCase: t.seoUseCase,
-  presentation: {
-    accent: t.presentation.accent,
-    background: t.presentation.background,
-    heroAlignment: t.presentation.heroAlignment,
-    sceneFamily: t.presentation.sceneFamily,
-    scenePreset: t.presentation.scenePreset,
-    motion: t.presentation.motion,
-    intensity: t.presentation.intensity,
+const TEMPLATE_DISPLAY_OVERRIDES: Partial<
+  Record<TemplateId, { name: string; description: string; audience: string }>
+> = {
+  "doitwithai-flagship": {
+    name: "DoItWithAI Multi-Tool Directory & Publication",
+    description:
+      "Modeled on doitwithai.tools: pre-loaded with 5 AI SEO tools, 5 matching pillar blog posts, prompt vault, and 1-click access to 126+ catalog tools.",
+    audience: "Multi-tool AI platforms, SEO directories, and editorial publications",
   },
-}));
+  "micro-saas-launchpad": {
+    name: "Single-Tool AI Website & Micro-SaaS Launchpad",
+    description:
+      "Built for promoting one standalone AI tool (pre-loaded with AI Meta Title & Description Generator, live SERP pixel preview, 3 pages, and 5 SEO blog posts).",
+    audience: "Single-tool creators, micro-SaaS founders, and focused utility sites",
+  },
+};
+
+export const TEMPLATE_CONTRACTS: readonly TemplateContract[] = UNIFIED_WEBSITE_TEMPLATES.map((t) => {
+  const override = TEMPLATE_DISPLAY_OVERRIDES[t.id];
+  return {
+    id: t.id,
+    name: override?.name ?? t.name,
+    category: t.category,
+    categoryLabel: t.categoryLabel,
+    isDefault: t.isDefault,
+    mode: t.mode,
+    description: override?.description ?? t.description,
+    audience: override?.audience ?? t.audience,
+    seoUseCase: t.seoUseCase,
+    presentation: {
+      accent: t.presentation.accent,
+      background: t.presentation.background,
+      heroAlignment: t.presentation.heroAlignment,
+      sceneFamily: t.presentation.sceneFamily,
+      scenePreset: t.presentation.scenePreset,
+      motion: t.presentation.motion,
+      intensity: t.presentation.intensity,
+    },
+  };
+});
 
 export function getTemplateContract(id: TemplateId): TemplateContract {
   return TEMPLATE_CONTRACTS.find((template) => template.id === id) ?? TEMPLATE_CONTRACTS[0];
