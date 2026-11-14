@@ -100,3 +100,87 @@
   box-sizing: border-box;
   width: 100%;
 }
+
+/* Fix Studio Left Panel horizontal clipping & responsive containment */
+.website-builder-scope .workspace > .editor-panel,
+.website-builder-scope .editor-panel .expanded-editor-surface,
+.website-builder-scope .editor-panel .control-stack,
+.website-builder-scope .editor-panel .field,
+.website-builder-scope .editor-panel .collection-editor,
+.website-builder-scope .editor-panel .collection-editor > article {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.website-builder-scope .workspace > .editor-panel {
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+}
+
+.website-builder-scope .editor-panel input:not([type="checkbox"]):not([type="radio"]):not([type="color"]),
+.website-builder-scope .editor-panel textarea,
+.website-builder-scope .editor-panel select {
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.website-builder-scope .editor-panel select {
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.website-builder-scope .tool-studio-list {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.website-builder-scope .tool-studio-row {
+  display: grid;
+  gap: 7px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(15, 23, 42, 0.65);
+  min-width: 0;
+  transition: border-color 0.16s ease, background-color 0.16s ease;
+}
+
+.website-builder-scope .tool-studio-row.selected {
+  border-color: var(--accent);
+  background: rgba(var(--accent-rgb), 0.1);
+}
+
+.website-builder-scope .tool-studio-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+  padding: 4px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--line);
+}
+
+.website-builder-scope .tool-studio-tabs button {
+  min-width: 0;
+  padding: 7px 6px;
+  border-radius: 7px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.website-builder-scope .tool-studio-tabs button.active {
+  background: rgba(var(--accent-rgb), 0.18);
+  color: var(--accent);
+}

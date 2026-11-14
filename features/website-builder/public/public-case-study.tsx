@@ -5,7 +5,7 @@ import { isCollectionTemplate, isLightTemplate } from "@/features/website-builde
 import { ArrowLeft, Wrench } from "lucide-react";
 import Image from "next/image";
 import type { SiteDocument } from "@/features/website-builder/domain/site-document";
-import { InteractiveWebsiteToolRunner } from "@/features/website-builder/tools/InteractiveWebsiteToolRunner";
+import { InteractiveWebsiteToolRunner, resolveCatalogToolSlug } from "@/features/website-builder/tools/InteractiveWebsiteToolRunner";
 
 export function PublicCaseStudy({
   document,
@@ -24,7 +24,9 @@ export function PublicCaseStudy({
     .filter((asset): asset is SiteDocument["media"]["assets"][number] => Boolean(asset));
 
   const template = document.design.template;
+  const isTransferredCatalogTool = Boolean(resolveCatalogToolSlug(project));
   const isToolPage =
+    isTransferredCatalogTool ||
     template === "doitwithai-flagship" ||
     template === "micro-saas-launchpad" ||
     project.role.toLowerCase().includes("tool") ||
@@ -62,47 +64,54 @@ export function PublicCaseStudy({
         </nav>
       </header>
 
-      <article className="case-study-shell" style={{ maxWidth: "1180px", margin: "0 auto", display: "grid", gap: "28px" }}>
-        <header className="case-study-hero">
-          <p className="section-eyebrow" style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
-            {isToolPage ? (
-              <>
-                <Wrench size={14} /> LIVE IN-SITE AI TOOL · {project.role || "FREE BROWSER UTILITY"}
-              </>
-            ) : (
-              "PROJECT CASE STUDY"
-            )}
-          </p>
-          <h1>{project.title}</h1>
-          <p>{project.summary}</p>
-          <dl>
-            {project.role && (
-              <div>
-                <dt>{isToolPage ? "Category" : "Role"}</dt>
-                <dd>{project.role}</dd>
-              </div>
-            )}
-            {project.period && (
-              <div>
-                <dt>{isToolPage ? "Status" : "Period"}</dt>
-                <dd>{project.period}</dd>
-              </div>
-            )}
-            {project.technologies.length > 0 && (
-              <div>
-                <dt>Capabilities</dt>
-                <dd>{project.technologies.join(" · ")}</dd>
-              </div>
-            )}
-          </dl>
-        </header>
+      <article
+        className="case-study-shell"
+        style={{ maxWidth: isTransferredCatalogTool ? "1260px" : "1180px", margin: "0 auto", display: "grid", gap: "28px" }}
+      >
+        {!isTransferredCatalogTool && (
+          <header className="case-study-hero">
+            <p className="section-eyebrow" style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+              {isToolPage ? (
+                <>
+                  <Wrench size={14} /> LIVE IN-SITE AI TOOL · {project.role || "FREE BROWSER UTILITY"}
+                </>
+              ) : (
+                "PROJECT CASE STUDY"
+              )}
+            </p>
+            <h1>{project.title}</h1>
+            <p>{project.summary}</p>
+            <dl>
+              {project.role && (
+                <div>
+                  <dt>{isToolPage ? "Category" : "Role"}</dt>
+                  <dd>{project.role}</dd>
+                </div>
+              )}
+              {project.period && (
+                <div>
+                  <dt>{isToolPage ? "Status" : "Period"}</dt>
+                  <dd>{project.period}</dd>
+                </div>
+              )}
+              {project.technologies.length > 0 && (
+                <div>
+                  <dt>Capabilities</dt>
+                  <dd>{project.technologies.join(" · ")}</dd>
+                </div>
+              )}
+            </dl>
+          </header>
+        )}
 
         {isToolPage && (
-          <section aria-label={`Interactive ${project.title} workspace`}>
+          <section aria-label={`Interactive ${project.title} landing page`}>
             <InteractiveWebsiteToolRunner
               tool={project}
               siteName={document.identity.name}
               siteSlug={portfolioSlug}
+              siteAccent={document.design.accent}
+              siteBackground={document.design.background}
               allTools={document.content.projects.length > 1 ? document.content.projects : undefined}
             />
           </section>

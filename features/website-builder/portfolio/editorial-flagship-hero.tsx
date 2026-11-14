@@ -1396,6 +1396,8 @@ export function EditorialFlagshipHero({
             siteName={document.identity.name}
             siteSlug={inferredSiteSlug}
             accentColor="#22d3ee"
+            siteAccent={document.design.accent}
+            siteBackground={document.design.background}
           />
         </div>
       </section>

@@ -330,6 +330,8 @@ export function PublicProjectsIndex({
               tool={activeTool}
               siteName={document.identity.name}
               siteSlug={portfolioSlug}
+              siteAccent={document.design.accent}
+              siteBackground={document.design.background}
               allTools={projects}
               onSelectTool={(next) => setActiveToolId(next.id)}
             />

@@ -65,7 +65,12 @@ export function CatalogToolInstaller({
     [filteredTools, selectedSlug],
   );
 
-  const isLimitReached = document.content.projects.length >= 8;
+  const isSingleToolMode =
+    document.design.template === "micro-saas-launchpad" &&
+    document.content.projects.length > 0;
+  const replaceFlagshipId = isSingleToolMode ? document.content.projects[0]?.id : undefined;
+
+  const isLimitReached = !replaceFlagshipId && document.content.projects.length >= 8;
   const isAlreadyInstalled = activeTool
     ? installedSlugs.has(activeTool.slug)
     : false;
@@ -109,6 +114,7 @@ export function CatalogToolInstaller({
           1200,
         ),
       includeCompanionPost,
+      ...(replaceFlagshipId ? { replaceItemId: replaceFlagshipId } : {}),
     });
 
     setJustInstalledTitle(activeTool.name);
@@ -121,12 +127,16 @@ export function CatalogToolInstaller({
       style={{
         border: "1px solid rgba(56, 189, 248, 0.38)",
         borderRadius: "14px",
-        padding: "14px",
+        padding: "12px",
         background:
           "linear-gradient(145deg, rgba(8, 19, 38, 0.94), rgba(15, 23, 42, 0.92))",
         display: "grid",
         gap: "10px",
         marginBottom: "14px",
+        minWidth: 0,
+        maxWidth: "100%",
+        boxSizing: "border-box",
+        overflow: "hidden",
       }}
     >
       <header
@@ -134,10 +144,12 @@ export function CatalogToolInstaller({
           display: "flex",
           justifyContent: "space-between",
           alignItems: "flex-start",
-          gap: "8px",
+          flexWrap: "wrap",
+          gap: "6px",
+          minWidth: 0,
         }}
       >
-        <div>
+        <div style={{ minWidth: 0, flex: "1 1 180px" }}>
           <span
             style={{
               display: "inline-flex",
@@ -145,22 +157,24 @@ export function CatalogToolInstaller({
               gap: "5px",
               fontSize: "10px",
               fontWeight: 800,
-              letterSpacing: "0.12em",
+              letterSpacing: "0.08em",
               textTransform: "uppercase",
               color: "#38bdf8",
             }}
           >
-            <Wrench size={12} /> ZERO-TOKEN CATALOG PIPELINE ({CATALOG_TOOLS.length} TOOLS)
+            <Wrench size={12} /> {CATALOG_TOOLS.length} MAIN-SITE LANDING PAGES
           </span>
           <strong
             style={{
               display: "block",
               marginTop: "3px",
-              fontSize: "13.5px",
+              fontSize: "13px",
               color: "#f8fafc",
             }}
           >
-            + Add Tool from DoItWithAI Catalog
+            {isSingleToolMode
+              ? "⚡ Swap Flagship Tool (Any of 126+ Tools)"
+              : "+ Add Tool from DoItWithAI Catalog"}
           </strong>
         </div>
         <span
@@ -179,12 +193,14 @@ export function CatalogToolInstaller({
         </span>
       </header>
 
-      <p style={{ margin: 0, fontSize: "11.5px", lineHeight: 1.5, color: "#94a3b8" }}>
-        Select any of our {CATALOG_TOOLS.length} built tools to install an interactive, in-site AI tool page (<code>/p/[slug]/projects/&lt;tool-slug&gt;</code>) and companion SEO guide into your website in 1 click.
+      <p style={{ margin: 0, fontSize: "11px", lineHeight: 1.45, color: "#94a3b8" }}>
+        {isSingleToolMode
+          ? `Pick any of our ${CATALOG_TOOLS.length} tools below to transfer its full live landing page onto your homepage.`
+          : `Select any of our ${CATALOG_TOOLS.length} main-website tools to transfer its complete landing page & live tool UI in 1 click.`}
       </p>
 
-      <div style={{ display: "grid", gap: "8px" }}>
-        <label style={{ display: "grid", gap: "4px", fontSize: "11px", color: "#cbd5e1" }}>
+      <div style={{ display: "grid", gap: "8px", minWidth: 0 }}>
+        <label style={{ display: "grid", gap: "4px", fontSize: "11px", color: "#cbd5e1", minWidth: 0 }}>
           <span>Filter by Category</span>
           <select
             value={selectedCategory}
@@ -193,12 +209,18 @@ export function CatalogToolInstaller({
               setSelectedSlug("");
             }}
             style={{
-              padding: "7px 10px",
+              width: "100%",
+              minWidth: 0,
+              maxWidth: "100%",
+              boxSizing: "border-box",
+              padding: "7px 9px",
               borderRadius: "8px",
               border: "1px solid rgba(148, 163, 184, 0.28)",
               background: "#060b16",
               color: "#f8fafc",
               fontSize: "12px",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
             }}
           >
             <option value="all">All Categories ({CATALOG_TOOLS.length} tools)</option>
@@ -210,27 +232,31 @@ export function CatalogToolInstaller({
           </select>
         </label>
 
-        <label style={{ display: "grid", gap: "4px", fontSize: "11px", color: "#cbd5e1" }}>
+        <label style={{ display: "grid", gap: "4px", fontSize: "11px", color: "#cbd5e1", minWidth: 0 }}>
           <span>Search Tool by Name or Keyword</span>
           <div
             style={{
               display: "flex",
               alignItems: "center",
               gap: "6px",
-              padding: "0 10px",
+              padding: "0 9px",
               borderRadius: "8px",
               border: "1px solid rgba(148, 163, 184, 0.28)",
               background: "#060b16",
+              minWidth: 0,
+              maxWidth: "100%",
+              boxSizing: "border-box",
             }}
           >
-            <Search size={13} color="#38bdf8" />
+            <Search size={13} color="#38bdf8" style={{ flexShrink: 0 }} />
             <input
               type="search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="e.g. meta title, schema, keyword, readability…"
+              placeholder="e.g. meta title, schema, keyword..."
               style={{
                 width: "100%",
+                minWidth: 0,
                 padding: "7px 0",
                 border: 0,
                 background: "transparent",
@@ -242,24 +268,30 @@ export function CatalogToolInstaller({
           </div>
         </label>
 
-        <label style={{ display: "grid", gap: "4px", fontSize: "11px", color: "#cbd5e1" }}>
+        <label style={{ display: "grid", gap: "4px", fontSize: "11px", color: "#cbd5e1", minWidth: 0 }}>
           <span>Choose Tool ({filteredTools.length} matching)</span>
           <select
             value={activeTool?.slug ?? ""}
             onChange={(e) => setSelectedSlug(e.target.value)}
             style={{
-              padding: "8px 10px",
+              width: "100%",
+              minWidth: 0,
+              maxWidth: "100%",
+              boxSizing: "border-box",
+              padding: "8px 9px",
               borderRadius: "8px",
               border: "1px solid rgba(56, 189, 248, 0.4)",
               background: "#060b16",
               color: "#f8fafc",
               fontSize: "12px",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
             }}
           >
             {filteredTools.map((tool) => (
               <option key={tool.slug} value={tool.slug}>
                 {installedSlugs.has(tool.slug) ? "✓ " : ""}
-                {tool.name} ({toolPath(tool.slug)})
+                {tool.name}
               </option>
             ))}
           </select>
@@ -269,23 +301,24 @@ export function CatalogToolInstaller({
       {activeTool && (
         <div
           style={{
-            padding: "9px 11px",
+            padding: "9px 10px",
             borderRadius: "10px",
             background: "rgba(15, 23, 42, 0.78)",
             border: "1px solid rgba(148, 163, 184, 0.18)",
-            fontSize: "11.5px",
+            fontSize: "11px",
             color: "#cbd5e1",
             display: "grid",
             gap: "4px",
+            minWidth: 0,
           }}
         >
-          <div style={{ display: "flex", justifyContent: "space-between", gap: "6px" }}>
-            <strong style={{ color: "#ffffff" }}>{activeTool.name}</strong>
-            <code style={{ color: "#38bdf8", fontSize: "10.5px" }}>
-              /projects/{activeTool.slug}
+          <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: "4px", minWidth: 0 }}>
+            <strong style={{ color: "#ffffff", overflowWrap: "anywhere" }}>{activeTool.name}</strong>
+            <code style={{ color: "#38bdf8", fontSize: "10px", overflowWrap: "anywhere" }}>
+              {toolPath(activeTool.slug)}
             </code>
           </div>
-          <p style={{ margin: 0, color: "#94a3b8", fontSize: "11px", lineHeight: 1.45 }}>
+          <p style={{ margin: 0, color: "#94a3b8", fontSize: "11px", lineHeight: 1.45, overflowWrap: "anywhere" }}>
             {activeTool.description}
           </p>
         </div>
@@ -294,20 +327,22 @@ export function CatalogToolInstaller({
       <label
         style={{
           display: "flex",
-          alignItems: "center",
+          alignItems: "flex-start",
           gap: "8px",
-          fontSize: "11.5px",
+          fontSize: "11px",
           color: "#e2e8f0",
           cursor: "pointer",
+          minWidth: 0,
         }}
       >
         <input
           type="checkbox"
           checked={includeCompanionPost}
           onChange={(e) => setIncludeCompanionPost(e.target.checked)}
+          style={{ marginTop: "2px", flexShrink: 0 }}
         />
-        <span>
-          Also generate a ready-to-publish <strong>SEO blog post guide</strong> for this tool
+        <span style={{ lineHeight: 1.4 }}>
+          Also generate a ready-to-publish <strong>SEO blog guide</strong>
         </span>
       </label>
 
@@ -316,11 +351,15 @@ export function CatalogToolInstaller({
         disabled={!activeTool || isLimitReached}
         onClick={handleInstallTool}
         style={{
+          width: "100%",
+          minWidth: 0,
+          maxWidth: "100%",
+          boxSizing: "border-box",
           display: "inline-flex",
           alignItems: "center",
           justifyContent: "center",
-          gap: "7px",
-          padding: "9px 14px",
+          gap: "6px",
+          padding: "9px 12px",
           borderRadius: "9px",
           border: 0,
           background: isLimitReached
@@ -330,14 +369,21 @@ export function CatalogToolInstaller({
           fontWeight: 800,
           fontSize: "12px",
           cursor: isLimitReached ? "not-allowed" : "pointer",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
         }}
       >
-        <Plus size={14} />
-        {isLimitReached
-          ? "Maximum 8 Website Tools Reached"
-          : isAlreadyInstalled
-            ? `Add Another Copy of "${activeTool?.name.slice(0, 28)}…"`
-            : `+ Add Tool to Website (${includeCompanionPost ? "+ SEO Guide" : "Tool Only"})`}
+        <Plus size={14} style={{ flexShrink: 0 }} />
+        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {isLimitReached
+            ? "Max 8 Tools Reached"
+            : isSingleToolMode
+              ? `Set "${activeTool?.name}" as Flagship Tool`
+              : isAlreadyInstalled
+                ? `Add Another Copy`
+                : `Add Tool (${includeCompanionPost ? "+ SEO Guide" : "Tool Only"})`}
+        </span>
       </button>
 
       {justInstalledTitle && (
@@ -347,12 +393,16 @@ export function CatalogToolInstaller({
             display: "flex",
             alignItems: "center",
             gap: "6px",
-            fontSize: "11.5px",
+            fontSize: "11px",
             color: "#6ee7b7",
             fontWeight: 600,
+            overflowWrap: "anywhere",
           }}
         >
-          <Check size={14} /> Added &ldquo;{justInstalledTitle}&rdquo; to your website with 0 AI tokens!
+          <Check size={14} style={{ flexShrink: 0 }} />{" "}
+          {isSingleToolMode
+            ? `Swapped flagship landing page to "${justInstalledTitle}"!`
+            : `Transferred "${justInstalledTitle}" landing page (0 AI tokens)!`}
         </div>
       )}
     </section>

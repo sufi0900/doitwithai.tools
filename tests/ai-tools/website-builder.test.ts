@@ -26,6 +26,7 @@ import {
   homePublicationGroups,
   missingPublicationFields,
 } from "../../features/website-builder/domain/publication-selection";
+import { resolveCatalogToolSlug } from "../../features/website-builder/domain/catalog-tool-resolver";
 
 test("website builder exposes 16 curated templates across all 4 categories with doitwithai-flagship default", () => {
   assert.equal(DEFAULT_WEBSITE_TEMPLATE_ID, "doitwithai-flagship");
@@ -207,4 +208,107 @@ test("project.installCatalogTool installs a tool from the catalog with zero AI t
       (post) => post.pillarClusterSlug === "schema-markup-generator",
     ),
   );
+});
+
+test("resolveCatalogToolSlug resolves all flagship default tools and suffixed copies cleanly", () => {
+  const multiTool = getTemplate("doitwithai-flagship")!;
+  for (const project of multiTool.document.content.projects) {
+    const resolved = resolveCatalogToolSlug(project);
+    assert.ok(
+      resolved,
+      `Expected catalog slug resolution for default tool "${project.title}" (${project.caseStudySlug})`,
+    );
+  }
+  assert.equal(resolveCatalogToolSlug({ caseStudySlug: "ai-faq-snippet-generator" }), "ai-faq-generator");
+  assert.equal(resolveCatalogToolSlug({ caseStudySlug: "meta-title-generator-2" }), "meta-title-generator");
+  assert.equal(resolveCatalogToolSlug({ caseStudySlug: "custom-non-catalog-project" }), null);
+});
+
+test("Tool landing page customization fields and flagship swap persist via applySiteCommand", () => {
+  const singleToolDoc = validateSiteDocument(getTemplate("micro-saas-launchpad")!.document);
+  const flagshipId = singleToolDoc.content.projects[0].id;
+
+  const swapped = applySiteCommand(singleToolDoc, {
+    type: "project.installCatalogTool",
+    slug: "readability-checker",
+    title: "Readability Checker",
+    summary: "Audit clarity and sentence structure.",
+    technologies: ["Clarity", "Grade 8"],
+    link: "",
+    role: "Interactive AI Web Utility",
+    period: "Live on Your Website",
+    challenge: "",
+    approach: "",
+    outcome: "",
+    includeCompanionPost: false,
+    replaceItemId: flagshipId,
+  });
+
+  assert.equal(swapped.content.projects.length, 1);
+  assert.equal(swapped.content.projects[0].id, flagshipId);
+  assert.equal(swapped.content.projects[0].caseStudySlug, "readability-checker");
+
+  let customized = applySiteCommand(swapped, {
+    type: "project.update",
+    itemId: flagshipId,
+    field: "defaultInput",
+    value: "Custom prefilled headline topic",
+  });
+  customized = applySiteCommand(customized, {
+    type: "project.update",
+    itemId: flagshipId,
+    field: "defaultSecondaryInput",
+    value: "Sample article paragraph to pre-load inside the workspace.",
+  });
+  customized = applySiteCommand(customized, {
+    type: "project.update",
+    itemId: flagshipId,
+    field: "customCtaLabel",
+    value: "Analyze Clarity Now",
+  });
+  customized = applySiteCommand(customized, {
+    type: "project.update",
+    itemId: flagshipId,
+    field: "heroHighlights",
+    value: ["Grade 8 Meter: Highlight long sentences"],
+  });
+  customized = applySiteCommand(customized, {
+    type: "project.update",
+    itemId: flagshipId,
+    field: "toolAccentHex",
+    value: "#10b981",
+  });
+  customized = applySiteCommand(customized, {
+    type: "project.update",
+    itemId: flagshipId,
+    field: "toolThemeMode",
+    value: "dark",
+  });
+  customized = applySiteCommand(customized, {
+    type: "project.update",
+    itemId: flagshipId,
+    field: "hideEducationSection",
+    value: true,
+  });
+  customized = applySiteCommand(customized, {
+    type: "project.update",
+    itemId: flagshipId,
+    field: "hideFaqSection",
+    value: false,
+  });
+  customized = applySiteCommand(customized, {
+    type: "project.update",
+    itemId: flagshipId,
+    field: "customFaqs",
+    value: [{ question: "Is it free?", answer: "Yes, 100% browser-based." }],
+  });
+
+  const target = customized.content.projects[0];
+  assert.equal(target.defaultInput, "Custom prefilled headline topic");
+  assert.equal(target.customCtaLabel, "Analyze Clarity Now");
+  assert.deepEqual(target.heroHighlights, ["Grade 8 Meter: Highlight long sentences"]);
+  assert.equal(target.toolAccentHex, "#10b981");
+  assert.equal(target.toolThemeMode, "dark");
+  assert.equal(target.hideEducationSection, true);
+  assert.equal(target.customFaqs?.length, 1);
 });

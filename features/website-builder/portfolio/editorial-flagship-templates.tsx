@@ -1173,10 +1173,10 @@ export function EditorialFlagshipSections({
        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
         <div>
          <span style={{ fontSize: "11px", fontWeight: 800, letterSpacing: "0.14em", color: "#38bdf8" }}>
-          IN-SITE INTERACTIVE AI TOOL RUNNER · POWERED BY GEMINI API
+          LIVE TRANSFERRED TOOL LANDING PAGES · FULL INTERACTIVE WORKSPACE
          </span>
          <h3 style={{ margin: "4px 0 0", fontSize: "22px", color: "#ffffff" }}>
-          Test &amp; Run Any Installed Tool Right Here on Your Website
+          Use &amp; Customize Any Installed Tool Landing Page Directly Below
          </h3>
         </div>
        </div>
@@ -1185,6 +1185,8 @@ export function EditorialFlagshipSections({
         siteName={document.identity.name}
         siteSlug={publicBasePath ? publicBasePath.replace(/^\/p\//, "") : "doitwithai-hub"}
         accentColor="#6366f1"
+        siteAccent={document.design.accent}
+        siteBackground={document.design.background}
         allTools={projects}
         onSelectTool={(next) => setActiveInlineToolId(next.id)}
        />

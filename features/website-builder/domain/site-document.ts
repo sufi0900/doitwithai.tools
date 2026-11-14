@@ -87,7 +87,29 @@ export const DEFAULT_PORTFOLIO_CONTENT = {
   about: { heading: "About", body: "" },
   experience: [] as Array<{ id: string; role: string; organization: string; period: string; summary: string }>,
   education: [] as Array<{ id: string; credential: string; institution: string; period: string; summary: string }>,
-  projects: [] as Array<{ id: string; title: string; summary: string; technologies: string[]; link: string; caseStudySlug: string; role: string; period: string; challenge: string; approach: string; outcome: string; mediaIds: string[] }>,
+  projects: [] as Array<{
+    id: string;
+    title: string;
+    summary: string;
+    technologies: string[];
+    link: string;
+    caseStudySlug: string;
+    role: string;
+    period: string;
+    challenge: string;
+    approach: string;
+    outcome: string;
+    mediaIds: string[];
+    defaultInput?: string;
+    defaultSecondaryInput?: string;
+    customCtaLabel?: string;
+    heroHighlights?: string[];
+    toolAccentHex?: string;
+    toolThemeMode?: "auto" | "dark" | "light";
+    hideEducationSection?: boolean;
+    hideFaqSection?: boolean;
+    customFaqs?: Array<{ question: string; answer: string }>;
+  }>,
   contact: { heading: "Let’s build something useful", email: "", location: "", cta: "Start a conversation", socials: [] as Array<{ id: string; platform: typeof socialPlatformOptions[number]; url: string }> },
 };
 
@@ -110,6 +132,23 @@ const portfolioContentSchema = z.object({
     approach: z.string().trim().max(1800).default(""),
     outcome: z.string().trim().max(1200).default(""),
     mediaIds: z.array(z.string().min(1)).max(8).default([]),
+    defaultInput: z.string().trim().max(2000).optional(),
+    defaultSecondaryInput: z.string().trim().max(4000).optional(),
+    customCtaLabel: z.string().trim().max(90).optional(),
+    heroHighlights: z.array(z.string().trim().min(1).max(160)).max(6).optional(),
+    toolAccentHex: z.string().trim().max(32).optional(),
+    toolThemeMode: z.enum(["auto", "dark", "light"]).optional(),
+    hideEducationSection: z.boolean().optional(),
+    hideFaqSection: z.boolean().optional(),
+    customFaqs: z
+      .array(
+        z.object({
+          question: z.string().trim().min(1).max(220),
+          answer: z.string().trim().min(1).max(1200),
+        }),
+      )
+      .max(8)
+      .optional(),
   })).max(8),
   contact: z.object({ heading: z.string().trim().min(1).max(100), email: z.union([z.literal(""), z.string().email()]), location: z.string().trim().max(100), cta: z.string().trim().min(1).max(60), socials: z.array(z.object({ id: z.string().min(1), platform: z.enum(socialPlatformOptions), url: publicHttpUrl })).max(10).default([]) }),
 });

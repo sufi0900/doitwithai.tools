@@ -59,7 +59,7 @@ export function PortfolioStudio({ initialDocument, projectName = "Demo portfolio
   const [slug, setSlug] = useState(initialPublication?.slug ?? normalizePublicationSlug(projectName));
   const [historyOpen, setHistoryOpen] = useState(false);
   const [previewTarget, setPreviewTarget] = useState<PreviewTarget>({ section: "hero" });
-  const [editorWidth, setEditorWidth] = useState(300);
+  const [editorWidth, setEditorWidth] = useState(360);
   const [voiceWidth, setVoiceWidth] = useState(320);
   const [editorExpanded, setEditorExpanded] = useState(false);
   const [voiceHidden, setVoiceHidden] = useState(false);
@@ -260,7 +260,7 @@ export function PortfolioStudio({ initialDocument, projectName = "Demo portfolio
         <button type="button" aria-pressed={mobileView === "editor"} onClick={() => setMobileView("editor")}>Edit</button>
         <button type="button" aria-pressed={mobileView === "voice"} onClick={() => { setVoiceHidden(false); setMobileView("voice"); }}>Do It AI Agent{voice.active ? " · Live" : ""}</button>
       </nav>}
-      <div className="workspace" style={{ gridTemplateColumns: previewOnly ? undefined : editorExpanded ? (voiceHidden ? "minmax(0, 1fr)" : "minmax(0, 7fr) minmax(280px, 3fr)") : `${editorWidth}px minmax(420px,1fr) ${voiceHidden ? "0px" : `${voiceWidth}px`}` }}>
+      <div className="workspace" style={{ gridTemplateColumns: previewOnly ? undefined : editorExpanded ? (voiceHidden ? "minmax(0, 1fr)" : "minmax(0, 7fr) minmax(280px, 3fr)") : `${editorWidth}px minmax(360px,1fr) ${voiceHidden ? "0px" : `${voiceWidth}px`}` }}>
         <aside className="editor-panel" ref={editorPanelRef}>
           <div className="panel-intro"><div className="panel-title-row"><div><p className="eyebrow">PROJECT · PERSONAL PORTFOLIO</p><h1>Shape the experience</h1></div><button type="button" title={editorExpanded ? "Restore workspace" : "Expand editor"} aria-label={editorExpanded ? "Restore workspace" : "Expand editor"} onClick={() => { if (!editorExpanded && window.innerWidth <= 900 && !voice.active) setVoiceHidden(true); if (window.innerWidth <= 900) setMobileView("editor"); setEditorExpanded(value => !value); }}>{editorExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}</button></div><p>Use direct controls for precision. Ask the voice agent for broader changes.</p></div>
           <nav className="editor-tabs" aria-label="Editor sections">
@@ -274,7 +274,7 @@ export function PortfolioStudio({ initialDocument, projectName = "Demo portfolio
           {persistence !== "server" && <button type="button" className="reset-button" onClick={() => { if (window.confirm("Reset this draft? You can undo this action.")) dispatch({ type: "reset" }); }}><RotateCcw size={14} />Reset demo</button>}
         </aside>
 
-        {!previewOnly && !editorExpanded && <button type="button" className="panel-resizer editor-resizer" style={{ left: editorWidth - 3 }} aria-label="Resize content editor" onPointerDown={(event) => beginResize(event, editorWidth, setEditorWidth, 260, 620, 1)} />}
+        {!previewOnly && !editorExpanded && <button type="button" className="panel-resizer editor-resizer" style={{ left: editorWidth - 3 }} aria-label="Resize content editor" onPointerDown={(event) => beginResize(event, editorWidth, setEditorWidth, 280, 640, 1)} />}
 
         {!editorExpanded && <section className="preview-shell" aria-label="Live portfolio preview">
           <div className="preview-chrome"><span /><span /><span /><p>portfolio.preview</p><em>LIVE CANVAS</em></div>
@@ -354,6 +354,8 @@ function StudioPreview({ document, target, focusedSkill, execute, reducedMotion,
           <InteractiveWebsiteToolRunner
             tool={selectedTool}
             siteName={document.identity.name}
+            siteAccent={document.design.accent}
+            siteBackground={document.design.background}
             allTools={document.content.projects.length > 1 ? document.content.projects : undefined}
             onSelectTool={(next) => onNavigate({ section: "projects", itemId: next.id })}
           />

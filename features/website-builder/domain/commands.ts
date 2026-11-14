@@ -51,6 +51,7 @@ export const siteCommandSchema = z.discriminatedUnion("type", [
     approach: z.string().trim().max(1800).default(""),
     outcome: z.string().trim().max(1200).default(""),
     includeCompanionPost: z.boolean().default(true),
+    replaceItemId: z.string().min(1).max(80).optional(),
   }),
   z.object({ type: z.literal("scene.setFamily"), value: z.enum(sceneFamilyOptions) }),
   z.object({ type: z.literal("scene.setPreset"), value: z.enum(scenePresetOptions) }),
@@ -79,7 +80,42 @@ export const siteCommandSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("education.update"), itemId: z.string().min(1), field: z.enum(["credential", "institution", "period", "summary"]), value: z.string() }),
   z.object({ type: z.literal("education.remove"), itemId: z.string().min(1) }),
   z.object({ type: z.literal("project.add"), title: z.string().trim().min(1).max(100).optional(), summary: z.string().trim().max(500).optional(), technologies: z.array(z.string().trim().min(1).max(32)).max(8).optional(), link: z.union([z.literal(""), z.string().url()]).optional() }),
-  z.object({ type: z.literal("project.update"), itemId: z.string().min(1), field: z.enum(["title", "summary", "technologies", "link", "caseStudySlug", "role", "period", "challenge", "approach", "outcome"]), value: z.union([z.string(), z.array(z.string())]) }),
+  z.object({
+    type: z.literal("project.update"),
+    itemId: z.string().min(1),
+    field: z.enum([
+      "title",
+      "summary",
+      "technologies",
+      "link",
+      "caseStudySlug",
+      "role",
+      "period",
+      "challenge",
+      "approach",
+      "outcome",
+      "defaultInput",
+      "defaultSecondaryInput",
+      "customCtaLabel",
+      "heroHighlights",
+      "toolAccentHex",
+      "toolThemeMode",
+      "hideEducationSection",
+      "hideFaqSection",
+      "customFaqs",
+    ]),
+    value: z.union([
+      z.string(),
+      z.boolean(),
+      z.array(z.string()),
+      z.array(
+        z.object({
+          question: z.string().trim().min(1).max(220),
+          answer: z.string().trim().min(1).max(1200),
+        }),
+      ),
+    ]),
+  }),
   z.object({ type: z.literal("project.move"), itemId: z.string().min(1), direction: z.enum(["up", "down"]) }),
   z.object({ type: z.literal("project.attachMedia"), itemId: z.string().min(1), mediaId: z.string().min(1) }),
   z.object({ type: z.literal("project.detachMedia"), itemId: z.string().min(1), mediaId: z.string().min(1) }),
@@ -187,12 +223,15 @@ export function applySiteCommand(current: SiteDocument, candidate: unknown): Sit
       break;
     }
     case "project.installCatalogTool": {
-      if (current.content.projects.length >= 8) {
+      const replaceTarget = command.replaceItemId
+        ? current.content.projects.find((entry) => entry.id === command.replaceItemId)
+        : undefined;
+      if (!replaceTarget && current.content.projects.length >= 8) {
         throw new Error("A website can showcase up to 8 tools/projects on the homepage. Remove one first before adding another.");
       }
-      const slug = uniqueProjectSlug(current, command.slug || command.title);
+      const slug = uniqueProjectSlug(current, command.slug || command.title, replaceTarget?.id);
       const newProject = {
-        id: crypto.randomUUID(),
+        id: replaceTarget?.id ?? crypto.randomUUID(),
         title: command.title.slice(0, 100),
         summary: command.summary.slice(0, 500),
         technologies: command.technologies.map((t) => t.slice(0, 32)).slice(0, 8),
@@ -265,11 +304,14 @@ export function applySiteCommand(current: SiteDocument, candidate: unknown): Sit
         };
         nextPosts = [newPost, ...current.publishing.posts];
       }
+      const nextProjects = command.replaceItemId && current.content.projects.some((entry) => entry.id === command.replaceItemId)
+        ? current.content.projects.map((entry) => (entry.id === command.replaceItemId ? newProject : entry))
+        : [...current.content.projects, newProject];
       next = {
         ...current,
         content: {
           ...current.content,
-          projects: [...current.content.projects, newProject],
+          projects: nextProjects,
         },
         publishing: {
           ...current.publishing,
@@ -434,7 +476,32 @@ export function applySiteCommand(current: SiteDocument, candidate: unknown): Sit
     case "project.update": {
       const item = current.content.projects.find((entry) => entry.id === command.itemId);
       if (!item) throw new Error("The requested project does not exist.");
-      let value = Array.isArray(command.value) ? command.value.map((entry) => entry.trim()).filter(Boolean) : command.value.trim();
+      let value: string | boolean | string[] | Array<{ question: string; answer: string }>;
+      if (typeof command.value === "boolean") {
+        if (command.field !== "hideEducationSection" && command.field !== "hideFaqSection") {
+          throw new Error("Boolean values apply only to section visibility toggles.");
+        }
+        value = command.value;
+      } else if (command.field === "customFaqs") {
+        if (!Array.isArray(command.value)) throw new Error("Custom FAQs must be a list of question-and-answer items.");
+        value = command.value
+          .filter((entry): entry is { question: string; answer: string } => typeof entry === "object" && entry !== null)
+          .map((entry) => ({
+            question: entry.question.trim().slice(0, 220),
+            answer: entry.answer.trim().slice(0, 1200),
+          }))
+          .filter((entry) => entry.question.length > 0 && entry.answer.length > 0)
+          .slice(0, 8);
+      } else if (Array.isArray(command.value)) {
+        value = command.value
+          .map((entry) => (typeof entry === "string" ? entry.trim() : ""))
+          .filter(Boolean);
+      } else {
+        value = command.value.trim();
+        if (command.field === "toolThemeMode" && value !== "auto" && value !== "dark" && value !== "light") {
+          throw new Error("Theme mode must be auto, dark, or light.");
+        }
+      }
       if (command.field === "caseStudySlug" && typeof value === "string") {
         value = normalizeCaseStudySlug(value);
         if (!value) throw new Error("Use at least one letter or number in the case-study slug.");
@@ -676,11 +743,15 @@ export function normalizeCaseStudySlug(value: string) {
   return value.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80);
 }
 
-function uniqueProjectSlug(document: SiteDocument, value: string) {
+function uniqueProjectSlug(document: SiteDocument, value: string, exceptId?: string) {
   const base = normalizeCaseStudySlug(value) || "project";
   let candidate = base;
   let suffix = 2;
-  const existing = new Set(document.content.projects.map((project) => project.caseStudySlug));
+  const existing = new Set(
+    document.content.projects
+      .filter((project) => !exceptId || project.id !== exceptId)
+      .map((project) => project.caseStudySlug),
+  );
   while (existing.has(candidate)) candidate = `${base}-${suffix++}`;
   return candidate;
 }

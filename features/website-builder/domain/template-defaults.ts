@@ -481,7 +481,7 @@ const MULTI_TOOL_PROJECTS: RawProject[] = [
       "Generate 48-word Position-Zero direct answer blocks, People-Also-Ask Q&A pairs, and validated FAQPage JSON-LD schema for Google & AI Overviews.",
     technologies: ["AEO Snippets", "FAQPage Schema", "Position Zero", "PAA Generator"],
     link: "",
-    caseStudySlug: "ai-faq-snippet-generator",
+    caseStudySlug: "ai-faq-generator",
     role: "Tool 06 · Answer Engine & FAQ Schema Studio",
     period: "Live Utility · Position-Zero Engine",
     challenge:

@@ -2,7 +2,7 @@
 /* eslint-disable react/no-unescaped-entities */
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { Providers } from "./providers";
@@ -111,12 +111,15 @@ export default function ClientLayoutShell({ children }) {
   const isFounderHubPage =
     pathname === "/founder-hub" || pathname.startsWith("/founder-hub/");
   const [isEmbeddedView, setIsEmbeddedView] = useState(false);
+  const useIsoLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
-  useEffect(() => {
+  useIsoLayoutEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     const embedMode =
-      params.get("embed") === "1" || params.get("app") === "1";
+      params.get("embed") === "1" ||
+      params.get("embed") === "true" ||
+      params.get("app") === "1";
     setIsEmbeddedView(embedMode);
   }, [pathname]);
 

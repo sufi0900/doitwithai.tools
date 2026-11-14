@@ -1,7 +1,7 @@
 "use client";
 
 import { authorizedWebsiteFetch } from "@/features/website-builder/lib/supabase/browser";
-import { ArrowDown, ArrowUp, Eye, EyeOff, GripVertical, Plus, Share2, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ExternalLink, Eye, EyeOff, GripVertical, Plus, RotateCcw, Share2, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
@@ -10,6 +10,7 @@ import type { SiteCommand } from "@/features/website-builder/domain/commands";
 import { accentOptions, backgroundOptions, sceneFamilyOptions, socialPlatformOptions, type PortfolioSection, type SiteDocument } from "@/features/website-builder/domain/site-document";
 import { PublishingEditor } from "./publishing-editor";
 import { CatalogToolInstaller } from "./CatalogToolInstaller";
+import { getCatalogToolBySlug, resolveCatalogToolSlug, shouldApplyHeroOverride } from "@/features/website-builder/domain/catalog-tool-resolver";
 import { deriveImageAlt } from "@/features/website-builder/domain/media";
 import { getTemplatesByCategory, type WebsiteTemplateCategory } from "@/features/website-builder/ecosystem-bridge";
 import { getTemplateContract, isFlatTemplate } from "@/features/website-builder/domain/template-contracts";
@@ -88,59 +89,13 @@ export function ManualControls({ document, publishedDocument, execute, panel, ca
         <BufferedField label="Details" value={item.summary} maxLength={500} multiline allowEmpty onCommit={(value) => execute({ type: "education.update", itemId: item.id, field: "summary", value })} />
       </article>)}</section>}
       {contentSection === "projects" && (
-        <>
-          {document.design.template === "micro-saas-launchpad" ? (
-            <div className="template-defaults-reset-card">
-              <strong style={{ fontSize: "13px", color: "#22d3ee" }}>
-                ⚡ Single-Tool Landing Page Workspace
-              </strong>
-              <small style={{ color: "#cbd5e1", lineHeight: 1.5 }}>
-                This Single-Tool Website template embeds your flagship interactive AI tool directly on the Home Landing Page (<code>#tool-workspace</code>). Edit your flagship tool&apos;s title, summary, and specifications below.
-              </small>
-            </div>
-          ) : (
-            <CatalogToolInstaller document={document} execute={execute} />
-          )}
-          <section className="collection-editor">
-            <header>
-              <div>
-                <strong>
-                  {document.design.template === "micro-saas-launchpad"
-                    ? "Flagship Landing Page AI Tool"
-                    : document.design.template === "doitwithai-flagship"
-                      ? "Installed Website AI Tools"
-                      : "Tools & project case studies"}
-                </strong>
-                <small>
-                  {document.design.template === "micro-saas-launchpad"
-                    ? "1 flagship tool rendered live on Home page"
-                    : `${document.content.projects.length}/8 active tools or projects`}
-                </small>
-              </div>
-              {document.design.template !== "micro-saas-launchpad" && (
-                <button
-                  type="button"
-                  disabled={document.content.projects.length >= 8}
-                  onClick={() => execute({ type: "project.add" })}
-                >
-                  <Plus size={15} />
-                  Add custom tool
-                </button>
-              )}
-            </header>{document.content.projects.map((item, index) => <article key={item.id}>
-        <div className="collection-title"><strong>{item.title}</strong><span className="collection-actions"><button type="button" disabled={index === 0} aria-label={`Move ${item.title} up`} onClick={() => execute({ type: "project.move", itemId: item.id, direction: "up" })}><ArrowUp size={14} /></button><button type="button" disabled={index === document.content.projects.length - 1} aria-label={`Move ${item.title} down`} onClick={() => execute({ type: "project.move", itemId: item.id, direction: "down" })}><ArrowDown size={14} /></button><button type="button" aria-label={`Remove ${item.title}`} onClick={() => execute({ type: "project.remove", itemId: item.id })}><Trash2 size={14} /></button></span></div>
-        <BufferedField label="Project title" value={item.title} maxLength={100} onCommit={(value) => execute({ type: "project.update", itemId: item.id, field: "title", value })} />
-        <BufferedField label="Summary" value={item.summary} maxLength={500} multiline allowEmpty onCommit={(value) => execute({ type: "project.update", itemId: item.id, field: "summary", value })} />
-        <BufferedField label="Case-study slug" value={item.caseStudySlug} maxLength={80} onCommit={(value) => execute({ type: "project.update", itemId: item.id, field: "caseStudySlug", value:normalizePublishingSlug(value) })} />
-        <BufferedField label="Your role" value={item.role} maxLength={100} allowEmpty onCommit={(value) => execute({ type: "project.update", itemId: item.id, field: "role", value })} />
-        <BufferedField label="Period" value={item.period} maxLength={80} allowEmpty onCommit={(value) => execute({ type: "project.update", itemId: item.id, field: "period", value })} />
-        <BufferedField label="Challenge" value={item.challenge} maxLength={1200} multiline allowEmpty onCommit={(value) => execute({ type: "project.update", itemId: item.id, field: "challenge", value })} />
-        <BufferedField label="Approach" value={item.approach} maxLength={1800} multiline allowEmpty onCommit={(value) => execute({ type: "project.update", itemId: item.id, field: "approach", value })} />
-        <BufferedField label="Outcome" value={item.outcome} maxLength={1200} multiline allowEmpty onCommit={(value) => execute({ type: "project.update", itemId: item.id, field: "outcome", value })} />
-        <BufferedField label="Technologies (comma separated)" value={item.technologies.join(", ")} maxLength={260} allowEmpty onCommit={(value) => execute({ type: "project.update", itemId: item.id, field: "technologies", value: value.split(",").map((entry) => entry.trim()).filter(Boolean) })} />
-        <BufferedField label="Project URL" value={item.link} maxLength={300} allowEmpty onCommit={(value) => execute({ type: "project.update", itemId: item.id, field: "link", value })} />
-        <ProjectGallery project={item} document={document} execute={execute} />
-      </article>)}</section></>)}
+        <ProjectsToolsStudioEditor
+          document={document}
+          execute={execute}
+          previewTarget={previewTarget}
+          onPreviewTarget={onPreviewTarget}
+        />
+      )}
       {contentSection === "media library" && <MediaLibrary document={document} execute={execute} enabled={canUploadMedia} />}
       {contentSection === "site pages" && <PublishingEditor key="site-pages" document={document} publishedDocument={publishedDocument} execute={execute} kind="page" canUploadMedia={canUploadMedia} selectedItemId={previewTarget?.itemId} onSelect={(itemId) => onPreviewTarget?.({ section: "site pages", itemId })} onPublishItem={onPublishItem} publishingItemId={publishingItemId} publishError={itemPublishError} canDirectPublish={canDirectPublish} />}
       {contentSection === "blog posts" && <PublishingEditor key="blog-posts" document={document} publishedDocument={publishedDocument} execute={execute} kind="post" canUploadMedia={canUploadMedia} selectedItemId={previewTarget?.itemId === "__index__" ? undefined : previewTarget?.itemId} onSelect={(itemId) => onPreviewTarget?.({ section: "blog posts", itemId })} onPreviewListing={() => onPreviewTarget?.({ section: "blog posts", itemId: "__index__" })} onPublishItem={onPublishItem} publishingItemId={publishingItemId} publishError={itemPublishError} canDirectPublish={canDirectPublish} ensureSaved={ensureSaved} seededNotes={blogNotesSeed} publicSiteSlug={publicSiteSlug} />}
@@ -275,7 +230,777 @@ function BufferedInput({ value, maxLength, onCommit, ariaLabel }: { value: strin
   return <input aria-label={ariaLabel} value={draft} maxLength={maxLength} onChange={(event) => setDraft(event.target.value)} onBlur={commit} />;
 }
 
-function BufferedField({ label, value, maxLength, multiline = false, allowEmpty = false, onCommit }: { label: string; value: string; maxLength: number; multiline?: boolean; allowEmpty?: boolean; onCommit: (value: string) => void }) {
+function ProjectsToolsStudioEditor({
+  document,
+  execute,
+  previewTarget,
+  onPreviewTarget,
+}: {
+  document: SiteDocument;
+  execute: (command: SiteCommand) => void;
+  previewTarget?: PreviewTarget;
+  onPreviewTarget?: (target: PreviewTarget) => void;
+}) {
+  const isSingleTool = document.design.template === "micro-saas-launchpad";
+  const isToolTemplate = isSingleTool || document.design.template === "doitwithai-flagship";
+  const projects = document.content.projects;
+
+  const [selectedId, setSelectedId] = useState<string>(projects[0]?.id ?? "");
+  const [activeTab, setActiveTab] = useState<"hero" | "inputs" | "theme" | "story">("hero");
+  const [hexDraft, setHexDraft] = useState("");
+
+  useEffect(() => {
+    if (previewTarget?.section === "projects" && previewTarget.itemId && previewTarget.itemId !== "__index__") {
+      if (projects.some((p) => p.id === previewTarget.itemId)) {
+        setSelectedId(previewTarget.itemId);
+        return;
+      }
+    }
+    if (!projects.some((p) => p.id === selectedId)) {
+      setSelectedId(projects[0]?.id ?? "");
+    }
+  }, [previewTarget, projects, selectedId]);
+
+  const activeItem = projects.find((p) => p.id === selectedId) ?? projects[0];
+  useEffect(() => {
+    setHexDraft(activeItem?.toolAccentHex ?? "");
+  }, [activeItem?.id, activeItem?.toolAccentHex]);
+
+  const resolvedCatalogSlug = resolveCatalogToolSlug(activeItem);
+  const catalogTool = getCatalogToolBySlug(resolvedCatalogSlug);
+  const heroOverrideFlags = activeItem
+    ? shouldApplyHeroOverride(activeItem, catalogTool)
+    : { title: false, summary: false, role: false, period: false, technologies: false };
+  const hasAnyHeroCustomization =
+    Boolean(resolvedCatalogSlug) &&
+    (heroOverrideFlags.title ||
+      heroOverrideFlags.summary ||
+      heroOverrideFlags.role ||
+      heroOverrideFlags.period ||
+      heroOverrideFlags.technologies ||
+      Boolean(activeItem?.heroHighlights?.length));
+
+  function restoreOriginalHeroCopy() {
+    if (!activeItem || !catalogTool) return;
+    const autoBadges = Array.from(
+      new Set([
+        ...(catalogTool.categories || []),
+        ...(catalogTool.topics || []),
+        ...(catalogTool.tags || []).slice(0, 4),
+      ]),
+    )
+      .map((item) => item.trim().slice(0, 32))
+      .filter(Boolean)
+      .slice(0, 6);
+    execute({ type: "project.update", itemId: activeItem.id, field: "title", value: catalogTool.name.slice(0, 100) });
+    execute({ type: "project.update", itemId: activeItem.id, field: "summary", value: catalogTool.description.slice(0, 500) });
+    execute({ type: "project.update", itemId: activeItem.id, field: "role", value: "" });
+    execute({ type: "project.update", itemId: activeItem.id, field: "period", value: "" });
+    execute({ type: "project.update", itemId: activeItem.id, field: "technologies", value: autoBadges });
+    execute({ type: "project.update", itemId: activeItem.id, field: "heroHighlights", value: [] });
+  }
+
+  const TOOL_ACCENT_SWATCHES = [
+    { label: "Cyan", hex: "#22d3ee" },
+    { label: "Indigo", hex: "#6366f1" },
+    { label: "Emerald", hex: "#10b981" },
+    { label: "Violet", hex: "#a78bfa" },
+    { label: "Amber", hex: "#f59e0b" },
+    { label: "Rose", hex: "#f43f5e" },
+  ];
+
+  return (
+    <div style={{ display: "grid", gap: "12px", minWidth: 0, maxWidth: "100%" }}>
+      <CatalogToolInstaller document={document} execute={execute} />
+
+      <section className="collection-editor" style={{ minWidth: 0 }}>
+        <header style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: "8px" }}>
+          <div style={{ minWidth: 0 }}>
+            <strong>
+              {isSingleTool
+                ? "Flagship Tool Landing Page"
+                : isToolTemplate
+                  ? `Installed AI Tools (${projects.length}/8)`
+                  : `Tools & Projects (${projects.length}/8)`}
+            </strong>
+            <small>
+              {isSingleTool
+                ? "Select & customize the live landing page on Home"
+                : "Click a tool below to preview & customize its landing page"}
+            </small>
+          </div>
+          {!isSingleTool && (
+            <button
+              type="button"
+              disabled={projects.length >= 8}
+              onClick={() => execute({ type: "project.add" })}
+              style={{ flexShrink: 0 }}
+            >
+              <Plus size={14} /> Custom Tool
+            </button>
+          )}
+        </header>
+
+        <div className="tool-studio-list">
+          {projects.map((item, index) => {
+            const isSelected = activeItem?.id === item.id;
+            const itemCatalogSlug = resolveCatalogToolSlug(item);
+            return (
+              <div
+                key={item.id}
+                className={`tool-studio-row ${isSelected ? "selected" : ""}`}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px", minWidth: 0 }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedId(item.id);
+                      onPreviewTarget?.({ section: "projects", itemId: item.id });
+                    }}
+                    style={{
+                      flex: 1,
+                      minWidth: 0,
+                      textAlign: "left",
+                      background: "transparent",
+                      border: 0,
+                      padding: 0,
+                      cursor: "pointer",
+                      display: "grid",
+                      gap: "3px",
+                    }}
+                  >
+                    <span style={{ fontSize: "10px", fontWeight: 700, color: itemCatalogSlug ? "#38bdf8" : "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                      {String(index + 1).padStart(2, "0")} · {itemCatalogSlug ? `Transferred /tools/${itemCatalogSlug}` : "Custom Interactive Tool"}
+                    </span>
+                    <strong style={{ fontSize: "12.5px", color: "#f8fafc", lineHeight: 1.3, overflowWrap: "anywhere" }}>
+                      {item.title}
+                    </strong>
+                  </button>
+                  <div style={{ display: "flex", alignItems: "center", gap: "3px", flexShrink: 0 }}>
+                    <button
+                      type="button"
+                      disabled={index === 0}
+                      aria-label={`Move ${item.title} up`}
+                      onClick={() => execute({ type: "project.move", itemId: item.id, direction: "up" })}
+                      style={{ padding: "4px", borderRadius: "6px", border: "1px solid var(--line)", background: "rgba(255,255,255,0.04)", cursor: index === 0 ? "not-allowed" : "pointer" }}
+                    >
+                      <ArrowUp size={13} />
+                    </button>
+                    <button
+                      type="button"
+                      disabled={index === projects.length - 1}
+                      aria-label={`Move ${item.title} down`}
+                      onClick={() => execute({ type: "project.move", itemId: item.id, direction: "down" })}
+                      style={{ padding: "4px", borderRadius: "6px", border: "1px solid var(--line)", background: "rgba(255,255,255,0.04)", cursor: index === projects.length - 1 ? "not-allowed" : "pointer" }}
+                    >
+                      <ArrowDown size={13} />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={`Remove ${item.title}`}
+                      onClick={() => execute({ type: "project.remove", itemId: item.id })}
+                      style={{ padding: "4px", borderRadius: "6px", border: "1px solid rgba(253,164,175,0.3)", background: "rgba(253,164,175,0.08)", color: "#fda4af", cursor: "pointer" }}
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", alignItems: "center" }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedId(item.id);
+                      onPreviewTarget?.({ section: "projects", itemId: item.id });
+                    }}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "5px",
+                      padding: "4px 9px",
+                      borderRadius: "7px",
+                      border: isSelected ? "1px solid var(--accent)" : "1px solid var(--line)",
+                      background: isSelected ? "rgba(var(--accent-rgb), 0.16)" : "rgba(255,255,255,0.04)",
+                      color: isSelected ? "#ffffff" : "#cbd5e1",
+                      fontSize: "11px",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                    }}
+                  >
+                    <ExternalLink size={11} />
+                    {isSelected ? "Editing & Previewing" : "Preview & Customize"}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {activeItem && (
+          <article style={{ minWidth: 0, maxWidth: "100%", display: "grid", gap: "11px", marginTop: "6px" }}>
+            <div style={{ display: "grid", gap: "3px", borderBottom: "1px solid var(--line)", paddingBottom: "8px" }}>
+              <span style={{ fontSize: "10px", fontWeight: 800, color: "var(--accent)", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                TOOL LANDING PAGE STUDIO CUSTOMIZER
+              </span>
+              <strong style={{ fontSize: "13.5px", color: "#ffffff", overflowWrap: "anywhere" }}>
+                {activeItem.title}
+              </strong>
+              {resolvedCatalogSlug && (
+                <small style={{ color: "#94a3b8", fontSize: "11px" }}>
+                  Live source: <code>/tools/{resolvedCatalogSlug}</code>
+                </small>
+              )}
+            </div>
+
+            <nav className="tool-studio-tabs" aria-label="Tool landing page customization tabs">
+              <button
+                type="button"
+                className={activeTab === "hero" ? "active" : ""}
+                onClick={() => setActiveTab("hero")}
+              >
+                1. Hero &amp; Copy
+              </button>
+              <button
+                type="button"
+                className={activeTab === "inputs" ? "active" : ""}
+                onClick={() => setActiveTab("inputs")}
+              >
+                2. Default Inputs
+              </button>
+              <button
+                type="button"
+                className={activeTab === "theme" ? "active" : ""}
+                onClick={() => setActiveTab("theme")}
+              >
+                3. Theme &amp; Colors
+              </button>
+              <button
+                type="button"
+                className={activeTab === "story" ? "active" : ""}
+                onClick={() => setActiveTab("story")}
+              >
+                4. Story &amp; FAQs
+              </button>
+            </nav>
+
+            {activeTab === "hero" && (
+              <div key={`${activeItem.id}-hero`} style={{ display: "grid", gap: "10px", minWidth: 0 }}>
+                {resolvedCatalogSlug && (
+                  <div
+                    style={{
+                      padding: "8px 10px",
+                      borderRadius: "9px",
+                      background: "rgba(56, 189, 248, 0.08)",
+                      border: "1px solid rgba(56, 189, 248, 0.28)",
+                      display: "grid",
+                      gap: "6px",
+                      fontSize: "11px",
+                      color: "#cbd5e1",
+                    }}
+                  >
+                    <span>
+                      {hasAnyHeroCustomization
+                        ? "Custom Hero overrides active on transferred landing page."
+                        : "Showing exact main-website Hero copy as-is. Edit any field below to customize."}
+                    </span>
+                    {hasAnyHeroCustomization && catalogTool && (
+                      <button
+                        type="button"
+                        onClick={restoreOriginalHeroCopy}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "5px",
+                          padding: "5px 9px",
+                          borderRadius: "7px",
+                          border: "1px solid rgba(56, 189, 248, 0.35)",
+                          background: "rgba(15, 23, 42, 0.8)",
+                          color: "#7dd3fc",
+                          fontSize: "11px",
+                          fontWeight: 700,
+                          cursor: "pointer",
+                        }}
+                      >
+                        <RotateCcw size={12} /> Restore Original Main-Site Hero
+                      </button>
+                    )}
+                  </div>
+                )}
+                <BufferedField
+                  label="Landing Page H1 Title"
+                  value={activeItem.title}
+                  maxLength={100}
+                  onCommit={(value) => execute({ type: "project.update", itemId: activeItem.id, field: "title", value })}
+                />
+                <BufferedField
+                  label="Hero Lead Subtitle"
+                  value={activeItem.summary}
+                  maxLength={500}
+                  multiline
+                  allowEmpty
+                  onCommit={(value) => execute({ type: "project.update", itemId: activeItem.id, field: "summary", value })}
+                />
+                <BufferedField
+                  label="Hero Eyebrow / Kicker"
+                  value={activeItem.role}
+                  maxLength={100}
+                  allowEmpty
+                  placeholder="e.g. On-Page SEO · Free AI Tool"
+                  onCommit={(value) => execute({ type: "project.update", itemId: activeItem.id, field: "role", value })}
+                />
+                <BufferedField
+                  label="Feature Badges (comma separated)"
+                  value={activeItem.technologies.join(", ")}
+                  maxLength={260}
+                  allowEmpty
+                  placeholder="600px Pixel Guard, Live SERP Preview, Free"
+                  onCommit={(value) =>
+                    execute({
+                      type: "project.update",
+                      itemId: activeItem.id,
+                      field: "technologies",
+                      value: value.split(",").map((entry) => entry.trim()).filter(Boolean),
+                    })
+                  }
+                />
+                <BufferedField
+                  label="Right Hero Card Heading"
+                  value={activeItem.period}
+                  maxLength={80}
+                  allowEmpty
+                  placeholder="e.g. What This Tool Generates"
+                  onCommit={(value) => execute({ type: "project.update", itemId: activeItem.id, field: "period", value })}
+                />
+                <BufferedField
+                  label="Right Hero Card Highlights (one bullet per line, max 6)"
+                  value={(activeItem.heroHighlights ?? []).join("\n")}
+                  maxLength={960}
+                  multiline
+                  allowEmpty
+                  placeholder={"Instant Audit: Inspect 28 SEO factors live\nZero Login: Runs inside the visitor browser"}
+                  onCommit={(value) =>
+                    execute({
+                      type: "project.update",
+                      itemId: activeItem.id,
+                      field: "heroHighlights",
+                      value: value
+                        .split(/\r?\n/)
+                        .map((line) => line.trim().slice(0, 160))
+                        .filter(Boolean)
+                        .slice(0, 6),
+                    })
+                  }
+                />
+                <BufferedField
+                  label="URL Slug"
+                  value={activeItem.caseStudySlug}
+                  maxLength={80}
+                  onCommit={(value) =>
+                    execute({
+                      type: "project.update",
+                      itemId: activeItem.id,
+                      field: "caseStudySlug",
+                      value: normalizePublishingSlug(value),
+                    })
+                  }
+                />
+              </div>
+            )}
+
+            {activeTab === "inputs" && (
+              <div key={`${activeItem.id}-inputs`} style={{ display: "grid", gap: "10px", minWidth: 0 }}>
+                <p className="guardrail-note" style={{ margin: 0 }}>
+                  Pre-fill the transferred tool&apos;s interactive input fields and primary CTA button label for every visitor who opens this landing page.
+                </p>
+                <BufferedField
+                  label="Default Primary Input (Topic / URL / Keyword)"
+                  value={activeItem.defaultInput ?? ""}
+                  maxLength={2000}
+                  allowEmpty
+                  placeholder="e.g. Best AI Workflow Tools for Agencies"
+                  onCommit={(value) =>
+                    execute({ type: "project.update", itemId: activeItem.id, field: "defaultInput", value })
+                  }
+                />
+                <BufferedField
+                  label="Default Secondary Input / Draft Content"
+                  value={activeItem.defaultSecondaryInput ?? ""}
+                  maxLength={4000}
+                  multiline
+                  allowEmpty
+                  placeholder="Optional default draft text, HTML snippet, or description pre-loaded into the tool textarea..."
+                  onCommit={(value) =>
+                    execute({ type: "project.update", itemId: activeItem.id, field: "defaultSecondaryInput", value })
+                  }
+                />
+                <BufferedField
+                  label="Custom Primary Action Button Label"
+                  value={activeItem.customCtaLabel ?? ""}
+                  maxLength={90}
+                  allowEmpty
+                  placeholder="e.g. Run Free SEO Analysis"
+                  onCommit={(value) =>
+                    execute({ type: "project.update", itemId: activeItem.id, field: "customCtaLabel", value })
+                  }
+                />
+              </div>
+            )}
+
+            {activeTab === "theme" && (
+              <div key={`${activeItem.id}-theme`} style={{ display: "grid", gap: "11px", minWidth: 0 }}>
+                <Field label="Landing Page Theme Mode">
+                  <select
+                    value={activeItem.toolThemeMode ?? "auto"}
+                    onChange={(event) =>
+                      execute({
+                        type: "project.update",
+                        itemId: activeItem.id,
+                        field: "toolThemeMode",
+                        value: event.target.value,
+                      })
+                    }
+                  >
+                    <option value="auto">Match Website Theme (Auto)</option>
+                    <option value="dark">Dark Mode Surface</option>
+                    <option value="light">Light Mode Surface</option>
+                  </select>
+                </Field>
+
+                <div style={{ display: "grid", gap: "6px" }}>
+                  <span style={{ color: "#b4bed1", fontSize: "12px", fontWeight: 600 }}>
+                    Per-Tool Accent Color Override
+                  </span>
+                  <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                    <input
+                      type="color"
+                      aria-label="Pick tool accent color"
+                      value={/^#[0-9a-f]{6}$/i.test(hexDraft) ? hexDraft : "#22d3ee"}
+                      onChange={(e) => {
+                        setHexDraft(e.target.value);
+                        execute({
+                          type: "project.update",
+                          itemId: activeItem.id,
+                          field: "toolAccentHex",
+                          value: e.target.value,
+                        });
+                      }}
+                      style={{ width: "42px", height: "36px", padding: "2px", borderRadius: "8px", border: "1px solid var(--line)", background: "transparent", cursor: "pointer", flexShrink: 0 }}
+                    />
+                    <input
+                      type="text"
+                      aria-label="Tool accent hex color"
+                      value={hexDraft}
+                      maxLength={32}
+                      placeholder="#22d3ee (inherits site accent)"
+                      onChange={(e) => setHexDraft(e.target.value)}
+                      onBlur={() =>
+                        execute({
+                          type: "project.update",
+                          itemId: activeItem.id,
+                          field: "toolAccentHex",
+                          value: hexDraft.trim(),
+                        })
+                      }
+                      style={{
+                        flex: 1,
+                        minWidth: 0,
+                        padding: "8px 10px",
+                        borderRadius: "8px",
+                        border: "1px solid var(--line)",
+                        background: "rgba(0,0,0,0.25)",
+                        color: "var(--text)",
+                        fontSize: "12px",
+                      }}
+                    />
+                  </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", alignItems: "center" }}>
+                    {TOOL_ACCENT_SWATCHES.map((swatch) => (
+                      <button
+                        key={swatch.hex}
+                        type="button"
+                        title={`${swatch.label} (${swatch.hex})`}
+                        aria-label={`Set accent ${swatch.label}`}
+                        onClick={() => {
+                          setHexDraft(swatch.hex);
+                          execute({
+                            type: "project.update",
+                            itemId: activeItem.id,
+                            field: "toolAccentHex",
+                            value: swatch.hex,
+                          });
+                        }}
+                        style={{
+                          width: "24px",
+                          height: "24px",
+                          borderRadius: "999px",
+                          border: activeItem.toolAccentHex === swatch.hex ? "2px solid #ffffff" : "1px solid rgba(255,255,255,0.25)",
+                          background: swatch.hex,
+                          cursor: "pointer",
+                        }}
+                      />
+                    ))}
+                    {activeItem.toolAccentHex && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setHexDraft("");
+                          execute({
+                            type: "project.update",
+                            itemId: activeItem.id,
+                            field: "toolAccentHex",
+                            value: "",
+                          });
+                        }}
+                        style={{
+                          padding: "4px 8px",
+                          borderRadius: "7px",
+                          border: "1px solid var(--line)",
+                          background: "rgba(255,255,255,0.05)",
+                          color: "#cbd5e1",
+                          fontSize: "10.5px",
+                          cursor: "pointer",
+                        }}
+                      >
+                        Use Site Default
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div style={{ display: "grid", gap: "8px", paddingTop: "4px", borderTop: "1px solid var(--line)" }}>
+                  <span style={{ color: "#b4bed1", fontSize: "12px", fontWeight: 600 }}>
+                    Landing Page Sections
+                  </span>
+                  <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", color: "#e2e8f0", cursor: "pointer" }}>
+                    <input
+                      type="checkbox"
+                      checked={Boolean(activeItem.hideEducationSection)}
+                      onChange={(e) =>
+                        execute({
+                          type: "project.update",
+                          itemId: activeItem.id,
+                          field: "hideEducationSection",
+                          value: e.target.checked,
+                        })
+                      }
+                    />
+                    <span>Hide Educational / How-It-Works Sections</span>
+                  </label>
+                  <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", color: "#e2e8f0", cursor: "pointer" }}>
+                    <input
+                      type="checkbox"
+                      checked={Boolean(activeItem.hideFaqSection)}
+                      onChange={(e) =>
+                        execute({
+                          type: "project.update",
+                          itemId: activeItem.id,
+                          field: "hideFaqSection",
+                          value: e.target.checked,
+                        })
+                      }
+                    />
+                    <span>Hide FAQ Accordion Section</span>
+                  </label>
+                </div>
+              </div>
+            )}
+
+            {activeTab === "story" && (
+              <div key={`${activeItem.id}-story`} style={{ display: "grid", gap: "10px", minWidth: 0 }}>
+                <CustomFaqsEditor
+                  faqs={activeItem.customFaqs ?? []}
+                  onChange={(nextFaqs) =>
+                    execute({
+                      type: "project.update",
+                      itemId: activeItem.id,
+                      field: "customFaqs",
+                      value: nextFaqs,
+                    })
+                  }
+                />
+                <BufferedField
+                  label="Methodology Note: Problem / Challenge"
+                  value={activeItem.challenge}
+                  maxLength={1200}
+                  multiline
+                  allowEmpty
+                  onCommit={(value) =>
+                    execute({ type: "project.update", itemId: activeItem.id, field: "challenge", value })
+                  }
+                />
+                <BufferedField
+                  label="Methodology Note: Approach"
+                  value={activeItem.approach}
+                  maxLength={1800}
+                  multiline
+                  allowEmpty
+                  onCommit={(value) =>
+                    execute({ type: "project.update", itemId: activeItem.id, field: "approach", value })
+                  }
+                />
+                <BufferedField
+                  label="Methodology Note: Outcome"
+                  value={activeItem.outcome}
+                  maxLength={1200}
+                  multiline
+                  allowEmpty
+                  onCommit={(value) =>
+                    execute({ type: "project.update", itemId: activeItem.id, field: "outcome", value })
+                  }
+                />
+                <BufferedField
+                  label="External Reference URL (Optional)"
+                  value={activeItem.link}
+                  maxLength={300}
+                  allowEmpty
+                  onCommit={(value) =>
+                    execute({ type: "project.update", itemId: activeItem.id, field: "link", value })
+                  }
+                />
+                <ProjectGallery project={activeItem} document={document} execute={execute} />
+              </div>
+            )}
+          </article>
+        )}
+      </section>
+    </div>
+  );
+}
+
+function CustomFaqsEditor({
+  faqs,
+  onChange,
+}: {
+  faqs: Array<{ question: string; answer: string }>;
+  onChange: (next: Array<{ question: string; answer: string }>) => void;
+}) {
+  const [drafts, setDrafts] = useState(faqs);
+
+  useEffect(() => {
+    setDrafts(faqs);
+  }, [faqs]);
+
+  function commitDrafts(next: Array<{ question: string; answer: string }>) {
+    const valid = next
+      .map((item) => ({
+        question: item.question.trim().slice(0, 220),
+        answer: item.answer.trim().slice(0, 1200),
+      }))
+      .filter((item) => item.question.length > 0 && item.answer.length > 0);
+    onChange(valid);
+  }
+
+  return (
+    <div style={{ display: "grid", gap: "8px", padding: "10px", borderRadius: "10px", border: "1px solid var(--line)", background: "rgba(15, 23, 42, 0.45)" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+        <div>
+          <strong style={{ fontSize: "12px", color: "#f8fafc", display: "block" }}>
+            Custom Landing Page FAQs ({drafts.length}/8)
+          </strong>
+          <small style={{ fontSize: "10.5px", color: "#94a3b8" }}>
+            {drafts.length > 0 ? "Replaces original FAQ items." : "Leave empty to keep main-site FAQs."}
+          </small>
+        </div>
+        <button
+          type="button"
+          disabled={drafts.length >= 8}
+          onClick={() => {
+            const next = [
+              ...drafts,
+              {
+                question: "How does this tool help my workflow?",
+                answer: "Enter your inputs above and generate actionable results right in your browser.",
+              },
+            ];
+            setDrafts(next);
+            commitDrafts(next);
+          }}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "4px",
+            padding: "5px 9px",
+            borderRadius: "7px",
+            border: "1px solid rgba(56, 189, 248, 0.35)",
+            background: "rgba(56, 189, 248, 0.12)",
+            color: "#7dd3fc",
+            fontSize: "11px",
+            fontWeight: 700,
+            cursor: drafts.length >= 8 ? "not-allowed" : "pointer",
+          }}
+        >
+          <Plus size={12} /> Add FAQ
+        </button>
+      </div>
+
+      {drafts.map((faq, idx) => (
+        <div key={idx} style={{ display: "grid", gap: "6px", padding: "8px", borderRadius: "8px", background: "rgba(0,0,0,0.22)", border: "1px solid var(--line)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "6px" }}>
+            <span style={{ fontSize: "10.5px", fontWeight: 700, color: "var(--accent)" }}>FAQ #{idx + 1}</span>
+            <button
+              type="button"
+              aria-label={`Remove FAQ ${idx + 1}`}
+              onClick={() => {
+                const next = drafts.filter((_, i) => i !== idx);
+                setDrafts(next);
+                commitDrafts(next);
+              }}
+              style={{ border: 0, background: "transparent", color: "#fda4af", cursor: "pointer", padding: "2px" }}
+            >
+              <Trash2 size={13} />
+            </button>
+          </div>
+          <input
+            type="text"
+            value={faq.question}
+            maxLength={220}
+            placeholder="FAQ Question..."
+            onChange={(e) => {
+              const next = drafts.map((item, i) => (i === idx ? { ...item, question: e.target.value } : item));
+              setDrafts(next);
+            }}
+            onBlur={() => commitDrafts(drafts)}
+          />
+          <textarea
+            rows={2}
+            value={faq.answer}
+            maxLength={1200}
+            placeholder="FAQ Answer..."
+            onChange={(e) => {
+              const next = drafts.map((item, i) => (i === idx ? { ...item, answer: e.target.value } : item));
+              setDrafts(next);
+            }}
+            onBlur={() => commitDrafts(drafts)}
+          />
+        </div>
+      ))}
+
+      {drafts.length > 0 && (
+        <button
+          type="button"
+          onClick={() => {
+            setDrafts([]);
+            onChange([]);
+          }}
+          style={{
+            padding: "5px 9px",
+            borderRadius: "7px",
+            border: "1px solid var(--line)",
+            background: "transparent",
+            color: "#cbd5e1",
+            fontSize: "11px",
+            cursor: "pointer",
+          }}
+        >
+          Clear Custom FAQs (Restore Original)
+        </button>
+      )}
+    </div>
+  );
+}
+
+function BufferedField({ label, value, maxLength, multiline = false, allowEmpty = false, placeholder, onCommit }: { label: string; value: string; maxLength: number; multiline?: boolean; allowEmpty?: boolean; placeholder?: string; onCommit: (value: string) => void }) {
   const [draft, setDraft] = useState(value);
   useEffect(() => setDraft(value), [value]);
   useEffect(() => {
@@ -284,7 +1009,7 @@ function BufferedField({ label, value, maxLength, multiline = false, allowEmpty 
     return () => window.clearTimeout(timer);
   }, [allowEmpty, draft, onCommit, value]);
   const commit = () => { const next = label.toLowerCase().includes("slug") ? normalizePublishingSlug(draft) : draft.trim(); setDraft(next); if (!allowEmpty && !next) setDraft(value); else if (next !== value) onCommit(next); };
-  return <Field label={label}>{multiline ? <textarea value={draft} maxLength={maxLength} rows={5} onChange={(event) => setDraft(event.target.value)} onBlur={commit} /> : <input value={draft} maxLength={maxLength} onChange={(event) => setDraft(event.target.value)} onBlur={commit} />}</Field>;
+  return <Field label={label}>{multiline ? <textarea value={draft} maxLength={maxLength} rows={4} placeholder={placeholder} onChange={(event) => setDraft(event.target.value)} onBlur={commit} /> : <input value={draft} maxLength={maxLength} placeholder={placeholder} onChange={(event) => setDraft(event.target.value)} onBlur={commit} />}</Field>;
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) { return <label className="field"><span>{label}</span>{children}</label>; }
