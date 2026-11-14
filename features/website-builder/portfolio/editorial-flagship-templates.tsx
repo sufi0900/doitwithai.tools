@@ -14,6 +14,8 @@ import {
 import type { SiteDocument } from "@/features/website-builder/domain/site-document";
 import { isBlogFirstTemplate } from "@/features/website-builder/domain/template-contracts";
 import { projectsForPresentation } from "@/features/website-builder/domain/opportunity";
+import { InteractiveWebsiteToolRunner } from "@/features/website-builder/tools/InteractiveWebsiteToolRunner";
+import { CatalogToolInstaller } from "@/features/website-builder/studio/CatalogToolInstaller";
 import {
  EditorialFlagshipHero,
  isEditorialFlagshipTemplate,
@@ -27,16 +29,22 @@ export function EditorialFlagshipSections({
  publicBasePath,
  onOpenPage,
  onOpenPost,
+ onOpenTool,
+ execute,
 }: {
  document: SiteDocument;
  editing?: boolean;
  publicBasePath?: string;
  onOpenPage?: (id: string) => void;
  onOpenPost?: (id: string) => void;
+ onOpenTool?: (id: string) => void;
+ execute?: (command: any) => void;
 }) {
  const template = document.design.template;
  const meta = TEMPLATE_META[template] ?? TEMPLATE_META["doitwithai-flagship"];
  const [searchQuery, setSearchQuery] = useState("");
+ const [activeInlineToolId, setActiveInlineToolId] = useState<string>("");
+ const [showStudioToolInstaller, setShowStudioToolInstaller] = useState<boolean>(false);
  const [selectedTopic, setSelectedTopic] = useState<string>("all");
  const [activeReaderPostId, setActiveReaderPostId] = useState<string | null>(null);
  const [copiedPromptId, setCopiedPromptId] = useState<string | null>(null);
@@ -53,7 +61,6 @@ export function EditorialFlagshipSections({
    (post) => !publicBasePath || post.status === "published"
   );
   if (realPosts.length > 0 || publicBasePath) return realPosts;
-  // Provide rich starter demo dispatches in Studio preview when no posts exist yet
   const primarySkill = document.skills[0]?.label || "AI SEO & Content Systems";
   const secondarySkill = document.skills[1]?.label || "Web Engineering";
   return [
@@ -295,9 +302,6 @@ export function EditorialFlagshipSections({
   setCopiedSchema(true);
   setTimeout(() => setCopiedSchema(false), 2200);
  };
- // ============================================================================
- // LAYOUT VARIANT A: CLASSIC BLOGGER.COM / EDITORIAL 2-COLUMN WITH STICKY SIDEBAR
- // ============================================================================
  if (template === "authority-niche-blog") {
   return (
    <div
@@ -307,7 +311,6 @@ export function EditorialFlagshipSections({
     <div
      style={{ maxWidth: "1240px", margin: "0 auto", display: "grid", gridTemplateColumns: "minmax(0, 2.1fr) minmax(280px, 1fr)", gap: "36px", alignItems: "start", }}
     >
-     {/* Main 2/3 Blog & Review Stream */}
      <div style={{ display: "grid", gap: "28px" }}>
       <div
        style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "2px solid #0f172a", paddingBottom: "12px", }}
@@ -411,7 +414,6 @@ export function EditorialFlagshipSections({
         </p>
        </div>
       )}
-      {/* Phase 3: Editorial Key Takeaways & E-E-A-T Pros/Cons Review Box */}
       <section
        id="key-takeaways"
        style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderLeft: "4px solid #2563eb", borderRadius: "14px", padding: "24px", display: "grid", gap: "12px", }}
@@ -455,7 +457,6 @@ export function EditorialFlagshipSections({
         </div>
        </div>
       </section>
-      {/* Phase 2: Interactive Side-by-Side Comparison Matrix Table */}
       {filteredProjects.length > 0 && (
        <section
         id="comparison-matrix"
@@ -490,13 +491,7 @@ export function EditorialFlagshipSections({
             <td style={{ padding: "12px 8px", color: "#334155" }}>{proj.technologies.slice(0, 3).join(" · ")}</td>
             <td style={{ padding: "12px 8px", color: "#475569" }}>{(proj.outcome || proj.summary).slice(0, 90)}</td>
             <td style={{ padding: "12px 8px", whiteSpace: "nowrap" }}>
-             {proj.link ? (
-              <a href={proj.link} target="_blank" rel="noopener noreferrer" style={{ color: "#2563eb", fontWeight: 700, textDecoration: "none" }}>
-               Test Tool ↗
-              </a>
-             ) : (
-              <span style={{ color: "#64748b" }}>Included</span>
-             )}
+             <span style={{ color: "#2563eb", fontWeight: 700 }}>Included</span>
             </td>
            </tr>
           ))}
@@ -504,7 +499,6 @@ export function EditorialFlagshipSections({
         </table>
        </section>
       )}
-      {/* Recommended Tools / Case Studies Table inside Main Column */}
       {filteredProjects.length > 0 && (
        <section id="projects" style={{ marginTop: "16px", display: "grid", gap: "16px" }}>
         <div style={{ borderBottom: "2px solid #0f172a", paddingBottom: "10px" }}>
@@ -536,9 +530,7 @@ export function EditorialFlagshipSections({
        </section>
       )}
      </div>
-     {/* Sticky 1/3 Classic Blogger Sidebar */}
      <aside style={{ display: "grid", gap: "20px", position: "sticky", top: "24px" }} aria-label="Blog sidebar">
-      {/* Phase 3: Sticky Table of Contents (ToC) & Quick Jump Widget */}
       <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "14px", padding: "20px", display: "grid", gap: "10px" }}>
        <strong style={{ fontSize: "12px", letterSpacing: "0.12em", textTransform: "uppercase", color: "#2563eb" }}>
         STICKY TABLE OF CONTENTS
@@ -553,7 +545,6 @@ export function EditorialFlagshipSections({
         <a href="#contact" style={{ color: "#334155", textDecoration: "none" }}>06. Weekly Newsletter Signup</a>
        </nav>
       </div>
-      {/* Search Widget */}
       <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "14px", padding: "20px" }}>
        <strong style={{ display: "block", fontSize: "12px", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "10px", color: "#0f172a" }}>
         SEARCH THIS BLOG
@@ -569,7 +560,6 @@ export function EditorialFlagshipSections({
         />
        </div>
       </div>
-      {/* Author E-E-A-T Bio Widget */}
       <div id="about" style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "14px", padding: "22px", display: "grid", gap: "10px" }}>
        <strong style={{ fontSize: "12px", letterSpacing: "0.12em", textTransform: "uppercase", color: "#2563eb" }}>
         ABOUT THE AUTHOR
@@ -600,7 +590,6 @@ export function EditorialFlagshipSections({
         </div>
        )}
       </div>
-      {/* Categories / Topic Clusters Widget */}
       {topicFilters.length > 0 && (
        <div id="skills" style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "14px", padding: "20px", display: "grid", gap: "10px" }}>
         <strong style={{ fontSize: "12px", letterSpacing: "0.12em", textTransform: "uppercase", color: "#0f172a" }}>
@@ -627,7 +616,6 @@ export function EditorialFlagshipSections({
         </div>
        </div>
       )}
-      {/* Newsletter / Contact Sidebar Box */}
       <div id="contact" style={{ background: "#1e293b", color: "#f8fafc", borderRadius: "14px", padding: "22px", display: "grid", gap: "10px" }}>
        <span style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.14em", color: "#60a5fa" }}>
         WEEKLY DISPATCH
@@ -650,15 +638,11 @@ export function EditorialFlagshipSections({
    </div>
   );
  }
- // ============================================================================
- // LAYOUT VARIANT B: TRUE DOITWITHAI FLAGSHIP, GLASSMORPHISM, KO-FI & SAAS HUB
- // ============================================================================
  return (
   <div
    className={`flagship-sections-root flagship-body-${template}`}
    style={{ background: meta.surfaceBg, color: "#f8fafc", padding: "36px clamp(20px, 5vw, 68px) 72px", display: "grid", gap: "52px", }}
   >
-   {/* 1. Interactive DoItWithAI Tool, Article & Topic Finder Bar */}
    <section
     aria-label="Interactive Topic and Tool Explorer"
     style={{ background: meta.cardBg, border: `1px solid ${meta.borderColor}`, borderRadius: "18px", padding: "22px 24px", backdropFilter: "blur(20px)", display: "grid", gap: "16px", }}
@@ -711,7 +695,6 @@ export function EditorialFlagshipSections({
      ))}
     </div>
    </section>
-   {/* 2. Featured Articles & Topic Cluster Hub (`#blog`) */}
    {(filteredPosts.length > 0 || editing || isBlogFirstTemplate(template)) && (
     <section id="blog" style={{ display: "grid", gap: "20px" }}>
      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: "12px" }}>
@@ -744,7 +727,6 @@ export function EditorialFlagshipSections({
        )
       )}
      </header>
-     {/* Phase 2 Interactive Inline Article Reader Drawer */}
      {activeReaderPost && (
       <article
        id="article-reader-drawer"
@@ -898,193 +880,391 @@ export function EditorialFlagshipSections({
      )}
     </section>
    )}
-   {/* 3. Tools, Digital Products & Case Studies Bento Grid (`#projects`) */}
-   {document.content.visibility.projects && (filteredProjects.length > 0 || editing) && (
-    <section id="projects" style={{ display: "grid", gap: "20px" }}>
+   {template === "micro-saas-launchpad" && (
+    <section
+     id="how-it-works"
+     style={{
+      background: meta.cardBg,
+      border: `1px solid ${meta.borderColor}`,
+      borderRadius: "18px",
+      padding: "28px",
+      display: "grid",
+      gap: "20px",
+     }}
+    >
      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: "12px" }}>
       <div>
-       <span style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.16em", color: meta.accentColor }}>
-        {template === "doitwithai-flagship" || template === "micro-saas-launchpad"
-         ? "FEATURED AI TOOLS, PRODUCTS & WORKFLOWS"
+       <span style={{ fontSize: "11px", fontWeight: 800, letterSpacing: "0.16em", color: meta.accentColor }}>
+        HOW THIS SINGLE-TOOL ENGINE WORKS · 3-STEP WORKFLOW
+       </span>
+       <h2 style={{ margin: "6px 0 0", fontSize: "clamp(22px, 2.8vw, 32px)" }}>
+        Calibrated for 600px Desktop Titles, 920px Mobile Descriptions &amp; Zero SERP Rewrites
+       </h2>
+      </div>
+      <a
+       href="#tool-workspace"
+       style={{
+        padding: "8px 14px",
+        borderRadius: "9px",
+        background: "rgba(34, 211, 238, 0.14)",
+        border: `1px solid ${meta.borderColor}`,
+        color: meta.accentColor,
+        fontSize: "12px",
+        fontWeight: 800,
+        textDecoration: "none",
+       }}
+      >
+       ↑ Back to Live AI Tool Workspace
+      </a>
+     </header>
+     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "16px" }}>
+      {[
+       {
+        step: "STEP 01 · FRONT-LOAD ENTITY",
+        title: "Place Primary Keyword in First 35 Characters",
+        desc: "Google rewrites over 60% of title tags that bury the primary topic. Our generator front-loads your target keyword and pairs it with a clear brand suffix.",
+       },
+       {
+        step: "STEP 02 · PIXEL WIDTH CALIBRATION",
+        title: "Verify 600px Title & 920px Description Limits",
+        desc: "Wide uppercase letters (M, W, G) consume more pixels than narrow characters. Real-time pixel gauges guarantee zero ellipsis truncation on desktop and mobile.",
+       },
+       {
+        step: "STEP 03 · 1-CLICK HTML & OPENGRAPH EXPORT",
+        title: "Copy Validated <head> & Social Meta Tags",
+        desc: "Switch to the HTML / JSON-LD Export tab inside the tool above to copy production-ready <title>, meta description, canonical, OpenGraph, and Twitter Card tags.",
+       },
+      ].map((card) => (
+       <article
+        key={card.step}
+        style={{
+         background: "rgba(5, 11, 22, 0.72)",
+         border: `1px solid ${meta.borderColor}`,
+         borderRadius: "14px",
+         padding: "20px",
+         display: "grid",
+         gap: "8px",
+        }}
+       >
+        <span style={{ fontSize: "10.5px", fontWeight: 800, letterSpacing: "0.12em", color: meta.accentColor }}>
+         {card.step}
+        </span>
+        <h3 style={{ margin: 0, fontSize: "17px", color: "#ffffff" }}>{card.title}</h3>
+        <p style={{ margin: 0, fontSize: "13px", color: "#cbd5e1", lineHeight: 1.6 }}>{card.desc}</p>
+       </article>
+      ))}
+     </div>
+    </section>
+   )}
+
+   {template !== "micro-saas-launchpad" && document.content.visibility.projects && (filteredProjects.length > 0 || editing) && (
+    <section id="projects" style={{ display: "grid", gap: "22px" }}>
+     <header style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: "12px" }}>
+      <div>
+       <span style={{ fontSize: "11px", fontWeight: 800, letterSpacing: "0.16em", color: meta.accentColor }}>
+        {template === "doitwithai-flagship"
+         ? `INTERACTIVE AI TOOLS DIRECTORY · ${projects.length} LIVE TOOLS IN THIS WEBSITE`
          : template === "founder-authority-brand"
-          ? "CREATOR SHOP, TEMPLATES & CASE STUDIES"
+          ? "CREATOR SHOP, FREE TOOLS & TEMPLATES"
           : "VERIFIED CASE STUDIES & CLIENT OUTCOMES"}
        </span>
        <h2 style={{ margin: "6px 0 0", fontSize: "clamp(24px, 3.2vw, 36px)" }}>
         {template === "doitwithai-flagship"
-         ? "Interactive Tools & Flagship Builds"
+         ? `All ${projects.length} Interactive AI Tools & Utilities`
          : template === "founder-authority-brand"
           ? "Digital Products, Resources & Proof"
           : "Selected Projects & Case Studies"}
        </h2>
       </div>
-      {publicBasePath && projects.length > 0 && (
-       <a
-        href={`${publicBasePath}/projects`}
-        style={{ color: meta.accentColor, fontSize: "13px", fontWeight: 700, textDecoration: "none" }}
-       >
-        Explore all {projects.length} items →
-       </a>
-      )}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", alignItems: "center" }}>
+       {editing && execute && template === "doitwithai-flagship" && (
+        <button
+         type="button"
+         onClick={() => setShowStudioToolInstaller((prev) => !prev)}
+         style={{
+          padding: "9px 15px",
+          borderRadius: "10px",
+          border: 0,
+          background: "linear-gradient(135deg, #22d3ee, #6366f1)",
+          color: "#04101c",
+          fontSize: "12.5px",
+          fontWeight: 800,
+          cursor: "pointer",
+         }}
+        >
+         {showStudioToolInstaller ? "Hide Tool Installer" : "+ Add New Tool (126+ Catalog)"}
+        </button>
+       )}
+       {publicBasePath && projects.length > 0 && (
+        <a
+         href={`${publicBasePath}/projects`}
+         style={{
+          padding: "9px 14px",
+          borderRadius: "10px",
+          background: "rgba(99, 102, 241, 0.16)",
+          border: `1px solid ${meta.borderColor}`,
+          color: "#e0e7ff",
+          fontSize: "12.5px",
+          fontWeight: 800,
+          textDecoration: "none",
+         }}
+        >
+         {template === "doitwithai-flagship"
+          ? `Open Dedicated All Tools Page (${projects.length}) →`
+          : `Explore all ${projects.length} items →`}
+        </a>
+       )}
+      </div>
      </header>
+
+     {editing && execute && showStudioToolInstaller && template === "doitwithai-flagship" && (
+      <div style={{ maxWidth: "680px" }}>
+       <CatalogToolInstaller document={document} execute={execute} />
+      </div>
+     )}
+
      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "18px" }}>
       {filteredProjects.map((project, idx) => {
        const cover = document.media.assets.find((a) => project.mediaIds.includes(a.id));
+       const toolSlug = project.caseStudySlug || project.id;
        return (
         <article
          key={project.id}
-         style={{ background: meta.cardBg, border: `1px solid ${meta.borderColor}`, borderRadius: "16px", padding: "22px", backdropFilter: "blur(18px)", display: "grid", gap: "12px", }}
+         style={{
+          background: meta.cardBg,
+          border: `1px solid ${meta.borderColor}`,
+          borderRadius: "16px",
+          padding: "22px",
+          backdropFilter: "blur(18px)",
+          display: "grid",
+          gap: "12px",
+         }}
         >
          {cover && (
           <div style={{ position: "relative", height: "165px", borderRadius: "10px", overflow: "hidden" }}>
            <Image src={cover.url} alt={cover.alt} fill sizes="420px" unoptimized />
           </div>
          )}
-         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.12em", color: meta.accentColor }}>
-           {project.role || `BUILD #${String(idx + 1).padStart(2, "0")}`}
+         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "8px" }}>
+          <span style={{ fontSize: "11px", fontWeight: 800, letterSpacing: "0.1em", color: meta.accentColor }}>
+           {project.role || `TOOL #${String(idx + 1).padStart(2, "0")}`}
           </span>
-          {project.period && <small style={{ color: "#94a3b8", fontSize: "11px" }}>{project.period}</small>}
+          <span
+           style={{
+            fontSize: "10.5px",
+            padding: "2px 8px",
+            borderRadius: "999px",
+            background: "rgba(16, 185, 129, 0.14)",
+            color: "#6ee7b7",
+            fontWeight: 700,
+           }}
+          >
+           {template === "doitwithai-flagship" ? "Live In-Site Tool" : project.period || "Verified"}
+          </span>
          </div>
-         <h3 style={{ margin: 0, fontSize: "20px" }}>{project.title}</h3>
+         <h3 style={{ margin: 0, fontSize: "20px", color: "#ffffff" }}>{project.title}</h3>
          <p style={{ margin: 0, fontSize: "13px", color: "#cbd5e1", lineHeight: 1.6 }}>{project.summary}</p>
          {project.outcome && (
           <div
-           style={{ padding: "9px 12px", borderRadius: "10px", background: "rgba(16, 185, 129, 0.08)", border: "1px solid rgba(16, 185, 129, 0.24)", fontSize: "12px", color: "#6ee7b7", }}
+           style={{
+            padding: "9px 12px",
+            borderRadius: "10px",
+            background: "rgba(16, 185, 129, 0.08)",
+            border: "1px solid rgba(16, 185, 129, 0.24)",
+            fontSize: "12px",
+            color: "#6ee7b7",
+           }}
           >
-           <strong>Outcome:</strong> {project.outcome}
+           <strong>Output:</strong> {project.outcome}
           </div>
          )}
          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
           {project.technologies.map((tech) => (
            <span
             key={tech}
-            style={{ fontSize: "11px", padding: "3px 9px", borderRadius: "999px", border: `1px solid ${meta.borderColor}`, background: "rgba(255,255,255,0.03)", color: "#e2e8f0", }}
+            style={{
+             fontSize: "11px",
+             padding: "3px 9px",
+             borderRadius: "999px",
+             border: `1px solid ${meta.borderColor}`,
+             background: "rgba(255,255,255,0.03)",
+             color: "#e2e8f0",
+            }}
            >
             {tech}
            </span>
           ))}
          </div>
-         <div style={{ display: "flex", gap: "14px", marginTop: "4px" }}>
-          {publicBasePath && project.caseStudySlug && (
+         <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginTop: "6px" }}>
+          {publicBasePath ? (
            <a
-            href={`${publicBasePath}/projects/${project.caseStudySlug}`}
-            style={{ display: "inline-flex", alignItems: "center", gap: "5px", color: meta.accentColor, fontSize: "13px", fontWeight: 700, textDecoration: "none" }}
+            href={`${publicBasePath}/projects/${toolSlug}`}
+            style={{
+             display: "inline-flex",
+             alignItems: "center",
+             gap: "6px",
+             padding: "8px 13px",
+             borderRadius: "9px",
+             background: meta.accentColor,
+             color: "#ffffff",
+             fontSize: "12px",
+             fontWeight: 800,
+             textDecoration: "none",
+            }}
            >
-            Read case study <ArrowUpRight size={14} />
+            {template === "doitwithai-flagship" ? "Open Tool Page" : "View Details"} <ArrowUpRight size={14} />
            </a>
+          ) : (
+           <button
+            type="button"
+            onClick={() => {
+             if (onOpenTool) onOpenTool(project.id);
+            }}
+            style={{
+             display: "inline-flex",
+             alignItems: "center",
+             gap: "6px",
+             padding: "8px 13px",
+             borderRadius: "9px",
+             border: 0,
+             background: meta.accentColor,
+             color: "#ffffff",
+             fontSize: "12px",
+             fontWeight: 800,
+             cursor: "pointer",
+            }}
+           >
+            {template === "doitwithai-flagship" ? "Open Tool Page Preview →" : "Preview Case Study →"}
+           </button>
           )}
-          {project.link && (
-           <a
-            href={project.link}
-            target="_blank"
-            rel="noreferrer"
-            style={{ display: "inline-flex", alignItems: "center", gap: "5px", color: "#f8fafc", fontSize: "13px", fontWeight: 600, textDecoration: "none" }}
+          {template === "doitwithai-flagship" && (
+           <button
+            type="button"
+            onClick={() => {
+             setActiveInlineToolId(project.id);
+             const el = window.document.getElementById("tool-workspace");
+             el?.scrollIntoView({ behavior: "smooth" });
+            }}
+            style={{
+             display: "inline-flex",
+             alignItems: "center",
+             gap: "5px",
+             padding: "8px 12px",
+             borderRadius: "9px",
+             border: "1px solid rgba(56, 189, 248, 0.4)",
+             background: "rgba(15, 23, 42, 0.78)",
+             color: "#7dd3fc",
+             fontSize: "12px",
+             fontWeight: 700,
+             cursor: "pointer",
+            }}
            >
-            Launch live <ArrowUpRight size={14} />
-           </a>
+            Run Below ↓
+           </button>
           )}
          </div>
         </article>
        );
       })}
      </div>
+
+     {template === "doitwithai-flagship" && projects.length > 0 && (
+      <div style={{ marginTop: "10px", display: "grid", gap: "12px" }}>
+       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
+        <div>
+         <span style={{ fontSize: "11px", fontWeight: 800, letterSpacing: "0.14em", color: "#38bdf8" }}>
+          IN-SITE INTERACTIVE AI TOOL RUNNER · POWERED BY GEMINI API
+         </span>
+         <h3 style={{ margin: "4px 0 0", fontSize: "22px", color: "#ffffff" }}>
+          Test &amp; Run Any Installed Tool Right Here on Your Website
+         </h3>
+        </div>
+       </div>
+       <InteractiveWebsiteToolRunner
+        tool={projects.find((p) => p.id === activeInlineToolId) ?? projects[0]}
+        siteName={document.identity.name}
+        siteSlug={publicBasePath ? publicBasePath.replace(/^\/p\//, "") : "doitwithai-hub"}
+        accentColor="#6366f1"
+        allTools={projects}
+        onSelectTool={(next) => setActiveInlineToolId(next.id)}
+       />
+      </div>
+     )}
     </section>
    )}
-   {/* 4. Capabilities & Topic Authority Matrix (`#skills`) */}
-   {document.content.visibility.skills && (document.skills.length > 0 || editing) && (
-    <section id="skills" style={{ display: "grid", gap: "18px" }}>
-     <header>
+
+   {document.content.visibility.about && (
+    <section
+     id="about"
+     style={{
+      display: "grid",
+      gridTemplateColumns: "1fr",
+      gap: "20px",
+     }}
+    >
+     <div
+      style={{
+       background: meta.cardBg,
+       border: `1px solid ${meta.borderColor}`,
+       borderRadius: "18px",
+       padding: "26px",
+       display: "grid",
+       gap: "12px",
+      }}
+     >
       <span style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.16em", color: meta.accentColor }}>
-       CORE CAPABILITIES &amp; DOMAIN PILLARS
+       {template === "micro-saas-launchpad"
+        ? "ABOUT THIS AI TOOL & PIXEL METHODOLOGY"
+        : template === "doitwithai-flagship"
+         ? "ABOUT THIS MULTI-TOOL AI PLATFORM"
+         : "ABOUT & EDITORIAL METHODOLOGY"}
       </span>
-      <h2 style={{ margin: "6px 0 0", fontSize: "clamp(22px, 2.8vw, 32px)" }}>
-       What Powers This Platform
-      </h2>
-     </header>
-     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: "14px" }}>
-      {document.skills.map((skill, idx) => (
-       <article
-        key={skill.id}
-        style={{ background: meta.cardBg, border: `1px solid ${meta.borderColor}`, borderRadius: "14px", padding: "18px", display: "grid", gap: "8px", }}
-       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-         <span style={{ fontSize: "11px", fontFamily: "ui-monospace, monospace", color: meta.accentColor }}>
-          PILLAR 0{idx + 1}
-         </span>
-         <span style={{ fontSize: "11px", color: "#94a3b8" }}>Level {skill.level}/5</span>
-        </div>
-        <h3 style={{ margin: 0, fontSize: "17px" }}>{skill.label}</h3>
-        <div style={{ height: "5px", borderRadius: "999px", background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
-         <div style={{ width: `${skill.level * 20}%`, height: "100%", background: meta.accentColor }} />
-        </div>
-       </article>
-      ))}
+      <h2 style={{ margin: 0, fontSize: "24px" }}>{document.content.about.heading}</h2>
+      <p style={{ margin: 0, fontSize: "14px", color: "#cbd5e1", lineHeight: 1.7 }}>
+       {document.content.about.body || document.identity.intro}
+      </p>
+      {aboutPage && (
+       <div>
+        {publicBasePath ? (
+         <a
+          href={`${publicBasePath}/pages/about`}
+          style={{
+           display: "inline-flex",
+           alignItems: "center",
+           gap: "6px",
+           color: meta.accentColor,
+           fontWeight: 700,
+           fontSize: "13px",
+           textDecoration: "none",
+          }}
+         >
+          Read full {aboutPage.navigationLabel} page <ArrowUpRight size={14} />
+         </a>
+        ) : (
+         <button
+          type="button"
+          onClick={() => onOpenPage?.(aboutPage.id)}
+          style={{
+           display: "inline-flex",
+           alignItems: "center",
+           gap: "6px",
+           color: meta.accentColor,
+           background: "none",
+           border: 0,
+           padding: 0,
+           fontWeight: 700,
+           fontSize: "13px",
+           cursor: "pointer",
+          }}
+         >
+          Preview {aboutPage.navigationLabel} page <ArrowUpRight size={14} />
+         </button>
+        )}
+       </div>
+      )}
      </div>
     </section>
    )}
-   {/* 5. About & Experience Authority Split (`#about` & `#experience`) */}
-   {(document.content.visibility.about || document.content.visibility.experience) && (
-    <section
-     id="about"
-     style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "24px", }}
-    >
-     {document.content.visibility.about && (
-      <div
-       style={{ background: meta.cardBg, border: `1px solid ${meta.borderColor}`, borderRadius: "18px", padding: "26px", display: "grid", gap: "12px", }}
-      >
-       <span style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.16em", color: meta.accentColor }}>
-        ABOUT &amp; E-E-A-T CREDENTIALS
-       </span>
-       <h2 style={{ margin: 0, fontSize: "24px" }}>{document.content.about.heading}</h2>
-       <p style={{ margin: 0, fontSize: "14px", color: "#cbd5e1", lineHeight: 1.7 }}>
-        {document.content.about.body || document.identity.intro}
-       </p>
-       {aboutPage && (
-        <div>
-         {publicBasePath ? (
-          <a
-           href={`${publicBasePath}/pages/about`}
-           style={{ display: "inline-flex", alignItems: "center", gap: "6px", color: meta.accentColor, fontWeight: 700, fontSize: "13px", textDecoration: "none" }}
-          >
-           Read full profile <ArrowUpRight size={14} />
-          </a>
-         ) : (
-          <button
-           type="button"
-           onClick={() => onOpenPage?.(aboutPage.id)}
-           style={{ display: "inline-flex", alignItems: "center", gap: "6px", color: meta.accentColor, background: "none", border: 0, padding: 0, fontWeight: 700, fontSize: "13px", cursor: "pointer" }}
-          >
-           Preview detailed About page <ArrowUpRight size={14} />
-          </button>
-         )}
-        </div>
-       )}
-      </div>
-     )}
-     {document.content.visibility.experience && (document.content.experience.length > 0 || document.content.education.length > 0) && (
-      <div
-       id="experience"
-       style={{ background: meta.cardBg, border: `1px solid ${meta.borderColor}`, borderRadius: "18px", padding: "26px", display: "grid", gap: "14px", }}
-      >
-       <span style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.16em", color: meta.accentColor }}>
-        TRACK RECORD &amp; MILESTONES
-       </span>
-       {document.content.experience.map((exp) => (
-        <div key={exp.id} style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: "12px" }}>
-         <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", color: "#94a3b8" }}>
-          <strong style={{ color: "#f8fafc", fontSize: "15px" }}>{exp.role}</strong>
-          <span>{exp.period}</span>
-         </div>
-         {exp.organization && <small style={{ color: meta.accentColor }}>{exp.organization}</small>}
-         <p style={{ margin: "6px 0 0", fontSize: "13px", color: "#cbd5e1", lineHeight: 1.55 }}>{exp.summary}</p>
-        </div>
-       ))}
-      </div>
-     )}
-    </section>
-   )}
-   {/* 5A-1. Phase 4 — Ko-fi Creator Membership, Support Goal Bar & Supporter Wall (`founder-authority-brand`) */}
    {template === "founder-authority-brand" && (
     <section
      id="kofi-creator-hub"
@@ -1161,7 +1341,6 @@ export function EditorialFlagshipSections({
      </div>
     </section>
    )}
-   {/* 5A-2. Phase 5 — Substack Newsletter Tier Comparison & Sponsor Slot Card (`creator-newsletter-hub`) */}
    {template === "creator-newsletter-hub" && (
     <section
      id="newsletter-tiers"
@@ -1200,7 +1379,6 @@ export function EditorialFlagshipSections({
      </div>
     </section>
    )}
-   {/* 5A-3. Phase 6 — Frosted Glassmorphism ROI Estimator & Productized Packages (`consultant-lead-engine` & `startup-service-agency`) */}
    {(template === "consultant-lead-engine" || template === "startup-service-agency") && (
     <section
      id="advisory-roi-engine"
@@ -1251,7 +1429,6 @@ export function EditorialFlagshipSections({
      </div>
     </section>
    )}
-   {/* 5A-4. Phase 7 — Interactive AI Tool Sandbox & Changelog (`micro-saas-launchpad`) */}
    {template === "micro-saas-launchpad" && (
     <section
      id="saas-sandbox"
@@ -1289,7 +1466,6 @@ export function EditorialFlagshipSections({
      </div>
     </section>
    )}
-   {/* 5B. Phase 2 — Starter Prompt Library & Copy-to-Clipboard Cards (`#prompt-library`) */}
    {(template === "doitwithai-flagship" || template === "micro-saas-launchpad" || template === "founder-authority-brand") && (
     <section id="prompt-library" style={{ display: "grid", gap: "20px" }}>
      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: "12px" }}>
@@ -1339,7 +1515,6 @@ export function EditorialFlagshipSections({
      </div>
     </section>
    )}
-   {/* 5C. Phase 2 — Step-by-Step Workflow Playbooks Accordion (`#playbooks`) */}
    {(template === "doitwithai-flagship" || template === "consultant-lead-engine" || template === "startup-service-agency") && (
     <section id="playbooks" style={{ display: "grid", gap: "18px" }}>
      <header>
@@ -1387,7 +1562,6 @@ export function EditorialFlagshipSections({
      </div>
     </section>
    )}
-   {/* 5D. Phase 2 — Connected JSON-LD @graph Structured Data Engine & Live Inspector */}
    <section
     id="jsonld-schema"
     style={{ background: "rgba(6, 10, 22, 0.78)", border: `1px solid ${meta.borderColor}`, borderRadius: "16px", padding: "20px 24px", display: "grid", gap: "14px", }}
@@ -1433,7 +1607,6 @@ export function EditorialFlagshipSections({
      </pre>
     )}
    </section>
-   {/* 6. Newsletter & Direct Contact Conversion Banner (`#contact`) */}
    {document.content.visibility.contact && (
     <section
      id="contact"

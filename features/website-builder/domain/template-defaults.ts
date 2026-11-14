@@ -8,8 +8,8 @@ import {
   type TemplateId,
 } from "./template-contracts";
 import { legacyRichDocument } from "./legacy-rich-document";
-import { PHASE3_TEMPLATE_SEEDS } from "./template-defaults-phase3";
 
+import { PHASE3_TEMPLATE_SEEDS } from "./template-defaults-phase3";
 type RawBlock = SiteDocument["publishing"]["posts"][number]["blocks"][number];
 type RawPost = SiteDocument["publishing"]["posts"][number];
 type RawPage = SiteDocument["publishing"]["pages"][number];
@@ -111,10 +111,6 @@ function makePage(input: {
   };
 }
 
-// ============================================================================
-// 1. SINGLE-TOOL AI WEBSITE (`micro-saas-launchpad`)
-// Pre-loaded with AI Meta Title & Description Generator + 3 Pages + 5 SEO Posts
-// ============================================================================
 const SINGLE_TOOL_PROJECTS: RawProject[] = [
   {
     id: "tool-meta-title-description-generator",
@@ -129,7 +125,7 @@ const SINGLE_TOOL_PROJECTS: RawProject[] = [
       "OpenGraph Tags",
       "AEO Snippets",
     ],
-    link: "https://doitwithai.tools/tools/meta-title-generator",
+    link: "",
     caseStudySlug: "meta-title-generator",
     role: "Flagship Standalone AI SEO Tool",
     period: "v2.4 Live · Free Browser Utility",
@@ -387,10 +383,6 @@ const SINGLE_TOOL_POSTS: RawPost[] = [
   }),
 ];
 
-// ============================================================================
-// 2. MULTI-TOOL DIRECTORY & PUBLICATION (`doitwithai-flagship`)
-// Modeled on doitwithai.tools with 5 Pre-Loaded Tools + 3 Pages + 5 SEO Posts
-// ============================================================================
 const MULTI_TOOL_PROJECTS: RawProject[] = [
   {
     id: "flagship-tool-1-meta-generator",
@@ -398,7 +390,7 @@ const MULTI_TOOL_PROJECTS: RawProject[] = [
     summary:
       "Craft pixel-verified Google meta titles (600px) and meta descriptions (920px) with CTR scoring, intent tags, and instant OpenGraph HTML snippets.",
     technologies: ["Meta Title AI", "600px SERP Check", "CTR Scoring", "OpenGraph"],
-    link: "https://doitwithai.tools/tools/meta-title-generator",
+    link: "",
     caseStudySlug: "meta-title-generator",
     role: "Tool 01 · On-Page CTR & SERP Snippet Studio",
     period: "Live Utility · 0 Login Required",
@@ -416,7 +408,7 @@ const MULTI_TOOL_PROJECTS: RawProject[] = [
     summary:
       "Run a 28-point technical and semantic on-page SEO audit checking H1–H6 hierarchy, entity coverage, internal links, and passage answer readiness.",
     technologies: ["On-Page Audit", "H1-H6 Hierarchy", "Entity Gap", "AEO Passages"],
-    link: "https://doitwithai.tools/tools/on-page-ai-seo-analyzer",
+    link: "",
     caseStudySlug: "on-page-ai-seo-analyzer",
     role: "Tool 02 · Technical & Semantic Page Auditor",
     period: "Live Utility · 28-Point Diagnostic",
@@ -434,7 +426,7 @@ const MULTI_TOOL_PROJECTS: RawProject[] = [
     summary:
       "Build connected Schema.org JSON-LD @graph blocks (Article, FAQPage, SoftwareApplication, Organization, BreadcrumbList) validated for Google & AI search.",
     technologies: ["JSON-LD @graph", "FAQPage Schema", "SoftwareApplication", "Rich Results"],
-    link: "https://doitwithai.tools/tools/schema-markup-generator",
+    link: "",
     caseStudySlug: "schema-markup-generator",
     role: "Tool 03 · Structured Data & Entity Graph Studio",
     period: "Live Utility · Schema.org Validated",
@@ -452,7 +444,7 @@ const MULTI_TOOL_PROJECTS: RawProject[] = [
     summary:
       "Group raw keyword lists into hub-and-spoke topic clusters with primary pillar assignments, search intent labels, and cannibalization guards.",
     technologies: ["Topic Clusters", "Intent Mapping", "Hub & Spoke", "Zero Cannibalization"],
-    link: "https://doitwithai.tools/tools/keyword-clustering-tool",
+    link: "",
     caseStudySlug: "keyword-clustering-tool",
     role: "Tool 04 · Topical Authority & Cluster Architect",
     period: "Live Utility · Hub-and-Spoke Engine",
@@ -470,7 +462,7 @@ const MULTI_TOOL_PROJECTS: RawProject[] = [
     summary:
       "Audit Flesch-Kincaid grade level, flag sentences over 25 words, and verify first-hand E-E-A-T trust signals for human readers and AI citations.",
     technologies: ["Grade 7-9 Clarity", "<25w Sentences", "Active Voice", "E-E-A-T Signals"],
-    link: "https://doitwithai.tools/tools/readability-checker",
+    link: "",
     caseStudySlug: "readability-checker",
     role: "Tool 05 · Editorial Clarity & E-E-A-T Verifier",
     period: "Live Utility · Instant Passage Grader",
@@ -480,6 +472,24 @@ const MULTI_TOOL_PROJECTS: RawProject[] = [
       "Highlights hard and very-hard sentences, passive voice, and missing evidence markers so writers can tighten prose to Grade 8 clarity.",
     outcome:
       "Transforms complex technical drafts into scannable, high-retention articles with clear Position Zero answer blocks.",
+    mediaIds: [],
+  },
+  {
+    id: "flagship-tool-6-faq-generator",
+    title: "AI FAQ & Answer Engine Snippet Generator",
+    summary:
+      "Generate 48-word Position-Zero direct answer blocks, People-Also-Ask Q&A pairs, and validated FAQPage JSON-LD schema for Google & AI Overviews.",
+    technologies: ["AEO Snippets", "FAQPage Schema", "Position Zero", "PAA Generator"],
+    link: "",
+    caseStudySlug: "ai-faq-snippet-generator",
+    role: "Tool 06 · Answer Engine & FAQ Schema Studio",
+    period: "Live Utility · Position-Zero Engine",
+    challenge:
+      "Pages without concise 40–55 word answer blocks and structured FAQPage schema miss out on Featured Snippets and AI Overview citations.",
+    approach:
+      "Synthesizes direct entity-rich answer passages alongside 5 high-intent People-Also-Ask questions and ready-to-embed JSON-LD markup.",
+    outcome:
+      "Delivers copy-ready Position-Zero answer blocks and FAQPage schema in one click inside your website.",
     mediaIds: [],
   },
 ];
@@ -502,7 +512,7 @@ const MULTI_TOOL_PAGES: RawPage[] = [
         { h2: "Scale From 5 Pre-Loaded Tools to 126+ Catalog Utilities in 1 Click" },
         {
           list: [
-            "Pre-loaded with 5 core SEO & editorial utilities and 5 matching pillar blog posts.",
+            "Pre-loaded with 6 core SEO & editorial utilities and 5 matching pillar blog posts.",
             "Use the '+ Add Tool from DoItWithAI Catalog (0 AI Tokens)' selector in Website Studio to install any of our 126+ tools instantly.",
             "Connected directly to /ai-content-writer for 1-click blog publishing and automatic internal link injection.",
           ],
@@ -685,10 +695,6 @@ const MULTI_TOOL_POSTS: RawPost[] = [
   }),
 ];
 
-// ============================================================================
-// 3. PHASE 2 DEEP CONTENT PACK: BLOGGING, NEWSLETTER & MAGAZINE TEMPLATES
-// (`authority-niche-blog`, `creator-newsletter-hub`, `olive-journal`)
-// ============================================================================
 const AUTHORITY_BLOG_PROJECTS: RawProject[] = [
   {
     id: "review-bench-1-ai-seo-suite",
@@ -696,7 +702,7 @@ const AUTHORITY_BLOG_PROJECTS: RawProject[] = [
     summary:
       "60-day controlled benchmark testing 14 AI SEO and content optimization platforms across entity recall, SERP correlation, readability, and cost per published article.",
     technologies: ["9.8/10 Winner", "60-Day Study", "14 Tools Tested", "E-E-A-T Verified"],
-    link: "https://doitwithai.tools/tools/on-page-ai-seo-analyzer",
+    link: "",
     caseStudySlug: "ai-seo-software-benchmark-2026",
     role: "Editor's Choice Benchmark · 9.8 / 10 Rating",
     period: "Q4 2026 Lab Report",
@@ -714,7 +720,7 @@ const AUTHORITY_BLOG_PROJECTS: RawProject[] = [
     summary:
       "Side-by-side comparison of 8 technical SEO auditing and JSON-LD schema generators evaluated on @graph accuracy, speed, and zero-signup usability.",
     technologies: ["9.5/10 Score", "JSON-LD @graph", "Core Web Vitals", "Free Utility"],
-    link: "https://doitwithai.tools/tools/schema-markup-generator",
+    link: "",
     caseStudySlug: "technical-seo-crawler-shootout",
     role: "Technical Lab Winner · 9.5 / 10 Rating",
     period: "2026 Technical Review",
@@ -732,7 +738,7 @@ const AUTHORITY_BLOG_PROJECTS: RawProject[] = [
     summary:
       "Empirical analysis of 1,200 title tags and meta descriptions measuring Google rewrite rates before and after 580px pixel calibration.",
     technologies: ["9.7/10 Score", "1,200 URLs Audited", "600px Rule", "+38% CTR Lift"],
-    link: "https://doitwithai.tools/tools/meta-title-generator",
+    link: "",
     caseStudySlug: "serp-ctr-optimization-study",
     role: "Best Free CTR Tool · 9.7 / 10 Rating",
     period: "2026 SERP Study",
@@ -952,7 +958,7 @@ const NEWSLETTER_PROJECTS: RawProject[] = [
     summary:
       "Complete searchable archive of 52 tactical teardowns covering programmatic SEO tools, Substack-style newsletter growth, and solo micro-SaaS economics.",
     technologies: ["52 Issues", "18.4k Subscribers", "48% Open Rate", "Operator Teardowns"],
-    link: "https://doitwithai.tools/tools/keyword-clustering-tool",
+    link: "",
     caseStudySlug: "ai-operator-playbook-vault",
     role: "Flagship Subscriber Archive",
     period: "Updated Every Tuesday",
@@ -1182,7 +1188,7 @@ const OLIVE_JOURNAL_PROJECTS: RawProject[] = [
     summary:
       "Empirical field notes on 65ch measure, serif contrast, and vertical rhythm across mobile and desktop editorial publications.",
     technologies: ["65ch Measure", "Serif Hierarchy", "Print Craft", "Reading UX"],
-    link: "https://doitwithai.tools/tools/readability-checker",
+    link: "",
     caseStudySlug: "typography-reading-rhythm-digital-print",
     role: "Issue 02 · Typography Study",
     period: "2026 Edition",
@@ -1347,9 +1353,6 @@ const OLIVE_JOURNAL_POSTS: RawPost[] = [
   }),
 ];
 
-// ============================================================================
-// 4. DEDICATED CONTENT PACKS FOR KO-FI CREATOR, GLASSMORPHISM ADVISORY & AGENCY
-// ============================================================================
 const KOFI_CREATOR_POSTS: RawPost[] = [
   makePost({
     id: "kofi-post-1",
@@ -1794,6 +1797,7 @@ const OTHER_TEMPLATE_SEEDS: Partial<Record<TemplateId, ArchetypeSeed>> = {
   },
 };
 
+
 export function getTemplateDefaultDocument(templateId: TemplateId): SiteDocument {
   const contract =
     TEMPLATE_CONTRACTS.find((t) => t.id === templateId) ?? TEMPLATE_CONTRACTS[0];
@@ -1835,6 +1839,13 @@ export function getTemplateDefaultDocument(templateId: TemplateId): SiteDocument
       ],
       content: {
         ...DEFAULT_PORTFOLIO_CONTENT,
+        visibility: {
+          about: true,
+          experience: false,
+          skills: false,
+          projects: false,
+          contact: true,
+        },
         about: {
           heading: "Why We Built This Standalone Meta Title & Description Tool",
           body: "Over 60% of web pages lose organic clicks because Google truncates oversized title tags or rewrites vague meta descriptions. MetaCraft AI gives writers and SEOs a single, zero-latency workspace to craft, measure, and preview pixel-perfect SERP snippets—backed by 5 actionable guides below.",
@@ -1856,13 +1867,7 @@ export function getTemplateDefaultDocument(templateId: TemplateId): SiteDocument
           email: "hello@doitwithai.tools",
           location: "Global Browser Edge · 100% Free Utility",
           cta: "Contact Tool Team",
-          socials: [
-            {
-              id: "soc-single-1",
-              platform: "website",
-              url: "https://doitwithai.tools/tools/meta-title-generator",
-            },
-          ],
+          socials: [],
         },
       },
       publishing: {
@@ -1882,8 +1887,8 @@ export function getTemplateDefaultDocument(templateId: TemplateId): SiteDocument
         name: "DoItWithAI Tools & SEO Hub",
         role: "Multi-Tool AI SEO Directory, Content Studio & Editorial Publication",
         intro:
-          "Explore 5 pre-loaded AI SEO & content utilities—or add any of 126+ catalog tools in 1 click—paired with 5 pillar guides, prompt vaults, and JSON-LD schema.",
-        availability: "5 Live Tools + 5 Pillar Guides Pre-Loaded · 126+ Catalog Ready",
+          "Explore 6 pre-loaded interactive AI SEO utilities running directly inside this website—or add any of 126+ catalog tools in 1 click—paired with 5 pillar guides.",
+        availability: "6 Live AI Tools + 5 Pillar Guides Pre-Loaded · 126+ Catalog Ready",
       },
       design: baseDesign,
       scene: baseScene,
@@ -1896,18 +1901,25 @@ export function getTemplateDefaultDocument(templateId: TemplateId): SiteDocument
       ],
       content: {
         ...DEFAULT_PORTFOLIO_CONTENT,
+        visibility: {
+          about: true,
+          experience: false,
+          skills: false,
+          projects: true,
+          contact: true,
+        },
         about: {
           heading: "About This Multi-Tool AI & Editorial Platform",
-          body: "Built on the exact architecture of doitwithai.tools, this flagship template pre-loads 5 high-demand AI SEO utilities and 5 matching pillar guides. Use the '+ Add Tool from DoItWithAI Catalog (0 AI Tokens)' control in Studio to add any of our 126+ built tools in one click.",
+          body: "Built on the exact architecture of doitwithai.tools, this flagship template pre-loads 6 high-demand AI SEO utilities and 5 matching pillar guides. Use the '+ Add Tool from DoItWithAI Catalog (0 AI Tokens)' control in Studio to add any of our 126+ built tools in one click.",
         },
         experience: [
           {
             id: "exp-multi-1",
-            role: "5 Core AI SEO Tools + 126-Tool Catalog Pipeline",
+            role: "6 Core AI SEO Tools + 126-Tool Catalog Pipeline",
             organization: "DoItWithAI Ecosystem",
             period: "2026 Flagship Suite",
             summary:
-              "Pre-configured with Meta Title Generator, On-Page SEO Analyzer, Schema Markup Generator, Keyword Clustering Tool, and Readability Checker.",
+              "Pre-configured with Meta Title Generator, On-Page SEO Analyzer, Schema Markup Generator, Keyword Clustering Tool, Readability Checker, and AI FAQ Snippet Generator.",
           },
         ],
         education: [],
@@ -1951,6 +1963,13 @@ export function getTemplateDefaultDocument(templateId: TemplateId): SiteDocument
       skills: seeded.skills,
       content: {
         ...DEFAULT_PORTFOLIO_CONTENT,
+        visibility: {
+          about: true,
+          experience: Boolean(PHASE3_TEMPLATE_SEEDS[templateId] && templateId !== "midnight-bento"),
+          skills: Boolean(PHASE3_TEMPLATE_SEEDS[templateId] && templateId !== "midnight-bento"),
+          projects: true,
+          contact: true,
+        },
         about: {
           heading: seeded.aboutHeading,
           body: seeded.aboutBody,
@@ -2004,11 +2023,6 @@ const DEFAULT_TEMPLATE_IDENTITY_NAMES = new Set<string>([
   ...TEMPLATE_CONTRACTS.map((t) => getTemplateDefaultDocument(t.id).identity.name),
 ]);
 
-/**
- * Returns true if the document is still using an unedited default template identity name,
- * allowing `design.setTemplate` to automatically swap in the newly selected template's
- * purpose-built tools, pages, and 5 blog posts.
- */
 export function isUsingDefaultTemplateIdentity(document: SiteDocument): boolean {
   return DEFAULT_TEMPLATE_IDENTITY_NAMES.has(document.identity.name.trim());
 }
