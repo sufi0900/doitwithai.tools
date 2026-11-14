@@ -1,5 +1,4 @@
 export const contentPrefixes = {
-  makemoney: "ai-learn-earn", aitool: "ai-tools", coding: "ai-code",
   seo: "ai-seo", blogPost: "blogs", guide: "guides",
 };
 
@@ -8,6 +7,7 @@ const EXCLUDED_FROM_TOOLS_SITEMAP = new Set([
   "ai-blog-writer",
   "ai-article-writer",
   "ai-blog-article-writer",
+  "ai-website-builder",
   "blog-to-infographic-generator",
   "seo-optimizer-ai-agent",
   "ai-support-agent-builder",
@@ -34,6 +34,7 @@ export function toolSitemapEntries(registry, origin) {
   );
   const paths = [
     "/ai-content-writer",
+    "/ai-website-builder",
     "/tools",
     "/tools/categories",
     ...registry.categories
@@ -44,13 +45,4 @@ export function toolSitemapEntries(registry, origin) {
     ...available.map((tool) => `/tools/${tool.slug}`),
   ];
   return paths.map((path) => ({ url: `${origin}${path}` }));
-}
-
-export function contentSitemapEntries(posts, origin) {
-  return posts.flatMap((post) => {
-    const path = articlePath(post);
-    if (!path) return [];
-    const date = post._updatedAt && new Date(post._updatedAt);
-    return [{ url: `${origin}${path}`, ...(date && !Number.isNaN(date.getTime()) ? { lastModified: date } : {}) }];
-  });
 }

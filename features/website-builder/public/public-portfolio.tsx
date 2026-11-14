@@ -59,10 +59,10 @@ export function PublicPortfolio({
         )}
       </header>
       <div className="portfolio-preview" aria-label={`${document.identity.name}'s website`}>
-        {isCollectionTemplate(document.design.template) ? (
-          <CollectionHero document={document} publicBasePath={path} />
-        ) : isEditorialFlagshipTemplate(document.design.template) ? (
+        {isEditorialFlagshipTemplate(document.design.template) ? (
           <EditorialFlagshipHero document={document} publicBasePath={path} />
+        ) : isCollectionTemplate(document.design.template) ? (
+          <CollectionHero document={document} publicBasePath={path} />
         ) : (
           <section className={`portfolio-hero align-${document.design.heroAlignment}`}>
             <div className="ambient-grid" />
@@ -105,7 +105,7 @@ export function PublicPortfolio({
       </div>
       <footer className="public-footer">
         <span>
-          Built with <a href="/tools/ai-website-builder">DoItWithAI Studio</a>
+          Built with <a href="/ai-website-builder">DoItWithAI Studio</a>
         </span>
         <small>Published revision {document.revision}</small>
       </footer>

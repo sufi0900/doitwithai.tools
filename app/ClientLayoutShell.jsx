@@ -103,6 +103,7 @@ export default function ClientLayoutShell({ children }) {
   const isStandaloneWebsiteRoute =
     pathname.startsWith("/p/") ||
     pathname.startsWith("/s/") ||
+    pathname.startsWith("/ai-website-builder/studio/") ||
     pathname.startsWith("/do-it-ai/website-studio/");
   const isDoItAiPage =
     (pathname === "/do-it-ai" || pathname.startsWith("/do-it-ai/")) &&

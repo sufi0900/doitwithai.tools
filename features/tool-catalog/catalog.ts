@@ -1,13 +1,16 @@
 import registry from "./registry.json";
 
 /**
- * Slugs excluded from the `/tools` catalog to prevent keyword cannibalization:
+ * Slugs excluded from the `/tools` catalog to prevent keyword cannibalization and keep
+ * flagship standalone SaaS platforms at the root domain level:
  *  1. Full-article / blog / content writer slugs (`ai-content-writer`, `ai-blog-writer`,
- *     `ai-article-writer`, `ai-blog-article-writer`) now live at the standalone root-level
+ *     `ai-article-writer`, `ai-blog-article-writer`) live at the standalone root-level
  *     flagship platform route `/ai-content-writer` (outside `/tools`).
- *  2. Legacy `blog-to-infographic-generator` is consolidated into the 25-template
+ *  2. Flagship Website Builder (`ai-website-builder`) lives at the standalone root-level
+ *     platform route `/ai-website-builder` (outside `/tools`).
+ *  3. Legacy `blog-to-infographic-generator` is consolidated into the 25-template
  *     `blog-section-infographic-generator`.
- *  3. Dedicated `/agents/*` routes live under `/agents/<slug>` rather than duplicating under `/tools/<slug>`.
+ *  4. Dedicated `/agents/*` routes live under `/agents/<slug>` rather than duplicating under `/tools/<slug>`.
  *
  * — Signed by: Aegis-Prime (Founder's Master AI Strategist & Lead Ecosystem Architect)
  */
@@ -16,6 +19,7 @@ export const EXCLUDED_FROM_TOOLS_CATALOG_SLUGS = new Set<string>([
   "ai-blog-writer",
   "ai-article-writer",
   "ai-blog-article-writer",
+  "ai-website-builder",
   "blog-to-infographic-generator",
   "seo-optimizer-ai-agent",
   "ai-support-agent-builder",
@@ -41,47 +45,9 @@ export const toolPath = (slug: string) =>
   slug === "ai-article-writer" ||
   slug === "ai-blog-article-writer"
     ? "/ai-content-writer"
-    : `/tools/${slug}`;
+    : slug === "ai-website-builder"
+      ? "/ai-website-builder"
+      : `/tools/${slug}`;
 export const categoryPath = (slug: string) => `/tools/categories/${slug}`;
 export const siteOrigin = "https://doitwithai.tools";
 export const featuredTools = tools.filter((tool) => tool.featuredOrder != null);
-
-export function collectionSchema(
-  name: string,
-  path: string,
-  items: CatalogTool[],
-) {
-  return {
-    "@context": "https://schema.org",
-    "@type": "CollectionPage",
-    "@id": `${siteOrigin}${path}#collection`,
-    name,
-    url: `${siteOrigin}${path}`,
-    breadcrumb: {
-      "@type": "BreadcrumbList",
-      itemListElement: [
-        { name: "Home", path: "" },
-        { name: "Tools", path: "/tools" },
-        ...(path.startsWith("/tools/categories")
-          ? [{ name: "Categories", path: "/tools/categories" }]
-          : []),
-        ...(path.startsWith("/tools/categories/") ? [{ name, path }] : []),
-      ].map((item, index) => ({
-        "@type": "ListItem",
-        position: index + 1,
-        name: item.name,
-        item: `${siteOrigin}${item.path}`,
-      })),
-    },
-    mainEntity: {
-      "@type": "ItemList",
-      numberOfItems: items.length,
-      itemListElement: items.map((tool, index) => ({
-        "@type": "ListItem",
-        position: index + 1,
-        name: tool.name,
-        url: `${siteOrigin}${toolPath(tool.slug)}`,
-      })),
-    },
-  };
-}

@@ -82,8 +82,25 @@ export function isBlogFirstTemplate(id: string): boolean {
   return found?.category === "blog-editorial";
 }
 
+/**
+ * Strictly the 3 original Voxfolio collection layouts (`rose-studio`, `midnight-bento`, `olive-journal`).
+ * Do NOT include the 7 DoItWithAI Flagship templates here, so they render via `EditorialFlagshipHero`
+ * and `EditorialFlagshipSections` instead of falling back to `rose-studio`.
+ */
 export function isCollectionTemplate(id: string): boolean {
-  return ["doitwithai-flagship", "authority-niche-blog", "creator-newsletter-hub", "rose-studio", "midnight-bento", "olive-journal", "micro-saas-launchpad"].includes(id);
+  return ["rose-studio", "midnight-bento", "olive-journal"].includes(id);
+}
+
+export function isEditorialFlagshipTemplate(id: string): boolean {
+  return [
+    "doitwithai-flagship",
+    "authority-niche-blog",
+    "creator-newsletter-hub",
+    "founder-authority-brand",
+    "consultant-lead-engine",
+    "micro-saas-launchpad",
+    "startup-service-agency",
+  ].includes(id);
 }
 
 export function isLightTemplate(id: string): boolean {

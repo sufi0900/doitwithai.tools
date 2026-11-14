@@ -1,6 +1,7 @@
 import { HomepageJournal } from "./homepage-journal";
 import { isBlogFirstTemplate, isCollectionTemplate } from "@/features/website-builder/domain/template-contracts";
 import { CollectionSections } from "./collection-templates";
+import { EditorialFlagshipSections, isEditorialFlagshipTemplate } from "./editorial-flagship-templates";
 import { ArrowUpRight, Globe2, Mail, MapPin } from "lucide-react";
 import Image from "next/image";
 import type { PortfolioSection, SiteDocument } from "@/features/website-builder/domain/site-document";
@@ -28,11 +29,22 @@ export function PortfolioNavigation({ document, publicBasePath, onNavigateSectio
   </nav>;
 }
 
-export function PortfolioSections(props:{document:SiteDocument;editing?:boolean;publicBasePath?:string;onOpenPage?:(id:string)=>void;onOpenPost?:(id:string)=>void}) {
- const blogFirst = isBlogFirstTemplate(props.document.design.template);
- return blogFirst
-   ? <><HomepageJournal document={props.document} publicBasePath={props.publicBasePath} onOpenPost={props.onOpenPost}/><PortfolioSectionBody {...props}/></>
-   : <><PortfolioSectionBody {...props}/><HomepageJournal document={props.document} publicBasePath={props.publicBasePath} onOpenPost={props.onOpenPost}/></>;
+export function PortfolioSections(props: { document: SiteDocument; editing?: boolean; publicBasePath?: string; onOpenPage?: (id: string) => void; onOpenPost?: (id: string) => void }) {
+  if (isEditorialFlagshipTemplate(props.document.design.template)) {
+    return (
+      <EditorialFlagshipSections
+        document={props.document}
+        editing={props.editing}
+        publicBasePath={props.publicBasePath}
+        onOpenPage={props.onOpenPage}
+        onOpenPost={props.onOpenPost}
+      />
+    );
+  }
+  const blogFirst = isBlogFirstTemplate(props.document.design.template);
+  return blogFirst
+    ? <><HomepageJournal document={props.document} publicBasePath={props.publicBasePath} onOpenPost={props.onOpenPost} /><PortfolioSectionBody {...props} /></>
+    : <><PortfolioSectionBody {...props} /><HomepageJournal document={props.document} publicBasePath={props.publicBasePath} onOpenPost={props.onOpenPost} /></>;
 }
 
 function PortfolioSectionBody({ document, editing = false, publicBasePath, onOpenPage }: { document: SiteDocument; editing?: boolean; publicBasePath?: string; onOpenPage?: (pageId: string) => void }) {
@@ -60,7 +72,7 @@ function Section({ section, document, editing, cinematic, publicBasePath, onOpen
     const selectedProjects = projectsForPresentation(document);
     if (!selectedProjects.length && !editing) return null;
     const projects = publicBasePath ? selectedProjects.slice(0, 4) : selectedProjects;
-      return <section id="projects" className="portfolio-section"><SectionHeading eyebrow="SELECTED WORK" title="Projects" kind="projects" cinematic={cinematic} template={document.design.template} />{projects.length ? <><div className="work-grid">{projects.map((project, index) => { const cover = document.media.assets.find((asset) => project.mediaIds.includes(asset.id)); const caseStudyHref = publicBasePath && project.caseStudySlug ? `${publicBasePath}/projects/${project.caseStudySlug}` : ""; return <article key={project.id} className={cover ? "has-project-cover" : ""}>{cover && <div className="project-card-cover"><Image src={cover.url} alt={cover.alt} fill sizes="(max-width: 780px) 90vw, 420px" unoptimized /></div>}<span>0{index + 1}</span><h3>{project.title}</h3><p>{project.summary}</p><div className="technology-list">{project.technologies.map((technology) => <em key={technology}>{technology}</em>)}</div><div className="project-links">{caseStudyHref && <a href={caseStudyHref}>Read case study <ArrowUpRight size={15} /></a>}{project.link && <a href={project.link} target="_blank" rel="noreferrer">Visit project <ArrowUpRight size={15} /></a>}</div></article>; })}</div>{publicBasePath && selectedProjects.length > 0 && <a className="section-detail-link" href={`${publicBasePath}/projects`}>View all projects <ArrowUpRight size={15} /></a>}</> : <EmptyState label="Add selected work in Content → Projects." />}</section>;
+    return <section id="projects" className="portfolio-section"><SectionHeading eyebrow="SELECTED WORK" title="Projects" kind="projects" cinematic={cinematic} template={document.design.template} />{projects.length ? <><div className="work-grid">{projects.map((project, index) => { const cover = document.media.assets.find((asset) => project.mediaIds.includes(asset.id)); const caseStudyHref = publicBasePath && project.caseStudySlug ? `${publicBasePath}/projects/${project.caseStudySlug}` : ""; return <article key={project.id} className={cover ? "has-project-cover" : ""}>{cover && <div className="project-card-cover"><Image src={cover.url} alt={cover.alt} fill sizes="(max-width: 780px) 90vw, 420px" unoptimized /></div>}<span>0{index + 1}</span><h3>{project.title}</h3><p>{project.summary}</p><div className="technology-list">{project.technologies.map((technology) => <em key={technology}>{technology}</em>)}</div><div className="project-links">{caseStudyHref && <a href={caseStudyHref}>Read case study <ArrowUpRight size={15} /></a>}{project.link && <a href={project.link} target="_blank" rel="noreferrer">Visit project <ArrowUpRight size={15} /></a>}</div></article>; })}</div>{publicBasePath && selectedProjects.length > 0 && <a className="section-detail-link" href={`${publicBasePath}/projects`}>View all projects <ArrowUpRight size={15} /></a>}</> : <EmptyState label="Add selected work in Content → Projects." />}</section>;
   }
   const contact = document.content.contact;
   if (!contact.email && !contact.location && !contact.socials.length && !editing) return null;
