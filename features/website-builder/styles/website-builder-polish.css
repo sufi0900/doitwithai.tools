@@ -184,3 +184,30 @@
   background: rgba(var(--accent-rgb), 0.18);
   color: var(--accent);
 }
+
+/* Override legacy .projects-index article > div { height: 230px; background: #080d19 } collision */
+.website-builder-scope .projects-index .wb-tools-directory-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 310px), 1fr)) !important;
+  gap: 20px !important;
+  align-items: stretch !important;
+}
+
+.website-builder-scope .projects-index .wb-tool-directory-card {
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.website-builder-scope .projects-index .wb-tool-directory-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(56, 189, 248, 0.55) !important;
+  box-shadow: 0 18px 40px rgba(2, 6, 23, 0.45);
+}
+
+.website-builder-scope .projects-index .wb-tool-directory-card > div:not(.wb-tool-card-media) {
+  height: auto !important;
+  min-height: 0 !important;
+  position: static !important;
+  background: transparent !important;
+  overflow: visible !important;
+}
+

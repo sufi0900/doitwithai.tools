@@ -1,12 +1,47 @@
 // next.config.js — Optimized by Apex-CWV (Phase 4: AVIF/WebP Image Pipeline & Immutable Cache-Control Headers)
+const path = require("path");
+
 const nextConfig = {
-  webpack(config) {
+  webpack(config, { isServer }) {
     // Extraction needs DOM parsing, not the optional native canvas adapter.
     // Keep normal imports for CommonJS test runners; bundle the DOM-only build.
     config.resolve.alias = {
       ...config.resolve.alias,
       "linkedom$": require.resolve("linkedom/package.json").replace(/package\.json$/, "worker.js"),
+      ...(isServer
+        ? {
+            "@/features/website-builder/tools/transferred-tool-registry$": path.resolve(
+              __dirname,
+              "features/website-builder/tools/transferred-tool-registry.server-stub.ts",
+            ),
+            [path.resolve(
+              __dirname,
+              "features/website-builder/tools/transferred-tool-registry",
+            )]: path.resolve(
+              __dirname,
+              "features/website-builder/tools/transferred-tool-registry.server-stub.ts",
+            ),
+            [path.resolve(
+              __dirname,
+              "features/website-builder/tools/transferred-tool-registry.ts",
+            )]: path.resolve(
+              __dirname,
+              "features/website-builder/tools/transferred-tool-registry.server-stub.ts",
+            ),
+          }
+        : {}),
     };
+    if (!isServer) {
+      config.module.rules.push({
+        test: /[\\/]app[\\/](?:tools|agents)[\\/].+[\\/]page\.tsx$/,
+        enforce: "pre",
+        use: [
+          {
+            loader: path.resolve(__dirname, "scripts/strip-client-page-metadata-loader.cjs"),
+          },
+        ],
+      });
+    }
     return config;
   },
 
@@ -90,6 +125,9 @@ const nextConfig = {
   },
 
   experimental: {
+    webpackBuildWorker: true,
+    cpus: 2,
+    workerThreads: false,
     serverActions: {
       allowedOrigins: ['localhost:3000', '*.vercel.app'],
     },

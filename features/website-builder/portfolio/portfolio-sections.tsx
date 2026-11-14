@@ -78,6 +78,13 @@ export function PortfolioNavigation({
   if (template === "micro-saas-launchpad") {
     return (
       <nav className="portfolio-site-nav" aria-label="Single-tool website navigation">
+        {publicBasePath ? (
+          <a href={publicBasePath}>Home</a>
+        ) : (
+          <button type="button" onClick={() => onNavigateSection?.("about")}>
+            Home
+          </button>
+        )}
         <a
           className="nav-pill-primary"
           href={publicBasePath ? `${publicBasePath}#tool-workspace` : "#tool-workspace"}
@@ -92,7 +99,7 @@ export function PortfolioNavigation({
               : undefined
           }
         >
-          ⚡ Live AI Tool
+          Live AI Tool
         </a>
         {publicBasePath
           ? publishedPages.map((page) => (
@@ -134,8 +141,15 @@ export function PortfolioNavigation({
     return (
       <nav className="portfolio-site-nav" aria-label="Multi-tool directory navigation">
         {publicBasePath ? (
+          <a href={publicBasePath}>Home</a>
+        ) : (
+          <button type="button" onClick={() => onNavigateSection?.("about")}>
+            Home
+          </button>
+        )}
+        {publicBasePath ? (
           <a className="nav-pill-primary" href={`${publicBasePath}/projects`}>
-            🧰 Tools ({toolCount})
+            Tools ({toolCount})
           </a>
         ) : (
           <button
@@ -146,7 +160,7 @@ export function PortfolioNavigation({
               else onNavigateSection?.("projects");
             }}
           >
-            🧰 Tools ({toolCount})
+            Tools ({toolCount})
           </button>
         )}
         {publicBasePath && hasBlog && <a href={`${publicBasePath}/blog`}>Blog &amp; Guides</a>}

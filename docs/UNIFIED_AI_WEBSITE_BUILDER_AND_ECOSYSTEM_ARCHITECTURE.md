@@ -143,3 +143,15 @@ Every AI engineer or developer working on **Phase 3 through Phase 6** must adher
        4. **Connected Backend SEO Tools**: Direct launchers to run `On-Page AI SEO Repair Agent`, `Internal Link Opportunity Finder`, `Schema Markup Validator`, and `LLMs.txt Generator` against any hosted website.
 3. **Update `/founder-hub` (`lib/founder-hub/data.ts`)**:
    - Record the Phase 1–Phase 6 Unified Website Builder + Content Studio + `/do-it-ai` Dashboard milestones in the Founder Hub telemetry log.
+
+
+---
+
+### Phase 7: Native React Tool Transfer Pipeline, Upstream Version Control & Global Navbar Rule
+1. **True Native Full-Page Transfer (Zero `<iframe>` Simulation)**:
+   - `scripts/generate-transferred-tools-manifest.mjs` (wired into `package.json` `prebuild`) scans every `app/tools/<slug>/page.tsx` and its local `@/features/*` dependencies, computes a deterministic 8-char SHA-256 `versionHash` (`v2026.11.<hash>`), extracts `metaTitle`, `metaDescription`, `heroTitle`, `heroDescription`, and static FAQs into `features/website-builder/tools/transferred-tools-manifest.json`, and generates `features/website-builder/tools/transferred-tool-registry.ts` using `next/dynamic(..., { ssr: false })`.
+   - `features/website-builder/tools/TransferredToolRuntimeContext.tsx` (`useTransferredToolRuntime`) signals `PortableToolHeroBar` and client-safe `ToolResources` to return `null` inside user websites (`/p/[slug]/projects/[tool]`), while `InteractiveWebsiteToolRunner` renders the real upstream tool component natively edge-to-edge with luminance-aware button contrast, custom `toolBackgroundHex`, BYOK Gemini API key storage + header forwarding, and internal `<Link>` routing inside `/p/[slug]`.
+2. **Per-Tool Version Sync (`Update` / `Revert`) & SEO Controls**:
+   - `site-document.ts` and `commands.ts` store `metaTitle`, `metaDescription`, `toolBackgroundHex`, `installedToolVersion`, and `previousToolSnapshot`, with `project.syncCatalogToolVersion` and `project.revertCatalogToolVersion` commands exposed directly in `ProjectsToolsStudioEditor`.
+3. **Permanent Main Website Navbar Rule**:
+   - Every flagship / grand / mega tool built for DoItWithAI.tools (such as `AI Content Writer`, `AI Agents`, and **`AI Website Builder`** at `/ai-website-builder`) **must always be added prominently to the main website top navbar** (`components/Header/menuData.tsx` and `components/Header/index.tsx`), mobile drawer, and badge system.

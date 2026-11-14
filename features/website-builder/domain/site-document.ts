@@ -105,10 +105,29 @@ export const DEFAULT_PORTFOLIO_CONTENT = {
     customCtaLabel?: string;
     heroHighlights?: string[];
     toolAccentHex?: string;
+    toolBackgroundHex?: string;
     toolThemeMode?: "auto" | "dark" | "light";
     hideEducationSection?: boolean;
     hideFaqSection?: boolean;
     customFaqs?: Array<{ question: string; answer: string }>;
+    metaTitle?: string;
+    metaDescription?: string;
+    installedToolVersion?: string;
+    previousToolSnapshot?: {
+      version?: string;
+      title: string;
+      summary: string;
+      metaTitle?: string;
+      metaDescription?: string;
+      role: string;
+      period: string;
+      challenge: string;
+      approach: string;
+      outcome: string;
+      customCtaLabel?: string;
+      toolAccentHex?: string;
+      toolBackgroundHex?: string;
+    };
   }>,
   contact: { heading: "Let’s build something useful", email: "", location: "", cta: "Start a conversation", socials: [] as Array<{ id: string; platform: typeof socialPlatformOptions[number]; url: string }> },
 };
@@ -137,6 +156,7 @@ const portfolioContentSchema = z.object({
     customCtaLabel: z.string().trim().max(90).optional(),
     heroHighlights: z.array(z.string().trim().min(1).max(160)).max(6).optional(),
     toolAccentHex: z.string().trim().max(32).optional(),
+    toolBackgroundHex: z.string().trim().max(32).optional(),
     toolThemeMode: z.enum(["auto", "dark", "light"]).optional(),
     hideEducationSection: z.boolean().optional(),
     hideFaqSection: z.boolean().optional(),
@@ -148,6 +168,26 @@ const portfolioContentSchema = z.object({
         }),
       )
       .max(8)
+      .optional(),
+    metaTitle: z.string().trim().max(120).optional(),
+    metaDescription: z.string().trim().max(320).optional(),
+    installedToolVersion: z.string().trim().max(60).optional(),
+    previousToolSnapshot: z
+      .object({
+        version: z.string().trim().max(60).optional(),
+        title: z.string().trim().max(100),
+        summary: z.string().trim().max(500),
+        metaTitle: z.string().trim().max(120).optional(),
+        metaDescription: z.string().trim().max(320).optional(),
+        role: z.string().trim().max(100).default(""),
+        period: z.string().trim().max(80).default(""),
+        challenge: z.string().trim().max(1200).default(""),
+        approach: z.string().trim().max(1800).default(""),
+        outcome: z.string().trim().max(1200).default(""),
+        customCtaLabel: z.string().trim().max(90).optional(),
+        toolAccentHex: z.string().trim().max(32).optional(),
+        toolBackgroundHex: z.string().trim().max(32).optional(),
+      })
       .optional(),
   })).max(8),
   contact: z.object({ heading: z.string().trim().min(1).max(100), email: z.union([z.literal(""), z.string().email()]), location: z.string().trim().max(100), cta: z.string().trim().min(1).max(60), socials: z.array(z.object({ id: z.string().min(1), platform: z.enum(socialPlatformOptions), url: publicHttpUrl })).max(10).default([]) }),

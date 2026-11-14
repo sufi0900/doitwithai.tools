@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTransferredToolRuntime } from "@/features/website-builder/tools/TransferredToolRuntimeContext";
 import JSZip from "jszip";
 import {
   Archive,
@@ -1780,6 +1781,7 @@ export default function PortableToolHeroBar({
   workspaceId?: string;
 }) {
   const pathname = usePathname();
+  const transferred = useTransferredToolRuntime();
   const [modalOpen, setModalOpen] = useState(false);
   const [downloadingZip, setDownloadingZip] = useState(false);
   const [isEmbeddedView, setIsEmbeddedView] = useState(false);
@@ -1809,7 +1811,7 @@ export default function PortableToolHeroBar({
     [detectedSlug],
   );
 
-  if (!tool || isEmbeddedView) return null;
+  if (!tool || isEmbeddedView || transferred?.isTransferredTool) return null;
 
   function handleUseToolNow() {
     if (typeof document === "undefined") return;

@@ -378,6 +378,12 @@ const Header = () => {
         usePathName.startsWith("/blogs/")
       );
     }
+    if (path === "/ai-website-builder") {
+      return (
+        usePathName === "/ai-website-builder" ||
+        usePathName.startsWith("/ai-website-builder/")
+      );
+    }
     if (path === "/prompts") {
       return usePathName === "/prompts" || usePathName.startsWith("/prompts/");
     }
@@ -440,6 +446,7 @@ const Header = () => {
                     const active = isMenuActive(menuItem.path);
                     const isToolsItem = menuItem.id === 100;
                     const isWriterItem = menuItem.id === 108;
+                    const isWebsiteBuilderItem = menuItem.id === 112;
                     const isAgentsItem = menuItem.id === 107;
                     const isSeoHubItem = menuItem.id === 2;
                     const isPromptsItem = menuItem.id === 102;
@@ -481,6 +488,17 @@ const Header = () => {
                                   }`}
                                 >
                                   Studio
+                                </span>
+                              )}
+                              {isWebsiteBuilderItem && (
+                                <span
+                                  className={`rounded-full px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider ${
+                                    active
+                                      ? "bg-white/20 text-white"
+                                      : "border border-cyan-500/35 bg-cyan-500/10 text-cyan-700 dark:border-cyan-400/40 dark:bg-cyan-500/20 dark:text-cyan-300"
+                                  }`}
+                                >
+                                  New
                                 </span>
                               )}
                               {isAgentsItem && (
@@ -1614,6 +1632,11 @@ const Header = () => {
                               {menuItem.id === 108 && (
                                 <span className="rounded-full bg-purple-500/15 px-1.5 py-0.5 text-[9px] font-extrabold uppercase text-purple-600 dark:text-purple-300">
                                   Studio
+                                </span>
+                              )}
+                              {menuItem.id === 112 && (
+                                <span className="rounded-full bg-cyan-500/15 px-1.5 py-0.5 text-[9px] font-extrabold uppercase text-cyan-600 dark:text-cyan-300">
+                                  New
                                 </span>
                               )}
                               {menuItem.id === 107 && (

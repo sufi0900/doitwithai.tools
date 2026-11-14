@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "next dev",
     "generate-sitemap": "next-sitemap",
-    "prebuild": "node scripts/generate-pages-manifest.js && node scripts/build-portable-tools.mjs",
+    "prebuild": "node scripts/generate-pages-manifest.js && node scripts/generate-transferred-tools-manifest.mjs && node scripts/build-portable-tools.mjs",
     "build": " next build",
     "generate-manifest": "node scripts/generate-pages-manifest.js",
     "start": "next start",

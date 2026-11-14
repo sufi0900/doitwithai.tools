@@ -431,21 +431,25 @@ export function EditorialFlagshipHero({
                       {tool.summary.slice(0, 110)}
                       {tool.summary.length > 110 ? "…" : ""}
                     </p>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", marginTop: "4px" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", marginTop: "6px" }}>
                       {publicBasePath ? (
                         <a
                           href={`${publicBasePath}/projects/${toolSlug}`}
                           style={{
                             display: "inline-flex",
                             alignItems: "center",
-                            gap: "5px",
+                            gap: "6px",
+                            padding: "6px 11px",
+                            borderRadius: "8px",
+                            background: "rgba(99, 102, 241, 0.16)",
+                            border: "1px solid rgba(99, 102, 241, 0.35)",
                             fontSize: "12px",
                             fontWeight: 800,
-                            color: "#a5b4fc",
+                            color: "#c7d2fe",
                             textDecoration: "none",
                           }}
                         >
-                          Open Tool Workspace <ArrowUpRight size={13} />
+                          {tool.title} <ArrowUpRight size={13} />
                         </a>
                       ) : (
                         <button
@@ -455,29 +459,19 @@ export function EditorialFlagshipHero({
                             else navigate?.("projects");
                           }}
                           style={{
-                            background: "none",
-                            border: 0,
-                            padding: 0,
+                            background: "rgba(99, 102, 241, 0.16)",
+                            border: "1px solid rgba(99, 102, 241, 0.35)",
+                            borderRadius: "8px",
+                            padding: "6px 11px",
                             fontSize: "12px",
                             fontWeight: 800,
-                            color: "#a5b4fc",
+                            color: "#c7d2fe",
                             cursor: "pointer",
                           }}
                         >
-                          Launch Tool in Site →
+                          {tool.title} →
                         </button>
                       )}
-                      <a
-                        href="#tool-workspace"
-                        style={{
-                          fontSize: "11px",
-                          fontWeight: 700,
-                          color: "#38bdf8",
-                          textDecoration: "none",
-                        }}
-                      >
-                        Quick Run ↓
-                      </a>
                     </div>
                   </div>
                 );

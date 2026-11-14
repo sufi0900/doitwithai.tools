@@ -1,25 +1,28 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Check,
   Code2,
   Copy,
-  ExternalLink,
   KeyRound,
-  Layers,
-  Maximize2,
-  Minimize2,
   RefreshCw,
   Sparkles,
   Wand2,
   Wrench,
+  X,
 } from "lucide-react";
 import {
   getCatalogToolBySlug,
   resolveCatalogToolSlug,
   shouldApplyHeroOverride,
 } from "@/features/website-builder/domain/catalog-tool-resolver";
+import { TransferredToolRuntimeProvider } from "./TransferredToolRuntimeContext";
+import {
+  getTransferredToolComponent,
+  hasTransferredToolComponent,
+} from "@/features/website-builder/tools/transferred-tool-registry";
 
 export { resolveCatalogToolSlug };
 
@@ -40,10 +43,14 @@ export type WebsiteToolSpec = {
   customCtaLabel?: string;
   heroHighlights?: string[];
   toolAccentHex?: string;
+  toolBackgroundHex?: string;
   toolThemeMode?: "auto" | "dark" | "light";
   hideEducationSection?: boolean;
   hideFaqSection?: boolean;
   customFaqs?: Array<{ question: string; answer: string }>;
+  metaTitle?: string;
+  metaDescription?: string;
+  installedToolVersion?: string;
 };
 
 const SITE_ACCENT_HEX_MAP: Record<string, string> = {
@@ -59,15 +66,69 @@ const SITE_ACCENT_HEX_MAP: Record<string, string> = {
 
 const LIGHT_BACKGROUNDS = new Set(["ivory"]);
 
-function hexToRgba(hex: string, alpha: number): string {
+const BYOK_STORAGE_KEYS = [
+  "doitwithai_portable_api_key",
+  "doitwithai_gemini_api_key",
+  "doitwithai_byok_gemini_key",
+] as const;
+
+function readStoredGeminiKey(): string {
+  if (typeof window === "undefined") return "";
+  try {
+    for (const key of BYOK_STORAGE_KEYS) {
+      const val = window.localStorage.getItem(key)?.trim();
+      if (val) return val;
+    }
+  } catch {
+    // Ignore storage restriction
+  }
+  return "";
+}
+
+function saveStoredGeminiKey(value: string) {
+  if (typeof window === "undefined") return;
+  const trimmed = value.trim();
+  try {
+    for (const key of BYOK_STORAGE_KEYS) {
+      if (trimmed) {
+        window.localStorage.setItem(key, trimmed);
+      } else {
+        window.localStorage.removeItem(key);
+      }
+    }
+  } catch {
+    // Ignore storage restriction
+  }
+}
+
+function normalizeHex(hex: string): string {
   const clean = hex.replace("#", "").trim();
-  const normalized =
-    clean.length === 3
-      ? clean
-          .split("")
-          .map((c) => c + c)
-          .join("")
-      : clean;
+  if (clean.length === 3) {
+    return clean
+      .split("")
+      .map((c) => c + c)
+      .join("");
+  }
+  return clean;
+}
+
+function isValidHex(value?: string): boolean {
+  if (!value) return false;
+  return /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(value.trim());
+}
+
+function isLightColorHex(hex: string): boolean {
+  const norm = normalizeHex(hex);
+  if (!/^[0-9a-fA-F]{6}$/.test(norm)) return false;
+  const r = parseInt(norm.slice(0, 2), 16);
+  const g = parseInt(norm.slice(2, 4), 16);
+  const b = parseInt(norm.slice(4, 6), 16);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.58;
+}
+
+function hexToRgba(hex: string, alpha: number): string {
+  const normalized = normalizeHex(hex);
   if (!/^[0-9a-fA-F]{6}$/.test(normalized)) return `rgba(99, 102, 241, ${alpha})`;
   const r = parseInt(normalized.slice(0, 2), 16);
   const g = parseInt(normalized.slice(2, 4), 16);
@@ -97,100 +158,175 @@ function setNativeInputValue(
   el.dispatchEvent(new EventCtor("change", { bubbles: true }));
 }
 
-function applyTransferredToolCustomizations(params: {
-  doc: Document;
+function updateElementTextNodePreservingIcons(el: HTMLElement, nextText: string) {
+  const walker = el.ownerDocument.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  const textNodes: Text[] = [];
+  let node = walker.nextNode();
+  while (node) {
+    if ((node.nodeValue || "").trim().length > 0) {
+      textNodes.push(node as Text);
+    }
+    node = walker.nextNode();
+  }
+  if (textNodes.length > 0) {
+    const primary = textNodes[textNodes.length - 1];
+    if (primary.nodeValue?.trim() !== nextText.trim()) {
+      primary.nodeValue = ` ${nextText.trim()}`;
+    }
+    for (let i = 0; i < textNodes.length - 1; i++) {
+      if (textNodes[i].nodeValue?.trim()) {
+        textNodes[i].nodeValue = "";
+      }
+    }
+    return;
+  }
+  if (el.children.length === 0 && el.textContent !== nextText) {
+    el.textContent = nextText;
+  }
+}
+
+function buildNativeToolScopeCss(params: {
+  scopeClass: string;
+  effectiveAccent: string;
+  effectiveBackground: string;
+  effectiveThemeMode: "dark" | "light";
+  hasCustomBackground: boolean;
+}) {
+  const { scopeClass, effectiveAccent, effectiveBackground, effectiveThemeMode, hasCustomBackground } =
+    params;
+  const isDark = effectiveThemeMode === "dark";
+  const accentFg = isLightColorHex(effectiveAccent) ? "#04101c" : "#ffffff";
+  const accentSoft = hexToRgba(effectiveAccent, 0.2);
+  const accentBorder = hexToRgba(effectiveAccent, 0.45);
+  const accentGlow = hexToRgba(effectiveAccent, 0.16);
+  const heroBg = hasCustomBackground
+    ? `radial-gradient(circle at 18% 15%, ${accentSoft}, transparent 50%), ${effectiveBackground}`
+    : isDark
+      ? `radial-gradient(circle at 18% 15%, ${accentSoft}, transparent 48%), linear-gradient(155deg, #040915 0%, #0b152a 100%)`
+      : `radial-gradient(circle at 18% 15%, ${accentSoft}, transparent 52%), linear-gradient(155deg, #f8fafc 0%, #eef2ff 100%)`;
+
+  return `
+    .${scopeClass} {
+      --wb-tool-accent: ${effectiveAccent};
+      --wb-tool-accent-fg: ${accentFg};
+      --wb-tool-accent-soft: ${accentSoft};
+      --wb-tool-accent-border: ${accentBorder};
+      --wb-tool-accent-glow: ${accentGlow};
+      --wb-tool-bg: ${effectiveBackground};
+      background: ${effectiveBackground} !important;
+      color: ${isDark ? "#e2e8f0" : "#0f172a"};
+      overflow-x: clip;
+    }
+    .${scopeClass} [data-portable-hero-bar="true"],
+    .${scopeClass} aside[aria-label="Supporting guides and related tools"] {
+      display: none !important;
+    }
+    ${
+      isDark
+        ? `
+      .${scopeClass} main > section,
+      .${scopeClass} main > div > section,
+      .${scopeClass} section.bg-white,
+      .${scopeClass} section[class*="bg-[#f5f7fc]"] {
+        background-color: ${hasCustomBackground ? effectiveBackground : "#0b1324"} !important;
+        border-color: rgba(148, 163, 184, 0.16) !important;
+        color: #e2e8f0 !important;
+      }
+      .${scopeClass} section.bg-white h2,
+      .${scopeClass} section.bg-white h3,
+      .${scopeClass} section[class*="bg-[#f5f7fc]"] h2,
+      .${scopeClass} section[class*="bg-[#f5f7fc]"] h3,
+      .${scopeClass} details summary {
+        color: #f8fafc !important;
+      }
+      .${scopeClass} article.rounded-2xl,
+      .${scopeClass} details.rounded-2xl {
+        background-color: rgba(15, 23, 42, 0.88) !important;
+        border-color: rgba(148, 163, 184, 0.22) !important;
+        color: #cbd5e1 !important;
+      }
+    `
+        : `
+      .${scopeClass} main > section:not(:first-of-type) {
+        background-color: ${hasCustomBackground ? effectiveBackground : "#f8fafc"};
+      }
+    `
+    }
+    .${scopeClass} main > section:first-of-type,
+    .${scopeClass} > main > div:first-of-type {
+      background-image: ${heroBg} !important;
+      border-bottom: 1px solid ${accentBorder} !important;
+    }
+    .${scopeClass} h1 span {
+      background-image: linear-gradient(95deg, ${isDark ? "#ffffff" : "#0f172a"} 10%, ${effectiveAccent} 95%) !important;
+      -webkit-background-clip: text !important;
+      background-clip: text !important;
+      color: transparent !important;
+    }
+    .${scopeClass} button[type="submit"],
+    .${scopeClass} button[class*="bg-[#5271"],
+    .${scopeClass} button[class*="from-[#3452d1"] {
+      background-image: linear-gradient(135deg, ${effectiveAccent}, ${effectiveAccent}) !important;
+      background-color: ${effectiveAccent} !important;
+      color: ${accentFg} !important;
+      border-color: ${accentBorder} !important;
+      box-shadow: 0 12px 28px ${accentGlow} !important;
+    }
+    .${scopeClass} input:focus,
+    .${scopeClass} textarea:focus,
+    .${scopeClass} select:focus {
+      border-color: ${effectiveAccent} !important;
+      box-shadow: 0 0 0 3px ${accentGlow} !important;
+    }
+  `;
+}
+
+function applyNativeToolOverrides(params: {
+  container: HTMLElement;
   tool: WebsiteToolSpec;
   resolvedSlug: string;
   siteName: string;
   siteSlug?: string;
-  effectiveAccent: string;
-  effectiveThemeMode: "dark" | "light";
   displayMode: "full-landing" | "workspace-only";
 }) {
-  const {
-    doc,
-    tool,
-    resolvedSlug,
-    siteName,
-    siteSlug,
-    effectiveAccent,
-    effectiveThemeMode,
-    displayMode,
-  } = params;
-  if (!doc || !doc.body) return;
-
+  const { container, tool, resolvedSlug, siteName, siteSlug, displayMode } = params;
   const catalogTool = getCatalogToolBySlug(resolvedSlug);
   const overrides = shouldApplyHeroOverride(tool, catalogTool);
   const cleanBrand = siteName.split(/[—·|]/)[0]?.trim() || siteName || "AI Tools Hub";
   const baseHref = siteSlug ? `/p/${siteSlug}` : "#";
   const toolsHref = siteSlug ? `/p/${siteSlug}/projects` : "#projects";
 
-  // 1. Hide main-site chrome that does not belong inside a Website Builder site
-  doc.querySelectorAll<HTMLElement>('[data-portable-hero-bar="true"]').forEach((el) => {
-    el.style.display = "none";
-  });
-  doc
-    .querySelectorAll<HTMLElement>('aside[aria-label="Supporting guides and related tools"]')
-    .forEach((el) => {
-      el.style.display = "none";
-    });
-
-  // 2. Rewrite breadcrumb to the user's own Website Builder site
-  const breadcrumb = doc.querySelector<HTMLElement>('nav[aria-label="Breadcrumb"]');
+  // 1. Safe non-destructive breadcrumb update (text-only + href attr)
+  const breadcrumb = container.querySelector<HTMLElement>('nav[aria-label="Breadcrumb"]');
   if (breadcrumb) {
     const links = breadcrumb.querySelectorAll<HTMLAnchorElement>("a");
     if (links[0]) {
-      links[0].textContent = cleanBrand;
-      if (siteSlug) {
-        links[0].href = baseHref;
-        links[0].target = "_top";
-      }
+      updateElementTextNodePreservingIcons(links[0], cleanBrand);
+      if (siteSlug) links[0].setAttribute("href", baseHref);
     }
     if (links[1]) {
-      links[1].textContent = "Tools";
-      if (siteSlug) {
-        links[1].href = toolsHref;
-        links[1].target = "_top";
-      }
+      updateElementTextNodePreservingIcons(links[1], "Tools");
+      if (siteSlug) links[1].setAttribute("href", toolsHref);
     }
     const currentCrumb = breadcrumb.querySelector<HTMLElement>('[aria-current="page"]');
-    if (currentCrumb && overrides.title) {
-      if (!currentCrumb.dataset.wbOrigText) {
-        currentCrumb.dataset.wbOrigText = currentCrumb.textContent || "";
-      }
-      currentCrumb.textContent = tool.title;
-    } else if (currentCrumb && currentCrumb.dataset.wbOrigText !== undefined) {
-      currentCrumb.textContent = currentCrumb.dataset.wbOrigText;
+    if (currentCrumb && overrides.title && tool.title.trim()) {
+      updateElementTextNodePreservingIcons(currentCrumb, tool.title.trim());
     }
   }
 
-  // 3. Hero overrides & Compact Workspace visibility
-  const h1 = doc.querySelector<HTMLElement>("h1");
+  // 2. Hero overrides (NEVER use .innerHTML or .replaceChildren on React nodes)
+  const h1 = container.querySelector<HTMLElement>("h1");
   const heroContainer = h1?.closest<HTMLElement>("section, div.relative");
   const heroGrid = heroContainer?.querySelector<HTMLElement>(".grid");
   const heroLeftCol = h1?.parentElement;
-  const heroRightCol =
-    heroGrid && heroLeftCol && heroGrid.children.length > 1
-      ? (Array.from(heroGrid.children).find((c) => c !== heroLeftCol) as HTMLElement | undefined)
-      : undefined;
 
-  if (heroContainer) {
-    if (displayMode === "workspace-only" && heroGrid) {
-      heroGrid.style.display = "none";
-    } else if (heroGrid) {
-      heroGrid.style.display = "";
-    }
+  if (heroGrid) {
+    heroGrid.style.display = displayMode === "workspace-only" ? "none" : "";
   }
 
-  if (h1) {
-    if (h1.dataset.wbOrigHtml === undefined) {
-      h1.dataset.wbOrigHtml = h1.innerHTML;
-    }
-    if (overrides.title) {
-      h1.textContent = tool.title;
-    } else if (h1.dataset.wbOrigHtml !== undefined) {
-      h1.innerHTML = h1.dataset.wbOrigHtml;
-    }
+  if (h1 && overrides.title && tool.title.trim() && h1.dataset.wbTitleApplied !== tool.title) {
+    h1.dataset.wbTitleApplied = tool.title;
+    h1.textContent = tool.title;
   }
 
   if (heroLeftCol) {
@@ -203,109 +339,27 @@ function applyTransferredToolCustomizations(params: {
         (el) => h1 && (el.compareDocumentPosition(h1) & Node.DOCUMENT_POSITION_PRECEDING) !== 0,
       ) ?? paragraphs[1];
 
-    if (eyebrowEl && eyebrowEl !== leadEl) {
-      if (eyebrowEl.dataset.wbOrigText === undefined) {
-        eyebrowEl.dataset.wbOrigText = eyebrowEl.textContent || "";
-      }
-      if (overrides.role && tool.role) {
-        eyebrowEl.textContent = tool.role;
-      } else {
-        eyebrowEl.textContent = eyebrowEl.dataset.wbOrigText;
+    if (eyebrowEl && eyebrowEl !== leadEl && overrides.role && tool.role?.trim()) {
+      if (eyebrowEl.textContent !== tool.role.trim()) {
+        eyebrowEl.textContent = tool.role.trim();
       }
     }
 
-    if (leadEl) {
-      if (leadEl.dataset.wbOrigText === undefined) {
-        leadEl.dataset.wbOrigText = leadEl.textContent || "";
-      }
-      if (overrides.summary && tool.summary) {
-        leadEl.textContent = tool.summary;
-      } else {
-        leadEl.textContent = leadEl.dataset.wbOrigText;
-      }
-    }
-
-    const badgesWrap = Array.from(heroLeftCol.children).find(
-      (el): el is HTMLElement =>
-        el.tagName === "DIV" &&
-        !el.hasAttribute("data-portable-hero-bar") &&
-        el.querySelectorAll("span").length > 0 &&
-        el.className.includes("flex"),
-    );
-    if (badgesWrap) {
-      if (badgesWrap.dataset.wbOrigHtml === undefined) {
-        badgesWrap.dataset.wbOrigHtml = badgesWrap.innerHTML;
-      }
-      if (overrides.technologies && tool.technologies.length > 0) {
-        badgesWrap.replaceChildren();
-        tool.technologies.slice(0, 6).forEach((badgeText) => {
-          const span = doc.createElement("span");
-          span.className = "rounded-lg border border-white/15 px-3 py-2";
-          span.textContent = badgeText;
-          badgesWrap.appendChild(span);
-        });
-      } else {
-        badgesWrap.innerHTML = badgesWrap.dataset.wbOrigHtml;
+    if (leadEl && overrides.summary && tool.summary?.trim()) {
+      if (leadEl.textContent !== tool.summary.trim()) {
+        leadEl.textContent = tool.summary.trim();
       }
     }
   }
 
-  if (heroRightCol) {
-    const cardHeading = heroRightCol.querySelector<HTMLElement>("p, h2, h3");
-    if (cardHeading) {
-      if (cardHeading.dataset.wbOrigText === undefined) {
-        cardHeading.dataset.wbOrigText = cardHeading.textContent || "";
-      }
-      if (overrides.period && tool.period) {
-        cardHeading.textContent = tool.period;
-      } else {
-        cardHeading.textContent = cardHeading.dataset.wbOrigText;
-      }
-    }
-
-    const cardList = heroRightCol.querySelector<HTMLUListElement>("ul");
-    if (cardList) {
-      if (cardList.dataset.wbOrigHtml === undefined) {
-        cardList.dataset.wbOrigHtml = cardList.innerHTML;
-      }
-      if (tool.heroHighlights && tool.heroHighlights.length > 0) {
-        cardList.replaceChildren();
-        const highlightColors = [
-          "text-emerald-300",
-          "text-sky-300",
-          "text-indigo-300",
-          "text-amber-300",
-          "text-emerald-300",
-          "text-sky-300",
-        ];
-        tool.heroHighlights.slice(0, 6).forEach((line, idx) => {
-          const li = doc.createElement("li");
-          const colonIdx = line.indexOf(":");
-          if (colonIdx > 0 && colonIdx < 36) {
-            const strong = doc.createElement("strong");
-            strong.className = highlightColors[idx % highlightColors.length] || "text-sky-300";
-            strong.textContent = `${line.slice(0, colonIdx)}:`;
-            li.appendChild(strong);
-            li.appendChild(doc.createTextNode(line.slice(colonIdx + 1)));
-          } else {
-            li.textContent = line;
-          }
-          cardList.appendChild(li);
-        });
-      } else {
-        cardList.innerHTML = cardList.dataset.wbOrigHtml;
-      }
-    }
-  }
-
-  // 4. Default Tool Inputs & Primary CTA Label inside live React tool workspace
+  // 3. Default Tool Inputs & Safe Primary CTA Label override (text node only, keeps icons!)
   const allEditableInputs = Array.from(
-    doc.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>("input, textarea"),
+    container.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>("input, textarea"),
   ).filter((el) => {
     if (el.closest("nav") || el.closest("aside") || el.closest("[data-wb-custom-faqs]")) {
       return false;
     }
-    if (el instanceof HTMLInputElement || el.tagName === "INPUT") {
+    if (el.tagName === "INPUT") {
       const type = (el.getAttribute("type") || "text").toLowerCase();
       return type === "text" || type === "url" || type === "search" || type === "email" || !type;
     }
@@ -313,69 +367,79 @@ function applyTransferredToolCustomizations(params: {
   });
 
   if (tool.defaultInput && tool.defaultInput.trim()) {
+    const token = `${resolvedSlug}:${tool.defaultInput}`;
     const primaryInput = allEditableInputs[0];
-    if (primaryInput && doc.body.dataset.wbAppliedDefaultInput !== tool.defaultInput) {
-      doc.body.dataset.wbAppliedDefaultInput = tool.defaultInput;
+    if (primaryInput && container.dataset.wbAppliedDefaultInput !== token) {
+      container.dataset.wbAppliedDefaultInput = token;
       setNativeInputValue(primaryInput, tool.defaultInput);
     }
-  } else {
-    delete doc.body.dataset.wbAppliedDefaultInput;
   }
 
   if (tool.defaultSecondaryInput && tool.defaultSecondaryInput.trim()) {
-    const secondaryInput = allEditableInputs[1] || doc.querySelector<HTMLTextAreaElement>("textarea");
-    if (
-      secondaryInput &&
-      doc.body.dataset.wbAppliedSecondaryInput !== tool.defaultSecondaryInput
-    ) {
-      doc.body.dataset.wbAppliedSecondaryInput = tool.defaultSecondaryInput;
+    const token = `${resolvedSlug}:${tool.defaultSecondaryInput}`;
+    const secondaryInput =
+      allEditableInputs[1] || container.querySelector<HTMLTextAreaElement>("textarea");
+    if (secondaryInput && container.dataset.wbAppliedSecondaryInput !== token) {
+      container.dataset.wbAppliedSecondaryInput = token;
       setNativeInputValue(secondaryInput, tool.defaultSecondaryInput);
     }
-  } else {
-    delete doc.body.dataset.wbAppliedSecondaryInput;
   }
 
-  const primaryActionBtn = Array.from(doc.querySelectorAll<HTMLButtonElement>("button")).find(
-    (btn) => {
-      if (btn.closest("nav") || btn.closest("aside") || btn.closest("[data-portable-hero-bar]")) {
+  if (tool.customCtaLabel && tool.customCtaLabel.trim()) {
+    const primaryActionBtn = Array.from(
+      container.querySelectorAll<HTMLButtonElement>("button"),
+    ).find((btn) => {
+      if (
+        btn.closest("nav") ||
+        btn.closest("aside") ||
+        btn.closest("[data-portable-hero-bar]") ||
+        btn.closest("[data-wb-runtime-controls]")
+      ) {
         return false;
       }
       if (btn.getAttribute("type") === "submit") return true;
       const cls = btn.className || "";
       const txt = (btn.textContent || "").trim();
       return (
-        (cls.includes("bg-gradient") || cls.includes("bg-[#5271") || cls.includes("bg-blue-600") || cls.includes("bg-indigo-600")) &&
+        (cls.includes("bg-gradient") ||
+          cls.includes("bg-[#5271") ||
+          cls.includes("bg-blue-600") ||
+          cls.includes("bg-indigo-600")) &&
         txt.length > 2
       );
-    },
-  );
+    });
 
-  if (primaryActionBtn) {
-    if (primaryActionBtn.dataset.wbOrigHtml === undefined) {
-      primaryActionBtn.dataset.wbOrigHtml = primaryActionBtn.innerHTML;
-    }
-    if (tool.customCtaLabel && tool.customCtaLabel.trim()) {
-      const svg = primaryActionBtn.querySelector("svg")?.cloneNode(true);
-      primaryActionBtn.replaceChildren();
-      if (svg) primaryActionBtn.appendChild(svg);
-      primaryActionBtn.appendChild(doc.createTextNode(tool.customCtaLabel.trim()));
-    } else if (primaryActionBtn.dataset.wbOrigHtml !== undefined) {
-      primaryActionBtn.innerHTML = primaryActionBtn.dataset.wbOrigHtml;
+    if (
+      primaryActionBtn &&
+      primaryActionBtn.dataset.wbCtaApplied !== tool.customCtaLabel.trim()
+    ) {
+      primaryActionBtn.dataset.wbCtaApplied = tool.customCtaLabel.trim();
+      updateElementTextNodePreservingIcons(primaryActionBtn, tool.customCtaLabel.trim());
     }
   }
 
-  // 5. Education & FAQ section visibility + Custom FAQs
-  const mainEl = doc.querySelector("main") || doc.body;
+  // 4. Education & FAQ section visibility via style.display (NEVER mutating children)
+  const mainEl = container.querySelector("main") || container;
   const sections = Array.from(mainEl.querySelectorAll<HTMLElement>("section"));
   const heroRootSection = heroContainer?.tagName === "SECTION" ? heroContainer : null;
   const workspaceContainer =
     allEditableInputs[0]?.closest<HTMLElement>("section") ??
-    doc.querySelector<HTMLElement>("[data-tool-workspace='true']")?.closest<HTMLElement>("section") ??
+    container.querySelector<HTMLElement>("[data-tool-workspace='true']")?.closest<HTMLElement>(
+      "section",
+    ) ??
     null;
 
+  const hasCustomFaqs = Boolean(tool.customFaqs && tool.customFaqs.length > 0);
+
   sections.forEach((sectionEl) => {
+    if (sectionEl.hasAttribute("data-wb-custom-faqs")) return;
     if (sectionEl === heroRootSection || sectionEl === workspaceContainer) return;
-    if (heroContainer && (heroContainer.contains(sectionEl) || sectionEl.contains(heroContainer))) return;
+    if (
+      heroContainer &&
+      (heroContainer.contains(sectionEl) || sectionEl.contains(heroContainer))
+    ) {
+      return;
+    }
     if (workspaceContainer && workspaceContainer.contains(sectionEl)) return;
 
     const hasDetails = sectionEl.querySelectorAll("details").length > 0;
@@ -385,158 +449,103 @@ function applyTransferredToolCustomizations(params: {
 
     if (isFaqSection) {
       sectionEl.style.display =
-        displayMode === "workspace-only" || tool.hideFaqSection ? "none" : "";
-
-      const detailsParent =
-        sectionEl.querySelector("details")?.parentElement ||
-        sectionEl.querySelector<HTMLElement>(".space-y-4, .divide-y");
-      if (detailsParent) {
-        if (detailsParent.dataset.wbOrigHtml === undefined) {
-          detailsParent.dataset.wbOrigHtml = detailsParent.innerHTML;
-        }
-        if (tool.customFaqs && tool.customFaqs.length > 0) {
-          detailsParent.setAttribute("data-wb-custom-faqs", "true");
-          detailsParent.replaceChildren();
-          tool.customFaqs.forEach((faq) => {
-            const details = doc.createElement("details");
-            details.className =
-              "group rounded-2xl border border-slate-200 bg-white p-5 open:shadow-lg dark:border-slate-800 dark:bg-slate-900 sm:p-6";
-            const summary = doc.createElement("summary");
-            summary.className =
-              "cursor-pointer list-none pr-8 text-base font-extrabold text-slate-950 marker:hidden dark:text-white";
-            summary.textContent = faq.question;
-            const ans = doc.createElement("p");
-            ans.className =
-              "mt-4 border-t border-slate-100 pt-4 text-sm leading-7 text-slate-600 dark:border-slate-800 dark:text-slate-300";
-            ans.textContent = faq.answer;
-            details.appendChild(summary);
-            details.appendChild(ans);
-            detailsParent.appendChild(details);
-          });
-        } else if (detailsParent.dataset.wbOrigHtml !== undefined) {
-          detailsParent.removeAttribute("data-wb-custom-faqs");
-          detailsParent.innerHTML = detailsParent.dataset.wbOrigHtml;
-        }
-      }
+        displayMode === "workspace-only" || tool.hideFaqSection || hasCustomFaqs ? "none" : "";
     } else {
       sectionEl.style.display =
         displayMode === "workspace-only" || tool.hideEducationSection ? "none" : "";
     }
   });
-
-  // 6. Theme & Color injection synced to Website Builder design
-  const isDark = effectiveThemeMode === "dark";
-  doc.documentElement.classList.toggle("dark", isDark);
-
-  const accentSoft = hexToRgba(effectiveAccent, 0.22);
-  const accentBorder = hexToRgba(effectiveAccent, 0.48);
-  const accentGlow = hexToRgba(effectiveAccent, 0.16);
-
-  let styleEl = doc.getElementById("wb-transferred-tool-theme") as HTMLStyleElement | null;
-  if (!styleEl) {
-    styleEl = doc.createElement("style");
-    styleEl.id = "wb-transferred-tool-theme";
-    doc.head.appendChild(styleEl);
-  }
-
-  styleEl.textContent = `
-    :root {
-      --wb-tool-accent: ${effectiveAccent};
-      --wb-tool-accent-soft: ${accentSoft};
-      --wb-tool-accent-border: ${accentBorder};
-      --wb-tool-accent-glow: ${accentGlow};
-    }
-    html, body {
-      overflow-x: hidden !important;
-      ${isDark ? "background: #070d19 !important; color: #e2e8f0 !important;" : "background: #f8fafc !important; color: #0f172a !important;"}
-    }
-    ${isDark ? `
-      main > section,
-      main > div > section,
-      section.bg-white,
-      section[class*="bg-[#f5f7fc]"] {
-        background-color: #0b1324 !important;
-        border-color: rgba(148, 163, 184, 0.16) !important;
-        color: #e2e8f0 !important;
-      }
-      section.bg-white h2,
-      section.bg-white h3,
-      section[class*="bg-[#f5f7fc]"] h2,
-      section[class*="bg-[#f5f7fc]"] h3,
-      details summary {
-        color: #f8fafc !important;
-      }
-      article.rounded-2xl,
-      details.rounded-2xl {
-        background-color: #0f172a !important;
-        border-color: rgba(148, 163, 184, 0.2) !important;
-        color: #cbd5e1 !important;
-      }
-    ` : ""}
-    [data-portable-hero-bar="true"],
-    aside[aria-label="Supporting guides and related tools"] {
-      display: none !important;
-    }
-    main > section:first-of-type,
-    main > div:first-of-type {
-      background-image: radial-gradient(circle at 18% 15%, ${accentSoft}, transparent 48%), linear-gradient(155deg, #040915 0%, #0b152a 100%) !important;
-      border-bottom: 1px solid ${accentBorder} !important;
-    }
-    h1 span {
-      background-image: linear-gradient(95deg, #ffffff 10%, ${effectiveAccent} 95%) !important;
-      -webkit-background-clip: text !important;
-      background-clip: text !important;
-      color: transparent !important;
-    }
-    button[type="submit"],
-    button[class*="bg-[#5271"],
-    button[class*="from-[#3452d1"] {
-      background-image: linear-gradient(135deg, ${effectiveAccent}, ${effectiveAccent}) !important;
-      background-color: ${effectiveAccent} !important;
-      border-color: ${accentBorder} !important;
-      box-shadow: 0 12px 28px ${accentGlow} !important;
-    }
-    input:focus, textarea:focus, select:focus {
-      border-color: ${effectiveAccent} !important;
-      box-shadow: 0 0 0 3px ${accentGlow} !important;
-    }
-  `;
 }
 
-function TransferredCatalogToolFrame({
-  tool,
-  resolvedSlug,
-  siteName,
-  siteSlug,
-  accentColor,
-  siteAccent,
-  siteBackground,
-  initialDisplayMode = "full-landing",
-  allTools,
-  onSelectTool,
-}: {
+function TransferredCatalogToolFrame(props: {
   tool: WebsiteToolSpec;
   resolvedSlug: string;
   siteName: string;
   siteSlug?: string;
+  publicBasePath?: string;
   accentColor: string;
   siteAccent?: string;
   siteBackground?: string;
   initialDisplayMode?: "full-landing" | "workspace-only";
+  compact?: boolean;
   allTools?: WebsiteToolSpec[];
   onSelectTool?: (tool: WebsiteToolSpec) => void;
 }) {
-  const iframeRef = useRef<HTMLIFrameElement | null>(null);
-  const [iframeLoaded, setIframeLoaded] = useState(false);
-  const [iframeHeight, setIframeHeight] = useState(960);
-  const [displayMode, setDisplayMode] = useState<"full-landing" | "workspace-only">(
-    initialDisplayMode,
+  const {
+    tool,
+    resolvedSlug,
+    siteName,
+    siteSlug,
+    publicBasePath,
+    accentColor,
+    siteAccent,
+    siteBackground,
+    initialDisplayMode = "full-landing",
+    compact = false,
+    allTools,
+    onSelectTool,
+  } = props;
+
+  const router = useRouter();
+  const rawReactId = useId();
+  const scopeClass = useMemo(
+    () => `wb-tool-scope-${rawReactId.replace(/[^a-zA-Z0-9_-]/g, "")}`,
+    [rawReactId],
   );
+  const surfaceRef = useRef<HTMLDivElement | null>(null);
+  const displayMode = initialDisplayMode;
+
+  const [isClientMounted, setIsClientMounted] = useState(false);
+  const [storedApiKey, setStoredApiKey] = useState("");
+  const [apiKeyDraft, setApiKeyDraft] = useState("");
+  const [apiModalOpen, setApiModalOpen] = useState(false);
+  const [apiKeySavedToast, setApiKeySavedToast] = useState(false);
+
+  useEffect(() => {
+    setIsClientMounted(true);
+    const existing = readStoredGeminiKey();
+    setStoredApiKey(existing);
+    setApiKeyDraft(existing);
+  }, []);
+
+  // Forward saved BYOK Gemini key on same-origin /api/ tool calls when running inside transferred runtime
+  useEffect(() => {
+    if (typeof window === "undefined" || !storedApiKey.trim()) return;
+    const originalFetch = window.fetch.bind(window);
+    const trimmedKey = storedApiKey.trim();
+
+    window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+      const urlString =
+        typeof input === "string"
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
+
+      const isSameOriginApi =
+        urlString.startsWith("/api/") ||
+        urlString.startsWith(`${window.location.origin}/api/`);
+
+      if (!isSameOriginApi) {
+        return originalFetch(input, init);
+      }
+
+      const headers = new Headers(
+        init?.headers ?? (input instanceof Request ? input.headers : undefined),
+      );
+      if (!headers.has("x-gemini-api-key") && !headers.has("x-goog-api-key")) {
+        headers.set("x-gemini-api-key", trimmedKey);
+      }
+      return originalFetch(input, { ...init, headers });
+    };
+
+    return () => {
+      window.fetch = originalFetch;
+    };
+  }, [storedApiKey]);
 
   const effectiveAccent = useMemo(() => {
-    if (tool.toolAccentHex && /^#[0-9a-f]{3,8}$/i.test(tool.toolAccentHex.trim())) {
-      return tool.toolAccentHex.trim();
-    }
+    if (isValidHex(tool.toolAccentHex)) return tool.toolAccentHex!.trim();
     if (siteAccent && SITE_ACCENT_HEX_MAP[siteAccent]) {
       return SITE_ACCENT_HEX_MAP[siteAccent];
     }
@@ -547,321 +556,479 @@ function TransferredCatalogToolFrame({
     if (tool.toolThemeMode === "dark" || tool.toolThemeMode === "light") {
       return tool.toolThemeMode;
     }
+    if (tool.toolBackgroundHex && isValidHex(tool.toolBackgroundHex)) {
+      return isLightColorHex(tool.toolBackgroundHex) ? "light" : "dark";
+    }
     if (siteBackground && LIGHT_BACKGROUNDS.has(siteBackground)) {
       return "light";
     }
     return "dark";
-  }, [tool.toolThemeMode, siteBackground]);
+  }, [tool.toolThemeMode, tool.toolBackgroundHex, siteBackground]);
 
-  const measureIframeHeight = useCallback(() => {
-    const iframe = iframeRef.current;
-    if (!iframe) return;
-    try {
-      const doc = iframe.contentDocument;
-      if (!doc || !doc.documentElement) return;
-      const mainHeight = doc.querySelector("main")?.scrollHeight ?? 0;
-      const bodyHeight = doc.body?.scrollHeight ?? 0;
-      const docHeight = doc.documentElement.scrollHeight ?? 0;
-      const nextHeight = Math.max(mainHeight, bodyHeight, docHeight, 720);
-      setIframeHeight((prev) => (Math.abs(prev - nextHeight) > 4 ? nextHeight + 8 : prev));
-    } catch {
-      // Cross-origin safety guard
-    }
-  }, []);
+  const hasCustomBackground = isValidHex(tool.toolBackgroundHex);
+  const effectiveBackground = hasCustomBackground
+    ? tool.toolBackgroundHex!.trim()
+    : effectiveThemeMode === "dark"
+      ? "#070d19"
+      : "#f8fafc";
 
-  const syncCustomizations = useCallback(() => {
-    const iframe = iframeRef.current;
-    if (!iframe) return;
-    try {
-      const doc = iframe.contentDocument;
-      if (!doc || !doc.body) return;
-      applyTransferredToolCustomizations({
-        doc,
-        tool,
-        resolvedSlug,
-        siteName,
-        siteSlug,
+  const scopeCss = useMemo(
+    () =>
+      buildNativeToolScopeCss({
+        scopeClass,
         effectiveAccent,
+        effectiveBackground,
         effectiveThemeMode,
-        displayMode,
-      });
-      measureIframeHeight();
-    } catch {
-      // Cross-origin safety guard
-    }
-  }, [
-    tool,
-    resolvedSlug,
-    siteName,
-    siteSlug,
-    effectiveAccent,
-    effectiveThemeMode,
-    displayMode,
-    measureIframeHeight,
-  ]);
+        hasCustomBackground,
+      }),
+    [scopeClass, effectiveAccent, effectiveBackground, effectiveThemeMode, hasCustomBackground],
+  );
+
+  const hasManifestEntry = hasTransferredToolComponent(resolvedSlug);
+
+  const TransferredPageComponent = useMemo(
+    () => (isClientMounted && hasManifestEntry ? getTransferredToolComponent(resolvedSlug) : null),
+    [isClientMounted, hasManifestEntry, resolvedSlug],
+  );
+
+  const runOverrides = useCallback(() => {
+    const el = surfaceRef.current;
+    if (!el) return;
+    applyNativeToolOverrides({
+      container: el,
+      tool,
+      resolvedSlug,
+      siteName,
+      siteSlug,
+      displayMode,
+    });
+  }, [tool, resolvedSlug, siteName, siteSlug, displayMode]);
 
   useEffect(() => {
-    setIframeLoaded(false);
-    setIframeHeight(960);
-  }, [resolvedSlug]);
+    runOverrides();
+    const el = surfaceRef.current;
+    if (!el || typeof MutationObserver === "undefined") return;
 
-  useEffect(() => {
-    if (!iframeLoaded) return;
-    syncCustomizations();
-    const t1 = window.setTimeout(syncCustomizations, 180);
-    const t2 = window.setTimeout(syncCustomizations, 550);
+    let rafId = 0;
+    const observer = new MutationObserver(() => {
+      if (rafId) window.cancelAnimationFrame(rafId);
+      rafId = window.requestAnimationFrame(runOverrides);
+    });
+    observer.observe(el, { childList: true, subtree: true });
+
+    const t1 = window.setTimeout(runOverrides, 120);
+    const t2 = window.setTimeout(runOverrides, 450);
+
     return () => {
+      observer.disconnect();
+      if (rafId) window.cancelAnimationFrame(rafId);
       window.clearTimeout(t1);
       window.clearTimeout(t2);
     };
-  }, [iframeLoaded, syncCustomizations]);
-
-  useEffect(() => {
-    const iframe = iframeRef.current;
-    if (!iframe || !iframeLoaded) return;
-    let resizeObserver: ResizeObserver | null = null;
-    let mutationObserver: MutationObserver | null = null;
-    let rafId = 0;
-
-    const scheduleMeasure = () => {
-      if (rafId) window.cancelAnimationFrame(rafId);
-      rafId = window.requestAnimationFrame(measureIframeHeight);
-    };
-
-    try {
-      const doc = iframe.contentDocument;
-      if (doc) {
-        if (typeof ResizeObserver !== "undefined") {
-          resizeObserver = new ResizeObserver(scheduleMeasure);
-          resizeObserver.observe(doc.documentElement);
-          if (doc.body) resizeObserver.observe(doc.body);
-        }
-        if (typeof MutationObserver !== "undefined" && doc.body) {
-          mutationObserver = new MutationObserver(() => {
-            scheduleMeasure();
-          });
-          mutationObserver.observe(doc.body, {
-            childList: true,
-            subtree: true,
-          });
-        }
-      }
-    } catch {
-      // Safe fallback
-    }
-
-    return () => {
-      if (rafId) window.cancelAnimationFrame(rafId);
-      resizeObserver?.disconnect();
-      mutationObserver?.disconnect();
-    };
-  }, [iframeLoaded, measureIframeHeight]);
+  }, [runOverrides]);
 
   const cleanBrand = siteName.split(/[—·|]/)[0]?.trim() || "AI Tools Hub";
   const slugPart = (siteSlug || cleanBrand.toLowerCase().replace(/[^a-z0-9]+/g, "-")).replace(
     /^\/+|\/+$/g,
     "",
   );
-  const targetSlug = tool.caseStudySlug || resolvedSlug;
+  const resolvedBaseHref = publicBasePath || `/p/${slugPart}`;
+  const toolsHref = `${resolvedBaseHref}/projects`;
+
+  const handleSurfaceClickCapture = useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      const target = event.target as HTMLElement | null;
+      const anchor = target?.closest("a");
+      if (!anchor) return;
+      const href = anchor.getAttribute("href");
+      if (!href || !href.startsWith("/")) return;
+      if (href.startsWith("/p/")) return;
+
+      event.preventDefault();
+      if (href === "/") {
+        router.push(resolvedBaseHref);
+        return;
+      }
+      if (href === "/tools" || href.startsWith("/tools/categories")) {
+        router.push(toolsHref);
+        return;
+      }
+      if (href.startsWith("/tools/")) {
+        const targetToolSlug = href.replace(/^\/tools\//, "").split(/[?#]/)[0];
+        const installedMatch = allTools?.find(
+          (candidate) =>
+            resolveCatalogToolSlug(candidate) === targetToolSlug ||
+            candidate.caseStudySlug === targetToolSlug,
+        );
+        if (installedMatch && onSelectTool) {
+          onSelectTool(installedMatch);
+          return;
+        }
+        if (installedMatch) {
+          router.push(`${resolvedBaseHref}/projects/${installedMatch.caseStudySlug}`);
+          return;
+        }
+        router.push(toolsHref);
+        return;
+      }
+      if (href.startsWith("/guides") || href.startsWith("/do-it-ai")) {
+        router.push(toolsHref);
+      }
+    },
+    [router, resolvedBaseHref, toolsHref, allTools, onSelectTool],
+  );
+
+  if (!hasManifestEntry) {
+    return <FallbackGenericToolRunner {...props} />;
+  }
 
   return (
-    <div
-      id="tool-workspace"
-      className="interactive-tool-runner transferred-tool-landing"
-      style={{
-        background: "#050b18",
-        border: `1px solid ${hexToRgba(effectiveAccent, 0.42)}`,
-        borderRadius: "20px",
-        overflow: "hidden",
-        boxShadow: "0 24px 64px rgba(0, 0, 0, 0.52)",
-        color: "#f8fafc",
-        textAlign: "left",
-        width: "100%",
+    <TransferredToolRuntimeProvider
+      value={{
+        isTransferredTool: true,
+        siteSlug: slugPart,
+        siteName: cleanBrand,
+        publicBasePath: resolvedBaseHref,
+        projectSlug: tool.caseStudySlug || resolvedSlug,
+        projectTitle: tool.title,
+        accentHex: effectiveAccent,
+        backgroundHex: effectiveBackground,
+        themeMode: effectiveThemeMode,
       }}
     >
       <div
+        ref={surfaceRef}
+        id="tool-workspace"
+        onClickCapture={handleSurfaceClickCapture}
+        className={`wb-native-tool-surface ${scopeClass} ${effectiveThemeMode === "dark" ? "dark" : ""}`}
         style={{
-          background: "rgba(9, 17, 34, 0.96)",
-          padding: "10px 16px",
-          borderBottom: "1px solid rgba(148, 163, 184, 0.18)",
-          display: "flex",
-          flexWrap: "wrap",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: "10px",
+          position: "relative",
+          width: "100%",
+          background: effectiveBackground,
+          borderRadius: compact ? "18px" : "0",
+          border: compact ? `1px solid ${hexToRgba(effectiveAccent, 0.32)}` : "none",
+          overflow: compact ? "hidden" : "visible",
+          color: effectiveThemeMode === "dark" ? "#f8fafc" : "#0f172a",
+          textAlign: "left",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", minWidth: 0 }}>
-          <span
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "5px",
-              padding: "3px 10px",
-              borderRadius: "999px",
-              background: hexToRgba(effectiveAccent, 0.16),
-              border: `1px solid ${hexToRgba(effectiveAccent, 0.42)}`,
-              color: "#e2e8f0",
-              fontSize: "10.5px",
-              fontWeight: 800,
-              letterSpacing: "0.06em",
-            }}
-          >
-            <Layers size={12} color={effectiveAccent} /> LIVE TRANSFERRED LANDING PAGE
-          </span>
-          <code
-            style={{
-              fontSize: "11px",
-              color: "#94a3b8",
-              background: "rgba(255,255,255,0.05)",
-              padding: "2px 8px",
-              borderRadius: "6px",
-            }}
-          >
-            /p/{slugPart}/projects/{targetSlug}
-          </code>
-        </div>
+        <style>{scopeCss}</style>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-          <button
-            type="button"
-            onClick={() =>
-              setDisplayMode((prev) => (prev === "full-landing" ? "workspace-only" : "full-landing"))
-            }
+        {allTools && allTools.length > 1 && onSelectTool && (
+          <div
+            data-wb-runtime-controls="true"
             style={{
-              display: "inline-flex",
+              padding: "10px 18px",
+              background: effectiveThemeMode === "dark" ? "rgba(6, 11, 23, 0.92)" : "#f1f5f9",
+              borderBottom: "1px solid rgba(148, 163, 184, 0.16)",
+              display: "flex",
               alignItems: "center",
-              gap: "5px",
-              padding: "4px 10px",
-              borderRadius: "8px",
-              border: "1px solid rgba(148, 163, 184, 0.28)",
-              background: "rgba(15, 23, 42, 0.85)",
-              color: "#cbd5e1",
-              fontSize: "11px",
-              fontWeight: 600,
-              cursor: "pointer",
+              gap: "8px",
+              overflowX: "auto",
             }}
           >
-            {displayMode === "full-landing" ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
-            {displayMode === "full-landing" ? "Full Page View" : "Tool Workspace Only"}
-          </button>
-          <a
-            href={`/tools/${resolvedSlug}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "5px",
-              padding: "4px 10px",
-              borderRadius: "8px",
-              border: `1px solid ${hexToRgba(effectiveAccent, 0.35)}`,
-              background: hexToRgba(effectiveAccent, 0.12),
-              color: "#f8fafc",
-              fontSize: "11px",
-              fontWeight: 600,
-              textDecoration: "none",
-            }}
-          >
-            <ExternalLink size={12} /> Open Source Page
-          </a>
-        </div>
-      </div>
+            {allTools.map((candidate, idx) => {
+              const active = candidate.id === tool.id;
+              return (
+                <button
+                  key={candidate.id}
+                  type="button"
+                  onClick={() => onSelectTool(candidate)}
+                  style={{
+                    padding: "6px 12px",
+                    borderRadius: "999px",
+                    border: active
+                      ? `1px solid ${effectiveAccent}`
+                      : "1px solid rgba(148, 163, 184, 0.25)",
+                    background: active ? hexToRgba(effectiveAccent, 0.18) : "transparent",
+                    color: active
+                      ? effectiveThemeMode === "dark"
+                        ? "#ffffff"
+                        : "#0f172a"
+                      : effectiveThemeMode === "dark"
+                        ? "#cbd5e1"
+                        : "#334155",
+                    fontSize: "12px",
+                    fontWeight: active ? 700 : 600,
+                    cursor: "pointer",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  0{idx + 1}. {candidate.title}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
-      {allTools && allTools.length > 1 && onSelectTool && (
+        {/* Subtle corner API Key utility button without breaking full-page immersion */}
         <div
+          data-wb-runtime-controls="true"
           style={{
-            padding: "9px 16px",
-            background: "rgba(6, 11, 23, 0.94)",
-            borderBottom: "1px solid rgba(148, 163, 184, 0.14)",
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            overflowX: "auto",
+            position: "fixed",
+            right: "18px",
+            bottom: "18px",
+            zIndex: 45,
           }}
         >
-          <span
+          <button
+            type="button"
+            onClick={() => {
+              setApiKeyDraft(storedApiKey);
+              setApiModalOpen(true);
+            }}
             style={{
-              fontSize: "10.5px",
-              fontWeight: 800,
-              letterSpacing: "0.08em",
-              color: "#94a3b8",
-              whiteSpace: "nowrap",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              padding: "8px 13px",
+              borderRadius: "999px",
+              border: `1px solid ${
+                storedApiKey ? "rgba(52, 211, 153, 0.5)" : hexToRgba(effectiveAccent, 0.45)
+              }`,
+              background:
+                effectiveThemeMode === "dark"
+                  ? "rgba(8, 14, 30, 0.92)"
+                  : "rgba(255, 255, 255, 0.95)",
+              color: effectiveThemeMode === "dark" ? "#f8fafc" : "#0f172a",
+              fontSize: "12px",
+              fontWeight: 700,
+              cursor: "pointer",
+              boxShadow: "0 10px 26px rgba(2, 6, 23, 0.28)",
+              backdropFilter: "blur(8px)",
             }}
           >
-            SWITCH TOOL ({allTools.length}):
-          </span>
-          {allTools.map((candidate, idx) => {
-            const active = candidate.id === tool.id;
-            return (
-              <button
-                key={candidate.id}
-                type="button"
-                onClick={() => onSelectTool(candidate)}
+            <KeyRound size={13} color={storedApiKey ? "#34d399" : effectiveAccent} />
+            {storedApiKey ? "Gemini Key Saved" : "API Key"}
+          </button>
+        </div>
+
+        {/* Native React rendering of real upstream tool page (zero iframe) */}
+        {isClientMounted && TransferredPageComponent ? (
+          <React.Suspense
+            fallback={
+              <div
                 style={{
-                  padding: "5px 12px",
-                  borderRadius: "999px",
-                  border: active
-                    ? `1px solid ${effectiveAccent}`
-                    : "1px solid rgba(148, 163, 184, 0.22)",
-                  background: active ? hexToRgba(effectiveAccent, 0.2) : "rgba(15, 23, 42, 0.72)",
-                  color: active ? "#ffffff" : "#cbd5e1",
-                  fontSize: "11.5px",
-                  fontWeight: active ? 800 : 600,
-                  cursor: "pointer",
-                  whiteSpace: "nowrap",
+                  padding: "48px 24px",
+                  textAlign: "center",
+                  color: "#94a3b8",
+                  fontSize: "14px",
                 }}
               >
-                0{idx + 1}. {candidate.title}
-              </button>
-            );
-          })}
-        </div>
-      )}
-
-      <div style={{ position: "relative", width: "100%", minHeight: "720px", background: effectiveThemeMode === "dark" ? "#070d19" : "#f8fafc" }}>
-        {!iframeLoaded && (
+                Loading interactive tool workspace…
+              </div>
+            }
+          >
+            <TransferredPageComponent />
+          </React.Suspense>
+        ) : (
           <div
             style={{
-              position: "absolute",
-              inset: 0,
-              zIndex: 2,
-              display: "grid",
-              placeItems: "center",
-              background: "rgba(5, 11, 24, 0.92)",
-              color: "#cbd5e1",
-              fontSize: "13px",
-              fontWeight: 600,
+              padding: "48px 24px",
+              textAlign: "center",
+              color: "#94a3b8",
+              fontSize: "14px",
             }}
           >
-            <div style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}>
-              <RefreshCw size={16} color={effectiveAccent} className="animate-spin" />
-              Loading live landing page from /tools/{resolvedSlug}…
+            Loading interactive tool workspace…
+          </div>
+        )}
+
+        {/* Optional Custom FAQs rendered cleanly in React when configured */}
+        {!tool.hideFaqSection && tool.customFaqs && tool.customFaqs.length > 0 && (
+          <section
+            data-wb-custom-faqs="true"
+            style={{
+              maxWidth: "1120px",
+              margin: "0 auto",
+              padding: "28px 20px 52px",
+            }}
+          >
+            <h2
+              style={{
+                fontSize: "24px",
+                fontWeight: 800,
+                marginBottom: "16px",
+                color: effectiveThemeMode === "dark" ? "#f8fafc" : "#0f172a",
+              }}
+            >
+              Frequently Asked Questions
+            </h2>
+            <div style={{ display: "grid", gap: "12px" }}>
+              {tool.customFaqs.map((faq, idx) => (
+                <details
+                  key={`${faq.question}-${idx}`}
+                  style={{
+                    borderRadius: "16px",
+                    border: "1px solid rgba(148, 163, 184, 0.22)",
+                    background:
+                      effectiveThemeMode === "dark" ? "rgba(15, 23, 42, 0.85)" : "#ffffff",
+                    padding: "16px 20px",
+                  }}
+                >
+                  <summary
+                    style={{
+                      cursor: "pointer",
+                      fontSize: "15px",
+                      fontWeight: 700,
+                      color: effectiveThemeMode === "dark" ? "#f8fafc" : "#0f172a",
+                    }}
+                  >
+                    {faq.question}
+                  </summary>
+                  <p
+                    style={{
+                      marginTop: "10px",
+                      fontSize: "14px",
+                      lineHeight: 1.65,
+                      color: effectiveThemeMode === "dark" ? "#cbd5e1" : "#475569",
+                    }}
+                  >
+                    {faq.answer}
+                  </p>
+                </details>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* API Key Modal */}
+        {apiModalOpen && (
+          <div
+            data-wb-runtime-controls="true"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Gemini API Key Settings"
+            style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 60,
+              display: "grid",
+              placeItems: "center",
+              padding: "16px",
+              background: "rgba(2, 6, 23, 0.72)",
+              backdropFilter: "blur(6px)",
+            }}
+          >
+            <div
+              style={{
+                width: "100%",
+                maxWidth: "440px",
+                borderRadius: "18px",
+                padding: "20px",
+                background: "#0b1324",
+                border: `1px solid ${hexToRgba(effectiveAccent, 0.45)}`,
+                color: "#f8fafc",
+                boxShadow: "0 24px 60px rgba(0, 0, 0, 0.55)",
+                display: "grid",
+                gap: "12px",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  gap: "12px",
+                }}
+              >
+                <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", fontWeight: 800, fontSize: "15px" }}>
+                  <KeyRound size={16} color={effectiveAccent} />
+                  Gemini API Key (Optional BYOK)
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setApiModalOpen(false)}
+                  aria-label="Close API Key settings"
+                  style={{
+                    background: "transparent",
+                    border: 0,
+                    color: "#94a3b8",
+                    cursor: "pointer",
+                    padding: "4px",
+                  }}
+                >
+                  <X size={16} />
+                </button>
+              </div>
+              <p style={{ margin: 0, fontSize: "12.5px", lineHeight: 1.55, color: "#cbd5e1" }}>
+                Stored privately in your browser localStorage and sent via secure header on AI tool
+                requests inside this site. Leave blank to use built-in defaults.
+              </p>
+              <input
+                type="password"
+                value={apiKeyDraft}
+                onChange={(e) => setApiKeyDraft(e.target.value)}
+                placeholder="AIzaSy... (Google Gemini API Key)"
+                style={{
+                  width: "100%",
+                  borderRadius: "10px",
+                  border: "1px solid rgba(148, 163, 184, 0.3)",
+                  background: "#050b18",
+                  color: "#f8fafc",
+                  padding: "10px 12px",
+                  fontSize: "13px",
+                }}
+              />
+              {apiKeySavedToast && (
+                <div style={{ fontSize: "12px", color: "#34d399", fontWeight: 700 }}>
+                  API Key saved locally for this browser session.
+                </div>
+              )}
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px" }}>
+                {storedApiKey && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      saveStoredGeminiKey("");
+                      setStoredApiKey("");
+                      setApiKeyDraft("");
+                      setApiModalOpen(false);
+                    }}
+                    style={{
+                      padding: "8px 12px",
+                      borderRadius: "10px",
+                      border: "1px solid rgba(248, 113, 113, 0.35)",
+                      background: "rgba(248, 113, 113, 0.12)",
+                      color: "#fecaca",
+                      fontSize: "12px",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Clear Key
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    saveStoredGeminiKey(apiKeyDraft);
+                    setStoredApiKey(apiKeyDraft.trim());
+                    setApiKeySavedToast(true);
+                    window.setTimeout(() => {
+                      setApiKeySavedToast(false);
+                      setApiModalOpen(false);
+                    }, 600);
+                  }}
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: "10px",
+                    border: 0,
+                    background: effectiveAccent,
+                    color: isLightColorHex(effectiveAccent) ? "#04101c" : "#ffffff",
+                    fontSize: "12.5px",
+                    fontWeight: 800,
+                    cursor: "pointer",
+                  }}
+                >
+                  Save Key
+                </button>
+              </div>
             </div>
           </div>
         )}
-        <iframe
-          ref={iframeRef}
-          key={resolvedSlug}
-          src={`/tools/${resolvedSlug}?embed=1`}
-          title={`${tool.title} — Transferred Tool Landing Page`}
-          onLoad={() => {
-            setIframeLoaded(true);
-            syncCustomizations();
-            window.setTimeout(syncCustomizations, 200);
-          }}
-          style={{
-            width: "100%",
-            height: `${iframeHeight}px`,
-            border: 0,
-            display: "block",
-            overflow: "hidden",
-            opacity: iframeLoaded ? 1 : 0,
-            transition: "opacity 180ms ease",
-          }}
-        />
       </div>
-    </div>
+    </TransferredToolRuntimeProvider>
   );
 }
 
@@ -959,6 +1126,7 @@ export function InteractiveWebsiteToolRunner(props: {
   tool: WebsiteToolSpec;
   siteName: string;
   siteSlug?: string;
+  publicBasePath?: string;
   accentColor?: string;
   siteAccent?: string;
   siteBackground?: string;
@@ -976,10 +1144,12 @@ export function InteractiveWebsiteToolRunner(props: {
         resolvedSlug={resolvedSlug}
         siteName={props.siteName}
         siteSlug={props.siteSlug}
+        publicBasePath={props.publicBasePath}
         accentColor={props.accentColor || "#22d3ee"}
         siteAccent={props.siteAccent}
         siteBackground={props.siteBackground}
         initialDisplayMode={props.displayMode ?? "full-landing"}
+        compact={props.compact}
         allTools={props.allTools}
         onSelectTool={props.onSelectTool}
       />

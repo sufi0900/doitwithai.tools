@@ -10,6 +10,7 @@ import {
 } from "@/features/tool-catalog/catalog";
 import type { SiteCommand } from "@/features/website-builder/domain/commands";
 import type { SiteDocument } from "@/features/website-builder/domain/site-document";
+import { getTransferredToolManifestEntry } from "@/features/website-builder/tools/transferred-tool-manifest";
 
 export function CatalogToolInstaller({
   document,
@@ -65,6 +66,10 @@ export function CatalogToolInstaller({
     [filteredTools, selectedSlug],
   );
 
+  const activeManifest = activeTool
+    ? getTransferredToolManifestEntry(activeTool.slug)
+    : null;
+
   const isSingleToolMode =
     document.design.template === "micro-saas-launchpad" &&
     document.content.projects.length > 0;
@@ -115,6 +120,13 @@ export function CatalogToolInstaller({
         ),
       includeCompanionPost,
       ...(replaceFlagshipId ? { replaceItemId: replaceFlagshipId } : {}),
+      ...(activeManifest?.versionLabel
+        ? { installedToolVersion: activeManifest.versionLabel }
+        : {}),
+      ...(activeManifest?.metaTitle ? { metaTitle: activeManifest.metaTitle } : {}),
+      ...(activeManifest?.metaDescription
+        ? { metaDescription: activeManifest.metaDescription }
+        : {}),
     });
 
     setJustInstalledTitle(activeTool.name);
@@ -314,9 +326,16 @@ export function CatalogToolInstaller({
         >
           <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: "4px", minWidth: 0 }}>
             <strong style={{ color: "#ffffff", overflowWrap: "anywhere" }}>{activeTool.name}</strong>
-            <code style={{ color: "#38bdf8", fontSize: "10px", overflowWrap: "anywhere" }}>
-              {toolPath(activeTool.slug)}
-            </code>
+            <div style={{ display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap" }}>
+              {activeManifest?.versionLabel && (
+                <span style={{ fontSize: "9.5px", padding: "2px 6px", borderRadius: "999px", background: "rgba(56, 189, 248, 0.14)", color: "#7dd3fc", fontWeight: 700 }}>
+                  {activeManifest.versionLabel}
+                </span>
+              )}
+              <code style={{ color: "#38bdf8", fontSize: "10px", overflowWrap: "anywhere" }}>
+                {toolPath(activeTool.slug)}
+              </code>
+            </div>
           </div>
           <p style={{ margin: 0, color: "#94a3b8", fontSize: "11px", lineHeight: 1.45, overflowWrap: "anywhere" }}>
             {activeTool.description}

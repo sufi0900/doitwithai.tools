@@ -43,7 +43,6 @@ export function EditorialFlagshipSections({
  const template = document.design.template;
  const meta = TEMPLATE_META[template] ?? TEMPLATE_META["doitwithai-flagship"];
  const [searchQuery, setSearchQuery] = useState("");
- const [activeInlineToolId, setActiveInlineToolId] = useState<string>("");
  const [showStudioToolInstaller, setShowStudioToolInstaller] = useState<boolean>(false);
  const [selectedTopic, setSelectedTopic] = useState<string>("all");
  const [activeReaderPostId, setActiveReaderPostId] = useState<string | null>(null);
@@ -1103,16 +1102,16 @@ export function EditorialFlagshipSections({
              display: "inline-flex",
              alignItems: "center",
              gap: "6px",
-             padding: "8px 13px",
+             padding: "9px 14px",
              borderRadius: "9px",
              background: meta.accentColor,
              color: "#ffffff",
-             fontSize: "12px",
+             fontSize: "12.5px",
              fontWeight: 800,
              textDecoration: "none",
             }}
            >
-            {template === "doitwithai-flagship" ? "Open Tool Page" : "View Details"} <ArrowUpRight size={14} />
+            {template === "doitwithai-flagship" ? project.title : "View Details"} <ArrowUpRight size={14} />
            </a>
           ) : (
            <button
@@ -1124,42 +1123,17 @@ export function EditorialFlagshipSections({
              display: "inline-flex",
              alignItems: "center",
              gap: "6px",
-             padding: "8px 13px",
+             padding: "9px 14px",
              borderRadius: "9px",
              border: 0,
              background: meta.accentColor,
              color: "#ffffff",
-             fontSize: "12px",
+             fontSize: "12.5px",
              fontWeight: 800,
              cursor: "pointer",
             }}
            >
-            {template === "doitwithai-flagship" ? "Open Tool Page Preview →" : "Preview Case Study →"}
-           </button>
-          )}
-          {template === "doitwithai-flagship" && (
-           <button
-            type="button"
-            onClick={() => {
-             setActiveInlineToolId(project.id);
-             const el = window.document.getElementById("tool-workspace");
-             el?.scrollIntoView({ behavior: "smooth" });
-            }}
-            style={{
-             display: "inline-flex",
-             alignItems: "center",
-             gap: "5px",
-             padding: "8px 12px",
-             borderRadius: "9px",
-             border: "1px solid rgba(56, 189, 248, 0.4)",
-             background: "rgba(15, 23, 42, 0.78)",
-             color: "#7dd3fc",
-             fontSize: "12px",
-             fontWeight: 700,
-             cursor: "pointer",
-            }}
-           >
-            Run Below ↓
+            {template === "doitwithai-flagship" ? `${project.title} →` : "Preview Case Study →"}
            </button>
           )}
          </div>
@@ -1167,31 +1141,6 @@ export function EditorialFlagshipSections({
        );
       })}
      </div>
-
-     {template === "doitwithai-flagship" && projects.length > 0 && (
-      <div style={{ marginTop: "10px", display: "grid", gap: "12px" }}>
-       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
-        <div>
-         <span style={{ fontSize: "11px", fontWeight: 800, letterSpacing: "0.14em", color: "#38bdf8" }}>
-          LIVE TRANSFERRED TOOL LANDING PAGES · FULL INTERACTIVE WORKSPACE
-         </span>
-         <h3 style={{ margin: "4px 0 0", fontSize: "22px", color: "#ffffff" }}>
-          Use &amp; Customize Any Installed Tool Landing Page Directly Below
-         </h3>
-        </div>
-       </div>
-       <InteractiveWebsiteToolRunner
-        tool={projects.find((p) => p.id === activeInlineToolId) ?? projects[0]}
-        siteName={document.identity.name}
-        siteSlug={publicBasePath ? publicBasePath.replace(/^\/p\//, "") : "doitwithai-hub"}
-        accentColor="#6366f1"
-        siteAccent={document.design.accent}
-        siteBackground={document.design.background}
-        allTools={projects}
-        onSelectTool={(next) => setActiveInlineToolId(next.id)}
-       />
-      </div>
-     )}
     </section>
    )}
 

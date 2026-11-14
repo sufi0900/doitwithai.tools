@@ -55,13 +55,17 @@ function ContentNav({ document, basePath }: { document: SiteDocument; basePath: 
         {document.identity.name}
       </a>
       <nav>
+        <a href={basePath}>Home</a>
         {isSingleTool ? (
-          <a href={`${basePath}#tool-workspace`}>⚡ Live AI Tool</a>
+          <a href={`${basePath}#tool-workspace`}>Live AI Tool</a>
         ) : isMultiTool ? (
-          <a href={`${basePath}/projects`}>🧰 Tools ({document.content.projects.length})</a>
+          <a href={`${basePath}/projects`}>Tools ({document.content.projects.length})</a>
         ) : (
           document.content.visibility.projects &&
           document.content.projects.length > 0 && <a href={`${basePath}/projects`}>Projects</a>
+        )}
+        {document.publishing.posts.some((post) => post.status === "published") && (
+          <a href={`${basePath}/blog`}>Blog &amp; Guides</a>
         )}
         {document.publishing.pages
           .filter((page) => page.status === "published")
@@ -70,9 +74,7 @@ function ContentNav({ document, basePath }: { document: SiteDocument; basePath: 
               {page.navigationLabel}
             </a>
           ))}
-        {document.publishing.posts.some((post) => post.status === "published") && (
-          <a href={`${basePath}/blog`}>Blog</a>
-        )}
+        <a href={`${basePath}#contact`}>Contact</a>
       </nav>
     </header>
   );

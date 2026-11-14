@@ -21,9 +21,13 @@ export async function generateMetadata({
     return { title: "Tool or Case Study — DoItWithAI Studio" };
   }
 
+  const projectMeta = project as typeof project & {
+    metaTitle?: string;
+    metaDescription?: string;
+  };
   return {
-    title: `${project.title} — ${item.document.identity.name}`,
-    description: project.summary || item.document.identity.intro,
+    title: projectMeta.metaTitle?.trim() || `${project.title} — ${item.document.identity.name}`,
+    description: projectMeta.metaDescription?.trim() || project.summary || item.document.identity.intro,
   };
 }
 

@@ -27,6 +27,7 @@ import {
   missingPublicationFields,
 } from "../../features/website-builder/domain/publication-selection";
 import { resolveCatalogToolSlug } from "../../features/website-builder/domain/catalog-tool-resolver";
+import transferredManifest from "../../features/website-builder/tools/transferred-tools-manifest.json";
 
 test("website builder exposes 16 curated templates across all 4 categories with doitwithai-flagship default", () => {
   assert.equal(DEFAULT_WEBSITE_TEMPLATE_ID, "doitwithai-flagship");
@@ -311,4 +312,76 @@ test("Tool landing page customization fields and flagship swap persist via apply
   assert.equal(target.toolThemeMode, "dark");
   assert.equal(target.hideEducationSection, true);
   assert.equal(target.customFaqs?.length, 1);
+});
+
+
+test("transferred tools manifest indexes live app/tools pages with deterministic versions", () => {
+  const manifest = transferredManifest as {
+    toolCount: number;
+    tools: Record<string, { slug: string; versionLabel: string; metaTitle: string; metaDescription: string }>;
+  };
+  assert.ok(manifest.toolCount >= 120);
+  assert.ok(manifest.tools["meta-title-generator"]);
+  assert.match(manifest.tools["meta-title-generator"].versionLabel, /^v2026\.11\.[0-9a-f]{8}$/);
+  assert.ok(manifest.tools["meta-title-generator"].metaTitle.length > 5);
+  assert.ok(manifest.tools["on-page-ai-seo-analyzer"]);
+});
+
+test("website-builder supports per-tool SEO metadata, background override, and version sync/revert", () => {
+  let doc = applySiteCommand(DEFAULT_SITE_DOCUMENT, {
+    type: "design.setTemplate",
+    value: "doitwithai-flagship",
+  });
+
+  const target = doc.content.projects[0];
+  assert.ok(target);
+
+  doc = applySiteCommand(doc, {
+    type: "project.update",
+    itemId: target.id,
+    field: "metaTitle",
+    value: "Custom SEO Meta Title for Site",
+  });
+  doc = applySiteCommand(doc, {
+    type: "project.update",
+    itemId: target.id,
+    field: "metaDescription",
+    value: "Custom SEO meta description tuned for higher organic click-through rate.",
+  });
+  doc = applySiteCommand(doc, {
+    type: "project.update",
+    itemId: target.id,
+    field: "toolBackgroundHex",
+    value: "#0f172a",
+  });
+
+  const beforeSync = doc.content.projects[0];
+  assert.equal(beforeSync.metaTitle, "Custom SEO Meta Title for Site");
+  assert.equal(beforeSync.toolBackgroundHex, "#0f172a");
+
+  doc = applySiteCommand(doc, {
+    type: "project.syncCatalogToolVersion",
+    itemId: target.id,
+    versionLabel: "v2026.11.abcd1234",
+    metaTitle: "Upstream Fresh Meta Title",
+    metaDescription: "Upstream Fresh Description",
+    title: "Upstream Tool Name",
+    overwriteCustomCopy: true,
+  });
+
+  const afterSync = doc.content.projects[0];
+  assert.equal(afterSync.installedToolVersion, "v2026.11.abcd1234");
+  assert.equal(afterSync.metaTitle, "Upstream Fresh Meta Title");
+  assert.equal(afterSync.previousToolSnapshot?.metaTitle, "Custom SEO Meta Title for Site");
+  assert.equal(afterSync.previousToolSnapshot?.toolBackgroundHex, "#0f172a");
+
+  doc = applySiteCommand(doc, {
+    type: "project.revertCatalogToolVersion",
+    itemId: target.id,
+  });
+
+  const reverted = doc.content.projects[0];
+  assert.equal(reverted.metaTitle, "Custom SEO Meta Title for Site");
+  assert.equal(reverted.toolBackgroundHex, "#0f172a");
+  assert.equal(reverted.previousToolSnapshot, undefined);
 });

@@ -52,6 +52,23 @@ export const siteCommandSchema = z.discriminatedUnion("type", [
     outcome: z.string().trim().max(1200).default(""),
     includeCompanionPost: z.boolean().default(true),
     replaceItemId: z.string().min(1).max(80).optional(),
+    installedToolVersion: z.string().trim().max(60).optional(),
+    metaTitle: z.string().trim().max(120).optional(),
+    metaDescription: z.string().trim().max(320).optional(),
+  }),
+  z.object({
+    type: z.literal("project.syncCatalogToolVersion"),
+    itemId: z.string().min(1),
+    versionLabel: z.string().trim().min(1).max(60),
+    metaTitle: z.string().trim().max(120).optional(),
+    metaDescription: z.string().trim().max(320).optional(),
+    summary: z.string().trim().max(500).optional(),
+    title: z.string().trim().max(100).optional(),
+    overwriteCustomCopy: z.boolean().default(false),
+  }),
+  z.object({
+    type: z.literal("project.revertCatalogToolVersion"),
+    itemId: z.string().min(1),
   }),
   z.object({ type: z.literal("scene.setFamily"), value: z.enum(sceneFamilyOptions) }),
   z.object({ type: z.literal("scene.setPreset"), value: z.enum(scenePresetOptions) }),
@@ -99,10 +116,14 @@ export const siteCommandSchema = z.discriminatedUnion("type", [
       "customCtaLabel",
       "heroHighlights",
       "toolAccentHex",
+      "toolBackgroundHex",
       "toolThemeMode",
       "hideEducationSection",
       "hideFaqSection",
       "customFaqs",
+      "metaTitle",
+      "metaDescription",
+      "installedToolVersion",
     ]),
     value: z.union([
       z.string(),
@@ -243,6 +264,13 @@ export function applySiteCommand(current: SiteDocument, candidate: unknown): Sit
         approach: command.approach.slice(0, 1800),
         outcome: command.outcome.slice(0, 1200),
         mediaIds: [] as string[],
+        ...(command.metaTitle ? { metaTitle: command.metaTitle.slice(0, 120) } : {}),
+        ...(command.metaDescription
+          ? { metaDescription: command.metaDescription.slice(0, 320) }
+          : {}),
+        ...(command.installedToolVersion
+          ? { installedToolVersion: command.installedToolVersion.slice(0, 60) }
+          : {}),
       };
       let nextPosts = current.publishing.posts;
       if (command.includeCompanionPost && current.publishing.posts.length < 24) {
@@ -511,6 +539,85 @@ export function applySiteCommand(current: SiteDocument, candidate: unknown): Sit
       next = { ...current, content: { ...current.content, projects: current.content.projects.map((entry) => entry.id === command.itemId ? { ...entry, [command.field]: value } : entry) }, ...nextRevision(current) };
       break;
     }
+    case "project.syncCatalogToolVersion": {
+      const item = current.content.projects.find((entry) => entry.id === command.itemId);
+      if (!item) throw new Error("The requested tool does not exist.");
+      const snapshot = {
+        ...(item.installedToolVersion ? { version: item.installedToolVersion } : {}),
+        title: item.title,
+        summary: item.summary,
+        ...(item.metaTitle ? { metaTitle: item.metaTitle } : {}),
+        ...(item.metaDescription ? { metaDescription: item.metaDescription } : {}),
+        role: item.role,
+        period: item.period,
+        challenge: item.challenge,
+        approach: item.approach,
+        outcome: item.outcome,
+        ...(item.customCtaLabel ? { customCtaLabel: item.customCtaLabel } : {}),
+        ...(item.toolAccentHex ? { toolAccentHex: item.toolAccentHex } : {}),
+        ...(item.toolBackgroundHex ? { toolBackgroundHex: item.toolBackgroundHex } : {}),
+      };
+      const updated = {
+        ...item,
+        installedToolVersion: command.versionLabel.slice(0, 60),
+        ...(command.metaTitle && (!item.metaTitle || command.overwriteCustomCopy)
+          ? { metaTitle: command.metaTitle.slice(0, 120) }
+          : {}),
+        ...(command.metaDescription && (!item.metaDescription || command.overwriteCustomCopy)
+          ? { metaDescription: command.metaDescription.slice(0, 320) }
+          : {}),
+        ...(command.overwriteCustomCopy && command.title ? { title: command.title.slice(0, 100) } : {}),
+        ...(command.overwriteCustomCopy && command.summary ? { summary: command.summary.slice(0, 500) } : {}),
+        previousToolSnapshot: snapshot,
+      };
+      next = {
+        ...current,
+        content: {
+          ...current.content,
+          projects: current.content.projects.map((entry) =>
+            entry.id === command.itemId ? updated : entry,
+          ),
+        },
+        ...nextRevision(current),
+      };
+      break;
+    }
+    case "project.revertCatalogToolVersion": {
+      const item = current.content.projects.find((entry) => entry.id === command.itemId);
+      if (!item) throw new Error("The requested tool does not exist.");
+      if (!item.previousToolSnapshot) {
+        throw new Error("No previous version snapshot is saved for this tool yet.");
+      }
+      const snap = item.previousToolSnapshot;
+      const reverted = {
+        ...item,
+        installedToolVersion: snap.version,
+        title: snap.title,
+        summary: snap.summary,
+        metaTitle: snap.metaTitle,
+        metaDescription: snap.metaDescription,
+        role: snap.role,
+        period: snap.period,
+        challenge: snap.challenge,
+        approach: snap.approach,
+        outcome: snap.outcome,
+        customCtaLabel: snap.customCtaLabel,
+        toolAccentHex: snap.toolAccentHex,
+        toolBackgroundHex: snap.toolBackgroundHex,
+        previousToolSnapshot: undefined,
+      };
+      next = {
+        ...current,
+        content: {
+          ...current.content,
+          projects: current.content.projects.map((entry) =>
+            entry.id === command.itemId ? reverted : entry,
+          ),
+        },
+        ...nextRevision(current),
+      };
+      break;
+    }
     case "project.move": {
       const index = current.content.projects.findIndex((entry) => entry.id === command.itemId);
       if (index < 0) throw new Error("The requested project does not exist.");
@@ -686,6 +793,8 @@ export function describeCommand(command: SiteCommand, document: SiteDocument) {
     case "design.setTemplate": return `Switched to the ${command.value} template.`;
     case "design.applyTemplateDefaults": return `Loaded default tools, pages, and 5 SEO blog posts for ${command.value}.`;
     case "project.installCatalogTool": return `Installed "${command.title}" from the DoItWithAI Tool Catalog (0 AI tokens).`;
+    case "project.syncCatalogToolVersion": return `Synced tool to upstream version ${command.versionLabel} (previous snapshot saved).`;
+    case "project.revertCatalogToolVersion": return "Reverted tool back to its previous saved version.";
     case "scene.setFamily": return `Changed the 3D scene family to ${command.value}.`;
     case "scene.setPreset": return `Applied the ${command.value} 3D preset.`;
     case "scene.setMotion": return `Set scene motion to ${command.value}.`;

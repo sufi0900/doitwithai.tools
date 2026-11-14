@@ -2,11 +2,10 @@
 
 import React, { useMemo, useState } from "react";
 import { isCollectionTemplate, isLightTemplate } from "@/features/website-builder/domain/template-contracts";
-import { ArrowLeft, ArrowUpRight, Search, Sparkles, Wrench } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Search } from "lucide-react";
 import Image from "next/image";
 import type { SiteDocument } from "@/features/website-builder/domain/site-document";
 import { projectsForPresentation } from "@/features/website-builder/domain/opportunity";
-import { InteractiveWebsiteToolRunner } from "@/features/website-builder/tools/InteractiveWebsiteToolRunner";
 
 export function PublicProjectsIndex({
   document,
@@ -27,7 +26,6 @@ export function PublicProjectsIndex({
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTag, setSelectedTag] = useState("all");
-  const [activeToolId, setActiveToolId] = useState<string>(projects[0]?.id ?? "");
 
   const allTags = useMemo(() => {
     const s = new Set<string>();
@@ -49,11 +47,6 @@ export function PublicProjectsIndex({
     });
   }, [projects, searchQuery, selectedTag]);
 
-  const activeTool = useMemo(
-    () => projects.find((p) => p.id === activeToolId) ?? projects[0],
-    [projects, activeToolId],
-  );
-
   const publishedPages = document.publishing.pages.filter((p) => p.status === "published");
   const hasBlog = document.publishing.posts.some((p) => p.status === "published");
 
@@ -67,9 +60,10 @@ export function PublicProjectsIndex({
           <ArrowLeft size={16} />
           {document.identity.name}
         </a>
-        <nav style={{ display: "flex", gap: "14px", flexWrap: "wrap", alignItems: "center" }}>
+        <nav style={{ display: "flex", gap: "16px", flexWrap: "wrap", alignItems: "center" }}>
+          <a href={path}>Home</a>
           <a href={`${path}/projects`} style={{ fontWeight: 800, color: "#38bdf8" }}>
-            {isToolDirectory ? `🧰 All Tools (${projects.length})` : `Projects (${projects.length})`}
+            {isToolDirectory ? `Tools (${projects.length})` : `Projects (${projects.length})`}
           </a>
           {hasBlog && <a href={`${path}/blog`}>Blog &amp; Guides</a>}
           {publishedPages.map((page) => (
@@ -77,6 +71,7 @@ export function PublicProjectsIndex({
               {page.navigationLabel}
             </a>
           ))}
+          <a href={`${path}#contact`}>Contact</a>
         </nav>
       </header>
 
@@ -97,7 +92,7 @@ export function PublicProjectsIndex({
           </h1>
           <p style={{ margin: 0, maxWidth: "760px", color: "#94a3b8", fontSize: "15px", lineHeight: 1.65 }}>
             {isToolDirectory
-              ? `Run any of our ${projects.length} interactive AI utilities directly inside this website. Click a tool card below to launch its dedicated workspace or test it immediately in the live runner.`
+              ? `Explore ${projects.length} interactive AI utilities built into this website. Open any tool card below to launch its dedicated full-page experience.`
               : `A complete collection of work and outcomes by ${document.identity.name}.`}
           </p>
         </header>
@@ -175,35 +170,32 @@ export function PublicProjectsIndex({
           </div>
         </div>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-            gap: "18px",
-          }}
-        >
+        <div className="wb-tools-directory-grid">
           {filteredProjects.map((project, index) => {
             const cover = project.mediaIds
               .map((id) => document.media.assets.find((asset) => asset.id === id))
               .find(Boolean);
             const toolSlug = project.caseStudySlug || project.id;
-            const isSelected = activeTool?.id === project.id;
             return (
               <article
                 key={project.id}
+                className="wb-tool-directory-card"
                 style={{
                   background: "rgba(15, 23, 42, 0.84)",
-                  border: isSelected
-                    ? "1px solid #22d3ee"
-                    : "1px solid rgba(99, 102, 241, 0.28)",
+                  border: "1px solid rgba(99, 102, 241, 0.28)",
                   borderRadius: "16px",
-                  padding: "20px",
-                  display: "grid",
+                  padding: "22px",
+                  display: "flex",
+                  flexDirection: "column",
                   gap: "12px",
+                  height: "100%",
                 }}
               >
                 {cover && (
-                  <div style={{ position: "relative", height: "160px", borderRadius: "10px", overflow: "hidden" }}>
+                  <div
+                    className="wb-tool-card-media"
+                    style={{ position: "relative", height: "160px", borderRadius: "10px", overflow: "hidden" }}
+                  >
                     <Image
                       src={cover.url}
                       alt={cover.alt}
@@ -227,18 +219,21 @@ export function PublicProjectsIndex({
                   <span
                     style={{
                       fontSize: "10.5px",
-                      padding: "2px 8px",
+                      padding: "2px 9px",
                       borderRadius: "999px",
                       background: "rgba(16, 185, 129, 0.14)",
                       color: "#6ee7b7",
                       fontWeight: 700,
+                      whiteSpace: "nowrap",
                     }}
                   >
                     Live in Site
                   </span>
                 </div>
-                <h2 style={{ margin: 0, fontSize: "19px", color: "#ffffff" }}>{project.title}</h2>
-                <p style={{ margin: 0, fontSize: "13px", color: "#cbd5e1", lineHeight: 1.55 }}>
+                <h2 style={{ margin: 0, fontSize: "19px", lineHeight: 1.3, color: "#ffffff" }}>
+                  {project.title}
+                </h2>
+                <p style={{ margin: 0, fontSize: "13px", color: "#cbd5e1", lineHeight: 1.6 }}>
                   {project.summary}
                 </p>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
@@ -259,84 +254,32 @@ export function PublicProjectsIndex({
                     </em>
                   ))}
                 </div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginTop: "6px" }}>
+                <div style={{ marginTop: "auto", paddingTop: "8px" }}>
                   <a
                     href={`${path}/projects/${toolSlug}`}
                     style={{
                       display: "inline-flex",
                       alignItems: "center",
-                      gap: "6px",
-                      padding: "9px 14px",
-                      borderRadius: "9px",
+                      justifyContent: "space-between",
+                      gap: "8px",
+                      width: "100%",
+                      padding: "10px 14px",
+                      borderRadius: "10px",
                       background: "linear-gradient(135deg, #22d3ee, #6366f1)",
                       color: "#04101c",
-                      fontSize: "12px",
+                      fontSize: "13px",
                       fontWeight: 800,
                       textDecoration: "none",
                     }}
                   >
-                    <Wrench size={13} /> Open Dedicated Tool Page <ArrowUpRight size={14} />
+                    <span>{project.title}</span>
+                    <ArrowUpRight size={15} />
                   </a>
-                  {isToolDirectory && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setActiveToolId(project.id);
-                        const el = window.document.getElementById("tool-workspace");
-                        el?.scrollIntoView({ behavior: "smooth" });
-                      }}
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "5px",
-                        padding: "9px 12px",
-                        borderRadius: "9px",
-                        border: "1px solid rgba(56, 189, 248, 0.4)",
-                        background: "rgba(15, 23, 42, 0.8)",
-                        color: "#7dd3fc",
-                        fontSize: "12px",
-                        fontWeight: 700,
-                        cursor: "pointer",
-                      }}
-                    >
-                      <Sparkles size={13} /> Run Inline Below ↓
-                    </button>
-                  )}
                 </div>
               </article>
             );
           })}
         </div>
-
-        {isToolDirectory && activeTool && (
-          <div style={{ marginTop: "12px", display: "grid", gap: "14px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
-              <div>
-                <span style={{ fontSize: "11px", fontWeight: 800, letterSpacing: "0.14em", color: "#22d3ee" }}>
-                  ACTIVE IN-SITE TOOL WORKSPACE
-                </span>
-                <h2 style={{ margin: "4px 0 0", fontSize: "24px" }}>
-                  Running: {activeTool.title}
-                </h2>
-              </div>
-              <a
-                href={`${path}/projects/${activeTool.caseStudySlug || activeTool.id}`}
-                style={{ color: "#38bdf8", fontSize: "13px", fontWeight: 700, textDecoration: "none" }}
-              >
-                Open standalone URL ({path}/projects/{activeTool.caseStudySlug || activeTool.id}) →
-              </a>
-            </div>
-            <InteractiveWebsiteToolRunner
-              tool={activeTool}
-              siteName={document.identity.name}
-              siteSlug={portfolioSlug}
-              siteAccent={document.design.accent}
-              siteBackground={document.design.background}
-              allTools={projects}
-              onSelectTool={(next) => setActiveToolId(next.id)}
-            />
-          </div>
-        )}
       </section>
     </main>
   );

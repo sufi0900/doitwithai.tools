@@ -11,6 +11,7 @@ import { accentOptions, backgroundOptions, sceneFamilyOptions, socialPlatformOpt
 import { PublishingEditor } from "./publishing-editor";
 import { CatalogToolInstaller } from "./CatalogToolInstaller";
 import { getCatalogToolBySlug, resolveCatalogToolSlug, shouldApplyHeroOverride } from "@/features/website-builder/domain/catalog-tool-resolver";
+import { getTransferredToolManifestEntry } from "@/features/website-builder/tools/transferred-tool-manifest";
 import { deriveImageAlt } from "@/features/website-builder/domain/media";
 import { getTemplatesByCategory, type WebsiteTemplateCategory } from "@/features/website-builder/ecosystem-bridge";
 import { getTemplateContract, isFlatTemplate } from "@/features/website-builder/domain/template-contracts";
@@ -248,6 +249,7 @@ function ProjectsToolsStudioEditor({
   const [selectedId, setSelectedId] = useState<string>(projects[0]?.id ?? "");
   const [activeTab, setActiveTab] = useState<"hero" | "inputs" | "theme" | "story">("hero");
   const [hexDraft, setHexDraft] = useState("");
+  const [bgDraft, setBgDraft] = useState("");
 
   useEffect(() => {
     if (previewTarget?.section === "projects" && previewTarget.itemId && previewTarget.itemId !== "__index__") {
@@ -264,10 +266,15 @@ function ProjectsToolsStudioEditor({
   const activeItem = projects.find((p) => p.id === selectedId) ?? projects[0];
   useEffect(() => {
     setHexDraft(activeItem?.toolAccentHex ?? "");
-  }, [activeItem?.id, activeItem?.toolAccentHex]);
+    setBgDraft(activeItem?.toolBackgroundHex ?? "");
+  }, [activeItem?.id, activeItem?.toolAccentHex, activeItem?.toolBackgroundHex]);
 
   const resolvedCatalogSlug = resolveCatalogToolSlug(activeItem);
   const catalogTool = getCatalogToolBySlug(resolvedCatalogSlug);
+  const manifestEntry = getTransferredToolManifestEntry(resolvedCatalogSlug);
+  const isUpdateAvailable = Boolean(
+    manifestEntry && activeItem?.installedToolVersion !== manifestEntry.versionLabel,
+  );
   const heroOverrideFlags = activeItem
     ? shouldApplyHeroOverride(activeItem, catalogTool)
     : { title: false, summary: false, role: false, period: false, technologies: false };
@@ -307,6 +314,14 @@ function ProjectsToolsStudioEditor({
     { label: "Violet", hex: "#a78bfa" },
     { label: "Amber", hex: "#f59e0b" },
     { label: "Rose", hex: "#f43f5e" },
+  ];
+
+  const TOOL_BACKGROUND_SWATCHES = [
+    { label: "Deep Navy", hex: "#070d19" },
+    { label: "Midnight", hex: "#050b18" },
+    { label: "Slate Ink", hex: "#0f172a" },
+    { label: "Crisp White", hex: "#ffffff" },
+    { label: "Ivory Paper", hex: "#f8fafc" },
   ];
 
   return (
@@ -448,7 +463,99 @@ function ProjectsToolsStudioEditor({
               {resolvedCatalogSlug && (
                 <small style={{ color: "#94a3b8", fontSize: "11px" }}>
                   Live source: <code>/tools/{resolvedCatalogSlug}</code>
+                  {activeItem.installedToolVersion && (
+                    <> · Installed <code>{activeItem.installedToolVersion}</code></>
+                  )}
                 </small>
+              )}
+              {resolvedCatalogSlug && manifestEntry && (isUpdateAvailable || activeItem.previousToolSnapshot) && (
+                <div
+                  style={{
+                    marginTop: "6px",
+                    padding: "8px 10px",
+                    borderRadius: "9px",
+                    background: isUpdateAvailable ? "rgba(245, 158, 11, 0.1)" : "rgba(16, 185, 129, 0.08)",
+                    border: isUpdateAvailable
+                      ? "1px solid rgba(245, 158, 11, 0.35)"
+                      : "1px solid rgba(16, 185, 129, 0.28)",
+                    display: "grid",
+                    gap: "6px",
+                    fontSize: "11px",
+                    color: "#e2e8f0",
+                  }}
+                >
+                  <span>
+                    {isUpdateAvailable ? (
+                      <>
+                        New Upstream Version Detected (<code>{manifestEntry.versionLabel}</code> vs{" "}
+                        <code>{activeItem.installedToolVersion || "unversioned"}</code>). Sync while
+                        keeping a rollback snapshot.
+                      </>
+                    ) : (
+                      <>
+                        Running latest upstream version (<code>{manifestEntry.versionLabel}</code>).
+                        Previous snapshot available for rollback.
+                      </>
+                    )}
+                  </span>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                    {isUpdateAvailable && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          execute({
+                            type: "project.syncCatalogToolVersion",
+                            itemId: activeItem.id,
+                            versionLabel: manifestEntry.versionLabel,
+                            metaTitle: manifestEntry.metaTitle,
+                            metaDescription: manifestEntry.metaDescription,
+                            title: catalogTool?.name,
+                            summary: catalogTool?.description,
+                            overwriteCustomCopy: false,
+                          })
+                        }
+                        style={{
+                          padding: "5px 10px",
+                          borderRadius: "7px",
+                          border: "1px solid rgba(245, 158, 11, 0.45)",
+                          background: "rgba(245, 158, 11, 0.18)",
+                          color: "#fde68a",
+                          fontSize: "11px",
+                          fontWeight: 700,
+                          cursor: "pointer",
+                        }}
+                      >
+                        Update to Latest ({manifestEntry.versionLabel})
+                      </button>
+                    )}
+                    {activeItem.previousToolSnapshot && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          execute({
+                            type: "project.revertCatalogToolVersion",
+                            itemId: activeItem.id,
+                          })
+                        }
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "4px",
+                          padding: "5px 10px",
+                          borderRadius: "7px",
+                          border: "1px solid rgba(148, 163, 184, 0.35)",
+                          background: "rgba(15, 23, 42, 0.78)",
+                          color: "#cbd5e1",
+                          fontSize: "11px",
+                          fontWeight: 700,
+                          cursor: "pointer",
+                        }}
+                      >
+                        <RotateCcw size={11} /> Revert to Previous Version
+                      </button>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
 
@@ -532,6 +639,23 @@ function ProjectsToolsStudioEditor({
                   value={activeItem.title}
                   maxLength={100}
                   onCommit={(value) => execute({ type: "project.update", itemId: activeItem.id, field: "title", value })}
+                />
+                <BufferedField
+                  label={`SEO Meta Title (${(activeItem.metaTitle ?? manifestEntry?.metaTitle ?? activeItem.title).length}/60 recommended)`}
+                  value={activeItem.metaTitle ?? ""}
+                  maxLength={120}
+                  allowEmpty
+                  placeholder={manifestEntry?.metaTitle || `${activeItem.title} | ${document.identity.name}`}
+                  onCommit={(value) => execute({ type: "project.update", itemId: activeItem.id, field: "metaTitle", value })}
+                />
+                <BufferedField
+                  label={`SEO Meta Description (${(activeItem.metaDescription ?? manifestEntry?.metaDescription ?? activeItem.summary).length}/155 recommended)`}
+                  value={activeItem.metaDescription ?? ""}
+                  maxLength={320}
+                  multiline
+                  allowEmpty
+                  placeholder={manifestEntry?.metaDescription || activeItem.summary}
+                  onCommit={(value) => execute({ type: "project.update", itemId: activeItem.id, field: "metaDescription", value })}
                 />
                 <BufferedField
                   label="Hero Lead Subtitle"
@@ -749,6 +873,107 @@ function ProjectsToolsStudioEditor({
                             type: "project.update",
                             itemId: activeItem.id,
                             field: "toolAccentHex",
+                            value: "",
+                          });
+                        }}
+                        style={{
+                          padding: "4px 8px",
+                          borderRadius: "7px",
+                          border: "1px solid var(--line)",
+                          background: "rgba(255,255,255,0.05)",
+                          color: "#cbd5e1",
+                          fontSize: "10.5px",
+                          cursor: "pointer",
+                        }}
+                      >
+                        Use Site Default
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div style={{ display: "grid", gap: "6px", paddingTop: "6px", borderTop: "1px solid var(--line)" }}>
+                  <span style={{ color: "#b4bed1", fontSize: "12px", fontWeight: 600 }}>
+                    Per-Tool Background Color Override
+                  </span>
+                  <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                    <input
+                      type="color"
+                      aria-label="Pick tool background color"
+                      value={/^#[0-9a-f]{6}$/i.test(bgDraft) ? bgDraft : "#070d19"}
+                      onChange={(e) => {
+                        setBgDraft(e.target.value);
+                        execute({
+                          type: "project.update",
+                          itemId: activeItem.id,
+                          field: "toolBackgroundHex",
+                          value: e.target.value,
+                        });
+                      }}
+                      style={{ width: "42px", height: "36px", padding: "2px", borderRadius: "8px", border: "1px solid var(--line)", background: "transparent", cursor: "pointer", flexShrink: 0 }}
+                    />
+                    <input
+                      type="text"
+                      aria-label="Tool background hex color"
+                      value={bgDraft}
+                      maxLength={32}
+                      placeholder="#070d19 (inherits website surface)"
+                      onChange={(e) => setBgDraft(e.target.value)}
+                      onBlur={() =>
+                        execute({
+                          type: "project.update",
+                          itemId: activeItem.id,
+                          field: "toolBackgroundHex",
+                          value: bgDraft.trim(),
+                        })
+                      }
+                      style={{
+                        flex: 1,
+                        minWidth: 0,
+                        padding: "8px 10px",
+                        borderRadius: "8px",
+                        border: "1px solid var(--line)",
+                        background: "rgba(0,0,0,0.25)",
+                        color: "var(--text)",
+                        fontSize: "12px",
+                      }}
+                    />
+                  </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", alignItems: "center" }}>
+                    {TOOL_BACKGROUND_SWATCHES.map((swatch) => (
+                      <button
+                        key={swatch.hex}
+                        type="button"
+                        title={`${swatch.label} (${swatch.hex})`}
+                        aria-label={`Set background ${swatch.label}`}
+                        onClick={() => {
+                          setBgDraft(swatch.hex);
+                          execute({
+                            type: "project.update",
+                            itemId: activeItem.id,
+                            field: "toolBackgroundHex",
+                            value: swatch.hex,
+                          });
+                        }}
+                        style={{
+                          width: "24px",
+                          height: "24px",
+                          borderRadius: "6px",
+                          border: activeItem.toolBackgroundHex === swatch.hex ? "2px solid var(--accent)" : "1px solid rgba(148,163,184,0.45)",
+                          background: swatch.hex,
+                          cursor: "pointer",
+                        }}
+                      />
+                    ))}
+                    {activeItem.toolBackgroundHex && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setBgDraft("");
+                          execute({
+                            type: "project.update",
+                            itemId: activeItem.id,
+                            field: "toolBackgroundHex",
                             value: "",
                           });
                         }}
