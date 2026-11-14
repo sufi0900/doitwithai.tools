@@ -87,7 +87,47 @@ export function ManualControls({ document, publishedDocument, execute, panel, ca
         <BufferedField label="Period" value={item.period} maxLength={80} allowEmpty onCommit={(value) => execute({ type: "education.update", itemId: item.id, field: "period", value })} />
         <BufferedField label="Details" value={item.summary} maxLength={500} multiline allowEmpty onCommit={(value) => execute({ type: "education.update", itemId: item.id, field: "summary", value })} />
       </article>)}</section>}
-      {contentSection === "projects" && <><CatalogToolInstaller document={document} execute={execute} /><section className="collection-editor"><header><div><strong>Tools & project case studies</strong><small>{document.content.projects.length}/8 tools or projects</small></div><button type="button" disabled={document.content.projects.length >= 8} onClick={() => execute({ type: "project.add" })}><Plus size={15} />Add custom</button></header>{document.content.projects.map((item, index) => <article key={item.id}>
+      {contentSection === "projects" && (
+        <>
+          {document.design.template === "micro-saas-launchpad" ? (
+            <div className="template-defaults-reset-card">
+              <strong style={{ fontSize: "13px", color: "#22d3ee" }}>
+                ⚡ Single-Tool Landing Page Workspace
+              </strong>
+              <small style={{ color: "#cbd5e1", lineHeight: 1.5 }}>
+                This Single-Tool Website template embeds your flagship interactive AI tool directly on the Home Landing Page (<code>#tool-workspace</code>). Edit your flagship tool&apos;s title, summary, and specifications below.
+              </small>
+            </div>
+          ) : (
+            <CatalogToolInstaller document={document} execute={execute} />
+          )}
+          <section className="collection-editor">
+            <header>
+              <div>
+                <strong>
+                  {document.design.template === "micro-saas-launchpad"
+                    ? "Flagship Landing Page AI Tool"
+                    : document.design.template === "doitwithai-flagship"
+                      ? "Installed Website AI Tools"
+                      : "Tools & project case studies"}
+                </strong>
+                <small>
+                  {document.design.template === "micro-saas-launchpad"
+                    ? "1 flagship tool rendered live on Home page"
+                    : `${document.content.projects.length}/8 active tools or projects`}
+                </small>
+              </div>
+              {document.design.template !== "micro-saas-launchpad" && (
+                <button
+                  type="button"
+                  disabled={document.content.projects.length >= 8}
+                  onClick={() => execute({ type: "project.add" })}
+                >
+                  <Plus size={15} />
+                  Add custom tool
+                </button>
+              )}
+            </header>{document.content.projects.map((item, index) => <article key={item.id}>
         <div className="collection-title"><strong>{item.title}</strong><span className="collection-actions"><button type="button" disabled={index === 0} aria-label={`Move ${item.title} up`} onClick={() => execute({ type: "project.move", itemId: item.id, direction: "up" })}><ArrowUp size={14} /></button><button type="button" disabled={index === document.content.projects.length - 1} aria-label={`Move ${item.title} down`} onClick={() => execute({ type: "project.move", itemId: item.id, direction: "down" })}><ArrowDown size={14} /></button><button type="button" aria-label={`Remove ${item.title}`} onClick={() => execute({ type: "project.remove", itemId: item.id })}><Trash2 size={14} /></button></span></div>
         <BufferedField label="Project title" value={item.title} maxLength={100} onCommit={(value) => execute({ type: "project.update", itemId: item.id, field: "title", value })} />
         <BufferedField label="Summary" value={item.summary} maxLength={500} multiline allowEmpty onCommit={(value) => execute({ type: "project.update", itemId: item.id, field: "summary", value })} />
@@ -100,7 +140,7 @@ export function ManualControls({ document, publishedDocument, execute, panel, ca
         <BufferedField label="Technologies (comma separated)" value={item.technologies.join(", ")} maxLength={260} allowEmpty onCommit={(value) => execute({ type: "project.update", itemId: item.id, field: "technologies", value: value.split(",").map((entry) => entry.trim()).filter(Boolean) })} />
         <BufferedField label="Project URL" value={item.link} maxLength={300} allowEmpty onCommit={(value) => execute({ type: "project.update", itemId: item.id, field: "link", value })} />
         <ProjectGallery project={item} document={document} execute={execute} />
-      </article>)}</section></>}
+      </article>)}</section></>)}
       {contentSection === "media library" && <MediaLibrary document={document} execute={execute} enabled={canUploadMedia} />}
       {contentSection === "site pages" && <PublishingEditor key="site-pages" document={document} publishedDocument={publishedDocument} execute={execute} kind="page" canUploadMedia={canUploadMedia} selectedItemId={previewTarget?.itemId} onSelect={(itemId) => onPreviewTarget?.({ section: "site pages", itemId })} onPublishItem={onPublishItem} publishingItemId={publishingItemId} publishError={itemPublishError} canDirectPublish={canDirectPublish} />}
       {contentSection === "blog posts" && <PublishingEditor key="blog-posts" document={document} publishedDocument={publishedDocument} execute={execute} kind="post" canUploadMedia={canUploadMedia} selectedItemId={previewTarget?.itemId === "__index__" ? undefined : previewTarget?.itemId} onSelect={(itemId) => onPreviewTarget?.({ section: "blog posts", itemId })} onPreviewListing={() => onPreviewTarget?.({ section: "blog posts", itemId: "__index__" })} onPublishItem={onPublishItem} publishingItemId={publishingItemId} publishError={itemPublishError} canDirectPublish={canDirectPublish} ensureSaved={ensureSaved} seededNotes={blogNotesSeed} publicSiteSlug={publicSiteSlug} />}
@@ -118,7 +158,7 @@ export function ManualControls({ document, publishedDocument, execute, panel, ca
 
   if (panel === "design") return (
     <div className="control-stack">
-      <section className="studio-template-picker" aria-labelledby="template-picker-title"><header><strong id="template-picker-title">Website template</strong><small>16 templates across 4 categories · pre-loaded with template-specific tools, pages & 5 SEO blog posts.</small></header><button type="button" className="secondary-action" style={{ width: "100%", marginBottom: "10px" }} onClick={() => execute({ type: "design.applyTemplateDefaults", value: document.design.template })}>Load {activeTemplate.name} Default Content (Tools, Pages & 5 Posts)</button><div className="template-category-list">{([ ["blog-editorial", "Blogging & SEO Publications"], ["personal-brand", "Personal Brand & Advisory"], ["startup-saas", "Startup, SaaS & AI Tools"], ["interactive-3d-portfolio", "Interactive 3D Cinemas"] ] as readonly [WebsiteTemplateCategory, string][]).map(([catId, catTitle]) => { const items = getTemplatesByCategory(catId); return <div key={catId} className="template-category-group"><p className="template-category-header">{catTitle} ({items.length})</p>{items.map((template) => <button type="button" key={template.id} className={document.design.template === template.id ? "selected" : ""} aria-pressed={document.design.template === template.id} onClick={() => execute({ type: "design.setTemplate", value: template.id })}><i aria-hidden="true" /><span><strong>{template.name}{template.isDefault ? " · Flagship" : ""}</strong><small>{template.description}</small></span></button>)}</div>; })}</div></section>
+      <div className="template-defaults-reset-card"><div style={{ display: "grid", gap: "2px" }}><strong style={{ fontSize: "12.5px", color: "#f8fafc" }}>Active Template: {activeTemplate.name}</strong><small style={{ fontSize: "11px", color: "#94a3b8" }}>Reset or load this template&apos;s pre-configured AI tools, pages &amp; 5 SEO blog posts:</small></div><button type="button" className="secondary-action template-reset-action" onClick={() => execute({ type: "design.applyTemplateDefaults", value: document.design.template })}><span>↻ Load {activeTemplate.name} Default Content</span></button></div><section className="studio-template-picker" aria-labelledby="template-picker-title"><header><strong id="template-picker-title">Website template</strong><small>16 templates across 4 categories · click any template to preview its layout and default content.</small></header><div className="template-category-list">{([ ["blog-editorial", "Blogging & SEO Publications"], ["personal-brand", "Personal Brand & Advisory"], ["startup-saas", "Startup, SaaS & AI Tools"], ["interactive-3d-portfolio", "Interactive 3D Cinemas"] ] as readonly [WebsiteTemplateCategory, string][]).map(([catId, catTitle]) => { const items = getTemplatesByCategory(catId); return <div key={catId} className="template-category-group"><p className="template-category-header">{catTitle} ({items.length})</p>{items.map((template) => <button type="button" key={template.id} className={document.design.template === template.id ? "selected" : ""} aria-pressed={document.design.template === template.id} onClick={() => execute({ type: "design.setTemplate", value: template.id })}><i aria-hidden="true" /><span><strong>{template.name}{template.isDefault ? " · Flagship" : ""}</strong><small>{template.description}</small></span></button>)}</div>; })}</div></section>
       <Select label="Accent" value={document.design.accent} options={[...accentOptions]} onChange={(value) => execute({ type: "design.setAccent", value: value as never })} />
       {!flat && <Select label="Background" value={document.design.background} options={[...backgroundOptions]} onChange={(value) => execute({ type: "design.setBackground", value: value as never })} />}
       {!flat && <Select label="Hero alignment" value={document.design.heroAlignment} options={["left", "center", "right"]} onChange={(value) => execute({ type: "design.setHeroAlignment", value: value as never })} />}

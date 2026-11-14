@@ -108,7 +108,6 @@ test("applyUpsertFromWriterStudioCommand syncs and updates an article idempotent
   assert.equal(syncedPost.status, "published");
   assert.equal(missingPublicationFields(syncedPost, "post", syncedDoc).length, 0);
 
-  // Upsert again with updated title -> updates existing post in place instead of duplicating
   const updatedDoc = applyUpsertFromWriterStudioCommand(syncedDoc, {
     ...payload,
     title: "AI Website Builder SEO Blueprint (Updated)",
@@ -119,7 +118,6 @@ test("applyUpsertFromWriterStudioCommand syncs and updates an article idempotent
     "AI Website Builder SEO Blueprint (Updated)",
   );
 
-  // Build atomic live snapshot for first publication
   const selection = [...homePublicationGroups.map(String), `post:${syncedPost.id}`];
   const snapshot = buildPublicationSnapshot(updatedDoc, undefined, selection, {
     kind: "post",
@@ -130,7 +128,7 @@ test("applyUpsertFromWriterStudioCommand syncs and updates an article idempotent
   assert.equal(snapshot.publishing.posts[0].status, "published");
 });
 
-test("All 16 templates ship unique identities, custom pages, projects, and 80 globally unique SEO blog posts", () => {
+test("Single-Tool, Multi-Tool, Blogging, Newsletter, Magazine, Creator, Advisory & Agency templates ship unique 5-post SEO packs", () => {
   for (const tpl of PORTFOLIO_TEMPLATES) {
     const validated = validateSiteDocument(tpl.document);
     assert.equal(validated.design.template, tpl.id);
@@ -143,12 +141,19 @@ test("All 16 templates ship unique identities, custom pages, projects, and 80 gl
 
   const singleTool = getTemplate("micro-saas-launchpad")!;
   assert.equal(singleTool.document.content.projects.length, 1);
+  assert.equal(singleTool.document.content.projects[0].link, "");
+  assert.equal(singleTool.document.content.visibility.experience, false);
+  assert.equal(singleTool.document.content.visibility.skills, false);
+  assert.equal(singleTool.document.content.visibility.projects, false);
   assert.match(singleTool.document.content.projects[0].title, /Meta Title/i);
   assert.equal(singleTool.document.publishing.posts.length, 5);
   assert.equal(singleTool.document.publishing.pages.length, 3);
 
   const multiTool = getTemplate("doitwithai-flagship")!;
-  assert.equal(multiTool.document.content.projects.length, 5);
+  assert.equal(multiTool.document.content.projects.length, 6);
+  assert.equal(multiTool.document.content.projects.every((p) => p.link === ""), true);
+  assert.equal(multiTool.document.content.visibility.experience, false);
+  assert.equal(multiTool.document.content.visibility.skills, false);
   assert.equal(multiTool.document.publishing.posts.length, 5);
   assert.equal(multiTool.document.publishing.pages.length, 3);
 
@@ -183,7 +188,7 @@ test("project.installCatalogTool installs a tool from the catalog with zero AI t
     title: "JSON-LD Schema Markup Generator",
     summary: "Generate connected JSON-LD @graph structured data for Google and AI search.",
     technologies: ["JSON-LD", "Schema.org", "Rich Results"],
-    link: "https://doitwithai.tools/tools/schema-markup-generator",
+    link: "",
     role: "Interactive AI SEO Utility",
     period: "Live on DoItWithAI",
     challenge: "Manual schema writing is error-prone.",

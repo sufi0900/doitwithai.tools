@@ -19,17 +19,268 @@ const sectionLabels: Record<PortfolioSection, string> = {
   contact: "Contact",
 };
 
-export function PortfolioNavigation({ document, publicBasePath, onNavigateSection, onNavigatePage, onNavigateBlog }: { document: SiteDocument; publicBasePath?: string; onNavigateSection?: (section: PortfolioSection) => void; onNavigatePage?: (pageId: string) => void; onNavigateBlog?: () => void }) {
-  return <nav className="portfolio-site-nav" aria-label="Portfolio sections">
-    {document.content.order.filter((section) => document.content.visibility[section]).map((section) => <a key={section} href={publicBasePath && section === "projects" ? `${publicBasePath}/projects` : `#${section}`} onClick={onNavigateSection ? (event) => { event.preventDefault(); onNavigateSection(section); } : undefined}>{sectionLabels[section]}</a>)}
-    {publicBasePath && document.publishing.pages.filter((page) => page.status === "published").map((page) => <a key={page.id} href={`${publicBasePath}/pages/${page.slug}`}>{page.navigationLabel}</a>)}
-    {publicBasePath && document.publishing.posts.some((post) => post.status === "published") && <a href={`${publicBasePath}/blog`}>Blog</a>}
-    {!publicBasePath && onNavigatePage && document.publishing.pages.map((page) => <button type="button" key={page.id} onClick={() => onNavigatePage(page.id)}>{page.navigationLabel}</button>)}
-    {!publicBasePath && onNavigateBlog && document.publishing.posts.length > 0 && <button type="button" onClick={onNavigateBlog}>Blog</button>}
-  </nav>;
+const PERSONAL_PORTFOLIO_TEMPLATES = new Set([
+  "cinematic-orbit",
+  "architectural-grid",
+  "editorial-depth",
+  "kinetic-gallery",
+  "velocity-atelier",
+  "professional-2d",
+  "rose-studio",
+]);
+
+function getArchetypeProjectsNavLabel(template: string, count: number): string {
+  switch (template) {
+    case "doitwithai-flagship":
+      return `Tools (${count})`;
+    case "authority-niche-blog":
+      return "Reviews & Benchmarks";
+    case "creator-newsletter-hub":
+      return "Issue Vault";
+    case "olive-journal":
+      return "Monographs";
+    case "founder-authority-brand":
+      return "Free Tools & Shop";
+    case "consultant-lead-engine":
+      return "Case Studies";
+    case "startup-service-agency":
+      return "Service Packages";
+    case "midnight-bento":
+      return "Product Suite";
+    default:
+      return "Projects";
+  }
 }
 
-export function PortfolioSections(props: { document: SiteDocument; editing?: boolean; publicBasePath?: string; onOpenPage?: (id: string) => void; onOpenPost?: (id: string) => void }) {
+export function PortfolioNavigation({
+  document,
+  publicBasePath,
+  onNavigateSection,
+  onNavigatePage,
+  onNavigateBlog,
+  onNavigateTools,
+}: {
+  document: SiteDocument;
+  publicBasePath?: string;
+  onNavigateSection?: (section: PortfolioSection) => void;
+  onNavigatePage?: (pageId: string) => void;
+  onNavigateBlog?: () => void;
+  onNavigateTools?: () => void;
+}) {
+  const template = document.design.template;
+  const publishedPages = document.publishing.pages.filter(
+    (page) => !publicBasePath || page.status === "published",
+  );
+  const hasBlog = publicBasePath
+    ? document.publishing.posts.some((post) => post.status === "published")
+    : document.publishing.posts.length > 0;
+
+  if (template === "micro-saas-launchpad") {
+    return (
+      <nav className="portfolio-site-nav" aria-label="Single-tool website navigation">
+        <a
+          className="nav-pill-primary"
+          href={publicBasePath ? `${publicBasePath}#tool-workspace` : "#tool-workspace"}
+          onClick={
+            onNavigateSection
+              ? (event) => {
+                  event.preventDefault();
+                  onNavigateSection("about");
+                  const el = window.document.getElementById("tool-workspace");
+                  el?.scrollIntoView({ behavior: "smooth" });
+                }
+              : undefined
+          }
+        >
+          ⚡ Live AI Tool
+        </a>
+        {publicBasePath
+          ? publishedPages.map((page) => (
+              <a key={page.id} href={`${publicBasePath}/pages/${page.slug}`}>
+                {page.navigationLabel}
+              </a>
+            ))
+          : onNavigatePage &&
+            publishedPages.map((page) => (
+              <button type="button" key={page.id} onClick={() => onNavigatePage(page.id)}>
+                {page.navigationLabel}
+              </button>
+            ))}
+        {publicBasePath && hasBlog && <a href={`${publicBasePath}/blog`}>SEO Guides &amp; Blog</a>}
+        {!publicBasePath && onNavigateBlog && hasBlog && (
+          <button type="button" onClick={onNavigateBlog}>
+            SEO Guides &amp; Blog
+          </button>
+        )}
+        <a
+          href="#contact"
+          onClick={
+            onNavigateSection
+              ? (event) => {
+                  event.preventDefault();
+                  onNavigateSection("contact");
+                }
+              : undefined
+          }
+        >
+          Contact
+        </a>
+      </nav>
+    );
+  }
+
+  if (template === "doitwithai-flagship") {
+    const toolCount = document.content.projects.length;
+    return (
+      <nav className="portfolio-site-nav" aria-label="Multi-tool directory navigation">
+        {publicBasePath ? (
+          <a className="nav-pill-primary" href={`${publicBasePath}/projects`}>
+            🧰 Tools ({toolCount})
+          </a>
+        ) : (
+          <button
+            type="button"
+            className="nav-pill-primary"
+            onClick={() => {
+              if (onNavigateTools) onNavigateTools();
+              else onNavigateSection?.("projects");
+            }}
+          >
+            🧰 Tools ({toolCount})
+          </button>
+        )}
+        {publicBasePath && hasBlog && <a href={`${publicBasePath}/blog`}>Blog &amp; Guides</a>}
+        {!publicBasePath && onNavigateBlog && hasBlog && (
+          <button type="button" onClick={onNavigateBlog}>
+            Blog &amp; Guides
+          </button>
+        )}
+        {publicBasePath
+          ? publishedPages.map((page) => (
+              <a key={page.id} href={`${publicBasePath}/pages/${page.slug}`}>
+                {page.navigationLabel}
+              </a>
+            ))
+          : onNavigatePage &&
+            publishedPages.map((page) => (
+              <button type="button" key={page.id} onClick={() => onNavigatePage(page.id)}>
+                {page.navigationLabel}
+              </button>
+            ))}
+        <a
+          href="#contact"
+          onClick={
+            onNavigateSection
+              ? (event) => {
+                  event.preventDefault();
+                  onNavigateSection("contact");
+                }
+              : undefined
+          }
+        >
+          Contact
+        </a>
+      </nav>
+    );
+  }
+
+  if (!PERSONAL_PORTFOLIO_TEMPLATES.has(template)) {
+    const allowedSections = document.content.order.filter(
+      (section) =>
+        document.content.visibility[section] &&
+        section !== "experience" &&
+        section !== "skills",
+    );
+    return (
+      <nav className="portfolio-site-nav" aria-label="Website navigation">
+        {publicBasePath && hasBlog && (
+          <a className="nav-pill-primary" href={`${publicBasePath}/blog`}>
+            Articles &amp; Blog
+          </a>
+        )}
+        {!publicBasePath && onNavigateBlog && hasBlog && (
+          <button type="button" className="nav-pill-primary" onClick={onNavigateBlog}>
+            Articles &amp; Blog
+          </button>
+        )}
+        {allowedSections.map((section) => (
+          <a
+            key={section}
+            href={publicBasePath && section === "projects" ? `${publicBasePath}/projects` : `#${section}`}
+            onClick={
+              onNavigateSection
+                ? (event) => {
+                    event.preventDefault();
+                    onNavigateSection(section);
+                  }
+                : undefined
+            }
+          >
+            {section === "projects"
+              ? getArchetypeProjectsNavLabel(template, document.content.projects.length)
+              : sectionLabels[section]}
+          </a>
+        ))}
+        {publicBasePath
+          ? publishedPages.map((page) => (
+              <a key={page.id} href={`${publicBasePath}/pages/${page.slug}`}>
+                {page.navigationLabel}
+              </a>
+            ))
+          : onNavigatePage &&
+            publishedPages.map((page) => (
+              <button type="button" key={page.id} onClick={() => onNavigatePage(page.id)}>
+                {page.navigationLabel}
+              </button>
+            ))}
+      </nav>
+    );
+  }
+
+  return (
+    <nav className="portfolio-site-nav" aria-label="Portfolio sections">
+      {document.content.order
+        .filter((section) => document.content.visibility[section])
+        .map((section) => (
+          <a
+            key={section}
+            href={publicBasePath && section === "projects" ? `${publicBasePath}/projects` : `#${section}`}
+            onClick={
+              onNavigateSection
+                ? (event) => {
+                    event.preventDefault();
+                    onNavigateSection(section);
+                  }
+                : undefined
+            }
+          >
+            {sectionLabels[section]}
+          </a>
+        ))}
+      {publicBasePath &&
+        publishedPages.map((page) => (
+          <a key={page.id} href={`${publicBasePath}/pages/${page.slug}`}>
+            {page.navigationLabel}
+          </a>
+        ))}
+      {publicBasePath && hasBlog && <a href={`${publicBasePath}/blog`}>Blog</a>}
+      {!publicBasePath &&
+        onNavigatePage &&
+        publishedPages.map((page) => (
+          <button type="button" key={page.id} onClick={() => onNavigatePage(page.id)}>
+            {page.navigationLabel}
+          </button>
+        ))}
+      {!publicBasePath && onNavigateBlog && hasBlog && (
+        <button type="button" onClick={onNavigateBlog}>
+          Blog
+        </button>
+      )}
+    </nav>
+  );
+}
+
+export function PortfolioSections(props: { document: SiteDocument; editing?: boolean; publicBasePath?: string; onOpenPage?: (id: string) => void; onOpenPost?: (id: string) => void; onOpenTool?: (id: string) => void; execute?: (command: any) => void }) {
   if (isEditorialFlagshipTemplate(props.document.design.template)) {
     return (
       <EditorialFlagshipSections
@@ -38,6 +289,8 @@ export function PortfolioSections(props: { document: SiteDocument; editing?: boo
         publicBasePath={props.publicBasePath}
         onOpenPage={props.onOpenPage}
         onOpenPost={props.onOpenPost}
+        onOpenTool={props.onOpenTool}
+        execute={props.execute}
       />
     );
   }

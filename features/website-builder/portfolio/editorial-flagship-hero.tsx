@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import type { SiteDocument } from "@/features/website-builder/domain/site-document";
 import { isBlogFirstTemplate } from "@/features/website-builder/domain/template-contracts";
+import { InteractiveWebsiteToolRunner } from "@/features/website-builder/tools/InteractiveWebsiteToolRunner";
 
 const FLAGSHIP_TEMPLATE_IDS = new Set([
   "doitwithai-flagship",
@@ -44,8 +45,8 @@ export const TEMPLATE_META: Record<
   }
 > = {
   "doitwithai-flagship": {
-    kicker: "DOITWITHAI MULTI-TOOL DIRECTORY · 5 AI TOOLS + 5 PILLAR GUIDES",
-    primaryLabel: "Explore 5 Pre-Loaded Tools & Guides",
+    kicker: "DOITWITHAI MULTI-TOOL DIRECTORY · 6 LIVE AI TOOLS + 5 PILLAR GUIDES",
+    primaryLabel: "Explore 6 Live AI Tools & Guides",
     secondaryLabel: "Connect with Founder",
     badge: "Multi-Tool Directory & Publication",
     accentColor: "#6366f1",
@@ -154,11 +155,13 @@ export function EditorialFlagshipHero({
   publicBasePath,
   navigate,
   onOpenPost,
+  onOpenTool,
 }: {
   document: SiteDocument;
   publicBasePath?: string;
   navigate?: (section: "projects" | "contact" | "blog") => void;
   onOpenPost?: (id: string) => void;
+  onOpenTool?: (id: string) => void;
 }) {
   const template = document.design.template;
   const meta = TEMPLATE_META[template] ?? TEMPLATE_META["doitwithai-flagship"];
@@ -172,13 +175,6 @@ export function EditorialFlagshipHero({
   const [heroSupportTier, setHeroSupportTier] = useState("⚡ $15 Pro Member");
   const [heroTeamSize, setHeroTeamSize] = useState(8);
   const [heroHoursSaved, setHeroHoursSaved] = useState(14);
-
-  // Single-Tool Live Meta Title & Description Simulator state
-  const [metaKeyword, setMetaKeyword] = useState("AI Meta Title & Description Generator");
-  const [metaBrand, setMetaBrand] = useState("MetaCraft AI");
-  const [metaBenefit, setMetaBenefit] = useState(
-    "Generate pixel-perfect 600px meta titles and 920px meta descriptions with live Google SERP preview and CTR scoring.",
-  );
 
   const posts = document.publishing.posts
     .filter((post) => !publicBasePath || post.status === "published")
@@ -201,15 +197,13 @@ export function EditorialFlagshipHero({
     }
   };
 
-  // ============================================================================
-  // HERO 1: DOITWITHAI MULTI-TOOL DIRECTORY & PUBLICATION HUB (`doitwithai-flagship`)
-  // ============================================================================
   if (template === "doitwithai-flagship") {
     const filteredProjects = allProjects.filter(
       (proj) =>
         !heroSearch.trim() ||
         proj.title.toLowerCase().includes(heroSearch.toLowerCase()) ||
-        proj.summary.toLowerCase().includes(heroSearch.toLowerCase()),
+        proj.summary.toLowerCase().includes(heroSearch.toLowerCase()) ||
+        proj.technologies.some((t) => t.toLowerCase().includes(heroSearch.toLowerCase())),
     );
 
     return (
@@ -226,7 +220,7 @@ export function EditorialFlagshipHero({
       >
         <div
           style={{
-            maxWidth: "1160px",
+            maxWidth: "1180px",
             margin: "0 auto",
             display: "grid",
             gap: "24px",
@@ -258,7 +252,7 @@ export function EditorialFlagshipHero({
               }}
             >
               <TemplateIcon id={template} /> {meta.badge.toUpperCase()} ·{" "}
-              {allProjects.length} TOOLS &amp; {posts.length} GUIDES LIVE
+              {allProjects.length} LIVE TOOLS &amp; {posts.length} GUIDES
             </span>
             <span
               style={{
@@ -307,7 +301,7 @@ export function EditorialFlagshipHero({
             <p
               style={{
                 margin: "4px auto 0",
-                maxWidth: "700px",
+                maxWidth: "720px",
                 fontSize: "16px",
                 lineHeight: 1.7,
                 color: "#cbd5e1",
@@ -317,17 +311,17 @@ export function EditorialFlagshipHero({
             </p>
           </div>
 
-          {/* Embedded DoItWithAI Multi-Tool Search & Quick Filter Bar */}
           <div
             style={{
-              maxWidth: "760px",
+              maxWidth: "780px",
               width: "100%",
               margin: "0 auto",
-              background: "rgba(15, 23, 42, 0.86)",
-              border: "1px solid rgba(99, 102, 241, 0.4)",
+              background: "rgba(15, 23, 42, 0.88)",
+              border: "1px solid rgba(99, 102, 241, 0.45)",
               borderRadius: "16px",
               padding: "10px 14px",
               display: "flex",
+              flexWrap: "wrap",
               alignItems: "center",
               gap: "12px",
               boxShadow: "0 20px 50px rgba(0, 0, 0, 0.45)",
@@ -338,10 +332,10 @@ export function EditorialFlagshipHero({
               type="search"
               value={heroSearch}
               onChange={(e) => setHeroSearch(e.target.value)}
-              placeholder={`Filter ${allProjects.length} installed AI tools & ${posts.length} pillar SEO guides…`}
+              placeholder={`Search ${allProjects.length} installed AI tools & ${posts.length} pillar SEO guides…`}
               aria-label="Search flagship tool directory"
               style={{
-                flex: 1,
+                flex: "1 1 220px",
                 background: "transparent",
                 border: 0,
                 color: "#f8fafc",
@@ -349,113 +343,145 @@ export function EditorialFlagshipHero({
                 outline: "none",
               }}
             />
-            <button
-              type="button"
-              onClick={() => navigate?.("projects")}
-              style={{
-                padding: "10px 16px",
-                borderRadius: "10px",
-                background: "#6366f1",
-                color: "#ffffff",
-                border: 0,
-                fontSize: "12px",
-                fontWeight: 800,
-                cursor: "pointer",
-                whiteSpace: "nowrap",
-              }}
-            >
-              All {allProjects.length} Tools ↓
-            </button>
+            {publicBasePath ? (
+              <a
+                href={`${publicBasePath}/projects`}
+                style={{
+                  padding: "10px 16px",
+                  borderRadius: "10px",
+                  background: "#6366f1",
+                  color: "#ffffff",
+                  fontSize: "12px",
+                  fontWeight: 800,
+                  textDecoration: "none",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                All {allProjects.length} Tools Directory →
+              </a>
+            ) : (
+              <button
+                type="button"
+                onClick={() => navigate?.("projects")}
+                style={{
+                  padding: "10px 16px",
+                  borderRadius: "10px",
+                  background: "#6366f1",
+                  color: "#ffffff",
+                  border: 0,
+                  fontSize: "12px",
+                  fontWeight: 800,
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                All {allProjects.length} Tools ↓
+              </button>
+            )}
           </div>
 
-          {/* Pre-Loaded Multi-Tool Quick Launcher Strip (Shows up to 5 tools right in Hero) */}
           {filteredProjects.length > 0 && (
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(205px, 1fr))",
-                gap: "12px",
+                gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+                gap: "14px",
                 textAlign: "left",
               }}
             >
-              {filteredProjects.slice(0, 5).map((tool, index) => (
-                <div
-                  key={tool.id}
-                  style={{
-                    background: "rgba(15, 23, 42, 0.82)",
-                    border: "1px solid rgba(99, 102, 241, 0.32)",
-                    borderRadius: "14px",
-                    padding: "14px 16px",
-                    display: "grid",
-                    gap: "6px",
-                  }}
-                >
+              {filteredProjects.slice(0, 6).map((tool, index) => {
+                const toolSlug = tool.caseStudySlug || tool.id;
+                return (
                   <div
+                    key={tool.id}
                     style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      fontSize: "10px",
-                      fontWeight: 800,
-                      letterSpacing: "0.1em",
-                      color: "#38bdf8",
+                      background: "rgba(15, 23, 42, 0.84)",
+                      border: "1px solid rgba(99, 102, 241, 0.34)",
+                      borderRadius: "14px",
+                      padding: "16px",
+                      display: "grid",
+                      gap: "8px",
                     }}
                   >
-                    <span>TOOL 0{index + 1}</span>
-                    <span>FREE UTILITY</span>
-                  </div>
-                  <strong style={{ fontSize: "14px", color: "#ffffff", lineHeight: 1.3 }}>
-                    {tool.title}
-                  </strong>
-                  <p
-                    style={{
-                      margin: 0,
-                      fontSize: "11.5px",
-                      color: "#94a3b8",
-                      lineHeight: 1.45,
-                    }}
-                  >
-                    {tool.summary.slice(0, 95)}
-                    {tool.summary.length > 95 ? "…" : ""}
-                  </p>
-                  <div style={{ marginTop: "4px" }}>
-                    {tool.link ? (
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        fontSize: "10px",
+                        fontWeight: 800,
+                        letterSpacing: "0.1em",
+                        color: "#38bdf8",
+                      }}
+                    >
+                      <span>TOOL 0{index + 1}</span>
+                      <span style={{ color: "#6ee7b7" }}>● LIVE IN-SITE</span>
+                    </div>
+                    <strong style={{ fontSize: "14.5px", color: "#ffffff", lineHeight: 1.3 }}>
+                      {tool.title}
+                    </strong>
+                    <p
+                      style={{
+                        margin: 0,
+                        fontSize: "12px",
+                        color: "#94a3b8",
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      {tool.summary.slice(0, 110)}
+                      {tool.summary.length > 110 ? "…" : ""}
+                    </p>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", marginTop: "4px" }}>
+                      {publicBasePath ? (
+                        <a
+                          href={`${publicBasePath}/projects/${toolSlug}`}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "5px",
+                            fontSize: "12px",
+                            fontWeight: 800,
+                            color: "#a5b4fc",
+                            textDecoration: "none",
+                          }}
+                        >
+                          Open Tool Workspace <ArrowUpRight size={13} />
+                        </a>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (onOpenTool) onOpenTool(tool.id);
+                            else navigate?.("projects");
+                          }}
+                          style={{
+                            background: "none",
+                            border: 0,
+                            padding: 0,
+                            fontSize: "12px",
+                            fontWeight: 800,
+                            color: "#a5b4fc",
+                            cursor: "pointer",
+                          }}
+                        >
+                          Launch Tool in Site →
+                        </button>
+                      )}
                       <a
-                        href={tool.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        href="#tool-workspace"
                         style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "4px",
-                          fontSize: "11.5px",
+                          fontSize: "11px",
                           fontWeight: 700,
-                          color: "#818cf8",
+                          color: "#38bdf8",
                           textDecoration: "none",
                         }}
                       >
-                        Launch Tool <ArrowUpRight size={13} />
+                        Quick Run ↓
                       </a>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => navigate?.("projects")}
-                        style={{
-                          background: "none",
-                          border: 0,
-                          padding: 0,
-                          fontSize: "11.5px",
-                          fontWeight: 700,
-                          color: "#818cf8",
-                          cursor: "pointer",
-                        }}
-                      >
-                        Inspect Tool →
-                      </button>
-                    )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
 
@@ -491,9 +517,6 @@ export function EditorialFlagshipHero({
     );
   }
 
-  // ============================================================================
-  // HERO 2: AUTHORITY NICHE BLOG — LIGHT CLASSIC BLOGGER / WIRECUTTER MASTHEAD
-  // ============================================================================
   if (template === "authority-niche-blog") {
     return (
       <section
@@ -680,9 +703,6 @@ export function EditorialFlagshipHero({
     );
   }
 
-  // ============================================================================
-  // HERO 3: CREATOR NEWSLETTER HUB — SUBSTACK / BEEHIVE READER-FIRST DISPATCH
-  // ============================================================================
   if (template === "creator-newsletter-hub") {
     return (
       <section
@@ -842,9 +862,6 @@ export function EditorialFlagshipHero({
     );
   }
 
-  // ============================================================================
-  // HERO 4: FOUNDER AUTHORITY BRAND — KO-FI CREATOR HUB, TIP-JAR & DIGITAL SHOP
-  // ============================================================================
   if (template === "founder-authority-brand") {
     const initials =
       document.identity.name
@@ -1083,9 +1100,6 @@ export function EditorialFlagshipHero({
     );
   }
 
-  // ============================================================================
-  // HERO 5: CONSULTANT LEAD ENGINE — FROSTED GLASSMORPHISM 2.0 + LIVE ROI ENGINE
-  // ============================================================================
   if (template === "consultant-lead-engine") {
     const monthlyHours = heroTeamSize * heroHoursSaved * 4;
     const monthlySavings = monthlyHours * 75;
@@ -1236,27 +1250,26 @@ export function EditorialFlagshipHero({
     );
   }
 
-  // ============================================================================
-  // HERO 6: SINGLE-TOOL AI WEBSITE (`micro-saas-launchpad`)
-  // Interactive Live Meta Title & Description SERP Pixel Simulator Right in Hero
-  // ============================================================================
   if (template === "micro-saas-launchpad") {
-    const activeToolTitle =
-      leadProject?.title || "AI Meta Title & Description Generator";
-    const activeToolLink =
-      leadProject?.link || "https://doitwithai.tools/tools/meta-title-generator";
-    const generatedTitle = `${metaKeyword.trim() || "AI Meta Title Generator"} — Free 2026 SERP Tool | ${metaBrand.trim() || "MetaCraft"}`.slice(
-      0,
-      68,
-    );
-    const titleChars = generatedTitle.length;
-    const titlePixels = Math.round(titleChars * 9.4);
-    const descText = (
-      metaBenefit.trim() ||
-      "Generate pixel-perfect 600px meta titles and 920px meta descriptions with live Google SERP preview."
-    ).slice(0, 165);
-    const descChars = descText.length;
-    const descPixels = Math.round(descChars * 5.7);
+    const singleTool = leadProject ?? {
+      id: "tool-meta-title-description-generator",
+      title: "AI Meta Title & Description Generator",
+      summary:
+        "Generate click-magnet Google meta titles (50–60 chars / 600px) and meta descriptions (140–160 chars / 920px) with real-time pixel validation, CTR hooks, and copy-ready HTML meta tags.",
+      caseStudySlug: "meta-title-generator",
+      technologies: [
+        "600px SERP Validator",
+        "Meta Title AI",
+        "Meta Description AI",
+        "CTR Hook Scorer",
+        "OpenGraph Tags",
+      ],
+      role: "Flagship Standalone AI SEO Tool",
+      period: "v2.4 Live · Free Browser Utility",
+    };
+    const inferredSiteSlug = publicBasePath
+      ? publicBasePath.replace(/^\/p\//, "").replace(/^\/+|\/+$/g, "")
+      : document.identity.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 
     return (
       <section
@@ -1266,7 +1279,7 @@ export function EditorialFlagshipHero({
           background: "linear-gradient(150deg, #030712 0%, #08172e 100%)",
           color: "#f8fafc",
           borderBottom: "1px solid rgba(34, 211, 238, 0.32)",
-          padding: "clamp(32px, 5vw, 64px)",
+          padding: "clamp(28px, 4.5vw, 56px)",
         }}
       >
         <div
@@ -1274,19 +1287,25 @@ export function EditorialFlagshipHero({
             maxWidth: "1220px",
             margin: "0 auto",
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(330px, 1fr))",
-            gap: "28px",
-            alignItems: "center",
+            gap: "26px",
           }}
         >
-          <div style={{ display: "grid", gap: "14px" }}>
+          <div
+            style={{
+              maxWidth: "880px",
+              margin: "0 auto",
+              textAlign: "center",
+              display: "grid",
+              gap: "12px",
+              justifyItems: "center",
+            }}
+          >
             <div
               style={{
                 display: "inline-flex",
-                width: "fit-content",
                 alignItems: "center",
                 gap: "8px",
-                padding: "5px 12px",
+                padding: "5px 14px",
                 borderRadius: "999px",
                 background: "rgba(34, 211, 238, 0.14)",
                 border: "1px solid rgba(34, 211, 238, 0.4)",
@@ -1296,13 +1315,12 @@ export function EditorialFlagshipHero({
                 fontFamily: "ui-monospace, monospace",
               }}
             >
-              <Rocket size={14} /> SINGLE-TOOL FLAGSHIP WEBSITE · {posts.length}{" "}
-              SEO GUIDES INCLUDED
+              <Rocket size={14} /> SINGLE-TOOL FLAGSHIP WEBSITE · LIVE AI WORKSPACE ON HOME PAGE
             </div>
             <Title
               style={{
                 margin: 0,
-                fontSize: "clamp(30px, 4.4vw, 50px)",
+                fontSize: "clamp(30px, 4.5vw, 52px)",
                 lineHeight: 1.06,
                 color: "#ffffff",
               }}
@@ -1312,7 +1330,7 @@ export function EditorialFlagshipHero({
             <Role
               style={{
                 margin: 0,
-                fontSize: "18px",
+                fontSize: "clamp(16px, 2vw, 21px)",
                 color: "#22d3ee",
                 fontFamily: "ui-monospace, monospace",
               }}
@@ -1322,6 +1340,7 @@ export function EditorialFlagshipHero({
             <p
               style={{
                 margin: 0,
+                maxWidth: "740px",
                 fontSize: "15px",
                 lineHeight: 1.65,
                 color: "#cbd5e1",
@@ -1333,19 +1352,18 @@ export function EditorialFlagshipHero({
               style={{
                 display: "flex",
                 flexWrap: "wrap",
+                justifyContent: "center",
                 gap: "10px",
-                marginTop: "6px",
+                marginTop: "4px",
               }}
             >
               <a
-                href={activeToolLink}
-                target="_blank"
-                rel="noopener noreferrer"
+                href="#tool-workspace"
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
                   gap: "6px",
-                  padding: "11px 18px",
+                  padding: "10px 18px",
                   borderRadius: "10px",
                   background: "#22d3ee",
                   color: "#04101c",
@@ -1354,12 +1372,12 @@ export function EditorialFlagshipHero({
                   textDecoration: "none",
                 }}
               >
-                Open Full {activeToolTitle} <ArrowUpRight size={15} />
+                Use Live {singleTool.title} Below ↓
               </a>
               <a
                 href="#blog"
                 style={{
-                  padding: "11px 18px",
+                  padding: "10px 18px",
                   borderRadius: "10px",
                   border: "1px solid rgba(34, 211, 238, 0.4)",
                   color: "#f8fafc",
@@ -1368,191 +1386,22 @@ export function EditorialFlagshipHero({
                   textDecoration: "none",
                 }}
               >
-                Read {posts.length} Pre-Loaded SEO Blog Posts ↓
+                Read {posts.length} Pre-Loaded SEO Guides ↓
               </a>
             </div>
           </div>
 
-          {/* Interactive Single-Tool Live Meta Title & Description SERP Pixel Simulator */}
-          <div
-            style={{
-              background: "#050b16",
-              border: "1px solid rgba(34, 211, 238, 0.45)",
-              borderRadius: "18px",
-              overflow: "hidden",
-              boxShadow: "0 24px 60px rgba(0, 0, 0, 0.55)",
-            }}
-          >
-            <div
-              style={{
-                background: "#0c192e",
-                padding: "11px 16px",
-                borderBottom: "1px solid rgba(34, 211, 238, 0.25)",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                fontSize: "11px",
-                color: "#94a3b8",
-                fontFamily: "ui-monospace, monospace",
-              }}
-            >
-              <span>● ● ● LIVE TOOL RUNNER · {activeToolTitle.toUpperCase()}</span>
-              <span style={{ color: "#22d3ee", fontWeight: 700 }}>
-                600px SERP CHECK
-              </span>
-            </div>
-
-            <div style={{ padding: "18px", display: "grid", gap: "12px" }}>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "2fr 1fr",
-                  gap: "8px",
-                }}
-              >
-                <label
-                  style={{
-                    display: "grid",
-                    gap: "4px",
-                    fontSize: "11px",
-                    color: "#cbd5e1",
-                  }}
-                >
-                  <span>Target Keyword / Topic</span>
-                  <input
-                    type="text"
-                    value={metaKeyword}
-                    onChange={(e) => setMetaKeyword(e.target.value)}
-                    style={{
-                      padding: "8px 10px",
-                      borderRadius: "8px",
-                      background: "rgba(34, 211, 238, 0.08)",
-                      border: "1px solid rgba(34, 211, 238, 0.35)",
-                      color: "#ffffff",
-                      fontSize: "12px",
-                    }}
-                  />
-                </label>
-                <label
-                  style={{
-                    display: "grid",
-                    gap: "4px",
-                    fontSize: "11px",
-                    color: "#cbd5e1",
-                  }}
-                >
-                  <span>Brand Suffix</span>
-                  <input
-                    type="text"
-                    value={metaBrand}
-                    onChange={(e) => setMetaBrand(e.target.value)}
-                    style={{
-                      padding: "8px 10px",
-                      borderRadius: "8px",
-                      background: "rgba(34, 211, 238, 0.08)",
-                      border: "1px solid rgba(34, 211, 238, 0.35)",
-                      color: "#ffffff",
-                      fontSize: "12px",
-                    }}
-                  />
-                </label>
-              </div>
-
-              <label
-                style={{
-                  display: "grid",
-                  gap: "4px",
-                  fontSize: "11px",
-                  color: "#cbd5e1",
-                }}
-              >
-                <span>Meta Description Draft (140–160 chars)</span>
-                <input
-                  type="text"
-                  value={metaBenefit}
-                  onChange={(e) => setMetaBenefit(e.target.value)}
-                  style={{
-                    padding: "8px 10px",
-                    borderRadius: "8px",
-                    background: "rgba(34, 211, 238, 0.08)",
-                    border: "1px solid rgba(34, 211, 238, 0.35)",
-                    color: "#ffffff",
-                    fontSize: "12px",
-                  }}
-                />
-              </label>
-
-              {/* Live Google SERP Preview Card */}
-              <div
-                style={{
-                  padding: "14px",
-                  borderRadius: "12px",
-                  background: "#ffffff",
-                  color: "#1e293b",
-                  display: "grid",
-                  gap: "4px",
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: "11px",
-                    color: "#475569",
-                    display: "flex",
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <span>https://doitwithai.tools › tools › meta-title-generator</span>
-                  <span
-                    style={{
-                      color: titlePixels <= 580 ? "#16a34a" : "#dc2626",
-                      fontWeight: 700,
-                    }}
-                  >
-                    {titleChars} chars · ~{titlePixels}px / 600px
-                  </span>
-                </div>
-                <div
-                  style={{
-                    fontSize: "16px",
-                    fontWeight: 700,
-                    color: "#1a0dab",
-                    lineHeight: 1.3,
-                  }}
-                >
-                  {generatedTitle}
-                </div>
-                <div
-                  style={{
-                    fontSize: "12.5px",
-                    color: "#334155",
-                    lineHeight: 1.5,
-                  }}
-                >
-                  {descText}
-                </div>
-                <div
-                  style={{
-                    fontSize: "10.5px",
-                    color: "#64748b",
-                    marginTop: "2px",
-                  }}
-                >
-                  Description: {descChars}/160 chars (~{descPixels}px / 920px) ·{" "}
-                  {descChars >= 120 && descChars <= 160
-                    ? "Optimal SERP Length ✓"
-                    : "Adjust to 140–160 chars"}
-                </div>
-              </div>
-            </div>
-          </div>
+          <InteractiveWebsiteToolRunner
+            tool={singleTool}
+            siteName={document.identity.name}
+            siteSlug={inferredSiteSlug}
+            accentColor="#22d3ee"
+          />
         </div>
       </section>
     );
   }
 
-  // ============================================================================
-  // HERO 7: STARTUP SERVICE AGENCY — PRODUCTIZED AGENCY & 3-TIER SPRINT FUNNEL
-  // ============================================================================
   return (
     <section
       id="hero"

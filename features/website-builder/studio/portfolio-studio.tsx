@@ -23,6 +23,8 @@ import { SceneRenderer } from "@/features/website-builder/scene/scene-renderer";
 import { isFlatTemplate, isCollectionTemplate, isLightTemplate } from "@/features/website-builder/domain/template-contracts";
 import { CollectionHero } from "@/features/website-builder/portfolio/collection-templates";
 import { EditorialFlagshipHero, isEditorialFlagshipTemplate } from "@/features/website-builder/portfolio/editorial-flagship-templates";
+import { InteractiveWebsiteToolRunner } from "@/features/website-builder/tools/InteractiveWebsiteToolRunner";
+import { CatalogToolInstaller } from "./CatalogToolInstaller";
 import { ProfessionalHeroAside } from "@/features/website-builder/portfolio/professional-hero-aside";
 
 import {
@@ -157,14 +159,11 @@ export function PortfolioStudio({ initialDocument, projectName = "Demo portfolio
   useEffect(() => {
     if (!welcomeFromVox || autoWelcomeAttempted.current) return;
     autoWelcomeAttempted.current = true;
-    // A granted microphone does not guarantee permission to autoplay audio.
-    // Keep the one-click welcome available when the browser declines playback.
     if (!navigator.permissions?.query) return;
     void navigator.permissions.query({ name: "microphone" as PermissionName }).then(permission => {
       const audioPolicy = (navigator as Navigator & { getAutoplayPolicy?: (type: "audiocontext") => string }).getAutoplayPolicy?.("audiocontext");
       if (permission.state === "granted" && (navigator.userActivation?.isActive || audioPolicy === "allowed")) void voice.start();
     }).catch(() => undefined);
-  // The welcome only attempts once on arrival, not on every voice status update.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [welcomeFromVox]);
   useEffect(() => {
@@ -248,9 +247,9 @@ export function PortfolioStudio({ initialDocument, projectName = "Demo portfolio
           <button type="button" onClick={() => dispatch({ type: "undo", source: "manual" })} disabled={!state.past.length} aria-label="Undo"><Undo2 size={17} /></button>
           <button type="button" onClick={() => dispatch({ type: "redo" })} disabled={!state.future.length} aria-label="Redo"><Redo2 size={17} /></button>
           <button type="button" className="preview-button" onClick={() => { if (previewOnly) setPreviewOnly(false); else { setEditorExpanded(false); setPreviewOnly(true); } }}><Eye size={16} />{previewOnly ? "Exit preview" : "Preview"}</button>
-          <button type="button" className="publish-button" onClick={openPublication}><Globe2 size={16} />{publication ? portfolioHasUnpublishedChanges ? "Changes pending" : `Live (/p/${publication.slug})` : "Publish"}</button>
+          <button type="button" className="publish-button" onClick={openPublication}><Globe2 size={16} />{publication ? portfolioHasUnpublishedChanges ? "Publish Updates" : `Live · /p/${publication.slug.length > 18 ? `${publication.slug.slice(0, 18)}…` : publication.slug}` : "Save & Publish"}</button>{publication && <Link className="top-link" href={`/p/${publication.slug}`} target="_blank">Open Site ↗</Link>}
           {persistence === "server" && <button type="button" onClick={() => setHistoryOpen(true)}><Clock3 size={16} />History</button>}
-          <Link className="top-link" href={`/ai-content-writer?targetSiteId=${encodeURIComponent(state.present.projectId)}`}>Write Blog Post</Link>
+          <Link className="top-link" href={`/ai-content-writer?targetSiteId=${encodeIComponent(state.present.projectId)}`}>Write Blog Post</Link>
           <Link className="top-link" href="/do-it-ai?view=websites">My Websites</Link>
           {authenticated && userEmail && <span className="account-pill" title={userEmail} aria-label={`Signed in as ${userEmail}`}>{userEmail.slice(0, 1).toUpperCase()}</span>}
         </div>
@@ -309,22 +308,130 @@ export function PortfolioStudio({ initialDocument, projectName = "Demo portfolio
 
 function StudioPreview({ document, target, focusedSkill, execute, reducedMotion, onNavigate }: { document: SiteDocument; target: PreviewTarget; focusedSkill?: SiteDocument["skills"][number]; execute: (command: SiteCommand) => void; reducedMotion: boolean; onNavigate: (target: PreviewTarget) => void }) {
   const previewRef = useRef<HTMLDivElement>(null);
-  const previousPreviewMode = useRef(target.section === "site pages" || target.section === "blog posts" ? "standalone" : "home");
+  const isStandaloneView =
+    target.section === "site pages" ||
+    target.section === "blog posts" ||
+    (target.section === "projects" && Boolean(target.itemId));
+  const previousPreviewMode = useRef(isStandaloneView ? "standalone" : "home");
   useLayoutEffect(() => {
     const container = previewRef.current;
     if (!container) return;
-    const mode = target.section === "site pages" || target.section === "blog posts" ? "standalone" : "home";
+    const mode = isStandaloneView ? "standalone" : "home";
     const changedRoute = previousPreviewMode.current !== mode;
     previousPreviewMode.current = mode;
     const frame = window.requestAnimationFrame(() => scrollPreviewContainer(container, target, reducedMotion || changedRoute ? "auto" : "smooth"));
     return () => window.cancelAnimationFrame(frame);
-  }, [reducedMotion, target]);
+  }, [reducedMotion, target, isStandaloneView]);
+
+  if (target.section === "projects" && target.itemId === "__index__") {
+    return <StudioToolsIndex document={document} execute={execute} onNavigate={onNavigate} />;
+  }
+  if (target.section === "projects" && target.itemId) {
+    const selectedTool =
+      document.content.projects.find((entry) => entry.id === target.itemId || entry.caseStudySlug === target.itemId) ??
+      document.content.projects[0];
+    if (selectedTool) {
+      return (
+        <div
+          ref={previewRef}
+          className={`portfolio-preview content-draft-preview bg-${document.design.background} template-${document.design.template} ${isCollectionTemplate(document.design.template) ? "collection-theme" : ""} ${isLightTemplate(document.design.template) ? "light-theme" : ""}`}
+          data-accent={document.design.accent}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px", marginBottom: "16px" }}>
+            <button type="button" className="preview-back-button" onClick={() => onNavigate({ section: "hero" })}>
+              ← Back to homepage preview
+            </button>
+            {document.design.template === "doitwithai-flagship" && (
+              <button
+                type="button"
+                className="preview-back-button"
+                onClick={() => onNavigate({ section: "projects", itemId: "__index__" })}
+              >
+                🧰 View All {document.content.projects.length} Tools Directory &amp; + Add Tool
+              </button>
+            )}
+          </div>
+          <InteractiveWebsiteToolRunner
+            tool={selectedTool}
+            siteName={document.identity.name}
+            allTools={document.content.projects.length > 1 ? document.content.projects : undefined}
+            onSelectTool={(next) => onNavigate({ section: "projects", itemId: next.id })}
+          />
+        </div>
+      );
+    }
+  }
+
   const item = target.section === "site pages" ? document.publishing.pages.find((entry) => entry.id === target.itemId) : target.section === "blog posts" ? document.publishing.posts.find((entry) => entry.id === target.itemId) : undefined;
   if (target.section === "blog posts" && target.itemId === "__index__") return <StudioBlogIndex document={document} onNavigate={onNavigate} />;
   if (target.section === "site pages" || target.section === "blog posts") { const cover = item ? document.media.assets.find((asset) => asset.id === item.coverMediaId) : undefined; return <div ref={previewRef} className={`portfolio-preview content-draft-preview bg-${document.design.background} template-${document.design.template} ${isCollectionTemplate(document.design.template) ? "collection-theme" : ""} ${isLightTemplate(document.design.template) ? "light-theme" : ""}`} data-accent={document.design.accent}><button type="button" className="preview-back-button" onClick={() => onNavigate({ section: "hero" })}>← Back to homepage preview</button>{item ? <article><p className="section-eyebrow">{target.section === "blog posts" ? "BLOG ARTICLE PREVIEW" : "SITE PAGE PREVIEW"}</p><h1>{item.title}</h1>{"excerpt" in item && item.excerpt && <p className="draft-excerpt">{item.excerpt}</p>}{cover && <figure className="published-content-cover draft-cover"><Image src={cover.url} alt={cover.alt} fill sizes="(max-width: 900px) 94vw, 900px" unoptimized /></figure>}<StructuredContent document={document} blocks={item.blocks} richContent={item.richContent} /></article> : <div className="portfolio-empty-state">Create an item to preview it here.</div>}</div>; }
   const navigateSection = (section: PortfolioSection) => onNavigate({ section });
   const sceneHint = document.scene.family === "kinetic-gallery" ? "Move to shift perspective · Select a skill" : document.scene.family === "velocity-roadster" ? "Move to steer the light · Watch the road flow" : document.scene.family === "professional-2d" || document.scene.family === "doitwithai-editorial-grid" ? "" : "Drag to orbit · Scroll to zoom · Select a skill";
-  return <div ref={previewRef} className={`portfolio-preview bg-${document.design.background} template-${document.design.template} ${isCollectionTemplate(document.design.template) ? "collection-theme" : ""} ${isLightTemplate(document.design.template) ? "light-theme" : ""}`} data-accent={document.design.accent}><PortfolioNavigation document={document} onNavigateSection={navigateSection} onNavigatePage={(itemId) => onNavigate({ section: "site pages", itemId })} onNavigateBlog={() => onNavigate({ section: "blog posts", itemId: "__index__" })} />{isEditorialFlagshipTemplate(document.design.template) ? <EditorialFlagshipHero document={document} navigate={(section) => section === "blog" ? onNavigate({ section: "blog posts", itemId: "__index__" }) : onNavigate({ section })} onOpenPost={(itemId) => onNavigate({ section: "blog posts", itemId })} /> : isCollectionTemplate(document.design.template) ? <CollectionHero document={document} navigate={navigateSection} /> : <div className={`portfolio-hero align-${document.design.heroAlignment}`}><div className="ambient-grid" /><div className="portfolio-copy"><p className="availability"><i />{document.identity.availability}</p><p className="kicker">DESIGNING USEFUL DIGITAL SYSTEMS</p><h2>{document.identity.name}</h2><h3>{document.identity.role}</h3><p className="intro">{document.identity.intro}</p><div className="hero-actions"><button type="button" onClick={() => navigateSection("projects")}>View selected work</button><button type="button" className="ghost" onClick={() => navigateSection("contact")}>Start a conversation</button></div>{focusedSkill && <div className="focus-card"><span>SCENE FOCUS</span><strong>{focusedSkill.label}</strong><p>Capability level {focusedSkill.level}/5</p></div>}</div>{document.design.template === "professional-2d" && <ProfessionalHeroAside document={document} />}{!isFlatTemplate(document.design.template) && <div className="scene-stage"><SceneRenderer document={document} execute={execute} reducedMotion={reducedMotion} />{sceneHint && <div className="scene-caption"><Volume2 size={14} /><span>{sceneHint}</span></div>}</div>}</div>}<PortfolioSections document={document} editing onOpenPost={(itemId)=>onNavigate({section:"blog posts",itemId})} onOpenPage={(itemId) => onNavigate({ section: "site pages", itemId })} /></div>;
+  return <div ref={previewRef} className={`portfolio-preview bg-${document.design.background} template-${document.design.template} ${isCollectionTemplate(document.design.template) ? "collection-theme" : ""} ${isLightTemplate(document.design.template) ? "light-theme" : ""}`} data-accent={document.design.accent}><PortfolioNavigation document={document} onNavigateSection={navigateSection} onNavigatePage={(itemId) => onNavigate({ section: "site pages", itemId })} onNavigateBlog={() => onNavigate({ section: "blog posts", itemId: "__index__" })} onNavigateTools={() => onNavigate({ section: "projects", itemId: "__index__" })} />{isEditorialFlagshipTemplate(document.design.template) ? <EditorialFlagshipHero document={document} navigate={(section) => section === "blog" ? onNavigate({ section: "blog posts", itemId: "__index__" }) : section === "projects" && document.design.template === "doitwithai-flagship" ? onNavigate({ section: "projects", itemId: "__index__" }) : onNavigate({ section })} onOpenPost={(itemId) => onNavigate({ section: "blog posts", itemId })} onOpenTool={(itemId) => onNavigate({ section: "projects", itemId })} /> : isCollectionTemplate(document.design.template) ? <CollectionHero document={document} navigate={navigateSection} /> : <div className={`portfolio-hero align-${document.design.heroAlignment}`}><div className="ambient-grid" /><div className="portfolio-copy"><p className="availability"><i />{document.identity.availability}</p><p className="kicker">DESIGNING USEFUL DIGITAL SYSTEMS</p><h2>{document.identity.name}</h2><h3>{document.identity.role}</h3><p className="intro">{document.identity.intro}</p><div className="hero-actions"><button type="button" onClick={() => navigateSection("projects")}>View selected work</button><button type="button" className="ghost" onClick={() => navigateSection("contact")}>Start a conversation</button></div>{focusedSkill && <div className="focus-card"><span>SCENE FOCUS</span><strong>{focusedSkill.label}</strong><p>Capability level {focusedSkill.level}/5</p></div>}</div>{document.design.template === "professional-2d" && <ProfessionalHeroAside document={document} />}{!isFlatTemplate(document.design.template) && <div className="scene-stage"><SceneRenderer document={document} execute={execute} reducedMotion={reducedMotion} />{sceneHint && <div className="scene-caption"><Volume2 size={14} /><span>{sceneHint}</span></div>}</div>}</div>}<PortfolioSections document={document} editing execute={execute} onOpenPost={(itemId)=>onNavigate({section:"blog posts",itemId})} onOpenPage={(itemId) => onNavigate({ section: "site pages", itemId })} onOpenTool={(itemId) => onNavigate({ section: "projects", itemId })} /></div>;
+}
+
+function StudioToolsIndex({ document, execute, onNavigate }: { document: SiteDocument; execute: (command: SiteCommand) => void; onNavigate: (target: PreviewTarget) => void }) {
+  const [showInstaller, setShowInstaller] = useState(false);
+  return (
+    <div
+      className={`portfolio-preview content-draft-preview studio-blog-index bg-${document.design.background} template-${document.design.template} ${isCollectionTemplate(document.design.template) ? "collection-theme" : ""} ${isLightTemplate(document.design.template) ? "light-theme" : ""}`}
+      data-accent={document.design.accent}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px", marginBottom: "18px" }}>
+        <button type="button" className="preview-back-button" onClick={() => onNavigate({ section: "hero" })}>
+          ← Back to homepage preview
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowInstaller((prev) => !prev)}
+          style={{
+            padding: "9px 16px",
+            borderRadius: "10px",
+            border: 0,
+            background: "linear-gradient(135deg, #22d3ee, #6366f1)",
+            color: "#04101c",
+            fontWeight: 800,
+            fontSize: "12.5px",
+            cursor: "pointer",
+          }}
+        >
+          {showInstaller ? "Hide Catalog Tool Installer" : "+ Add New Tool from 126+ Catalog"}
+        </button>
+      </div>
+
+      {showInstaller && (
+        <div style={{ marginBottom: "22px", maxWidth: "680px" }}>
+          <CatalogToolInstaller document={document} execute={execute} />
+        </div>
+      )}
+
+      <section className="blog-index">
+        <header>
+          <p className="section-eyebrow">ALL WEBSITE AI TOOLS DIRECTORY ({document.content.projects.length} INSTALLED)</p>
+          <h1>{document.identity.name} — Interactive Tools</h1>
+          <p>Click any tool below to open and run its live Gemini-powered workspace inside this website.</p>
+        </header>
+        {document.content.projects.length ? (
+          <div>
+            {document.content.projects.map((tool, index) => (
+              <article key={tool.id}>
+                <div>
+                  <span>TOOL 0{index + 1} · LIVE IN-SITE WORKSPACE</span>
+                  <h2>{tool.title}</h2>
+                  <p>{tool.summary}</p>
+                  <button type="button" onClick={() => onNavigate({ section: "projects", itemId: tool.id })}>
+                    Launch Live Tool Workspace →
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="portfolio-empty-state">Use &ldquo;+ Add New Tool&rdquo; above to add interactive AI tools to this website.</div>
+        )}
+      </section>
+    </div>
+  );
 }
 
 function StudioBlogIndex({ document, onNavigate }: { document: SiteDocument; onNavigate: (target: PreviewTarget) => void }) {
