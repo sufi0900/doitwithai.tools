@@ -10,6 +10,7 @@ import {
 } from "./model";
 import type { FeaturedBannerState, Project } from "./types";
 import s from "./workspace.module.css";
+import { bannerLines } from "./banner-layout";
 
 function wrapTextLines(text: string, maxChars: number, maxLines: number): string[] {
   const words = (text || "").trim().split(/\s+/).filter(Boolean);
@@ -43,11 +44,13 @@ export function FeaturedBannerArtwork({
   const w = workspace(project);
   const banner = useMemo(() => defaultFeaturedBanner(project), [project]);
   const palette = brandColors(banner.theme || w.brand.color);
-  const accent = palette[0] || "#4f46e5";
-  const accentSoft = palette[1] || "#06b6d4";
+  const accent = palette.accent;
+  const accentSoft = palette.bgStart;
 
-  const headlineLines = wrapTextLines(banner.headline, 34, 3);
-  const subLines = wrapTextLines(banner.subheadline, 62, 2);
+  const headline = bannerLines(banner.headline, 740, 52, 4);
+  const headlineLines = headline.lines;
+  const sub = bannerLines(banner.subheadline, 740, 22, 3);
+  const subLines = sub.lines;
   const altEval = useMemo(
     () => evaluateAltText(banner.altText, banner.headline),
     [banner.altText, banner.headline],
@@ -99,7 +102,7 @@ export function FeaturedBannerArtwork({
       <div className={s.featuredBannerBar}>
         <div className={s.featuredBannerTitleGroup}>
           <ImageIcon className="w-4 h-4" aria-hidden />
-          <strong>16:9 Horizontal Featured Image</strong>
+          <strong>Featured image</strong>
           <span className={s.dimBadge}>1200 × 630 px</span>
           <span
             className={altEval.score >= 80 ? s.altScoreGood : s.altScoreWarn}
@@ -212,9 +215,9 @@ export function FeaturedBannerArtwork({
             <text
               key={i}
               x="96"
-              y={184 + i * 68}
+              y={184 + i * (headline.size * 1.2)}
               fill="#f8fafc"
-              fontSize="52"
+              fontSize={headline.size}
               fontWeight="800"
               fontFamily="system-ui, -apple-system, Segoe UI, sans-serif"
             >
@@ -227,9 +230,9 @@ export function FeaturedBannerArtwork({
             <text
               key={i}
               x="96"
-              y={192 + headlineLines.length * 68 + 34 + i * 32}
+              y={210 + headlineLines.length * headline.size * 1.2 + i * 29}
               fill="#cbd5e1"
-              fontSize="22"
+              fontSize={sub.size}
               fontWeight="400"
               fontFamily="system-ui, -apple-system, Segoe UI, sans-serif"
             >

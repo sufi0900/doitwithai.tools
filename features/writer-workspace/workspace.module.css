@@ -4171,3 +4171,13 @@
   color: var(--muted);
   font-style: normal;
 }
+
+/* Prism Forge: progress motion represents activity, never fabricated completion. */
+.liveDraftExcerpt { position:relative; padding:16px; margin-bottom:18px; border:1px solid #6475ff55; border-radius:12px; background:linear-gradient(120deg,#6374ff12,transparent); overflow-wrap:anywhere; animation:writerDraftReveal .45s ease-out; }
+.liveDraftExcerpt strong { display:block; margin:8px 0; font-size:16px; }
+.liveDraftExcerpt p { margin:0; line-height:1.65; font-size:14px; }
+.pipelineTheatre[data-working="true"] .theatreSpotlightIconWrap > svg { animation:writerTaskFloat 2.4s ease-in-out infinite; }
+.pipelineTheatre[data-working="false"] * { animation-play-state:paused !important; }
+@keyframes writerTaskFloat { 0%,100% { transform:translateY(0) rotate(-4deg); } 50% { transform:translateY(-5px) rotate(4deg); } }
+@keyframes writerDraftReveal { from { opacity:.35; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+@media(prefers-reduced-motion:reduce) { .pipelineTheatre *, .pipelineTheatre *::before, .pipelineTheatre *::after { animation:none !important; transition:none !important; } }

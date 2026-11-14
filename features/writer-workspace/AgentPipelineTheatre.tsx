@@ -22,7 +22,7 @@ import {
   Facebook,
   Sparkles,
 } from "lucide-react";
-import { workspace } from "./model";
+import { bodyOf, workspace } from "./model";
 import type { PipelineStageId, Project } from "./types";
 import { INITIAL_PIPELINE_STAGES } from "./useGeneration";
 import s from "./workspace.module.css";
@@ -75,10 +75,13 @@ export function AgentPipelineTheatre({
     ),
   );
   const research = w.research;
+  const latestDraft = [...project.sections].reverse().find(section => bodyOf(section).trim());
+  const draftExcerpt = latestDraft ? bodyOf(latestDraft).replace(/\[([^\]]+)\]\([^)]*\)/g, "$1").replace(/[#*_>`]/g, "").slice(0, 480) : "";
 
   return (
     <section
       className={s.pipelineTheatre}
+      data-working={busy}
       role="status"
       aria-live="polite"
       aria-label="Multi-agent AI article pipeline progress"
@@ -87,10 +90,10 @@ export function AgentPipelineTheatre({
         <div>
           <div className={s.theatrePulseBadge}>
             <span className={s.pulseDot} aria-hidden />
-            {busy ? `Multi-Agent Pipeline Active · ${progressPct}% Complete` : "Pipeline Checkpoint"}
+            {busy ? `Working · ${doneCount} of ${stages.length} steps resolved` : "Pipeline Checkpoint"}
           </div>
           <h2 className={s.theatreTitle}>
-            {run.stageLabel || "Orchestrating specialized AI editorial agents..."}
+            {run.stageLabel || "Preparing your article…"}
           </h2>
           {currentSecObj ? (
             <p className={s.theatreSub}>
@@ -98,7 +101,7 @@ export function AgentPipelineTheatre({
             </p>
           ) : (
             <p className={s.theatreSub}>
-              Your studio unlocks automatically with your H1–H6 article, 16:9 hero banner, inline infographics, internal/external links, and 9 social adapters ready.
+              Your draft and publishing assets will appear as they are prepared. You can pause and keep completed work.
             </p>
           )}
         </div>
@@ -118,7 +121,7 @@ export function AgentPipelineTheatre({
       {/* Active Sub-Agent Spotlight & Shimmer Writing Canvas */}
       <div className={s.theatreWorkbenchGrid}>
         <div className={s.theatreSpotlightCard}>
-          <div className={s.theatreSpotlightIconWrap}>
+          <div className={s.theatreSpotlightIconWrap} key={activeStage?.id}>
             <ActiveIcon className="w-6 h-6" aria-hidden />
             <span className={s.theatreOrbitDot} aria-hidden />
           </div>
@@ -136,7 +139,8 @@ export function AgentPipelineTheatre({
           </div>
         </div>
 
-        <div className={s.skeletonContainer} aria-hidden>
+        <div className={s.skeletonContainer}>
+          {latestDraft && <div className={s.liveDraftExcerpt} key={latestDraft.id}><span className={s.eyebrow}>Latest saved draft</span><strong>{latestDraft.h2Text}</strong><p>{draftExcerpt}</p></div>}
           <div className={s.skeletonHeaderRow}>
             <div className={s.skeletonPill} />
             <div className={s.skeletonTitleBar} />

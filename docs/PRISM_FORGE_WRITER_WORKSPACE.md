@@ -185,3 +185,21 @@ Behavior contract for future contributors:
 - Next bundles exact `linkedom` imports using the package’s DOM-only `worker.js` build. Standard imports remain compatible with CommonJS test runners (the package exposes its worker subpath only to ESM imports). HTML parsing and Readability do not need native canvas. No blanket webpack fallback or native canvas installation is introduced.
 
 Regression coverage includes every restored export, empty drafts, estimated pixel bounds, repeat application, complete-sentence preservation, quiz grounding, takeover avoidance, and image-label descriptions. Run the writer test suite, extraction/infographic suites, TypeScript, and a production build before wiring new model exports into UI. Provider-backed generation and deployment configuration remain separate concerns.
+
+## Phase 1 continuation — 15 November 2026 — Prism Forge
+
+Baseline: 5a49910, preserving the founder's newer Website Builder and readability changes. Older unmerged local redesign changes are not applied wholesale.
+
+Delivered in this increment:
+- Pipeline shimmer now reveals an excerpt from the most recent nonempty saved section, not invented streaming text. Active icon gently moves; pause freezes animation and reduced-motion disables it.
+- Progress wording counts resolved stages instead of presenting the heuristic bar as an exact completion percentage.
+- Featured banner uses the actual brand palette object and bounded wrapping in a 740px text region, separate from the right artwork.
+- Removed deterministic insertion of an arbitrary available source beside statistical claims and appended Related Resource lists. Generation permits zero links when no source supports the section.
+
+Validation: writer suite 33/33 and banner layout suite 2/2 passed. Full build and browser validation must be reported separately; these tests do not prove live provider or deployment success.
+
+Phase 1 is not fully closed: remaining source-grounding audit, export/brand propagation and visual regression checks must precede Phase 2. Preserve current sentence highlights. Never intentionally make writing harder to induce editing.
+
+Follow-up sequence: Phase 2 focused builder canvas and sizing; Phase 3 shared editable tool definitions and canvas/panel synchronization; Phase 4 multi-tool flagship; Phase 5 single-tool; Phase 6 blogging; Phase 7 personal brand; Phase 8 template expansion and launch validation. Each run reads the latest branch, resumes the earliest unfinished phase, preserves concurrent work and only pushes validated coherent changes. Hourly runs are checkpoints, not a guarantee that an entire phase finishes each hour.
+
+Validation checkpoint: full TypeScript/build could not pass with the prior local dependency installation: newer builder packages (including mammoth, pdf-parse, Tiptap extensions, Supabase SSR and Three.js dependencies) were absent. No writer-file diagnostics appeared in that TypeScript run. A fresh frozen-lockfile installation was started. Do not mark this as a full-build pass or Phase 1 completion; resume dependency installation and browser/export/source-grounding validation first.

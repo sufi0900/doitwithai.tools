@@ -294,53 +294,7 @@ function normalizeAndValidateSectionMarkdown(
     ].join("\n\n");
   }
 
-  // V3.11: Ground unlinked statistical/research claims in verified external references when available
-  if (enrichStructure && verifiedLinks.length > 0) {
-    const externalPick = verifiedLinks.find(
-      (l) => l.kind === "external" && !body.includes(l.url),
-    );
-    const statCue =
-      /\b(?:\d+(?:\.\d+)?%|\d+x\b|studies\s+show|research\s+indicates|according\s+to|survey\s+(?:of|found)|report\s+by|benchmark\s+shows)(?![\w%])/i;
-    if (externalPick && statCue.test(body)) {
-      const lines = body.split(/\r?\n/);
-      let attributed = false;
-      body = lines
-        .map((line) => {
-          if (
-            attributed ||
-            !statCue.test(line) ||
-            /\[[^\]]+\]\(https?:\/\/[^)]+\)/.test(line) ||
-            /^(?:#{1,6}\s|\||```)/.test(line.trim())
-          ) {
-            return line;
-          }
-          attributed = true;
-          const cleanLine = line.trim().replace(/[.!?]+$/, "");
-          const punct = (line.trim().match(/([.!?]+)$/) || ["."])[0];
-          return `${cleanLine} ([${externalPick.title}](${externalPick.url}))${punct}`;
-        })
-        .join("\n");
-    }
-  }
-
-  if (verifiedLinks.length > 0 && !/\[[^\]]+\]\(https?:\/\/[^)]+\)/.test(body)) {
-    const internalPick = verifiedLinks.find((l) => l.kind === "internal");
-    const externalPick = verifiedLinks.find((l) => l.kind === "external");
-    const linkLines: string[] = [];
-    if (internalPick) {
-      linkLines.push(
-        `- **Related Resource:** Explore [${internalPick.title}](${internalPick.url}) for hands-on implementation workflows.`,
-      );
-    }
-    if (externalPick) {
-      linkLines.push(
-        `- **Authority Reference:** Review [${externalPick.title}](${externalPick.url}) for official technical specifications.`,
-      );
-    }
-    if (linkLines.length) {
-      body = `${body}\n\n${linkLines.join("\n")}`;
-    }
-  }
+  // A discovered URL is not evidence for an arbitrary claim. Never append citations or resource lists automatically.
 
   if (
     enrichStructure &&
@@ -435,7 +389,7 @@ export function createGenerationHandler(deps: Deps = {}) {
           : "";
       const verifiedLinkHint =
         data.verifiedLinks?.length && data.operation === "section"
-          ? `\nVerified links available — weave at least 1 internal link and 1 external authority link naturally into this section using Markdown [anchor text](url), and attribute any empirical claims to these verified sources (never invent other URLs):\n${data.verifiedLinks
+          ? `\nVerified links available — use a link only when its source supports the surrounding statement. Zero links is acceptable. Use natural descriptive Markdown anchors, never append Related Resource lists, and never attribute a claim merely because a URL is available (never invent URLs):\n${data.verifiedLinks
               .slice(0, 6)
               .map((l) => `- [${l.kind}] ${l.title}: ${l.url}`)
               .join("\n")}`
