@@ -340,6 +340,8 @@ test("a provider failure refunds the failed step and returns a real error", asyn
 test("invalid or heading-only responses fail validation and missing H3 is not accepted", async () => {
   for (const output of [
     { bodyMarkdown: "Heading only" },
+    { bodyMarkdown: paragraphs.join("\n\n") },
+    { bodyMarkdown: `### Unrelated heading\n\n${paragraphs[0]}` },
     { bodyMarkdown: paragraphs[0] },
   ]) {
     const response = await createGenerationHandler({
