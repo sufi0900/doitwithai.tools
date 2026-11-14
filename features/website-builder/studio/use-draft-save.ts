@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { drainDraftQueue } from "./drain-draft-queue";
 import type { SiteDocument } from "@/features/website-builder/domain/site-document";
 import { authorizedWebsiteFetch } from "@/features/website-builder/lib/supabase/browser";
+import { DEMO_STUDIO_STORAGE_KEY, saveLocalWebsiteDraft } from "@/features/website-builder/lib/local-websites-store";
 
 export async function requestJson(url: string, init?: RequestInit) {
   const response = await authorizedWebsiteFetch(url, { ...init, signal: AbortSignal.timeout(20000) });
@@ -32,7 +33,11 @@ export function useDraftSave(document: SiteDocument, hydrated: boolean, server: 
             const result = await requestJson(`/api/projects/${snapshot.projectId}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ document: snapshot, expectedRevision, source: "manual" }) });
             return result.revision;
           }
-          localStorage.setItem("voxfolio-demo-document-v1", JSON.stringify(snapshot));
+          if (snapshot.projectId && snapshot.projectId !== "demo-portfolio") {
+            saveLocalWebsiteDraft(snapshot.projectId, snapshot);
+          } else {
+            localStorage.setItem(DEMO_STUDIO_STORAGE_KEY, JSON.stringify(snapshot));
+          }
           return expectedRevision;
         });
         setSaved(true); return revision.current;

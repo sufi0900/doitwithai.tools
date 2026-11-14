@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { LocalPublicWebsiteFallback } from "@/features/website-builder/public/LocalPublicWebsiteFallback";
 import { PublicPortfolio } from "@/features/website-builder/public/public-portfolio";
 import { getPublicationSnapshot } from "@/features/website-builder/lib/publication-snapshot";
 
@@ -51,7 +51,7 @@ export default async function PublicWebsitePage({
 }) {
   const { slug } = params;
   const item = await getPublicationSnapshot(slug);
-  if (!item) notFound();
+  if (!item) return <LocalPublicWebsiteFallback slug={slug} view={{ kind: "home" }} />;
 
   const base =
     process.env.NEXT_PUBLIC_SITE_URL ?? "https://doitwithai.tools";

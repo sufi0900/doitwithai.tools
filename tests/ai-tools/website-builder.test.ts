@@ -4,6 +4,11 @@ import {
   DEFAULT_SITE_DOCUMENT,
   validateSiteDocument,
 } from "../../features/website-builder/domain/site-document";
+import { applySiteCommand } from "../../features/website-builder/domain/commands";
+import {
+  PORTFOLIO_TEMPLATES,
+  getTemplate,
+} from "../../features/website-builder/domain/templates";
 import {
   DEFAULT_WEBSITE_TEMPLATE_ID,
   getTemplatesByCategory,
@@ -123,4 +128,55 @@ test("applyUpsertFromWriterStudioCommand syncs and updates an article idempotent
   });
   assert.equal(snapshot.publishing.posts.length, 1);
   assert.equal(snapshot.publishing.posts[0].status, "published");
+});
+
+test("Single-Tool (micro-saas-launchpad) and Multi-Tool (doitwithai-flagship) templates ship tailored default tools, pages, and 5 SEO blog posts", () => {
+  for (const tpl of PORTFOLIO_TEMPLATES) {
+    const validated = validateSiteDocument(tpl.document);
+    assert.equal(validated.design.template, tpl.id);
+    assert.notEqual(
+      validated.identity.name,
+      "Sufian Mustafa",
+      `Template ${tpl.id} should not use generic portfolio identity`,
+    );
+  }
+
+  const singleTool = getTemplate("micro-saas-launchpad")!;
+  assert.equal(singleTool.document.content.projects.length, 1);
+  assert.match(singleTool.document.content.projects[0].title, /Meta Title/i);
+  assert.equal(singleTool.document.publishing.posts.length, 5);
+  assert.equal(singleTool.document.publishing.pages.length, 3);
+
+  const multiTool = getTemplate("doitwithai-flagship")!;
+  assert.equal(multiTool.document.content.projects.length, 5);
+  assert.equal(multiTool.document.publishing.posts.length, 5);
+  assert.equal(multiTool.document.publishing.pages.length, 3);
+});
+
+test("project.installCatalogTool installs a tool from the catalog with zero AI tokens and optional companion SEO blog post", () => {
+  const updated = applySiteCommand(DEFAULT_SITE_DOCUMENT, {
+    type: "project.installCatalogTool",
+    slug: "schema-markup-generator",
+    title: "JSON-LD Schema Markup Generator",
+    summary: "Generate connected JSON-LD @graph structured data for Google and AI search.",
+    technologies: ["JSON-LD", "Schema.org", "Rich Results"],
+    link: "https://doitwithai.tools/tools/schema-markup-generator",
+    role: "Interactive AI SEO Utility",
+    period: "Live on DoItWithAI",
+    challenge: "Manual schema writing is error-prone.",
+    approach: "Automated @graph builder.",
+    outcome: "Valid structured data in 1 click.",
+    includeCompanionPost: true,
+  });
+
+  assert.ok(
+    updated.content.projects.some(
+      (p) => p.caseStudySlug === "schema-markup-generator",
+    ),
+  );
+  assert.ok(
+    updated.publishing.posts.some(
+      (post) => post.pillarClusterSlug === "schema-markup-generator",
+    ),
+  );
 });

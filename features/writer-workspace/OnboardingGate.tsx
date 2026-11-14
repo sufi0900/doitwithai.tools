@@ -1,5 +1,7 @@
 "use client";
 
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   Globe,
   Sparkles,
@@ -7,9 +9,19 @@ import {
   ArrowRight,
   SlidersHorizontal,
   PenLine,
+  Layers,
+  Plus,
 } from "lucide-react";
 import { workspace } from "./model";
 import type { Project } from "./types";
+import { authorizedWebsiteFetch } from "@/features/website-builder/lib/supabase/browser";
+import type { ConnectedWebsiteSummary } from "@/features/website-builder/ecosystem-bridge";
+import {
+  getSelectedWriterTargetSiteId,
+  listLocalWebsiteInternalLinks,
+  listLocalWebsitesAsConnectedSummaries,
+  setSelectedWriterTargetSiteId,
+} from "@/features/website-builder/lib/local-websites-store";
 import s from "./workspace.module.css";
 
 const SAMPLE_BRIEF = `Topic: AI SEO vs Traditional SEO: Which Strategy Wins in 2026?
@@ -49,6 +61,153 @@ export function OnboardingGate({
   const canLaunch =
     !busy && project.rawUserBriefOrSourceText.trim().length >= 3;
 
+  const [detectedWebsites, setDetectedWebsites] = useState<
+    ConnectedWebsiteSummary[]
+  >([]);
+  const [detectedLinks, setDetectedLinks] = useState<
+    Array<{
+      siteProjectId: string;
+      siteName: string;
+      publicSlug: string;
+      title: string;
+      slug: string;
+      url: string;
+    }>
+  >([]);
+  const [selectedSiteId, setSelectedSiteId] = useState<string>("__external__");
+
+  const applyDetectedWebsite = React.useCallback(
+    (
+      siteId: string,
+      sites = detectedWebsites,
+      links = detectedLinks,
+    ) => {
+      setSelectedSiteId(siteId);
+      if (siteId === "__external__" || !siteId) {
+        setSelectedWriterTargetSiteId("");
+        return;
+      }
+      setSelectedWriterTargetSiteId(siteId);
+      const chosen = sites.find((item) => item.projectId === originId(siteId));
+      if (!chosen) return;
+      const origin =
+        typeof window !== "undefined"
+          ? window.location.origin
+          : "https://doitwithai.tools";
+      const siteUrl = chosen.publicSlug
+        ? `${origin}/p/${chosen.publicSlug}`
+        : `${origin}/ai-website-builder/studio/${chosen.projectId}`;
+
+      const siteLinks = links
+        .filter((l) => l.siteProjectId === chosen.projectId)
+        .map((item) => ({
+          id: `site-${chosen.projectId.slice(0, 8)}-${item.slug}`,
+          anchorText: item.title,
+          targetTitle: item.title,
+          targetUrl: item.url,
+          category: "pillar-guide" as const,
+        }));
+
+      onPatchProject({
+        brandSiteUrl: siteUrl,
+        ...(siteLinks.length > 0
+          ? {
+              internalLinks: [
+                ...siteLinks,
+                ...project.internalLinks.filter(
+                  (existing) =>
+                    !siteLinks.some((sl) => sl.targetUrl === existing.targetUrl),
+                ),
+              ].slice(0, 24),
+            }
+          : {}),
+      });
+      onPatchWorkspace({
+        brand: {
+          ...w.brand,
+          name: chosen.name,
+        },
+      });
+    },
+    [detectedLinks, detectedWebsites, onPatchProject, onPatchWorkspace, project.internalLinks, w.brand],
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    async function detectUserWebsites() {
+      const localSites = listLocalWebsitesAsConnectedSummaries();
+      const localLinks = listLocalWebsiteInternalLinks();
+      let serverSites: ConnectedWebsiteSummary[] = [];
+      let serverLinks: typeof localLinks = [];
+
+      try {
+        const res = await authorizedWebsiteFetch("/api/website-builder/overview", {
+          cache: "no-store",
+        });
+        if (res.ok) {
+          const data = (await res.json()) as {
+            websites?: ConnectedWebsiteSummary[];
+            internalLinks?: typeof localLinks;
+          };
+          if (Array.isArray(data.websites)) serverSites = data.websites;
+          if (Array.isArray(data.internalLinks)) serverLinks = data.internalLinks;
+        }
+      } catch {
+        /* Local websites still work offline or without Google OAuth */
+      }
+
+      if (cancelled) return;
+      const seen = new Set<string>();
+      const mergedSites = [...localSites, ...serverSites].filter((item) => {
+        if (seen.has(item.projectId)) return false;
+        seen.add(item.projectId);
+        return true;
+      });
+      const mergedLinks = [...localLinks, ...serverLinks];
+
+      setDetectedWebsites(mergedSites);
+      setDetectedLinks(mergedLinks);
+
+      const preferred =
+        getSelectedWriterTargetSiteId() || mergedSites[0]?.projectId || "";
+      if (
+        preferred &&
+        mergedSites.some((item) => item.projectId === preferred)
+      ) {
+        setSelectedSiteId(preferred);
+        setSelectedWriterTargetSiteId(preferred);
+        const chosen = mergedSites.find((item) => item.projectId === preferred)!;
+        const origin =
+          typeof window !== "undefined"
+            ? window.location.origin
+            : "https://doitwithai.tools";
+        const siteUrl = chosen.publicSlug
+          ? `${origin}/p/${chosen.publicSlug}`
+          : `${origin}/ai-website-builder/studio/${chosen.projectId}`;
+        if (!project.brandSiteUrl) {
+          onPatchProject({ brandSiteUrl: siteUrl });
+        }
+        if (!w.brand.name) {
+          onPatchWorkspace({ brand: { ...w.brand, name: chosen.name } });
+        }
+      }
+    }
+
+    void detectUserWebsites();
+    const onStorageUpdate = () => void detectUserWebsites();
+    window.addEventListener("storage", onStorageUpdate);
+    window.addEventListener("doitwithai-local-websites-updated", onStorageUpdate);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("storage", onStorageUpdate);
+      window.removeEventListener(
+        "doitwithai-local-websites-updated",
+        onStorageUpdate,
+      );
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <section
       className={s.onboardingCard}
@@ -66,8 +225,8 @@ export function OnboardingGate({
         <h2>Brief your AI editorial team before opening the studio</h2>
         <p>
           Describe your article in natural human language — include custom H2/H3 headings, visual
-          placement notes, conclusion style, or your website URL for automatic internal link discovery.
-          The studio unlocks once your research-backed draft is ready.
+          placement notes, conclusion style, or select one of your created websites below for
+          automatic internal link discovery and 1-click publishing.
         </p>
       </div>
 
@@ -76,6 +235,104 @@ export function OnboardingGate({
           <strong>Pipeline paused:</strong> {errorMessage}
         </div>
       ) : null}
+
+      {/* AUTO-DETECTED USER WEBSITES SELECTOR */}
+      <div
+        style={{
+          marginBottom: "16px",
+          padding: "14px 16px",
+          borderRadius: "14px",
+          border: "1px solid rgba(99, 102, 241, 0.38)",
+          background:
+            "linear-gradient(135deg, rgba(12, 19, 44, 0.94), rgba(15, 23, 42, 0.92))",
+          display: "grid",
+          gap: "10px",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "8px",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <Layers className="w-4 h-4 text-indigo-400" aria-hidden />
+            <strong style={{ fontSize: "13px", color: "#f8fafc" }}>
+              {detectedWebsites.length > 0
+                ? `Connected Website Auto-Detected (${detectedWebsites.length} Website${detectedWebsites.length === 1 ? "" : "s"} Found)`
+                : "Write for a DoItWithAI Website or Any External Domain"}
+            </strong>
+          </div>
+          <Link
+            href="/ai-website-builder/start"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "5px",
+              fontSize: "11.5px",
+              fontWeight: 700,
+              color: "#818cf8",
+              textDecoration: "none",
+            }}
+          >
+            <Plus className="w-3.5 h-3.5" aria-hidden /> Create Another Website
+          </Link>
+        </div>
+
+        {detectedWebsites.length > 0 ? (
+          <div style={{ display: "grid", gap: "8px" }}>
+            <label
+              htmlFor="onboarding-detected-site"
+              style={{ fontSize: "12px", color: "#cbd5e1" }}
+            >
+              Which website are you writing this blog post for?
+            </label>
+            <select
+              id="onboarding-detected-site"
+              value={selectedSiteId}
+              onChange={(e) => applyDetectedWebsite(e.target.value)}
+              style={{
+                padding: "9px 12px",
+                borderRadius: "10px",
+                border: "1px solid rgba(99, 102, 241, 0.45)",
+                background: "#060b18",
+                color: "#f8fafc",
+                fontSize: "13px",
+              }}
+            >
+              {detectedWebsites.map((site) => (
+                <option key={site.projectId} value={site.projectId}>
+                  🌐 {site.name} ({site.templateName || site.templateId} ·{" "}
+                  {site.publicSlug ? `/p/${site.publicSlug}` : "Local Draft"} ·{" "}
+                  {site.publishedPostCount} posts)
+                </option>
+              ))}
+              <option value="__external__">
+                ✍️ Write for another / external website (enter custom URL below)
+              </option>
+            </select>
+            {selectedSiteId !== "__external__" && (
+              <small style={{ color: "#6ee7b7", fontSize: "11.5px" }}>
+                ✓ Brand name, website URL, and existing blog/tool internal links are synced for 1-click publishing.
+              </small>
+            )}
+          </div>
+        ) : (
+          <p style={{ margin: 0, fontSize: "12px", color: "#94a3b8" }}>
+            No created websites detected in this browser yet. You can write for any external URL below, or{" "}
+            <Link
+              href="/ai-website-builder/start"
+              style={{ color: "#38bdf8", textDecoration: "underline" }}
+            >
+              launch an AI Website or Blog in 60 seconds
+            </Link>{" "}
+            and publish articles to it in 1 click.
+          </p>
+        )}
+      </div>
 
       <div className={s.formStack}>
         <div className={s.briefLabelRow}>
@@ -302,4 +559,8 @@ export function OnboardingGate({
       </div>
     </section>
   );
+}
+
+function originId(value: string) {
+  return value.trim();
 }

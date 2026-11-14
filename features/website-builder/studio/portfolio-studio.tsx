@@ -25,7 +25,14 @@ import { CollectionHero } from "@/features/website-builder/portfolio/collection-
 import { EditorialFlagshipHero, isEditorialFlagshipTemplate } from "@/features/website-builder/portfolio/editorial-flagship-templates";
 import { ProfessionalHeroAside } from "@/features/website-builder/portfolio/professional-hero-aside";
 
-const STORAGE_KEY = "voxfolio-demo-document-v1";
+import {
+  DEMO_STUDIO_STORAGE_KEY,
+  publishLocalWebsiteProject,
+  saveLocalWebsiteDraft,
+  unpublishLocalWebsiteProject,
+} from "@/features/website-builder/lib/local-websites-store";
+
+const STORAGE_KEY = DEMO_STUDIO_STORAGE_KEY;
 
 type Publication = { slug: string; revision: number; published_at: string; document?: SiteDocument };
 
@@ -68,7 +75,14 @@ export function PortfolioStudio({ initialDocument, projectName = "Demo portfolio
     sync();
     preference.addEventListener("change", sync);
     let stored: unknown = hydratedDocument.current;
-    if (!stored) { try { stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null"); } catch { stored = undefined; } }
+    if (!stored || (hydratedDocument.current?.projectId === "demo-portfolio" && !window.location.search.includes("template="))) {
+      try {
+        const cached = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null");
+        if (cached) stored = cached;
+      } catch {
+        /* Keep initialDocument */
+      }
+    }
     dispatch({ type: "hydrate", document: stored });
     return () => preference.removeEventListener("change", sync);
   }, []);
@@ -183,6 +197,15 @@ export function PortfolioStudio({ initialDocument, projectName = "Demo portfolio
     if(itemAction) setPublishingItemId(itemAction.id);
     try {
       const confirmedRevision = await flush();
+      if (persistence !== "server") {
+        const targetId = latestDraft.current.projectId === "demo-portfolio" ? "demo-local-site" : latestDraft.current.projectId;
+        saveLocalWebsiteDraft(targetId, { ...latestDraft.current, projectId: targetId }, projectName);
+        const localResult = publishLocalWebsiteProject(targetId, normalizePublicationSlug(slug), selection, itemAction);
+        setPublishedDocument(localResult.document);
+        setPublication({ ...localResult.publication, document: localResult.document });
+        setPublishOpen(false);
+        return { ok: true, message: `Published locally at /p/${localResult.publication.slug} (stored in browser localStorage).` };
+      }
       const result = await requestJson(`/api/projects/${latestDraft.current.projectId}/publish`, {method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({slug:normalizePublicationSlug(slug),expectedRevision:confirmedRevision,selection,itemAction})});
       setPublishedDocument(result.document); setPublication({...result.publication,document:result.document});
       setPublishOpen(false);
@@ -195,13 +218,17 @@ export function PortfolioStudio({ initialDocument, projectName = "Demo portfolio
     } finally { publishBusy.current=false; setPublishing(false); setPublishingItemId(""); }
   }
   function publishItem(kind:"page"|"post",itemId:string,status:"draft"|"published") {
-    if(persistence!=="server") return setItemPublishError("Sign in and save this portfolio first.");
-    if(!publishedDocument) { openPublication(); setItemPublishError("Publish the portfolio once using the main dialog, then publish individual articles independently."); return; }
+    if(!publishedDocument) { openPublication(); setItemPublishError("Publish the website once using the main dialog, then publish individual articles independently."); return; }
     void performPublication([`${kind}:${itemId}`],{kind,id:itemId,status});
   }
   async function unpublish() {
     setPublishing(true); setPublishError("");
     try {
+      if (persistence !== "server") {
+        unpublishLocalWebsiteProject(state.present.projectId);
+        setPublication(undefined);setPublishedDocument(undefined);setPublishOpen(false);
+        return;
+      }
       await requestJson(`/api/projects/${state.present.projectId}/publish`,{method:"DELETE"});
       setPublication(undefined);setPublishedDocument(undefined);setPublishOpen(false);
     } catch(cause) {setPublishError(cause instanceof Error?cause.message:"Could not unpublish. Please retry.");}
@@ -221,10 +248,10 @@ export function PortfolioStudio({ initialDocument, projectName = "Demo portfolio
           <button type="button" onClick={() => dispatch({ type: "undo", source: "manual" })} disabled={!state.past.length} aria-label="Undo"><Undo2 size={17} /></button>
           <button type="button" onClick={() => dispatch({ type: "redo" })} disabled={!state.future.length} aria-label="Redo"><Redo2 size={17} /></button>
           <button type="button" className="preview-button" onClick={() => { if (previewOnly) setPreviewOnly(false); else { setEditorExpanded(false); setPreviewOnly(true); } }}><Eye size={16} />{previewOnly ? "Exit preview" : "Preview"}</button>
-          {persistence === "server" && <button type="button" className="publish-button" onClick={openPublication}><Globe2 size={16} />{publication ? portfolioHasUnpublishedChanges ? "Changes pending" : "Published" : "Publish"}</button>}
+          <button type="button" className="publish-button" onClick={openPublication}><Globe2 size={16} />{publication ? portfolioHasUnpublishedChanges ? "Changes pending" : `Live (/p/${publication.slug})` : "Publish"}</button>
           {persistence === "server" && <button type="button" onClick={() => setHistoryOpen(true)}><Clock3 size={16} />History</button>}
-          {persistence === "local" && <Link className="publish-button top-link" href={guestClaimPath(authenticated)}><Save size={15} />Save & publish</Link>}
-          <Link className="top-link" href={authenticated ? "/do-it-ai" : "/do-it-ai?signin=1"}>{authenticated ? "My projects" : "Sign in"}</Link>
+          <Link className="top-link" href={`/ai-content-writer?targetSiteId=${encodeURIComponent(state.present.projectId)}`}>Write Blog Post</Link>
+          <Link className="top-link" href="/do-it-ai?view=websites">My Websites</Link>
           {authenticated && userEmail && <span className="account-pill" title={userEmail} aria-label={`Signed in as ${userEmail}`}>{userEmail.slice(0, 1).toUpperCase()}</span>}
         </div>
       </header>
@@ -244,7 +271,7 @@ export function PortfolioStudio({ initialDocument, projectName = "Demo portfolio
             <Tab active={state.selectedPanel === "opportunity"} label="Opportunities" icon={<Share2 size={16} />} onClick={() => dispatch({ type: "selectPanel", panel: "opportunity" })} />
           </nav>
           {state.lastCommandError && <p className="form-message" role="alert">{state.lastCommandError}</p>}
-          <div className="expanded-editor-surface"><ManualControls ensureSaved={flush} document={state.present} publishedDocument={publishedDocument} execute={executeManual} panel={state.selectedPanel} canUploadMedia={persistence === "server" && authenticated} previewTarget={previewTarget} onPreviewTarget={setPreviewTarget} onPublishItem={publishItem} publishingItemId={publishingItemId || (publishing ? "__snapshot__" : "")} itemPublishError={itemPublishError} canDirectPublish={persistence === "server" && authenticated && slug.length >= 3} blogNotesSeed={blogNotesSeed} publicSiteSlug={publication?.slug} /></div>
+          <div className="expanded-editor-surface"><ManualControls ensureSaved={flush} document={state.present} publishedDocument={publishedDocument} execute={executeManual} panel={state.selectedPanel} canUploadMedia={persistence === "server" && authenticated} previewTarget={previewTarget} onPreviewTarget={setPreviewTarget} onPublishItem={publishItem} publishingItemId={publishingItemId || (publishing ? "__snapshot__" : "")} itemPublishError={itemPublishError} canDirectPublish={slug.length >= 3} blogNotesSeed={blogNotesSeed} publicSiteSlug={publication?.slug} /></div>
           {persistence !== "server" && <button type="button" className="reset-button" onClick={() => { if (window.confirm("Reset this draft? You can undo this action.")) dispatch({ type: "reset" }); }}><RotateCcw size={14} />Reset demo</button>}
         </aside>
 

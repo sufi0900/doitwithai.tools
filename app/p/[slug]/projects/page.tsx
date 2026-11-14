@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { LocalPublicWebsiteFallback } from "@/features/website-builder/public/LocalPublicWebsiteFallback";
 import { PublicProjectsIndex } from "@/features/website-builder/public/public-projects-index";
 import { getPublicationSnapshot } from "@/features/website-builder/lib/publication-snapshot";
 
@@ -24,7 +24,7 @@ export default async function PublicProjectsIndexPage({
   params: { slug: string };
 }) {
   const item = await getPublicationSnapshot(params.slug);
-  if (!item) notFound();
+  if (!item) return <LocalPublicWebsiteFallback slug={params.slug} view={{ kind: "projects-index" }} />;
   return (
     <PublicProjectsIndex document={item.document} portfolioSlug={params.slug} />
   );

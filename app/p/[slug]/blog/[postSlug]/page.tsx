@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { LocalPublicWebsiteFallback } from "@/features/website-builder/public/LocalPublicWebsiteFallback";
 import { PublicContentPage } from "@/features/website-builder/public/public-content";
 import { getPublicationSnapshot } from "@/features/website-builder/lib/publication-snapshot";
 
@@ -30,12 +30,12 @@ export default async function PublicBlogPostPage({
   params: { slug: string; postSlug: string };
 }) {
   const item = await getPublicationSnapshot(params.slug);
-  if (!item) notFound();
+  if (!item) return <LocalPublicWebsiteFallback slug={params.slug} view={{ kind: "blog-post", postSlug: params.postSlug }} />;
   const post = item.document.publishing.posts.find(
     (candidate) =>
       candidate.status === "published" && candidate.slug === params.postSlug,
   );
-  if (!post) notFound();
+  if (!post) return <LocalPublicWebsiteFallback slug={params.slug} view={{ kind: "blog-post", postSlug: params.postSlug }} />;
 
   return (
     <PublicContentPage

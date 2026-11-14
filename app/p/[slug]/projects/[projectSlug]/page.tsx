@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { LocalPublicWebsiteFallback } from "@/features/website-builder/public/LocalPublicWebsiteFallback";
 import { PublicCaseStudy } from "@/features/website-builder/public/public-case-study";
 import { projectsForPresentation } from "@/features/website-builder/domain/opportunity";
 import { getPublicationSnapshot } from "@/features/website-builder/lib/publication-snapshot";
@@ -33,11 +33,11 @@ export default async function PublicCaseStudyPage({
   params: { slug: string; projectSlug: string };
 }) {
   const item = await getPublicationSnapshot(params.slug);
-  if (!item) notFound();
+  if (!item) return <LocalPublicWebsiteFallback slug={params.slug} view={{ kind: "project-detail", projectSlug: params.projectSlug }} />;
   const project = projectsForPresentation(item.document).find(
     (candidate) => candidate.caseStudySlug === params.projectSlug,
   );
-  if (!project) notFound();
+  if (!project) return <LocalPublicWebsiteFallback slug={params.slug} view={{ kind: "project-detail", projectSlug: params.projectSlug }} />;
 
   return (
     <PublicCaseStudy

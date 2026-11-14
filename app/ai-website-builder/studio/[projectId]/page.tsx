@@ -5,21 +5,22 @@ import { DEFAULT_WEBSITE_TEMPLATE_ID } from "@/features/website-builder/ecosyste
 
 export const dynamic = "force-dynamic";
 
-export default function RootWebsiteStudioPage({
+export default function WebsiteStudioPage({
   params,
   searchParams,
 }: {
   params: { projectId: string };
-  searchParams?: { welcome?: string };
+  searchParams?: { welcome?: string; template?: string };
 }) {
   const { projectId } = params;
 
   if (projectId === "demo") {
-    const flagship = getTemplate(DEFAULT_WEBSITE_TEMPLATE_ID);
+    const requestedTemplate = searchParams?.template || DEFAULT_WEBSITE_TEMPLATE_ID;
+    const chosen = getTemplate(requestedTemplate) ?? getTemplate(DEFAULT_WEBSITE_TEMPLATE_ID);
     return (
       <PortfolioStudio
-        initialDocument={flagship!.document}
-        projectName="Interactive Flagship Demo"
+        initialDocument={chosen!.document}
+        projectName={chosen!.name || "Interactive Flagship Demo"}
         persistence="local"
       />
     );

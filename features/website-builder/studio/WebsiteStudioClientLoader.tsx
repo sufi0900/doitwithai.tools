@@ -5,6 +5,11 @@ import Link from "next/link";
 import { useWorkspace } from "@/features/tools-workspace/WorkspaceProvider";
 import { authorizedWebsiteFetch } from "@/features/website-builder/lib/supabase/browser";
 import { validateSiteDocument, type SiteDocument } from "@/features/website-builder/domain/site-document";
+import {
+  createLocalWebsiteProject,
+  getLocalWebsiteRecord,
+  isLocalPreviewAuthBypassEnabled,
+} from "@/features/website-builder/lib/local-websites-store";
 import { PortfolioStudio } from "./portfolio-studio";
 
 interface ApiProjectResponse {
@@ -38,6 +43,7 @@ export function WebsiteStudioClientLoader({
   const [loaded, setLoaded] = useState<{
     document: SiteDocument;
     projectName: string;
+    persistence: "local" | "server";
     publication?: {
       slug: string;
       revision: number;
@@ -48,7 +54,39 @@ export function WebsiteStudioClientLoader({
 
   useEffect(() => {
     if (!ready) return;
+
+    // 1. Check browser localStorage first (supports Vercel preview testing without Google OAuth)
+    const localRec = getLocalWebsiteRecord(projectId);
+    if (localRec) {
+      setLoaded({
+        document: localRec.document,
+        projectName: localRec.name,
+        persistence: "local",
+        publication: localRec.publication ?? undefined,
+      });
+      setLoading(false);
+      setUnauthorized(false);
+      return;
+    }
+
+    // 2. If not signed in and local preview auth bypass is enabled, auto-provision a local project
     if (!user) {
+      if (isLocalPreviewAuthBypassEnabled()) {
+        const created = createLocalWebsiteProject({
+          id: projectId,
+          name: "My AI Website",
+          templateId: "doitwithai-flagship",
+          creationMode: "template",
+        });
+        setLoaded({
+          document: created.document,
+          projectName: created.name,
+          persistence: "local",
+          publication: created.publication ?? undefined,
+        });
+        setLoading(false);
+        return;
+      }
       setLoading(false);
       setUnauthorized(true);
       return;
@@ -65,8 +103,28 @@ export function WebsiteStudioClientLoader({
           cache: "no-store",
         });
         if (cancelled) return;
-        if (res.status === 401 || res.status === 403) {
-          setUnauthorized(true);
+        if (res.status === 401 || res.status === 403 || res.status === 404) {
+          if (isLocalPreviewAuthBypassEnabled()) {
+            const fallback = createLocalWebsiteProject({
+              id: projectId,
+              name: "My AI Website",
+              templateId: "doitwithai-flagship",
+              creationMode: "template",
+            });
+            setLoaded({
+              document: fallback.document,
+              projectName: fallback.name,
+              persistence: "local",
+              publication: fallback.publication ?? undefined,
+            });
+            setLoading(false);
+            return;
+          }
+          if (res.status === 404) {
+            setError("Could not find this website project.");
+          } else {
+            setUnauthorized(true);
+          }
           setLoading(false);
           return;
         }
@@ -92,6 +150,7 @@ export function WebsiteStudioClientLoader({
         setLoaded({
           document: { ...doc, revision: data.project.revision },
           projectName: data.project.name,
+          persistence: "server",
           publication,
         });
       } catch (err) {
@@ -122,7 +181,7 @@ export function WebsiteStudioClientLoader({
         </header>
         <div className="empty-projects">
           <h2>Opening your Website Studio…</h2>
-          <p>Syncing draft document, template design, and blog posts.</p>
+          <p>Syncing draft document, template design, tools, and blog posts.</p>
         </div>
       </main>
     );
@@ -134,7 +193,7 @@ export function WebsiteStudioClientLoader({
         <header className="flow-nav">
           <Link href="/ai-website-builder">Website Builder</Link>
           <strong className="flow-brand">DOITWITHAI STUDIO</strong>
-          <Link href="/do-it-ai/website-studio/demo">Try Interactive Demo</Link>
+          <Link href="/ai-website-builder/studio/demo">Try Interactive Demo</Link>
         </header>
         <section className="flow-card claim-card">
           <p className="eyebrow">GOOGLE WORKSPACE SIGN-IN REQUIRED</p>
@@ -154,7 +213,7 @@ export function WebsiteStudioClientLoader({
             </button>
             <Link
               className="secondary-action"
-              href="/do-it-ai/website-studio/demo"
+              href="/ai-website-builder/studio/demo"
             >
               Open Interactive Flagship Demo
             </Link>
@@ -181,7 +240,7 @@ export function WebsiteStudioClientLoader({
             </Link>
             <Link
               className="secondary-action"
-              href="/do-it-ai/website-studio/demo"
+              href="/ai-website-builder/studio/demo"
             >
               Launch Demo Studio
             </Link>
@@ -195,9 +254,9 @@ export function WebsiteStudioClientLoader({
     <PortfolioStudio
       initialDocument={loaded.document}
       projectName={loaded.projectName}
-      persistence="server"
+      persistence={loaded.persistence}
       initialPublication={loaded.publication}
-      authenticated
+      authenticated={Boolean(user)}
       userEmail={user?.email ?? undefined}
       welcomeFromVox={welcomeFromVox}
     />

@@ -9,7 +9,9 @@ import { getTemplatesByCategory, type WebsiteTemplateCategory } from "@/features
 import { EditorialFlagshipHero, EditorialFlagshipSections, isEditorialFlagshipTemplate } from "@/features/website-builder/portfolio/editorial-flagship-templates";
 import { isCollectionTemplate, isLightTemplate } from "@/features/website-builder/domain/template-contracts";
 import { CollectionHero, CollectionSections } from "@/features/website-builder/portfolio/collection-templates";
-import { PORTFOLIO_TEMPLATES } from "@/features/website-builder/domain/templates";
+import { PORTFOLIO_TEMPLATES, buildGuidedDocument, getTemplate } from "@/features/website-builder/domain/templates";
+import { createLocalWebsiteProject, isLocalPreviewAuthBypassEnabled } from "@/features/website-builder/lib/local-websites-store";
+import type { TemplateId } from "@/features/website-builder/domain/template-contracts";
 import type { CvCandidate } from "@/features/website-builder/domain/cv-ingestion";
 import type { GuidedInterview } from "@/features/website-builder/domain/guided-interview";
 import { GuidedInterviewPanel } from "./guided-interview";
@@ -129,11 +131,6 @@ export function CreationFlow({ authenticated, suggestedName = "", ownerId = "gue
   async function create(fromVoice = false): Promise<{ok: boolean; error?: string; projectId?: string}> {
     if (createdProject.current) return {ok:true,projectId:createdProject.current};
     if (creating.current) return { ok: false, error: "Your private draft is already being saved. Please wait for the result." };
-    if (!isAuthed) {
-      if (workspace) { workspace.signIn(); return { ok: false, error: "Sign in with Google to save your private website draft." }; }
-      router.push("/do-it-ai?signin=1&next=/ai-website-builder/start");
-      return { ok: false, error: "Sign in to create your private draft." };
-    }
     if (fromVoice && (mode !== "guided" || !isVoiceDraftReady(voiceState))) return {ok:false,error:"Confirm your name, role, introduction and at least two short core skills, choose a portfolio purpose and select a template before creating the private draft."};
     const cv = cvSource ? {
       ...cvSource,
@@ -150,18 +147,75 @@ export function CreationFlow({ authenticated, suggestedName = "", ownerId = "gue
         return {ok:false,error:message};
       }
     }
+
+    const createInLocalStorage = () => {
+      const localId = crypto.randomUUID();
+      const chosenTemplateId = (templateId || "doitwithai-flagship") as TemplateId;
+      const doc =
+        mode === "template"
+          ? {
+              ...(getTemplate(chosenTemplateId)?.document ?? PORTFOLIO_TEMPLATES[0].document),
+              projectId: localId,
+              updatedAt: new Date().toISOString(),
+            }
+          : buildGuidedDocument({
+              ...(body as Exclude<typeof body, { mode: "template" }>),
+              templateId: chosenTemplateId,
+              projectId: localId,
+              style:
+                (body as Exclude<typeof body, { mode: "template" }>).interview?.tone === "structured"
+                  ? "technical"
+                  : (body as Exclude<typeof body, { mode: "template" }>).interview?.tone === "minimal"
+                    ? "minimal"
+                    : "creative",
+            });
+      const rec = createLocalWebsiteProject({
+        id: localId,
+        name: form.projectName.trim() || doc.identity.name || "My AI Website",
+        templateId: chosenTemplateId,
+        creationMode: mode ?? "template",
+        document: doc,
+        autoPublish: true,
+      });
+      try { sessionStorage.removeItem(`voxfolio-creation:${ownerId}`); } catch {}
+      createdProject.current = rec.id;
+      router.push(
+        mode === "guided"
+          ? `/ai-website-builder/studio/${rec.id}?welcome=vox`
+          : `/ai-website-builder/studio/${rec.id}`,
+      );
+      return { ok: true, projectId: rec.id };
+    };
+
+    if (!isAuthed) {
+      if (isLocalPreviewAuthBypassEnabled()) {
+        return createInLocalStorage();
+      }
+      if (workspace) { workspace.signIn(); return { ok: false, error: "Sign in with Google to save your private website draft." }; }
+      router.push("/do-it-ai?signin=1&next=/ai-website-builder/start");
+      return { ok: false, error: "Sign in to create your private draft." };
+    }
+
     creating.current = true; setBusy(true); setError("");
     try {
       const response = await authorizedWebsiteFetch("/api/projects", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
       const result = await response.json().catch(() => ({ error: `The server returned ${response.status} without a readable response.` }));
-      if (!response.ok) { const message = result.error ?? "Could not create the project."; setError(message); return {ok:false,error:message}; }
+      if (!response.ok) {
+        if ((response.status === 401 || response.status === 403 || response.status >= 500) && isLocalPreviewAuthBypassEnabled()) {
+          return createInLocalStorage();
+        }
+        const message = result.error ?? "Could not create the project."; setError(message); return {ok:false,error:message};
+      }
       try { sessionStorage.removeItem(`voxfolio-creation:${ownerId}`); } catch {}
       const projectId: string = result.projectId;
       createdProject.current = projectId;
-      if (mode === "guided") window.setTimeout(() => router.push(`/do-it-ai/website-studio/${projectId}?welcome=vox`), 450);
-      else router.push(`/do-it-ai/website-studio/${projectId}`);
+      if (mode === "guided") window.setTimeout(() => router.push(`/ai-website-builder/studio/${projectId}?welcome=vox`), 450);
+      else router.push(`/ai-website-builder/studio/${projectId}`);
       return {ok:true,projectId};
     } catch {
+      if (isLocalPreviewAuthBypassEnabled()) {
+        return createInLocalStorage();
+      }
       const message = "The save request was interrupted. Check My projects before trying again so you do not create a duplicate draft.";
       setError(message); return {ok:false,error:message};
     } finally { creating.current = false; setBusy(false); }
@@ -251,7 +305,7 @@ export function CreationFlow({ authenticated, suggestedName = "", ownerId = "gue
     {error && <div className="form-message" role="alert">{error}</div>}
     {busy && <p className="voice-saving-status" role="status"><span className="inline-spinner" /> Saving your private draft… Waiting for the server to confirm.</p>}
     {mode === "guided" && !isVoiceDraftReady(voiceState) && <p className="creation-review-help" role="status">To create with Do It AI Agent, confirm your name, role, introduction and at least two core skills, then choose one purpose and a template. Use the accessible text route if voice is unavailable.</p>}
-    <button className="primary-action" disabled={busy || !form.projectName || (mode === "guided" && !isVoiceDraftReady(voiceState)) || (mode === "manual" && (!form.name || !form.role || !form.intro || Object.keys(interview).length !== 5))} onClick={() => void create()}>{busy ? "Saving private draft…" : isAuthed ? "Create private website draft" : "Sign in with Google to create"}</button>
+    <button className="primary-action" disabled={busy || !form.projectName || (mode === "guided" && !isVoiceDraftReady(voiceState)) || (mode === "manual" && (!form.name || !form.role || !form.intro || Object.keys(interview).length !== 5))} onClick={() => void create()}>{busy ? "Saving website draft…" : isAuthed ? "Create website draft" : "Create website in browser (No Sign-In Needed)"}</button>
   </section>;
 }
 

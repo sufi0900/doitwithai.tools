@@ -15,6 +15,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { authorizedWebsiteFetch } from "@/features/website-builder/lib/supabase/browser";
+import { listLocalWebsitesAsConnectedSummaries } from "@/features/website-builder/lib/local-websites-store";
 import type { ConnectedWebsiteSummary } from "@/features/website-builder/ecosystem-bridge";
 import {
   listSavedBlogProjects,
@@ -54,17 +55,22 @@ export function WorkspaceMasterHub({
         }).catch(() => null),
       ]);
       setArticles(localArticles);
+      const localSites = listLocalWebsitesAsConnectedSummaries();
+      let serverSites: ConnectedWebsiteSummary[] = [];
       if (webRes && webRes.ok) {
         const data = (await webRes.json()) as {
           websites?: ConnectedWebsiteSummary[];
         };
-        const list = Array.isArray(data.websites) ? data.websites : [];
-        setWebsites(list);
-        onWebsitesCountChange?.(list.length);
-      } else {
-        setWebsites([]);
-        onWebsitesCountChange?.(0);
+        serverSites = Array.isArray(data.websites) ? data.websites : [];
       }
+      const seenIds = new Set<string>();
+      const merged = [...localSites, ...serverSites].filter((s) => {
+        if (seenIds.has(s.projectId)) return false;
+        seenIds.add(s.projectId);
+        return true;
+      });
+      setWebsites(merged);
+      onWebsitesCountChange?.(merged.length);
     } finally {
       setLoading(false);
     }
