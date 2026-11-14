@@ -1,24 +1,8 @@
 "use client";
-
-/**
- * Phase 6 Core Deliverable: Interactive Split-Screen Rich Text & Visual Editor + Live 0–100 SEO Scorecard (Stage 4)
- * File: features/blog-writer-studio/components/Stage4RichEditorAndScorecard.tsx
- *
- * Architecture:
- *  - Left Pane (70% width on lg+):
- *      - 3 View Modes: "Rich Visual Preview", "Markdown Source Editor", "Clean Semantic HTML"
- *      - Inline H2 HTML5 <canvas> Infographic Cards with 1-click "🎨 Customize Visual in Canva/Napkin Studio"
- *        modal launcher (mounts <BlogInfographicStudio mode="embedded-modal" />)
- *      - Per-Section AI Co-Pilot Action Pills (Humanize, Expand Examples, Rewrite, Add Table, Add AEO Box, Refresh Visuals)
- *  - Right Pane (30% width on lg+ — Sticky Sidebar):
- *      - Real-time 0–100 Deterministic SEO, Originality & Readability Scorecard (<10ms, 0 LLM tokens)
- *      - Live SERP Pixel Width Meters (<580px Title / <920px Description)
- *      - Interactive Semantic LSI Entity Checklist Pills (green = used, click unused pill to weave into active H2)
- *      - "✨ 1-Click Auto-Fix All SEO Warnings" button calling applyOneClickSeoAutoFixes()
- *
- * — Signed by: Nova-Forge (Flagship Studio Persistence & Workspace Engineer)
- */
-
+import {
+  getInfographicDimensions,
+  fixedInfographicRatio,
+} from "@/lib/blog-infographic-studio/layout-registry";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import type {
   BlogInfographicConfig,
@@ -36,22 +20,23 @@ import {
   generateBlogInfographicSvg,
   renderBlogInfographicToCanvas,
 } from "@/lib/blog-infographic-studio/canvas-renderer";
-import { BLOG_INFOGRAPHIC_25_TEMPLATES } from "@/lib/founder-hub/grand-blog-writer-blueprint";
+import { BLOG_INFOGRAPHIC_25_TEMPLATES } from "@/lib/blog-infographic-studio/templates";
+import {
+  PRISM_LAYOUTS,
+  withPrismLayout,
+} from "@/lib/blog-infographic-studio/visual-brief";
 import type { SectionCopilotAction } from "@/app/api/blog-writer/generate/route";
-
 export interface Stage4RichEditorAndScorecardProps {
   project: CanonicalBlogProjectState;
   onChange: (updated: CanonicalBlogProjectState) => void;
   onRunSectionCopilot?: (
     sectionId: string,
     action: SectionCopilotAction,
-    customInstruction?: string
+    customInstruction?: string,
   ) => Promise<void> | void;
   onAdvanceToStage5?: () => void;
 }
-
 type EditorViewMode = "rich-visual" | "markdown-source" | "semantic-html";
-
 const QUICK_COPILOT_PILLS: {
   action: SectionCopilotAction;
   label: string;
@@ -88,11 +73,6 @@ const QUICK_COPILOT_PILLS: {
     title: "Synthesize 4 fresh KPI/diagram nodes for the section infographic",
   },
 ];
-
-/**
- * Renders a live 1200x675 HTML5 <canvas> preview of the section's BlogInfographicConfig
- * with 1-click access to the 25-template Canva/Napkin.ai modal drawer.
- */
 function InlineSectionInfographicCard({
   config,
   sectionIndex,
@@ -105,15 +85,42 @@ function InlineSectionInfographicCard({
   onQuickChangeConfig: (updated: BlogInfographicConfig) => void;
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-
+  const [visualError, setVisualError] = useState("");
+  const dims = getInfographicDimensions(config);
   useEffect(() => {
     if (!canvasRef.current) return;
-    renderBlogInfographicToCanvas(canvasRef.current, config);
+    let stale = false;
+    setVisualError("");
+    const canvas = canvasRef.current;
+    void renderBlogInfographicToCanvas(canvas, config).catch((error) => {
+      if (stale) return;
+      canvas.getContext("2d")?.clearRect(0, 0, canvas.width, canvas.height);
+      setVisualError(
+        error instanceof Error
+          ? error.message
+          : "Open the visual editor to complete this infographic.",
+      );
+    });
+    return () => {
+      stale = true;
+    };
   }, [config]);
-
   function handleCycleTemplate(delta: number) {
+    if (config.visualEngine === "prism-antv") {
+      const index = PRISM_LAYOUTS.findIndex((l) => l.id === config.prismLayout);
+      onQuickChangeConfig(
+        withPrismLayout(
+          config,
+          PRISM_LAYOUTS[
+            (Math.max(0, index) + delta + PRISM_LAYOUTS.length) %
+              PRISM_LAYOUTS.length
+          ].id,
+        ),
+      );
+      return;
+    }
     const currentIdx = BLOG_INFOGRAPHIC_25_TEMPLATES.findIndex(
-      (t) => t.id === config.templateId
+      (t) => t.id === config.templateId,
     );
     const nextIdx =
       (Math.max(0, currentIdx) + delta + BLOG_INFOGRAPHIC_25_TEMPLATES.length) %
@@ -124,11 +131,22 @@ function InlineSectionInfographicCard({
       templateId: nextSpec.id,
       templateSlug: nextSpec.slug,
       templateName: nextSpec.name,
+      renderedSvgMarkup: undefined,
+      renderedPngDataUrl: undefined,
     });
   }
-
   function handleDownloadSvg() {
-    const svgMarkup = generateBlogInfographicSvg(config);
+    let svgMarkup: string;
+    try {
+      svgMarkup = generateBlogInfographicSvg(config);
+    } catch (error) {
+      setVisualError(
+        error instanceof Error
+          ? error.message
+          : "Fix the infographic before exporting.",
+      );
+      return;
+    }
     const blob = new Blob([svgMarkup], { type: "image/svg+xml;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -137,19 +155,20 @@ function InlineSectionInfographicCard({
     a.click();
     URL.revokeObjectURL(url);
   }
-
   return (
     <div className="my-4 overflow-hidden rounded-2xl border border-indigo-500/30 bg-slate-950/90 shadow-lg">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/90 bg-slate-900/90 px-4 py-2.5">
         <div className="flex items-center gap-2">
           <span className="rounded-md bg-indigo-500/20 px-2 py-0.5 text-[11px] font-bold text-indigo-300">
-            Template #{config.templateId}/25
+            {config.visualEngine
+              ? "Editorial collection"
+              : `Template #${config.templateId}/25`}
           </span>
           <span className="text-xs font-semibold text-white">
             {config.templateName}
           </span>
           <span className="hidden text-[11px] text-slate-400 sm:inline">
-            · {config.aspectRatio} · Zero-CLS Vector/Canvas
+            · {fixedInfographicRatio(config)}
           </span>
         </div>
 
@@ -182,19 +201,31 @@ function InlineSectionInfographicCard({
             onClick={onOpenModal}
             className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-indigo-500 to-violet-600 px-3 py-1 text-xs font-bold text-white shadow transition hover:from-indigo-400 hover:to-violet-500"
           >
-            <span>🎨 Customize Visual in Canva/Napkin Studio</span>
+            <span>Customize infographic</span>
           </button>
         </div>
       </div>
 
-      <div className="relative flex items-center justify-center bg-slate-950 p-3">
+      {visualError && (
+        <p
+          role="alert"
+          className="m-3 rounded-lg border border-amber-500/40 bg-amber-950/40 p-3 text-xs leading-relaxed text-amber-200"
+        >
+          {visualError} Open “Customize infographic” to adjust the content or
+          format.
+        </p>
+      )}
+      <div
+        className={`relative items-center justify-center bg-slate-950 p-3 ${visualError ? "hidden" : "flex"}`}
+      >
         <canvas
           ref={canvasRef}
-          width={1200}
-          height={675}
+          width={dims.width}
+          height={dims.height}
           onClick={onOpenModal}
-          className="aspect-video w-full max-w-3xl cursor-pointer rounded-xl border border-slate-800 shadow-md transition hover:border-indigo-500/60"
-          title="Click to customize this section infographic in the 25-Template Studio"
+          style={{ aspectRatio: `${dims.width} / ${dims.height}` }}
+          className="h-auto w-full max-w-3xl cursor-pointer rounded-xl border border-slate-800 shadow-md transition hover:border-indigo-500/60"
+          title="Click to edit this section infographic"
         />
       </div>
 
@@ -203,23 +234,18 @@ function InlineSectionInfographicCard({
           Alt Text: <strong className="text-slate-300">{config.altText}</strong>
         </span>
         <span className="text-emerald-400">
-          ✓ width=&quot;1200&quot; height=&quot;675&quot; ({sectionIndex === 0 ? 'fetchpriority="high" LCP' : 'loading="lazy"'} · 0.000 CLS)
+          {dims.width} × {dims.height} · {fixedInfographicRatio(config)}
         </span>
       </div>
     </div>
   );
 }
-
-/**
- * Simple helper to render a Markdown table string as a clean preview table in Rich Visual mode.
- */
 function MarkdownTablePreview({ markdown }: { markdown: string }) {
   const lines = markdown
     .trim()
     .split("\n")
     .map((l) => l.trim())
     .filter((l) => l.startsWith("|"));
-
   if (lines.length < 2) {
     return (
       <pre className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950 p-3 font-mono text-xs text-slate-300">
@@ -227,20 +253,17 @@ function MarkdownTablePreview({ markdown }: { markdown: string }) {
       </pre>
     );
   }
-
   const parseRow = (line: string) =>
     line
       .replace(/^\|/, "")
       .replace(/\|$/, "")
       .split("|")
       .map((cell) => cell.trim());
-
   const headers = parseRow(lines[0]);
   const dataRows = lines
     .slice(1)
     .filter((l) => !/^\|[\s:-]+\|/.test(l))
     .map(parseRow);
-
   return (
     <div className="my-3 overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/90">
       <table className="w-full border-collapse text-left text-xs text-slate-200">
@@ -268,7 +291,6 @@ function MarkdownTablePreview({ markdown }: { markdown: string }) {
     </div>
   );
 }
-
 export function Stage4RichEditorAndScorecard({
   project,
   onChange,
@@ -277,20 +299,19 @@ export function Stage4RichEditorAndScorecard({
 }: Stage4RichEditorAndScorecardProps) {
   const [viewMode, setViewMode] = useState<EditorViewMode>("rich-visual");
   const [activeSectionId, setActiveSectionId] = useState<string>(
-    project.sections[0]?.id || "sec-h2-1"
+    project.sections[0]?.id || "sec-h2-1",
   );
-  const [modalVisualSectionId, setModalVisualSectionId] = useState<string | null>(
-    null
+  const [modalVisualSectionId, setModalVisualSectionId] = useState<
+    string | null
+  >(null);
+  const [runningCopilotKey, setRunningCopilotKey] = useState<string | null>(
+    null,
   );
-  const [runningCopilotKey, setRunningCopilotKey] = useState<string | null>(null);
   const [copiedBanner, setCopiedBanner] = useState<string | null>(null);
-
-  // Real-time 0–100 Deterministic SEO Scorecard (<10ms, 0 LLM tokens)
   const liveScorecard = useMemo(
     () => runFullDeterministicSeoScorecard(project),
-    [project]
+    [project],
   );
-
   const fullBodyLower = useMemo(() => {
     return [
       project.metaPack.h1Title,
@@ -299,14 +320,15 @@ export function Stage4RichEditorAndScorecard({
         (s) =>
           `${s.h2Text} ${s.bodyMarkdown} ${s.subHeadings
             .map((sub) => `${sub.h3Text} ${sub.bodyMarkdown}`)
-            .join(" ")} ${s.comparisonTableMarkdown || ""} ${s.keyTakeawayText || ""}`
+            .join(
+              " ",
+            )} ${s.comparisonTableMarkdown || ""} ${s.keyTakeawayText || ""}`,
       ),
       ...project.faqs.map((f) => `${f.question} ${f.answer}`),
     ]
       .join(" ")
       .toLowerCase();
   }, [project]);
-
   const compiledFullMarkdown = useMemo(() => {
     const blocks: string[] = [
       `# ${project.metaPack.h1Title}`,
@@ -317,12 +339,11 @@ export function Stage4RichEditorAndScorecard({
       ...project.metaPack.tldrBullets.map((b) => `- ${b}`),
       "",
     ];
-
     project.sections.forEach((sec, idx) => {
       blocks.push(`## ${sec.h2Text} {#${sec.anchorId}}`);
       blocks.push("");
       blocks.push(
-        `![${sec.infographicConfig?.altText || sec.h2Text}](infographic-${idx + 1}-${sec.infographicConfig?.templateSlug || "visual"}.svg)`
+        `![${sec.infographicConfig?.altText || sec.h2Text}](../visuals/section-${idx + 1}-infographic.svg)`,
       );
       blocks.push("");
       if (sec.bodyMarkdown) {
@@ -343,7 +364,6 @@ export function Stage4RichEditorAndScorecard({
         blocks.push("");
       }
     });
-
     if (project.faqs.length > 0) {
       blocks.push("## Frequently Asked Questions (FAQ)");
       blocks.push("");
@@ -353,36 +373,28 @@ export function Stage4RichEditorAndScorecard({
         blocks.push("");
       });
     }
-
     return blocks.join("\n");
   }, [project]);
-
   const compiledSemanticHtmlPreview = useMemo(() => {
     const tocItems = project.sections
-      .map(
-        (s) =>
-          `    <li><a href="#${s.anchorId}">${s.h2Text}</a></li>`
-      )
+      .map((s) => `    <li><a href="#${s.anchorId}">${s.h2Text}</a></li>`)
       .join("\n");
-
     const sectionHtmlBlocks = project.sections
       .map((s, idx) => {
         const fetchAttr =
-          idx === 0
-            ? 'fetchpriority="high" loading="eager"'
-            : 'loading="lazy"';
+          idx === 0 ? 'fetchpriority="high" loading="eager"' : 'loading="lazy"';
+        const visualDims = getInfographicDimensions(s.infographicConfig);
         const subBlocks = s.subHeadings
           .map(
             (sub) =>
-              `    <h3>${sub.h3Text}</h3>\n    <p>${(sub.bodyMarkdown || "").replace(/\n\n+/g, "</p>\n    <p>")}</p>`
+              `    <h3>${sub.h3Text}</h3>\n    <p>${(sub.bodyMarkdown || "").replace(/\n\n+/g, "</p>\n    <p>")}</p>`,
           )
           .join("\n");
-
         return [
           `  <section id="${s.anchorId}">`,
           `    <h2>${s.h2Text}</h2>`,
-          `    <figure class="blog-section-infographic" style="aspect-ratio: 16 / 9;">`,
-          `      <img src="/visuals/section-${idx + 1}-${s.infographicConfig?.templateSlug || "diagram"}.svg" alt="${s.infographicConfig?.altText || s.h2Text}" width="1200" height="675" ${fetchAttr} decoding="async" />`,
+          `    <figure class="blog-section-infographic" style="aspect-ratio: ${visualDims.width} / ${visualDims.height};">`,
+          `      <img src="/visuals/section-${idx + 1}-infographic.svg" alt="${s.infographicConfig?.altText || s.h2Text}" width="${visualDims.width}" height="${visualDims.height}" ${fetchAttr} decoding="async" />`,
           `      <figcaption>${s.infographicConfig?.headline || s.h2Text} — ${s.infographicConfig?.footerSourceLabel || "DoItWithAI.tools"}</figcaption>`,
           `    </figure>`,
           `    <p>${(s.bodyMarkdown || "").replace(/\n\n+/g, "</p>\n    <p>")}</p>`,
@@ -396,7 +408,6 @@ export function Stage4RichEditorAndScorecard({
           .join("\n");
       })
       .join("\n\n");
-
     const faqHtml =
       project.faqs.length > 0
         ? [
@@ -404,12 +415,11 @@ export function Stage4RichEditorAndScorecard({
             `    <h2>Frequently Asked Questions</h2>`,
             ...project.faqs.map(
               (f) =>
-                `    <details>\n      <summary><strong>${f.question}</strong></summary>\n      <p>${f.answer}</p>\n    </details>`
+                `    <details>\n      <summary><strong>${f.question}</strong></summary>\n      <p>${f.answer}</p>\n    </details>`,
             ),
             `  </section>`,
           ].join("\n")
         : "";
-
     return [
       `<article itemscope itemtype="https://schema.org/BlogPosting">`,
       `  <header>`,
@@ -431,13 +441,12 @@ export function Stage4RichEditorAndScorecard({
       `</article>`,
     ].join("\n");
   }, [project]);
-
   function updateSection(
     sectionId: string,
-    updater: (sec: BlogSectionNode) => BlogSectionNode
+    updater: (sec: BlogSectionNode) => BlogSectionNode,
   ) {
     const nextSections = project.sections.map((s) =>
-      s.id === sectionId ? updater(s) : s
+      s.id === sectionId ? updater(s) : s,
     );
     const updated: CanonicalBlogProjectState = {
       ...project,
@@ -447,10 +456,9 @@ export function Stage4RichEditorAndScorecard({
     updated.scorecard = runFullDeterministicSeoScorecard(updated);
     onChange(updated);
   }
-
   async function triggerSectionCopilot(
     sectionId: string,
-    action: SectionCopilotAction
+    action: SectionCopilotAction,
   ) {
     const key = `${sectionId}:${action}`;
     setRunningCopilotKey(key);
@@ -479,7 +487,6 @@ export function Stage4RichEditorAndScorecard({
       setRunningCopilotKey(null);
     }
   }
-
   function handleInsertMissingLsiEntity(entity: string) {
     const targetId = activeSectionId || project.sections[0]?.id;
     if (!targetId) return;
@@ -495,13 +502,10 @@ export function Stage4RichEditorAndScorecard({
     setCopiedBanner(`✓ Wove semantic entity "${entity}" into section!`);
     setTimeout(() => setCopiedBanner(null), 2600);
   }
-
   function handleOneClickAutoFixAll() {
     let working = applyOneClickSeoAutoFixes(project);
-
-    // Also weave any missing LSI entities into the first section if needed for 75%+ LSI coverage
     const missingEntities = working.keywordCluster.lsiEntities.filter(
-      (ent) => !fullBodyLower.includes(ent.toLowerCase())
+      (ent) => !fullBodyLower.includes(ent.toLowerCase()),
     );
     if (missingEntities.length > 0 && working.sections.length > 0) {
       const entitySentence = `\n\n**Semantic Entity Alignment:** This workflow incorporates ${missingEntities
@@ -516,29 +520,25 @@ export function Stage4RichEditorAndScorecard({
                 ...s,
                 bodyMarkdown: `${s.bodyMarkdown.trim()}${entitySentence}`,
               }
-            : s
+            : s,
         ),
       };
     }
-
     working.scorecard = runFullDeterministicSeoScorecard(working);
     onChange(working);
     setCopiedBanner(
-      `✨ Auto-Fixed Meta Pixels, Slug, AI Clichés, H2 Infographics & LSI Coverage! Score: ${working.scorecard.overallScore}/100`
+      `✨ Auto-Fixed Meta Pixels, Slug, AI Clichés, H2 Infographics & LSI Coverage! Score: ${working.scorecard.overallScore}/100`,
     );
     setTimeout(() => setCopiedBanner(null), 3500);
   }
-
   function handleCopyText(text: string, label: string) {
     navigator.clipboard?.writeText(text);
     setCopiedBanner(`✓ Copied ${label} to clipboard!`);
     setTimeout(() => setCopiedBanner(null), 2500);
   }
-
   const activeModalSection = project.sections.find(
-    (s) => s.id === modalVisualSectionId
+    (s) => s.id === modalVisualSectionId,
   );
-
   return (
     <div className="relative">
       {copiedBanner && (
@@ -547,13 +547,8 @@ export function Stage4RichEditorAndScorecard({
         </div>
       )}
 
-      {/* Main 70/30 Split-Screen Grid */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-        {/* ================================================================
-            LEFT PANE (70% -> 8 Cols on lg+): RICH EDITOR & VISUAL STUDIO
-           ================================================================ */}
         <div className="space-y-5 lg:col-span-8">
-          {/* Top View Mode Switcher & Action Bar */}
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-800 bg-slate-900/95 p-4 shadow-md">
             <div className="flex flex-wrap items-center gap-1.5 rounded-xl bg-slate-950 p-1">
               <button
@@ -613,10 +608,8 @@ export function Stage4RichEditorAndScorecard({
             </div>
           </div>
 
-          {/* VIEW MODE 1: RICH VISUAL & SECTION-BY-SECTION EDITOR */}
           {viewMode === "rich-visual" && (
             <div className="space-y-6">
-              {/* Article Header, SERP Quick-Tune & 50-Word AEO Box */}
               <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-5 shadow-md">
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                   <span className="rounded-full border border-indigo-500/30 bg-indigo-500/10 px-3 py-0.5 text-[11px] font-semibold text-indigo-300">
@@ -647,7 +640,6 @@ export function Stage4RichEditorAndScorecard({
                   className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-base font-bold text-white focus:border-indigo-500 focus:outline-none"
                 />
 
-                {/* Quick Meta Title & Meta Description Pixel Editors */}
                 <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
                     <div className="flex items-center justify-between text-[11px]">
@@ -717,11 +709,10 @@ export function Stage4RichEditorAndScorecard({
                   </div>
                 </div>
 
-                {/* 50-Word AEO Direct Answer Box */}
                 <div className="mt-4 rounded-xl border border-emerald-500/30 bg-emerald-950/20 p-3.5">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-emerald-300">
-                      🎯 50-Word AEO Direct Answer Box (Google AI Overviews / Perplexity Snippet)
+                      🎯 Direct answer summary
                     </span>
                     <span className="text-[11px] text-emerald-400">
                       {
@@ -748,7 +739,6 @@ export function Stage4RichEditorAndScorecard({
                   />
                 </div>
 
-                {/* Interactive TOC Jump Bar */}
                 <div className="mt-4">
                   <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
                     Table of Contents (#anchor-id Jump Links)
@@ -772,7 +762,6 @@ export function Stage4RichEditorAndScorecard({
                 </div>
               </div>
 
-              {/* Section-by-Section Interactive Cards */}
               {project.sections.map((sec, idx) => {
                 const isFocused = activeSectionId === sec.id;
                 return (
@@ -785,7 +774,6 @@ export function Stage4RichEditorAndScorecard({
                         : "border-slate-800 bg-slate-900/80"
                     }`}
                   >
-                    {/* Section H2 Header */}
                     <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
                       <div className="flex flex-1 items-center gap-2">
                         <span className="rounded-lg bg-indigo-500/20 px-2.5 py-1 text-xs font-bold text-indigo-300">
@@ -808,7 +796,6 @@ export function Stage4RichEditorAndScorecard({
                       </span>
                     </div>
 
-                    {/* Per-Section AI Co-Pilot Action Pills */}
                     <div className="mt-3 flex flex-wrap items-center gap-1.5">
                       <span className="mr-1 text-[11px] font-semibold text-slate-400">
                         AI Co-Pilot:
@@ -834,7 +821,6 @@ export function Stage4RichEditorAndScorecard({
                       })}
                     </div>
 
-                    {/* Inline Rendered 25-Template Infographic Card */}
                     {sec.infographicConfig && (
                       <InlineSectionInfographicCard
                         config={sec.infographicConfig}
@@ -849,16 +835,11 @@ export function Stage4RichEditorAndScorecard({
                       />
                     )}
 
-                    {/* Section Body Prose Editor */}
                     <div className="mt-3">
                       <div className="mb-1 flex items-center justify-between text-xs text-slate-400">
                         <span>Section Body Prose (Markdown)</span>
                         <span>
-                          {
-                            sec.bodyMarkdown
-                              .split(/\s+/)
-                              .filter(Boolean).length
-                          }{" "}
+                          {sec.bodyMarkdown.split(/\s+/).filter(Boolean).length}{" "}
                           words
                         </span>
                       </div>
@@ -878,7 +859,6 @@ export function Stage4RichEditorAndScorecard({
                       />
                     </div>
 
-                    {/* H3 Subheadings */}
                     {sec.subHeadings.length > 0 && (
                       <div className="mt-4 space-y-3 border-t border-slate-800/80 pt-3">
                         <div className="text-xs font-semibold text-indigo-300">
@@ -902,7 +882,7 @@ export function Stage4RichEditorAndScorecard({
                                     subHeadings: s.subHeadings.map((item, i) =>
                                       i === sIdx
                                         ? { ...item, h3Text: e.target.value }
-                                        : item
+                                        : item,
                                     ),
                                   }))
                                 }
@@ -921,7 +901,7 @@ export function Stage4RichEditorAndScorecard({
                                           ...item,
                                           bodyMarkdown: e.target.value,
                                         }
-                                      : item
+                                      : item,
                                   ),
                                 }))
                               }
@@ -932,13 +912,13 @@ export function Stage4RichEditorAndScorecard({
                       </div>
                     )}
 
-                    {/* Comparison Table Preview & Editor */}
                     {(sec.includeComparisonTable ||
                       Boolean(sec.comparisonTableMarkdown)) && (
                       <div className="mt-4 rounded-xl border border-indigo-500/25 bg-indigo-950/15 p-3.5">
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-bold text-indigo-300">
-                            📊 Structured Comparison Matrix (Featured Snippet Ready)
+                            📊 Structured Comparison Matrix (Featured Snippet
+                            Ready)
                           </span>
                         </div>
                         {sec.comparisonTableMarkdown && (
@@ -962,7 +942,6 @@ export function Stage4RichEditorAndScorecard({
                       </div>
                     )}
 
-                    {/* Key Takeaway Callout Box */}
                     {(sec.includeKeyTakeawayCallout ||
                       Boolean(sec.keyTakeawayText)) && (
                       <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-950/15 p-3">
@@ -987,11 +966,11 @@ export function Stage4RichEditorAndScorecard({
                 );
               })}
 
-              {/* Schema-Ready FAQ Editor */}
               <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-5">
                 <div className="mb-3 flex items-center justify-between">
                   <h3 className="text-sm font-bold text-white">
-                    ❓ Schema-Ready FAQ Pairs ({project.faqs.length} FAQs · Synced with FAQPage JSON-LD)
+                    ❓ Schema-Ready FAQ Pairs ({project.faqs.length} FAQs ·
+                    Synced with FAQPage JSON-LD)
                   </h3>
                   <button
                     type="button"
@@ -1028,7 +1007,7 @@ export function Stage4RichEditorAndScorecard({
                           const nextFaqs = project.faqs.map((item, i) =>
                             i === fIdx
                               ? { ...item, question: e.target.value }
-                              : item
+                              : item,
                           );
                           onChange({ ...project, faqs: nextFaqs });
                         }}
@@ -1041,7 +1020,7 @@ export function Stage4RichEditorAndScorecard({
                           const nextFaqs = project.faqs.map((item, i) =>
                             i === fIdx
                               ? { ...item, answer: e.target.value }
-                              : item
+                              : item,
                           );
                           onChange({ ...project, faqs: nextFaqs });
                         }}
@@ -1054,16 +1033,17 @@ export function Stage4RichEditorAndScorecard({
             </div>
           )}
 
-          {/* VIEW MODE 2: UNIFIED MARKDOWN SOURCE EDITOR */}
           {viewMode === "markdown-source" && (
             <div className="rounded-2xl border border-slate-800 bg-slate-900/95 p-5 shadow-md">
               <div className="mb-3 flex items-center justify-between">
                 <div>
                   <h3 className="text-sm font-bold text-white">
-                    Unified Markdown Source ({liveScorecard.totalWordCount.toLocaleString()} words)
+                    Unified Markdown Source (
+                    {liveScorecard.totalWordCount.toLocaleString()} words)
                   </h3>
                   <p className="text-xs text-slate-400">
-                    Clean Markdown with #anchor-id headings, infographic figure references, comparison tables, and FAQs.
+                    Clean Markdown with #anchor-id headings, infographic figure
+                    references, comparison tables, and FAQs.
                   </p>
                 </div>
                 <button
@@ -1082,7 +1062,6 @@ export function Stage4RichEditorAndScorecard({
             </div>
           )}
 
-          {/* VIEW MODE 3: CLEAN SEMANTIC HTML PREVIEW */}
           {viewMode === "semantic-html" && (
             <div className="rounded-2xl border border-slate-800 bg-slate-900/95 p-5 shadow-md">
               <div className="mb-3 flex items-center justify-between">
@@ -1091,7 +1070,8 @@ export function Stage4RichEditorAndScorecard({
                     Clean Core Web Vitals Semantic &lt;article&gt; HTML
                   </h3>
                   <p className="text-xs text-slate-400">
-                    Includes explicit width=&quot;1200&quot; height=&quot;675&quot;, fetchpriority=&quot;high&quot; on LCP visual, and 0.000 CLS figure wrappers.
+                    Includes image dimensions matching each selected format,
+                    source captions, alt text and loading attributes.
                   </p>
                 </div>
                 <button
@@ -1099,7 +1079,7 @@ export function Stage4RichEditorAndScorecard({
                   onClick={() =>
                     handleCopyText(
                       compiledSemanticHtmlPreview,
-                      "Clean Semantic HTML"
+                      "Clean Semantic HTML",
                     )
                   }
                   className="rounded-xl bg-indigo-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-indigo-500"
@@ -1114,12 +1094,8 @@ export function Stage4RichEditorAndScorecard({
           )}
         </div>
 
-        {/* ================================================================
-            RIGHT PANE (30% -> 4 Cols on lg+): STICKY 0–100 SEO SCORECARD
-           ================================================================ */}
         <div className="lg:col-span-4">
           <div className="sticky top-6 space-y-4 rounded-2xl border border-indigo-500/30 bg-slate-900/95 p-5 shadow-xl">
-            {/* Overall Score Header */}
             <div className="flex items-center justify-between border-b border-slate-800 pb-4">
               <div>
                 <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-400">
@@ -1139,7 +1115,6 @@ export function Stage4RichEditorAndScorecard({
               </div>
             </div>
 
-            {/* 1-Click Auto-Fix All SEO Warnings Button */}
             <button
               type="button"
               onClick={handleOneClickAutoFixAll}
@@ -1148,7 +1123,6 @@ export function Stage4RichEditorAndScorecard({
               ✨ 1-Click Auto-Fix All SEO Warnings
             </button>
 
-            {/* 7 Sub-Pillar Score Bars */}
             <div className="space-y-2 border-b border-slate-800 pb-4">
               {[
                 {
@@ -1197,23 +1171,27 @@ export function Stage4RichEditorAndScorecard({
               ))}
             </div>
 
-            {/* Real-Time Telemetry Pills */}
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div className="rounded-xl border border-slate-800 bg-slate-950/80 p-2.5">
-                <div className="text-[10px] text-slate-400">Primary Keyword</div>
+                <div className="text-[10px] text-slate-400">
+                  Primary Keyword
+                </div>
                 <div className="mt-0.5 font-bold text-white">
-                  {liveScorecard.primaryKeywordCount}x ({liveScorecard.primaryKeywordDensityPercent}%)
+                  {liveScorecard.primaryKeywordCount}x (
+                  {liveScorecard.primaryKeywordDensityPercent}%)
                 </div>
               </div>
               <div className="rounded-xl border border-slate-800 bg-slate-950/80 p-2.5">
-                <div className="text-[10px] text-slate-400">Burstiness & Clichés</div>
+                <div className="text-[10px] text-slate-400">
+                  Burstiness & Clichés
+                </div>
                 <div className="mt-0.5 font-bold text-emerald-300">
-                  σ={liveScorecard.burstinessStdDev} · {liveScorecard.aiClichesDetected.length} Clichés
+                  σ={liveScorecard.burstinessStdDev} ·{" "}
+                  {liveScorecard.aiClichesDetected.length} Clichés
                 </div>
               </div>
             </div>
 
-            {/* Interactive Semantic LSI Entity Checklist Pills */}
             <div className="border-t border-slate-800 pt-3">
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-xs font-bold text-white">
@@ -1237,7 +1215,7 @@ export function Stage4RichEditorAndScorecard({
                       }`}
                       title={
                         isUsed
-                          ? `Verified in article body: "${entity}"`
+                          ? `Found in article body: "${entity}"`
                           : `Click to weave "${entity}" into the active H2 section`
                       }
                     >
@@ -1248,7 +1226,6 @@ export function Stage4RichEditorAndScorecard({
               </div>
             </div>
 
-            {/* Diagnostic Audit Checklist */}
             <div className="border-t border-slate-800 pt-3">
               <div className="mb-2 text-xs font-bold text-white">
                 7-Pillar Deterministic SEO Checks
@@ -1274,7 +1251,10 @@ export function Stage4RichEditorAndScorecard({
                       </span>
                     </div>
                     <div className="mt-1 text-[11px] text-slate-400">
-                      Current: <strong className="text-slate-200">{chk.currentValue}</strong>
+                      Current:{" "}
+                      <strong className="text-slate-200">
+                        {chk.currentValue}
+                      </strong>
                     </div>
                     {chk.status !== "pass" && (
                       <div className="mt-1 text-[11px] text-amber-300/90">
@@ -1289,16 +1269,14 @@ export function Stage4RichEditorAndScorecard({
         </div>
       </div>
 
-      {/* ====================================================================
-          EMBEDDED 25-TEMPLATE CANVA / NAPKIN.AI INFOGRAPHIC STUDIO MODAL
-         ==================================================================== */}
       {activeModalSection && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3 backdrop-blur-sm sm:p-6">
           <div className="relative max-h-[94vh] w-full max-w-7xl overflow-y-auto rounded-3xl border border-indigo-500/40 bg-slate-950 p-4 shadow-2xl sm:p-6">
             <div className="mb-4 flex items-center justify-between border-b border-slate-800 pb-3">
               <div>
                 <span className="text-xs font-bold uppercase tracking-wider text-indigo-400">
-                  Embedded Section Visual Customizer · H2 #{activeModalSection.orderIndex + 1}
+                  Embedded Section Visual Customizer · H2 #
+                  {activeModalSection.orderIndex + 1}
                 </span>
                 <h3 className="text-lg font-bold text-white">
                   {activeModalSection.h2Text}
@@ -1316,6 +1294,7 @@ export function Stage4RichEditorAndScorecard({
             <BlogInfographicStudio
               mode="embedded-modal"
               initialConfig={activeModalSection.infographicConfig}
+              sourceSection={activeModalSection}
               onSaveConfig={(updatedCfg) => {
                 updateSection(activeModalSection.id, (sec) => ({
                   ...sec,
@@ -1323,7 +1302,7 @@ export function Stage4RichEditorAndScorecard({
                 }));
                 setModalVisualSectionId(null);
                 setCopiedBanner(
-                  `🎨 Updated infographic (${updatedCfg.templateName}) for "${activeModalSection.h2Text}"!`
+                  `🎨 Updated infographic (${updatedCfg.templateName}) for "${activeModalSection.h2Text}"!`,
                 );
                 setTimeout(() => setCopiedBanner(null), 3000);
               }}
@@ -1335,5 +1314,4 @@ export function Stage4RichEditorAndScorecard({
     </div>
   );
 }
-
 export default Stage4RichEditorAndScorecard;

@@ -1,7 +1,14 @@
+import { extractWebsiteBrand } from "@/lib/blog-infographic-studio/brand-source";
+import type { WebsiteBrandHint } from "@/lib/blog-infographic-studio/brand-source";
 import { NextRequest, NextResponse } from "next/server";
 import { parseHTML } from "linkedom";
 import { Readability } from "@mozilla/readability";
 import { z } from "zod";
+import { extractArticleSource } from "@/lib/blog-infographic-studio/article-source";
+import type {
+  ArticleSourceSection,
+  ArticleSourceCoverage,
+} from "@/lib/blog-infographic-studio/article-source";
 import { BodyError, readBoundedJson } from "@/lib/ai-tools/request-body";
 import {
   fetchPublic,
@@ -14,12 +21,14 @@ export const maxDuration = 60;
 
 const inputSchema = z.object({
   url: z.string().trim().min(4).max(2048),
+  purpose: z.literal("infographic").optional(),
 });
 
 export type ExtractedSubTopic = {
   title: string;
   summary: string;
   content: string;
+  sectionId?: string;
 };
 
 export type ExtractedImageAsset = {
@@ -46,6 +55,11 @@ export type UniversalExtractResponse = {
   keyTakeaways: string[];
   subTopics: ExtractedSubTopic[];
   images: ExtractedImageAsset[];
+  sections?: ArticleSourceSection[];
+  recommendedSectionId?: string;
+  selectedSectionId?: string;
+  coverage?: ArticleSourceCoverage;
+  brandTheme?: WebsiteBrandHint;
   rawTranscriptWithTimestamps?: string;
   transcriptSegments?: Array<{
     timestamp: string;
@@ -740,7 +754,12 @@ function parsePlainTimestampedLines(
     if (m) {
       let sec = parseTimestampStrToSeconds(m[1]);
       // If Gemini returned relative timestamps starting at 0:00 for a later window, offset them cleanly
-      if (windowStartSec > 0 && sec < windowStartSec && out.length === 0 && sec < 30) {
+      if (
+        windowStartSec > 0 &&
+        sec < windowStartSec &&
+        out.length === 0 &&
+        sec < 30
+      ) {
         sec += windowStartSec;
       }
       const spoken = clean(m[2]);
@@ -955,7 +974,9 @@ async function extractYoutubeUrlData(
             const titleMatch = html.match(/<title>([^<]+)<\/title>/i);
             if (titleMatch) {
               title = cleanArticleTitle(
-                decodeXmlEntities(titleMatch[1].replace(/\s*-\s*YouTube$/i, "")),
+                decodeXmlEntities(
+                  titleMatch[1].replace(/\s*-\s*YouTube$/i, ""),
+                ),
               );
             }
           }
@@ -1319,7 +1340,8 @@ async function extractYoutubeUrlData(
  * so browser SVG/PNG/PDF exports in EditableInfographicStudio never fail on CORS.
  */
 export async function GET(request: NextRequest) {
-  const rawImgUrl = request.nextUrl.searchParams.get("proxyImage")?.trim() || "";
+  const rawImgUrl =
+    request.nextUrl.searchParams.get("proxyImage")?.trim() || "";
   if (!rawImgUrl) {
     return NextResponse.json(
       { error: "Missing proxyImage query parameter." },
@@ -1332,7 +1354,8 @@ export async function GET(request: NextRequest) {
       headers: {
         "User-Agent":
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/132.0.0.0 Safari/537.36",
-        Accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+        Accept:
+          "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
       },
       signal: AbortSignal.timeout(9000),
     });
@@ -1506,9 +1529,7 @@ export async function POST(request: NextRequest) {
     } catch {}
 
     if (paragraphs.length === 0) {
-      paragraphs = Array.from(
-        document.querySelectorAll("article p, main p, p"),
-      )
+      paragraphs = Array.from(document.querySelectorAll("article p, main p, p"))
         .map((p: unknown) => clean((p as Element).textContent))
         .filter((t) => t.length >= 40 && !/^table of contents/i.test(t))
         .slice(0, 35);
@@ -1611,6 +1632,13 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    const sourceTree =
+      input.purpose === "infographic"
+        ? extractArticleSource(document as unknown as Document, title)
+        : undefined;
+    const sourceParagraphs = sourceTree?.sections.flatMap((s) =>
+      s.blocks.filter((b) => b.kind !== "heading").map((b) => b.text),
+    );
     const resPayload: UniversalExtractResponse = {
       isYoutube: false,
       url: finalUrl,
@@ -1620,10 +1648,39 @@ export async function POST(request: NextRequest) {
       author,
       focusKeyword: focusKeyword || "ai tools",
       headings,
-      paragraphs,
-      cleanText: paragraphs.join("\n\n"),
-      keyTakeaways,
-      subTopics,
+      paragraphs: sourceParagraphs || paragraphs,
+      cleanText: (sourceParagraphs || paragraphs).join("\n\n"),
+      keyTakeaways: sourceTree
+        ? sourceTree.sections
+            .filter((s) => s.role === "content")
+            .flatMap((s) =>
+              s.blocks
+                .filter((b) => b.kind !== "heading")
+                .slice(0, 1)
+                .map((b) => b.text),
+            )
+            .slice(0, 6)
+        : keyTakeaways,
+      subTopics: sourceTree
+        ? sourceTree.sections.map((s) => ({
+            sectionId: s.id,
+            title: s.title,
+            summary: s.blocks.find((b) => b.kind !== "heading")?.text || "",
+            content: s.blocks
+              .filter((b) => b.kind !== "heading")
+              .map((b) => b.text)
+              .join("\n\n"),
+          }))
+        : subTopics,
+      ...sourceTree,
+      ...(sourceTree
+        ? {
+            brandTheme: extractWebsiteBrand(
+              document as unknown as Document,
+              domain,
+            ),
+          }
+        : {}),
       images: images.slice(0, 25),
     };
 

@@ -178,6 +178,33 @@ export const DAILY_ENGINEERING_VELOCITY: DailyActivityPoint[] = [
     commitsPushed: 16,
     highlightNote: "Testimonial Studio overhaul, 4-Tier AI Failover, 5 Feeder Tools (#58–#62) Live & /founder-hub",
   },
+  {
+    date: "2026-11-10",
+    shortLabel: "Nov 10",
+    errorsFixed: 8,
+    improvementsShipped: 18,
+    routesAndToolsAdded: 5,
+    commitsPushed: 12,
+    highlightNote: "All 5 Feeder Tools (#58–#62) shipped, VoxFolio V27.12 audit & Master Vision dynamic calculator",
+  },
+  {
+    date: "2026-11-11",
+    shortLabel: "Nov 11",
+    errorsFixed: 12,
+    improvementsShipped: 16,
+    routesAndToolsAdded: 3,
+    commitsPushed: 9,
+    highlightNote: "Infographic Studio redesign, Prism pure-SVG renderer engine & Next.js static build fix",
+  },
+  {
+    date: "2026-11-12",
+    shortLabel: "Nov 12",
+    errorsFixed: 14,
+    improvementsShipped: 36,
+    routesAndToolsAdded: 12,
+    commitsPushed: 9,
+    highlightNote: "GSC Top 3 + Dark Studio Fix + Full 7-Phase /ai-content-writer V3 Studio (Research, SERP Canvas, H1-H6 Tell-AI Editor, Readability, 16:9 Hero + Alt Text & Social Adapters)",
+  },
 ];
 
 export interface SprintProgressBarItem {
@@ -751,6 +778,100 @@ export const GRAND_AI_CONTENT_WRITER_PIPELINE = {
   ],
 };
 
+export const AI_CONTENT_WRITER_V3_BLUEPRINT = {
+  title: "AI Content Writer Studio V3 — Multi-Agent Pipeline, Missing Tool Integration & 7-Phase Overhaul",
+  subtitle:
+    "Full UX/UI, Light/Dark contrast audit, 2026 AIO/Readability research, standalone DoItWithAI tool gap mapping, and phased execution plan for /ai-content-writer (docs/AI_CONTENT_WRITER_V3_MASTER_BLUEPRINT.md).",
+  gapAudit: [
+    {
+      area: "SERP & Rich Result Simulator",
+      standaloneRef: "features/serp-preview/",
+      gap: "Top Meta Panel only has a basic text preview without Google Desktop/Mobile SERP card, pixel width gauges, or Rich Result badges.",
+      targetPhase: "Phase 4",
+    },
+    {
+      area: "Image Alt Text Sub-Agent",
+      standaloneRef: "features/alt-text/",
+      gap: "Featured horizontal banner & section infographics lack an automated SEO + WCAG accessible Alt Text Sub-Agent and audit score.",
+      targetPhase: "Phase 5",
+    },
+    {
+      area: "Deep Readability & Comprehension",
+      standaloneRef: "features/readability/ + /ai-seo/ai-readability-tools",
+      gap: "Editor only underlines long sentences and StarterKit stops at H3; missing H4–H6, multi-band clarity highlights, diagnosis-before-rewrite, and language-aware checks.",
+      targetPhase: "Phase 3",
+    },
+    {
+      area: "Keyword & Semantic Entity Agent",
+      standaloneRef: "features/keyword-research/ & keyword-clustering/",
+      gap: "Requires manual single focus keyword instead of discovering primary, long-tail, LSI, and entity coverage automatically.",
+      targetPhase: "Phase 1 & 2",
+    },
+    {
+      area: "Competitor Search & Site Internal Linking",
+      standaloneRef: "features/internal-linking/ & external-links/",
+      gap: "Website URL sits unused in collapsed Brand accordion; missing live web search competitor packet & verified internal URL discovery.",
+      targetPhase: "Phase 1 & 2",
+    },
+    {
+      area: "Content Organizer & 50w AEO Box",
+      standaloneRef: "features/table-of-contents-generator/ & faq-schema-validator/",
+      gap: "Needs dedicated Content Organizer pass (H1–H6, 50w AEO summary, TOC, short paras, bullets/tables, quotes, FAQ + JSON-LD) and inline 'Tell AI' menu.",
+      targetPhase: "Phase 3 & 5",
+    },
+    {
+      area: "Platform-Native Social & Video Studio",
+      standaloneRef: "facebook / instagram / linkedin / pinterest / youtube studios",
+      gap: "Bottom social cards look overly similar; needs platform-authentic 2026 ratios (IG/LI 4:5 carousel, Pin 2:3, X 16:9, YT script + 1280x720) & modular adapters.",
+      targetPhase: "Phase 6",
+    },
+  ],
+  phases: [
+    {
+      phase: "Phase 1",
+      name: "Strict Onboarding Gate, Safe Internal/External Research & Animated Loading Theatre",
+      cta: "Shipped: Dashboard strictly locked during initial onboarding; OnboardingGate + 11-step AgentPipelineTheatre + SSRF-safe /api/writer-workspace/research (sitemap/anchor internal link discovery + Wikipedia/DuckDuckGo authority references).",
+      status: "Completed",
+    },
+    {
+      phase: "Phase 2",
+      name: "Left Panel Redesign (Remove Brief/Outline -> AI Helper, Readability, SEO & Links)",
+      cta: "Shipped: Replaced sidebar Brief/Outline tabs with LeftStudioPanel (AI Helper with scope + diff preview, Readability overlays scorecard, SEO & Links verified internal/external link inserter + BriefSettingsModal).",
+      status: "Completed",
+    },
+    {
+      phase: "Phase 3",
+      name: "H1–H6 Editor, Inline Right-Click 'Tell AI' Menu & Deep Readability Studio",
+      cta: "Shipped: Upgraded Tiptap StarterKit & Markdown/HTML/EPUB serializers to H1–H6, wired multi-band Readability ProseMirror decorations, and added floating toolbar + right-click 'Tell AI about it' context actions.",
+      status: "Completed",
+    },
+    {
+      phase: "Phase 4",
+      name: "Multi-Option SERP Header Agent & Top Google SERP / Rich Result Simulator",
+      cta: "Shipped: Built SearchAppearancePanel integrating SerpCanvas (Desktop/Mobile SERP preview, pixel gauges), 5 selectable Meta Titles, 4 Meta Descriptions, FAQ Rich Result card, and copyable Article + FAQPage JSON-LD.",
+      status: "Completed",
+    },
+    {
+      phase: "Phase 5",
+      name: "Content Organizer Agent, 50w AEO Box & Horizontal Featured + Section Infographics + Alt-Text",
+      cta: "Shipped: Added clickable TOC jump strip, editable 50-word AEO Direct Answer Box, 16:9 FeaturedBannerArtwork (1200x630 PNG export), zero-gap section visuals, FAQ accordion, and WCAG Alt Text Sub-Agent scoring.",
+      status: "Completed",
+    },
+    {
+      phase: "Phase 6",
+      name: "Dedicated Social/Video Sub-Agents & Modular Visual Adapter Registry",
+      cta: "Shipped: Built adapters/socialVisualRegistry.ts enforcing 2026 specs (IG/LI 1080x1350 carousel, X 1600x900, Pinterest 1000x1500 2:3 Pin, YouTube 1280x720 thumbnail + AI video scripts) with live slide deck preview.",
+      status: "Completed",
+    },
+    {
+      phase: "Phase 7",
+      name: "End-to-End QA, Light/Dark Audit, 4-Tier Failover Stress Tests & Build Verification",
+      cta: "Shipped: Audited Daylight + Dark Studio styling across all new UI panels, added V3 tests covering H1-H6 round trips, Alt Text WCAG audit, JSON-LD, Social adapters, and Research API failover.",
+      status: "Completed",
+    },
+  ],
+};
+
 export const H1_CLUSTER_DOMINATION_BLUEPRINT = {
   title: "H1 Heading & Tag Cluster Domination Blueprint (/ai-seo/h1-heading + Connected Tools)",
   subtitle:
@@ -968,6 +1089,187 @@ export interface ChangelogEntry {
 }
 
 export const FOUNDER_AI_CHANGELOG: ChangelogEntry[] = [
+  {
+    id: "log-sprint-16-flagship-website-builder-and-voxfolio-bridge",
+    sprintNumber: 16,
+    date: "2026-11-13",
+    title: "Unified Flagship AI Website Builder (Phases 1–6 Complete): Voxfolio Migration, 16 2D/3D Templates, Do It AI Agent Voice Studio, Writer-to-Website Bridge & /do-it-ai Master Command Center",
+    category: "Flagship Tool Overhaul",
+    founderRequestSummary:
+      "Execute all 6 Phases of UNIFIED_AI_WEBSITE_BUILDER_AND_ECOSYSTEM_ARCHITECTURE.md: integrate the Voxfolio 3D/2D voice-directed portfolio and website builder under isolated website_* Supabase tables without rewriting core governed engines, expand templates into 16 categorized archetypes led by DoItWithAI Editorial Flagship, remove the duplicate standalone blog writer in favor of a live bidirectional bridge with /ai-content-writer, rebrand the studio assistant to Do It AI Agent, add voice open_in_content_writer navigation, and turn /do-it-ai into the unified multi-website and writer workspace.",
+    aiStrategicBlueprint:
+      "Executed a zero-rewrite modular port under features/website-builder/ paired with unified browserAccounts() Google OAuth + Authorization Bearer header forwarding, 28 isolated API routes complying with Next.js 14 sync params and Vercel Hobby maxDuration <= 60s, standalone CSS layout scoping across /ai-website-builder, /do-it-ai/website-studio, /p/[slug], and /s/[token], bidirectional /api/website-builder/overview + /api/website-builder/publish-from-writer routes, an idempotent consolidated SQL migration (20261114_website_builder_projects.sql), and WorkspaceMasterHub inside /do-it-ai.",
+    aiImplementationDetails: [
+      "Phases 1–2: Registered ai-website-builder in features/tool-catalog/registry.json, created ecosystem-bridge.ts (16 curated 2D & 3D templates across Blogging & SEO Media, Personal Brand & Creator, Startup & SaaS Product, and 3D Interactive & Spatial), added writerPublishing commands + WriterStudioBridgeCard, and extended site-document.ts with sourceArticleProjectId & pillarClusterSlug.",
+      "Phase 3: Migrated domain, scene (Three.js + drei), portfolio, Tiptap v2 content editor, manual controls, and studio reducer into features/website-builder/, wired unified Google OAuth session forwarding (browser.ts + server.ts), created EditorialFlagshipHero + obsidian/indigo styling, and removed Voxfolio's duplicate blog writer.",
+      "Phase 4: Rebranded Vox to Do It AI Agent with public/pcm-processor.js + open_in_content_writer voice tool, ported all 28 API routes with website_* / website-media isolation, configured ClientLayoutShell standalone chrome for /p/, /s/, and /do-it-ai/website-studio/, and built App Router pages for /ai-website-builder, /tools/ai-website-builder, /ai-website-builder/start, /ai-website-builder/claim, /do-it-ai/website-studio/[projectId](/settings), /p/[slug]/**, and /s/[token]/[[...path]].",
+      "Phase 5: Shipped GET /api/website-builder/overview and POST /api/website-builder/publish-from-writer, enabled zero-blocker live blog publishing from Writer Studio synced posts, mounted ConnectedWebsitePublishBar in WriterWorkspace.tsx with ?targetSiteId= preselection, and auto-synced published website blog URLs into Writer Studio internal link suggestions.",
+      "Phase 6: Authored idempotent supabase/migrations/20261114_website_builder_projects.sql (all 14 website_* tables, website-media bucket, RLS policies, and 13 security-checked RPCs), added WorkspaceMasterHub to /do-it-ai for switching between AI Chat and Saved Websites + Writer Articles, added unit tests in tests/ai-tools/website-builder.test.ts, and logged progress on /founder-hub.",
+    ],
+    blogPostDraftMarkdown: `# Unifying AI Website Creation, 3D WebGL Studios & SEO Content Publishing Into One Platform
+
+In **Sprint 16**, we merged our flagship voice-and-3D **AI Website Builder** directly with the **AI Content Writer Studio** and **/do-it-ai Master Workspace**:
+
+1. **16 Purpose-Built 2D & 3D Templates**: Launch with our default **DoItWithAI Editorial Flagship** blog-first layout or switch live between 2D editorial publications, SaaS product sites, and interactive Three.js 3D stages.
+2. **Do It AI Agent Voice + Governed Editing**: Update copy, switch templates or dark/light themes, undo/redo revisions, and jump straight into AI Content Writer by voice or manual controls.
+3. **Zero-Copy-Paste Writer-to-Website Bridge**: Draft SEO-optimized articles with section infographics in \`/ai-content-writer\`, pull same-site internal links automatically, and push posts straight to your website's live \`/p/[slug]/blog\` journal in one click.`,
+    filesTouched: [
+      "features/website-builder/**",
+      "app/ai-website-builder/**",
+      "app/tools/ai-website-builder/**",
+      "app/do-it-ai/website-studio/**",
+      "app/p/**",
+      "app/s/**",
+      "app/api/website-builder/**",
+      "app/api/projects/**",
+      "app/api/shares/**",
+      "app/api/visitor/**",
+      "app/api/connect/**",
+      "app/api/assemblyai/**",
+      "features/writer-workspace/ConnectedWebsitePublishBar.tsx",
+      "features/writer-workspace/WriterWorkspace.tsx",
+      "features/do-it-ai/WorkspaceMasterHub.tsx",
+      "features/do-it-ai/DoItAiDashboardClient.tsx",
+      "supabase/migrations/20261114_website_builder_projects.sql",
+      "tests/ai-tools/website-builder.test.ts",
+      "lib/founder-hub/data.ts",
+    ],
+    commits: ["codex/infographic-studio-redesign"],
+    status: "Completed & Live",
+  },
+  {
+    id: "log-sprint-15-ai-content-writer-v3-phases-1-to-7-shipped",
+    sprintNumber: 15,
+    date: "2026-11-12",
+    title: "AI Content Writer Studio V3 Complete (Phases 1–7): Multi-Agent Pipeline, Research Engine, SERP Simulator, H1–H6 'Tell AI' Editor, Alt Text Sub-Agent & 2026 Social Registry",
+    category: "Flagship Tool Overhaul",
+    founderRequestSummary:
+      "Execute all 7 Phases of the AI_CONTENT_WRITER_V3_MASTER_BLUEPRINT autonomously on /ai-content-writer: enforce a strict onboarding gate with website URL input and an 11-step animated multi-agent loading theatre, build a real SSRF-safe internal/external link research packet engine, redesign the Left Studio Panel (AI Helper, Readability, SEO & Links), upgrade the editor to H1–H6 with embedded multi-band Readability overlays and right-click 'Tell AI about it' actions, embed the interactive Google SERP Simulator and Article/FAQ JSON-LD card, add a 50-word AEO quick answer box, TOC, horizontal 16:9 Featured Banner + WCAG Alt Text Sub-Agent, zero-gap section infographics, and modular 2026 platform-native social/video adapters.",
+    aiStrategicBlueprint:
+      "Orchestrated all 7 phases incrementally without breaking any existing writer-workspace unit test invariants or standalone /tools/* routes. Reused hardened repo engines across SSRF-safe page fetching (fetchPublic), Readability comprehension scoring (analyzeDocument/annotate), WCAG Alt Text grading (reviewAlt), interactive Google SERP rendering (SerpCanvas/RichResultCard), and clean modular React subcomponents (OnboardingGate, AgentPipelineTheatre, LeftStudioPanel, SearchAppearancePanel, FeaturedBannerArtwork, BriefSettingsModal) plus a pluggable SocialVisualAdapter registry.",
+    aiImplementationDetails: [
+      "Phase 1: Implemented features/writer-workspace/research.server.ts + app/api/writer-workspace/research/route.ts for SSRF-hardened sitemap/anchor website internal link discovery and Wikipedia/DuckDuckGo authority citations. Built OnboardingGate.tsx (locking empty studio tabs until submitted or explicitly unlocked) and AgentPipelineTheatre.tsx (animated 11-agent pipeline tracker + live ResearchPacket preview) wired to generation.server.ts (`enrichment` op) & useGeneration.ts.",
+      "Phase 2: Built LeftStudioPanel.tsx replacing Brief/Outline tabs with AI Helper (supporting both selection and full-article rewrites, quick chips, and inline diff preview), Readability (live Grade Level/Flesch metrics, language guardrails, toggleable highlight overlays), and SEO & Links (keyword/entity coverage + verified internal/external link 1-click insertion + BriefSettingsModal.tsx).",
+      "Phase 3: Upgraded ArticleEditor.tsx, model.ts, and assets.tsx exports to full H1–H6 fidelity, wired multi-tier Readability ProseMirror decorations (`veryHard`, `hard`, `passive`, `simpler`), and added both a floating selection bar and right-click 'Tell AI about it' context menu.",
+      "Phase 4: Built SearchAppearancePanel.tsx with Google Desktop/Mobile SERP Canvas simulator, character & pixel width progress bars, 5 selectable Meta Title & 4 Description options, canonical URL slug sanitization, FAQPage rich result preview, and 1-click Article + FAQPage JSON-LD copy.",
+      "Phase 5: Added clickable Table of Contents jump pills, editable 50-word AEO Direct Answer Box, 1200x630 16:9 FeaturedBannerArtwork.tsx with SVG-to-PNG download, WCAG Alt Text Sub-Agent grading across Hero + Section visuals, tighter zero-gap .visual framing, and interactive FAQ Accordion editor.",
+      "Phase 6: Shipped adapters/socialVisualRegistry.ts defining 2026 dimensions across all 9 channels (Instagram/LinkedIn 1080x1350 carousels with live multi-slide preview, X 1600x900 landscape, Pinterest 1000x1500 vertical Pin, Facebook/Reddit/Quora 1200x630, YouTube 1280x720 thumbnail + AI Short/Long video scripts).",
+      "Phase 7: Verified Daylight & Dark Studio parity in workspace.module.css, added 5 new V3 test suites in tests/ai-tools/writer-workspace.test.ts (27/27 tests passing), updated all AI_CONTENT_WRITER_V3_BLUEPRINT phases to Completed in /founder-hub, and verified clean tsc + foundation tests + Next.js build.",
+    ],
+    blogPostDraftMarkdown: `# Shipping AI Content Writer Studio V3: 11 Specialized AI Agents Inside One Unified Next.js Workspace
+
+In **Sprint 15**, we completed all 7 phases transforming \`/ai-content-writer\` into an end-to-end multi-agent editorial and distribution studio:
+
+- **Strict Onboarding + Live Research Packet**: Scans real internal pages from the author's website via SSRF-safe sitemap/HTML parsing and discovers verified background citations before outlining.
+- **11-Step Animated Multi-Agent Pipeline**: Visualizes Brief Analysis, Keywords & Entities, Web Search, Internal Links, SERP Meta, 16:9 Featured Banner + Alt Text, Outline, Section Writing, Infographics, Readability/FAQ QA, and 9 Social/Video adapters.
+- **Reader-First Studio Editor**: Full H1–H6 support, toggleable Hemingway-grade readability highlights, right-click *"Tell AI about it"* contextual editing, interactive Google Desktop/Mobile SERP simulator with Article + FAQPage JSON-LD, and modular 2026 social visual adapters.`,
+    filesTouched: [
+      "features/writer-workspace/types.ts",
+      "features/writer-workspace/model.ts",
+      "features/writer-workspace/research.server.ts",
+      "app/api/writer-workspace/research/route.ts",
+      "features/writer-workspace/generation.server.ts",
+      "features/writer-workspace/useGeneration.ts",
+      "features/writer-workspace/OnboardingGate.tsx",
+      "features/writer-workspace/AgentPipelineTheatre.tsx",
+      "features/writer-workspace/LeftStudioPanel.tsx",
+      "features/writer-workspace/BriefSettingsModal.tsx",
+      "features/writer-workspace/SearchAppearancePanel.tsx",
+      "features/writer-workspace/FeaturedBannerArtwork.tsx",
+      "features/writer-workspace/adapters/socialVisualRegistry.ts",
+      "features/writer-workspace/ArticleEditor.tsx",
+      "features/writer-workspace/assets.tsx",
+      "features/writer-workspace/AssetDeck.tsx",
+      "features/writer-workspace/WriterWorkspace.tsx",
+      "features/writer-workspace/workspace.module.css",
+      "tests/ai-tools/writer-workspace.test.ts",
+      "lib/founder-hub/data.ts",
+    ],
+    commits: ["codex/infographic-studio-redesign"],
+    status: "Completed & Live",
+  },
+  {
+    id: "log-sprint-14-ai-writer-v3-audit-contrast-and-blueprint",
+    sprintNumber: 14,
+    date: "2026-11-12",
+    title: "AI Content Writer V3 Strategy: Dark-Studio Textarea Contrast Fix, 2026 Multi-Agent Audit & 7-Phase Roadmap",
+    category: "Flagship Tool Overhaul",
+    founderRequestSummary:
+      "Review live /ai-content-writer screenshots showing white-text-on-white-textarea in Dark Studio mode and uniform social cards. Conduct deep research on 2026 AIO formatting, readability best practices (including our own /ai-seo/ai-readability-tools guide), and audit all DoItWithAI standalone tools to architect a complete multi-agent pipeline (strict onboarding gate, animated multi-agent loading preview, prompt analyzer, keyword research, competitor web search, site internal linking, SERP simulator, H1–H6 + inline 'Tell AI' editor, Left Panel AI Helper + Readability + SEO/Links, Featured + Section Infographics + Alt Text sub-agent, and modular platform-specific Social & Video adapters). Fix the dark-mode contrast bug immediately and publish the phased plan to /founder-hub.",
+    aiStrategicBlueprint:
+      "Fixed the immediate Dark Studio CSS specificity bug in features/writer-workspace/workspace.module.css where `.formStack > textarea { background: #fff !important; }` (specificity 0,2,0) beat `.darkShell :where(...)` (0,1,0), causing invisible white text in `01 · TELL YOUR STORY`. Cross-referenced 120+ repo feature modules against `features/writer-workspace/*`, DoItWithAI's published readability guide (`seo:ai-readability-tools` in sanitySnapshot.json), and 2026 AIO/social specs to write `docs/AI_CONTENT_WRITER_V3_MASTER_BLUEPRINT.md` and `AI_CONTENT_WRITER_V3_BLUEPRINT` with a clean 7-phase execution plan and modular adapter contracts so future standalone social visual upgrades auto-plug into `/ai-content-writer`.",
+    aiImplementationDetails: [
+      "Fixed Dark Studio textarea & dropdown contrast bugs in features/writer-workspace/workspace.module.css: removed `!important` from `.formStack > textarea`, added explicit `.darkShell .formStack > textarea` and `.darkShell .newsletter` dark surface rules, plus `.darkShell select option` styling for Daylight + Dark Studio parity.",
+      "Audited features/* standalone tools against features/writer-workspace/*, identifying 7 core capability integrations: SERP Simulator (`serp-preview`), Image Alt Text (`alt-text`), Deep Readability (`readability` + `seo:ai-readability-tools`), Keyword Research/Clustering (`keyword-research`), Internal/External Linking (`internal-linking`, `external-links`), Content Organizer/Schema (`faq-schema-validator`, `eeat-content-auditor`), and Platform Social/Video studios.",
+      "Authored full V3 Master Blueprint (docs/AI_CONTENT_WRITER_V3_MASTER_BLUEPRINT.md) detailing Strict Onboarding Gate, 11-Step Animated Multi-Agent Loading Theatre, Left Panel Redesign (AI Helper / Readability / SEO & Links replacing Brief/Outline), H1–H6 Tiptap upgrade + selection/right-click 'Tell AI' menu, and Modular Social Visual Adapter Registry.",
+      "Published AI_CONTENT_WRITER_V3_BLUEPRINT and Sprint 14 execution tracking directly inside /founder-hub.",
+    ],
+    blogPostDraftMarkdown: `# Designing a Multi-Agent AI Content Writer Studio: From Prompt & Competitor Research to Platform-Native Distribution
+
+Most AI article writers dump text from a single prompt into a basic box. In **Sprint 14**, we fixed a critical Dark Studio textarea contrast collision in \`/ai-content-writer\` and completed a comprehensive audit comparing our 108+ standalone SEO/visual tools against our flagship Writer Studio.
+
+### Key Architectural Upgrades Planned Across 7 Sequential Phases
+1. **Strict Onboarding + Research Packet**: Lock empty studio tabs until the user submits a topic or full human-language prompt plus an optional website URL for internal linking.
+2. **Animated Multi-Agent Loading Theatre**: Show each specialized sub-agent working live—Prompt Analyzer, Keyword Research, Competitor Web Search, Site Internal Linking, SERP Simulator, Featured Horizontal Banner + Alt Text, Content Organizer (H1–H6, 50w AEO box, tables, lists), Infographics, Readability/E-E-A-T QA, and Platform-Native Social & Video Sub-Agents.
+3. **Reader-First Editing**: Move the AI revision helper into a dedicated Left Panel alongside Deep Readability comprehension bands and SEO/Link inspection, plus an inline *"Tell AI about it"* menu inside an H1–H6 rich editor.`,
+    filesTouched: [
+      "features/writer-workspace/workspace.module.css",
+      "docs/AI_CONTENT_WRITER_V3_MASTER_BLUEPRINT.md",
+      "lib/founder-hub/data.ts",
+      "features/founder-hub/FounderCommandCenterClient.tsx",
+    ],
+    commits: ["pending"],
+    status: "Completed & Live",
+  },
+  {
+    id: "log-sprint-13-gsc-triple-optimization-and-build-fix",
+    sprintNumber: 13,
+    date: "2026-11-12",
+    title: "GSC Top 3 Performance Breakthrough, Pure-SVG Prism Engine & Triple High-Intent Tool Redesign",
+    category: "Flagship Content & Keyword Strategy",
+    founderRequestSummary:
+      "Analyze the latest Google Search Console performance data showing 3 breakthrough URLs generating clicks (tools/journalist-pitch-builder at 14.3% CTR, prompts/linkedin-personal-branding-b2b-prompts at 100% CTR pos 5.0, and tools/downloadable-ai-tools at 100% CTR pos 5.0). Optimize and improve these 3 tools with enhanced UX, scannability, interactive presets, category filters, expanded high-intent keywords, and structured HowTo/Product schemas. Also fix the Vercel production build failure caused by canvas/DOM dependencies and record all engineering actions in /founder-hub.",
+    aiStrategicBlueprint:
+      "Resolved the Vercel Next.js build failure by pruning @antv/infographic and writing an in-module, pure-SVG DOM-free AST renderer and Arial metrics table in lib/blog-infographic-studio/prism-renderer.ts (guaranteeing 234/234 static pages compile cleanly). Next, conducted deep UX and SEO enhancement across the top 3 GSC performers: (1) Added 4 real-world query presets (Connectively HARO, Featured.com Q&A, Qwoted Expert, Inc. Magazine Data Pitch) + live Scannability Scorecard status pills & HowTo schema to Journalist Pitch Builder; (2) Added interactive quick-filter category pills (All 83 Prompts, Headlines, 140c Hooks, Teardowns, Carousels, Memos, Commenting, DMs) + 2026 intent metadata to LinkedIn B2B Prompts; (3) Upgraded Downloadable AI Tools Hub metadata, H1, and copy from 90+ to 125+ portable standalone tools matching our 125 built packages with zero-terminal setup and custom BYOK API keys.",
+    aiImplementationDetails: [
+      "Fixed writer-workspace generation type error: Changed maxRetries in features/writer-workspace/generation.server.ts to 0, satisfying GeminiClient's strict options contract.",
+      "Resolved static build memory limit: Removed experimental optimizeCss from next.config.js, preventing V8 worker heap exhaustion on large CSS modules during 234-route prerendering.",
+      "Added /ai-content-writer to global navigation: Added AI Content Writer tab with 'Studio' badge to desktop navbar and mobile drawer in components/Header/menuData.tsx and index.tsx.",
+      "Synchronized navigation label: Updated menu link to 'Download & Embed 125+ Tools' matching the 125 standalone packages in the catalog.",
+      "Fixed visual-brief type error: Strongly typed `expanded: { block: ArticleSourceBlock; presetTitle?: string }[]` in lib/blog-infographic-studio/visual-brief.ts so item.presetTitle resolves correctly.",
+      "Fixed Next.js App Router page export validation: Made REQUIRE_AUTH_FOR_CONTENT_WRITER_STUDIO internal in app/ai-content-writer/page.tsx, eliminating .next/types validation errors.",
+      "Added permanentRedirect export to scripts/portable-shims/navigation.ts and updated tests/tool-catalog.test.cjs, enabling 125/125 standalone portable tools to compile cleanly.",
+      "Calibrated local-seo topic accent to `#0f766e` in features/tool-catalog/discovery.ts for WCAG 4.5:1 text contrast compliance across light and dark theme navigation cards.",
+      "Fixed Next.js static build error: Removed @antv/infographic (64 bloated transitive dependencies including canvas.cjs), replaced with an ultra-fast, zero-DOM pure SVG AST compiler in lib/blog-infographic-studio/prism-renderer.ts; verified all 234 static routes compile cleanly.",
+      "Optimized Tool 1 (/tools/journalist-pitch-builder, 14.3% CTR, pos 50.4): Added 4 real-world query presets (Connectively HARO, Featured Q&A, Qwoted Expert, Inc. Magazine Data Pitch), upgraded the Scannability Scorecard with dynamic visual status pills ('Quote-Ready' vs 'Needs Review'), word count badges, and reading time indicator, expanded target keywords, and injected structured HowTo schema.",
+      "Optimized Tool 2 (/prompts/linkedin-personal-branding-b2b-prompts, 100% CTR, pos 5.0): Built interactive quick-filter category pills (All 83 Prompts, Headlines, 140c Hooks, Teardowns, Carousels, Founder Memos, Commenting, DMs) directly above the prompt search bar, updated metadata title & description for 2026 search intent, and expanded high-intent search tags.",
+      "Optimized Tool 3 (/tools/downloadable-ai-tools, 100% CTR, pos 5.0): Synchronized page title, description, and H1 from '90+' to '125+' portable tools (matching the 125 standalone packages built by scripts/build-portable-tools.mjs), expanded metadata keywords for offline PC app and embeddable widgets, and highlighted zero-terminal setup with BYOK key management.",
+      "Logged Sprint 13 and updated engineering velocity graph in /founder-hub (lib/founder-hub/data.ts).",
+    ],
+    blogPostDraftMarkdown: `# How We Optimized Our Top 3 Search Console Pages for Maximum CTR & Conversions
+
+When Google Search Console (GSC) shows early impressions and clicks on specific pages, search engines are testing user satisfaction. In our 24-hour report, three pages proved early organic demand:
+1. **/tools/journalist-pitch-builder (14.3% CTR from Position 50.4)**: High CTR deep in SERPs means journalists, founders, and PR specialists need fast, quote-ready pitches for Connectively (formerly HARO) and Qwoted. We added 4 one-click query presets, real-time scannability health scoring, and rich HowTo schema.
+2. **/prompts/linkedin-personal-branding-b2b-prompts (100% CTR at Position 5.0)**: Ranking in the top 5 for B2B founder personal branding. We added interactive one-click category filtering for all 83 prompt templates across 8 content types (Hooks, Teardowns, Carousels, Founder Memos) to eliminate bounce rates.
+3. **/tools/downloadable-ai-tools (100% CTR at Position 5.0)**: Users searching for offline and embeddable widgets. We updated the catalog count from 90+ to 125+ portable standalone tools, detailing zero-terminal local running and transparent BYOK key configuration.
+
+By pairing rapid SEO data feedback with immediate UX execution, we convert emerging impressions into long-term organic authority.`,
+    filesTouched: [
+      "lib/blog-infographic-studio/prism-renderer.ts",
+      "package.json",
+      "pnpm-lock.yaml",
+      "features/journalist-pitch-builder/model.ts",
+      "features/journalist-pitch-builder/JournalistPitchBuilderClient.tsx",
+      "app/tools/journalist-pitch-builder/page.tsx",
+      "features/prompts/catalog.ts",
+      "features/prompts/details.ts",
+      "features/prompts/LinkedinB2bPromptLibrary.tsx",
+      "app/tools/downloadable-ai-tools/page.tsx",
+      "lib/founder-hub/data.ts",
+    ],
+    commits: ["e061c45"],
+    status: "Completed & Live",
+  },
   {
     id: "log-sprint-12-voxfolio-ecosystem-master-calculator",
     sprintNumber: 12,

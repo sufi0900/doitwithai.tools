@@ -1,9 +1,53 @@
 import registry from "./registry.json";
 
-export const categories = Array.isArray(registry.categories) ? registry.categories : [];
-export const tools = (Array.isArray(registry.tools) ? registry.tools : []).filter((tool) => tool.status === "live");
+/**
+ * Slugs excluded from the `/tools` catalog to prevent keyword cannibalization and keep
+ * flagship standalone SaaS platforms at the root domain level:
+ *  1. Full-article / blog / content writer slugs (`ai-content-writer`, `ai-blog-writer`,
+ *     `ai-article-writer`, `ai-blog-article-writer`) live at the standalone root-level
+ *     flagship platform route `/ai-content-writer` (outside `/tools`).
+ *  2. Flagship Website Builder (`ai-website-builder`) lives at the standalone root-level
+ *     platform route `/ai-website-builder` (outside `/tools`).
+ *  3. Legacy `blog-to-infographic-generator` is consolidated into the 25-template
+ *     `blog-section-infographic-generator`.
+ *  4. Dedicated `/agents/*` routes live under `/agents/<slug>` rather than duplicating under `/tools/<slug>`.
+ *
+ * — Signed by: Aegis-Prime (Founder's Master AI Strategist & Lead Ecosystem Architect)
+ */
+export const EXCLUDED_FROM_TOOLS_CATALOG_SLUGS = new Set<string>([
+  "ai-content-writer",
+  "ai-blog-writer",
+  "ai-article-writer",
+  "ai-blog-article-writer",
+  "ai-website-builder",
+  "blog-to-infographic-generator",
+  "seo-optimizer-ai-agent",
+  "ai-support-agent-builder",
+  "client-intake-lead-agent",
+  "ai-marketing-campaign-agent",
+  "whatsapp-instagram-ai-agent-studio",
+  "no-code-workflow-agent-planner",
+  "on-page-ai-seo-repair-agent",
+  "ai-citation-geo-agent",
+  "serp-content-gap-agent",
+  "omnichannel-marketing-agent",
+]);
+
+export const categories = registry.categories;
+export const tools = registry.tools.filter(
+  (tool) =>
+    tool.status === "live" && !EXCLUDED_FROM_TOOLS_CATALOG_SLUGS.has(tool.slug)
+);
 export type CatalogTool = (typeof tools)[number];
-export const toolPath = (slug: string) => `/tools/${slug}`;
+export const toolPath = (slug: string) =>
+  slug === "ai-content-writer" ||
+  slug === "ai-blog-writer" ||
+  slug === "ai-article-writer" ||
+  slug === "ai-blog-article-writer"
+    ? "/ai-content-writer"
+    : slug === "ai-website-builder"
+      ? "/ai-website-builder"
+      : `/tools/${slug}`;
 export const categoryPath = (slug: string) => `/tools/categories/${slug}`;
 export const siteOrigin = "https://doitwithai.tools";
 export const featuredTools = tools.filter((tool) => tool.featuredOrder != null);

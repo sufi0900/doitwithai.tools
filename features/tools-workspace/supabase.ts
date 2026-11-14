@@ -22,17 +22,21 @@ export function browserAccounts() {
   ));
 }
 export function safeReturnPath(value: string | null) {
+  const allowedPattern =
+    /^\/(?:tools|do-it-ai|ai-website-builder|ai-content-writer|p|s)(?:\/|\?|#|$)/;
+  const pathnamePattern =
+    /^\/(?:tools|do-it-ai|ai-website-builder|ai-content-writer|p|s)(?:\/|$)/;
   if (
     !value ||
     value.length > 4096 ||
     /[\\\u0000-\u0020]/.test(value) ||
-    !/^\/(?:tools|do-it-ai)(?:\/|\?|#|$)/.test(value)
+    !allowedPattern.test(value)
   )
     return "/tools";
   const target = new URL(value, "https://return.invalid");
   if (
     target.origin !== "https://return.invalid" ||
-    !/^\/(?:tools|do-it-ai)(?:\/|$)/.test(target.pathname)
+    !pathnamePattern.test(target.pathname)
   )
     return "/tools";
   return value;

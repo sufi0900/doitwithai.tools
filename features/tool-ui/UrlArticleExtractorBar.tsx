@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import {
   CheckCircle2,
   Globe,
@@ -27,6 +27,7 @@ type UrlArticleExtractorBarProps = {
   placeholder?: string;
   buttonLabel?: string;
   allowSubTopicSelection?: boolean;
+  extractionPurpose?: "infographic";
   onExtracted: (data: UniversalExtractResponse) => void;
   onSelectSubTopic?: (
     subTopic: ExtractedSubTopic,
@@ -39,6 +40,7 @@ export function UrlArticleExtractorBar({
   placeholder = "https://doitwithai.tools/ai-seo/what-is-ai-seo or YouTube video URL…",
   buttonLabel = "Extract & Generate (1-Click)",
   allowSubTopicSelection = true,
+  extractionPurpose,
   onExtracted,
   onSelectSubTopic,
 }: UrlArticleExtractorBarProps) {
@@ -62,13 +64,19 @@ export function UrlArticleExtractorBar({
     const chosen = data.subTopics[idx];
     const focusedPayload: UniversalExtractResponse = {
       ...data,
+      selectedSectionId: chosen.sectionId,
       title: chosen.title,
       cleanText: chosen.content,
       paragraphs: chosen.content.split("\n\n").filter(Boolean),
-      keyTakeaways: [
-        chosen.summary,
-        ...data.keyTakeaways.filter((k) => k !== chosen.title).slice(0, 4),
-      ],
+      keyTakeaways:
+        extractionPurpose === "infographic"
+          ? [chosen.summary]
+          : [
+              chosen.summary,
+              ...data.keyTakeaways
+                .filter((k) => k !== chosen.title)
+                .slice(0, 4),
+            ],
     };
 
     if (isInitialAutoSelect) {
@@ -94,7 +102,7 @@ export function UrlArticleExtractorBar({
       const res = await fetch("/api/ai-tools/universal-extract", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: trimmed }),
+        body: JSON.stringify({ url: trimmed, purpose: extractionPurpose }),
       });
       const data = (await res.json()) as UniversalExtractResponse & {
         error?: { message?: string };
@@ -107,9 +115,19 @@ export function UrlArticleExtractorBar({
         return;
       }
       setExtractedData(data);
-      // Automatically select Topic #1 and trigger generation in 1 single click!
-      if (allowSubTopicSelection && data.subTopics && data.subTopics.length > 0) {
-        applySubTopicChoice(0, data, true);
+      // Infographic mode prefers a substantive source section; other tools keep their existing first-topic behavior.
+      if (
+        allowSubTopicSelection &&
+        data.subTopics &&
+        data.subTopics.length > 0
+      ) {
+        const recommended =
+          extractionPurpose === "infographic"
+            ? data.subTopics.findIndex(
+                (t) => t.sectionId === data.recommendedSectionId,
+              )
+            : 0;
+        applySubTopicChoice(Math.max(0, recommended), data, true);
       } else {
         setActiveTopicIdx(-1);
         onExtracted(data);
@@ -128,7 +146,11 @@ export function UrlArticleExtractorBar({
       <ToolRunOverlay
         active={loading}
         title="Extracting Article & Generating Output in 1 Click..."
-        description="Scanning headings, key takeaways, and article images—Topic #1 is auto-selected so your output renders immediately."
+        description={
+          extractionPurpose === "infographic"
+            ? "Reading section bodies, lists and tables. A substantive section is selected first; you can choose another after extraction."
+            : "Scanning headings, key takeaways, and article images—Topic #1 is auto-selected so your output renders immediately."
+        }
       />
 
       <div className="mb-6 rounded-2xl border border-[#3452d1]/30 bg-gradient-to-r from-[#3452d1]/5 via-indigo-500/5 to-cyan-500/5 p-4 sm:p-5 shadow-xs dark:border-[#5271ff]/35 dark:bg-[#111827]">
@@ -140,9 +162,18 @@ export function UrlArticleExtractorBar({
           {extractedData && (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-extrabold text-emerald-700 dark:text-emerald-300">
               <CheckCircle2 size={13} />
-              Topic #{activeTopicIdx === -1 ? "All" : activeTopicIdx + 1} Active ·{" "}
-              {extractedData.subTopics.length} angles &amp;{" "}
-              {extractedData.images.length} images extracted
+              {extractionPurpose === "infographic" ? (
+                <>
+                  Section {activeTopicIdx + 1} selected ·{" "}
+                  {extractedData.subTopics.length} sections read
+                </>
+              ) : (
+                <>
+                  Topic #{activeTopicIdx === -1 ? "All" : activeTopicIdx + 1}{" "}
+                  Active · {extractedData.subTopics.length} angles &amp;{" "}
+                  {extractedData.images.length} images extracted
+                </>
+              )}
             </span>
           )}
         </div>
@@ -189,7 +220,9 @@ export function UrlArticleExtractorBar({
               <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
                 <span className="inline-flex items-center gap-1.5 text-xs font-extrabold text-slate-900 dark:text-white">
                   <Layers size={14} className="text-[#4058d0]" />
-                  Topic #1 Auto-Generated Below — Click Any Other Sub-Topic to Switch Angles:
+                  {extractionPurpose === "infographic"
+                    ? "Choose the section to visualize — its body text stays attached to the draft:"
+                    : "Topic #1 Auto-Generated Below — Click Any Other Sub-Topic to Switch Angles:"}
                 </span>
               </div>
 
@@ -200,7 +233,9 @@ export function UrlArticleExtractorBar({
                     <button
                       key={idx}
                       type="button"
-                      onClick={() => applySubTopicChoice(idx, extractedData, false)}
+                      onClick={() =>
+                        applySubTopicChoice(idx, extractedData, false)
+                      }
                       className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-extrabold transition ${
                         isSelected
                           ? "border-[#3452d1] bg-[#3452d1] text-white shadow-xs"
@@ -215,18 +250,25 @@ export function UrlArticleExtractorBar({
                   );
                 })}
 
-                <button
-                  type="button"
-                  onClick={() => applySubTopicChoice(-1, extractedData, false)}
-                  className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-extrabold transition ${
-                    activeTopicIdx === -1
-                      ? "border-[#3452d1] bg-[#3452d1] text-white shadow-xs"
-                      : "border-dashed border-slate-300 bg-white text-slate-700 hover:border-[#3452d1] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-                  }`}
-                >
-                  {activeTopicIdx === -1 && <Check size={12} />}
-                  <span>Full Article Overview</span>
-                </button>
+                {!(
+                  extractionPurpose === "infographic" &&
+                  extractedData.sections?.length
+                ) && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      applySubTopicChoice(-1, extractedData, false)
+                    }
+                    className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-extrabold transition ${
+                      activeTopicIdx === -1
+                        ? "border-[#3452d1] bg-[#3452d1] text-white shadow-xs"
+                        : "border-dashed border-slate-300 bg-white text-slate-700 hover:border-[#3452d1] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                    }`}
+                  >
+                    {activeTopicIdx === -1 && <Check size={12} />}
+                    <span>Full Article Overview</span>
+                  </button>
+                )}
               </div>
             </div>
           )}
