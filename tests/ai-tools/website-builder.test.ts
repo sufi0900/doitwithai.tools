@@ -43,7 +43,8 @@ test("website builder exposes 16 curated templates across all 4 categories with 
 
   assert.equal(isEditorialFlagshipTemplate("doitwithai-flagship"), true);
   assert.equal(isBlogFirstTemplate("doitwithai-flagship"), true);
-  assert.equal(isCollectionTemplate("doitwithai-flagship"), true);
+  assert.equal(isCollectionTemplate("doitwithai-flagship"), false);
+  assert.equal(isCollectionTemplate("rose-studio"), true);
   assert.equal(isLightTemplate("olive-journal"), true);
   assert.equal(isLightTemplate("doitwithai-flagship"), false);
 });

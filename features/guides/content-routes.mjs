@@ -1,4 +1,5 @@
 export const contentPrefixes = {
+  makemoney: "ai-learn-earn", aitool: "ai-tools", coding: "ai-code",
   seo: "ai-seo", blogPost: "blogs", guide: "guides",
 };
 
@@ -45,4 +46,13 @@ export function toolSitemapEntries(registry, origin) {
     ...available.map((tool) => `/tools/${tool.slug}`),
   ];
   return paths.map((path) => ({ url: `${origin}${path}` }));
+}
+
+export function contentSitemapEntries(posts, origin) {
+  return posts.flatMap((post) => {
+    const path = articlePath(post);
+    if (!path) return [];
+    const date = post._updatedAt && new Date(post._updatedAt);
+    return [{ url: `${origin}${path}`, ...(date && !Number.isNaN(date.getTime()) ? { lastModified: date } : {}) }];
+  });
 }
