@@ -8,6 +8,7 @@ import {
   type TemplateId,
 } from "./template-contracts";
 import { legacyRichDocument } from "./legacy-rich-document";
+import { PHASE3_TEMPLATE_SEEDS } from "./template-defaults-phase3";
 
 type RawBlock = SiteDocument["publishing"]["posts"][number]["blocks"][number];
 type RawPost = SiteDocument["publishing"]["posts"][number];
@@ -1932,7 +1933,7 @@ export function getTemplateDefaultDocument(templateId: TemplateId): SiteDocument
     };
   }
 
-  const seeded = OTHER_TEMPLATE_SEEDS[templateId];
+  const seeded = OTHER_TEMPLATE_SEEDS[templateId] ?? PHASE3_TEMPLATE_SEEDS[templateId];
   if (seeded) {
     return {
       ...DEFAULT_SITE_DOCUMENT,
@@ -1970,7 +1971,6 @@ export function getTemplateDefaultDocument(templateId: TemplateId): SiteDocument
     };
   }
 
-  // Remaining Collection & 3D Templates get distinct, non-generic creative/technical defaults
   return {
     ...DEFAULT_SITE_DOCUMENT,
     projectId: "demo-portfolio",
