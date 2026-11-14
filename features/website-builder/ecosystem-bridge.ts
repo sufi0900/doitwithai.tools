@@ -116,7 +116,7 @@ export const UNIFIED_WEBSITE_TEMPLATES: readonly UnifiedWebsiteTemplateContract[
       sceneFamily: "professional-2d",
       scenePreset: "minimal",
       motion: "still",
-      intensity: 0.35,
+      intensity: 0.4,
     },
   },
   {
@@ -480,6 +480,7 @@ export interface ConnectedSitePostPayload {
   seoDescription: string;
   excerpt: string;
   tags: string[];
+  pillarClusterSlug?: string;
   status: "draft" | "published";
   publishedAt: string | null;
   blocks: SiteStructuredBlockPayload[];
@@ -690,6 +691,9 @@ export function convertWriterArticleToSitePostPayload(
     seoDescription: (input.seoDescription || input.excerpt).trim().slice(0, 170),
     excerpt: input.excerpt.trim().slice(0, 320),
     tags: combinedTags,
+    ...(input.pillarClusterSlug?.trim()
+      ? { pillarClusterSlug: input.pillarClusterSlug.trim().slice(0, 80) }
+      : {}),
     status,
     publishedAt: status === "published" ? new Date().toISOString() : null,
     blocks,

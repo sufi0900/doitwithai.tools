@@ -151,6 +151,10 @@ export function CreationFlow({ authenticated, suggestedName = "", ownerId = "gue
     const createInLocalStorage = () => {
       const localId = crypto.randomUUID();
       const chosenTemplateId = (templateId || "doitwithai-flagship") as TemplateId;
+      const guidedBody = body as Exclude<typeof body, { mode: "template" }>;
+      const resolvedInterview = guidedBody.interview
+        ? (completeGuidedDirection(guidedBody.interview) ?? undefined)
+        : undefined;
       const doc =
         mode === "template"
           ? {
@@ -159,13 +163,14 @@ export function CreationFlow({ authenticated, suggestedName = "", ownerId = "gue
               updatedAt: new Date().toISOString(),
             }
           : buildGuidedDocument({
-              ...(body as Exclude<typeof body, { mode: "template" }>),
+              ...guidedBody,
+              interview: resolvedInterview,
               templateId: chosenTemplateId,
               projectId: localId,
               style:
-                (body as Exclude<typeof body, { mode: "template" }>).interview?.tone === "structured"
+                resolvedInterview?.tone === "structured"
                   ? "technical"
-                  : (body as Exclude<typeof body, { mode: "template" }>).interview?.tone === "minimal"
+                  : resolvedInterview?.tone === "minimal"
                     ? "minimal"
                     : "creative",
             });

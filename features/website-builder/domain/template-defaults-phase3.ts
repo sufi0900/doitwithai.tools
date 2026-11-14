@@ -543,7 +543,7 @@ export const PHASE3_TEMPLATE_SEEDS: Partial<Record<TemplateId, ArchetypeSeed>> =
     ],
   }),
 
-  "constellation-editorial": buildSpecializedArchetypeSeed({
+  "architectural-grid": buildSpecializedArchetypeSeed({
     prefix: "constellation",
     name: "Astraea Graph · Spatial Knowledge & AI Lab",
     role: "Interactive 3D Constellation Map, Entity SEO & Knowledge Graphs",
@@ -753,7 +753,7 @@ export const PHASE3_TEMPLATE_SEEDS: Partial<Record<TemplateId, ArchetypeSeed>> =
     ],
   }),
 
-  "aurora-archive": buildSpecializedArchetypeSeed({
+  "editorial-depth": buildSpecializedArchetypeSeed({
     prefix: "aurora",
     name: "Aurora Research · Deep-Tech & AI Systems Archive",
     role: "Atmospheric 3D Research Lab, AI Alignment & Systems Papers",
@@ -858,7 +858,7 @@ export const PHASE3_TEMPLATE_SEEDS: Partial<Record<TemplateId, ArchetypeSeed>> =
     ],
   }),
 
-  "orbital-showcase": buildSpecializedArchetypeSeed({
+  "cinematic-orbit": buildSpecializedArchetypeSeed({
     prefix: "orbital",
     name: "Orbital Labs · Spatial Product & Hardware Studio",
     role: "3D Orbital Product Showcase, Industrial Design & Embedded AI",
@@ -963,7 +963,7 @@ export const PHASE3_TEMPLATE_SEEDS: Partial<Record<TemplateId, ArchetypeSeed>> =
     ],
   }),
 
-  "velocity-roadster": buildSpecializedArchetypeSeed({
+  "velocity-atelier": buildSpecializedArchetypeSeed({
     prefix: "velocity",
     name: "Velocity 3D · Realtime WebGL & Performance Studio",
     role: "High-Speed 3D Roadster Stage, Shader Engineering & Web Performance",
