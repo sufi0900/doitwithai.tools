@@ -47,8 +47,8 @@ export function PortfolioSections(props: { document: SiteDocument; editing?: boo
     : <><PortfolioSectionBody {...props} /><HomepageJournal document={props.document} publicBasePath={props.publicBasePath} onOpenPost={props.onOpenPost} /></>;
 }
 
-function PortfolioSectionBody({ document, editing = false, publicBasePath, onOpenPage }: { document: SiteDocument; editing?: boolean; publicBasePath?: string; onOpenPage?: (pageId: string) => void }) {
-  if (isCollectionTemplate(document.design.template)) return <CollectionSections document={document} editing={editing} publicBasePath={publicBasePath} onOpenPage={onOpenPage} />;
+function PortfolioSectionBody({ document, editing = false, publicBasePath, onOpenPage, onOpenPost }: { document: SiteDocument; editing?: boolean; publicBasePath?: string; onOpenPage?: (pageId: string) => void; onOpenPost?: (id: string) => void }) {
+  if (isCollectionTemplate(document.design.template)) return <CollectionSections document={document} editing={editing} publicBasePath={publicBasePath} onOpenPage={onOpenPage} onOpenPost={onOpenPost} />;
   if (document.design.template === "professional-2d") return <ProfessionalPortfolioSections document={document} editing={editing} publicBasePath={publicBasePath} onOpenPage={onOpenPage} />;
   const cinematic = isCinematicTemplate(document.design.template);
   return <CinemaRoot enabled={cinematic} template={document.design.template} motion={document.scene.motion} intensity={document.scene.intensity}>

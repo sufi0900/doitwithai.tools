@@ -130,7 +130,7 @@ test("applyUpsertFromWriterStudioCommand syncs and updates an article idempotent
   assert.equal(snapshot.publishing.posts[0].status, "published");
 });
 
-test("Single-Tool (micro-saas-launchpad) and Multi-Tool (doitwithai-flagship) templates ship tailored default tools, pages, and 5 SEO blog posts", () => {
+test("Single-Tool, Multi-Tool, Blogging, Newsletter, Magazine, Creator, Advisory & Agency templates ship unique 5-post SEO packs", () => {
   for (const tpl of PORTFOLIO_TEMPLATES) {
     const validated = validateSiteDocument(tpl.document);
     assert.equal(validated.design.template, tpl.id);
@@ -151,6 +151,31 @@ test("Single-Tool (micro-saas-launchpad) and Multi-Tool (doitwithai-flagship) te
   assert.equal(multiTool.document.content.projects.length, 5);
   assert.equal(multiTool.document.publishing.posts.length, 5);
   assert.equal(multiTool.document.publishing.pages.length, 3);
+
+  const deepTemplates = [
+    "micro-saas-launchpad",
+    "doitwithai-flagship",
+    "authority-niche-blog",
+    "creator-newsletter-hub",
+    "olive-journal",
+    "founder-authority-brand",
+    "consultant-lead-engine",
+    "startup-service-agency",
+  ] as const;
+
+  const seenLeadSlugs = new Set<string>();
+  for (const id of deepTemplates) {
+    const tpl = getTemplate(id)!;
+    assert.equal(tpl.document.publishing.posts.length, 5, `Expected 5 posts in ${id}`);
+    assert.ok(tpl.document.publishing.pages.length >= 2, `Expected >= 2 pages in ${id}`);
+    const leadSlug = tpl.document.publishing.posts[0].slug;
+    assert.equal(
+      seenLeadSlugs.has(leadSlug),
+      false,
+      `Template ${id} should have a unique lead blog post slug (${leadSlug})`,
+    );
+    seenLeadSlugs.add(leadSlug);
+  }
 });
 
 test("project.installCatalogTool installs a tool from the catalog with zero AI tokens and optional companion SEO blog post", () => {

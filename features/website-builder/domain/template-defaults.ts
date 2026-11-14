@@ -685,8 +685,983 @@ const MULTI_TOOL_POSTS: RawPost[] = [
 ];
 
 // ============================================================================
-// 3. ARCHETYPE-SPECIFIC DEFAULTS FOR THE REMAINING 14 TEMPLATES
+// 3. PHASE 2 DEEP CONTENT PACK: BLOGGING, NEWSLETTER & MAGAZINE TEMPLATES
+// (`authority-niche-blog`, `creator-newsletter-hub`, `olive-journal`)
 // ============================================================================
+const AUTHORITY_BLOG_PROJECTS: RawProject[] = [
+  {
+    id: "review-bench-1-ai-seo-suite",
+    title: "2026 AI SEO & Content Suite Benchmark (14 Tools Tested)",
+    summary:
+      "60-day controlled benchmark testing 14 AI SEO and content optimization platforms across entity recall, SERP correlation, readability, and cost per published article.",
+    technologies: ["9.8/10 Winner", "60-Day Study", "14 Tools Tested", "E-E-A-T Verified"],
+    link: "https://doitwithai.tools/tools/on-page-ai-seo-analyzer",
+    caseStudySlug: "ai-seo-software-benchmark-2026",
+    role: "Editor's Choice Benchmark · 9.8 / 10 Rating",
+    period: "Q4 2026 Lab Report",
+    challenge:
+      "Most software roundups repeat vendor marketing copy without running controlled indexing or readability tests.",
+    approach:
+      "Published 42 test articles across identical domain tiers and measured 30-day impressions, passage citations, and editorial revision time.",
+    outcome:
+      "Identified the top 3 workflow stacks that cut drafting time by 58% while maintaining Grade 8 clarity.",
+    mediaIds: [],
+  },
+  {
+    id: "review-bench-2-schema-crawlers",
+    title: "Technical SEO Crawler & Schema Validator Shootout",
+    summary:
+      "Side-by-side comparison of 8 technical SEO auditing and JSON-LD schema generators evaluated on @graph accuracy, speed, and zero-signup usability.",
+    technologies: ["9.5/10 Score", "JSON-LD @graph", "Core Web Vitals", "Free Utility"],
+    link: "https://doitwithai.tools/tools/schema-markup-generator",
+    caseStudySlug: "technical-seo-crawler-shootout",
+    role: "Technical Lab Winner · 9.5 / 10 Rating",
+    period: "2026 Technical Review",
+    challenge:
+      "Legacy schema plugins output disconnected microdata that fails Google Rich Result validation.",
+    approach:
+      "Benchmarked each generator against 12 complex page types including SaaS pricing, multi-author blogs, and FAQ hubs.",
+    outcome:
+      "Crowned connected @graph generators as the gold standard for AI Overview and Perplexity citation eligibility.",
+    mediaIds: [],
+  },
+  {
+    id: "review-bench-3-serp-ctr-lab",
+    title: "SERP Snippet & Pixel Width CTR Lab Study",
+    summary:
+      "Empirical analysis of 1,200 title tags and meta descriptions measuring Google rewrite rates before and after 580px pixel calibration.",
+    technologies: ["9.7/10 Score", "1,200 URLs Audited", "600px Rule", "+38% CTR Lift"],
+    link: "https://doitwithai.tools/tools/meta-title-generator",
+    caseStudySlug: "serp-ctr-optimization-study",
+    role: "Best Free CTR Tool · 9.7 / 10 Rating",
+    period: "2026 SERP Study",
+    challenge:
+      "Over 61% of audited title tags were being rewritten by Google due to pixel overflow or brand-prefix boilerplate.",
+    approach:
+      "Re-engineered snippets using front-loaded primary entities and strict 575px desktop ceilings.",
+    outcome:
+      "Reduced unwanted Google title rewrites from 61% to 14% and lifted average organic CTR by 38%.",
+    mediaIds: [],
+  },
+];
+
+const AUTHORITY_BLOG_PAGES: RawPage[] = [
+  makePage({
+    id: "auth-blog-page-about",
+    title: "How We Test & Benchmark Software at SearchCraft Review Lab",
+    slug: "about",
+    navigationLabel: "How We Test",
+    seoTitle: "How We Test Software — Independent E-E-A-T Review Methodology",
+    seoDescription:
+      "Read SearchCraft Review Lab's reproducible testing methodology, 5-factor scoring rubric, and strict editorial independence standards.",
+    blocks: makeBlocks(
+      [
+        { h2: "100% Independent, Hands-On Software Benchmarking" },
+        {
+          p: "SearchCraft Review Lab is a classic 2-column authority review publication modeled on Wirecutter and RTINGS. We never accept paid placements or vendor-written guest reviews.",
+        },
+        { h2: "Our 5-Factor Scoring Rubric" },
+        {
+          list: [
+            "Output Accuracy & Hallucination Resistance (30% weight).",
+            "Time-to-Value & Workflow Speed (25% weight).",
+            "Technical SEO & Schema Compliance (20% weight).",
+            "Pricing Transparency & Free-Tier Utility (15% weight).",
+            "Documentation, Export Formats & Ecosystem Integration (10% weight).",
+          ],
+        },
+      ],
+      "auth-blog-about",
+    ),
+  }),
+  makePage({
+    id: "auth-blog-page-policy",
+    title: "Editorial Ethics, Affiliate Disclosure & Fact-Checking Policy",
+    slug: "editorial-policy",
+    navigationLabel: "Review Policy",
+    seoTitle: "Editorial Ethics & Affiliate Disclosure | SearchCraft Review Lab",
+    seoDescription:
+      "Our transparent affiliate disclosure, quarterly re-testing schedule, and primary-source fact-checking protocol.",
+    blocks: makeBlocks(
+      [
+        { h2: "Why Readers & Search Engines Trust Our Verdicts" },
+        {
+          p: "Every comparison matrix and buyer guide includes a 'Last Benchmarked' date, raw test prompts, and direct links to the live tools we evaluated.",
+        },
+      ],
+      "auth-blog-policy",
+    ),
+  }),
+  makePage({
+    id: "auth-blog-page-submit",
+    title: "Submit a SaaS Tool or AI Utility for Lab Evaluation",
+    slug: "submit-product",
+    navigationLabel: "Submit Product",
+    seoTitle: "Submit a Tool for Independent Lab Review | SearchCraft Lab",
+    seoDescription:
+      "Request an independent hands-on benchmark of your AI, SEO, or developer tool by our editorial engineering team.",
+    blocks: makeBlocks(
+      [
+        { h2: "How to Request an Independent Benchmark" },
+        {
+          p: "Send our editorial desk your live product URL, public documentation, and changelog. Submitting a product does not guarantee coverage or a positive score.",
+        },
+      ],
+      "auth-blog-submit",
+    ),
+  }),
+];
+
+const AUTHORITY_BLOG_POSTS: RawPost[] = [
+  makePost({
+    id: "auth-blog-post-1",
+    title: "11 Best AI SEO & Content Optimization Tools Tested (2026 Hands-On Scoring Matrix)",
+    slug: "best-ai-seo-tools-tested-2026",
+    seoTitle: "11 Best AI SEO Tools Tested (2026 Hands-On Comparison Matrix)",
+    seoDescription:
+      "We tested 14 AI SEO and content optimization tools across 42 live articles. See our ranked comparison table, pros/cons verdict, and top picks.",
+    excerpt:
+      "After 60 days of controlled testing across 42 live articles, here is our definitive ranking of the 11 best AI SEO tools for topic clustering, on-page audits, and schema.",
+    tags: ["Buyer Guide", "Tool Reviews", "Comparison Matrix", "AI SEO"],
+    pillarClusterSlug: "ai-seo-software-benchmark-2026",
+    blocks: makeBlocks(
+      [
+        { h2: "Executive Summary: Top Picks at a Glance" },
+        {
+          list: [
+            "Best Overall Free Suite (9.8/10): DoItWithAI Tools & Content Writer Studio — unmatched 1-click bridge between keyword clustering, drafting, and live site publishing.",
+            "Best Standalone On-Page Auditor (9.6/10): On-Page AI SEO Analyzer & Repair Agent — 28-point DOM + entity diagnostic with copy-ready fixes.",
+            "Best Schema Architect (9.5/10): JSON-LD @graph Generator — builds connected Organization, Person, Article, and FAQPage graphs in seconds.",
+          ],
+        },
+        { h2: "Why Most AI Content Tools Fail in 2026" },
+        {
+          p: "Tools that generate generic 2,000-word essays without checking pixel-width meta tags, internal link anchors, or Grade 8 readability fail to hold Page 1 rankings. Test your pages with the [On-Page AI SEO Analyzer](https://doitwithai.tools/tools/on-page-ai-seo-analyzer).",
+        },
+      ],
+      "auth-post-1",
+    ),
+  }),
+  makePost({
+    id: "auth-blog-post-2",
+    title: "AI Content Writer vs. Legacy SEO Editors: 60-Day Organic Traffic & Indexing Study",
+    slug: "ai-content-writer-vs-legacy-seo-editors",
+    seoTitle: "AI Content Writer vs Legacy SEO Editors (60-Day Indexing Study)",
+    seoDescription:
+      "Side-by-side 60-day experiment comparing multi-agent AI content workflows against traditional TF-IDF keyword-stuffing editors.",
+    excerpt:
+      "Does TF-IDF keyword density still work, or do entity-first multi-agent workflows win? We measured indexing speed, Featured Snippets, and AI citations over 60 days.",
+    tags: ["Case Study", "Benchmarks", "Content Writing", "AEO"],
+    pillarClusterSlug: "ai-seo-software-benchmark-2026",
+    blocks: makeBlocks(
+      [
+        { h2: "Key Findings From Our 60-Day Split Test" },
+        {
+          list: [
+            "Articles structured with 45-word direct answer leads won 3.4x more Position Zero snippets than keyword-stuffed intros.",
+            "Pages with connected JSON-LD @graph markup were indexed 48% faster across newly launched domains.",
+            "Keeping sentence length under 25 words reduced mobile bounce rate by 22%.",
+          ],
+        },
+        { h2: "Reproduce This Workflow on Your Site" },
+        {
+          p: "Combine our [Readability Checker](https://doitwithai.tools/tools/readability-checker) with the [AI Citation Readiness Checker](https://doitwithai.tools/tools/ai-citation-readiness-checker) before publishing.",
+        },
+      ],
+      "auth-post-2",
+    ),
+  }),
+  makePost({
+    id: "auth-blog-post-3",
+    title: "How We Test Software: Our 5-Factor E-E-A-T & Reproducibility Rubric Explained",
+    slug: "how-we-test-software-eeat-rubric",
+    seoTitle: "How We Test Software: 5-Factor E-E-A-T Review Rubric Explained",
+    seoDescription:
+      "Inside SearchCraft Review Lab's testing protocol: how we score accuracy, speed, schema validity, and real-world ROI.",
+    excerpt:
+      "Google's Product Reviews system rewards publications that show measurable test data, original screenshots, and clear pros/cons tradeoffs. Here is our exact rubric.",
+    tags: ["Methodology", "E-E-A-T", "Product Reviews", "Editorial Standards"],
+    pillarClusterSlug: "ai-seo-software-benchmark-2026",
+    blocks: makeBlocks(
+      [
+        { h2: "What Google's Product Reviews System Looks For" },
+        {
+          p: "High-ranking review publications demonstrate first-hand testing through quantitative measurements, repeatable benchmarks, and honest discussion of where a product falls short.",
+        },
+        { h2: "Audit Your Own Review Articles" },
+        {
+          p: "Run your buyer guides through the [E-E-A-T Content Auditor](https://doitwithai.tools/tools/eeat-content-auditor) to verify first-hand proof signals.",
+        },
+      ],
+      "auth-post-3",
+    ),
+  }),
+  makePost({
+    id: "auth-blog-post-4",
+    title: "Best Free Technical SEO Utilities for Schema, Meta Tags & Internal Linking (2026)",
+    slug: "best-free-technical-seo-utilities-2026",
+    seoTitle: "7 Best Free Technical SEO Tools for Schema, Meta Tags & Links",
+    seoDescription:
+      "Our curated roundup of zero-cost browser utilities for validating 600px meta titles, JSON-LD @graph markup, and hub-and-spoke internal links.",
+    excerpt:
+      "You do not need a $299/month enterprise subscription to fix your site's highest-impact technical SEO bottlenecks. Here are the 7 best free utilities we use daily.",
+    tags: ["Free Tools", "Technical SEO", "Schema Markup", "Internal Links"],
+    pillarClusterSlug: "technical-seo-crawler-shootout",
+    blocks: makeBlocks(
+      [
+        { h2: "The 3 Free Technical Utilities Every Site Owner Should Bookmark" },
+        {
+          list: [
+            "AI Meta Title & Description Generator (/tools/meta-title-generator) for 600px/920px SERP snippet validation.",
+            "JSON-LD Schema Markup Generator (/tools/schema-markup-generator) for connected entity graphs.",
+            "Internal Link Opportunity Finder (/tools/internal-link-opportunity-finder) for hub-and-spoke anchor text mapping.",
+          ],
+        },
+      ],
+      "auth-post-4",
+    ),
+  }),
+  makePost({
+    id: "auth-blog-post-5",
+    title: "Why 2-Column Editorial Blogs With Sticky ToCs Outconvert Cluttered Magazine Grids",
+    slug: "why-2-column-editorial-blogs-convert",
+    seoTitle: "Why 2-Column Blogs With Sticky ToCs Outconvert Magazine Grids",
+    seoDescription:
+      "UX and conversion analysis of classic 2/3 article + 1/3 sticky sidebar layouts for authority blogs, affiliate reviews, and technical guides.",
+    excerpt:
+      "A 68ch reading column paired with a sticky Table of Contents, Editor's Choice callout, and category filter keeps readers engaged 40% longer.",
+    tags: ["Blog Design", "Conversion UX", "Classic Blogger", "CRO"],
+    pillarClusterSlug: "serp-ctr-optimization-study",
+    blocks: makeBlocks(
+      [
+        { h2: "The Anatomy of a High-Converting Authority Blog Layout" },
+        {
+          p: "When readers land from Google on a 2,000-word review, they want two things immediately: an Executive Summary / Key Takeaways box at the top, and a sticky Table of Contents on the right to jump straight to the comparison matrix.",
+        },
+      ],
+      "auth-post-5",
+    ),
+  }),
+];
+
+const NEWSLETTER_PROJECTS: RawProject[] = [
+  {
+    id: "newsletter-proj-1-vault",
+    title: "The 2026 AI Operator Playbook Vault (52 Weekly Issues)",
+    summary:
+      "Complete searchable archive of 52 tactical teardowns covering programmatic SEO tools, Substack-style newsletter growth, and solo micro-SaaS economics.",
+    technologies: ["52 Issues", "18.4k Subscribers", "48% Open Rate", "Operator Teardowns"],
+    link: "https://doitwithai.tools/tools/keyword-clustering-tool",
+    caseStudySlug: "ai-operator-playbook-vault",
+    role: "Flagship Subscriber Archive",
+    period: "Updated Every Tuesday",
+    challenge:
+      "Founders drown in generic AI news summaries that offer zero implementation blueprints.",
+    approach:
+      "Every Tuesday issue delivers one tested growth system, complete with prompts, schema snippets, and revenue math.",
+    outcome:
+      "Grew organically to 18,400+ founders and marketing operators with a 48.2% verified open rate.",
+    mediaIds: [],
+  },
+  {
+    id: "newsletter-proj-2-sponsor",
+    title: "Newsletter Sponsorship & Partner Engine",
+    summary:
+      "High-intent native sponsorship placements reaching 18,400+ SaaS founders, SEO leads, and technical creators every Tuesday morning.",
+    technologies: ["4.6% Sponsor CTR", "B2B Decision Makers", "Native Deep-Dives", "Verified Metrics"],
+    link: "https://doitwithai.tools",
+    caseStudySlug: "newsletter-sponsorship-kit",
+    role: "Primary Monetization Channel",
+    period: "Q4 2026 Booking Open",
+    challenge:
+      "Banner ads suffer from ad-blockers and banner blindness; B2B sponsors need trusted editorial context.",
+    approach:
+      "Limits each weekly issue to one primary sponsor slot written in the editor's authentic voice with a tested workflow example.",
+    outcome:
+      "Delivers an average 4.6% click-through rate for developer, SEO, and AI SaaS sponsors.",
+    mediaIds: [],
+  },
+];
+
+const NEWSLETTER_PAGES: RawPage[] = [
+  makePage({
+    id: "newsletter-page-about",
+    title: "About The AI Growth Dispatch & Reader Manifesto",
+    slug: "about",
+    navigationLabel: "About the Dispatch",
+    seoTitle: "About The AI Growth Dispatch — Weekly Operator Newsletter",
+    seoDescription:
+      "Learn why 18,400+ founders, marketers, and indie hackers read The AI Growth Dispatch every Tuesday morning.",
+    blocks: makeBlocks(
+      [
+        { h2: "One Actionable AI & SEO Growth System Every Tuesday" },
+        {
+          p: "The AI Growth Dispatch is a reader-first publication built for practitioners. Every issue breaks down one real-world experiment in AI search, programmatic tools, or digital publishing.",
+        },
+      ],
+      "newsletter-about",
+    ),
+  }),
+  makePage({
+    id: "newsletter-page-sponsor",
+    title: "Sponsor an Upcoming Issue — 2026 Media Kit & Audience Stats",
+    slug: "sponsor",
+    navigationLabel: "Sponsor an Issue",
+    seoTitle: "Sponsor The AI Growth Dispatch — 2026 Newsletter Media Kit",
+    seoDescription:
+      "Reach 18,400+ SaaS founders, growth leads, and AI builders. View open rates, click benchmarks, and upcoming sponsor dates.",
+    blocks: makeBlocks(
+      [
+        { h2: "Audience Demographics & Performance Benchmarks" },
+        {
+          list: [
+            "Total Active Subscribers: 18,400+ verified double-opt-in readers.",
+            "Average Open Rate: 48.2% across the last 12 weekly dispatches.",
+            "Primary Sponsor Slot CTR: 4.1% to 5.3% average click-through rate.",
+          ],
+        },
+      ],
+      "newsletter-sponsor",
+    ),
+  }),
+  makePage({
+    id: "newsletter-page-vault",
+    title: "Insider Member Vault — Downloadable Prompt Packs & SOPs",
+    slug: "member-vault",
+    navigationLabel: "Member Vault",
+    seoTitle: "Insider Member Vault — AI Prompts, Templates & SOPs",
+    seoDescription:
+      "Full-Access Insider members unlock all 52 teardown playbooks, Notion templates, and JSON-LD schema blueprints.",
+    blocks: makeBlocks(
+      [
+        { h2: "What's Inside the Insider Vault" },
+        {
+          p: "Upgrade to Full-Access Insider ($12/mo) to download our complete Hub-and-Spoke Keyword Matrices, Meta Tag Formulas, and custom tool blueprints.",
+        },
+      ],
+      "newsletter-vault",
+    ),
+  }),
+];
+
+const NEWSLETTER_POSTS: RawPost[] = [
+  makePost({
+    id: "newsletter-post-1",
+    title: "Issue #48: How Solo Builders Are Using Free Browser Tools to Beat $500/mo SaaS Suites",
+    slug: "issue-48-free-browser-tools-vs-saas",
+    seoTitle: "Issue #48: How Free Browser Tools Beat $500/mo SaaS Suites",
+    seoDescription:
+      "Why single-purpose AI SEO utilities and zero-token catalog tools are replacing bloated enterprise marketing subscriptions in 2026.",
+    excerpt:
+      "In this week's dispatch, we unpack why focused, zero-signup browser utilities capture 10x more organic backlinks and user trust than gated SaaS dashboards.",
+    tags: ["Issue #48", "Micro-SaaS", "Growth Playbook", "Free Tools"],
+    pillarClusterSlug: "ai-operator-playbook-vault",
+    blocks: makeBlocks(
+      [
+        { h2: "The Unbundling of Bloated SEO Suites" },
+        {
+          p: "Users searching for a specific job-to-be-done—like checking a 600px meta title or generating a JSON-LD @graph—prefer an instant, un-gated browser tool over a $500/month dashboard.",
+        },
+        { h2: "How to Launch Your Own Tool Directory in Minutes" },
+        {
+          p: "Use the '+ Add Tool from DoItWithAI Catalog' button in Website Studio to install any of 126+ ready-made utilities such as the [AI Meta Title Generator](https://doitwithai.tools/tools/meta-title-generator) onto your site with zero token cost.",
+        },
+      ],
+      "news-post-1",
+    ),
+  }),
+  makePost({
+    id: "newsletter-post-2",
+    title: "Issue #47: The 1-Pillar + 5-Spoke Content Loop That Scaled to 42,000 Monthly Clicks",
+    slug: "issue-47-one-pillar-five-spoke-content-loop",
+    seoTitle: "Issue #47: The 1-Pillar + 5-Spoke Loop (42k Monthly Clicks)",
+    seoDescription:
+      "Step-by-step breakdown of the exact hub-and-spoke publishing cadence that compounds organic search and newsletter subscribers simultaneously.",
+    excerpt:
+      "Stop publishing random essays. Here is how pairing 1 interactive tool with 5 tightly interlinked spoke articles creates an unstoppable topical moat.",
+    tags: ["Issue #47", "Topic Clusters", "SEO Loop", "Case Study"],
+    pillarClusterSlug: "ai-operator-playbook-vault",
+    blocks: makeBlocks(
+      [
+        { h2: "Why 5 Focused Spoke Posts Beat 50 Unconnected Articles" },
+        {
+          p: "When every spoke article answers a distinct sub-query and links back to your flagship tool page, Google assigns topical authority across the entire cluster within weeks. Map yours with the [Keyword Clustering Tool](https://doitwithai.tools/tools/keyword-clustering-tool).",
+        },
+      ],
+      "news-post-2",
+    ),
+  }),
+  makePost({
+    id: "newsletter-post-3",
+    title: "Issue #46: Why Owned Email Newsletters + SEO Tool Hubs Are the Ultimate 2026 Moat",
+    slug: "issue-46-email-newsletters-plus-seo-tools-moat",
+    seoTitle: "Issue #46: Email Newsletters + SEO Tool Hubs = 2026 Moat",
+    seoDescription:
+      "How to combine evergreen search traffic from free AI tools with high-retention weekly email dispatches.",
+    excerpt:
+      "Search brings high-intent strangers to your free tools; your weekly newsletter turns those visitors into lifelong customers and sponsors.",
+    tags: ["Issue #46", "Newsletter Strategy", "Audience Moat", "Monetization"],
+    pillarClusterSlug: "newsletter-sponsorship-kit",
+    blocks: makeBlocks(
+      [
+        { h2: "The Flywheel: Search Discovery -> Tool Usage -> Email Capture" },
+        {
+          p: "Place a frictionless newsletter signup box directly below your interactive tool output so visitors can receive weekly playbooks and templates.",
+        },
+      ],
+      "news-post-3",
+    ),
+  }),
+  makePost({
+    id: "newsletter-post-4",
+    title: "Issue #45: Anatomy of a 48% Open-Rate Welcome Sequence for Technical Creators",
+    slug: "issue-45-high-open-rate-creator-welcome-sequence",
+    seoTitle: "Issue #45: 48% Open-Rate Welcome Sequence for Creators",
+    seoDescription:
+      "Copy our 3-email onboarding sequence that delivers immediate tool value, segments reader goals, and drives replies.",
+    excerpt:
+      "Your first email determines whether a subscriber opens your next 20 issues. Here is the exact plain-text welcome email template we use.",
+    tags: ["Issue #45", "Email Copywriting", "Retention", "Templates"],
+    pillarClusterSlug: "newsletter-sponsorship-kit",
+    blocks: makeBlocks(
+      [
+        { h2: "Deliver the Best Asset in Email #1 Within 60 Seconds" },
+        {
+          p: "Never make new subscribers wait until next Tuesday. Send your top 3 evergreen essays and a link to your flagship free tool immediately upon signup.",
+        },
+      ],
+      "news-post-4",
+    ),
+  }),
+  makePost({
+    id: "newsletter-post-5",
+    title: "Issue #44: Zero-Fluff E-E-A-T: How to Write Operator Essays That AI Engines Cite",
+    slug: "issue-44-operator-essays-ai-engines-cite",
+    seoTitle: "Issue #44: How to Write Operator Essays That AI Engines Cite",
+    seoDescription:
+      "Formatting rules for newsletter writers who want their public archive issues cited in Google AI Overviews, ChatGPT, and Perplexity.",
+    excerpt:
+      "Your newsletter archive is an SEO goldmine—if you format each issue with clear H2 question headers, 50-word answer leads, and original metrics.",
+    tags: ["Issue #44", "AEO Citations", "Editorial Craft", "E-E-A-T"],
+    pillarClusterSlug: "ai-operator-playbook-vault",
+    blocks: makeBlocks(
+      [
+        { h2: "Structure Every Public Newsletter Issue for Dual Discovery" },
+        {
+          p: "Write a compelling narrative hook for inbox readers, and pair it with scannable H2 subheadings and verified data points verified via the [Readability Checker](https://doitwithai.tools/tools/readability-checker).",
+        },
+      ],
+      "news-post-5",
+    ),
+  }),
+];
+
+const OLIVE_JOURNAL_PROJECTS: RawProject[] = [
+  {
+    id: "olive-mono-1",
+    title: "Monograph I: Calm Software & Human-Centered AI Interfaces",
+    summary:
+      "An illustrated design and engineering monograph exploring tactile typography, distraction-free writing studios, and deterministic AI assistance.",
+    technologies: ["Editorial Design", "Calm Technology", "Typography", "Field Study"],
+    link: "https://doitwithai.tools/ai-content-writer",
+    caseStudySlug: "calm-software-human-centered-ai",
+    role: "Issue 01 · Design Monograph",
+    period: "Autumn / Winter 2026",
+    challenge:
+      "Modern creative tools overwhelm writers with blinking chat sidebars and noisy notifications.",
+    approach:
+      "Designed a quiet, warm-paper editorial environment where AI research happens before drafting and stays out of the writer's way.",
+    outcome:
+      "Adopted by independent essayists, researchers, and boutique publications seeking long-form focus.",
+    mediaIds: [],
+  },
+  {
+    id: "olive-mono-2",
+    title: "Monograph II: Typography, Reading Rhythm & Digital Print Craft",
+    summary:
+      "Empirical field notes on 65ch measure, serif contrast, and vertical rhythm across mobile and desktop editorial publications.",
+    technologies: ["65ch Measure", "Serif Hierarchy", "Print Craft", "Reading UX"],
+    link: "https://doitwithai.tools/tools/readability-checker",
+    caseStudySlug: "typography-reading-rhythm-digital-print",
+    role: "Issue 02 · Typography Study",
+    period: "2026 Edition",
+    challenge:
+      "Wide, uncalibrated text columns fatigue the eye and cause readers to abandon long-form essays.",
+    approach:
+      "Paired high-contrast editorial serifs with generous olive-paper margins and structured pull-quotes.",
+    outcome:
+      "Increased average long-form essay completion rates from 34% to 61%.",
+    mediaIds: [],
+  },
+];
+
+const OLIVE_JOURNAL_PAGES: RawPage[] = [
+  makePage({
+    id: "olive-page-about",
+    title: "Colophon, Masthead & Editorial Ethos — The Olive Journal",
+    slug: "about",
+    navigationLabel: "Colophon & Ethos",
+    seoTitle: "Colophon & Editorial Ethos | The Olive Journal",
+    seoDescription:
+      "Explore the masthead, typographic system, and slow-publishing philosophy behind The Olive Journal.",
+    blocks: makeBlocks(
+      [
+        { h2: "A Quiet Space for Long-Form Essays, Field Notes & Monographs" },
+        {
+          p: "The Olive Journal is crafted for essayists, cultural critics, researchers, and literary technologists who value enduring ideas over ephemeral feeds.",
+        },
+      ],
+      "olive-about",
+    ),
+  }),
+  makePage({
+    id: "olive-page-submissions",
+    title: "Contributor Guidelines & Essay Pitch Submissions",
+    slug: "submissions",
+    navigationLabel: "Submissions",
+    seoTitle: "Essay Submissions & Pitch Guidelines | The Olive Journal",
+    seoDescription:
+      "How to pitch long-form essays, architectural field notes, and book reviews to The Olive Journal editorial desk.",
+    blocks: makeBlocks(
+      [
+        { h2: "What We Look For in Every Commissioned Essay" },
+        {
+          p: "We publish 1,800 to 3,500-word essays grounded in lived practice, primary archival research, and clear prose.",
+        },
+      ],
+      "olive-submissions",
+    ),
+  }),
+];
+
+const OLIVE_JOURNAL_POSTS: RawPost[] = [
+  makePost({
+    id: "olive-post-1",
+    title: "On Slow Publishing: Why Deeply Researched Essays Outlast Algorithmic Feeds",
+    slug: "on-slow-publishing-deep-essays",
+    seoTitle: "On Slow Publishing: Why Deep Essays Outlast Algorithmic Feeds",
+    seoDescription:
+      "An essay on the enduring compounding value of primary-source research, calm typography, and owned web publications.",
+    excerpt:
+      "Social feeds decay in four hours; a well-researched essay on an owned domain compounds readers, citations, and trust for a decade.",
+    tags: ["Slow Publishing", "Essays", "Digital Culture", "Evergreen"],
+    pillarClusterSlug: "calm-software-human-centered-ai",
+    blocks: makeBlocks(
+      [
+        { h2: "The Half-Life of Attention on the Modern Web" },
+        {
+          p: "When you publish on rented timelines, your best thinking vanishes by tomorrow morning. When you publish in a structured journal with clean URLs and semantic headings, every essay becomes a permanent room in your intellectual home.",
+        },
+      ],
+      "olive-post-1",
+    ),
+  }),
+  makePost({
+    id: "olive-post-2",
+    title: "The Editorial Grid: Designing Digital Magazines That Respect Human Attention",
+    slug: "the-editorial-grid-digital-magazines",
+    seoTitle: "The Editorial Grid: Designing Digital Magazines for Attention",
+    seoDescription:
+      "How classical print proportion, warm paper backgrounds, and restrained accent colors transform online reading.",
+    excerpt:
+      "Borrowing proportion and restraint from 20th-century print monographs to create web pages people actually want to finish reading.",
+    tags: ["Typography", "Editorial Grid", "Design Systems", "Print Craft"],
+    pillarClusterSlug: "typography-reading-rhythm-digital-print",
+    blocks: makeBlocks(
+      [
+        { h2: "Why Warm Paper Tones Reduce Eye Strain" },
+        {
+          p: "Pure `#ffffff` glare fatigues readers during 12-minute essays. Warm stone and olive-tinted surfaces pair effortlessly with deep ink typography.",
+        },
+      ],
+      "olive-post-2",
+    ),
+  }),
+  makePost({
+    id: "olive-post-3",
+    title: "Field Notes on Human + AI Collaboration: Keeping the Author's Voice Intact",
+    slug: "field-notes-human-ai-voice",
+    seoTitle: "Field Notes on Human + AI Writing: Keeping Voice Intact",
+    seoDescription:
+      "How essayists and researchers use AI for synthesis and structural auditing without surrendering sentence-level style.",
+    excerpt:
+      "Let machines handle query fan-out, citation verification, and schema graphs—while keeping lived metaphor, cadence, and judgment strictly human.",
+    tags: ["Field Notes", "Author Voice", "Editorial Workflow", "AI Ethics"],
+    pillarClusterSlug: "calm-software-human-centered-ai",
+    blocks: makeBlocks(
+      [
+        { h2: "Separating Research Synthesis From Sentence Craft" },
+        {
+          p: "Use tools like the [Readability Checker](https://doitwithai.tools/tools/readability-checker) to spot clunky clauses while preserving your personal voice.",
+        },
+      ],
+      "olive-post-3",
+    ),
+  }),
+  makePost({
+    id: "olive-post-4",
+    title: "Why Serif Typography and Generous Margins Increase Long-Form Completion Rates",
+    slug: "serif-typography-long-form-completion",
+    seoTitle: "Why Serif Typography & Margins Boost Article Completion",
+    seoDescription:
+      "Practical typographic rules for line length (60–70ch), line height (1.75), and heading cadence in digital journals.",
+    excerpt:
+      "A 65-character measure with 1.75 line spacing lets the human eye track smoothly from line to line without losing its place.",
+    tags: ["Reading UX", "Serif Type", "Long-Form", "Design"],
+    pillarClusterSlug: "typography-reading-rhythm-digital-print",
+    blocks: makeBlocks(
+      [
+        { h2: "Three Typographic Rules for Essay Publications" },
+        {
+          list: [
+            "Keep body measure between 60ch and 70ch on desktop viewports.",
+            "Insert a clear H2 or pull-quote every 250–350 words to create visual resting points.",
+            "Pair high-contrast editorial serifs for headlines with clean, legible body copy.",
+          ],
+        },
+      ],
+      "olive-post-4",
+    ),
+  }),
+  makePost({
+    id: "olive-post-5",
+    title: "Building an Independent Digital Publication: Archive Architecture & Evergreen Discovery",
+    slug: "independent-digital-publication-archive",
+    seoTitle: "Building an Independent Digital Publication & Evergreen Archive",
+    seoDescription:
+      "How to organize essays into thematic monographs, topic tags, and connected schema so readers explore your entire archive.",
+    excerpt:
+      "A great journal is not a chronological dump—it is a curated library where every essay leads naturally to the next.",
+    tags: ["Independent Media", "Archive Design", "Topic Clusters", "Publishing"],
+    pillarClusterSlug: "calm-software-human-centered-ai",
+    blocks: makeBlocks(
+      [
+        { h2: "Curating Thematic Series Instead of Chronological Feeds" },
+        {
+          p: "Group your best essays into named monographs and interlink them with our [Internal Link Opportunity Finder](https://doitwithai.tools/tools/internal-link-opportunity-finder).",
+        },
+      ],
+      "olive-post-5",
+    ),
+  }),
+];
+
+// ============================================================================
+// 4. DEDICATED CONTENT PACKS FOR KO-FI CREATOR, GLASSMORPHISM ADVISORY & AGENCY
+// ============================================================================
+const KOFI_CREATOR_POSTS: RawPost[] = [
+  makePost({
+    id: "kofi-post-1",
+    title: "How I Built a Zero-Fee Creator Shop & Membership Hub Around Free AI Tools",
+    slug: "zero-fee-creator-shop-free-ai-tools",
+    seoTitle: "How to Build a Creator Shop & Membership Hub Around AI Tools",
+    seoDescription:
+      "Behind-the-scenes breakdown of combining free browser utilities, a Ko-fi style tip jar, and downloadable prompt packs.",
+    excerpt:
+      "Give away 90% of your tools and playbooks for free, then let superfans support your studio through memberships, digital templates, and 1:1 sessions.",
+    tags: ["Creator Economy", "Ko-fi Studio", "Digital Shop", "Build in Public"],
+    blocks: makeBlocks(
+      [
+        { h2: "The Open-Tool + Creator Membership Business Model" },
+        {
+          p: "Free browser utilities like our [AI Meta Title Generator](https://doitwithai.tools/tools/meta-title-generator) attract daily organic visitors, while Pro Memberships ($15/mo) unlock downloadable Notion and JSON workflow packs.",
+        },
+      ],
+      "kofi-post-1",
+    ),
+  }),
+  makePost({
+    id: "kofi-post-2",
+    title: "Inside the 2026 Prompt & Workflow Vault: 35 Copy-Ready Systems for Builders",
+    slug: "inside-2026-prompt-and-workflow-vault",
+    seoTitle: "2026 Prompt & Workflow Vault: 35 Copy-Ready Creator Systems",
+    seoDescription:
+      "Preview the 35 constraint-layered prompt systems included in our Pro Creator Membership and digital shop.",
+    excerpt:
+      "Every prompt in our creator vault uses named architectural patterns, hard output constraints, and real-world validation checks.",
+    tags: ["Prompt Vault", "Digital Products", "Workflows", "Memberships"],
+    blocks: makeBlocks(
+      [
+        { h2: "Why Constraint-Layered Prompts Outperform One-Liners" },
+        {
+          p: "Each template specifies role, target audience, forbidden clichés, and exact output schema.",
+        },
+      ],
+      "kofi-post-2",
+    ),
+  }),
+  makePost({
+    id: "kofi-post-3",
+    title: "Monthly Build Log: Shipping 4 New AI SEO Micro-Tools With Community Votes",
+    slug: "monthly-build-log-community-voted-ai-tools",
+    seoTitle: "Monthly Creator Build Log: Shipping 4 Community-Voted AI Tools",
+    seoDescription:
+      "How our Coffee and Pro supporters vote on our monthly tool roadmap and get early access to new releases.",
+    excerpt:
+      "A transparent look at our monthly server costs, supporter goal bar ($780/$1,000), and the 4 new tools shipped this month.",
+    tags: ["Build Log", "Community Roadmap", "Indie Hacker", "Open Tools"],
+    blocks: makeBlocks(
+      [
+        { h2: "Funded by Readers & Builders, Not Intrusive Ads" },
+        {
+          p: "Supporter memberships keep all 126+ catalog tools 100% ad-free and fast.",
+        },
+      ],
+      "kofi-post-3",
+    ),
+  }),
+  makePost({
+    id: "kofi-post-4",
+    title: "How to Package Your Expertise Into High-Value 1:1 Strategy & Teardown Sessions",
+    slug: "package-expertise-one-on-one-strategy-sessions",
+    seoTitle: "How to Package 1:1 Strategy & Website Teardown Sessions",
+    seoDescription:
+      "A creator's guide to running focused 45-minute architecture, SEO, and conversion teardowns alongside digital products.",
+    excerpt:
+      "Combine asynchronous pre-audit checklists with a recorded 45-minute live teardown so clients leave with an immediate execution plan.",
+    tags: ["1:1 Advisory", "Creator Income", "Productized Consulting", "Playbook"],
+    blocks: makeBlocks(
+      [
+        { h2: "Structuring a High-Impact 45-Minute Teardown" },
+        {
+          p: "We pre-audit every client site with the [On-Page AI SEO Analyzer](https://doitwithai.tools/tools/on-page-ai-seo-analyzer) before the call starts.",
+        },
+      ],
+      "kofi-post-4",
+    ),
+  }),
+  makePost({
+    id: "kofi-post-5",
+    title: "Starter Kit: Launching Your Own Creator Hub + Blog in Under 10 Minutes",
+    slug: "starter-kit-launching-creator-hub-and-blog",
+    seoTitle: "Starter Kit: Launch a Creator Hub, Tip Jar & Blog in 10 Minutes",
+    seoDescription:
+      "Step-by-step guide to customizing this Ko-fi Creator & Brand template, adding tools, and publishing SEO posts.",
+    excerpt:
+      "Customize your supporter tiers, connect catalog tools in 1 click, and publish weekly build logs directly from AI Content Writer Studio.",
+    tags: ["Starter Guide", "Website Builder", "Creator Hub", "SEO"],
+    blocks: makeBlocks(
+      [
+        { h2: "Own Your Audience, Shop & Search Traffic on One Domain" },
+        {
+          p: "Unlike third-party link-in-bio pages, your DoItWithAI Creator Hub builds long-term Google search equity on every post and tool.",
+        },
+      ],
+      "kofi-post-5",
+    ),
+  }),
+];
+
+const ADVISORY_POSTS: RawPost[] = [
+  makePost({
+    id: "advisory-post-1",
+    title: "Executive Playbook: Quantifying the ROI of AI Search & Content Automation in B2B SaaS",
+    slug: "executive-playbook-roi-ai-search-b2b-saas",
+    seoTitle: "B2B SaaS Executive Playbook: ROI of AI Search & Content Systems",
+    seoDescription:
+      "How B2B marketing and engineering leaders reclaim 300+ hours per month while increasing organic pipeline and AI citations.",
+    excerpt:
+      "A board-level framework for calculating engineering and editorial capacity unlocked by governed AI content and technical SEO pipelines.",
+    tags: ["Executive Advisory", "ROI Model", "B2B SaaS", "AI Strategy"],
+    blocks: makeBlocks(
+      [
+        { h2: "Moving From Ad-Hoc Prompting to Governed Production Pipelines" },
+        {
+          p: "Enterprise teams lose hundreds of hours to fragmented copy-pasting. Unifying research, schema validation via the [JSON-LD Schema Generator](https://doitwithai.tools/tools/schema-markup-generator), and 1-click publishing cuts cycle times by 60%+.",
+        },
+      ],
+      "advisory-post-1",
+    ),
+  }),
+  makePost({
+    id: "advisory-post-2",
+    title: "Technical SEO Architecture for High-Growth SaaS: Programmatic Tools & Hub Clusters",
+    slug: "technical-seo-architecture-high-growth-saas",
+    seoTitle: "Technical SEO Architecture for SaaS: Tools & Hub Clusters",
+    seoDescription:
+      "How to pair free interactive calculators and diagnostics with hub-and-spoke pillar guides to capture bottom-of-funnel B2B demand.",
+    excerpt:
+      "Interactive tools convert at 3x the rate of static blog posts. Learn how we architect tool + content clusters for Series A–C SaaS leaders.",
+    tags: ["Technical SEO", "Programmatic SEO", "SaaS Funnel", "Architecture"],
+    blocks: makeBlocks(
+      [
+        { h2: "Why Interactive Calculators & Auditors Dominate B2B SERPs" },
+        {
+          p: "Every B2B buyer wants an instant diagnostic before booking a demo. Embed interactive tools alongside your pillar guides.",
+        },
+      ],
+      "advisory-post-2",
+    ),
+  }),
+  makePost({
+    id: "advisory-post-3",
+    title: "Winning Citations in Google AI Overviews, ChatGPT Enterprise & Perplexity",
+    slug: "winning-citations-google-ai-overviews-perplexity-b2b",
+    seoTitle: "Winning B2B Citations in Google AI Overviews & Perplexity",
+    seoDescription:
+      "How B2B software brands secure primary source citations when enterprise buyers research vendors inside LLM answer engines.",
+    excerpt:
+      "When prospects ask ChatGPT or Perplexity to compare B2B vendors, does your brand get cited? Here is our 14-point AEO audit protocol.",
+    tags: ["AEO Strategy", "AI Overviews", "Perplexity", "Brand Authority"],
+    blocks: makeBlocks(
+      [
+        { h2: "The 3 Signals LLM Retrieval Engines Prioritize" },
+        {
+          list: [
+            "Clear entity definitions and comparison tables in the top 30% of the page.",
+            "Connected @graph JSON-LD linking Organization, SoftwareApplication, and FAQPage.",
+            "Consistent third-party corroboration and verifiable benchmark metrics.",
+          ],
+        },
+      ],
+      "advisory-post-3",
+    ),
+  }),
+  makePost({
+    id: "advisory-post-4",
+    title: "Case Study: How a B2B Workflow Platform 3.2x'd Non-Branded Organic Signups in 90 Days",
+    slug: "case-study-b2b-workflow-platform-organic-signups",
+    seoTitle: "Case Study: 3.2x B2B Organic Signups in 90 Days via Tool Clusters",
+    seoDescription:
+      "Read how Apex Signal Advisory restructured a B2B SaaS blog into 4 interactive tool hubs and 20 spoke guides.",
+    excerpt:
+      "By replacing generic thought leadership with 4 free browser diagnostics and 20 intent-mapped spoke guides, organic trial signups grew 3.2x.",
+    tags: ["Client Case Study", "Organic Pipeline", "Conversion Rate", "B2B"],
+    blocks: makeBlocks(
+      [
+        { h2: "90-Day Execution Roadmap & Measured Outcomes" },
+        {
+          p: "We audited every page with the [On-Page AI SEO Analyzer](https://doitwithai.tools/tools/on-page-ai-seo-analyzer) and deployed 4 interactive tools in Week 2.",
+        },
+      ],
+      "advisory-post-4",
+    ),
+  }),
+  makePost({
+    id: "advisory-post-5",
+    title: "How to Scope a 30-Day Technical SEO & AI Content Advisory Sprint",
+    slug: "how-to-scope-30-day-technical-seo-ai-advisory-sprint",
+    seoTitle: "How We Run a 30-Day Technical SEO & AI Content Advisory Sprint",
+    seoDescription:
+      "Deliverables, milestones, and executive KPI reporting inside our 30-day B2B advisory engagement.",
+    excerpt:
+      "See the week-by-week deliverables of our executive advisory sprint—from full-site schema and meta calibration to team workflow training.",
+    tags: ["Advisory Sprint", "Deliverables", "Executive KPIs", "Consulting"],
+    blocks: makeBlocks(
+      [
+        { h2: "Week 1 to Week 4 Advisory Deliverables" },
+        {
+          p: "Use the interactive ROI calculator in the hero section above to estimate your team's monthly hours saved before booking a discovery call.",
+        },
+      ],
+      "advisory-post-5",
+    ),
+  }),
+];
+
+const AGENCY_POSTS: RawPost[] = [
+  makePost({
+    id: "agency-post-1",
+    title: "Why Productized 14-Day Website + AI Tool Sprints Beat Traditional 6-Month Agency Retainers",
+    slug: "why-productized-14-day-sprints-beat-agency-retainers",
+    seoTitle: "Why 14-Day Productized Website & SEO Sprints Beat Retainers",
+    seoDescription:
+      "How fixed-scope engineering and SEO sprints deliver a live authority website, interactive lead tool, and 5 pillar blog posts in 14 days.",
+    excerpt:
+      "Traditional agencies bill for months of meetings before shipping a single page. Our 14-day productized sprint ships your site, tool, and SEO cluster live.",
+    tags: ["Productized Agency", "14-Day Sprint", "Web Engineering", "ROI"],
+    blocks: makeBlocks(
+      [
+        { h2: "Fixed Scope, Transparent Pricing, Shippable Code in 14 Days" },
+        {
+          p: "Every Flagship Growth Studio sprint includes custom template architecture, 1 interactive lead-magnet tool, connected JSON-LD schema, and 5 SEO pillar posts.",
+        },
+      ],
+      "agency-post-1",
+    ),
+  }),
+  makePost({
+    id: "agency-post-2",
+    title: "Lead-Magnet Engineering: How Adding 1 Interactive Calculator Doubles Agency Lead Conversion",
+    slug: "interactive-calculator-doubles-lead-conversion",
+    seoTitle: "How 1 Interactive Tool Doubles Website Lead Conversion (2026)",
+    seoDescription:
+      "Why embedding a free interactive diagnostic, ROI calculator, or SEO checker on your service website outperforms static contact forms.",
+    excerpt:
+      "Visitors rarely fill out 'Contact Us' forms cold—but they happily test an interactive tool that diagnoses their problem in 5 seconds.",
+    tags: ["Lead Generation", "Interactive Tools", "Conversion Design", "CRO"],
+    blocks: makeBlocks(
+      [
+        { h2: "Install Proven Tools From Our 126+ Catalog in 1 Click" },
+        {
+          p: "We wire tools like the [AI Meta Title Generator](https://doitwithai.tools/tools/meta-title-generator) and [On-Page AI SEO Analyzer](https://doitwithai.tools/tools/on-page-ai-seo-analyzer) directly into client funnels.",
+        },
+      ],
+      "agency-post-2",
+    ),
+  }),
+  makePost({
+    id: "agency-post-3",
+    title: "Our 28-Point Pre-Launch Technical SEO, Schema & Core Web Vitals Checklist",
+    slug: "pre-launch-technical-seo-schema-core-web-vitals-checklist",
+    seoTitle: "28-Point Pre-Launch Technical SEO & Core Web Vitals Checklist",
+    seoDescription:
+      "The exact quality assurance checklist Velocity Growth Studio runs before handing over any client website.",
+    excerpt:
+      "From 600px meta title calibration and connected @graph schema to mobile CLS zeroing, here is how we guarantee technical excellence on Day 1.",
+    tags: ["Launch Checklist", "Core Web Vitals", "Technical SEO", "QA"],
+    blocks: makeBlocks(
+      [
+        { h2: "Zero Technical Debt at Launch" },
+        {
+          p: "Every route is verified with our [JSON-LD Schema Markup Generator](https://doitwithai.tools/tools/schema-markup-generator) and [Readability Checker](https://doitwithai.tools/tools/readability-checker).",
+        },
+      ],
+      "agency-post-3",
+    ),
+  }),
+  makePost({
+    id: "agency-post-4",
+    title: "Client Showcase: Launching a Multi-Tool AI SEO Portal & Content Engine in 12 Days",
+    slug: "client-showcase-multi-tool-ai-seo-portal-12-days",
+    seoTitle: "Client Showcase: Multi-Tool AI SEO Portal Shipped in 12 Days",
+    seoDescription:
+      "How we took a B2B media brand from a static brochure site to an interactive 5-tool directory with 1-click blog publishing.",
+    excerpt:
+      "A complete teardown of the architecture, design tokens, and hub-and-spoke topic cluster we shipped in under two weeks.",
+    tags: ["Client Showcase", "Case Study", "Multi-Tool Portal", "Speed"],
+    blocks: makeBlocks(
+      [
+        { h2: "Results 30 Days Post-Launch" },
+        {
+          p: "Organic impressions rose 210% within 30 days thanks to 5 pre-indexed tool pages and 5 supporting pillar guides.",
+        },
+      ],
+      "agency-post-4",
+    ),
+  }),
+  makePost({
+    id: "agency-post-5",
+    title: "Starter Sprint vs. Flagship Growth Studio: Which Package Fits Your Stage?",
+    slug: "starter-sprint-vs-flagship-growth-studio-comparison",
+    seoTitle: "Starter Sprint vs Flagship Growth Studio: Agency Package Guide",
+    seoDescription:
+      "Compare our 7-day Starter Launch Sprint, 14-day Flagship Growth Studio, and Dedicated Monthly Partner packages.",
+    excerpt:
+      "Whether you need a rapid 7-day authority launch or a full multi-tool platform with ongoing SEO velocity, here is how to choose the right tier.",
+    tags: ["Pricing & Packages", "Sprint Tiers", "Agency Scope", "FAQ"],
+    blocks: makeBlocks(
+      [
+        { h2: "Compare Deliverables Across All 3 Sprint Tiers" },
+        {
+          p: "Review the 3 tier cards in our hero section above and reach out via the contact section to lock in one of this month's 2 open sprint slots.",
+        },
+      ],
+      "agency-post-5",
+    ),
+  }),
+];
+
 type ArchetypeSeed = {
   name: string;
   role: string;
@@ -714,17 +1689,18 @@ const OTHER_TEMPLATE_SEEDS: Partial<Record<TemplateId, ArchetypeSeed>> = {
       { id: "s1", label: "Software Benchmarking", level: 5 },
       { id: "s2", label: "E-E-A-T Review Audits", level: 5 },
       { id: "s3", label: "Comparison Matrices", level: 5 },
-      { id: "s4", label: "Topic Cluster SEO", level: 4 },
+      { id: "s4", label: "Topic Cluster SEO", level: 5 },
+      { id: "s5", label: "SERP CTR Testing", level: 4 },
     ],
-    projects: MULTI_TOOL_PROJECTS.slice(0, 3),
-    pages: MULTI_TOOL_PAGES.slice(0, 2),
-    posts: MULTI_TOOL_POSTS.slice(0, 5),
+    projects: AUTHORITY_BLOG_PROJECTS,
+    pages: AUTHORITY_BLOG_PAGES,
+    posts: AUTHORITY_BLOG_POSTS,
   },
   "creator-newsletter-hub": {
     name: "The AI Growth Dispatch",
     role: "Weekly Operator Newsletter on AI Search, Content & Micro-SaaS",
     intro:
-      "Every Tuesday, 18,000+ founders and marketers get one actionable teardown on AI SEO, programmatic tools, and high-margin digital publishing.",
+      "Every Tuesday, 18,400+ founders and marketers get one actionable teardown on AI SEO, programmatic tools, and high-margin digital publishing.",
     availability: "New Issue Every Tuesday · Free & Insider Editions",
     aboutHeading: "About The AI Growth Dispatch",
     aboutBody:
@@ -732,12 +1708,31 @@ const OTHER_TEMPLATE_SEEDS: Partial<Record<TemplateId, ArchetypeSeed>> = {
     skills: [
       { id: "s1", label: "Weekly Teardowns", level: 5 },
       { id: "s2", label: "AI Search Strategy", level: 5 },
-      { id: "s3", label: "Newsletter Growth", level: 4 },
+      { id: "s3", label: "Newsletter Growth", level: 5 },
       { id: "s4", label: "Creator Monetization", level: 4 },
     ],
-    projects: MULTI_TOOL_PROJECTS.slice(0, 2),
-    pages: MULTI_TOOL_PAGES.slice(0, 2),
-    posts: MULTI_TOOL_POSTS.slice(0, 5),
+    projects: NEWSLETTER_PROJECTS,
+    pages: NEWSLETTER_PAGES,
+    posts: NEWSLETTER_POSTS,
+  },
+  "olive-journal": {
+    name: "The Olive Journal",
+    role: "Long-Form Essays, Design Monographs & Cultural Field Notes",
+    intro:
+      "A quiet, typography-first digital magazine exploring human-centered software, editorial craft, and independent publishing.",
+    availability: "Autumn / Winter 2026 Issue Live · Submissions Open",
+    aboutHeading: "Colophon & Slow-Publishing Ethos",
+    aboutBody:
+      "The Olive Journal pairs 20th-century print proportion and warm paper surfaces with structured digital archives and connected topic series.",
+    skills: [
+      { id: "s1", label: "Long-Form Essays", level: 5 },
+      { id: "s2", label: "Editorial Typography", level: 5 },
+      { id: "s3", label: "Design Monographs", level: 5 },
+      { id: "s4", label: "Archival Curation", level: 4 },
+    ],
+    projects: OLIVE_JOURNAL_PROJECTS,
+    pages: OLIVE_JOURNAL_PAGES,
+    posts: OLIVE_JOURNAL_POSTS,
   },
   "founder-authority-brand": {
     name: "Alex Rivera · Creator Studio",
@@ -756,7 +1751,7 @@ const OTHER_TEMPLATE_SEEDS: Partial<Record<TemplateId, ArchetypeSeed>> = {
     ],
     projects: MULTI_TOOL_PROJECTS.slice(0, 3),
     pages: SINGLE_TOOL_PAGES.slice(0, 2),
-    posts: SINGLE_TOOL_POSTS.slice(0, 5),
+    posts: KOFI_CREATOR_POSTS,
   },
   "consultant-lead-engine": {
     name: "Apex Signal Advisory",
@@ -775,7 +1770,7 @@ const OTHER_TEMPLATE_SEEDS: Partial<Record<TemplateId, ArchetypeSeed>> = {
     ],
     projects: MULTI_TOOL_PROJECTS.slice(0, 3),
     pages: MULTI_TOOL_PAGES.slice(0, 2),
-    posts: MULTI_TOOL_POSTS.slice(0, 5),
+    posts: ADVISORY_POSTS,
   },
   "startup-service-agency": {
     name: "Velocity Growth Studio",
@@ -794,7 +1789,7 @@ const OTHER_TEMPLATE_SEEDS: Partial<Record<TemplateId, ArchetypeSeed>> = {
     ],
     projects: MULTI_TOOL_PROJECTS.slice(0, 3),
     pages: MULTI_TOOL_PAGES.slice(0, 2),
-    posts: MULTI_TOOL_POSTS.slice(0, 5),
+    posts: AGENCY_POSTS,
   },
 };
 

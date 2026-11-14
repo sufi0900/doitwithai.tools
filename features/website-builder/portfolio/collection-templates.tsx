@@ -21,7 +21,7 @@ export function CollectionHero({ document, publicBasePath, navigate }: { documen
 }
 
 /** Three art directions, one content contract: the same editable facts, order and visibility. */
-export function CollectionSections({ document, editing = false, publicBasePath, onOpenPage }: { document: SiteDocument; editing?: boolean; publicBasePath?: string; onOpenPage?: (id: string) => void }) {
+export function CollectionSections({ document, editing = false, publicBasePath, onOpenPage, onOpenPost }: { document: SiteDocument; editing?: boolean; publicBasePath?: string; onOpenPage?: (id: string) => void; onOpenPost?: (id: string) => void }) {
   const work = projectsForPresentation(document);
   const aboutPage = document.publishing.pages.find((page) => page.slug === "about" && (!publicBasePath || page.status === "published"));
   const contact = document.content.contact;
@@ -44,5 +44,32 @@ export function CollectionSections({ document, editing = false, publicBasePath, 
     }
     if (!editing && !contact.email && !contact.location && !contact.socials.length) return null;
     return <section id="contact" className="collection-section collection-contact" key={section}>{heading(contact.heading, "LET'S CONNECT")}<div className="collection-contact-grid">{contact.email ? <a className="collection-contact-cta" href={`mailto:${contact.email}`}><Mail size={20} />{contact.cta}<ArrowUpRight size={20} /></a> : editing && <p>Add an email in Studio to enable contact.</p>}{contact.location && <span><MapPin size={16} />{contact.location}</span>}</div><nav className="collection-socials" aria-label="Social profiles">{contact.socials.map((item) => <a key={item.id} href={item.url} target="_blank" rel="noopener noreferrer"><Globe2 size={15} aria-hidden="true" />{item.platform}<ArrowUpRight size={14} aria-hidden="true" /></a>)}</nav></section>;
-  })}</div>;
+  })}{document.publishing.posts.filter((post) => !publicBasePath || post.status === "published").length > 0 && (
+    <section id="blog" className="collection-section collection-journal-essays" style={{ marginTop: "28px", paddingTop: "24px", borderTop: "1px solid rgba(120, 131, 75, 0.28)" }}>
+      <header className="collection-heading">
+        <span>ARCHIVE / ESSAYS &amp; FIELD NOTES</span>
+        <h2>{document.design.template === "olive-journal" ? "Published Essays & Monographs" : "Journal & Dispatches"}</h2>
+        <Icon size={28} strokeWidth={1.2} aria-hidden="true" />
+      </header>
+      <div className={`collection-work-grid collection-work-${document.design.template}`} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(270px, 1fr))", gap: "18px" }}>
+        {document.publishing.posts
+          .filter((post) => !publicBasePath || post.status === "published")
+          .slice(0, 5)
+          .map((post, idx) => (
+            <article key={post.id} style={{ padding: "20px", borderRadius: "14px", border: "1px solid rgba(120, 131, 75, 0.28)", display: "grid", gap: "10px" }}>
+              <span className="collection-eyebrow">ESSAY 0{idx + 1} · {post.tags.slice(0, 2).join(" / ") || "EDITORIAL"}</span>
+              <h3 style={{ margin: 0, fontSize: "19px", lineHeight: 1.35 }}>{post.title}</h3>
+              <p style={{ margin: 0, fontSize: "14px", lineHeight: 1.65, opacity: 0.88 }}>{post.excerpt || post.seoDescription}</p>
+              <div className="collection-work-links">
+                {publicBasePath ? (
+                  <a href={`${publicBasePath}/blog/${post.slug}`}>Read full essay <ArrowUpRight size={15} /></a>
+                ) : (
+                  onOpenPost && <button type="button" onClick={() => onOpenPost(post.id)} style={{ background: "none", border: 0, padding: 0, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "5px", color: "inherit" }}>Preview essay <ArrowUpRight size={15} /></button>
+                )}
+              </div>
+            </article>
+          ))}
+      </div>
+    </section>
+  )}</div>;
 }
