@@ -249,7 +249,7 @@ export function PortfolioStudio({ initialDocument, projectName = "Demo portfolio
           <button type="button" className="preview-button" onClick={() => { if (previewOnly) setPreviewOnly(false); else { setEditorExpanded(false); setPreviewOnly(true); } }}><Eye size={16} />{previewOnly ? "Exit preview" : "Preview"}</button>
           <button type="button" className="publish-button" onClick={openPublication}><Globe2 size={16} />{publication ? portfolioHasUnpublishedChanges ? "Publish Updates" : `Live · /p/${publication.slug.length > 18 ? `${publication.slug.slice(0, 18)}…` : publication.slug}` : "Save & Publish"}</button>{publication && <Link className="top-link" href={`/p/${publication.slug}`} target="_blank">Open Site ↗</Link>}
           {persistence === "server" && <button type="button" onClick={() => setHistoryOpen(true)}><Clock3 size={16} />History</button>}
-          <Link className="top-link" href={`/ai-content-writer?targetSiteId=${encodeIComponent(state.present.projectId)}`}>Write Blog Post</Link>
+          <Link className="top-link" href={`/ai-content-writer?targetSiteId=${encodeURIComponent(state.present.projectId)}`}>Write Blog Post</Link>
           <Link className="top-link" href="/do-it-ai?view=websites">My Websites</Link>
           {authenticated && userEmail && <span className="account-pill" title={userEmail} aria-label={`Signed in as ${userEmail}`}>{userEmail.slice(0, 1).toUpperCase()}</span>}
         </div>
