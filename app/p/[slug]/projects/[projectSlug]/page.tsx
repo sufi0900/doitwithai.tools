@@ -18,7 +18,7 @@ export async function generateMetadata({
       )
     : undefined;
   if (!item || !project) {
-    return { title: "Case study not found — DoItWithAI Studio" };
+    return { title: "Tool or Case Study — DoItWithAI Studio" };
   }
 
   return {

@@ -1,0 +1,102 @@
+/* ============================================================================
+ * DoItWithAI Website Studio & Published Website UI/UX Polish Overrides
+ * Fixes template-picker button column squishing, top-actions wrapping,
+ * archetype navigation spacing, and responsive in-site AI tool workspaces.
+ * ============================================================================ */
+
+.website-builder-scope .top-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+
+.website-builder-scope .top-actions button,
+.website-builder-scope .top-actions .top-link {
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  min-height: 36px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  line-height: 1.1;
+}
+
+.website-builder-scope .top-actions .publish-button {
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Prevent .studio-template-picker 8px grid column from squishing action buttons */
+.website-builder-scope .template-defaults-reset-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.78);
+  border: 1px solid rgba(56, 189, 248, 0.32);
+}
+
+.website-builder-scope .template-defaults-reset-card button,
+.website-builder-scope .studio-template-picker button.template-reset-action {
+  display: inline-flex !important;
+  grid-template-columns: none !important;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 40px;
+  padding: 9px 14px;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: center;
+  white-space: normal;
+}
+
+/* Clean, scannable Archetype Navigation Bar inside Studio Preview & Public Sites */
+.website-builder-scope .portfolio-site-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px 14px;
+  padding: 12px 20px;
+}
+
+.website-builder-scope .portfolio-site-nav a,
+.website-builder-scope .portfolio-site-nav button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color 0.16s ease, color 0.16s ease, border-color 0.16s ease;
+}
+
+.website-builder-scope .portfolio-site-nav a.nav-pill-primary,
+.website-builder-scope .portfolio-site-nav button.nav-pill-primary {
+  background: rgba(99, 102, 241, 0.18);
+  border: 1px solid rgba(99, 102, 241, 0.45);
+  color: #e0e7ff;
+  font-weight: 700;
+}
+
+/* Interactive Tool Runner responsive polish */
+.website-builder-scope .interactive-tool-runner input,
+.website-builder-scope .interactive-tool-runner select,
+.website-builder-scope .interactive-tool-runner textarea {
+  font-family: inherit;
+  box-sizing: border-box;
+  width: 100%;
+}

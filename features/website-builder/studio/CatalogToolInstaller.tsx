@@ -90,9 +90,9 @@ export function CatalogToolInstaller({
       title: activeTool.name.slice(0, 100),
       summary: activeTool.description.slice(0, 500),
       technologies: techBadges.length ? techBadges : ["AI SEO Utility", "Browser Tool"],
-      link: fullUrl,
+      link: "",
       role: (activeTool.kind || "Interactive AI Web Utility").slice(0, 100),
-      period: "Live on DoItWithAI · Free Utility",
+      period: "Live on Your Website · Free Utility",
       challenge:
         `Eliminate manual ${activeTool.tags?.[0] || activeTool.name} bottlenecks with deterministic browser execution and structured SEO outputs.`.slice(
           0,
@@ -104,7 +104,7 @@ export function CatalogToolInstaller({
           1800,
         ),
       outcome:
-        `Ready to launch at ${fullUrl} with companion workflow documentation and internal cluster linking.`.slice(
+        `Runs directly inside your published website (/p/[slug]/projects/${activeTool.slug}) with companion workflow documentation and internal cluster linking (${fullUrl}).`.slice(
           0,
           1200,
         ),
@@ -180,8 +180,7 @@ export function CatalogToolInstaller({
       </header>
 
       <p style={{ margin: 0, fontSize: "11.5px", lineHeight: 1.5, color: "#94a3b8" }}>
-        Select any of our {CATALOG_TOOLS.length} built tools to transfer its landing page metadata,{" "}
-        <code>/tools/&lt;slug&gt;</code> URL, and optional SEO guide into this website in 1 click.
+        Select any of our {CATALOG_TOOLS.length} built tools to install an interactive, in-site AI tool page (<code>/p/[slug]/projects/&lt;tool-slug&gt;</code>) and companion SEO guide into your website in 1 click.
       </p>
 
       <div style={{ display: "grid", gap: "8px" }}>
@@ -283,7 +282,7 @@ export function CatalogToolInstaller({
           <div style={{ display: "flex", justifyContent: "space-between", gap: "6px" }}>
             <strong style={{ color: "#ffffff" }}>{activeTool.name}</strong>
             <code style={{ color: "#38bdf8", fontSize: "10.5px" }}>
-              {toolPath(activeTool.slug)}
+              /projects/{activeTool.slug}
             </code>
           </div>
           <p style={{ margin: 0, color: "#94a3b8", fontSize: "11px", lineHeight: 1.45 }}>
@@ -335,7 +334,7 @@ export function CatalogToolInstaller({
       >
         <Plus size={14} />
         {isLimitReached
-          ? "Maximum 8 Homepage Tools Reached"
+          ? "Maximum 8 Website Tools Reached"
           : isAlreadyInstalled
             ? `Add Another Copy of "${activeTool?.name.slice(0, 28)}…"`
             : `+ Add Tool to Website (${includeCompanionPost ? "+ SEO Guide" : "Tool Only"})`}

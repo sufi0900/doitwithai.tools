@@ -15,7 +15,7 @@ export async function generateMetadata({
     (candidate) =>
       candidate.status === "published" && candidate.slug === params.pageSlug,
   );
-  if (!item || !page) return { title: "Page not found — DoItWithAI Studio" };
+  if (!item || !page) return { title: "Page — DoItWithAI Studio" };
 
   return {
     title: `${page.title} — ${item.document.identity.name}`,
