@@ -126,7 +126,7 @@ export default function WebsiteBuilderShowcase() {
             </Link>
 
             <Link
-              href="/do-it-ai/website-studio/demo"
+              href="/ai-website-builder/studio/demo"
               className="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-900/80 px-5 py-3.5 text-sm font-semibold text-white transition hover:border-indigo-400/50 hover:bg-slate-800"
             >
               <Globe2 className="h-4 w-4 text-sky-400" />
@@ -299,7 +299,7 @@ export default function WebsiteBuilderShowcase() {
                     <ArrowRight className="h-3.5 w-3.5" />
                   </Link>
                   <Link
-                    href="/do-it-ai/website-studio/demo"
+                    href="/ai-website-builder/studio/demo"
                     className="inline-flex items-center justify-center rounded-lg border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:border-slate-500 hover:text-white"
                   >
                     Live Demo

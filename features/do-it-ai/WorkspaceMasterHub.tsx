@@ -133,7 +133,7 @@ export function WorkspaceMasterHub({
               >
                 <span className="font-semibold text-white">{site.name}</span>
                 <Link
-                  href={`/do-it-ai/website-studio/${site.projectId}`}
+                  href={`/ai-website-builder/studio/${site.projectId}`}
                   className="text-indigo-300 hover:text-indigo-200 font-semibold"
                 >
                   Studio
@@ -222,7 +222,7 @@ export function WorkspaceMasterHub({
               </button>
             )}
             <Link
-              href="/do-it-ai/website-studio/demo"
+              href="/ai-website-builder/studio/demo"
               className="rounded-xl border border-indigo-400/40 bg-indigo-500/15 px-4 py-2 text-xs font-bold text-indigo-200 hover:bg-indigo-500/25 transition"
             >
               Launch Interactive Studio Demo
@@ -238,7 +238,7 @@ export function WorkspaceMasterHub({
             Your Websites ({websites.length})
           </h3>
           <Link
-            href="/tools/ai-website-builder"
+            href="/ai-website-builder"
             className="text-xs font-semibold text-indigo-300 hover:text-indigo-200"
           >
             Browse all 16 templates →
@@ -273,7 +273,7 @@ export function WorkspaceMasterHub({
                   Create New Website →
                 </Link>
                 <Link
-                  href="/do-it-ai/website-studio/demo"
+                  href="/ai-website-builder/studio/demo"
                   className="rounded-lg border border-slate-700 px-3.5 py-2 text-xs font-semibold text-slate-200 hover:border-slate-500 transition"
                 >
                   Open Flagship Demo
@@ -347,7 +347,7 @@ export function WorkspaceMasterHub({
 
                 <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-800/80 pt-3">
                   <Link
-                    href={`/do-it-ai/website-studio/${site.projectId}`}
+                    href={`/ai-website-builder/studio/${site.projectId}`}
                     className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-500 hover:bg-indigo-400 px-3 py-1.5 text-xs font-bold text-white transition"
                   >
                     <Globe2 size={13} />
@@ -363,7 +363,7 @@ export function WorkspaceMasterHub({
                   </Link>
 
                   <Link
-                    href={`/do-it-ai/website-studio/${site.projectId}/settings`}
+                    href={`/ai-website-builder/studio/${site.projectId}/settings`}
                     className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-900 hover:border-slate-500 px-3 py-1.5 text-xs font-semibold text-slate-200 transition"
                   >
                     <Bot size={13} />
