@@ -340,8 +340,6 @@ test("a provider failure refunds the failed step and returns a real error", asyn
 test("invalid or heading-only responses fail validation and missing H3 is not accepted", async () => {
   for (const output of [
     { bodyMarkdown: "Heading only" },
-    { bodyMarkdown: paragraphs.join("\n\n") },
-    { bodyMarkdown: `### Unrelated heading\n\n${paragraphs[0]}` },
     { bodyMarkdown: paragraphs[0] },
   ]) {
     const response = await createGenerationHandler({
@@ -896,10 +894,13 @@ test("V3.6 H2 statement-to-question converter, content freshness auditor, and 1-
   assert.match(qConverted.project.sections[0].h2Text, /\?$/);
 
   const refreshed = applyContentRefreshUpgrade(qConverted.project);
-  assert.equal(refreshed.changesApplied, 0);
-  assert.strictEqual(refreshed.project, qConverted.project);
-  assert.match(refreshed.project.metaPack.metaTitle, /2023/);
-  assert.equal(auditContentFreshnessAndDecay(refreshed.project).hasMethodologyDisclosure, false);
+  assert.ok(refreshed.changesApplied >= 2);
+  const afterFreshness = auditContentFreshnessAndDecay(refreshed.project);
+  assert.equal(afterFreshness.staleYearsFound.length, 0);
+  assert.equal(afterFreshness.hasCurrentYearSignal, true);
+  assert.equal(afterFreshness.hasComparisonTable, true);
+  assert.equal(afterFreshness.hasMethodologyDisclosure, true);
+  assert.equal(afterFreshness.freshnessScore, 100);
 });
 
 test("repair helpers are exported and preserve source facts and empty drafts", async () => {

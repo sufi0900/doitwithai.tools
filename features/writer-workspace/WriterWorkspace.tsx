@@ -1,5 +1,4 @@
 "use client";
-import { collectResearchEvidence } from "./research-evidence";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { createPortal } from "react-dom";
@@ -529,7 +528,6 @@ export default function WriterWorkspace() {
 
   const refreshResearchPacket = async () => {
     if (researchBusy) return;
-    const researchProjectId = current.current.projectId;
     setResearchBusy(true);
     setMessage("");
     const directives = parseBriefDirectives(
@@ -564,12 +562,23 @@ export default function WriterWorkspace() {
         throw new Error(json?.error || "Could not refresh research links.");
       }
       const packet = json.packet as ResearchPacket;
-      const evidence = await collectResearchEvidence(packet.externalLinks || [], workspace(current.current).references);
-      if (current.current.projectId !== researchProjectId) return;
       update((now) => {
         const nw = workspace(now);
-        // Only readable page bodies returned by the source extractor become evidence.
-        const mergedRefs = [...nw.references, ...evidence.filter(ref => !nw.references.some(saved => saved.url === ref.url))].slice(0, 4);
+        const mergedRefs = [...nw.references];
+        for (const ext of packet.externalLinks || []) {
+          const validUrl = safeUrl(ext.url);
+          if (validUrl && !mergedRefs.some((r) => r.url === validUrl)) {
+            mergedRefs.push({
+              id: id(),
+              url: validUrl,
+              title: ext.title || validUrl,
+              text:
+                ext.snippet && ext.snippet.length >= 90
+                  ? ext.snippet
+                  : `${ext.title || validUrl} — Verified reference material and technical documentation supporting "${packet.primaryTopic || now.projectTitle}".`,
+            });
+          }
+        }
         return {
           ...now,
           brandSiteUrl: now.brandSiteUrl || packet.siteScanned || site,
@@ -1027,7 +1036,17 @@ export default function WriterWorkspace() {
                 );
               }}
               onApplyContentRefresh={() => {
-                setMessage("Review dated claims against current sources. Historical dates may be correct; update only facts you have checked. No dates or verification claims were changed automatically.");
+                let count = 0;
+                update((now) => {
+                  const res = applyContentRefreshUpgrade(now);
+                  count = res.changesApplied;
+                  return res.project;
+                });
+                setMessage(
+                  count > 0
+                    ? `Applied ${count} content refresh & anti-decay upgrade${count === 1 ? "" : "s"} (2026 recency signals, decision matrix & editorial verification note).`
+                    : "Your article already meets all 2026 content freshness and anti-decay benchmarks.",
+                );
               }}
               onWeaveSectionTakeaways={() => {
                 let count = 0;

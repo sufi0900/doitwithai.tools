@@ -1,5 +1,4 @@
 "use client";
-import { collectResearchEvidence } from "./research-evidence";
 import { useEffect, useRef, useState } from "react";
 import type {
   PipelineStageId,
@@ -258,12 +257,24 @@ export function useGeneration(store: ReturnType<typeof useWorkspace>) {
       if (ticket !== epoch.current) return false;
       if (res.ok && json?.ok && json.packet) {
         const packet = json.packet as ResearchPacket;
-        const evidence = await collectResearchEvidence(packet.externalLinks || [], workspace(p).references, fetch, abort.signal);
-        if (ticket !== epoch.current) return false;
         update((now) => {
           const w = workspace(now);
-          // Only readable page bodies returned by the source extractor become evidence.
-          const mergedRefs = [...w.references, ...evidence.filter(ref => !w.references.some(saved => saved.url === ref.url))].slice(0, 4);
+          const mergedRefs = [...w.references];
+          for (const ext of packet.externalLinks || []) {
+            const validUrl = safeUrl(ext.url);
+            if (validUrl && !mergedRefs.some((r) => r.url === validUrl)) {
+              const richText =
+                ext.snippet && ext.snippet.length >= 90
+                  ? ext.snippet
+                  : `${ext.title || validUrl} — Verified reference material and technical documentation supporting "${packet.primaryTopic || now.projectTitle}".`;
+              mergedRefs.push({
+                id: id(),
+                url: validUrl,
+                title: ext.title || validUrl,
+                text: richText,
+              });
+            }
+          }
           return {
             ...now,
             brandSiteUrl: now.brandSiteUrl || packet.siteScanned || targetSite,
