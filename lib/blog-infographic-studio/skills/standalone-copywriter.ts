@@ -236,7 +236,7 @@ export function toHeadlineCase(phrase: string): string {
   const words = clean(phrase).split(/\s+/).filter(Boolean);
   return words
     .map((w, idx) => {
-      if (/^[A-Z0-9&/-]{2,}$/.test(w)) return w;
+      if (/[A-Z].*[A-Z]|[a-z][A-Z]|^\([A-Z]/.test(w)) return w;
       const lower = w.toLowerCase();
       if (idx > 0 && idx < words.length - 1 && MINOR_TITLE_WORDS.has(lower)) {
         return lower;
@@ -394,9 +394,11 @@ function finalizePair(
     const bodySentences = splitSentences(decontextualizeProse(fullSourceText));
     const answerText =
       bodySentences.find((s) => !s.trim().endsWith("?")) || detail;
+    const subject = q.match(/^what is (.+?)\?$/i)?.[1];
+    const standaloneAnswer = subject ? answerText.replace(/^it\s+/i, () => subject + " ") : answerText;
     return {
       title: q.replace(/^\p{Ll}/u, (c) => c.toUpperCase()),
-      detail: clean(answerText || detail).replace(/^\p{Ll}/u, (c) =>
+      detail: clean(standaloneAnswer || detail).replace(/^\p{Ll}/u, (c) =>
         c.toUpperCase(),
       ),
     };
@@ -623,13 +625,13 @@ export function synthesizeStandaloneTitleAndDetail(
     const lead = inclusionMatch[1]
       .replace(/^(?:start with|begin with|focus on)\s+/i, "")
       .replace(/^(?:one|a|the)\s+/i, "");
-    const tail = clean(inclusionMatch[2]).replace(/[.]$/, "");
+
     const title = toHeadlineCase(
       /^coherent section$/i.test(lead)
         ? "Isolate One Coherent Section"
         : stripTrailingCliffhangers(lead).split(/\s+/).slice(0, 4).join(" "),
     );
-    const detail = `Include ${tail} while focusing edits on a single complete block.`;
+    const detail = `Include ${clean(inclusionMatch[2])}`;
     return finalizePair(title, detail, full);
   }
 
@@ -676,7 +678,7 @@ export function synthesizeStandaloneTitleAndDetail(
     );
     return finalizePair(
       toHeadlineCase(leadTitle),
-      `Applied cleanly to ${purposeClause} without adding friction.`,
+      candidate,
       full,
     );
   }
@@ -690,11 +692,11 @@ export function synthesizeStandaloneTitleAndDetail(
       .replace(/\bimportant\b/gi, "")
       .replace(/\s{2,}/g, " ")
       .trim();
-    const tail = clean(supplyMatch[2]).replace(/[.]$/, "");
+
     const title = toHeadlineCase(
       `Supply ${rawObjects.replace(/\band\b/i, "&")}`,
     );
-    const detail = `Pair ${tail} directly with essential background context and constraints.`;
+    const detail = `Pair ${clean(supplyMatch[2]).replace(/[.]$/, "")} with ${rawObjects}.`;
     return finalizePair(title, detail, full);
   }
 
@@ -710,7 +712,7 @@ export function synthesizeStandaloneTitleAndDetail(
     const rhs = toHeadlineCase(stripTrailingCliffhangers(rhsClause));
     return finalizePair(
       `Benchmark ${lhs} vs. ${rhs}`,
-      `Inspect side-by-side changes against the source draft to catch drift or omissions.`,
+      candidate,
       full,
     );
   }

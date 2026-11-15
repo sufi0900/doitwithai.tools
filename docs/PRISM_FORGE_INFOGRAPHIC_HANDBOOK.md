@@ -97,3 +97,11 @@ To eliminate mid-clause title truncation, title-body text duplication, context-d
    - `runInfographicQaCritic` audits and auto-repairs cliffhangers, title-body overlap, deictic copy leaks, low-signal headline highlights, FAQ `Q1..Qn` badges, sibling icon uniqueness, and synthesized bottom callout bars for 2–3 card layouts.
 6. **Universal URL-to-Visual Contract (`lib/content-intelligence/url-to-standalone-visual.ts`)**:
    - Re-exports all 6 layers under one canonical module so downstream social, carousel, and visual generators share the exact same standalone content standards.
+
+### Source fidelity for URL-driven graphics and social copy
+
+Prefer the article body over surrounding page chrome. Preserve paragraph breaks and inline acronym casing. Use H3 groups for coverage and H4 groups when a single parent contains several technical concepts. Keep each selected sentence tied to its source block through scoring, synthesis, and export. Omit sections with insufficient evidence. A list headline should promise only the points visible in the finished graphic.
+
+Select timelines for chronology, checklists for audits, and metric ribbons for quantified material. Use comparison columns only when the items fit the paired layout. Change surface treatments independently of the editorial relationship. Reuse the shared topic, copy, and icon helpers in URL-to-social consumers. Carry forward the user's branding and replace the previous article's takeaway, hub, and column labels.
+
+For the Python deck exporter, four through six cards use a two-column grid. Five-card layouts give the last card the full row. A two-card slide can request paired columns with `"kind": "comparison"`.

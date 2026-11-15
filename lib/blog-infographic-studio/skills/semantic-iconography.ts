@@ -60,6 +60,10 @@ export const INFOGRAPHIC_TOPIC_ICONS = [
   "database",
   "bot",
   "network",
+  "backlink",
+  "fingerprint",
+  "braces",
+  "stopwatch",
   // Users, Collaboration & FAQ
   "help-circle",
   "message-circle",
@@ -85,6 +89,10 @@ export function isInfographicTopicIcon(
  * commands for the native DOM-free `<path>` renderer.
  */
 export const SEMANTIC_ICON_PATHS: Record<InfographicTopicIcon, string[]> = {
+  backlink: ["M10 14l4-4", "M8 16l-1 1a4 4 0 0 1-6-6l4-4a4 4 0 0 1 6 0", "M13 17a4 4 0 0 0 6 0l4-4a4 4 0 0 0-6-6l-1 1"],
+  fingerprint: ["M3 12a9 9 0 0 1 18 0", "M6 15v-3a6 6 0 0 1 12 0c0 3 0 6-2 9", "M9 19c1-2 0-5 0-7a3 3 0 0 1 6 0c0 4 0 7-2 10", "M12 12v5"],
+  braces: ["M9 3H7v6c0 2-1 3-3 3 2 0 3 1 3 3v6h2", "M15 3h2v6c0 2 1 3 3 3-2 0-3 1-3 3v6h-2"],
+  stopwatch: ["M9 2h6M12 2v3m6 1 2-2", "M12 6a8 8 0 1 0 0 16 8 8 0 0 0 0-16Z", "m12 14 3-4"],
   // Original 8
   answer: ["M4 4h16v12H9l-5 4V4Z", "M8 8h8M8 12h5"],
   evidence: ["M6 3h9l4 4v14H6V3Z", "M14 3v5h5", "m9 15 2 2 4-5"],
@@ -290,6 +298,10 @@ const ICON_RULES: Array<[InfographicTopicIcon, RegExp]> = [
   ["scale", /\b(?:compare|comparison|original|benchmark|balance|trade-?off|difference|vs\.?|same)\b/i],
   ["search", /\b(?:identify|diagnose|audit|unclear|search|research|query|find|gap|missing)\b/i],
   ["filter", /\b(?:dense|prune|filter|trim|clarity|noise|ambigu|vague)\b/i],
+  ["backlink", /\b(?:backlinks?|link authority|referring domains?)\b/i],
+  ["fingerprint", /\b(?:original insights?|firsthand|first-hand|unique value)\b/i],
+  ["braces", /\b(?:structured data|json-ld|schema markup)\b/i],
+  ["stopwatch", /\b(?:page speed|load time|latency|core web vitals)\b/i],
   ["alert-triangle", /\b(?:risk|uncertain|error|pitfall|warning|weak|hallucinat|caution)\b/i],
   ["edit-3", /\b(?:revise|revision|rewrite|rewriting|edit|editing|draft|prose|phrasing)\b/i],
   ["shield-check", /\b(?:preserve|protect|safe|guard|meaning|accurate|fact|facts|trust|eeat|e-e-a-t|reliable)\b/i],
@@ -386,6 +398,11 @@ export function scoreSemanticIconCandidates(
       scores.set(icon, (scores.get(icon) || 0) + pts);
     }
   }
+
+  // Named disciplines are more specific than incidental words such as "engine".
+  if (/\banswer engine optimization\b/i.test(title)) scores.set("answer", 18);
+  if (/\bgenerative engine optimization\b/i.test(title)) scores.set("evidence", 18);
+  if (/\bAI-assisted SEO\b/i.test(title)) scores.set("workflow", 18);
 
   if (isQuestion) {
     scores.set("help-circle", (scores.get("help-circle") || 0) + 2.5);

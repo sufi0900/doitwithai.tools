@@ -1358,13 +1358,7 @@ export function buildPrismScene(
       0,
       slackAfterGaps - extraCardH * nodes.length,
     );
-    const topLead = Math.min(
-      68,
-      Math.max(
-        Math.min(16, remainingSlack),
-        Math.round(remainingSlack * 0.42),
-      ),
-    );
+    const topLead = Math.round(remainingSlack * 0.45);
     let y = top + topLead;
     if (isTimeline && nodes.length > 1) {
       const firstCy = y + (rowHeights[0] + extraCardH) / 2;

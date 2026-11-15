@@ -58,7 +58,7 @@ const COMPARISON_RE =
   /\b(?:vs\.?|versus|compare|comparison|difference between|trade-?offs?|before and after|pros and cons|which is better)\b/i;
 
 const PROCESS_RE =
-  /\b(?:step-by-step|steps?\b|workflow|process|pipeline|sequence|how to|guide|roadmap|phases?|stages?)\b/i;
+  /\b(?:step-by-step|steps?\b|evolution|chronology|workflow|process|pipeline|sequence|how to|guide|roadmap|phases?|stages?)\b/i;
 
 const CHECKLIST_RE =
   /\b(?:checklist|audit|verify|verification|criteria|rules|requirements|must-haves|best practices|quality check)\b/i;
@@ -160,8 +160,8 @@ export function classifySectionArchetype(
   }
 
   if (
-    (section.role === "introduction" || NARRATIVE_WRAPUP_RE.test(cleanTitle)) &&
-    bodyBlocks.length < 2
+    (section.role === "introduction" && bodyBlocks.length < 2) ||
+    NARRATIVE_WRAPUP_RE.test(cleanTitle.split(/[:—]/)[0].trim())
   ) {
     return {
       archetype: "skip",
@@ -221,7 +221,7 @@ export function classifySectionArchetype(
   }
 
   const metricMatches =
-    combinedText.match(/\b\d+(?:\.\d+)?\s*(?:%|percent|x|ms|s|px)\b/gi) || [];
+    combinedText.match(/\b\d+(?:\.\d+)?\s*(?:%(?!\w)|(?:percent|x|ms|s|px)\b)/gi) || [];
   if (metricMatches.length >= 2) {
     return {
       archetype: "data-metrics",

@@ -63,7 +63,7 @@ const personal =
  * cannot stand alone as an educational infographic concept.
  */
 const conversationalFiller =
-  /^(?:you(?:\s+have|[’']ve)?\s+probably\s+noticed\b|you\s+search\b|we(?:\s+have|[’']ve)?\s+seen\s+a\s+(?:huge|big|major|massive|significant|dramatic)\s+(?:change|shift)\b|in\s+recent\s+years,?\s+we\s+have\s+seen\b|but\s+this\s+does\s+not\s+mean\b|that\s+does\s+not\s+mean\b|does\s+this\s+mean\b|let[’']?s\s+(?:look|take\s+a\s+look|dive|start|explore|break\s+down|be\s+honest)\b|here\s+is\s+(?:why|what|how)\s+that\s+matters\b|think\s+about\s+how\s+you\b|so\s+what\s+does\s+this\s+mean\s+for\s+you\b)/i;
+  /^(?:(?:this|the) (?:timeline|diagram|infographic|illustration|graphic) (?:visualizes|shows|illustrates|depicts)\b|because of this limitation\b|clearing them up\b|you(?:\s+have|[’']ve)?\s+probably\s+noticed\b|you\s+search\b|we(?:\s+have|[’']ve)?\s+seen\s+a\s+(?:huge|big|major|massive|significant|dramatic)\s+(?:change|shift)\b|in\s+recent\s+years,?\s+we\s+have\s+seen\b|but\s+this\s+does\s+not\s+mean\b|that\s+does\s+not\s+mean\b|does\s+this\s+mean\b|let[’']?s\s+(?:look|take\s+a\s+look|dive|start|explore|break\s+down|be\s+honest)\b|here\s+is\s+(?:why|what|how)\s+that\s+matters\b|think\s+about\s+how\s+you\b|so\s+what\s+does\s+this\s+mean\s+for\s+you\b)/i;
 
 const sentences = (s: string) =>
   clean(s)
@@ -156,6 +156,22 @@ export function buildSectionVisual(
       if (b.kind !== "heading") excluded++;
       continue;
     }
+    if (b.kind === "table") {
+      const [headers, ...rows] = b.text.split("\n").map(row =>
+        row.split(" | ").map(clean),
+      );
+      for (const cells of rows) {
+        const [label, ...values] = cells;
+        if (!label || /^\d+(?:[.,]\d+)?%?$/.test(label) || label.length > 72 || cells.length !== headers.length) continue;
+        const detail = values.map((value, i) =>
+          value && headers[i + 1] ? `${headers[i + 1]}: ${value}` : value,
+        ).filter(Boolean).join(". ");
+        if (detail.length >= 12 && detail.length <= 260) {
+          eligible.push({ ...b, kind: "list", heading: label, text: detail });
+        }
+      }
+      continue;
+    }
     const rawText = decontextualizeProse(clean(b.text));
     if (
       rawText.length < 24 ||
@@ -185,7 +201,12 @@ export function buildSectionVisual(
     }
   }
 
-  const headings = [...new Set(eligible.map((b) => b.heading).filter(Boolean))];
+  const primaryHeadings = new Set(eligible.map((b) => b.heading).filter(Boolean));
+  const useSubheadings = primaryHeadings.size < 2 &&
+    new Set(eligible.map((b) => b.subheading).filter(Boolean)).size >= 2;
+  const groupHeading = (block: ArticleSourceBlock) =>
+    useSubheadings ? block.subheading : block.heading;
+  const headings = [...new Set(eligible.map(groupHeading).filter(Boolean))];
   const overviewList = eligible.filter(
     (b) =>
       !b.heading && b.kind === "list" && /^.{3,76}\s[—–]\s.{25,}$/.test(b.text),
@@ -201,7 +222,7 @@ export function buildSectionVisual(
       : headings.length >= 2
         ? headings.map((title) => ({
             title,
-            blocks: eligible.filter((b) => b.heading === title),
+            blocks: eligible.filter((b) => groupHeading(b) === title),
           }))
         : expanded.length === 1
           ? sentences(expanded[0].block.text).map((text) => ({
@@ -219,7 +240,7 @@ export function buildSectionVisual(
       const text = clean(first.text);
       const candidates = group.blocks
         .flatMap((b) =>
-          sentences(b.text).map((sentence) => ({ sentence, id: b.id })),
+          sentences(b.text).map((sentence) => ({ sentence, block: b })),
         )
         .filter(
           (x) =>
@@ -261,9 +282,10 @@ export function buildSectionVisual(
           : candidates.filter((c) => !/[:;]$/.test(c.sentence))
       ).slice(0, 1);
 
+      if (!chosen.length && /[:;]$/.test(text)) return null;
       const primarySentence = chosen[0]?.sentence || text;
       const derived = deriveStandaloneConcept(
-        text,
+        chosen[0]?.block.text || text,
         primarySentence,
         group.title,
         isFaq,
@@ -290,10 +312,10 @@ export function buildSectionVisual(
         title: clean(title),
         detail: detail.replace(/^\p{Ll}/u, (c) => c.toUpperCase()),
         metricValue: "",
-        sourceBlockIds: [...new Set(chosen.map((c) => c.id))],
+        sourceBlockIds: [chosen[0]?.block.id || first.id],
       };
     })
-    .filter((n) => n.title && n.detail && norm(n.title) !== norm(n.detail));
+    .filter((n): n is NonNullable<typeof n> => Boolean(n && n.title && n.detail && norm(n.title) !== norm(n.detail)));
   const nodes = assignDistinctSectionIcons(points.slice(0, 6), section.title);
   const omittedPoints = Math.max(0, points.length - nodes.length);
   const warnings: string[] = [];
@@ -309,9 +331,9 @@ export function buildSectionVisual(
     warnings.push(
       `${omittedPoints} additional source points remain in the source panel. Split this section into another infographic if needed.`,
     );
-  if (eligible.some((b) => b.kind === "table"))
+  if (section.blocks.some((b) => b.kind === "table"))
     warnings.push(
-      "Table content is preserved as text. This pilot does not infer chart values or units from tables.",
+      "Table rows retain their column labels. The full table is available in the source panel.",
     );
   return {
     nodes,
@@ -406,26 +428,9 @@ export function buildAllArticleSectionVisuals(
     }))
     .filter((item) => item.visual.nodes.length >= 2);
 
-  const pool =
-    contentCandidates.length > 0
-      ? contentCandidates
-      : sections
-          .map((section) => ({
-            section,
-            intel: classifySectionArchetype(section),
-            visual: buildSectionVisual(section, options.sourceUrl),
-          }))
-          .filter((item) => item.visual.nodes.length >= 2);
-
-  const selected = pool.slice(0, 12);
+  const selected = contentCandidates.slice(0, 12);
   const total = selected.length;
-  const layoutCycle: PrismLayout[] = [
-    "editorial",
-    "ribbon",
-    "constellation",
-    "checklist",
-    "timeline",
-  ];
+  const frameworkLayouts: PrismLayout[] = ["editorial", "constellation", "ribbon"];
   const patternCycle = BACKGROUND_PATTERNS.map((p) => p.id);
   const cardStyleCycle = CARD_STYLES.map((c) => c.id);
   const depthCycle = ["soft", "raised", "layered"] as const;
@@ -441,40 +446,23 @@ export function buildAllArticleSectionVisuals(
     ? brandColors(hint.accent, useDark)
     : base.brand?.customColors;
 
-  let prevLayout: PrismLayout | undefined;
-
+  let frameworkIndex = 0;
   return selected.map(({ section, intel, visual }, idx) => {
-    let layout: PrismLayout;
-    if (intel.isFaq) {
-      layout = prevLayout !== "checklist" ? "checklist" : "editorial";
-    } else if (
-      /\b(vs\.?|versus|compare|comparison|difference|trade-off)\b/i.test(
-        section.title,
-      ) &&
-      visual.nodes.length % 2 === 0
-    ) {
-      layout = "comparison";
-    } else if (
-      visual.brief.relationship === "sequence" &&
-      prevLayout !== "timeline"
-    ) {
-      layout = "timeline";
-    } else if (
-      /\b(checklist|check|audit|verify|guide|rules|criteria)\b/i.test(
-        section.title,
-      ) &&
-      prevLayout !== "checklist"
-    ) {
-      layout = "checklist";
-    } else {
-      layout = layoutCycle[idx % layoutCycle.length];
-      if (layout === prevLayout) {
-        layout = layoutCycle[(idx + 1) % layoutCycle.length];
-      }
+    let layout: PrismLayout = intel.recommendedPrismLayout;
+    if (intel.archetype === "framework") {
+      layout = frameworkLayouts[frameworkIndex++ % frameworkLayouts.length];
+    } else if (layout === "comparison" && visual.nodes.length % 2 !== 0) {
+      layout = "editorial";
     }
-    prevLayout = layout;
 
-    const autoHighlights = extractHeadlineHighlightPhrases(section.title).join(
+    // A capped list must advertise the number of points actually visible.
+    const headline = visual.brief.omittedPoints > 0
+      ? section.title.replace(/^\d+(?=\s)/, (count) =>
+          Number(count) === visual.nodes.length + visual.brief.omittedPoints
+            ? String(visual.nodes.length) : count,
+        )
+      : section.title;
+    const autoHighlights = extractHeadlineHighlightPhrases(headline).join(
       ", ",
     );
     const domainLabel = (
@@ -499,7 +487,11 @@ export function buildAllArticleSectionVisuals(
           id: `sec-vis-${section.id}-${idx + 1}`,
           sectionId: section.id,
           paletteId: resolvedPaletteId,
-          headline: section.title,
+          headline,
+          comparisonLabels: undefined,
+          centerLabel: undefined,
+          calloutText: undefined,
+          calloutBadge: undefined,
           subheadline: "",
           highlightWords: autoHighlights,
           eyebrowLabel,
@@ -523,7 +515,7 @@ export function buildAllArticleSectionVisuals(
           footerSourceLabel: options.domain
             ? `Source: ${options.domain}`
             : base.footerSourceLabel,
-          altText: `${section.title}: ${visual.nodes.map((n) => n.title).join("; ")}`,
+          altText: `${headline}: ${visual.nodes.map((n) => n.title).join("; ")}`,
           extractedBrand: hint || base.extractedBrand,
           signature: {
             ...normalizeSignature(base.signature),

@@ -127,6 +127,7 @@ def build_deck_html(
                 </div>
                 """
             )
+        grid = 4 <= len(cards_html) <= 6 or (s.get("kind") == "comparison" and len(cards_html) == 2)
         callout_html = ""
         if s.get("callout_text"):
             callout_html = f"""
@@ -160,7 +161,7 @@ def build_deck_html(
                 <div class="eyebrow-pill"><span class="eyebrow-dot"></span>{eyebrow}</div>
                 <h1 class="slide-headline">{headline_html}</h1>
                 <p class="slide-subheadline">{subheadline}</p>
-                <div class="cards-stack">
+                <div class="cards-stack{' cards-grid' if grid else ''}">
                   {"".join(cards_html)}
                 </div>
               </main>
@@ -328,7 +329,14 @@ def build_deck_html(
     flex-direction: column;
     gap: 22px;
   }}
+  .cards-grid {{
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }}
+  .cards-grid .concept-card {{ padding: 20px 24px; }}
+  .cards-grid .concept-card:last-child:nth-child(odd) {{ grid-column: 1 / -1; }}
   .concept-card {{
+    overflow-wrap: anywhere;
     background: {tokens["bg_surface"]};
     border: 1px solid rgba(255,255,255,0.08);
     border-radius: 22px;

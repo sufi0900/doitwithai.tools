@@ -713,7 +713,7 @@ export function BlogInfographicStudio({
                       brandTheme: data.brandTheme,
                     },
                   );
-                  if (allVisuals.length >= 2) {
+                  if (allVisuals.length > 0) {
                     const recIdx = Math.max(
                       0,
                       allVisuals.findIndex(
@@ -729,6 +729,8 @@ export function BlogInfographicStudio({
                     );
                     return;
                   }
+                  setError("This article has no standalone section with two source-backed points. Select a section or paste more detail.");
+                  return;
                 }
 
                 // If user clicked a section chip for an already-generated section tab, switch to that tab
@@ -763,6 +765,10 @@ export function BlogInfographicStudio({
                     ...active,
                     id: active.id,
                     sectionId: input.id,
+                    calloutText: undefined,
+                    calloutBadge: undefined,
+                    centerLabel: undefined,
+                    comparisonLabels: undefined,
                     headline: input.title,
                     subheadline: "",
                     highlightWords: extractHeadlineHighlightPhrases(

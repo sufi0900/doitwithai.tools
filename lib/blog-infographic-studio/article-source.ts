@@ -10,6 +10,7 @@ export interface ArticleSourceBlock {
   kind: "paragraph" | "list" | "table" | "caption" | "heading";
   text: string;
   heading?: string;
+  subheading?: string;
 }
 export interface ArticleSourceSection {
   id: string;
@@ -61,12 +62,14 @@ export function extractArticleSource(document: Document, title: string) {
     Array.from(el.querySelectorAll("p, li"))
       .filter((p) => !p.closest(excluded))
       .reduce((n, p) => n + tidy(p.textContent).length, 0);
+  const articleRoots = candidates.filter((el) => !el.matches("main") && score(el) > 0);
   const root =
-    candidates.sort((a, b) => score(b) - score(a))[0] || document.body;
+    (articleRoots.length ? articleRoots : candidates).sort((a, b) => score(b) - score(a))[0] || document.body;
   const sections: ArticleSourceSection[] = [];
   let current: ArticleSourceSection | undefined,
     preH2Section: ArticleSourceSection | undefined,
     h3 = "",
+    h4 = "",
     blocksFound = 0,
     blocksIncluded = 0,
     chars = 0,
@@ -82,14 +85,19 @@ export function extractArticleSource(document: Document, title: string) {
     if (isPreH2) preH2Section = current;
     if (sections.length < 36) sections.push(current);
     h3 = "";
+    h4 = "";
   };
   for (const el of Array.from(
-    root.querySelectorAll("h2,h3,p,li,table,figcaption"),
+    root.querySelectorAll("h2,h3,h4,p,li,table,figcaption"),
   )) {
     if (el.closest(excluded)) continue;
     if (el.parentElement?.closest("table, li") && !/^H[23]$/.test(el.tagName))
       continue;
-    let text = tidy(el.textContent);
+    const copy = el.querySelector("br") ? el.cloneNode(true) as Element : el;
+    if (copy !== el) {
+      for (const br of Array.from(copy.querySelectorAll("br"))) br.replaceWith(" ");
+    }
+    let text = tidy(copy.textContent);
     if (!text) continue;
     if (el.tagName === "H2") {
       begin(text, false);
@@ -97,7 +105,7 @@ export function extractArticleSource(document: Document, title: string) {
     }
     if (!current) begin(title, true);
     const kind: ArticleSourceBlock["kind"] =
-      el.tagName === "H3"
+      /^H[34]$/.test(el.tagName)
         ? "heading"
         : el.tagName === "LI"
           ? "list"
@@ -106,7 +114,10 @@ export function extractArticleSource(document: Document, title: string) {
             : el.tagName === "FIGCAPTION"
               ? "caption"
               : "paragraph";
-    if (kind === "heading") h3 = text;
+    if (el.tagName === "H3") {
+      h3 = text;
+      h4 = "";
+    } else if (el.tagName === "H4") h4 = text;
     if (kind === "table")
       text = Array.from(el.querySelectorAll("tr"))
         .map((tr) =>
@@ -133,6 +144,7 @@ export function extractArticleSource(document: Document, title: string) {
       kind,
       text: normalizedText,
       heading: h3 || undefined,
+      subheading: h4 || undefined,
     });
   }
   const useful = sections.filter((s) =>

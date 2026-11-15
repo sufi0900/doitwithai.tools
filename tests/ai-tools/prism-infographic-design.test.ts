@@ -456,7 +456,7 @@ test("6-Layer Agentic Infographic Pipeline resolves all live screenshot defects 
   assert.ok(Boolean(s1.calloutText && s1.calloutText.length > 0));
   for (const node of s1.nodes) {
     assert.doesNotMatch(`${node.title} ${node.detail}`, /prompt above/i);
-    assert.equal(hasTitleBodyDuplication(node.title, node.detail), false);
+    assert.equal(hasTitleBodyDuplication(node.title, node.detail), false, JSON.stringify(node));
     assert.equal(hasTrailingCliffhanger(node.title), false);
   }
   const s1Scene = buildInfographicScene(s1);
@@ -521,4 +521,21 @@ test("6-Layer Agentic Infographic Pipeline resolves all live screenshot defects 
     .map((_, el) => $s3(el).attr("data-semantic-icon"))
     .get();
   assert.equal(new Set(s3Icons).size, 6);
+});
+
+test("article graphics preserve nested technical subjects and source sentence boundaries", async () => {
+  const { extractArticleSource } = await import("../../lib/blog-infographic-studio/article-source");
+  const { document } = parseHTML(`<main><article><h2>Search visibility signals</h2>
+    <h3>Technical checks</h3><h4>Page speed</h4>
+    <p>Measure load time on the published page.<br>Repeat the measurement after changes.</p>
+    <h4>Backlink sources</h4><p>Inspect referring domains for relevant links to the published page.</p>
+    <h2>Final Thoughts: Search visibility</h2><p>Review the full guide for additional context.</p></article></main>`);
+  const { sections } = extractArticleSource(document as unknown as Document, "Search visibility");
+  const [visual, ...rest] = buildAllArticleSectionVisuals(sections);
+  assert.equal(rest.length, 0);
+  assert.deepEqual(visual.nodes.map(n => n.title), ["Page speed", "Backlink sources"]);
+  assert.match(sections[0].blocks.find(b => b.kind === "paragraph")!.text, /page\. Repeat/);
+  for (const node of visual.nodes) {
+    assert.ok(sections[0].blocks.some(b => node.sourceBlockIds?.includes(b.id) && b.text.includes(node.detail)));
+  }
 });
