@@ -46,3 +46,21 @@ This does not claim to resolve every native tool's responsive layout. Phase 2 st
 6. Confirm no unexpected horizontal page scrolling, clipped actions or duplicate scrollbars.
 
 Signature: **Prism Forge** — preserve concurrent changes; push only after validation and a latest-head check. Never merge main.
+
+## Phase 3 and 4 first increment — 15 November 2026 — Prism Forge
+
+Baseline `a7c697e`: preserve the founder-requested Content Writer rollback. The founder explicitly requested work on editable tool pages and multi-tool polish; this increment does not claim that Phase 2 visual QA or either new phase is complete.
+
+### Shared editing
+
+`ToolPageCanvasEditor` provides an explicit selection mode for native page headings and their introductory paragraphs, plus keyboard-accessible field selection. Apply dispatches the existing `project.update` command through `executeManual`; the existing reducer, persistence and publication model remain authoritative. Pending text is local until Apply. Discard restores the current saved field; a project switch remounts the editor. Left-panel changes and undo/redo refresh the draft through project values. No direct DOM text mutation is performed by the editor.
+
+Scope is currently heading and introduction only. Existing left controls continue to handle theme, inputs, FAQ and other properties. Existing installedToolVersion/sync behavior preserves custom copy unless explicit overwrite is requested. A complete versioned editable-property registry, selection coverage for every page element, migration/reset UI and browser verification are still outstanding. Do not label Phase 3 complete.
+
+### Multi-tool polish
+
+Search trims surrounding whitespace and also searches technology/category tags. A search with no matching tools retains the directory section, provides an accessible status and a Clear filters action. Tool card grids now fit containers narrower than 300px. Remaining homepage, dedicated directory, tool landing-page and blog visual review is still outstanding. Do not label Phase 4 complete.
+
+### Validation checkpoint
+
+Ten builder/shared-editing tests passed, including edit/undo/redo and default upstream-sync preservation. Application TypeScript passed (exit 0). Configured pnpm production build passed (exit 0), including 126/126 portable tool artifacts, using the documented public Sanity project/dataset. Existing lint, Redis-configuration and Portable Text warnings remain; no provider-backed runtime claim is made. Browser interaction and visual QA are not claimed.

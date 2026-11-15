@@ -24,6 +24,7 @@ import { isFlatTemplate, isCollectionTemplate, isLightTemplate } from "@/feature
 import { CollectionHero } from "@/features/website-builder/portfolio/collection-templates";
 import { EditorialFlagshipHero, isEditorialFlagshipTemplate } from "@/features/website-builder/portfolio/editorial-flagship-templates";
 import { InteractiveWebsiteToolRunner } from "@/features/website-builder/tools/InteractiveWebsiteToolRunner";
+import { ToolPageCanvasEditor } from "./tool-page-canvas-editor";
 import { CatalogToolInstaller } from "./CatalogToolInstaller";
 import { ProfessionalHeroAside } from "@/features/website-builder/portfolio/professional-hero-aside";
 
@@ -349,12 +350,14 @@ function StudioPreview({ document, target, focusedSkill, execute, reducedMotion,
           className={`portfolio-preview focused-tool-preview bg-${document.design.background} template-${document.design.template} ${isCollectionTemplate(document.design.template) ? "collection-theme" : ""} ${isLightTemplate(document.design.template) ? "light-theme" : ""}`}
           data-accent={document.design.accent}
         >
+          <ToolPageCanvasEditor key={selectedTool.id} tool={selectedTool} execute={execute}>
           <InteractiveWebsiteToolRunner
             tool={selectedTool}
             siteName={document.identity.name}
             siteAccent={document.design.accent}
             siteBackground={document.design.background}
           />
+          </ToolPageCanvasEditor>
         </div>
       );
     }

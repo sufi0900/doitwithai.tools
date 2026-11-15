@@ -2276,3 +2276,5 @@ body.public-site.light-theme {
 .studio-workspace .preview-shell .focused-tool-preview { display:block;padding:0;min-width:0;width:100%;flex:1;min-height:0; }
 .studio-workspace .preview-chrome { flex-shrink:0; }
 .studio-workspace.preview-only .preview-shell .focused-tool-preview { min-height:0; }
+
+.tool-canvas-controls { padding:12px;border-bottom:1px solid var(--line);background:var(--panel,#0f1524); }.tool-canvas-controls form { display:grid;gap:10px;margin-top:12px; }.tool-canvas-controls label { display:grid;gap:6px; }.tool-canvas-controls :is(button,select,textarea) { padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--panel,#0f1524);color:var(--text,#e2e8f0);max-width:100%; }.tool-canvas-controls textarea { width:100%;min-height:72px; }.tool-canvas-controls small { color:var(--muted); }

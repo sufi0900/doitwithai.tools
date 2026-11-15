@@ -150,8 +150,8 @@ export function EditorialFlagshipSections({
     post.title.toLowerCase().includes(selectedTopic.toLowerCase());
    const matchesQuery =
     !searchQuery.trim() ||
-    post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    post.excerpt.toLowerCase().includes(searchQuery.toLowerCase());
+    post.title.toLowerCase().includes(searchQuery.trim().toLowerCase()) ||
+    post.excerpt.toLowerCase().includes(searchQuery.trim().toLowerCase());
    return matchesTopic && matchesQuery;
   });
  }, [posts, searchQuery, selectedTopic]);
@@ -163,8 +163,9 @@ export function EditorialFlagshipSections({
     project.title.toLowerCase().includes(selectedTopic.toLowerCase());
    const matchesQuery =
     !searchQuery.trim() ||
-    project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    project.summary.toLowerCase().includes(searchQuery.toLowerCase());
+    project.title.toLowerCase().includes(searchQuery.trim().toLowerCase()) ||
+    project.summary.toLowerCase().includes(searchQuery.trim().toLowerCase()) ||
+    project.technologies.some(tag => tag.toLowerCase().includes(searchQuery.trim().toLowerCase()));
    return matchesTopic && matchesQuery;
   });
  }, [projects, searchQuery, selectedTopic]);
@@ -956,7 +957,7 @@ export function EditorialFlagshipSections({
     </section>
    )}
 
-   {template !== "micro-saas-launchpad" && document.content.visibility.projects && (filteredProjects.length > 0 || editing) && (
+   {template !== "micro-saas-launchpad" && document.content.visibility.projects && (projects.length > 0 || editing) && (
     <section id="projects" style={{ display: "grid", gap: "22px" }}>
      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: "12px" }}>
       <div>
@@ -1022,7 +1023,8 @@ export function EditorialFlagshipSections({
       </div>
      )}
 
-     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "18px" }}>
+     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 300px), 1fr))", gap: "18px" }}>
+      {filteredProjects.length === 0 && <div role="status" className="portfolio-empty-state"><h3>No tools match your search</h3><p>Try another keyword or clear the filters to browse all tools.</p><button type="button" onClick={() => { setSearchQuery(""); setSelectedTopic("all"); }}>Clear filters</button></div>}
       {filteredProjects.map((project, idx) => {
        const cover = document.media.assets.find((a) => project.mediaIds.includes(a.id));
        const toolSlug = project.caseStudySlug || project.id;
