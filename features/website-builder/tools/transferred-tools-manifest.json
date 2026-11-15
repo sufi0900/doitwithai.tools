@@ -247,8 +247,8 @@
     "blog-section-infographic-generator": {
       "slug": "blog-section-infographic-generator",
       "sourcePage": "app/tools/blog-section-infographic-generator/page.tsx",
-      "versionHash": "3bea82c3",
-      "versionLabel": "v2026.11.3bea82c3",
+      "versionHash": "af5f30a3",
+      "versionLabel": "v2026.11.af5f30a3",
       "metaTitle": "SEO blog posts & pillar guides",
       "metaDescription": "Turn any H2 blog heading, paragraph, or URL into a branded, dimensioned section infographic.",
       "heroTitle": "Free AI Blog Section Infographic Generator: Turn Explanations Into Clear Visuals",

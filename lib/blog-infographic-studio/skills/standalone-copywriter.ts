@@ -32,6 +32,8 @@ export const TRAILING_CLIFFHANGER_WORDS = new Set([
   "such",
   "my",
   "your",
+  "&",
+  "practical",
   "his",
   "her",
   "its",
@@ -178,6 +180,12 @@ export const TRAILING_CLIFFHANGER_WORDS = new Set([
   "compares",
   "start",
   "starts",
+  "triggers",
+  "trigger",
+  "killed",
+  "guarantees",
+  "guarantee",
+  "publish",
   // Participles / gerunds that dangle at clause cuts (e.g. "... section, including")
   "including",
   "missing",
@@ -232,18 +240,62 @@ const MINOR_TITLE_WORDS = new Set([
   "vs.",
 ]);
 
+const UPPER_ACRONYMS = new Set([
+  "ai",
+  "seo",
+  "aeo",
+  "geo",
+  "sxo",
+  "aio",
+  "nlp",
+  "eeat",
+  "api",
+  "llm",
+  "llms",
+  "url",
+  "cta",
+  "serp",
+  "faq",
+  "faqs",
+  "ui",
+  "ux",
+  "html",
+  "json",
+  "css",
+  "svg",
+  "png",
+  "cwv",
+  "roi",
+]);
+
+function formatCasePart(rawPart: string, allowMinorLower: boolean): string {
+  const m = rawPart.match(/^([^\p{L}\p{N}]*)([\p{L}\p{N}'’]+?)([^\p{L}\p{N}]*)$/u);
+  if (!m) return rawPart;
+  const [, pre, core, post] = m;
+  const low = core.toLowerCase();
+  if (UPPER_ACRONYMS.has(low)) return `${pre}${core.toUpperCase()}${post}`;
+  if (/^[A-Z0-9&/]{2,}$/.test(core)) return rawPart;
+  if (allowMinorLower && MINOR_TITLE_WORDS.has(low) && !pre.includes("(")) {
+    return `${pre}${low}${post}`;
+  }
+  const titled = low.replace(/^\p{Ll}/u, (c) => c.toUpperCase());
+  return `${pre}${titled}${post}`;
+}
+
 export function toHeadlineCase(phrase: string): string {
   const words = clean(phrase).split(/\s+/).filter(Boolean);
   return words
     .map((w, idx) => {
       if (/[A-Z].*[A-Z]|[a-z][A-Z]|^\([A-Z]/.test(w)) return w;
-      const lower = w.toLowerCase();
-      if (idx > 0 && idx < words.length - 1 && MINOR_TITLE_WORDS.has(lower)) {
-        return lower;
+      if (/^[A-Z0-9&/.-]{2,}$/.test(w)) {
+        // Keep acronyms like E-E-A-T, AEO, SEO intact
+        if (!/[a-z]/.test(w)) return w;
       }
-      return lower
+      const prevEndsColon = idx > 0 && /[:—–-]$/.test(words[idx - 1]);
+      const allowMinor = idx > 0 && idx < words.length - 1 && !prevEndsColon;
+      return w
         .split("-")
-        .map((part) => part.replace(/^\p{Ll}/u, (c) => c.toUpperCase()))
+        .map((part, pIdx) => formatCasePart(part, allowMinor && pIdx === 0))
         .join("-");
     })
     .join(" ");
@@ -333,6 +385,11 @@ export function decontextualizeProse(text: string): string {
     /\b(?:in the (?:section|paragraph|table|example|list|chart|step) (?:above|below|earlier)|see (?:above|below) for details)\b[,.\s]*/gi,
     "",
   );
+  // Collapse accidental word/phrase stutters from source HTML (e.g. "became central became a central")
+  out = out.replace(
+    /\b(became|is|was|are|were)\s+(\w+)\s+\1\s+(?:a|an|the)?\s*\2\b/gi,
+    "$1 a $2",
+  );
   out = out.replace(/\s{2,}/g, " ").trim();
   return out ? out.replace(/^\p{Ll}/u, (c) => c.toUpperCase()) : "";
 }
@@ -357,6 +414,8 @@ export function hasTitleBodyDuplication(title: string, detail: string): boolean 
     "from",
     "into",
     "your",
+  "&",
+  "practical",
     "our",
     "are",
     "was",
@@ -395,7 +454,9 @@ function finalizePair(
     const answerText =
       bodySentences.find((s) => !s.trim().endsWith("?")) || detail;
     const subject = q.match(/^what is (.+?)\?$/i)?.[1];
-    const standaloneAnswer = subject ? answerText.replace(/^it\s+/i, () => subject + " ") : answerText;
+    const standaloneAnswer = subject
+      ? answerText.replace(/^it\s+/i, () => `${subject} `)
+      : answerText;
     return {
       title: q.replace(/^\p{Ll}/u, (c) => c.toUpperCase()),
       detail: clean(standaloneAnswer || detail).replace(/^\p{Ll}/u, (c) =>
@@ -461,6 +522,228 @@ function finalizePair(
   };
 }
 
+const RHETORICAL_OR_FRAGMENT_RE =
+  /^(?:you decide whether|most people only|and optimizing|is not a fixed|not because|but because|so i went|i wanted to|a lot of what you see|in this guide|this guide took|let['’]?s look|here is why|think about|that is why|you have probably noticed|we have seen a huge|this guide is not|if you have read other|if you want (?:a |to )|but something else was happening)\b|\b(?:you can explore our|detailed guide on|framework you used earlier|happened on your side)\b/i;
+
+/** Returns true when a sentence is conversational filler or a sentence fragment unsuitable as standalone card copy. */
+export function isRhetoricalOrFragmentSentence(sentence: string): boolean {
+  const s = clean(sentence);
+  if (!s || s.length < 22) return true;
+  if (RHETORICAL_OR_FRAGMENT_RE.test(s)) return true;
+  if (/[:;]$/.test(s) || /\b(?:including|such as|covering)[.:]?$/i.test(s)) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Compresses verbose, conversational, or parenthetical H3/H4 headings (>5 words)
+ * into sharp 2–5 word standalone Concept Kernels while keeping short technical
+ * headings and FAQ questions intact.
+ */
+export function compressHeadingToConceptTitle(
+  rawHeading: string,
+  bodyContext?: string,
+  isFaq = false,
+): string {
+  const raw = clean(rawHeading);
+  if (!raw) return "";
+  if (isFaq) return raw;
+
+  // Preserve short, already-crisp headings (<= 5 words and <= 42 chars, without conversational parens)
+  const rawWords = raw.split(/\s+/).filter(Boolean);
+  if (
+    rawWords.length <= 5 &&
+    raw.length <= 42 &&
+    !/\(/.test(raw) &&
+    !/^(?:so\s+what|and\s+)/i.test(raw)
+  ) {
+    return raw.replace(/^\d+\.\s+/, "");
+  }
+
+  let working = raw
+    // Strip conversational parentheticals
+    .replace(
+      /\s*\((?:and why|why most|simple definition|what most|and how|see below|overview|explained)[^)]*\)/gi,
+      "",
+    )
+    .replace(/\s+/g, " ")
+    .trim();
+
+  // Pattern 1: Acronym expansion ("What Is AEO (Answer Engine Optimization) ...", "SXO ( Search Experience Optimization)")
+  const acronymMatch = working.match(
+    /^(?:what\s+is\s+)?([A-Z]{2,6})\s*\(\s*([^)]{3,44}?)\s*\)/i,
+  );
+  if (acronymMatch) {
+    const code = acronymMatch[1].toUpperCase();
+    const expansion = toHeadlineCase(
+      stripTrailingCliffhangers(clean(acronymMatch[2])),
+    );
+    return `${code}: ${expansion}`;
+  }
+
+  // Pattern 2: Conversational non-FAQ question headings ("So What Exactly Is AI SEO?")
+  const whatIsMatch = working.match(
+    /^(?:so\s+)?what\s+(?:exactly\s+)?is\s+([^?]+)\??$/i,
+  );
+  if (whatIsMatch) {
+    const subj = stripTrailingCliffhangers(clean(whatIsMatch[1]));
+    return `Core ${toHeadlineCase(subj)} Definition`;
+  }
+
+  // Pattern 3: Numbered / Phased / Myth / Mistake headings with colons or em-dashes
+  const strippedNum = working.replace(/^\d+\.\s+/, "");
+  const colonIdx = strippedNum.search(/:\s+|\s+[—–]\s+/);
+  if (colonIdx > 2) {
+    const left = clean(strippedNum.slice(0, colonIdx)).replace(
+      /\s*\(\d{4}\s*[–-]\s*\d{4}\)/,
+      "",
+    );
+    const right = clean(
+      strippedNum.slice(colonIdx).replace(/^[:\s—–-]+/, ""),
+    );
+
+    if (/^(?:phase|step|myth|mistake|revolution|factor)\b/i.test(left)) {
+      const cleanedRight = right
+        .replace(
+          /^(?:the\s+rise\s+of|you\s+can|practitioners|search\s+engines\s+became|the\s+multi-platform)\s+/i,
+          (m) => {
+            if (/the\s+multi-platform/i.test(m)) return "Multi-Platform ";
+            if (/search\s+engines\s+became/i.test(m)) return "AI Search ";
+            return "";
+          },
+        )
+        .replace(/^AI Search AI-Powered$/i, "AI-Powered Search")
+        .replace(/\bautomatically\s+/gi, "")
+        .replace(/\s+at\s+scale\s+without\s+editing\b/i, " Unedited")
+        .replace(/\s+without\s+editing\b/i, " Unedited")
+        .replace(/\bbrief\s+creation$/i, "Briefs")
+        .replace(/\s+and\s+/gi, " & ")
+        .trim();
+      const rightWords = cleanedRight.split(/\s+/).filter(Boolean);
+      const compactRight = stripTrailingCliffhangers(
+        (rightWords.length > 6 || cleanedRight.length > 40
+          ? rightWords.slice(0, 5)
+          : rightWords
+        ).join(" "),
+      );
+      if (compactRight) {
+        return `${toHeadlineCase(left)}: ${toHeadlineCase(compactRight)}`;
+      }
+    }
+
+    // If right side starts with "Using..." or is a long subtitle for an already named concept
+    if (
+      left.split(/\s+/).length <= 3 &&
+      left.length <= 24 &&
+      (/^(?:using|how to|two more|a practical|understanding)\b/i.test(right) ||
+        right.length > 42)
+    ) {
+      if (/\bworkflow/i.test(right) && !/\bworkflow/i.test(left)) {
+        return `${toHeadlineCase(left)} Workflows`;
+      }
+      if (/signals/i.test(right)) {
+        return `${toHeadlineCase(left.replace(/\band\b/gi, "&"))} Signals`;
+      }
+      return left.length >= 6
+        ? `${toHeadlineCase(left)} Pillars`
+        : toHeadlineCase(stripTrailingCliffhangers(right.split(/\s+/).slice(0, 5).join(" ")));
+    }
+
+    if (left.split(/\s+/).length <= 3 && right.split(/\s+/).length <= 5) {
+      return `${toHeadlineCase(left)}: ${toHeadlineCase(right)}`;
+    }
+  }
+
+  // Pattern 4: Structural narrative H3s
+  const twoNounsMatch = working.match(
+    /^(?:the\s+)?(two|three|four|five|key|core)\s+([a-z]+)\s+that\s+(?:created|shaped|drive|define|power)\s+(.+)$/i,
+  );
+  if (twoNounsMatch) {
+    return `${toHeadlineCase(twoNounsMatch[1])} ${toHeadlineCase(twoNounsMatch[2])} of ${toHeadlineCase(stripTrailingCliffhangers(twoNounsMatch[3]))}`;
+  }
+
+  const mergedMatch = working.match(
+    /^how\s+(.{4,32}?)\s+merged\s+into\s+one\s+discipline$/i,
+  );
+  if (mergedMatch) {
+    return `${toHeadlineCase(clean(mergedMatch[1]).replace(/\s+and\s+/i, " & "))} Convergence`;
+  }
+
+  const whyImportantMatch = working.match(
+    /^why\s+(.{3,24}?)\s+is\s+(?:even\s+)?more\s+important\s+for\s+(.{3,24}?)\s+than\b.+$/i,
+  );
+  if (whyImportantMatch) {
+    return `Why ${toHeadlineCase(clean(whyImportantMatch[1]))} Powers ${toHeadlineCase(clean(whyImportantMatch[2]))}`;
+  }
+
+  // Strip trailing relative clauses ("that still matter...", "that determine whether...")
+  let compact = strippedNum
+    .replace(
+      /\s+(?:that|which|where|when|while|and why|and how|for sustainable)\b.*$/i,
+      "",
+    )
+    .replace(/\b(?:how|why)\s+user\s+/i, "")
+    .replace(/\bhas\s+changed\s+in\s+the\s+/i, " in ")
+    .replace(/^turning\s+/i, "")
+    .replace(/\s+and\s+/gi, " & ")
+    .trim();
+
+  const words = compact.split(/\s+/).filter(Boolean);
+  if (words.length > 6 || compact.length > 46) {
+    compact = stripTrailingCliffhangers(words.slice(0, 6).join(" "));
+  } else {
+    compact = stripTrailingCliffhangers(compact);
+  }
+
+  if (!compact && bodyContext) {
+    const firstTopic = clean(bodyContext)
+      .split(/\s+/)
+      .slice(0, 4)
+      .join(" ");
+    return toHeadlineCase(stripTrailingCliffhangers(firstTopic));
+  }
+  return toHeadlineCase(compact || working);
+}
+
+/**
+ * Picks 1–2 high-signal informative sentences from `sentencesList`, rejecting
+ * rhetorical fragments and lines that duplicate `title`.
+ */
+function buildSubstantiveDetail(
+  title: string,
+  primarySentence: string,
+  fullSentences: string[],
+): string {
+  const cleanPrimary = decontextualizeProse(primarySentence).replace(
+    LEADING_DISCOURSE_RE,
+    "",
+  );
+  const pool = fullSentences.filter(
+    (s) =>
+      !isRhetoricalOrFragmentSentence(s) &&
+      !hasTitleBodyDuplication(title, s),
+  );
+
+  let chosen =
+    !isRhetoricalOrFragmentSentence(cleanPrimary) &&
+    !hasTitleBodyDuplication(title, cleanPrimary)
+      ? cleanPrimary
+      : pool[0] || cleanPrimary;
+
+  // Enrich very short (<36 char) details with a complementary sentence from the same block when available
+  if (chosen.length < 36 && pool.length >= 2) {
+    const second = pool.find(
+      (s) => normText(s) !== normText(chosen) && chosen.length + s.length + 1 <= 185,
+    );
+    if (second) {
+      chosen = `${chosen.replace(/[.]$/, "")}. ${second}`;
+    }
+  }
+
+  return chosen.replace(/^\p{Ll}/u, (c) => c.toUpperCase());
+}
+
 /**
  * Synthesizes a standalone 2–5 word Concept Kernel title (or full FAQ question)
  * and a non-overlapping explanatory detail from article prose or preset titles.
@@ -481,12 +764,12 @@ export function synthesizeStandaloneTitleAndDetail(
     s.trim().endsWith("?"),
   );
 
-  // Rule A: FAQ Question Preservation — never truncate or strip "What is / What are"
+  // Rule A: FAQ Question Preservation — only when section is an FAQ or heading itself is a genuine Q&A question
   const cleanPreset = clean(presetTitle || "");
   if (
     options?.isFaq ||
-    cleanPreset.endsWith("?") ||
-    (firstQuestionSentence && firstQuestionSentence.length <= 110)
+    (cleanPreset.endsWith("?") &&
+      !/\b(?:so what|what exactly)\b/i.test(cleanPreset))
   ) {
     const qTitle = cleanPreset.endsWith("?")
       ? cleanPreset
@@ -503,16 +786,29 @@ export function synthesizeStandaloneTitleAndDetail(
     return finalizePair(qTitle, answerText, full, true);
   }
 
-  // Respect non-overlapping clean preset titles (e.g. strong H3 headings)
-  if (
-    cleanPreset &&
-    !hasTrailingCliffhanger(cleanPreset) &&
-    !hasTitleBodyDuplication(cleanPreset, candidate)
-  ) {
-    return {
-      title: cleanPreset,
-      detail: candidate.replace(/^\p{Ll}/u, (c) => c.toUpperCase()),
-    };
+  // Compress verbose/conversational preset headings (H3/H4) into Concept Kernels
+  if (cleanPreset) {
+    const compressedPreset = compressHeadingToConceptTitle(
+      cleanPreset,
+      full,
+      false,
+    );
+    const builtDetail = buildSubstantiveDetail(
+      compressedPreset,
+      candidate,
+      fullSentences,
+    );
+    if (
+      compressedPreset &&
+      !hasTrailingCliffhanger(compressedPreset) &&
+      !hasTitleBodyDuplication(compressedPreset, builtDetail)
+    ) {
+      return {
+        title: compressedPreset,
+        detail: builtDetail,
+      };
+    }
+    return finalizePair(compressedPreset || cleanPreset, builtDetail, full);
   }
 
   // Rule B: Explicit defined concept ("known as / defined as ...")
@@ -625,7 +921,6 @@ export function synthesizeStandaloneTitleAndDetail(
     const lead = inclusionMatch[1]
       .replace(/^(?:start with|begin with|focus on)\s+/i, "")
       .replace(/^(?:one|a|the)\s+/i, "");
-
     const title = toHeadlineCase(
       /^coherent section$/i.test(lead)
         ? "Isolate One Coherent Section"
@@ -676,11 +971,7 @@ export function synthesizeStandaloneTitleAndDetail(
     const leadTitle = stripTrailingCliffhangers(
       leadClause.split(/\s+/).slice(0, 5).join(" "),
     );
-    return finalizePair(
-      toHeadlineCase(leadTitle),
-      candidate,
-      full,
-    );
+    return finalizePair(toHeadlineCase(leadTitle), candidate, full);
   }
 
   // E7. Provide / supply <X> with <Y> ("Provide context and important constraints with the section being edited.")
@@ -692,7 +983,6 @@ export function synthesizeStandaloneTitleAndDetail(
       .replace(/\bimportant\b/gi, "")
       .replace(/\s{2,}/g, " ")
       .trim();
-
     const title = toHeadlineCase(
       `Supply ${rawObjects.replace(/\band\b/i, "&")}`,
     );
@@ -710,11 +1000,7 @@ export function synthesizeStandaloneTitleAndDetail(
       /(?:[,.]|\s+(?:before|when|while|after|in order to|to ensure)\b)/i,
     )[0];
     const rhs = toHeadlineCase(stripTrailingCliffhangers(rhsClause));
-    return finalizePair(
-      `Benchmark ${lhs} vs. ${rhs}`,
-      candidate,
-      full,
-    );
+    return finalizePair(`Benchmark ${lhs} vs. ${rhs}`, candidate, full);
   }
 
   // E9. General subject/verb sentence
@@ -773,6 +1059,8 @@ const HIGHLIGHT_STOPWORDS = new Set([
   "when",
   "where",
   "your",
+  "&",
+  "practical",
   "our",
   "their",
   "this",

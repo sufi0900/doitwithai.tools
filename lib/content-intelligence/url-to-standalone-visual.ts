@@ -7,8 +7,11 @@
 
 export {
   classifySectionArchetype,
+  extractComparisonLabels,
   isFaqHeadingOrSection,
+  isPredominantlyPersonalOrNarrative,
   rewriteDependentSectionTitle,
+  synthesizeInfographicHeadlineAndSubheadline,
   type RecommendedPrismLayout,
   type SectionArchetype,
   type SectionIntelligenceBlockLike,
@@ -18,9 +21,11 @@ export {
 
 export {
   TRAILING_CLIFFHANGER_WORDS,
+  compressHeadingToConceptTitle,
   decontextualizeProse,
   hasTitleBodyDuplication,
   hasTrailingCliffhanger,
+  isRhetoricalOrFragmentSentence,
   scoreHeadlineHighlightPhrases,
   stripTrailingCliffhangers,
   synthesizeStandaloneTitleAndDetail,

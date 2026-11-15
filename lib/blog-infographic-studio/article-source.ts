@@ -12,6 +12,11 @@ export interface ArticleSourceBlock {
   heading?: string;
   subheading?: string;
 }
+
+const blockHeadingLevels = new Map<string, 3 | 4>();
+export function getBlockHeadingLevel(block: { id: string }): 3 | 4 {
+  return blockHeadingLevels.get(block.id) ?? 3;
+}
 export interface ArticleSourceSection {
   id: string;
   title: string;
@@ -37,7 +42,7 @@ const excluded =
   'nav, aside, footer, script, style, [hidden], [aria-hidden="true"], [role="navigation"], .toc, .table-of-contents, .related-posts, .author-bio, .newsletter, .share-buttons';
 export function classifySection(title: string): ArticleSourceSection["role"] {
   if (
-    /about (?:the |this )?author|note before|before we begin|my (?:story|journey)|how i (?:wrote|created)|meet the founder|^introduction$/i.test(
+    /about (?:the |this )?author|a note before|note before|before we begin|before you read|author['’]?s note|my (?:story|journey)|how i (?:wrote|created)|meet the founder|^introduction$|^(?:conclusion|final thoughts|wrapping up|closing thoughts|in closing|summary and next steps)\b/i.test(
       title,
     )
   )
@@ -51,7 +56,7 @@ export function classifySection(title: string): ArticleSourceSection["role"] {
   return "content";
 }
 
-/** Traversal crosses nested wrappers and keeps H3 context; it does not stop after ten siblings. */
+/** Traversal crosses nested wrappers and keeps H3/H4 context; it does not stop after ten siblings. */
 export function extractArticleSource(document: Document, title: string) {
   const candidates = Array.from(
     document.querySelectorAll(
@@ -62,14 +67,19 @@ export function extractArticleSource(document: Document, title: string) {
     Array.from(el.querySelectorAll("p, li"))
       .filter((p) => !p.closest(excluded))
       .reduce((n, p) => n + tidy(p.textContent).length, 0);
-  const articleRoots = candidates.filter((el) => !el.matches("main") && score(el) > 0);
+  const articleRoots = candidates.filter(
+    (el) => !el.matches("main") && score(el) > 0,
+  );
   const root =
-    (articleRoots.length ? articleRoots : candidates).sort((a, b) => score(b) - score(a))[0] || document.body;
+    (articleRoots.length ? articleRoots : candidates).sort(
+      (a, b) => score(b) - score(a),
+    )[0] || document.body;
   const sections: ArticleSourceSection[] = [];
   let current: ArticleSourceSection | undefined,
     preH2Section: ArticleSourceSection | undefined,
     h3 = "",
     h4 = "",
+    hLevel: 3 | 4 = 3,
     blocksFound = 0,
     blocksIncluded = 0,
     chars = 0,
@@ -86,16 +96,18 @@ export function extractArticleSource(document: Document, title: string) {
     if (sections.length < 36) sections.push(current);
     h3 = "";
     h4 = "";
+    hLevel = 3;
   };
   for (const el of Array.from(
     root.querySelectorAll("h2,h3,h4,p,li,table,figcaption"),
   )) {
     if (el.closest(excluded)) continue;
-    if (el.parentElement?.closest("table, li") && !/^H[23]$/.test(el.tagName))
+    if (el.parentElement?.closest("table, li") && !/^H[234]$/.test(el.tagName))
       continue;
-    const copy = el.querySelector("br") ? el.cloneNode(true) as Element : el;
+    const copy = el.querySelector("br") ? (el.cloneNode(true) as Element) : el;
     if (copy !== el) {
-      for (const br of Array.from(copy.querySelectorAll("br"))) br.replaceWith(" ");
+      for (const br of Array.from(copy.querySelectorAll("br")))
+        br.replaceWith(" ");
     }
     let text = tidy(copy.textContent);
     if (!text) continue;
@@ -104,8 +116,10 @@ export function extractArticleSource(document: Document, title: string) {
       continue;
     }
     if (!current) begin(title, true);
+    const isH3 = el.tagName === "H3";
+    const isH4 = el.tagName === "H4";
     const kind: ArticleSourceBlock["kind"] =
-      /^H[34]$/.test(el.tagName)
+      isH3 || isH4
         ? "heading"
         : el.tagName === "LI"
           ? "list"
@@ -114,10 +128,15 @@ export function extractArticleSource(document: Document, title: string) {
             : el.tagName === "FIGCAPTION"
               ? "caption"
               : "paragraph";
-    if (el.tagName === "H3") {
+    if (isH3) {
       h3 = text;
       h4 = "";
-    } else if (el.tagName === "H4") h4 = text;
+      hLevel = 3;
+    } else if (isH4) {
+      h4 = text;
+      if (!h3) h3 = text;
+      hLevel = 4;
+    }
     if (kind === "table")
       text = Array.from(el.querySelectorAll("tr"))
         .map((tr) =>
@@ -139,12 +158,14 @@ export function extractArticleSource(document: Document, title: string) {
       kind === "heading" || kind === "table"
         ? text
         : decontextualizeProse(text) || text;
+    const blockId = `block-${sourceId(`${current!.id}:${blocksFound}:${normalizedText}`)}`;
+    if (h3 || h4) blockHeadingLevels.set(blockId, hLevel);
     current!.blocks.push({
-      id: `block-${sourceId(`${current!.id}:${blocksFound}:${normalizedText}`)}`,
+      id: blockId,
       kind,
       text: normalizedText,
       heading: h3 || undefined,
-      subheading: h4 || undefined,
+      ...(h4 ? { subheading: h4 } : {}),
     });
   }
   const useful = sections.filter((s) =>
@@ -168,6 +189,9 @@ export function extractArticleSource(document: Document, title: string) {
   }
   for (const s of useful) {
     s.archetype = classifySectionArchetype(s, title).archetype;
+    if (s.archetype === "skip" && s.role === "content") {
+      s.role = "introduction";
+    }
   }
   const substantive = useful.filter((s) => s.role === "content");
   const rank = (s: ArticleSourceSection) => {

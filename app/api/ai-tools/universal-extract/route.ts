@@ -1636,7 +1636,16 @@ export async function POST(request: NextRequest) {
       input.purpose === "infographic"
         ? extractArticleSource(document as unknown as Document, title)
         : undefined;
-    const sourceParagraphs = sourceTree?.sections.flatMap((s) =>
+    const substantiveSections = sourceTree
+      ? sourceTree.sections.filter(
+          (s) => s.role === "content" && s.archetype !== "skip",
+        )
+      : undefined;
+    const exposedSections =
+      sourceTree && substantiveSections && substantiveSections.length > 0
+        ? substantiveSections
+        : sourceTree?.sections;
+    const sourceParagraphs = exposedSections?.flatMap((s) =>
       s.blocks.filter((b) => b.kind !== "heading").map((b) => b.text),
     );
     const resPayload: UniversalExtractResponse = {
@@ -1650,8 +1659,8 @@ export async function POST(request: NextRequest) {
       headings,
       paragraphs: sourceParagraphs || paragraphs,
       cleanText: (sourceParagraphs || paragraphs).join("\n\n"),
-      keyTakeaways: sourceTree
-        ? sourceTree.sections
+      keyTakeaways: exposedSections
+        ? exposedSections
             .filter((s) => s.role === "content")
             .flatMap((s) =>
               s.blocks
@@ -1661,8 +1670,8 @@ export async function POST(request: NextRequest) {
             )
             .slice(0, 6)
         : keyTakeaways,
-      subTopics: sourceTree
-        ? sourceTree.sections.map((s) => ({
+      subTopics: exposedSections
+        ? exposedSections.map((s) => ({
             sectionId: s.id,
             title: s.title,
             summary: s.blocks.find((b) => b.kind !== "heading")?.text || "",
@@ -1672,9 +1681,10 @@ export async function POST(request: NextRequest) {
               .join("\n\n"),
           }))
         : subTopics,
-      ...sourceTree,
       ...(sourceTree
         ? {
+            ...sourceTree,
+            sections: exposedSections,
             brandTheme: extractWebsiteBrand(
               document as unknown as Document,
               domain,

@@ -44,6 +44,9 @@ function importBrief(raw: VisualBrief | undefined): VisualBrief | undefined {
       text: b.text,
       heading:
         typeof b.heading === "string" ? b.heading.slice(0, 500) : undefined,
+      ...(typeof b.subheading === "string"
+        ? { subheading: b.subheading.slice(0, 500) }
+        : {}),
     };
   });
   let sourceUrl: string | undefined;
@@ -110,11 +113,15 @@ export function selectInfographicTemplate(
   });
 }
 export function nodesFromText(raw: string): BlogInfographicNodeItem[] {
-  return raw
+  const sentences = raw
     .split(/\n+|(?<=[.!?])\s+(?=[A-Z0-9])/g)
     .map((s) => s.replace(/^\s*(?:[-*•]|\d+[.)])\s*/, "").trim())
-    .filter((s) => s.length >= 6)
-    .slice(0, 8)
+    .filter((s) => s.length >= 6);
+  const grouped = sentences.slice(0, 8);
+  if (sentences.length > 8) {
+    grouped[7] = [grouped[7], ...sentences.slice(8)].join(" ");
+  }
+  return grouped
     .map((line, i) => {
       const colon = line.indexOf(":");
       const hasLabel = colon > 2 && colon < 48;
@@ -154,12 +161,16 @@ export function importInfographicProject(
       typeof c.templateId !== "number" ||
       c.templateId < 1 ||
       c.templateId > 25 ||
-      !BLOG_INFOGRAPHIC_PALETTES[
-        c.paletteId as keyof typeof BLOG_INFOGRAPHIC_PALETTES
-      ] ||
-      !ASPECT_RATIO_DIMENSIONS[
-        c.aspectRatio as keyof typeof ASPECT_RATIO_DIMENSIONS
-      ] ||
+      typeof c.paletteId !== "string" ||
+      !Object.prototype.hasOwnProperty.call(
+        BLOG_INFOGRAPHIC_PALETTES,
+        c.paletteId,
+      ) ||
+      typeof c.aspectRatio !== "string" ||
+      !Object.prototype.hasOwnProperty.call(
+        ASPECT_RATIO_DIMENSIONS,
+        c.aspectRatio,
+      ) ||
       ![c.headline, c.subheadline, c.footerSourceLabel, c.altText].every(
         (x) => typeof x === "string" && x.length < 10000,
       ) ||

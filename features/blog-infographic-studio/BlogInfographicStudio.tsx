@@ -64,6 +64,10 @@ import {
   withPrismLayout,
 } from "@/lib/blog-infographic-studio/visual-brief";
 import { INFOGRAPHIC_TOPIC_ICONS } from "@/lib/blog-infographic-studio/skills/semantic-iconography";
+import {
+  classifySectionArchetype,
+  synthesizeInfographicHeadlineAndSubheadline,
+} from "@/lib/blog-infographic-studio/skills/topic-intelligence";
 import { runInfographicQaCritic } from "@/lib/blog-infographic-studio/skills/visual-qa-critic";
 import type { PrismLayout } from "@/lib/blog-infographic-studio/visual-brief";
 import { autoRecommendInfographicTemplate } from "@/lib/blog-writer/deterministic-analyzers";
@@ -729,7 +733,9 @@ export function BlogInfographicStudio({
                     );
                     return;
                   }
-                  setError("This article has no standalone section with two source-backed points. Select a section or paste more detail.");
+                  setError(
+                    "This article has no standalone section with two source-backed points. Select a section or paste more detail.",
+                  );
                   return;
                 }
 
@@ -752,6 +758,11 @@ export function BlogInfographicStudio({
                 );
                 const input =
                   section || sectionFromText(data.title, data.cleanText);
+                const intel = classifySectionArchetype(input, data.title);
+                const synthesized = synthesizeInfographicHeadlineAndSubheadline(
+                  input.title,
+                  data.title,
+                );
                 const result = buildSectionVisual(input, data.url);
                 if (result.nodes.length < 2) {
                   setError(
@@ -760,19 +771,30 @@ export function BlogInfographicStudio({
                   );
                   return;
                 }
+                const domainBadge = (
+                  data.brandTheme?.siteName ||
+                  data.domain ||
+                  "ARTICLE"
+                )
+                  .slice(0, 28)
+                  .toUpperCase();
                 let next = withPrismLayout(
                   {
                     ...active,
                     id: active.id,
                     sectionId: input.id,
-                    calloutText: undefined,
+                    headline: synthesized.headline,
+                    subheadline: synthesized.subheadline,
+                    eyebrowLabel: intel.isFaq
+                      ? "FAQ PLAYBOOK · KEY QUESTIONS"
+                      : `SECTION PLAYBOOK · ${domainBadge}`,
+                    slideCounter: undefined,
                     calloutBadge: undefined,
+                    calloutText: undefined,
                     centerLabel: undefined,
                     comparisonLabels: undefined,
-                    headline: input.title,
-                    subheadline: "",
                     highlightWords: extractHeadlineHighlightPhrases(
-                      input.title,
+                      synthesized.headline,
                     ).join(", "),
                     nodes: result.nodes,
                     visualBrief: {
@@ -780,7 +802,7 @@ export function BlogInfographicStudio({
                       articleCoverage: data.coverage,
                     },
                     footerSourceLabel: `Source: ${data.domain}`,
-                    altText: `${input.title}: ${result.nodes.map((n) => n.title).join("; ")}`,
+                    altText: `${synthesized.headline}: ${result.nodes.map((n) => n.title).join("; ")}`,
                   },
                   recommendPrismLayout(result.brief, result.nodes.length),
                 );

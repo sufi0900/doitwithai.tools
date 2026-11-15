@@ -8,27 +8,28 @@ import type {
   ArticleSourceBlock,
   ArticleSourceCoverage,
 } from "./article-source";
-import { sourceId } from "./article-source";
+import { getBlockHeadingLevel, sourceId } from "./article-source";
 import { PRISM_LAYOUTS, prismLayoutSpec } from "./layout-registry";
 import type { PrismLayout } from "./layout-registry";
 import {
   BACKGROUND_PATTERNS,
   CARD_STYLES,
-  brandColors,
   extractHeadlineHighlightPhrases,
   normalizeSignature,
 } from "./appearance";
 import type { WebsiteBrandHint } from "./brand-source";
-import { BLOG_INFOGRAPHIC_PALETTES } from "./palettes";
 import { assignDistinctSectionIcons } from "./skills/semantic-iconography";
 import {
   decontextualizeProse,
+  isRhetoricalOrFragmentSentence,
   stripTrailingCliffhangers as stripCopyCliffhangers,
   synthesizeStandaloneTitleAndDetail,
 } from "./skills/standalone-copywriter";
 import {
   classifySectionArchetype,
+  extractComparisonLabels,
   isFaqHeadingOrSection,
+  synthesizeInfographicHeadlineAndSubheadline,
 } from "./skills/topic-intelligence";
 import { runInfographicQaCritic } from "./skills/visual-qa-critic";
 
@@ -63,7 +64,7 @@ const personal =
  * cannot stand alone as an educational infographic concept.
  */
 const conversationalFiller =
-  /^(?:(?:this|the) (?:timeline|diagram|infographic|illustration|graphic) (?:visualizes|shows|illustrates|depicts)\b|because of this limitation\b|clearing them up\b|you(?:\s+have|[’']ve)?\s+probably\s+noticed\b|you\s+search\b|we(?:\s+have|[’']ve)?\s+seen\s+a\s+(?:huge|big|major|massive|significant|dramatic)\s+(?:change|shift)\b|in\s+recent\s+years,?\s+we\s+have\s+seen\b|but\s+this\s+does\s+not\s+mean\b|that\s+does\s+not\s+mean\b|does\s+this\s+mean\b|let[’']?s\s+(?:look|take\s+a\s+look|dive|start|explore|break\s+down|be\s+honest)\b|here\s+is\s+(?:why|what|how)\s+that\s+matters\b|think\s+about\s+how\s+you\b|so\s+what\s+does\s+this\s+mean\s+for\s+you\b)/i;
+  /^(?:(?:this|the) (?:timeline|diagram|infographic|illustration|graphic) (?:visualizes|shows|illustrates|depicts)\b|because of this limitation\b|clearing them up\b|you(?:\s+have|[’']ve)?\s+probably\s+noticed\b|you\s+search\b|you\s+decide\s+whether\b|most\s+people\s+only\b|and\s+optimizing\s+your\b|is\s+not\s+a\s+fixed\s+strategy\b|not\s+because\s+the\b|but\s+because\s+most\b|a\s+lot\s+of\s+what\s+you\s+see\b|this\s+guide\s+(?:took|is\s+not)\b|if\s+you\s+have\s+read\s+other\b|instead\s+of\s+treating\b|so\s+i\s+went\s+deeper\b|i\s+wanted\s+to\s+approach\b|i\s+explored\s+how\b|i\s+also\s+tested\b|we(?:\s+have|[’']ve)?\s+seen\s+a\s+(?:huge|big|major|massive|significant|dramatic)\s+(?:change|shift)\b|in\s+recent\s+years,?\s+we\s+have\s+seen\b|but\s+this\s+does\s+not\s+mean\b|that\s+does\s+not\s+mean\b|does\s+this\s+mean\b|let[’']?s\s+(?:look|take\s+a\s+look|dive|start|explore|break\s+down|be\s+honest)\b|here\s+is\s+(?:why|what|how)\s+that\s+matters\b|think\s+about\s+how\s+you\b|so\s+what\s+does\s+this\s+mean\s+for\s+you\b)/i;
 
 const sentences = (s: string) =>
   clean(s)
@@ -157,15 +158,24 @@ export function buildSectionVisual(
       continue;
     }
     if (b.kind === "table") {
-      const [headers, ...rows] = b.text.split("\n").map(row =>
-        row.split(" | ").map(clean),
-      );
+      const [headers, ...rows] = b.text
+        .split("\n")
+        .map((row) => row.split(" | ").map(clean));
       for (const cells of rows) {
         const [label, ...values] = cells;
-        if (!label || /^\d+(?:[.,]\d+)?%?$/.test(label) || label.length > 72 || cells.length !== headers.length) continue;
-        const detail = values.map((value, i) =>
-          value && headers[i + 1] ? `${headers[i + 1]}: ${value}` : value,
-        ).filter(Boolean).join(". ");
+        if (
+          !label ||
+          /^\d+(?:[.,]\d+)?%?$/.test(label) ||
+          label.length > 72 ||
+          cells.length !== headers.length
+        )
+          continue;
+        const detail = values
+          .map((value, idx) =>
+            value && headers[idx + 1] ? `${headers[idx + 1]}: ${value}` : value,
+          )
+          .filter(Boolean)
+          .join(". ");
         if (detail.length >= 12 && detail.length <= 260) {
           eligible.push({ ...b, kind: "list", heading: label, text: detail });
         }
@@ -201,12 +211,36 @@ export function buildSectionVisual(
     }
   }
 
-  const primaryHeadings = new Set(eligible.map((b) => b.heading).filter(Boolean));
-  const useSubheadings = primaryHeadings.size < 2 &&
-    new Set(eligible.map((b) => b.subheading).filter(Boolean)).size >= 2;
-  const groupHeading = (block: ArticleSourceBlock) =>
-    useSubheadings ? block.subheading : block.heading;
-  const headings = [...new Set(eligible.map(groupHeading).filter(Boolean))];
+  const primaryHeadings = [
+    ...new Set(eligible.map((b) => b.heading).filter(Boolean)),
+  ] as string[];
+  const subHeadings = [
+    ...new Set(eligible.map((b) => b.subheading).filter(Boolean)),
+  ] as string[];
+  const useSubheadings = primaryHeadings.length < 2 && subHeadings.length >= 2;
+  const groupHeading = (b: ArticleSourceBlock) =>
+    useSubheadings ? b.subheading : b.heading;
+  const rawHeadings = useSubheadings ? subHeadings : primaryHeadings;
+  let headings = rawHeadings;
+  // When a section has > 6 headings (e.g. Phase 1..7 + child H4s), prioritize major H3/numbered headings
+  if (!useSubheadings && rawHeadings.length > 6) {
+    const phaseHeadings = rawHeadings.filter((h) =>
+      /^(?:phase|step|pillar|stage|myth|mistake|\d+[.):])\s*/i.test(h),
+    );
+    const h3Headings = [
+      ...new Set(
+        eligible
+          .filter((b) => b.heading && getBlockHeadingLevel(b) !== 4)
+          .map((b) => b.heading!),
+      ),
+    ];
+    if (phaseHeadings.length >= 3) {
+      headings = phaseHeadings;
+    } else if (h3Headings.length >= 2 && h3Headings.length <= 6) {
+      headings = h3Headings;
+    }
+  }
+
   const overviewList = eligible.filter(
     (b) =>
       !b.heading && b.kind === "list" && /^.{3,76}\s[—–]\s.{25,}$/.test(b.text),
@@ -216,29 +250,54 @@ export function buildSectionVisual(
       ? expandCompoundBlocks(eligible)
       : eligible.map((block) => ({ block, presetTitle: undefined }));
 
-  const groups: { title?: string; blocks: ArticleSourceBlock[] }[] =
-    overviewList.length >= 2 && overviewList.length <= 6
-      ? overviewList.map((b) => ({ blocks: [b] }))
-      : headings.length >= 2
-        ? headings.map((title) => ({
-            title,
-            blocks: eligible.filter((b) => groupHeading(b) === title),
-          }))
-        : expanded.length === 1
-          ? sentences(expanded[0].block.text).map((text) => ({
-              title: undefined,
-              blocks: [{ ...expanded[0].block, text }],
-            }))
-          : expanded.map((item) => ({
-              title: item.presetTitle,
-              blocks: [item.block],
-            }));
+  let groups: { title?: string; blocks: ArticleSourceBlock[] }[];
+  if (overviewList.length >= 2 && overviewList.length <= 6) {
+    groups = overviewList.map((b) => ({ blocks: [b] }));
+  } else if (headings.length >= 2) {
+    if (headings.length < rawHeadings.length) {
+      // Fold child heading blocks into the most recent prioritized parent heading
+      const selectedSet = new Set(headings);
+      const bucketMap = new Map<string, ArticleSourceBlock[]>(
+        headings.map((h) => [h, []]),
+      );
+      let activeKey = "";
+      for (const b of eligible) {
+        const gh = groupHeading(b);
+        if (gh && selectedSet.has(gh)) {
+          activeKey = gh;
+        }
+        if (activeKey && bucketMap.has(activeKey)) {
+          bucketMap.get(activeKey)!.push(b);
+        }
+      }
+      groups = headings
+        .map((title) => ({ title, blocks: bucketMap.get(title) || [] }))
+        .filter((g) => g.blocks.length > 0);
+    } else {
+      groups = headings
+        .map((title) => ({
+          title,
+          blocks: eligible.filter((b) => groupHeading(b) === title),
+        }))
+        .filter((g) => g.blocks.length > 0);
+    }
+  } else if (expanded.length === 1) {
+    groups = sentences(expanded[0].block.text).map((text) => ({
+      title: undefined,
+      blocks: [{ ...expanded[0].block, text }],
+    }));
+  } else {
+    groups = expanded.map((item) => ({
+      title: item.presetTitle,
+      blocks: [item.block],
+    }));
+  }
 
   const points = groups
     .map((group, i) => {
       const first = group.blocks[0];
-      const text = clean(first.text);
-      const candidates = group.blocks
+      const text = clean(group.blocks.map((b) => b.text).join(" "));
+      const allCandidates = group.blocks
         .flatMap((b) =>
           sentences(b.text).map((sentence) => ({ sentence, block: b })),
         )
@@ -247,6 +306,12 @@ export function buildSectionVisual(
             !personal.test(x.sentence) &&
             !conversationalFiller.test(x.sentence),
         );
+      const nonFragmentCandidates = allCandidates.filter(
+        (x) => !isRhetoricalOrFragmentSentence(x.sentence),
+      );
+      const candidates = nonFragmentCandidates.length
+        ? nonFragmentCandidates
+        : allCandidates;
 
       const provisionalHeading = group.title || "";
       const headingWords = new Set(
@@ -260,21 +325,27 @@ export function buildSectionVisual(
           (c) =>
             !/[:;]$|\b(?:including|such as|covering)[.:]?$/i.test(c.sentence),
         )
-        .map((c) => ({
-          ...c,
-          score:
-            (/\b(?:focus(?:es)?|uses?|practice|refers?|means?|helps?|designed|indicate|show|is (?:a|the))\b/i.test(
-              c.sentence,
-            )
-              ? 10
-              : 0) +
-            Math.min(c.sentence.length, 150) / 40 +
-            [...headingWords].filter((w) =>
-              c.sentence.toLowerCase().includes(w),
-            ).length *
-              2 -
-            Math.max(0, c.sentence.length - 240) / 15,
-        }))
+        .map((c) => {
+          const len = c.sentence.length;
+          return {
+            ...c,
+            score:
+              (len < 48 ? -12 : 0) +
+              (len >= 65 && len <= 185 ? 8 : 0) +
+              (/^(?:and|but|or|so)\s+/i.test(c.sentence) ? -10 : 0) +
+              (/\b(?:focus(?:es)?|uses?|practice|refers?|means?|helps?|designed|indicate|show|combines?|optimiz|structur|cit(?:e|ed|ation)|authority|ranking|signals?|answers?|is (?:a|the))\b/i.test(
+                c.sentence,
+              )
+                ? 10
+                : 0) +
+              Math.min(len, 160) / 36 +
+              [...headingWords].filter((w) =>
+                c.sentence.toLowerCase().includes(w),
+              ).length *
+                2 -
+              Math.max(0, len - 240) / 15,
+          };
+        })
         .sort((a, b) => b.score - a.score);
       const chosen = (
         ranked.length
@@ -299,9 +370,7 @@ export function buildSectionVisual(
               rawTitle.replace(/\s+and (?:why|how)\b.*$/i, ""),
             );
 
-      const detail = (
-        derived.detailOverride || chosen.map((c) => c.sentence).join(" ")
-      ).trim();
+      const detail = (derived.detailOverride || primarySentence).trim();
 
       return {
         id: `point-${sourceId(`${section.id}:${i}:${title}`)}`,
@@ -315,7 +384,9 @@ export function buildSectionVisual(
         sourceBlockIds: [chosen[0]?.block.id || first.id],
       };
     })
-    .filter((n): n is NonNullable<typeof n> => Boolean(n && n.title && n.detail && norm(n.title) !== norm(n.detail)));
+    .filter((n): n is NonNullable<typeof n> =>
+      Boolean(n && n.title && n.detail && norm(n.title) !== norm(n.detail)),
+    );
   const nodes = assignDistinctSectionIcons(points.slice(0, 6), section.title);
   const omittedPoints = Math.max(0, points.length - nodes.length);
   const warnings: string[] = [];
@@ -428,43 +499,114 @@ export function buildAllArticleSectionVisuals(
     }))
     .filter((item) => item.visual.nodes.length >= 2);
 
-  const selected = contentCandidates.slice(0, 12);
+  const pool =
+    contentCandidates.length > 0
+      ? contentCandidates
+      : sections
+          .map((section) => ({
+            section,
+            intel: classifySectionArchetype(section),
+            visual: buildSectionVisual(section, options.sourceUrl),
+          }))
+          .filter((item) => item.visual.nodes.length >= 2);
+
+  const selected = pool.slice(0, 12);
   const total = selected.length;
-  const frameworkLayouts: PrismLayout[] = ["editorial", "constellation", "ribbon"];
+  const layoutCycle: PrismLayout[] = [
+    "editorial",
+    "ribbon",
+    "constellation",
+    "checklist",
+    "timeline",
+  ];
+  const paletteCycle: BlogInfographicConfig["paletteId"][] = [
+    "indigo-cyber",
+    "blue-trust",
+    "emerald-growth",
+    "violet-saas",
+    "amber-executive",
+    "cyan-tech",
+    "rose-editorial",
+    "slate-minimal",
+  ];
   const patternCycle = BACKGROUND_PATTERNS.map((p) => p.id);
   const cardStyleCycle = CARD_STYLES.map((c) => c.id);
   const depthCycle = ["soft", "raised", "layered"] as const;
 
   const hint = options.brandTheme;
-  const resolvedPaletteId =
-    hint?.isDark && BLOG_INFOGRAPHIC_PALETTES[base.paletteId]?.isLight
-      ? "indigo-cyber"
-      : base.paletteId;
-  const useDark =
-    hint?.isDark ?? !BLOG_INFOGRAPHIC_PALETTES[resolvedPaletteId]?.isLight;
-  const brandCustomColors = hint?.accent
-    ? brandColors(hint.accent, useDark)
-    : base.brand?.customColors;
+  let prevLayout: PrismLayout | undefined;
 
-  let frameworkIndex = 0;
   return selected.map(({ section, intel, visual }, idx) => {
-    let layout: PrismLayout = intel.recommendedPrismLayout;
-    if (intel.archetype === "framework") {
-      layout = frameworkLayouts[frameworkIndex++ % frameworkLayouts.length];
-    } else if (layout === "comparison" && visual.nodes.length % 2 !== 0) {
-      layout = "editorial";
-    }
+    let nodesForSection = visual.nodes;
+    let comparisonLabels: [string, string] | undefined;
 
-    // A capped list must advertise the number of points actually visible.
-    const headline = visual.brief.omittedPoints > 0
-      ? section.title.replace(/^\d+(?=\s)/, (count) =>
-          Number(count) === visual.nodes.length + visual.brief.omittedPoints
-            ? String(visual.nodes.length) : count,
-        )
-      : section.title;
-    const autoHighlights = extractHeadlineHighlightPhrases(headline).join(
-      ", ",
+    const rawComparisonCandidate =
+      intel.archetype === "comparison" ||
+      /\b(vs\.?|versus|compare|comparison|difference|trade-off|two revolutions|two worlds)\b/i.test(
+        section.title,
+      );
+    const derivedLabels = rawComparisonCandidate
+      ? extractComparisonLabels(section.title, nodesForSection)
+      : undefined;
+    const rightSideToken = derivedLabels?.[1]?.toLowerCase().split(/\s+/)[0] || "";
+    const hasBothComparisonSides =
+      Boolean(derivedLabels) &&
+      (!/vs|versus/i.test(section.title) ||
+        nodesForSection.some(
+          (n, ni) =>
+            ni % 2 === 1 &&
+            rightSideToken.length >= 2 &&
+            `${n.title} ${n.detail}`.toLowerCase().includes(rightSideToken),
+        ));
+
+    let layout: PrismLayout;
+    if (intel.isFaq) {
+      layout = prevLayout !== "checklist" ? "checklist" : "editorial";
+    } else if (hasBothComparisonSides && nodesForSection.length >= 2) {
+      if (nodesForSection.length % 2 === 1) {
+        nodesForSection = nodesForSection.slice(0, nodesForSection.length - 1);
+      }
+      layout = "comparison";
+      comparisonLabels = derivedLabels;
+    } else if (
+      visual.brief.relationship === "sequence" &&
+      prevLayout !== "timeline"
+    ) {
+      layout = "timeline";
+    } else if (
+      /\b(checklist|check|audit|verify|guide|rules|criteria|myths|mistakes)\b/i.test(
+        section.title,
+      ) &&
+      prevLayout !== "checklist"
+    ) {
+      layout = "checklist";
+    } else {
+      layout = layoutCycle[idx % layoutCycle.length];
+      if (layout === prevLayout) {
+        layout = layoutCycle[(idx + 1) % layoutCycle.length];
+      }
+    }
+    prevLayout = layout;
+
+    const paletteId =
+      idx === 0 &&
+      base.paletteId !== "blue-trust" &&
+      (!hint?.isDark || base.paletteId === "indigo-cyber")
+        ? base.paletteId
+        : paletteCycle[idx % paletteCycle.length];
+
+    const adjustedTitle =
+      visual.brief.omittedPoints > 0
+        ? section.title.replace(/^\d+(?=\s)/, (count) =>
+            Number(count) === visual.nodes.length + visual.brief.omittedPoints
+              ? String(visual.nodes.length)
+              : count,
+          )
+        : section.title;
+    const { headline, subheadline } = synthesizeInfographicHeadlineAndSubheadline(
+      adjustedTitle,
     );
+    const autoHighlights = extractHeadlineHighlightPhrases(headline).join(", ");
     const domainLabel = (
       hint?.siteName ||
       options.domain ||
@@ -486,15 +628,15 @@ export function buildAllArticleSectionVisuals(
           ...base,
           id: `sec-vis-${section.id}-${idx + 1}`,
           sectionId: section.id,
-          paletteId: resolvedPaletteId,
+          paletteId,
           headline,
-          comparisonLabels: undefined,
+          subheadline,
+          highlightWords: autoHighlights,
+          eyebrowLabel,
           centerLabel: undefined,
           calloutText: undefined,
           calloutBadge: undefined,
-          subheadline: "",
-          highlightWords: autoHighlights,
-          eyebrowLabel,
+          comparisonLabels: comparisonLabels || undefined,
           slideCounter:
             total > 1
               ? `${String(idx + 1).padStart(2, "0")} / ${String(total).padStart(2, "0")}`
@@ -507,7 +649,7 @@ export function buildAllArticleSectionVisuals(
             preset: depthCycle[idx % depthCycle.length],
             strength: 65,
           },
-          nodes: visual.nodes,
+          nodes: nodesForSection,
           visualBrief: {
             ...visual.brief,
             articleCoverage: options.coverage,
@@ -515,7 +657,7 @@ export function buildAllArticleSectionVisuals(
           footerSourceLabel: options.domain
             ? `Source: ${options.domain}`
             : base.footerSourceLabel,
-          altText: `${headline}: ${visual.nodes.map((n) => n.title).join("; ")}`,
+          altText: `${headline}: ${nodesForSection.map((n) => n.title).join("; ")}`,
           extractedBrand: hint || base.extractedBrand,
           signature: {
             ...normalizeSignature(base.signature),
@@ -523,7 +665,9 @@ export function buildAllArticleSectionVisuals(
           },
           brand: {
             ...base.brand,
-            ...(brandCustomColors ? { customColors: brandCustomColors } : {}),
+            ...(base.brand?.customColors
+              ? { customColors: base.brand.customColors }
+              : { customColors: undefined }),
           },
         },
         layout,

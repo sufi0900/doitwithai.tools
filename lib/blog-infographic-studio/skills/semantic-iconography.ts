@@ -89,10 +89,26 @@ export function isInfographicTopicIcon(
  * commands for the native DOM-free `<path>` renderer.
  */
 export const SEMANTIC_ICON_PATHS: Record<InfographicTopicIcon, string[]> = {
-  backlink: ["M10 14l4-4", "M8 16l-1 1a4 4 0 0 1-6-6l4-4a4 4 0 0 1 6 0", "M13 17a4 4 0 0 0 6 0l4-4a4 4 0 0 0-6-6l-1 1"],
-  fingerprint: ["M3 12a9 9 0 0 1 18 0", "M6 15v-3a6 6 0 0 1 12 0c0 3 0 6-2 9", "M9 19c1-2 0-5 0-7a3 3 0 0 1 6 0c0 4 0 7-2 10", "M12 12v5"],
-  braces: ["M9 3H7v6c0 2-1 3-3 3 2 0 3 1 3 3v6h2", "M15 3h2v6c0 2 1 3 3 3-2 0-3 1-3 3v6h-2"],
-  stopwatch: ["M9 2h6M12 2v3m6 1 2-2", "M12 6a8 8 0 1 0 0 16 8 8 0 0 0 0-16Z", "m12 14 3-4"],
+  backlink: [
+    "M10 14l4-4",
+    "M8 16l-1 1a4 4 0 0 1-6-6l4-4a4 4 0 0 1 6 0",
+    "M13 17a4 4 0 0 0 6 0l4-4a4 4 0 0 0-6-6l-1 1",
+  ],
+  fingerprint: [
+    "M3 12a9 9 0 0 1 18 0",
+    "M6 15v-3a6 6 0 0 1 12 0c0 3 0 6-2 9",
+    "M9 19c1-2 0-5 0-7a3 3 0 0 1 6 0c0 4 0 7-2 10",
+    "M12 12v5",
+  ],
+  braces: [
+    "M9 3H7v6c0 2-1 3-3 3 2 0 3 1 3 3v6h2",
+    "M15 3h2v6c0 2 1 3 3 3-2 0-3 1-3 3v6h-2",
+  ],
+  stopwatch: [
+    "M9 2h6M12 2v3m6 1 2-2",
+    "M12 6a8 8 0 1 0 0 16 8 8 0 0 0 0-16Z",
+    "m12 14 3-4",
+  ],
   // Original 8
   answer: ["M4 4h16v12H9l-5 4V4Z", "M8 8h8M8 12h5"],
   evidence: ["M6 3h9l4 4v14H6V3Z", "M14 3v5h5", "m9 15 2 2 4-5"],
@@ -310,6 +326,7 @@ const ICON_RULES: Array<[InfographicTopicIcon, RegExp]> = [
   ["user-check", /\b(?:responsible|responsibility|accountability|human|owner|ownership|final output|approve)\b/i],
   ["users", /\b(?:audience|team|readers|users|collaboration|stakeholder)\b/i],
   ["gauge", /\b(?:score|readability|flesch|grade level|speed|cwv|performance|metric|rating)\b/i],
+  ["workflow", /\b(?:workflows?|pipeline|process|sequence|automate|chain|ai-assisted)\b/i],
   ["trending-up", /\b(?:seo|ranking|rankings|traffic|growth|ctr|conversion|boost|lift)\b/i],
   ["chart", /\b(?:data|analytics|statistics|chart|report|ratio|benchmark)\b/i],
   ["percent", /\b(?:percent|%|rate|share|proportion|conversion rate)\b/i],
@@ -319,7 +336,6 @@ const ICON_RULES: Array<[InfographicTopicIcon, RegExp]> = [
   ["file-text", /\b(?:article|document|page|heading|paragraph|text|content|body)\b/i],
   ["type", /\b(?:sentence|sentences|words|word count|typography|headline|title|copy)\b/i],
   ["list-checks", /\b(?:criteria|steps|items|list|bullet|requirements|every sentence)\b/i],
-  ["workflow", /\b(?:workflow|pipeline|process|sequence|automate|chain)\b/i],
   ["git-branch", /\b(?:branch|variation|version|diff|revision vs|parallel)\b/i],
   ["refresh-cw", /\b(?:iterate|iteration|refresh|update|loop|re-run)\b/i],
   ["zap", /\b(?:fast|instant|quick|speed|accelerate|trigger)\b/i],
@@ -336,8 +352,8 @@ const ICON_RULES: Array<[InfographicTopicIcon, RegExp]> = [
   ["network", /\b(?:cluster|link|internal link|topic hub|graph|connect)\b/i],
   ["globe", /\b(?:web|website|domain|url|serp|public|live page)\b/i],
   ["award", /\b(?:authority|expert|winner|top|best practice|guarantee)\b/i],
-  ["evidence", /\b(?:evidence|citation|cite|proof|study|studies)\b/i],
-  ["answer", /\b(?:aeo|direct answer|snippet|position zero)\b/i],
+  ["evidence", /\b(?:evidence|citations?|cite[ds]?|citing|referenced?|proof|stud(?:y|ies)|geo|generative engine)\b/i],
+  ["answer", /\b(?:aeo|answer engine|direct(?:ly)? answer|snippet|position zero)\b/i],
   ["check", /\b(?:pass|complete|valid|confirmed|done|ready)\b/i],
   ["idea", /\b(?:idea|concept|principle|theory|takeaway)\b/i],
 ];
@@ -395,13 +411,20 @@ export function scoreSemanticIconCandidates(
     if (rx.test(detail)) pts += 3;
     if (rx.test(section)) pts += 1;
     if (pts > 0) {
+      if (
+        (icon === "workflow" || icon === "evidence" || icon === "answer") &&
+        (rx.test(title) || rx.test(detail))
+      ) {
+        pts += 2;
+      }
       scores.set(icon, (scores.get(icon) || 0) + pts);
     }
   }
 
   // Named disciplines are more specific than incidental words such as "engine".
   if (/\banswer engine optimization\b/i.test(title)) scores.set("answer", 18);
-  if (/\bgenerative engine optimization\b/i.test(title)) scores.set("evidence", 18);
+  if (/\bgenerative engine optimization\b/i.test(title))
+    scores.set("evidence", 18);
   if (/\bAI-assisted SEO\b/i.test(title)) scores.set("workflow", 18);
 
   if (isQuestion) {

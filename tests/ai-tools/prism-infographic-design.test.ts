@@ -1,7 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
 import { parseHTML } from "linkedom";
 import { load } from "cheerio";
+import { extractArticleSource } from "../../lib/blog-infographic-studio/article-source";
 import {
   PRISM_LAYOUTS,
   getInfographicDimensions,
@@ -15,6 +18,7 @@ import {
 import { createLayoutSample } from "../../lib/blog-infographic-studio/samples";
 import {
   brandColors,
+  infographicColors,
   normalizeDepth,
 } from "../../lib/blog-infographic-studio/appearance";
 import { extractWebsiteBrand } from "../../lib/blog-infographic-studio/brand-source";
@@ -456,7 +460,7 @@ test("6-Layer Agentic Infographic Pipeline resolves all live screenshot defects 
   assert.ok(Boolean(s1.calloutText && s1.calloutText.length > 0));
   for (const node of s1.nodes) {
     assert.doesNotMatch(`${node.title} ${node.detail}`, /prompt above/i);
-    assert.equal(hasTitleBodyDuplication(node.title, node.detail), false, JSON.stringify(node));
+    assert.equal(hasTitleBodyDuplication(node.title, node.detail), false);
     assert.equal(hasTrailingCliffhanger(node.title), false);
   }
   const s1Scene = buildInfographicScene(s1);
@@ -523,19 +527,149 @@ test("6-Layer Agentic Infographic Pipeline resolves all live screenshot defects 
   assert.equal(new Set(s3Icons).size, 6);
 });
 
+test("real flagship article 'what-is-ai-seo' skips author-note/final-thoughts, compresses H3s, diversifies palettes, and renders valid multi-archetype SVGs", () => {
+  const snapPath = path.join(
+    process.cwd(),
+    "features",
+    "articles",
+    "legacy",
+    "sanitySnapshot.json",
+  );
+  const snap = JSON.parse(fs.readFileSync(snapPath, "utf8"));
+  const doc = snap["seo:what-is-ai-seo"];
+  assert.ok(doc && Array.isArray(doc.content));
+
+  let html = "<article>";
+  for (const b of doc.content) {
+    if (b._type === "block") {
+      const text = (b.children || [])
+        .map((c: { text?: string }) => c.text || "")
+        .join("");
+      if (!text.trim()) continue;
+      if (b.listItem) html += `<li>${text}</li>`;
+      else if (/^h[234]$/.test(b.style)) html += `<${b.style}>${text}</${b.style}>`;
+      else html += `<p>${text}</p>`;
+    }
+  }
+  if (Array.isArray(doc.faqs) && doc.faqs.length) {
+    html += "<h2>Frequently Asked Questions</h2>";
+    for (const f of doc.faqs) {
+      html += `<h3>${f.question}</h3><p>${f.answer}</p>`;
+    }
+  }
+  html += "</article>";
+
+  const dom = parseHTML(html).document as unknown as Document;
+  const extracted = extractArticleSource(
+    dom,
+    doc.title || "What Is AI SEO?",
+  );
+
+  // Author note & narrative wrap-up must be excluded from substantive content
+  const noteSec = extracted.sections.find((s) =>
+    /note before we begin/i.test(s.title),
+  );
+  assert.ok(noteSec, "Expected 'A Note Before We Begin' to exist in raw DOM");
+  assert.notEqual(noteSec.role, "content");
+  assert.equal(noteSec.archetype, "skip");
+
+  const finalSec = extracted.sections.find((s) =>
+    /final thoughts/i.test(s.title),
+  );
+  assert.ok(finalSec, "Expected 'Final Thoughts' to exist in raw DOM");
+  assert.notEqual(finalSec.role, "content");
+  assert.equal(finalSec.archetype, "skip");
+
+  const suite = buildAllArticleSectionVisuals(extracted.sections, {
+    sourceUrl: "https://doitwithai.tools/ai-seo/what-is-ai-seo",
+    domain: "doitwithai.tools",
+    brandTheme: {
+      accent: "#4A6CF7",
+      secondaryAccent: "#10B981",
+      siteName: "Do It With AI Tools",
+      source: "theme-color",
+    },
+  });
+
+  assert.ok(
+    suite.length >= 8,
+    `Expected >= 8 substantive infographics, got ${suite.length}`,
+  );
+  assert.ok(
+    !suite.some((c) => /note before|final thoughts/i.test(c.headline)),
+    "Skipped sections must not appear in the generated infographic suite",
+  );
+
+  // Palette and background diversity (never all identical white backgrounds)
+  const paletteIds = new Set(suite.map((c) => c.paletteId));
+  assert.ok(
+    paletteIds.size >= 5,
+    `Expected >= 5 distinct palettes across suite, got ${paletteIds.size}: ${[...paletteIds].join(", ")}`,
+  );
+  const bgColors = new Set(suite.map((c) => infographicColors(c).bg));
+  assert.ok(
+    bgColors.size >= 5,
+    `Expected >= 5 distinct background colors across suite, got ${bgColors.size}`,
+  );
+
+  // Zero verbatim conversational H3 parentheticals or rhetorical fragments
+  for (const card of suite) {
+    for (const node of card.nodes) {
+      assert.doesNotMatch(
+        node.title,
+        /\(And Why Most People Only Know One\)|\(Simple Definition\)/i,
+        `Conversational H3 leaked verbatim: "${node.title}"`,
+      );
+      assert.doesNotMatch(
+        node.detail,
+        /^You decide whether to use AI tools\.?$/i,
+        `Rhetorical fragment selected for detail in "${node.title}"`,
+      );
+    }
+
+    const scene = buildInfographicScene(card);
+    assert.deepEqual(
+      scene.issues,
+      [],
+      `SVG fit/contrast/copy issues on "${card.headline}" (${card.prismLayout}/${card.paletteId}): ${JSON.stringify(scene.issues)}`,
+    );
+    const $ = load(scene.svg, { xmlMode: true });
+    assert.equal(
+      $("[data-semantic-icon]").length >= card.nodes.length,
+      true,
+      `Every node in "${card.headline}" (${card.prismLayout}) should render a semantic icon`,
+    );
+  }
+});
+
 test("article graphics preserve nested technical subjects and source sentence boundaries", async () => {
-  const { extractArticleSource } = await import("../../lib/blog-infographic-studio/article-source");
+  const { extractArticleSource } = await import(
+    "../../lib/blog-infographic-studio/article-source"
+  );
   const { document } = parseHTML(`<main><article><h2>Search visibility signals</h2>
     <h3>Technical checks</h3><h4>Page speed</h4>
     <p>Measure load time on the published page.<br>Repeat the measurement after changes.</p>
     <h4>Backlink sources</h4><p>Inspect referring domains for relevant links to the published page.</p>
     <h2>Final Thoughts: Search visibility</h2><p>Review the full guide for additional context.</p></article></main>`);
-  const { sections } = extractArticleSource(document as unknown as Document, "Search visibility");
+  const { sections } = extractArticleSource(
+    document as unknown as Document,
+    "Search visibility",
+  );
   const [visual, ...rest] = buildAllArticleSectionVisuals(sections);
   assert.equal(rest.length, 0);
-  assert.deepEqual(visual.nodes.map(n => n.title), ["Page speed", "Backlink sources"]);
-  assert.match(sections[0].blocks.find(b => b.kind === "paragraph")!.text, /page\. Repeat/);
+  assert.deepEqual(
+    visual.nodes.map((n) => n.title),
+    ["Page speed", "Backlink sources"],
+  );
+  assert.match(
+    sections[0].blocks.find((b) => b.kind === "paragraph")!.text,
+    /page\. Repeat/,
+  );
   for (const node of visual.nodes) {
-    assert.ok(sections[0].blocks.some(b => node.sourceBlockIds?.includes(b.id) && b.text.includes(node.detail)));
+    assert.ok(
+      sections[0].blocks.some(
+        (b) => node.sourceBlockIds?.includes(b.id) && b.text.includes(node.detail),
+      ),
+    );
   }
 });

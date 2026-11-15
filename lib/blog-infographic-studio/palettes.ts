@@ -75,8 +75,8 @@ export const BLOG_INFOGRAPHIC_PALETTES: Record<
   "rose-editorial": {
     id: "rose-editorial",
     label: "Rose Editorial (Light)",
-    bgStart: "#FFFBF7",
-    bgEnd: "#FFF1F2",
+    bgStart: "#FFF3F5",
+    bgEnd: "#FFE0E6",
     surface: "#FFFFFF",
     surfaceAlt: "#FFE4E6",
     border: "#F43F5E",
@@ -107,8 +107,8 @@ export const BLOG_INFOGRAPHIC_PALETTES: Record<
   "slate-minimal": {
     id: "slate-minimal",
     label: "Boardroom Paper (Light)",
-    bgStart: "#F8FAFC",
-    bgEnd: "#EEF2FF",
+    bgStart: "#F1F5F9",
+    bgEnd: "#E2E8F0",
     surface: "#FFFFFF",
     surfaceAlt: "#F1F5F9",
     border: "#3452D1",
@@ -139,8 +139,8 @@ export const BLOG_INFOGRAPHIC_PALETTES: Record<
   "blue-trust": {
     id: "blue-trust",
     label: "DIWAT Royal Blue (Light)",
-    bgStart: "#F6F7FF",
-    bgEnd: "#E8ECFF",
+    bgStart: "#EDF1FF",
+    bgEnd: "#DAE3FF",
     surface: "#FFFFFF",
     surfaceAlt: "#EEF2FF",
     border: "#5271FF",

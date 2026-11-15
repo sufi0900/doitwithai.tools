@@ -955,7 +955,11 @@ export function buildPrismScene(
     parts.push(sub.node);
     top += sub.height + 16;
   }
-  top += H <= 960 ? 18 : 24;
+  top += H <= 960 ? 22 : 28;
+  parts.push(
+    rect(M, top - 16, 92, 5, accent, 2.5),
+    rect(M + 102, top - 16, 34, 5, colors[3], 2.5),
+  );
   nodes.forEach((n) => {
     if (
       !n.title.trim() ||
@@ -1067,9 +1071,52 @@ export function buildPrismScene(
       };
     }
 
+    const isEditorialBento =
+      layout === "editorial" &&
+      !isSyntheticOverflow &&
+      (nodes.length === 4 || nodes.length === 6);
+    if (isEditorialBento) {
+      const colGap = 28;
+      const cellW = (contentW - colGap) / 2;
+      const bentoTextW = cellW - 48;
+      const bentoHeadH = Math.max(58, Math.round(68 * s));
+      const bentoTextHeight = (n: BlogInfographicNodeItem) =>
+        bentoHeadH +
+        wrap(n.title, bentoTextW, labelSize, true).length * labelSize * 1.3 +
+        titleGap +
+        wrap(n.detail, bentoTextW, bodySize).length * bodySize * 1.3;
+      const rowHeights: number[] = [];
+      for (let i = 0; i < nodes.length; i += 2) {
+        const row = nodes.slice(i, i + 2);
+        const h =
+          Math.max(...row.map((n) => bentoTextHeight(n)), Math.round(156 * s)) +
+          padY * 2;
+        rowHeights.push(h);
+      }
+      const minTotal =
+        rowHeights.reduce((a, b) => a + b, 0) +
+        Math.max(0, rowHeights.length - 1) * minGap;
+      return {
+        s,
+        labelSize,
+        bodySize,
+        badgeSize,
+        badgeOffset,
+        titleGap,
+        padY,
+        minGap,
+        textHeight,
+        isEditorialBento: true,
+        bentoHeadH,
+        bentoTextHeight,
+        rowHeights,
+        minTotal,
+      };
+    }
+
     const isTimeline = layout === "timeline",
       isChecklist = layout === "checklist";
-    const textW = contentW - (isChecklist ? 228 : isTimeline ? 162 : 196);
+    const textW = contentW - (isChecklist ? 228 : isTimeline ? 250 : 196);
     const minCardH = Math.round((isChecklist ? 128 : 120) * s);
     const rowHeights = nodes.map((n) =>
       Math.max(minCardH, textHeight(n, textW) + padY * 2),
@@ -1210,11 +1257,41 @@ export function buildPrismScene(
         ).node,
       );
     });
+    // Central VS divider medallion between the two column headers
+    const vsCx = W / 2,
+      vsCy = startY + labelH / 2;
+    bodyParts.push(
+      circle(vsCx, vsCy, 22, surface, {
+        ...shadow,
+        stroke: accent,
+        strokeWidth: 2,
+      }),
+      textBlock(
+        "VS",
+        vsCx - 18,
+        vsCy - 10,
+        36,
+        15,
+        accent,
+        true,
+        true,
+        fontStack,
+      ).node,
+    );
     let y = startY + labelH + rowGap;
     const textW = cellW - 118;
     for (let i = 0; i < nodes.length; i += 2) {
       const row = nodes.slice(i, i + 2);
       const h = rowHeights[Math.floor(i / 2)] + extraCardH;
+      if (row.length === 2) {
+        bodyParts.push(
+          path(`M ${M + cellW} ${y + h / 2} H ${M + cellW + gap}`, accent, 2, {
+            strokeDasharray: "4 4",
+            opacity: 0.45,
+          }),
+          circle(W / 2, y + h / 2, 5, colors[3]),
+        );
+      }
       row.forEach((n, k) => {
         const x = M + k * (cellW + gap);
         const ntH = textHeight(n, textW);
@@ -1335,11 +1412,102 @@ export function buildPrismScene(
       y += h + rowGap;
     });
     bottom = y - rowGap;
+  } else if ("isEditorialBento" in chosen && chosen.isEditorialBento) {
+    const colGap = 28;
+    const cellW = (contentW - colGap) / 2;
+    const bentoTextW = cellW - 48;
+    const bentoHeadH = chosen.bentoHeadH!;
+    const bentoTextHeight = chosen.bentoTextHeight!;
+    const pairCount = Math.max(1, rowHeights.length);
+    const extraGap = Math.min(
+      36,
+      Math.round((slack * 0.25) / Math.max(1, pairCount - 1 || 1)),
+    );
+    const rowGap = minGap + extraGap;
+    const slackAfterGaps = Math.max(
+      0,
+      slack - extraGap * Math.max(0, pairCount - 1),
+    );
+    const extraCardH = Math.min(
+      96,
+      Math.round((slackAfterGaps * 0.65) / pairCount),
+    );
+    const topLead = Math.min(
+      42,
+      Math.round(Math.max(0, slackAfterGaps - extraCardH * pairCount) * 0.35),
+    );
+    let y = top + topLead;
+    for (let i = 0; i < nodes.length; i += 2) {
+      const row = nodes.slice(i, i + 2);
+      const h = rowHeights[Math.floor(i / 2)] + extraCardH;
+      row.forEach((n, k) => {
+        const idx = i + k;
+        const x = M + k * (cellW + colGap);
+        const c = colors[idx % 4];
+        surfaceRectInto(bodyParts, x, y, cellW, h, idx % 2 === 0, c);
+        bodyParts.push(rect(x + 24, y, cellW - 48, 4, c, 2));
+        medallionInto(
+          bodyParts,
+          n,
+          x + 46,
+          y + 42,
+          Math.max(18, Math.round(23 * fitScale)),
+          c,
+        );
+        const badgeLabel = n.badge.trim() || String(idx + 1).padStart(2, "0");
+        const pillW = Math.max(52, widthOf(badgeLabel, badgeSize, true) + 22);
+        bodyParts.push(
+          rect(x + cellW - 22 - pillW, y + 25, pillW, 30, surface, 15, {
+            stroke: c,
+            strokeOpacity: 0.55,
+            strokeWidth: 1.5,
+          }),
+          textBlock(
+            badgeLabel,
+            x + cellW - 22 - pillW,
+            y + 31,
+            pillW,
+            badgeSize,
+            c,
+            true,
+            true,
+            fontStack,
+          ).node,
+        );
+        const contentStartY =
+          y + Math.max(padY, Math.round((h - bentoTextHeight(n)) / 2)) + bentoHeadH;
+        const titleNode = textBlock(
+          n.title,
+          x + 24,
+          contentStartY,
+          bentoTextW,
+          labelSize,
+          ink,
+          true,
+          false,
+          fontStack,
+        );
+        const detailNode = textBlock(
+          n.detail,
+          x + 24,
+          contentStartY + titleNode.height + titleGap,
+          bentoTextW,
+          bodySize,
+          muted,
+          false,
+          false,
+          fontStack,
+        );
+        bodyParts.push(titleNode.node, detailNode.node);
+      });
+      y += h + rowGap;
+    }
+    bottom = y - rowGap;
   } else {
     const isTimeline = layout === "timeline",
       isChecklist = layout === "checklist",
       isRibbon = layout === "ribbon";
-    const textW = contentW - (isChecklist ? 228 : isTimeline ? 162 : 196);
+    const textW = contentW - (isChecklist ? 228 : isTimeline ? 250 : 196);
     const extraGap = Math.min(
       44,
       Math.round((slack * 0.3) / Math.max(1, nodes.length - 1)),
@@ -1358,7 +1526,13 @@ export function buildPrismScene(
       0,
       slackAfterGaps - extraCardH * nodes.length,
     );
-    const topLead = Math.round(remainingSlack * 0.45);
+    const topLead = Math.min(
+      68,
+      Math.max(
+        Math.min(16, remainingSlack),
+        Math.round(remainingSlack * 0.42),
+      ),
+    );
     let y = top + topLead;
     if (isTimeline && nodes.length > 1) {
       const firstCy = y + (rowHeights[0] + extraCardH) / 2;
@@ -1402,16 +1576,45 @@ export function buildPrismScene(
           ).node,
         );
         drawText(n, M + 138, textY, textW, i);
+        medallionInto(
+          bodyParts,
+          n,
+          W - M - 54,
+          cy,
+          Math.max(22, Math.round(30 * fitScale)),
+          c,
+        );
       } else if (isChecklist) {
         surfaceRectInto(bodyParts, M, y, contentW, h, i % 2 === 0, c);
-        bodyParts.push(
-          rect(M + 24, cy - 21, 42, 42, c, 12),
-          path(
-            `m ${M + 34} ${cy} 8 8 15 -18`,
-            light ? "#FFFFFF" : "#081322",
-            4,
-          ),
-        );
+        if (/^Q\d+$/i.test(n.badge.trim())) {
+          const badgeFg =
+            contrast("#FFFFFF", c) >= contrast("#081322", c)
+              ? "#FFFFFF"
+              : "#081322";
+          bodyParts.push(
+            rect(M + 20, cy - 22, 48, 44, c, 12),
+            textBlock(
+              n.badge.trim(),
+              M + 20,
+              cy - 12,
+              48,
+              18,
+              badgeFg,
+              true,
+              true,
+              fontStack,
+            ).node,
+          );
+        } else {
+          bodyParts.push(
+            rect(M + 24, cy - 21, 42, 42, c, 12),
+            path(
+              `m ${M + 34} ${cy} 8 8 15 -18`,
+              light ? "#FFFFFF" : "#081322",
+              4,
+            ),
+          );
+        }
         drawText(n, M + 92, textY, textW, i);
         medallionInto(
           bodyParts,
@@ -1424,7 +1627,18 @@ export function buildPrismScene(
       } else {
         const right = isRibbon && i % 2 === 1;
         if (isRibbon) surfaceRectInto(bodyParts, M, y, contentW, h, true, c);
-        else surfaceRectInto(bodyParts, M, y, contentW, h, i % 2 === 0, c);
+        else {
+          surfaceRectInto(bodyParts, M, y, contentW, h, i % 2 === 0, c);
+          if (i < nodes.length - 1) {
+            bodyParts.push(
+              path(`M ${W / 2} ${y + h} V ${y + h + rowGap}`, accent, 2, {
+                strokeDasharray: "4 4",
+                opacity: 0.35,
+              }),
+              circle(W / 2, y + h + rowGap / 2, 4, accent, { opacity: 0.65 }),
+            );
+          }
+        }
         const ix = right ? W - M - 70 : M + 68;
         medallionInto(
           bodyParts,
