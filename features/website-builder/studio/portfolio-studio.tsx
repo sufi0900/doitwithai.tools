@@ -261,7 +261,7 @@ export function PortfolioStudio({ initialDocument, projectName = "Demo portfolio
         <button type="button" aria-pressed={mobileView === "editor"} onClick={() => setMobileView("editor")}>Edit</button>
         <button type="button" aria-pressed={mobileView === "voice"} onClick={() => { setVoiceHidden(false); setMobileView("voice"); }}>Do It AI Agent{voice.active ? " · Live" : ""}</button>
       </nav>}
-      <div className="workspace" style={{ gridTemplateColumns: previewOnly ? undefined : editorExpanded ? (voiceHidden ? "minmax(0, 1fr)" : "minmax(0, 7fr) minmax(280px, 3fr)") : `${editorWidth}px minmax(0,1fr) ${voiceHidden ? "0px" : `${voiceWidth}px`}` }}>
+      <div className="workspace" style={{ gridTemplateColumns: previewOnly ? undefined : editorExpanded ? (voiceHidden ? "minmax(0, 1fr)" : "minmax(0, 7fr) minmax(280px, 3fr)") : `min(${editorWidth}px, 30%) minmax(0,1fr) ${voiceHidden ? "0px" : `min(${voiceWidth}px, 26%)`}` }}>
         <aside className="editor-panel" ref={editorPanelRef}>
           <div className="panel-intro"><div className="panel-title-row"><div><p className="eyebrow">PROJECT · PERSONAL PORTFOLIO</p><h1>Shape the experience</h1></div><button type="button" title={editorExpanded ? "Restore workspace" : "Expand editor"} aria-label={editorExpanded ? "Restore workspace" : "Expand editor"} onClick={() => { if (!editorExpanded && window.innerWidth <= 900 && !voice.active) setVoiceHidden(true); if (window.innerWidth <= 900) setMobileView("editor"); setEditorExpanded(value => !value); }}>{editorExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}</button></div><p>Use direct controls for precision. Ask the voice agent for broader changes.</p></div>
           <nav className="editor-tabs" aria-label="Editor sections">
@@ -275,7 +275,7 @@ export function PortfolioStudio({ initialDocument, projectName = "Demo portfolio
           {persistence !== "server" && <button type="button" className="reset-button" onClick={() => { if (window.confirm("Reset this draft? You can undo this action.")) dispatch({ type: "reset" }); }}><RotateCcw size={14} />Reset demo</button>}
         </aside>
 
-        {!previewOnly && !editorExpanded && <button type="button" className="panel-resizer editor-resizer" style={{ left: editorWidth - 3 }} aria-label="Resize content editor" onPointerDown={(event) => beginResize(event, editorWidth, setEditorWidth, 280, 640, 1)} />}
+        {!previewOnly && !editorExpanded && <button type="button" className="panel-resizer editor-resizer" style={{ left: `calc(min(${editorWidth}px, 30%) - 3px)` }} aria-label="Resize content editor" onPointerDown={(event) => beginResize(event, editorWidth, setEditorWidth, 280, 640, 1)} />}
 
         {!editorExpanded && <section className="preview-shell" aria-label="Live portfolio preview">
           <div className="preview-chrome"><span /><span /><span /><p>portfolio.preview</p><em>LIVE CANVAS</em></div>
@@ -291,10 +291,10 @@ export function PortfolioStudio({ initialDocument, projectName = "Demo portfolio
               </label>
             </nav>
           )}
-          <StudioPreview document={state.present} target={previewTarget} focusedSkill={focusedSkill} execute={executeManual} reducedMotion={reducedMotion} onNavigate={setPreviewTarget} />
+          <StudioPreview document={state.present} target={previewTarget} focusedSkill={focusedSkill} execute={executeManual} reducedMotion={reducedMotion} onNavigate={target => { setPreviewTarget(target); if (target.property) { dispatch({ type: "selectPanel", panel: "content" }); setMobileView("editor"); } }} />
         </section>}
 
-        {!previewOnly && !editorExpanded && !voiceHidden && <button type="button" className="panel-resizer voice-resizer" style={{ right: voiceWidth - 3 }} aria-label="Resize voice assistant" onPointerDown={(event) => beginResize(event, voiceWidth, setVoiceWidth, 260, 520, -1)} />}
+        {!previewOnly && !editorExpanded && !voiceHidden && <button type="button" className="panel-resizer voice-resizer" style={{ right: `calc(min(${voiceWidth}px, 26%) - 3px)` }} aria-label="Resize voice assistant" onPointerDown={(event) => beginResize(event, voiceWidth, setVoiceWidth, 260, 520, -1)} />}
         {!previewOnly && !voiceHidden && <VoicePanel {...voice} contextHint={state.selectedPanel === "content" && previewTarget.section === "blog posts" ? "Tell Do It AI Agent your article idea or open it directly in the AI Content Writer Studio for deep SEO generation." : state.selectedPanel === "opportunity" ? "Do It AI Agent can explain this opportunity variant and open its source review." : state.selectedPanel === "design" ? "Describe the visual mood or template category you want. Do It AI Agent can switch templates and accents." : state.selectedPanel === "content" && previewTarget.section === "site pages" ? "Do It AI Agent can help structure your page and navigate to the details you want to edit." : undefined} suggestedRequest={state.selectedPanel === "opportunity" ? "Show the opportunity source review" : state.selectedPanel === "design" ? "Show the design panel" : state.selectedPanel === "content" && previewTarget.section === "blog posts" ? "Open in AI Content Writer" : undefined} onUseConversationNotes={state.selectedPanel === "content" && previewTarget.section === "blog posts" ? () => { const notes = voice.transcript.filter(item => item.speaker === "user" && item.final).slice(-8).map(item => item.text).join("\n").slice(0, 3000); if (notes) setBlogNotesSeed({ id: Date.now(), text: notes }); } : undefined} onHide={() => { setVoiceHidden(true); setMobileView("canvas"); }} />}
         {!previewOnly && voiceHidden && <button type="button" className="restore-voice" onClick={() => { setVoiceHidden(false); setMobileView("voice"); }}><PanelRightOpen size={16} />{voice.active ? "Do It AI Agent is active · show conversation" : "Show AI studio agent"}</button>}
       </div>
@@ -334,7 +334,7 @@ function StudioPreview({ document, target, focusedSkill, execute, reducedMotion,
     previousPreviewMode.current = mode;
     const frame = window.requestAnimationFrame(() => scrollPreviewContainer(container, target, reducedMotion || changedRoute ? "auto" : "smooth"));
     return () => window.cancelAnimationFrame(frame);
-  }, [reducedMotion, target, isStandaloneView]);
+  }, [reducedMotion, target.section, target.itemId, isStandaloneView]);
 
   if (target.section === "projects" && target.itemId === "__index__") {
     return <StudioToolsIndex document={document} execute={execute} onNavigate={onNavigate} />;
@@ -350,8 +350,9 @@ function StudioPreview({ document, target, focusedSkill, execute, reducedMotion,
           className={`portfolio-preview focused-tool-preview bg-${document.design.background} template-${document.design.template} ${isCollectionTemplate(document.design.template) ? "collection-theme" : ""} ${isLightTemplate(document.design.template) ? "light-theme" : ""}`}
           data-accent={document.design.accent}
         >
-          <ToolPageCanvasEditor key={selectedTool.id} tool={selectedTool} execute={execute}>
+          <ToolPageCanvasEditor key={selectedTool.id} onSelect={property => onNavigate({ section: "projects", itemId: selectedTool.id, property })}>
           <InteractiveWebsiteToolRunner
+            key={JSON.stringify(selectedTool)}
             tool={selectedTool}
             siteName={document.identity.name}
             siteAccent={document.design.accent}

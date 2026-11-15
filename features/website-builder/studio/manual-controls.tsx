@@ -1,4 +1,6 @@
 "use client";
+import { ToolPagePropertyControl } from "./tool-page-property-control";
+import type { ToolPageField } from "../domain/tool-page-properties";
 
 import { authorizedWebsiteFetch } from "@/features/website-builder/lib/supabase/browser";
 import { ArrowDown, ArrowUp, ExternalLink, Eye, EyeOff, GripVertical, Plus, RotateCcw, Share2, Trash2 } from "lucide-react";
@@ -22,7 +24,7 @@ import { OpportunityShare } from "./opportunity-share";
 import { ProfessionalMemory } from "./professional-memory";
 import { AgentHealth } from "./agent-health";
 
-export type PreviewTarget = { section: string; itemId?: string };
+export type PreviewTarget = { section: string; itemId?: string; property?: ToolPageField };
 type Props = { ensureSaved?:()=>Promise<number>; document: SiteDocument; publishedDocument?: SiteDocument; execute: (command: SiteCommand) => void; panel: "content" | "design" | "scene" | "opportunity"; canUploadMedia?: boolean; previewTarget?: PreviewTarget; onPreviewTarget?: (target: PreviewTarget) => void; onPublishItem?: (kind: "page" | "post", itemId: string, status: "draft" | "published") => void; publishingItemId?: string; itemPublishError?: string; canDirectPublish?: boolean; blogNotesSeed?: { id: number; text: string }; publicSiteSlug?: string };
 
 export function ManualControls({ document, publishedDocument, execute, panel, canUploadMedia = false, previewTarget, onPreviewTarget, onPublishItem, publishingItemId = "", itemPublishError = "", canDirectPublish = false, ensureSaved, blogNotesSeed, publicSiteSlug }: Props) {
@@ -453,6 +455,7 @@ function ProjectsToolsStudioEditor({
 
         {activeItem && (
           <article style={{ minWidth: 0, maxWidth: "100%", display: "grid", gap: "11px", marginTop: "6px" }}>
+            <ToolPagePropertyControl tool={activeItem} field={previewTarget?.property || "title"} execute={execute} onSelect={property => onPreviewTarget?.({ section: "projects", itemId: activeItem.id, property })} />
             <div style={{ display: "grid", gap: "3px", borderBottom: "1px solid var(--line)", paddingBottom: "8px" }}>
               <span style={{ fontSize: "10px", fontWeight: 800, color: "var(--accent)", letterSpacing: "0.1em", textTransform: "uppercase" }}>
                 TOOL LANDING PAGE STUDIO CUSTOMIZER

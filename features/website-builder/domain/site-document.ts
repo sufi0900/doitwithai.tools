@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { toolPageEditsSchema, type ToolPageEdits } from "./tool-page-properties";
 import { richNodeSchema } from "./rich-document";
 
 export const accentOptions = ["indigo", "cyan", "violet", "coral", "lime", "rose", "blue", "olive"] as const;
@@ -112,8 +113,11 @@ export const DEFAULT_PORTFOLIO_CONTENT = {
     customFaqs?: Array<{ question: string; answer: string }>;
     metaTitle?: string;
     metaDescription?: string;
+    toolPageEdits?: ToolPageEdits;
     installedToolVersion?: string;
     previousToolSnapshot?: {
+      pageProperties?: ToolPageEdits["baseline"];
+      toolPageEdits?: ToolPageEdits;
       version?: string;
       title: string;
       summary: string;
@@ -171,9 +175,12 @@ const portfolioContentSchema = z.object({
       .optional(),
     metaTitle: z.string().trim().max(120).optional(),
     metaDescription: z.string().trim().max(320).optional(),
+    toolPageEdits: toolPageEditsSchema.optional(),
     installedToolVersion: z.string().trim().max(60).optional(),
     previousToolSnapshot: z
       .object({
+        pageProperties: toolPageEditsSchema.shape.baseline.optional(),
+        toolPageEdits: toolPageEditsSchema.optional(),
         version: z.string().trim().max(60).optional(),
         title: z.string().trim().max(100),
         summary: z.string().trim().max(500),

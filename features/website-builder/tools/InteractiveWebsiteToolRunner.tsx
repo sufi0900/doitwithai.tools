@@ -215,6 +215,8 @@ function buildNativeToolScopeCss(params: {
       --wb-tool-bg: ${effectiveBackground};
       background: ${effectiveBackground} !important;
       color: ${isDark ? "#e2e8f0" : "#0f172a"};
+      container-type: inline-size;
+      min-width: 0;
       overflow-x: clip;
     }
     .${scopeClass} [data-portable-hero-bar="true"],
@@ -256,6 +258,12 @@ function buildNativeToolScopeCss(params: {
     .${scopeClass} > main > div:first-of-type {
       background-image: ${heroBg} !important;
       border-bottom: 1px solid ${accentBorder} !important;
+    }
+    .${scopeClass} [data-wb-hero-grid] > * { min-width: 0; }
+    .${scopeClass} h1 { overflow-wrap: anywhere; }
+    @container (max-width: 760px) {
+      .${scopeClass} [data-wb-hero-grid] { grid-template-columns: minmax(0, 1fr) !important; gap: 24px !important; }
+      .${scopeClass} [data-wb-hero] h1 { font-size: clamp(28px, 7cqi, 48px) !important; line-height: 1.12 !important; }
     }
     .${scopeClass} h1 span {
       background-image: linear-gradient(95deg, ${isDark ? "#ffffff" : "#0f172a"} 10%, ${effectiveAccent} 95%) !important;
@@ -320,7 +328,10 @@ function applyNativeToolOverrides(params: {
   const heroGrid = heroContainer?.querySelector<HTMLElement>(".grid");
   const heroLeftCol = h1?.parentElement;
 
+  if (h1) h1.dataset.wbProperty = "title";
+  if (heroContainer) heroContainer.dataset.wbHero = "true";
   if (heroGrid) {
+    heroGrid.dataset.wbHeroGrid = "true";
     heroGrid.style.display = displayMode === "workspace-only" ? "none" : "";
   }
 
@@ -339,6 +350,8 @@ function applyNativeToolOverrides(params: {
         (el) => h1 && (el.compareDocumentPosition(h1) & Node.DOCUMENT_POSITION_PRECEDING) !== 0,
       ) ?? paragraphs[1];
 
+    if (eyebrowEl && eyebrowEl !== leadEl) eyebrowEl.dataset.wbProperty = "role";
+    if (leadEl) leadEl.dataset.wbProperty = "summary";
     if (eyebrowEl && eyebrowEl !== leadEl && overrides.role && tool.role?.trim()) {
       if (eyebrowEl.textContent !== tool.role.trim()) {
         eyebrowEl.textContent = tool.role.trim();
@@ -366,6 +379,10 @@ function applyNativeToolOverrides(params: {
     return true;
   });
 
+  if (allEditableInputs[0]) allEditableInputs[0].dataset.wbProperty = "defaultInput";
+  if (allEditableInputs[1]) allEditableInputs[1].dataset.wbProperty = "defaultSecondaryInput";
+  const submit = container.querySelector<HTMLElement>('button[type="submit"]');
+  if (submit) submit.dataset.wbProperty = "customCtaLabel";
   if (tool.defaultInput && tool.defaultInput.trim()) {
     const token = `${resolvedSlug}:${tool.defaultInput}`;
     const primaryInput = allEditableInputs[0];
@@ -385,7 +402,7 @@ function applyNativeToolOverrides(params: {
     }
   }
 
-  if (tool.customCtaLabel && tool.customCtaLabel.trim()) {
+  {
     const primaryActionBtn = Array.from(
       container.querySelectorAll<HTMLButtonElement>("button"),
     ).find((btn) => {
@@ -409,8 +426,9 @@ function applyNativeToolOverrides(params: {
       );
     });
 
+    if (primaryActionBtn) primaryActionBtn.dataset.wbProperty = "customCtaLabel";
     if (
-      primaryActionBtn &&
+      tool.customCtaLabel?.trim() && primaryActionBtn &&
       primaryActionBtn.dataset.wbCtaApplied !== tool.customCtaLabel.trim()
     ) {
       primaryActionBtn.dataset.wbCtaApplied = tool.customCtaLabel.trim();
@@ -838,6 +856,7 @@ function TransferredCatalogToolFrame(props: {
         {!tool.hideFaqSection && tool.customFaqs && tool.customFaqs.length > 0 && (
           <section
             data-wb-custom-faqs="true"
+            data-wb-property="customFaqs"
             style={{
               maxWidth: "1120px",
               margin: "0 auto",
@@ -1538,10 +1557,10 @@ function FallbackGenericToolRunner({
             >
               STEP 1 · CONFIGURE INPUTS
             </span>
-            <h3 style={{ margin: "4px 0 0", fontSize: "17px", color: "#ffffff" }}>
+            <h3 data-wb-property="title" style={{ margin: "4px 0 0", fontSize: "17px", color: "#ffffff" }}>
               {tool.title}
             </h3>
-            <p style={{ margin: "4px 0 0", fontSize: "12.5px", color: "#94a3b8", lineHeight: 1.5 }}>
+            <p data-wb-property="summary" style={{ margin: "4px 0 0", fontSize: "12.5px", color: "#94a3b8", lineHeight: 1.5 }}>
               {tool.summary}
             </p>
           </div>

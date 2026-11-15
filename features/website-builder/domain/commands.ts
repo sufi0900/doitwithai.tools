@@ -1,3 +1,4 @@
+import { isToolPageField, toolPageFields } from "./tool-page-properties";
 import { richNodeSchema } from "./rich-document";
 import { structuredBlockSchema } from "./site-document";
 import { z } from "zod";
@@ -56,6 +57,7 @@ export const siteCommandSchema = z.discriminatedUnion("type", [
     metaTitle: z.string().trim().max(120).optional(),
     metaDescription: z.string().trim().max(320).optional(),
   }),
+  z.object({ type: z.literal("project.resetPageProperty"), itemId: z.string().min(1), field: z.enum(toolPageFields) }),
   z.object({
     type: z.literal("project.syncCatalogToolVersion"),
     itemId: z.string().min(1),
@@ -536,13 +538,26 @@ export function applySiteCommand(current: SiteDocument, candidate: unknown): Sit
         if (current.content.projects.some((entry) => entry.id !== command.itemId && entry.caseStudySlug === value)) throw new Error("Each case study needs a unique slug.");
       }
       if (JSON.stringify(item[command.field]) === JSON.stringify(value)) return current;
-      next = { ...current, content: { ...current.content, projects: current.content.projects.map((entry) => entry.id === command.itemId ? { ...entry, [command.field]: value } : entry) }, ...nextRevision(current) };
+      next = { ...current, content: { ...current.content, projects: current.content.projects.map((entry) => entry.id === command.itemId ? { ...entry, [command.field]: value, ...(isToolPageField(command.field) ? { toolPageEdits: { schemaVersion: 1 as const, baseline: { [command.field]: item[command.field] ?? null, ...item.toolPageEdits?.baseline } } } : {}) } : entry) }, ...nextRevision(current) };
+      break;
+    }
+    case "project.resetPageProperty": {
+      const item = current.content.projects.find(entry => entry.id === command.itemId);
+      if (!item) throw new Error("The requested tool does not exist.");
+      const baseline = item.toolPageEdits?.baseline;
+      if (!baseline || !Object.prototype.hasOwnProperty.call(baseline, command.field)) return current;
+      const restored = baseline[command.field];
+      const remaining = { ...baseline };
+      delete remaining[command.field];
+      next = { ...current, content: { ...current.content, projects: current.content.projects.map(entry => entry.id === item.id ? { ...entry, [command.field]: restored === null ? undefined : restored, toolPageEdits: { schemaVersion: 1 as const, baseline: remaining } } : entry) }, ...nextRevision(current) };
       break;
     }
     case "project.syncCatalogToolVersion": {
       const item = current.content.projects.find((entry) => entry.id === command.itemId);
       if (!item) throw new Error("The requested tool does not exist.");
       const snapshot = {
+        pageProperties: Object.fromEntries(toolPageFields.map(field => [field, item[field] ?? null])),
+        toolPageEdits: item.toolPageEdits,
         ...(item.installedToolVersion ? { version: item.installedToolVersion } : {}),
         title: item.title,
         summary: item.summary,
@@ -604,6 +619,8 @@ export function applySiteCommand(current: SiteDocument, candidate: unknown): Sit
         customCtaLabel: snap.customCtaLabel,
         toolAccentHex: snap.toolAccentHex,
         toolBackgroundHex: snap.toolBackgroundHex,
+        ...(snap.pageProperties ? Object.fromEntries(Object.entries(snap.pageProperties).map(([key, value]) => [key, value === null ? undefined : value])) : {}),
+        toolPageEdits: snap.toolPageEdits,
         previousToolSnapshot: undefined,
       };
       next = {
@@ -793,6 +810,7 @@ export function describeCommand(command: SiteCommand, document: SiteDocument) {
     case "design.setTemplate": return `Switched to the ${command.value} template.`;
     case "design.applyTemplateDefaults": return `Loaded default tools, pages, and 5 SEO blog posts for ${command.value}.`;
     case "project.installCatalogTool": return `Installed "${command.title}" from the DoItWithAI Tool Catalog (0 AI tokens).`;
+    case "project.resetPageProperty": return `Reset ${command.field} to its saved baseline.`;
     case "project.syncCatalogToolVersion": return `Synced tool to upstream version ${command.versionLabel} (previous snapshot saved).`;
     case "project.revertCatalogToolVersion": return "Reverted tool back to its previous saved version.";
     case "scene.setFamily": return `Changed the 3D scene family to ${command.value}.`;

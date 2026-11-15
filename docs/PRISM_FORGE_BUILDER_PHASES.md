@@ -9,8 +9,8 @@ The latest user instruction assigns Content Writer (Phase 1) to the originating 
 | Phase | Status |
 | --- | --- |
 | 1 Content Writer | Owned by originating conversation; untouched here |
-| 2 Focused canvas and responsive fit | Focused preview increment validated; responsive visual QA remains open |
-| 3 Versioned editable tool properties | Pending Phase 2 |
+| 2 Focused canvas and responsive fit | Navigation and responsive code implemented; browser visual acceptance remains open |
+| 3 Versioned editable tool properties | Shared registry/history/reset/publication implemented; universal native-page coverage and browser acceptance remain open |
 | 4 Multi-tool website polish | Pending |
 | 5 Single-tool workflow | Pending |
 | 6 Blogging templates | Pending |
@@ -64,3 +64,35 @@ Search trims surrounding whitespace and also searches technology/category tags. 
 ### Validation checkpoint
 
 Ten builder/shared-editing tests passed, including edit/undo/redo and default upstream-sync preservation. Application TypeScript passed (exit 0). Configured pnpm production build passed (exit 0), including 126/126 portable tool artifacts, using the documented public Sanity project/dataset. Existing lint, Redis-configuration and Portable Text warnings remain; no provider-backed runtime claim is made. Browser interaction and visual QA are not claimed.
+
+## Shared-property and responsive continuation — Prism Forge
+
+Baseline: `4f9bebf82e83005cdd0066cb906d5ac4f929cdaf`. Scope: Phases 2–3 only. Content Writer rollback and all other concurrent work remain untouched.
+
+### Implementation
+
+- Native tool heroes respond to their container width, not just the browser width. At narrow canvas widths their columns stack and long headings wrap. Studio side panels are capped at 30% and 26% of available width so their resize settings cannot consume the entire preview. The existing external navigation toolbar remains authoritative.
+- `domain/tool-page-properties.ts` defines the editable-property registry and schema version 1. Legacy documents without edit metadata remain valid; unsupported metadata versions are rejected. This registry covers the existing project fields (copy, badges/highlights, colors/theme, default inputs, visibility, FAQs, story and SEO); it is not an arbitrary DOM or CSS editor.
+- Selecting annotated native headings, introduction, eyebrow, primary action, inputs or custom FAQs opens that property in the left content panel. The keyboard-accessible selector exposes the full registry, including properties with no visible canvas target. Property selection no longer jumps the canvas to the top. Native-page annotations remain best-effort for different transferred markup; no universal element-selection claim is made.
+- Both paths use `project.update` and the existing reducer, persistence and publication pipeline. FAQ editing uses question/answer controls. Changes are drafts until Apply; Discard restores the current saved field. Applying settings refreshes the tool preview (its transient tool-run state is restarted) so undo/reset cannot leave stale overridden native text.
+- First edit captures that property's prior value in `toolPageEdits.baseline`; subsequent edits preserve it. `project.resetPageProperty` restores that captured value and removes its override marker through normal undoable history. Reset means the pre-edit value, not an automatic fetch of the latest upstream default.
+- Catalog sync preserves custom values by default. Version snapshots now include every registered property and edit metadata; revert restores the complete snapshot, including FAQ/theme/input/visibility fields that older snapshots omitted. Legacy snapshots remain supported. Explicit overwrite of upstream copy remains the existing opt-in behavior.
+- Publication snapshots preserve selected project properties and metadata; edits in unselected publication groups remain private drafts.
+
+### Acceptance and remaining scope
+
+Phases 2 and 3 are **not yet fully signed off**. The shared-property implementation and state-transition tests are in place. Browser interaction/layout acceptance remains outstanding: the connected browser could not reach the local development server (`ERR_CONNECTION_REFUSED`). No pixel-perfect, mobile interaction, live publication, deployment or universal transferred-page selection pass is claimed. Arbitrary native educational-section text editing and adapting every transferred markup variant are outside the current property registry and remain a Phase 3 coverage gap for the founder's broader “every element” goal.
+
+Manual acceptance: select a long-title native tool; test narrow canvas, both sidebars, preview-only and mobile Canvas. Select title/intro/button/input/custom FAQ, change via left controls, Apply, undo/redo and Reset. Reload the saved project; sync upstream without overwrite and confirm all overrides survive; revert and confirm FAQ/theme/input values restore. Publish selected Projects and compare the public route; verify unpublished draft groups remain unchanged. No backend provider calls are required to edit properties.
+
+Signature: **Prism Forge**.
+
+Version scope: the snapshot restores page settings and the installed-version label. It does not pin or restore the executable transferred-tool source; that remains supplied by the current tool registry. Adding arbitrary educational-section editing or executable-version pinning requires explicit renderer contracts, not unsafe DOM serialization.
+
+### Validation for this continuation
+
+- Final application TypeScript check: exit 0.
+- Builder domain, shared-editing and preview-navigation regression tests: **16 passed, 0 failed**. Coverage includes edit/undo/redo/reset, legacy metadata, rejection of unknown metadata versions/keys, upstream preservation, complete property snapshot rollback and selective publication.
+- Final configured `pnpm build`: **exit 0**, 126/126 portable tools and 253/253 generated pages. Public Sanity settings from repository documentation were used. Existing lint, missing Redis configuration and Portable Text warnings remain.
+- `git diff --check`: passed. Generated manifest timestamp excluded.
+- Browser QA: blocked by localhost connection refusal; no visual pass or live deployment verification claimed.
