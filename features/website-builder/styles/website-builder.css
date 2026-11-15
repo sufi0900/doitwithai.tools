@@ -2266,3 +2266,13 @@ body.public-site.light-theme {
   .flagship-sections { padding:8px 18px 40px; gap:26px; }
   .flagship-lead-article.has-cover, .flagship-about-grid { grid-template-columns:1fr; }
 }
+
+/* Prism Forge: editor navigation lives outside the tool landing page. */
+.studio-workspace .tool-preview-toolbar { display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:10px;border:1px solid var(--line);background:var(--panel, #0f1524);flex:none;min-width:0; }
+.studio-workspace .tool-preview-toolbar button,.studio-workspace .tool-preview-toolbar select { min-height:36px;border:1px solid var(--line);border-radius:8px;padding:6px 10px;background:transparent;color:inherit;font:inherit;font-size:12px; }
+.studio-workspace .tool-preview-toolbar label { display:flex;align-items:center;gap:8px;flex:1 1 180px;min-width:0;font-size:12px; }
+.studio-workspace .tool-preview-toolbar select { width:100%;min-width:0;flex:1; }
+.studio-workspace .tool-preview-toolbar option { background:var(--panel, #0f1524);color:var(--text, #e2e8f0); }
+.studio-workspace .preview-shell .focused-tool-preview { display:block;padding:0;min-width:0;width:100%;flex:1;min-height:0; }
+.studio-workspace .preview-chrome { flex-shrink:0; }
+.studio-workspace.preview-only .preview-shell .focused-tool-preview { min-height:0; }

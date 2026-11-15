@@ -10,6 +10,11 @@ export function previewSectionId(target: PreviewTarget): PortfolioSection | "her
 }
 
 export function scrollPreviewContainer(container: HTMLElement, target: PreviewTarget, behavior: ScrollBehavior = "smooth") {
+  // Standalone pages reuse the scroll container; never inherit the previous tool's position.
+  if ((target.section === "projects" && target.itemId) || target.section === "site pages" || target.section === "blog posts") {
+    container.scrollTo({ top: 0, behavior: "auto" });
+    return;
+  }
   const section = previewSectionId(target);
   if (!section || section === "hero") {
     container.scrollTo({ top: 0, behavior });

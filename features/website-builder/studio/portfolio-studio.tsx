@@ -260,7 +260,7 @@ export function PortfolioStudio({ initialDocument, projectName = "Demo portfolio
         <button type="button" aria-pressed={mobileView === "editor"} onClick={() => setMobileView("editor")}>Edit</button>
         <button type="button" aria-pressed={mobileView === "voice"} onClick={() => { setVoiceHidden(false); setMobileView("voice"); }}>Do It AI Agent{voice.active ? " · Live" : ""}</button>
       </nav>}
-      <div className="workspace" style={{ gridTemplateColumns: previewOnly ? undefined : editorExpanded ? (voiceHidden ? "minmax(0, 1fr)" : "minmax(0, 7fr) minmax(280px, 3fr)") : `${editorWidth}px minmax(360px,1fr) ${voiceHidden ? "0px" : `${voiceWidth}px`}` }}>
+      <div className="workspace" style={{ gridTemplateColumns: previewOnly ? undefined : editorExpanded ? (voiceHidden ? "minmax(0, 1fr)" : "minmax(0, 7fr) minmax(280px, 3fr)") : `${editorWidth}px minmax(0,1fr) ${voiceHidden ? "0px" : `${voiceWidth}px`}` }}>
         <aside className="editor-panel" ref={editorPanelRef}>
           <div className="panel-intro"><div className="panel-title-row"><div><p className="eyebrow">PROJECT · PERSONAL PORTFOLIO</p><h1>Shape the experience</h1></div><button type="button" title={editorExpanded ? "Restore workspace" : "Expand editor"} aria-label={editorExpanded ? "Restore workspace" : "Expand editor"} onClick={() => { if (!editorExpanded && window.innerWidth <= 900 && !voice.active) setVoiceHidden(true); if (window.innerWidth <= 900) setMobileView("editor"); setEditorExpanded(value => !value); }}>{editorExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}</button></div><p>Use direct controls for precision. Ask the voice agent for broader changes.</p></div>
           <nav className="editor-tabs" aria-label="Editor sections">
@@ -278,6 +278,18 @@ export function PortfolioStudio({ initialDocument, projectName = "Demo portfolio
 
         {!editorExpanded && <section className="preview-shell" aria-label="Live portfolio preview">
           <div className="preview-chrome"><span /><span /><span /><p>portfolio.preview</p><em>LIVE CANVAS</em></div>
+          {previewTarget.section === "projects" && previewTarget.itemId && previewTarget.itemId !== "__index__" && (
+            <nav className="tool-preview-toolbar" aria-label="Tool preview navigation">
+              <button type="button" onClick={() => setPreviewTarget({ section: "hero" })}>Homepage</button>
+              <button type="button" onClick={() => setPreviewTarget({ section: "projects", itemId: "__index__" })}>All tools</button>
+              <label>
+                <span>Preview tool</span>
+                <select value={state.present.content.projects.find(tool => tool.id === previewTarget.itemId || tool.caseStudySlug === previewTarget.itemId)?.id || state.present.content.projects[0]?.id || ""} onChange={event => setPreviewTarget({ section: "projects", itemId: event.target.value })}>
+                  {state.present.content.projects.map(tool => <option key={tool.id} value={tool.id}>{tool.title}</option>)}
+                </select>
+              </label>
+            </nav>
+          )}
           <StudioPreview document={state.present} target={previewTarget} focusedSkill={focusedSkill} execute={executeManual} reducedMotion={reducedMotion} onNavigate={setPreviewTarget} />
         </section>}
 
@@ -334,30 +346,14 @@ function StudioPreview({ document, target, focusedSkill, execute, reducedMotion,
       return (
         <div
           ref={previewRef}
-          className={`portfolio-preview content-draft-preview bg-${document.design.background} template-${document.design.template} ${isCollectionTemplate(document.design.template) ? "collection-theme" : ""} ${isLightTemplate(document.design.template) ? "light-theme" : ""}`}
+          className={`portfolio-preview focused-tool-preview bg-${document.design.background} template-${document.design.template} ${isCollectionTemplate(document.design.template) ? "collection-theme" : ""} ${isLightTemplate(document.design.template) ? "light-theme" : ""}`}
           data-accent={document.design.accent}
         >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px", marginBottom: "16px" }}>
-            <button type="button" className="preview-back-button" onClick={() => onNavigate({ section: "hero" })}>
-              ← Back to homepage preview
-            </button>
-            {document.design.template === "doitwithai-flagship" && (
-              <button
-                type="button"
-                className="preview-back-button"
-                onClick={() => onNavigate({ section: "projects", itemId: "__index__" })}
-              >
-                🧰 View All {document.content.projects.length} Tools Directory &amp; + Add Tool
-              </button>
-            )}
-          </div>
           <InteractiveWebsiteToolRunner
             tool={selectedTool}
             siteName={document.identity.name}
             siteAccent={document.design.accent}
             siteBackground={document.design.background}
-            allTools={document.content.projects.length > 1 ? document.content.projects : undefined}
-            onSelectTool={(next) => onNavigate({ section: "projects", itemId: next.id })}
           />
         </div>
       );
