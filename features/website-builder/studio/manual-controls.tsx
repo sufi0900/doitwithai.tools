@@ -1,6 +1,10 @@
 "use client";
 import { ToolPagePropertyControl } from "./tool-page-property-control";
-import type { ToolPageField } from "../domain/tool-page-properties";
+import {
+  getToolPageFieldTab,
+  toolGradientPresets,
+  type ToolPageField,
+} from "../domain/tool-page-properties";
 
 import { authorizedWebsiteFetch } from "@/features/website-builder/lib/supabase/browser";
 import { ArrowDown, ArrowUp, ExternalLink, Eye, EyeOff, GripVertical, Plus, RotateCcw, Share2, Trash2 } from "lucide-react";
@@ -25,7 +29,7 @@ import { ProfessionalMemory } from "./professional-memory";
 import { AgentHealth } from "./agent-health";
 
 export type PreviewTarget = { section: string; itemId?: string; property?: ToolPageField };
-type Props = { ensureSaved?:()=>Promise<number>; document: SiteDocument; publishedDocument?: SiteDocument; execute: (command: SiteCommand) => void; panel: "content" | "design" | "scene" | "opportunity"; canUploadMedia?: boolean; previewTarget?: PreviewTarget; onPreviewTarget?: (target: PreviewTarget) => void; onPublishItem?: (kind: "page" | "post", itemId: string, status: "draft" | "published") => void; publishingItemId?: string; itemPublishError?: string; canDirectPublish?: boolean; blogNotesSeed?: { id: number; text: string }; publicSiteSlug?: string };
+type Props = { ensureSaved?: () => Promise<number>; document: SiteDocument; publishedDocument?: SiteDocument; execute: (command: SiteCommand) => void; panel: "content" | "design" | "scene" | "opportunity"; canUploadMedia?: boolean; previewTarget?: PreviewTarget; onPreviewTarget?: (target: PreviewTarget) => void; onPublishItem?: (kind: "page" | "post", itemId: string, status: "draft" | "published") => void; publishingItemId?: string; itemPublishError?: string; canDirectPublish?: boolean; blogNotesSeed?: { id: number; text: string }; publicSiteSlug?: string };
 
 export function ManualControls({ document, publishedDocument, execute, panel, canUploadMedia = false, previewTarget, onPreviewTarget, onPublishItem, publishingItemId = "", itemPublishError = "", canDirectPublish = false, ensureSaved, blogNotesSeed, publicSiteSlug }: Props) {
   const activeTemplate = getTemplateContract(document.design.template);
@@ -249,9 +253,19 @@ function ProjectsToolsStudioEditor({
   const projects = document.content.projects;
 
   const [selectedId, setSelectedId] = useState<string>(projects[0]?.id ?? "");
-  const [activeTab, setActiveTab] = useState<"hero" | "inputs" | "theme" | "story">("hero");
+  const [activeTab, setActiveTab] = useState<"hero" | "inputs" | "theme" | "story">(
+    getToolPageFieldTab(previewTarget?.property),
+  );
   const [hexDraft, setHexDraft] = useState("");
+  const [secondaryHexDraft, setSecondaryHexDraft] = useState("");
   const [bgDraft, setBgDraft] = useState("");
+  const [surfaceDraft, setSurfaceDraft] = useState("");
+
+  useEffect(() => {
+    if (previewTarget?.property) {
+      setActiveTab(getToolPageFieldTab(previewTarget.property));
+    }
+  }, [previewTarget?.property]);
 
   useEffect(() => {
     if (previewTarget?.section === "projects" && previewTarget.itemId && previewTarget.itemId !== "__index__") {
@@ -268,8 +282,16 @@ function ProjectsToolsStudioEditor({
   const activeItem = projects.find((p) => p.id === selectedId) ?? projects[0];
   useEffect(() => {
     setHexDraft(activeItem?.toolAccentHex ?? "");
+    setSecondaryHexDraft(activeItem?.toolSecondaryAccentHex ?? "");
     setBgDraft(activeItem?.toolBackgroundHex ?? "");
-  }, [activeItem?.id, activeItem?.toolAccentHex, activeItem?.toolBackgroundHex]);
+    setSurfaceDraft(activeItem?.toolSurfaceHex ?? "");
+  }, [
+    activeItem?.id,
+    activeItem?.toolAccentHex,
+    activeItem?.toolSecondaryAccentHex,
+    activeItem?.toolBackgroundHex,
+    activeItem?.toolSurfaceHex,
+  ]);
 
   const resolvedCatalogSlug = resolveCatalogToolSlug(activeItem);
   const catalogTool = getCatalogToolBySlug(resolvedCatalogSlug);
@@ -372,7 +394,7 @@ function ProjectsToolsStudioEditor({
                     type="button"
                     onClick={() => {
                       setSelectedId(item.id);
-                      onPreviewTarget?.({ section: "projects", itemId: item.id });
+                      onPreviewTarget?.({ section: "projects", itemId: item.id, property: previewTarget?.property });
                     }}
                     style={{
                       flex: 1,
@@ -428,7 +450,7 @@ function ProjectsToolsStudioEditor({
                     type="button"
                     onClick={() => {
                       setSelectedId(item.id);
-                      onPreviewTarget?.({ section: "projects", itemId: item.id });
+                      onPreviewTarget?.({ section: "projects", itemId: item.id, property: previewTarget?.property });
                     }}
                     style={{
                       display: "inline-flex",
@@ -455,7 +477,15 @@ function ProjectsToolsStudioEditor({
 
         {activeItem && (
           <article style={{ minWidth: 0, maxWidth: "100%", display: "grid", gap: "11px", marginTop: "6px" }}>
-            <ToolPagePropertyControl tool={activeItem} field={previewTarget?.property || "title"} execute={execute} onSelect={property => onPreviewTarget?.({ section: "projects", itemId: activeItem.id, property })} />
+            <ToolPagePropertyControl
+              tool={activeItem}
+              field={previewTarget?.property || "title"}
+              execute={execute}
+              onSelect={(property) => {
+                setActiveTab(getToolPageFieldTab(property));
+                onPreviewTarget?.({ section: "projects", itemId: activeItem.id, property });
+              }}
+            />
             <div style={{ display: "grid", gap: "3px", borderBottom: "1px solid var(--line)", paddingBottom: "8px" }}>
               <span style={{ fontSize: "10px", fontWeight: 800, color: "var(--accent)", letterSpacing: "0.1em", textTransform: "uppercase" }}>
                 TOOL LANDING PAGE STUDIO CUSTOMIZER
@@ -575,14 +605,14 @@ function ProjectsToolsStudioEditor({
                 className={activeTab === "inputs" ? "active" : ""}
                 onClick={() => setActiveTab("inputs")}
               >
-                2. Default Inputs
+                2. Inputs &amp; CTA
               </button>
               <button
                 type="button"
                 className={activeTab === "theme" ? "active" : ""}
                 onClick={() => setActiveTab("theme")}
               >
-                3. Theme &amp; Colors
+                3. Theme &amp; Gradient
               </button>
               <button
                 type="button"
@@ -738,8 +768,18 @@ function ProjectsToolsStudioEditor({
             {activeTab === "inputs" && (
               <div key={`${activeItem.id}-inputs`} style={{ display: "grid", gap: "10px", minWidth: 0 }}>
                 <p className="guardrail-note" style={{ margin: 0 }}>
-                  Pre-fill the transferred tool&apos;s interactive input fields and primary CTA button label for every visitor who opens this landing page.
+                  Customize the tool&apos;s interactive input field labels, default pre-filled values, and primary CTA button text in real time.
                 </p>
+                <BufferedField
+                  label="Primary Input Field Label"
+                  value={activeItem.inputLabel ?? ""}
+                  maxLength={120}
+                  allowEmpty
+                  placeholder="e.g. Target Focus Keyword or URL"
+                  onCommit={(value) =>
+                    execute({ type: "project.update", itemId: activeItem.id, field: "inputLabel", value })
+                  }
+                />
                 <BufferedField
                   label="Default Primary Input (Topic / URL / Keyword)"
                   value={activeItem.defaultInput ?? ""}
@@ -748,6 +788,16 @@ function ProjectsToolsStudioEditor({
                   placeholder="e.g. Best AI Workflow Tools for Agencies"
                   onCommit={(value) =>
                     execute({ type: "project.update", itemId: activeItem.id, field: "defaultInput", value })
+                  }
+                />
+                <BufferedField
+                  label="Secondary Input Field Label"
+                  value={activeItem.secondaryInputLabel ?? ""}
+                  maxLength={120}
+                  allowEmpty
+                  placeholder="e.g. Draft Copy, Context, or Value Proposition"
+                  onCommit={(value) =>
+                    execute({ type: "project.update", itemId: activeItem.id, field: "secondaryInputLabel", value })
                   }
                 />
                 <BufferedField
@@ -794,9 +844,34 @@ function ProjectsToolsStudioEditor({
                   </select>
                 </Field>
 
+                <Field label="Hero &amp; Card Gradient Preset">
+                  <select
+                    value={activeItem.toolGradientPreset ?? "auto"}
+                    onChange={(event) =>
+                      execute({
+                        type: "project.update",
+                        itemId: activeItem.id,
+                        field: "toolGradientPreset",
+                        value: event.target.value,
+                      })
+                    }
+                  >
+                    {toolGradientPresets.map((preset) => (
+                      <option key={preset} value={preset}>
+                        {preset === "auto"
+                          ? "Auto (Match Website Theme)"
+                          : preset
+                              .split("-")
+                              .map((part) => part[0].toUpperCase() + part.slice(1))
+                              .join(" → ")}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+
                 <div style={{ display: "grid", gap: "6px" }}>
                   <span style={{ color: "#b4bed1", fontSize: "12px", fontWeight: 600 }}>
-                    Per-Tool Accent Color Override
+                    Per-Tool Primary Accent Color
                   </span>
                   <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
                     <input
@@ -897,7 +972,56 @@ function ProjectsToolsStudioEditor({
 
                 <div style={{ display: "grid", gap: "6px", paddingTop: "6px", borderTop: "1px solid var(--line)" }}>
                   <span style={{ color: "#b4bed1", fontSize: "12px", fontWeight: 600 }}>
-                    Per-Tool Background Color Override
+                    Per-Tool Secondary / Gradient End Color
+                  </span>
+                  <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                    <input
+                      type="color"
+                      aria-label="Pick tool secondary gradient color"
+                      value={/^#[0-9a-f]{6}$/i.test(secondaryHexDraft) ? secondaryHexDraft : "#6366f1"}
+                      onChange={(e) => {
+                        setSecondaryHexDraft(e.target.value);
+                        execute({
+                          type: "project.update",
+                          itemId: activeItem.id,
+                          field: "toolSecondaryAccentHex",
+                          value: e.target.value,
+                        });
+                      }}
+                      style={{ width: "42px", height: "36px", padding: "2px", borderRadius: "8px", border: "1px solid var(--line)", background: "transparent", cursor: "pointer", flexShrink: 0 }}
+                    />
+                    <input
+                      type="text"
+                      aria-label="Tool secondary gradient hex color"
+                      value={secondaryHexDraft}
+                      maxLength={32}
+                      placeholder="#6366f1 (gradient end color)"
+                      onChange={(e) => setSecondaryHexDraft(e.target.value)}
+                      onBlur={() =>
+                        execute({
+                          type: "project.update",
+                          itemId: activeItem.id,
+                          field: "toolSecondaryAccentHex",
+                          value: secondaryHexDraft.trim(),
+                        })
+                      }
+                      style={{
+                        flex: 1,
+                        minWidth: 0,
+                        padding: "8px 10px",
+                        borderRadius: "8px",
+                        border: "1px solid var(--line)",
+                        background: "rgba(0,0,0,0.25)",
+                        color: "var(--text)",
+                        fontSize: "12px",
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: "grid", gap: "6px", paddingTop: "6px", borderTop: "1px solid var(--line)" }}>
+                  <span style={{ color: "#b4bed1", fontSize: "12px", fontWeight: 600 }}>
+                    Per-Tool Page Background Color
                   </span>
                   <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
                     <input
@@ -993,6 +1117,55 @@ function ProjectsToolsStudioEditor({
                         Use Site Default
                       </button>
                     )}
+                  </div>
+                </div>
+
+                <div style={{ display: "grid", gap: "6px", paddingTop: "6px", borderTop: "1px solid var(--line)" }}>
+                  <span style={{ color: "#b4bed1", fontSize: "12px", fontWeight: 600 }}>
+                    Per-Tool Card &amp; Workspace Surface Color
+                  </span>
+                  <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                    <input
+                      type="color"
+                      aria-label="Pick tool card surface color"
+                      value={/^#[0-9a-f]{6}$/i.test(surfaceDraft) ? surfaceDraft : "#0f172a"}
+                      onChange={(e) => {
+                        setSurfaceDraft(e.target.value);
+                        execute({
+                          type: "project.update",
+                          itemId: activeItem.id,
+                          field: "toolSurfaceHex",
+                          value: e.target.value,
+                        });
+                      }}
+                      style={{ width: "42px", height: "36px", padding: "2px", borderRadius: "8px", border: "1px solid var(--line)", background: "transparent", cursor: "pointer", flexShrink: 0 }}
+                    />
+                    <input
+                      type="text"
+                      aria-label="Tool card surface hex color"
+                      value={surfaceDraft}
+                      maxLength={32}
+                      placeholder="#0f172a (card surface override)"
+                      onChange={(e) => setSurfaceDraft(e.target.value)}
+                      onBlur={() =>
+                        execute({
+                          type: "project.update",
+                          itemId: activeItem.id,
+                          field: "toolSurfaceHex",
+                          value: surfaceDraft.trim(),
+                        })
+                      }
+                      style={{
+                        flex: 1,
+                        minWidth: 0,
+                        padding: "8px 10px",
+                        borderRadius: "8px",
+                        border: "1px solid var(--line)",
+                        background: "rgba(0,0,0,0.25)",
+                        color: "var(--text)",
+                        fontSize: "12px",
+                      }}
+                    />
                   </div>
                 </div>
 

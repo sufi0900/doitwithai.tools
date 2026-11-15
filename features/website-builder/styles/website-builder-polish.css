@@ -1,194 +1,252 @@
-/* ============================================================================
- * DoItWithAI Website Studio & Published Website UI/UX Polish Overrides
- * Fixes template-picker button column squishing, top-actions wrapping,
- * archetype navigation spacing, and responsive in-site AI tool workspaces.
- * ============================================================================ */
+/* DoItWithAI Website Studio & Flagship Templates Polish (Phases 2-5) */
 
-.website-builder-scope .top-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: nowrap;
-}
-
-.website-builder-scope .top-actions button,
-.website-builder-scope .top-actions .top-link {
-  white-space: nowrap !important;
-  flex-shrink: 0 !important;
-  min-height: 36px;
-  padding: 0 12px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  line-height: 1.1;
-}
-
-.website-builder-scope .top-actions .publish-button {
-  max-width: 260px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Prevent .studio-template-picker 8px grid column from squishing action buttons */
-.website-builder-scope .template-defaults-reset-card {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 12px 14px;
-  margin-bottom: 12px;
-  border-radius: 12px;
-  background: rgba(15, 23, 42, 0.78);
-  border: 1px solid rgba(56, 189, 248, 0.32);
-}
-
-.website-builder-scope .template-defaults-reset-card button,
-.website-builder-scope .studio-template-picker button.template-reset-action {
-  display: inline-flex !important;
-  grid-template-columns: none !important;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-  min-height: 40px;
-  padding: 9px 14px;
-  border-radius: 9px;
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1.35;
-  text-align: center;
-  white-space: normal;
-}
-
-/* Clean, scannable Archetype Navigation Bar inside Studio Preview & Public Sites */
 .website-builder-scope .portfolio-site-nav {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: center;
-  gap: 8px 14px;
-  padding: 12px 20px;
+  gap: 10px 16px;
 }
 
-.website-builder-scope .portfolio-site-nav a,
-.website-builder-scope .portfolio-site-nav button {
+.website-builder-scope .portfolio-site-nav .nav-pill-primary {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 6px 12px;
-  border-radius: 999px;
-  font-size: 12.5px;
-  font-weight: 600;
+  gap: 6px;
+  padding: 6px 13px !important;
+  border-radius: 999px !important;
+  background: rgba(56, 189, 248, 0.16) !important;
+  border: 1px solid rgba(56, 189, 248, 0.42) !important;
+  color: #7dd3fc !important;
+  font-weight: 800 !important;
   text-decoration: none;
-  white-space: nowrap;
-  transition: background-color 0.16s ease, color 0.16s ease, border-color 0.16s ease;
 }
 
-.website-builder-scope .portfolio-site-nav a.nav-pill-primary,
-.website-builder-scope .portfolio-site-nav button.nav-pill-primary {
-  background: rgba(99, 102, 241, 0.18);
-  border: 1px solid rgba(99, 102, 241, 0.45);
-  color: #e0e7ff;
-  font-weight: 700;
+/* Phase 2: Focused Tool Preview & External Studio Toolbar */
+.website-builder-scope .focused-tool-preview {
+  padding: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  min-width: 0 !important;
+  overflow-x: hidden !important;
 }
 
-/* Interactive Tool Runner responsive polish */
-.website-builder-scope .interactive-tool-runner input,
-.website-builder-scope .interactive-tool-runner select,
-.website-builder-scope .interactive-tool-runner textarea {
-  font-family: inherit;
-  box-sizing: border-box;
-  width: 100%;
+.website-builder-scope .tool-preview-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 14px;
+  padding: 10px 16px;
+  background: rgba(7, 12, 24, 0.94);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(99, 102, 241, 0.28);
 }
 
-/* Fix Studio Left Panel horizontal clipping & responsive containment */
-.website-builder-scope .workspace > .editor-panel,
-.website-builder-scope .editor-panel .expanded-editor-surface,
-.website-builder-scope .editor-panel .control-stack,
-.website-builder-scope .editor-panel .field,
-.website-builder-scope .editor-panel .collection-editor,
-.website-builder-scope .editor-panel .collection-editor > article {
-  min-width: 0;
-  max-width: 100%;
-  box-sizing: border-box;
-}
-
-.website-builder-scope .workspace > .editor-panel {
-  overflow-x: hidden;
-  scrollbar-gutter: stable;
-}
-
-.website-builder-scope .editor-panel input:not([type="checkbox"]):not([type="radio"]):not([type="color"]),
-.website-builder-scope .editor-panel textarea,
-.website-builder-scope .editor-panel select {
-  min-width: 0;
-  max-width: 100%;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.website-builder-scope .editor-panel select {
-  text-overflow: ellipsis;
-  overflow: hidden;
-  white-space: nowrap;
-}
-
-.website-builder-scope .tool-studio-list {
-  display: grid;
+.website-builder-scope .tool-preview-select {
+  display: inline-flex;
+  align-items: center;
   gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #cbd5e1;
+}
+
+.website-builder-scope .tool-preview-select select {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(99, 102, 241, 0.38);
+  background: rgba(15, 23, 42, 0.9);
+  color: #f8fafc;
+  font-size: 12px;
+  font-weight: 700;
+  max-width: min(320px, 65vw);
+}
+
+/* Phase 3: Interactive Tool Page Canvas Editor & Quick-Jump Pills */
+.website-builder-scope .tool-canvas-editor {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
   min-width: 0;
 }
 
-.website-builder-scope .tool-studio-row {
-  display: grid;
-  gap: 7px;
-  padding: 10px;
-  border-radius: 10px;
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  background: rgba(15, 23, 42, 0.65);
-  min-width: 0;
-  transition: border-color 0.16s ease, background-color 0.16s ease;
+.website-builder-scope .tool-canvas-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 16px;
+  background: rgba(15, 23, 42, 0.88);
+  border-bottom: 1px solid rgba(56, 189, 248, 0.24);
+  font-size: 12px;
+  color: #cbd5e1;
 }
 
-.website-builder-scope .tool-studio-row.selected {
-  border-color: var(--accent);
-  background: rgba(var(--accent-rgb), 0.1);
+.website-builder-scope .tool-canvas-controls__primary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
 }
 
-.website-builder-scope .tool-studio-tabs {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 5px;
-  padding: 4px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--line);
+.website-builder-scope .tool-canvas-controls__primary button {
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  background: rgba(56, 189, 248, 0.14);
+  color: #7dd3fc;
+  font-size: 11.5px;
+  font-weight: 800;
+  cursor: pointer;
 }
 
-.website-builder-scope .tool-studio-tabs button {
-  min-width: 0;
-  padding: 7px 6px;
-  border-radius: 7px;
-  border: 0;
-  background: transparent;
-  color: var(--muted);
+.website-builder-scope .tool-canvas-controls__primary button[aria-pressed="true"] {
+  background: linear-gradient(135deg, #22d3ee, #6366f1);
+  color: #04101c;
+  border-color: transparent;
+}
+
+.website-builder-scope .tool-canvas-QuickJumps {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.website-builder-scope .tool-canvas-QuickJumps__label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+  margin-right: 2px;
+}
+
+.website-builder-scope .tool-canvas-pill {
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(15, 23, 42, 0.72);
+  color: #cbd5e1;
   font-size: 11px;
   font-weight: 700;
   cursor: pointer;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  transition: all 0.15s ease;
 }
 
-.website-builder-scope .tool-studio-tabs button.active {
-  background: rgba(var(--accent-rgb), 0.18);
-  color: var(--accent);
+.website-builder-scope .tool-canvas-pill:hover,
+.website-builder-scope .tool-canvas-pill.is-active {
+  border-color: #22d3ee;
+  background: rgba(34, 211, 238, 0.16);
+  color: #a5f3fc;
+}
+
+.website-builder-scope .tool-canvas-editor[data-selecting="true"] [data-wb-property] {
+  outline: 1.5px dashed rgba(56, 189, 248, 0.55);
+  outline-offset: 3px;
+  cursor: pointer !important;
+  transition: outline-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.website-builder-scope .tool-canvas-editor[data-selecting="true"] [data-wb-property]:hover,
+.website-builder-scope .tool-canvas-editor [data-wb-active="true"] {
+  outline: 2px solid #22d3ee !important;
+  outline-offset: 4px;
+  box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.18);
+  border-radius: 6px;
+}
+
+/* Phase 3: Left-Panel Tool Property Control */
+.website-builder-scope .tool-property-control {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 14px;
+  display: grid;
+  gap: 12px;
+}
+
+.website-builder-scope .tool-property-control__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.website-builder-scope .tool-property-control__header h3 {
+  margin: 2px 0 0;
+  font-size: 15px;
+  color: #f8fafc;
+}
+
+.website-builder-scope .tool-property-QuickPills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.website-builder-scope .tool-property-pill {
+  padding: 4px 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  background: rgba(9, 14, 28, 0.72);
+  color: #cbd5e1;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.website-builder-scope .tool-property-pill.is-active {
+  border-color: #22d3ee;
+  background: rgba(34, 211, 238, 0.18);
+  color: #a5f3fc;
+}
+
+.website-builder-scope .tool-property-form {
+  display: grid;
+  gap: 10px;
+}
+
+.website-builder-scope .tool-property-color-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.website-builder-scope .tool-property-color-row input[type="color"] {
+  width: 40px;
+  height: 36px;
+  padding: 2px;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  background: transparent;
+  cursor: pointer;
+}
+
+.website-builder-scope .tool-property-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.website-builder-scope .tool-faq-editor {
+  display: grid;
+  gap: 10px;
+}
+
+.website-builder-scope .tool-faq-item {
+  padding: 10px;
+  border-radius: 10px;
+  background: rgba(9, 14, 28, 0.65);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  display: grid;
+  gap: 8px;
 }
 
 /* Override legacy .projects-index article > div { height: 230px; background: #080d19 } collision */
 .website-builder-scope .projects-index .wb-tools-directory-grid {
   display: grid !important;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 310px), 1fr)) !important;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)) !important;
   gap: 20px !important;
   align-items: stretch !important;
 }
@@ -211,3 +269,12 @@
   overflow: visible !important;
 }
 
+@media (max-width: 760px) {
+  .website-builder-scope .tool-preview-toolbar {
+    padding: 8px 12px;
+  }
+  .website-builder-scope .case-study-nav {
+    padding: 12px 16px;
+    gap: 10px;
+  }
+}
