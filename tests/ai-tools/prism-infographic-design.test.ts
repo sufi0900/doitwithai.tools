@@ -27,6 +27,12 @@ import {
   sectionFromText,
   shuffleInfographicVisualVariation,
 } from "../../lib/blog-infographic-studio/visual-brief";
+import {
+  decontextualizeProse,
+  hasTitleBodyDuplication,
+  hasTrailingCliffhanger,
+  scoreHeadlineHighlightPhrases,
+} from "../../lib/content-intelligence/url-to-standalone-visual";
 
 test("six distinct compositions keep every sample explanation within a fixed canvas across all eight themes", () => {
   const dimensions = {
@@ -368,4 +374,151 @@ test("programmatic visual engine builds unique per-section infographics with pro
 
   const shuffled = shuffleInfographicVisualVariation(restored, 1);
   assert.notEqual(shuffled.backgroundPattern, restored.backgroundPattern);
+});
+
+test("6-Layer Agentic Infographic Pipeline resolves all live screenshot defects (anti-duplication, zero cliffhangers, FAQ preservation, semantic highlight & 48 distinct icons)", () => {
+  // 1. 2-Tone headline highlights never pick stop-word tails like "a section"
+  assert.deepEqual(
+    scoreHeadlineHighlightPhrases("Prompt to diagnose and revise a section"),
+    ["diagnose and revise"],
+  );
+  assert.ok(
+    !scoreHeadlineHighlightPhrases("A five-step ChatGPT editing workflow")
+      .join(" ")
+      .toLowerCase()
+      .startsWith("a "),
+  );
+
+  // 2. De-contextualization scrubs "prompt above" while keeping quantitative "below 20 words" intact
+  assert.doesNotMatch(
+    decontextualizeProse(
+      "Use the revised prompt above to avoid rigid sentence-length rules.",
+    ),
+    /prompt above/i,
+  );
+  assert.match(
+    decontextualizeProse("Should every sentence be below 20 words?"),
+    /below 20 words/i,
+  );
+
+  // 3. Screenshot 1, Screenshot 2 & Screenshot 3 end-to-end suite generation
+  const sections = [
+    sectionFromText(
+      "Prompt to diagnose and revise a section",
+      [
+        "Use the revised prompt above to avoid rigid sentence-length rules.",
+        "Provide context and important constraints with the section being edited.",
+        "Compare the revision with the original before publishing.",
+      ].join("\n"),
+      "sec-prompt",
+    ),
+    sectionFromText(
+      "A five-step ChatGPT editing workflow",
+      [
+        "Start with one coherent section, including nearby context.",
+        "Identify unclear references, dense sentences, missing definitions, and weak transitions.",
+        "Request a revision that preserves the meaning and the required details.",
+        "Check facts, uncertainty, conditions, and who performs each action.",
+        "Preview the section in the page layout and test whether a reader can complete the intended task.",
+        "You remain responsible for checking the result.",
+      ].join("\n"),
+      "sec-workflow",
+    ),
+    sectionFromText(
+      "Frequently Asked Questions",
+      [
+        "### What is a good readability score?",
+        "No single score guarantees comprehension or rankings.",
+        "### Are Flesch Reading Ease and Flesch-Kincaid Grade Level the same?",
+        "Higher Reading Ease scores generally indicate easier text, while Grade Level estimates US school grade complexity.",
+        "### Should every sentence be under 20 words?",
+        "Split dense sentences when useful, but preserve natural flow and necessary relationships between ideas.",
+        "### Can ChatGPT preserve all facts during rewriting?",
+        "Compare the revision with the original and verify important statements.",
+        "### Does readability guarantee better SEO?",
+        "A score alone does not establish rankings, traffic, or conversion outcomes.",
+        "### How often should teams audit readability?",
+        "Review key landing and guide pages during initial drafting and quarterly content refreshes.",
+      ].join("\n"),
+      "sec-faq",
+    ),
+  ];
+
+  const suite = buildAllArticleSectionVisuals(sections, {
+    sourceUrl: "https://doitwithai.tools/guides/chatgpt-editing-workflow",
+    domain: "doitwithai.tools",
+  });
+  assert.equal(suite.length, 3);
+
+  // Verify Section 1 (Screenshot 1): no "a section", no "prompt above", 3 distinct icons, callout anchored
+  const s1 = suite[0];
+  assert.equal(s1.highlightWords, "diagnose and revise");
+  assert.ok(Boolean(s1.calloutText && s1.calloutText.length > 0));
+  for (const node of s1.nodes) {
+    assert.doesNotMatch(`${node.title} ${node.detail}`, /prompt above/i);
+    assert.equal(hasTitleBodyDuplication(node.title, node.detail), false);
+    assert.equal(hasTrailingCliffhanger(node.title), false);
+  }
+  const s1Scene = buildInfographicScene(s1);
+  assert.deepEqual(s1Scene.issues, []);
+  const $s1 = load(s1Scene.svg, { xmlMode: true });
+  const s1Icons = $s1("[data-semantic-icon]")
+    .map((_, el) => $s1(el).attr("data-semantic-icon"))
+    .get();
+  assert.equal(new Set(s1Icons).size, 3);
+
+  // Verify Section 2 (Screenshot 2): zero cliffhangers ("including", "missing", "preserves", "checking"),
+  // zero title-body duplication, 6 distinct semantic icons, clean SVG fit
+  const s2 = suite[1];
+  assert.equal(s2.nodes.length, 6);
+  for (const node of s2.nodes) {
+    assert.doesNotMatch(
+      node.title,
+      /(?:including|missing|preserves|checking|that)$/i,
+      `Dangling title detected: "${node.title}"`,
+    );
+    assert.equal(
+      hasTrailingCliffhanger(node.title),
+      false,
+      `Cliffhanger title: "${node.title}"`,
+    );
+    assert.equal(
+      hasTitleBodyDuplication(node.title, node.detail),
+      false,
+      `Duplicated title/detail: "${node.title}" :: "${node.detail}"`,
+    );
+  }
+  assert.equal(
+    new Set(s2.nodes.map((n) => n.icon)).size,
+    6,
+    "Every step node must have a distinct semantic icon assigned",
+  );
+  const s2Scene = buildInfographicScene(s2);
+  assert.deepEqual(s2Scene.issues, []);
+  const s2RibbonScene = buildInfographicScene({
+    ...s2,
+    prismLayout: "ribbon",
+    aspectRatio: "9:16",
+  });
+  assert.deepEqual(s2RibbonScene.issues, []);
+  const $s2 = load(s2RibbonScene.svg, { xmlMode: true });
+  const s2Icons = $s2("[data-semantic-icon]")
+    .map((_, el) => $s2(el).attr("data-semantic-icon"))
+    .get();
+  assert.equal(new Set(s2Icons).size, 6);
+
+  // Verify Section 3 (Screenshot 3): FAQ keeps "What is a good readability score?", Q1..Q6 badges, 6 distinct icons
+  const s3 = suite[2];
+  assert.equal(s3.nodes.length, 6);
+  assert.equal(s3.nodes[0].title, "What is a good readability score?");
+  assert.equal(s3.nodes[0].badge, "Q1");
+  assert.equal(s3.nodes[5].badge, "Q6");
+  assert.match(s3.eyebrowLabel || "", /FAQ/i);
+  const s3Scene = buildInfographicScene(s3);
+  assert.deepEqual(s3Scene.issues, []);
+  const $s3 = load(s3Scene.svg, { xmlMode: true });
+  const s3Icons = $s3("[data-semantic-icon]")
+    .map((_, el) => $s3(el).attr("data-semantic-icon"))
+    .get();
+  assert.equal(new Set(s3Icons).size, 6);
 });

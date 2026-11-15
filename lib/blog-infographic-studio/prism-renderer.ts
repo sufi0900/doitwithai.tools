@@ -13,6 +13,12 @@ import {
   mixColor,
   resolveFontStack,
 } from "./appearance";
+import {
+  SEMANTIC_ICON_PATHS,
+  assignDistinctSectionIcons,
+  isInfographicTopicIcon,
+  scoreSemanticIconCandidates,
+} from "./skills/semantic-iconography";
 
 export type JSXNode =
   | string
@@ -385,37 +391,13 @@ function textBlock(
     ),
   };
 }
-const icons: Record<Icon, string[]> = {
-  answer: ["M4 4h16v12H9l-5 4V4Z", "M8 8h8M8 12h5"],
-  evidence: ["M6 3h9l4 4v14H6V3Z", "M14 3v5h5", "m9 15 2 2 4-5"],
-  workflow: [
-    "M4 3h6v6H4zM14 15h6v6h-6z",
-    "M10 6h7v6m-3-3 3 3 3-3M14 18H7v-6m-3 3 3-3 3 3",
-  ],
-  search: ["M16 16l5 5", "M17 10a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z"],
-  target: [
-    "M21 12a9 9 0 1 1-9-9",
-    "M16 12a4 4 0 1 1-4-4",
-    "m12 12 8-8M16 3h5v5",
-  ],
-  chart: ["M4 3v18h17M8 16v-4M13 16V8M18 16V5"],
-  check: ["M20 12a8 8 0 1 1-4-7", "m8 11 4 4 9-10"],
-  idea: [
-    "M8 17c0-3-3-3-3-7a7 7 0 0 1 14 0c0 4-3 4-3 7H8ZM9 21h6M9 17v-4m6 4v-4m-6-3 3 3 3-3",
-  ],
-};
-export function semanticIcon(node: BlogInfographicNodeItem): Icon {
-  if (node.icon && icons[node.icon]) return node.icon;
-  const t = `${node.title} ${node.badge}`;
-  if (/answer|aeo|question/i.test(t)) return "answer";
-  if (/source|evidence|citation|geo|trust|verify|generative/i.test(t))
-    return "evidence";
-  if (/workflow|process|ai.assist|automat|publish/i.test(t)) return "workflow";
-  if (/search|research|keyword/i.test(t)) return "search";
-  if (/data|metric|measure|analys|result/i.test(t)) return "chart";
-  if (/goal|intent|target|audience/i.test(t)) return "target";
-  if (/check|review|valid|quality/i.test(t)) return "check";
-  return "idea";
+const icons: Record<Icon, string[]> = SEMANTIC_ICON_PATHS;
+export function semanticIcon(
+  node: BlogInfographicNodeItem,
+  sectionTitle?: string,
+): Icon {
+  if (node.icon && isInfographicTopicIcon(node.icon)) return node.icon;
+  return scoreSemanticIconCandidates(node, sectionTitle)[0] || "idea";
 }
 function pictogram(
   icon: Icon,
@@ -430,7 +412,7 @@ function pictogram(
       transform: `translate(${x},${y}) scale(${size / 24})`,
       "data-semantic-icon": icon,
     },
-    icons[icon].map((d) => path(d, ink, 1.5)),
+    (icons[icon] || icons.idea).map((d) => path(d, ink, 1.5)),
   );
 }
 export function buildPrismScene(
@@ -765,6 +747,14 @@ export function buildPrismScene(
       );
     }
   };
+  const distinctSceneNodes = assignDistinctSectionIcons(
+    config.nodes.slice(0, 6),
+    config.headline,
+  );
+  const iconForNode = (n: BlogInfographicNodeItem): Icon => {
+    const matched = distinctSceneNodes.find((d) => d.id === n.id);
+    return matched?.icon || semanticIcon(n, config.headline);
+  };
   const medallionInto = (
     target: JSXNode[],
     n: BlogInfographicNodeItem,
@@ -781,7 +771,7 @@ export function buildPrismScene(
         strokeOpacity: 0.3,
         strokeWidth: 1.5,
       }),
-      pictogram(semanticIcon(n), x - r * 0.55, y - r * 0.55, r * 1.1, c),
+      pictogram(iconForNode(n), x - r * 0.55, y - r * 0.55, r * 1.1, c),
     );
   };
   const drawSignature = (y: number) => {
@@ -1350,17 +1340,29 @@ export function buildPrismScene(
       isChecklist = layout === "checklist",
       isRibbon = layout === "ribbon";
     const textW = contentW - (isChecklist ? 228 : isTimeline ? 162 : 196);
-    const topLead = Math.min(24, Math.round(slack * 0.1));
     const extraGap = Math.min(
-      38,
+      44,
       Math.round((slack * 0.3) / Math.max(1, nodes.length - 1)),
     );
     const rowGap = minGap + extraGap;
+    const slackAfterGaps = Math.max(
+      0,
+      slack - extraGap * Math.max(0, nodes.length - 1),
+    );
+    const cardShareRatio = nodes.length <= 3 ? 0.66 : 0.78;
     const extraCardH = Math.min(
-      115,
-      Math.round(
-        (slack - topLead - extraGap * Math.max(0, nodes.length - 1)) /
-          Math.max(1, nodes.length),
+      145,
+      Math.round((slackAfterGaps * cardShareRatio) / Math.max(1, nodes.length)),
+    );
+    const remainingSlack = Math.max(
+      0,
+      slackAfterGaps - extraCardH * nodes.length,
+    );
+    const topLead = Math.min(
+      68,
+      Math.max(
+        Math.min(16, remainingSlack),
+        Math.round(remainingSlack * 0.42),
       ),
     );
     let y = top + topLead;

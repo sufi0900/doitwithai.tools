@@ -75,3 +75,25 @@ To deliver Antigravity-grade visual diversity while keeping every layer 100% edi
 3. **Multi-Page PDF Deck Export & Python CLI Skill (`scripts/visual_engine/build_infographic_deck.py`)**:
    - Users can export any individual section as PNG, SVG, WebP, or Print/PDF, or export all generated article sections together as a multi-page **PDF Deck** or `.ZIP` archive.
    - For headless CLI/Playwright workflows, `scripts/visual_engine/build_infographic_deck.py` compiles `1080×1350` multi-page PDF carousels from JSON briefs.
+
+## 14. 6-Layer Agentic Infographic & Universal URL-to-Visual Pipeline
+
+To eliminate mid-clause title truncation, title-body text duplication, context-dependent prose (`"prompt above"`), stripped FAQ questions, stop-word 2-tone highlights (`"a section"`), and repeated card icons, Prism Forge enforces a modular 6-layer pipeline across `lib/blog-infographic-studio/skills/*` and shares it platform-wide through `lib/content-intelligence/url-to-standalone-visual.ts`:
+
+1. **Layer 1 — Topic Intelligence & Archetype Router (`skills/topic-intelligence.ts`)**:
+   - Classifies every section into `faq`, `process`, `comparison`, `checklist`, `data-metrics`, `framework`, or `skip` via `classifySectionArchetype` and `isFaqHeadingOrSection`.
+   - Filters out promotional boilerplate and weak wrap-up sections whenever substantive sections are present.
+2. **Layer 2 — Standalone Copywriting & Anti-Duplication Engine (`skills/standalone-copywriter.ts`)**:
+   - Scrubs deictic references (`"use the revised prompt above"` → `"Use a structured prompt"`) via `decontextualizeProse`.
+   - Strips trailing prepositions, conjunctions, auxiliaries, and participles (`including`, `missing`, `checking`, `preserves`) via `stripTrailingCliffhangers`.
+   - Splits prose into a 2–5 word Concept Kernel (`title`) and a non-overlapping explanation (`detail`) via `synthesizeStandaloneTitleAndDetail`, preserving full FAQ questions ending in `?` (never stripping `"What is"` / `"What are"`).
+   - Scores 2-tone headline highlight phrases via `scoreHeadlineHighlightPhrases`, disqualifying stop-word and generic meta tails (`"a section"`).
+3. **Layer 3 — 48-Icon Semantic Vector Registry & Sibling Deduplication (`skills/semantic-iconography.ts`)**:
+   - Expands `InfographicTopicIcon` and `SEMANTIC_ICON_PATHS` to **48 vector icons** across Strategy, Workflow, Audit/QA, Data/Metrics, Editorial/Copy, AI/Code, and FAQ/Collaboration families.
+   - `assignDistinctSectionIcons` guarantees every sibling card on an infographic receives a distinct, topic-matched icon.
+4. **Layer 4 & 5 — Adaptive Geometry & Optical Centering (`prism-renderer.ts`)**:
+   - Distributes vertical canvas slack proportionally across gap expansion, card height, and optical vertical centering (`topLead`) while keeping every element above `footerY` with zero clipping.
+5. **Layer 6 — Automated Pre-Render Visual & Copy QA Critic (`skills/visual-qa-critic.ts`)**:
+   - `runInfographicQaCritic` audits and auto-repairs cliffhangers, title-body overlap, deictic copy leaks, low-signal headline highlights, FAQ `Q1..Qn` badges, sibling icon uniqueness, and synthesized bottom callout bars for 2–3 card layouts.
+6. **Universal URL-to-Visual Contract (`lib/content-intelligence/url-to-standalone-visual.ts`)**:
+   - Re-exports all 6 layers under one canonical module so downstream social, carousel, and visual generators share the exact same standalone content standards.

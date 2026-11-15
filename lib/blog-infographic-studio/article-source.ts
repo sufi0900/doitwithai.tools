@@ -1,3 +1,9 @@
+import { decontextualizeProse } from "./skills/standalone-copywriter";
+import {
+  classifySectionArchetype,
+  type SectionArchetype,
+} from "./skills/topic-intelligence";
+
 /** Article-only source tree. No generated claims or layout decisions belong here. */
 export interface ArticleSourceBlock {
   id: string;
@@ -10,6 +16,7 @@ export interface ArticleSourceSection {
   title: string;
   blocks: ArticleSourceBlock[];
   role: "content" | "introduction" | "promotional";
+  archetype?: SectionArchetype;
 }
 export interface ArticleSourceCoverage {
   sectionsFound: number;
@@ -117,10 +124,14 @@ export function extractArticleSource(document: Document, title: string) {
       continue;
     chars += text.length;
     blocksIncluded++;
+    const normalizedText =
+      kind === "heading" || kind === "table"
+        ? text
+        : decontextualizeProse(text) || text;
     current!.blocks.push({
-      id: `block-${sourceId(`${current!.id}:${blocksFound}:${text}`)}`,
+      id: `block-${sourceId(`${current!.id}:${blocksFound}:${normalizedText}`)}`,
       kind,
-      text,
+      text: normalizedText,
       heading: h3 || undefined,
     });
   }
@@ -142,6 +153,9 @@ export function extractArticleSource(document: Document, title: string) {
     if (!hasStructuredSubheadings && !hasDefinitionList) {
       preH2Section.role = "introduction";
     }
+  }
+  for (const s of useful) {
+    s.archetype = classifySectionArchetype(s, title).archetype;
   }
   const substantive = useful.filter((s) => s.role === "content");
   const rank = (s: ArticleSourceSection) => {

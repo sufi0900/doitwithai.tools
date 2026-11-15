@@ -7,16 +7,9 @@ import type {
   InfographicSignature,
 } from "./appearance";
 import type { PrismLayout, VisualBrief } from "./visual-brief";
+import type { InfographicTopicIcon } from "./skills/semantic-iconography";
 
-export type InfographicTopicIcon =
-  | "answer"
-  | "evidence"
-  | "workflow"
-  | "search"
-  | "target"
-  | "chart"
-  | "check"
-  | "idea";
+export type { InfographicTopicIcon } from "./skills/semantic-iconography";
 
 declare module "@/lib/blog-writer/canonical-state" {
   interface BlogInfographicNodeItem {

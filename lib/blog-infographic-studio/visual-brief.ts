@@ -20,6 +20,17 @@ import {
 } from "./appearance";
 import type { WebsiteBrandHint } from "./brand-source";
 import { BLOG_INFOGRAPHIC_PALETTES } from "./palettes";
+import { assignDistinctSectionIcons } from "./skills/semantic-iconography";
+import {
+  decontextualizeProse,
+  stripTrailingCliffhangers as stripCopyCliffhangers,
+  synthesizeStandaloneTitleAndDetail,
+} from "./skills/standalone-copywriter";
+import {
+  classifySectionArchetype,
+  isFaqHeadingOrSection,
+} from "./skills/topic-intelligence";
+import { runInfographicQaCritic } from "./skills/visual-qa-critic";
 
 export { PRISM_LAYOUTS } from "./layout-registry";
 export type { PrismLayout } from "./layout-registry";
@@ -54,157 +65,34 @@ const personal =
 const conversationalFiller =
   /^(?:you(?:\s+have|[’']ve)?\s+probably\s+noticed\b|you\s+search\b|we(?:\s+have|[’']ve)?\s+seen\s+a\s+(?:huge|big|major|massive|significant|dramatic)\s+(?:change|shift)\b|in\s+recent\s+years,?\s+we\s+have\s+seen\b|but\s+this\s+does\s+not\s+mean\b|that\s+does\s+not\s+mean\b|does\s+this\s+mean\b|let[’']?s\s+(?:look|take\s+a\s+look|dive|start|explore|break\s+down|be\s+honest)\b|here\s+is\s+(?:why|what|how)\s+that\s+matters\b|think\s+about\s+how\s+you\b|so\s+what\s+does\s+this\s+mean\s+for\s+you\b)/i;
 
-const trailingWeakWords =
-  /\s+\b(?:in|on|at|to|for|from|with|by|of|as|into|about|through|over|under|between|among|how|why|what|when|where|who|whom|whose|that|which|is|are|was|were|be|been|being|has|have|had|can|could|will|would|shall|should|may|might|must|do|does|did|not|and|or|but|nor|so|yet|because|although|though|while|if|unless|until|since|than|the|a|an|this|these|those|my|your|his|her|its|our|their|you|we|they|it|he|she|very|more|most|much|many|some|any|each|every|all|both|either|neither)\s*$/i;
-
-const leadingDiscourse =
-  /^(?:however|therefore|moreover|furthermore|in addition|for example|for instance|in practice|specifically|ultimately|instead|meanwhile|as a result|on the other hand|at the same time|in short|simply put|first|second|third|finally),\s+/i;
-
 const sentences = (s: string) =>
   clean(s)
     .split(/(?<=[.!?])\s+(?=[\p{Lu}\d])/u)
     .filter(Boolean);
 
-function toHeadlineCase(phrase: string): string {
-  const minor = new Set([
-    "a",
-    "an",
-    "the",
-    "and",
-    "or",
-    "but",
-    "for",
-    "nor",
-    "on",
-    "at",
-    "to",
-    "from",
-    "by",
-    "of",
-    "in",
-    "with",
-    "as",
-    "vs",
-  ]);
-  const words = clean(phrase).split(/\s+/).filter(Boolean);
-  return words
-    .map((w, idx) => {
-      if (/^[A-Z0-9&/-]{2,}$/.test(w)) return w;
-      const lower = w.toLowerCase();
-      if (idx > 0 && idx < words.length - 1 && minor.has(lower)) return lower;
-      return lower
-        .split("-")
-        .map((part) => part.replace(/^\p{Ll}/u, (c) => c.toUpperCase()))
-        .join("-");
-    })
-    .join(" ");
-}
-
 function stripTrailingCliffhangers(raw: string): string {
-  let out = clean(raw).replace(/[,;:.!?\s]+$/, "");
-  for (let i = 0; i < 6; i++) {
-    const next = out.replace(trailingWeakWords, "").replace(/[,;:.!?\s]+$/, "");
-    if (next === out || next.split(/\s+/).length < 2) break;
-    out = next;
-  }
-  return out;
+  return stripCopyCliffhangers(raw);
 }
 
 /**
- * Synthesizes a standalone, self-contained 2–6 word conceptual title and a
+ * Synthesizes a standalone, self-contained 2–5 word conceptual title and a
  * non-redundant explanatory detail from prose when no H3 heading is present.
  */
 function deriveStandaloneConcept(
   text: string,
   candidateSentence: string,
+  presetTitle?: string,
+  isFaq = false,
 ): { title: string; detailOverride?: string } {
-  const full = clean(text);
-
-  // 1. Defined concept pattern
-  const definedMatch = full.match(
-    /\b(?:described as|known as|called|termed|referred to as|defined as)\s+["“]?([a-z0-9][\w\s-]{2,36}?)(?:["”.,;]|(?:\s+(?:because|where|when|which|that|since|as|in)\b))/i,
+  const result = synthesizeStandaloneTitleAndDetail(
+    text,
+    candidateSentence,
+    presetTitle,
+    { isFaq },
   );
-  if (definedMatch) {
-    const rawTerm = stripTrailingCliffhangers(definedMatch[1]);
-    const termWords = rawTerm.split(/\s+/).filter(Boolean);
-    const title = toHeadlineCase(
-      termWords.length <= 2 ? `${rawTerm} Behavior` : rawTerm,
-    );
-    const afterBecause = full.match(
-      /\b(?:described as|known as|called|termed|referred to as|defined as)\s+["“]?[a-z0-9][\w\s-]{2,36}?["”]?\s+because\s+(.+)/i,
-    );
-    if (afterBecause?.[1]) {
-      const rest = clean(afterBecause[1]).replace(/^\p{Ll}/u, (c) =>
-        c.toUpperCase(),
-      );
-      return {
-        title,
-        detailOverride: /[.!?]$/.test(rest) ? rest : `${rest}.`,
-      };
-    }
-    return { title };
-  }
-
-  // 2. Quantitative study / benchmark pattern
-  const studyPctMatch = full.match(
-    /\b(?:studies|research|data|reports?|surveys?|analysis)\b.*?\b(?:indicate|show|find|reveal|suggest|estimate)s?\s+that\s+(?:approximately\s+|roughly\s+|about\s+|nearly\s+|over\s+|more\s+than\s+)?(\d+(?:\s*(?:to|–|-)\s*\d+)?)\s*(?:percent|%)\s+of\s+([a-z0-9][\w\s-]{3,32}?)(?:[.,;(]|\s+(?:now\s+|currently\s+|already\s+)?(?:end|result|happen|occur|take|use|rely|are|is|were|was)\b)/i,
-  );
-  if (studyPctMatch) {
-    const pct = studyPctMatch[1].replace(/\s*(?:to|-)\s*/i, "–");
-    if (/without a click|zero-click/i.test(full)) {
-      return { title: `${pct}% Zero-Click Searches` };
-    }
-    const subj = stripTrailingCliffhangers(studyPctMatch[2]);
-    return { title: toHeadlineCase(`${pct}% ${subj}`) };
-  }
-
-  // 3. Explicit colon or em-dash delimiter
-  const delimiter = full.match(/\s[—–]\s|:/);
-  const colon = delimiter?.index ?? -1;
-  if (colon > 3 && colon < 78) {
-    const rawPrefix = full.slice(0, colon).trim();
-    const rhs = full.slice(colon + (delimiter?.[0].length || 1)).trim();
-    if (/has two (?:meanings|parts|pillars|sides)/i.test(rawPrefix)) {
-      const subj = rawPrefix
-        .replace(/\s+has two (?:meanings|parts|pillars|sides).*$/i, "")
-        .trim();
-      return {
-        title: `${subj || "Core Topic"}: Two Core Meanings`,
-        detailOverride: rhs,
-      };
-    }
-    return {
-      title: stripTrailingCliffhangers(rawPrefix),
-      detailOverride: rhs,
-    };
-  }
-
-  // 4. Clean clause compression
-  const baseSentence = clean(candidateSentence || full).replace(
-    leadingDiscourse,
-    "",
-  );
-  const subjectMatch = baseSentence.match(
-    /^([A-Z0-9][\w\s&/-]{3,42}?)\s+(?:is|are|was|were|focuses\s+on|helps|enables|requires|means|refers\s+to|combines|connects|provides|allows|turns|supports)\b/,
-  );
-  if (
-    subjectMatch &&
-    !/^(?:this|that|these|those|it|they|we|you)\b/i.test(subjectMatch[1].trim())
-  ) {
-    const candidate = stripTrailingCliffhangers(subjectMatch[1]);
-    const words = candidate.split(/\s+/).filter(Boolean);
-    if (words.length >= 2 && words.length <= 6) {
-      return { title: candidate };
-    }
-  }
-
-  const clause = baseSentence.split(
-    /[;—–]|,\s+(?:which|while|because|and|so|but)\b/,
-  )[0];
-  const words = clause.split(/\s+/).filter(Boolean).slice(0, 6);
-  const compressed = stripTrailingCliffhangers(words.join(" "));
   return {
-    title: compressed || baseSentence.split(/\s+/).slice(0, 4).join(" "),
+    title: result.title,
+    detailOverride: result.detail,
   };
 }
 
@@ -260,6 +148,7 @@ export function buildSectionVisual(
   section: ArticleSourceSection,
   sourceUrl?: string,
 ): { nodes: BlogInfographicNodeItem[]; brief: VisualBrief } {
+  const isFaq = isFaqHeadingOrSection(section.title, section.blocks);
   let excluded = 0;
   const eligible: ArticleSourceBlock[] = [];
   for (const b of section.blocks) {
@@ -267,9 +156,9 @@ export function buildSectionVisual(
       if (b.kind !== "heading") excluded++;
       continue;
     }
-    const rawText = clean(b.text);
+    const rawText = decontextualizeProse(clean(b.text));
     if (
-      rawText.length < 32 ||
+      rawText.length < 24 ||
       personal.test(rawText) ||
       norm(rawText) === norm(section.title)
     ) {
@@ -281,7 +170,7 @@ export function buildSectionVisual(
         (s) =>
           !personal.test(s) &&
           !conversationalFiller.test(s) &&
-          clean(s).length >= 28,
+          clean(s).length >= 24,
       );
       if (!keptSentences.length) {
         excluded++;
@@ -292,7 +181,7 @@ export function buildSectionVisual(
         text: keptSentences.join(" "),
       });
     } else {
-      eligible.push(b);
+      eligible.push({ ...b, text: rawText });
     }
   }
 
@@ -373,14 +262,20 @@ export function buildSectionVisual(
       ).slice(0, 1);
 
       const primarySentence = chosen[0]?.sentence || text;
-      const derived = group.title
-        ? { title: group.title, detailOverride: undefined }
-        : deriveStandaloneConcept(text, primarySentence);
+      const derived = deriveStandaloneConcept(
+        text,
+        primarySentence,
+        group.title,
+        isFaq,
+      );
 
-      const title = derived.title
-        .replace(/^what (?:is|are)\s+/i, "")
-        .replace(/\s+and (?:why|how)\b.*$/i, "")
-        .replace(/:\s+using\b.*$/i, "");
+      const rawTitle = clean(derived.title).replace(/:\s+using\b.*$/i, "");
+      const title =
+        isFaq || rawTitle.endsWith("?")
+          ? rawTitle
+          : stripTrailingCliffhangers(
+              rawTitle.replace(/\s+and (?:why|how)\b.*$/i, ""),
+            );
 
       const detail = (
         derived.detailOverride || chosen.map((c) => c.sentence).join(" ")
@@ -388,8 +283,10 @@ export function buildSectionVisual(
 
       return {
         id: `point-${sourceId(`${section.id}:${i}:${title}`)}`,
-        badge:
-          title.match(/^([A-Z]{2,5})\b/)?.[1] || String(i + 1).padStart(2, "0"),
+        badge: isFaq
+          ? `Q${i + 1}`
+          : title.match(/^([A-Z]{2,5})\b/)?.[1] ||
+            String(i + 1).padStart(2, "0"),
         title: clean(title),
         detail: detail.replace(/^\p{Ll}/u, (c) => c.toUpperCase()),
         metricValue: "",
@@ -397,7 +294,7 @@ export function buildSectionVisual(
       };
     })
     .filter((n) => n.title && n.detail && norm(n.title) !== norm(n.detail));
-  const nodes = points.slice(0, 6);
+  const nodes = assignDistinctSectionIcons(points.slice(0, 6), section.title);
   const omittedPoints = Math.max(0, points.length - nodes.length);
   const warnings: string[] = [];
   if (section.role !== "content")
@@ -498,9 +395,13 @@ export function buildAllArticleSectionVisuals(
 ): BlogInfographicConfig[] {
   const base = options.baseConfig || createPrismSample();
   const contentCandidates = sections
-    .filter((s) => s.role === "content")
+    .filter(
+      (s) =>
+        s.role === "content" && classifySectionArchetype(s).archetype !== "skip",
+    )
     .map((section) => ({
       section,
+      intel: classifySectionArchetype(section),
       visual: buildSectionVisual(section, options.sourceUrl),
     }))
     .filter((item) => item.visual.nodes.length >= 2);
@@ -511,6 +412,7 @@ export function buildAllArticleSectionVisuals(
       : sections
           .map((section) => ({
             section,
+            intel: classifySectionArchetype(section),
             visual: buildSectionVisual(section, options.sourceUrl),
           }))
           .filter((item) => item.visual.nodes.length >= 2);
@@ -541,9 +443,11 @@ export function buildAllArticleSectionVisuals(
 
   let prevLayout: PrismLayout | undefined;
 
-  return selected.map(({ section, visual }, idx) => {
+  return selected.map(({ section, intel, visual }, idx) => {
     let layout: PrismLayout;
-    if (
+    if (intel.isFaq) {
+      layout = prevLayout !== "checklist" ? "checklist" : "editorial";
+    } else if (
       /\b(vs\.?|versus|compare|comparison|difference|trade-off)\b/i.test(
         section.title,
       ) &&
@@ -579,51 +483,59 @@ export function buildAllArticleSectionVisuals(
       "Article Playbook"
     ).slice(0, 32);
 
-    return withPrismLayout(
-      {
-        ...base,
-        id: `sec-vis-${section.id}-${idx + 1}`,
-        sectionId: section.id,
-        paletteId: resolvedPaletteId,
-        headline: section.title,
-        subheadline: "",
-        highlightWords: autoHighlights,
-        eyebrowLabel:
-          total > 1
-            ? `SECTION ${String(idx + 1).padStart(2, "0")} · ${domainLabel.toUpperCase()}`
-            : undefined,
-        slideCounter:
-          total > 1
-            ? `${String(idx + 1).padStart(2, "0")} / ${String(total).padStart(2, "0")}`
-            : undefined,
-        backgroundPattern: patternCycle[idx % patternCycle.length],
-        cardStyle: cardStyleCycle[idx % cardStyleCycle.length],
-        fontFamily: base.fontFamily || "inter-jakarta",
-        secondaryAccent: hint?.secondaryAccent || base.secondaryAccent,
-        depth: {
-          preset: depthCycle[idx % depthCycle.length],
-          strength: 65,
+    const cardStyle = intel.isFaq
+      ? "bordered-bento"
+      : cardStyleCycle[idx % cardStyleCycle.length];
+    const eyebrowLabel = intel.isFaq
+      ? intel.recommendedEyebrow || "FAQ PLAYBOOK · KEY QUESTIONS"
+      : total > 1
+        ? `SECTION ${String(idx + 1).padStart(2, "0")} · ${domainLabel.toUpperCase()}`
+        : undefined;
+
+    return runInfographicQaCritic(
+      withPrismLayout(
+        {
+          ...base,
+          id: `sec-vis-${section.id}-${idx + 1}`,
+          sectionId: section.id,
+          paletteId: resolvedPaletteId,
+          headline: section.title,
+          subheadline: "",
+          highlightWords: autoHighlights,
+          eyebrowLabel,
+          slideCounter:
+            total > 1
+              ? `${String(idx + 1).padStart(2, "0")} / ${String(total).padStart(2, "0")}`
+              : undefined,
+          backgroundPattern: patternCycle[idx % patternCycle.length],
+          cardStyle,
+          fontFamily: base.fontFamily || "inter-jakarta",
+          secondaryAccent: hint?.secondaryAccent || base.secondaryAccent,
+          depth: {
+            preset: depthCycle[idx % depthCycle.length],
+            strength: 65,
+          },
+          nodes: visual.nodes,
+          visualBrief: {
+            ...visual.brief,
+            articleCoverage: options.coverage,
+          },
+          footerSourceLabel: options.domain
+            ? `Source: ${options.domain}`
+            : base.footerSourceLabel,
+          altText: `${section.title}: ${visual.nodes.map((n) => n.title).join("; ")}`,
+          extractedBrand: hint || base.extractedBrand,
+          signature: {
+            ...normalizeSignature(base.signature),
+            name: base.signature?.name || hint?.siteName || options.domain || "",
+          },
+          brand: {
+            ...base.brand,
+            ...(brandCustomColors ? { customColors: brandCustomColors } : {}),
+          },
         },
-        nodes: visual.nodes,
-        visualBrief: {
-          ...visual.brief,
-          articleCoverage: options.coverage,
-        },
-        footerSourceLabel: options.domain
-          ? `Source: ${options.domain}`
-          : base.footerSourceLabel,
-        altText: `${section.title}: ${visual.nodes.map((n) => n.title).join("; ")}`,
-        extractedBrand: hint || base.extractedBrand,
-        signature: {
-          ...normalizeSignature(base.signature),
-          name: base.signature?.name || hint?.siteName || options.domain || "",
-        },
-        brand: {
-          ...base.brand,
-          ...(brandCustomColors ? { customColors: brandCustomColors } : {}),
-        },
-      },
-      layout,
+        layout,
+      ),
     );
   });
 }
@@ -690,16 +602,18 @@ export function visualFromWriterSection(
   const result = buildSectionVisual(
     sectionFromText(section.h2Text, text, section.id),
   );
-  return withPrismLayout(
-    {
-      ...section.infographicConfig,
-      headline: section.h2Text,
-      subheadline: "",
-      nodes: result.nodes,
-      visualBrief: result.brief,
-    },
-    section.infographicConfig.prismLayout ||
-      recommendPrismLayout(result.brief, result.nodes.length),
+  return runInfographicQaCritic(
+    withPrismLayout(
+      {
+        ...section.infographicConfig,
+        headline: section.h2Text,
+        subheadline: "",
+        nodes: result.nodes,
+        visualBrief: result.brief,
+      },
+      section.infographicConfig.prismLayout ||
+        recommendPrismLayout(result.brief, result.nodes.length),
+    ),
   );
 }
 export function createPrismSample(): BlogInfographicConfig {

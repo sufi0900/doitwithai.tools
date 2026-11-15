@@ -63,6 +63,8 @@ import {
   visualFromWriterSection,
   withPrismLayout,
 } from "@/lib/blog-infographic-studio/visual-brief";
+import { INFOGRAPHIC_TOPIC_ICONS } from "@/lib/blog-infographic-studio/skills/semantic-iconography";
+import { runInfographicQaCritic } from "@/lib/blog-infographic-studio/skills/visual-qa-critic";
 import type { PrismLayout } from "@/lib/blog-infographic-studio/visual-brief";
 import { autoRecommendInfographicTemplate } from "@/lib/blog-writer/deterministic-analyzers";
 import { BLOG_INFOGRAPHIC_25_TEMPLATES } from "@/lib/blog-infographic-studio/templates";
@@ -582,23 +584,25 @@ export function BlogInfographicStudio({
       );
       return;
     }
-    update({
-      ...withPrismLayout(
-        active,
-        recommendPrismLayout(result.brief, result.nodes.length),
-      ),
-      headline,
-      subheadline: "",
-      highlightWords: extractHeadlineHighlightPhrases(headline).join(", "),
-      nodes: result.nodes,
-      visualBrief: result.brief,
-      altText: `${headline}: ${result.nodes.map((n) => n.title).join("; ")}`,
-      footerSourceLabel: active.footerSourceLabel.includes(
-        "Illustrative framework",
-      )
-        ? "Source: supplied section text"
-        : active.footerSourceLabel,
-    });
+    update(
+      runInfographicQaCritic({
+        ...withPrismLayout(
+          active,
+          recommendPrismLayout(result.brief, result.nodes.length),
+        ),
+        headline,
+        subheadline: "",
+        highlightWords: extractHeadlineHighlightPhrases(headline).join(", "),
+        nodes: result.nodes,
+        visualBrief: result.brief,
+        altText: `${headline}: ${result.nodes.map((n) => n.title).join("; ")}`,
+        footerSourceLabel: active.footerSourceLabel.includes(
+          "Illustrative framework",
+        )
+          ? "Source: supplied section text"
+          : active.footerSourceLabel,
+      }),
+    );
     notify(
       "Created a source-based draft. Check the explanations and source coverage before exporting.",
     );
@@ -802,7 +806,7 @@ export function BlogInfographicStudio({
                       : {}),
                   };
                 }
-                update(next);
+                update(runInfographicQaCritic(next));
                 notify(
                   `${result.nodes.length} supported points from the selected section.${data.coverage?.truncated ? " Article exceeded extraction limits; inspect source coverage." : " Review the source text before publishing."}`,
                 );
@@ -1197,16 +1201,7 @@ export function BlogInfographicStudio({
                                 <option value="auto">
                                   Match the topic automatically
                                 </option>
-                                {[
-                                  "answer",
-                                  "evidence",
-                                  "workflow",
-                                  "search",
-                                  "target",
-                                  "chart",
-                                  "check",
-                                  "idea",
-                                ].map((icon) => (
+                                {INFOGRAPHIC_TOPIC_ICONS.map((icon) => (
                                   <option key={icon} value={icon}>
                                     {icon}
                                   </option>

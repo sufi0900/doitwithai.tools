@@ -19,6 +19,7 @@ import {
   normalizeSignature,
 } from "./appearance";
 import type { VisualBrief } from "./visual-brief";
+import { isInfographicTopicIcon } from "./skills/semantic-iconography";
 function importBrief(raw: VisualBrief | undefined): VisualBrief | undefined {
   if (!raw) return undefined;
   if (
@@ -276,18 +277,7 @@ export function importInfographicProject(
         detail: n.detail,
         badge: n.badge,
         metricValue: n.metricValue || "",
-        icon: [
-          "answer",
-          "evidence",
-          "workflow",
-          "search",
-          "target",
-          "chart",
-          "check",
-          "idea",
-        ].includes(n.icon || "")
-          ? n.icon
-          : undefined,
+        icon: isInfographicTopicIcon(n.icon) ? n.icon : undefined,
         sourceBlockIds: Array.isArray(n.sourceBlockIds)
           ? n.sourceBlockIds.filter((id) => typeof id === "string").slice(0, 12)
           : undefined,

@@ -1,5 +1,6 @@
 import type { BlogInfographicConfig } from "@/lib/blog-writer/canonical-state";
 import { BLOG_INFOGRAPHIC_PALETTES } from "./palettes";
+import { scoreHeadlineHighlightPhrases } from "./skills/standalone-copywriter";
 
 export type DepthPreset = "flat" | "soft" | "raised" | "layered";
 export interface InfographicDepth {
@@ -242,30 +243,5 @@ export function extractHeadlineHighlightPhrases(
   headline: string,
   customHighlightWords?: string,
 ): string[] {
-  if (customHighlightWords !== undefined) {
-    return customHighlightWords
-      .split(",")
-      .map((s) => s.trim())
-      .filter((s) => s.length >= 2)
-      .slice(0, 3);
-  }
-  const clean = (headline || "").replace(/\s+/g, " ").trim();
-  if (!clean) return [];
-  const colonParts = clean.split(/:\s+|\s+[—–-]\s+/);
-  if (colonParts.length >= 2 && colonParts[0].length <= 42) {
-    const first = colonParts[0].trim();
-    const secondWords = colonParts[1]
-      .trim()
-      .split(/\s+/)
-      .slice(0, 3)
-      .join(" ")
-      .replace(/[?.!,;:]$/, "");
-    return [first, secondWords].filter((s) => s.length >= 3);
-  }
-  const words = clean.split(/\s+/);
-  if (words.length <= 4) {
-    return [words.slice(-2).join(" ")];
-  }
-  const tail = words.slice(-2).join(" ").replace(/[?.!,;:]$/, "");
-  return tail.length >= 3 ? [tail] : [];
+  return scoreHeadlineHighlightPhrases(headline, customHighlightWords);
 }
