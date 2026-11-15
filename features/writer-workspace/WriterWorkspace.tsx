@@ -564,21 +564,8 @@ export default function WriterWorkspace() {
       const packet = json.packet as ResearchPacket;
       update((now) => {
         const nw = workspace(now);
+        // Discovery links are navigation candidates, not extracted source evidence.
         const mergedRefs = [...nw.references];
-        for (const ext of packet.externalLinks || []) {
-          const validUrl = safeUrl(ext.url);
-          if (validUrl && !mergedRefs.some((r) => r.url === validUrl)) {
-            mergedRefs.push({
-              id: id(),
-              url: validUrl,
-              title: ext.title || validUrl,
-              text:
-                ext.snippet && ext.snippet.length >= 90
-                  ? ext.snippet
-                  : `${ext.title || validUrl} — Verified reference material and technical documentation supporting "${packet.primaryTopic || now.projectTitle}".`,
-            });
-          }
-        }
         return {
           ...now,
           brandSiteUrl: now.brandSiteUrl || packet.siteScanned || site,
