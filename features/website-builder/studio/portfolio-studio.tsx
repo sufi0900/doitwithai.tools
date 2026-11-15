@@ -263,11 +263,13 @@ export function PortfolioStudio({ initialDocument, projectName = "Demo portfolio
           };
           dispatch({ type: "hydrate", document: nextDoc });
         }
-        const pub = publishLocalWebsiteProject(nextDoc.projectId, targetSlug, nextDoc, projectName);
-        setPublishedDocument(pub.document);
-        setPublication(pub);
+        const targetId = nextDoc.projectId === "demo-portfolio" ? "demo-local-site" : nextDoc.projectId;
+        saveLocalWebsiteDraft(targetId, { ...nextDoc, projectId: targetId }, projectName);
+        const localResult = publishLocalWebsiteProject(targetId, targetSlug, selection, itemAction);
+        setPublishedDocument(localResult.document);
+        setPublication({ ...localResult.publication, document: localResult.document });
         setPublishOpen(false);
-        return { ok: true, message: `Published locally at /p/${targetSlug}.` };
+        return { ok: true, message: `Published locally at /p/${localResult.publication.slug}.` };
       }
       const confirmedRevision = await flush();
       const result = await requestJson(`/api/projects/${latestDraft.current.projectId}/publish`, {
@@ -594,7 +596,7 @@ function StudioPreview({ document, target, focusedSkill, execute, reducedMotion,
         onNavigateSection={navigateSection}
         onNavigatePage={(itemId) => onNavigate({ section: "site pages", itemId })}
         onNavigateBlog={() => onNavigate({ section: "blog posts", itemId: "__index__" })}
-        onNavigateToolsIndex={() => onNavigate({ section: "projects", itemId: "__index__" })}
+        onNavigateTools={() => onNavigate({ section: "projects", itemId: "__index__" })}
       />
       {isEditorialFlagshipTemplate(document.design.template) ? (
         <EditorialFlagshipHero

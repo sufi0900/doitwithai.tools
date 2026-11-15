@@ -25,6 +25,121 @@ import {
 import { ToolPageCanvasEditor } from "@/features/website-builder/studio/tool-page-canvas-editor";
 import type { ToolPageField } from "@/features/website-builder/domain/tool-page-properties";
 
+const FLAGSHIP_TEMPLATE_IDS = new Set([
+  "doitwithai-flagship",
+  "authority-niche-blog",
+  "creator-newsletter-hub",
+  "founder-authority-brand",
+  "consultant-lead-engine",
+  "micro-saas-launchpad",
+  "startup-service-agency",
+]);
+
+export function isEditorialFlagshipTemplate(id: string): boolean {
+  return FLAGSHIP_TEMPLATE_IDS.has(id);
+}
+
+export const TEMPLATE_META: Record<
+  string,
+  {
+    kicker: string;
+    primaryLabel: string;
+    secondaryLabel: string;
+    badge: string;
+    accentColor: string;
+    surfaceBg: string;
+    cardBg: string;
+    borderColor: string;
+    isLight?: boolean;
+  }
+> = {
+  "doitwithai-flagship": {
+    kicker: "DOITWITHAI MULTI-TOOL DIRECTORY · 6 LIVE AI TOOLS + 5 PILLAR GUIDES",
+    primaryLabel: "Explore 6 Live AI Tools & Guides",
+    secondaryLabel: "Connect with Founder",
+    badge: "Multi-Tool Directory & Publication",
+    accentColor: "#6366f1",
+    surfaceBg: "linear-gradient(145deg, #060a16 0%, #0b1329 55%, #080d1d 100%)",
+    cardBg: "rgba(15, 23, 42, 0.78)",
+    borderColor: "rgba(99, 102, 241, 0.28)",
+  },
+  "authority-niche-blog": {
+    kicker: "CLASSIC BLOGGER & AUTHORITY MAGAZINE · 2-COLUMN EDITION",
+    primaryLabel: "Read Latest Articles",
+    secondaryLabel: "Subscribe to Updates",
+    badge: "Classic Blog + Sticky Sidebar",
+    accentColor: "#2563eb",
+    surfaceBg: "#f8fafc",
+    cardBg: "#ffffff",
+    borderColor: "rgba(15, 23, 42, 0.12)",
+    isLight: true,
+  },
+  "creator-newsletter-hub": {
+    kicker: "CREATOR DISPATCH · SUBSTACK-STYLE NEWSLETTER & ESSAYS",
+    primaryLabel: "Browse Issue Archive",
+    secondaryLabel: "Sponsor an Issue",
+    badge: "Reader-First Newsletter Hub",
+    accentColor: "#fb7185",
+    surfaceBg: "linear-gradient(160deg, #12081c 0%, #1b0d29 100%)",
+    cardBg: "rgba(30, 16, 46, 0.82)",
+    borderColor: "rgba(251, 113, 133, 0.26)",
+  },
+  "founder-authority-brand": {
+    kicker: "CREATOR & FOUNDER HUB · KO-FI SUPPORT, SHOP & BLOG",
+    primaryLabel: "Support & Explore Creations",
+    secondaryLabel: "Book a 1:1 Session",
+    badge: "Ko-fi Creator & Brand Studio",
+    accentColor: "#a78bfa",
+    surfaceBg: "linear-gradient(155deg, #090d1f 0%, #141936 100%)",
+    cardBg: "rgba(22, 28, 58, 0.8)",
+    borderColor: "rgba(167, 139, 250, 0.3)",
+  },
+  "consultant-lead-engine": {
+    kicker: "FROSTED GLASSMORPHISM · STRATEGIC ADVISORY & ROI ENGINE",
+    primaryLabel: "Review Client Case Studies",
+    secondaryLabel: "Request Strategy Audit",
+    badge: "Glassmorphism 2.0 Advisory",
+    accentColor: "#38bdf8",
+    surfaceBg:
+      "radial-gradient(circle at 20% 20%, rgba(56,189,248,0.16), transparent 45%), radial-gradient(circle at 80% 70%, rgba(99,102,241,0.16), transparent 50%), #050914",
+    cardBg: "rgba(15, 23, 42, 0.56)",
+    borderColor: "rgba(56, 189, 248, 0.32)",
+  },
+  "micro-saas-launchpad": {
+    kicker: "SINGLE-TOOL AI WEBSITE · META TITLE & DESCRIPTION STUDIO + 5 BLOG GUIDES",
+    primaryLabel: "Try Live Meta Title & Description Tool",
+    secondaryLabel: "Read 5 SEO Guides",
+    badge: "Single-Tool Flagship Website",
+    accentColor: "#22d3ee",
+    surfaceBg: "linear-gradient(150deg, #040914 0%, #0a192f 100%)",
+    cardBg: "rgba(12, 26, 48, 0.82)",
+    borderColor: "rgba(34, 211, 238, 0.28)",
+  },
+  "startup-service-agency": {
+    kicker: "DIGITAL SERVICE STUDIO · PACKAGES, PROOF & SEO HUB",
+    primaryLabel: "View Service Packages",
+    secondaryLabel: "Scope Your Project",
+    badge: "Agency & Small Business Funnel",
+    accentColor: "#a3e635",
+    surfaceBg: "linear-gradient(155deg, #060c09 0%, #0f1c14 100%)",
+    cardBg: "rgba(16, 30, 22, 0.84)",
+    borderColor: "rgba(163, 230, 53, 0.28)",
+  },
+};
+
+export function estimateReadingMinutes(post: {
+  blocks: Array<{ text?: string; items: string[] }>;
+}): number {
+  const words = post.blocks.reduce(
+    (sum, b) =>
+      sum +
+      (b.text ? b.text.split(/\s+/).length : 0) +
+      b.items.reduce((acc, item) => acc + item.split(/\s+/).length, 0),
+    0,
+  );
+  return Math.max(2, Math.round(words / 180));
+}
+
 const ACCENT_PALETTE: Record<string, { primary: string; secondary: string; softBg: string; border: string }> = {
   cyan: { primary: "#22d3ee", secondary: "#6366f1", softBg: "rgba(34, 211, 238, 0.14)", border: "rgba(34, 211, 238, 0.38)" },
   indigo: { primary: "#6366f1", secondary: "#22d3ee", softBg: "rgba(99, 102, 241, 0.16)", border: "rgba(99, 102, 241, 0.4)" },
