@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import {
   InfographicDepthControls,
+  InfographicProceduralStyleControls,
   InfographicSignatureControls,
 } from "./InfographicDesignControls";
 import {
@@ -40,9 +41,11 @@ import {
 import { PRISM_LAYOUT_THEMES } from "@/lib/blog-infographic-studio/samples";
 import {
   brandColors,
+  extractHeadlineHighlightPhrases,
   normalizeSignature,
 } from "@/lib/blog-infographic-studio/appearance";
 import UrlArticleExtractorBar from "@/features/tool-ui/UrlArticleExtractorBar";
+import type { UniversalExtractResponse } from "@/app/api/ai-tools/universal-extract/route";
 import { printCanvasAsPdfPoster } from "@/features/tool-ui/visualCardExport";
 import type {
   BlogInfographicConfig,
@@ -51,10 +54,12 @@ import type {
 } from "@/lib/blog-writer/canonical-state";
 import {
   PRISM_LAYOUTS,
+  buildAllArticleSectionVisuals,
   buildSectionVisual,
   createPrismSample,
   recommendPrismLayout,
   sectionFromText,
+  shuffleInfographicVisualVariation,
   visualFromWriterSection,
   withPrismLayout,
 } from "@/lib/blog-infographic-studio/visual-brief";
@@ -115,9 +120,13 @@ function escapeHtml(s: string) {
   return s.replace(
     /[&<>"']/g,
     (c) =>
-      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
-        c
-      ]!,
+      ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;",
+      })[c]!,
   );
 }
 
@@ -218,7 +227,6 @@ function TemplateCard({
       className={`group overflow-hidden rounded-2xl border-2 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${selected ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/30" : "border-transparent bg-slate-100 hover:border-indigo-300 dark:bg-slate-800/50"}`}
     >
       <div className="relative flex h-52 items-center justify-center overflow-hidden bg-slate-200/70 p-4 dark:bg-slate-900/80">
-        {/* The very same scene as the main preview, in the selected aspect ratio. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={src}
@@ -280,6 +288,9 @@ export function BlogInfographicStudio({
     [busy, setBusy] = useState(false),
     [zoom, setZoom] = useState(1);
   const [classicOpen, setClassicOpen] = useState(false);
+  const [extractedArticle, setExtractedArticle] =
+    useState<UniversalExtractResponse | null>(null);
+  const lastExtractedUrlRef = useRef<string>("");
   const [past, setPast] = useState<BlogInfographicConfig[][]>([]),
     [future, setFuture] = useState<BlogInfographicConfig[][]>([]);
   const toastTimer = useRef<ReturnType<typeof setTimeout>>();
@@ -451,14 +462,40 @@ export function BlogInfographicStudio({
       notify("Downloaded images and editable project.");
     });
   }
+  async function exportMultiPagePdfDeck() {
+    await run(async () => {
+      const pagesHtml: string[] = [];
+      for (const card of cards) {
+        const svg = generateBlogInfographicSvg(card);
+        const dims = getInfographicDimensions(card);
+        const dataUri = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+        pagesHtml.push(
+          `<div class="deck-page" style="width:${dims.width}px;height:${dims.height}px;page-break-after:always;break-after:page;display:flex;align-items:center;justify-content:center;overflow:hidden;margin:0 auto;"><img src="${dataUri}" alt="${escapeHtml(card.altText || card.headline)}" style="width:100%;height:100%;object-fit:contain;display:block;" /></div>`,
+        );
+      }
+      const win = window.open("", "_blank", "width=1100,height=900");
+      if (!win) {
+        throw new Error(
+          "Pop-up blocked. Allow pop-ups to print or save the multi-page PDF deck.",
+        );
+      }
+      const firstDims = getInfographicDimensions(cards[0]);
+      win.document.write(
+        `<!doctype html><html><head><title>${escapeHtml(cards[0]?.headline || "Infographic Deck")} — Visual Deck (${cards.length} Sections)</title><style>@page{size:${firstDims.width}px ${firstDims.height}px;margin:0;}*{box-sizing:border-box;margin:0;padding:0;}body{background:#0f172a;color:#fff;font-family:system-ui,sans-serif;}@media screen{.toolbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:12px 24px;background:#0f172aee;border-bottom:1px solid #334155;backdrop-filter:blur(8px);}.toolbar button{background:#4f46e5;color:#fff;border:0;padding:8px 18px;border-radius:8px;font-weight:700;cursor:pointer;}.deck-page{margin:24px auto;box-shadow:0 20px 50px rgba(0,0,0,.5);border-radius:12px;max-width:92vw;height:auto!important;}}@media print{.toolbar{display:none!important;}body{background:#fff;}}</style></head><body><div class="toolbar"><span><strong>${cards.length}-Section Infographic Deck</strong> · Choose "Save as PDF" in the print dialog</span><button onclick="window.print()">Save as PDF / Print</button></div>${pagesHtml.join("")}<script>window.onload=function(){setTimeout(function(){window.print();},350);};</script></body></html>`,
+      );
+      win.document.close();
+      notify(
+        `Opened ${cards.length}-page PDF deck. Choose "Save as PDF" in your print dialog.`,
+      );
+    });
+  }
   async function saveToWriter() {
     await run(async () => {
       const canvas = await freshCanvas();
       onSaveConfig?.({
         ...active,
         sectionId: initialConfig?.sectionId || active.sectionId,
-        id: initialConfig?.id || active.id,
-        renderedPngDataUrl: canvas.toDataURL("image/png"),
+        id: initialConfig?.id || active.id,\n        renderedPngDataUrl: canvas.toDataURL("image/png"),
         renderedSvgMarkup: generateBlogInfographicSvg(active),
       });
       onClose?.();
@@ -515,6 +552,10 @@ export function BlogInfographicStudio({
       brand: { ...active.brand },
       depth: active.depth,
       signature: active.signature,
+      backgroundPattern: active.backgroundPattern,
+      cardStyle: active.cardStyle,
+      fontFamily: active.fontFamily,
+      secondaryAccent: active.secondaryAccent,
       extractedBrand: active.extractedBrand,
     };
     commit([...cards, card]);
@@ -548,6 +589,7 @@ export function BlogInfographicStudio({
       ),
       headline,
       subheadline: "",
+      highlightWords: extractHeadlineHighlightPhrases(headline).join(", "),
       nodes: result.nodes,
       visualBrief: result.brief,
       altText: `${headline}: ${result.nodes.map((n) => n.title).join("; ")}`,
@@ -650,6 +692,55 @@ export function BlogInfographicStudio({
               label="Create from an article section"
               buttonLabel="Read article sections"
               onExtracted={(data) => {
+                setExtractedArticle(data);
+                const isNewUrl = lastExtractedUrlRef.current !== data.url;
+                lastExtractedUrlRef.current = data.url;
+
+                // When extracting a new article URL with multiple sections, automatically generate
+                // a unique infographic for every substantive section in the article at once!
+                if (isNewUrl && data.sections && data.sections.length >= 2) {
+                  const allVisuals = buildAllArticleSectionVisuals(
+                    data.sections,
+                    {
+                      sourceUrl: data.url,
+                      domain: data.domain,
+                      coverage: data.coverage,
+                      baseConfig: active,
+                      brandTheme: data.brandTheme,
+                    },
+                  );
+                  if (allVisuals.length >= 2) {
+                    const recIdx = Math.max(
+                      0,
+                      allVisuals.findIndex(
+                        (c) =>
+                          c.sectionId ===
+                          (data.selectedSectionId || data.recommendedSectionId),
+                      ),
+                    );
+                    commit(allVisuals);
+                    setActiveIdx(recIdx);
+                    notify(
+                      `Generated ${allVisuals.length} unique section infographics across the article with distinct layouts and shaders. Click any section tab to edit.`,
+                    );
+                    return;
+                  }
+                }
+
+                // If user clicked a section chip for an already-generated section tab, switch to that tab
+                if (!isNewUrl && data.selectedSectionId) {
+                  const existingTabIdx = cards.findIndex(
+                    (c) => c.sectionId === data.selectedSectionId,
+                  );
+                  if (existingTabIdx !== -1 && cards.length > 1) {
+                    setActiveIdx(existingTabIdx);
+                    notify(
+                      `Switched to Section ${existingTabIdx + 1}: ${cards[existingTabIdx].headline}`,
+                    );
+                    return;
+                  }
+                }
+
                 const section = data.sections?.find(
                   (s) => s.id === data.selectedSectionId,
                 );
@@ -670,6 +761,9 @@ export function BlogInfographicStudio({
                     sectionId: input.id,
                     headline: input.title,
                     subheadline: "",
+                    highlightWords: extractHeadlineHighlightPhrases(
+                      input.title,
+                    ).join(", "),
                     nodes: result.nodes,
                     visualBrief: {
                       ...result.brief,
@@ -690,27 +784,88 @@ export function BlogInfographicStudio({
                       ...normalizeSignature(active.signature),
                       name: active.signature?.name || hint.siteName,
                     },
+                    ...(hint.secondaryAccent
+                      ? { secondaryAccent: hint.secondaryAccent }
+                      : {}),
                     ...(hint.accent
                       ? {
                           brand: {
                             ...active.brand,
                             customColors: brandColors(
                               hint.accent,
-                              !BLOG_INFOGRAPHIC_PALETTES[active.paletteId]
-                                .isLight,
+                              hint.isDark ??
+                                !BLOG_INFOGRAPHIC_PALETTES[active.paletteId]
+                                  .isLight,
                             ),
                           },
                         }
                       : {}),
                   };
                 }
-                // Selecting a source replaces the current visual; it never creates a separate card for every paragraph.
                 update(next);
                 notify(
                   `${result.nodes.length} supported points from the selected section.${data.coverage?.truncated ? " Article exceeded extraction limits; inspect source coverage." : " Review the source text before publishing."}`,
                 );
               }}
             />
+            {extractedArticle?.sections &&
+              extractedArticle.sections.length >= 2 && (
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-indigo-200/80 bg-indigo-50/60 px-3.5 py-2.5 text-xs dark:border-indigo-500/30 dark:bg-indigo-950/30">
+                  <span className="font-semibold text-slate-700 dark:text-slate-200">
+                    AI Visual Engine:{" "}
+                    <strong>{cards.length} section visuals</strong> ready with
+                    unique compositions, 2-tone headlines &amp; SVG shaders.
+                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      className={primary}
+                      onClick={() => {
+                        const suite = buildAllArticleSectionVisuals(
+                          extractedArticle.sections!,
+                          {
+                            sourceUrl: extractedArticle.url,
+                            domain: extractedArticle.domain,
+                            coverage: extractedArticle.coverage,
+                            baseConfig: active,
+                            brandTheme: extractedArticle.brandTheme,
+                          },
+                        );
+                        if (!suite.length) {
+                          setError(
+                            "No substantive sections with 2+ explained points were found.",
+                          );
+                          return;
+                        }
+                        commit(suite);
+                        setActiveIdx(0);
+                        notify(
+                          `Generated ${suite.length} unique section infographics across the entire article.`,
+                        );
+                      }}
+                    >
+                      <Sparkles size={14} />
+                      Generate All Article Sections (
+                      {
+                        extractedArticle.sections.filter(
+                          (s) => s.role === "content",
+                        ).length
+                      }
+                      )
+                    </button>
+                    {cards.length > 1 && (
+                      <button
+                        type="button"
+                        className={button}
+                        onClick={() => void exportMultiPagePdfDeck()}
+                      >
+                        <Download size={14} />
+                        Export Multi-Page PDF Deck ({cards.length})
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
           </div>
         </details>
       )}
@@ -789,7 +944,7 @@ export function BlogInfographicStudio({
                 {active.visualBrief && (
                   <details className="rounded-xl border border-indigo-200 bg-indigo-50/50 p-3 text-xs dark:border-indigo-500/30 dark:bg-indigo-950/30">
                     <summary className="cursor-pointer font-bold text-indigo-700 dark:text-indigo-300">
-                      Source & coverage ·{" "}
+                      Source &amp; coverage ·{" "}
                       {
                         new Set(
                           active.nodes.flatMap((n) => n.sourceBlockIds || []),
@@ -870,8 +1025,65 @@ export function BlogInfographicStudio({
                       onChange={(e) => update({ headline: e.target.value })}
                     />
                   </label>
+                  {active.visualEngine && (
+                    <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-700 dark:bg-slate-900/50">
+                      <label className="block text-xs font-bold text-slate-600 dark:text-slate-300">
+                        <span className="flex items-center justify-between">
+                          <span>2-Tone headline highlight words</span>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              update({
+                                highlightWords: extractHeadlineHighlightPhrases(
+                                  active.headline,
+                                ).join(", "),
+                              })
+                            }
+                            className="text-[11px] font-semibold text-indigo-600 hover:underline dark:text-indigo-400"
+                          >
+                            Auto-pick
+                          </button>
+                        </span>
+                        <input
+                          className={field}
+                          value={active.highlightWords || ""}
+                          maxLength={140}
+                          placeholder="Comma-separated words to accent (e.g. AI SEO, Citations)"
+                          onChange={(e) =>
+                            update({ highlightWords: e.target.value })
+                          }
+                        />
+                      </label>
+                      <div className="grid grid-cols-[1fr_92px] gap-2">
+                        <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400">
+                          Eyebrow badge (optional)
+                          <input
+                            className={field}
+                            value={active.eyebrowLabel || ""}
+                            maxLength={64}
+                            placeholder="e.g. SECTION 01 · PLAYBOOK"
+                            onChange={(e) =>
+                              update({ eyebrowLabel: e.target.value })
+                            }
+                          />
+                        </label>
+                        <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400">
+                          Counter
+                          <input
+                            className={field}
+                            value={active.slideCounter || ""}
+                            maxLength={16}
+                            placeholder="01 / 05"
+                            onChange={(e) =>
+                              update({ slideCounter: e.target.value })
+                            }
+                          />
+                        </label>
+                      </div>
+                    </div>
+                  )}
                   <label className="block text-xs font-bold text-slate-600 dark:text-slate-300">
-                    Subtitle
+                    Short explanation (subtitle)
                     <textarea
                       className={field}
                       rows={2}
@@ -932,7 +1144,8 @@ export function BlogInfographicStudio({
                                 "0",
                               ),
                               title: "New point",
-                              detail: "Explain the idea in one short sentence.",
+                              detail:
+                                "Explain the idea in one short sentence.",
                               metricValue: "",
                             },
                           ],
@@ -1093,6 +1306,39 @@ export function BlogInfographicStudio({
                     ))}
                   </div>
                 </div>
+                {active.visualEngine && (
+                  <details className="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
+                    <summary className="cursor-pointer text-xs font-bold text-slate-700 dark:text-slate-200">
+                      Bottom callout / takeaway bar (optional)
+                    </summary>
+                    <div className="mt-3 space-y-3">
+                      <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400">
+                        Callout badge
+                        <input
+                          className={field}
+                          value={active.calloutBadge || ""}
+                          maxLength={28}
+                          placeholder="KEY TAKEAWAY or FREE TOOL"
+                          onChange={(e) =>
+                            update({ calloutBadge: e.target.value })
+                          }
+                        />
+                      </label>
+                      <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400">
+                        Callout text
+                        <input
+                          className={field}
+                          value={active.calloutText || ""}
+                          maxLength={140}
+                          placeholder="One-line takeaway or tool tip shown above footer"
+                          onChange={(e) =>
+                            update({ calloutText: e.target.value })
+                          }
+                        />
+                      </label>
+                    </div>
+                  </details>
+                )}
                 <label className="block text-xs font-bold text-slate-600 dark:text-slate-300">
                   <span className="flex items-center justify-between">
                     <span>Source / footer (optional)</span>
@@ -1116,7 +1362,8 @@ export function BlogInfographicStudio({
                     }
                   />
                   <span className="mt-1 block text-[11px] font-normal text-slate-500">
-                    Edit or clear this line anytime. Leave blank to hide the footer source credit.
+                    Edit or clear this line anytime. Leave blank to hide the
+                    footer source credit.
                   </span>
                 </label>
                 <label className="block text-xs font-bold text-slate-600 dark:text-slate-300">
@@ -1140,6 +1387,21 @@ export function BlogInfographicStudio({
                     Each layout has a fixed canvas. Choose another composition
                     in the gallery for a different format.
                   </p>
+                  {active.visualEngine && (
+                    <button
+                      type="button"
+                      className={primary + " mt-2.5 w-full"}
+                      onClick={() => {
+                        update(shuffleInfographicVisualVariation(active, 1));
+                        notify(
+                          "Shuffled layout, background shader and card style while keeping your text.",
+                        );
+                      }}
+                    >
+                      <Sparkles size={14} />
+                      Shuffle visual variation
+                    </button>
+                  )}
                 </div>
                 {(active.visualEngine
                   ? active.prismLayout === "comparison"
@@ -1277,7 +1539,16 @@ export function BlogInfographicStudio({
                   </div>
                 )}
                 {active.visualEngine && (
-                  <InfographicDepthControls config={active} onChange={update} />
+                  <>
+                    <InfographicProceduralStyleControls
+                      config={active}
+                      onChange={update}
+                    />
+                    <InfographicDepthControls
+                      config={active}
+                      onChange={update}
+                    />
+                  </>
                 )}
                 <div>
                   <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
@@ -1397,11 +1668,32 @@ export function BlogInfographicStudio({
                           {label}
                         </label>
                       ))}
+                      <label className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
+                        <input
+                          type="color"
+                          aria-label="Secondary"
+                          className="h-9 w-9 cursor-pointer rounded-lg border-0 bg-transparent"
+                          value={
+                            active.secondaryAccent ||
+                            BLOG_INFOGRAPHIC_PALETTES[active.paletteId]
+                              .accentSecondary
+                          }
+                          onChange={(e) =>
+                            update({ secondaryAccent: e.target.value })
+                          }
+                        />
+                        Secondary
+                      </label>
                     </div>
                     <button
                       type="button"
                       className="mt-3 text-xs font-semibold text-indigo-500"
-                      onClick={() => updateBrand({ customColors: {} })}
+                      onClick={() =>
+                        update({
+                          secondaryAccent: undefined,
+                          brand: { ...active.brand, customColors: {} },
+                        })
+                      }
                     >
                       Reset custom colors
                     </button>
@@ -1502,6 +1794,8 @@ export function BlogInfographicStudio({
                               brand: { ...active.brand },
                               depth: active.depth,
                               signature: active.signature,
+                              fontFamily: active.fontFamily,
+                              secondaryAccent: active.secondaryAccent,
                               extractedBrand: active.extractedBrand,
                             }),
                           ),
@@ -1544,6 +1838,21 @@ export function BlogInfographicStudio({
                   </button>
                 ))}
               </div>
+              {active.visualEngine && (
+                <button
+                  type="button"
+                  className={button}
+                  disabled={busy}
+                  title="Shuffle layout, background shader and card style"
+                  onClick={() => {
+                    update(shuffleInfographicVisualVariation(active, 1));
+                    notify("Shuffled visual style for this section.");
+                  }}
+                >
+                  <Sparkles size={14} />
+                  Shuffle style
+                </button>
+              )}
               <button
                 type="button"
                 className={button}
@@ -1620,6 +1929,16 @@ export function BlogInfographicStudio({
               >
                 Print / PDF
               </button>
+              {cards.length > 1 && (
+                <button
+                  type="button"
+                  className={button}
+                  disabled={busy}
+                  onClick={() => void exportMultiPagePdfDeck()}
+                >
+                  PDF Deck ({cards.length})
+                </button>
+              )}
               <button
                 type="button"
                 className={button}
@@ -1704,7 +2023,9 @@ export function BlogInfographicStudio({
               role="status"
               className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-xs leading-relaxed text-amber-900 dark:border-amber-500/30 dark:bg-amber-950/30 dark:text-amber-200"
             >
-              <p className="font-bold">Check these details before exporting.</p>
+              <p className="font-bold">
+                Check these details before exporting.
+              </p>
               <ul className="mt-2 max-h-48 list-disc space-y-1 overflow-y-auto pl-4">
                 {scene.issues.map((issue, i) => (
                   <li key={i}>{issue.message}</li>

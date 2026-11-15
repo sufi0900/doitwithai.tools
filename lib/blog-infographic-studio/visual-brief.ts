@@ -9,9 +9,18 @@ import type {
   ArticleSourceCoverage,
 } from "./article-source";
 import { sourceId } from "./article-source";
-
 import { PRISM_LAYOUTS, prismLayoutSpec } from "./layout-registry";
 import type { PrismLayout } from "./layout-registry";
+import {
+  BACKGROUND_PATTERNS,
+  CARD_STYLES,
+  brandColors,
+  extractHeadlineHighlightPhrases,
+  normalizeSignature,
+} from "./appearance";
+import type { WebsiteBrandHint } from "./brand-source";
+import { BLOG_INFOGRAPHIC_PALETTES } from "./palettes";
+
 export { PRISM_LAYOUTS } from "./layout-registry";
 export type { PrismLayout } from "./layout-registry";
 export interface VisualBrief {
@@ -111,7 +120,7 @@ function deriveStandaloneConcept(
 ): { title: string; detailOverride?: string } {
   const full = clean(text);
 
-  // 1. Defined concept pattern: "This change is often described as zero-click search because ..."
+  // 1. Defined concept pattern
   const definedMatch = full.match(
     /\b(?:described as|known as|called|termed|referred to as|defined as)\s+["“]?([a-z0-9][\w\s-]{2,36}?)(?:["”.,;]|(?:\s+(?:because|where|when|which|that|since|as|in)\b))/i,
   );
@@ -136,7 +145,7 @@ function deriveStandaloneConcept(
     return { title };
   }
 
-  // 2. Quantitative study / benchmark pattern: "Studies from SparkToro, Datos, and Semrush indicate that approximately 58 to 60 percent of Google searches now end without a click..."
+  // 2. Quantitative study / benchmark pattern
   const studyPctMatch = full.match(
     /\b(?:studies|research|data|reports?|surveys?|analysis)\b.*?\b(?:indicate|show|find|reveal|suggest|estimate)s?\s+that\s+(?:approximately\s+|roughly\s+|about\s+|nearly\s+|over\s+|more\s+than\s+)?(\d+(?:\s*(?:to|–|-)\s*\d+)?)\s*(?:percent|%)\s+of\s+([a-z0-9][\w\s-]{3,32}?)(?:[.,;(]|\s+(?:now\s+|currently\s+|already\s+)?(?:end|result|happen|occur|take|use|rely|are|is|were|was)\b)/i,
   );
@@ -149,7 +158,7 @@ function deriveStandaloneConcept(
     return { title: toHeadlineCase(`${pct}% ${subj}`) };
   }
 
-  // 3. Explicit colon or em-dash delimiter ("Term — Definition" or "Step 1: Action")
+  // 3. Explicit colon or em-dash delimiter
   const delimiter = full.match(/\s[—–]\s|:/);
   const colon = delimiter?.index ?? -1;
   if (colon > 3 && colon < 78) {
@@ -170,12 +179,11 @@ function deriveStandaloneConcept(
     };
   }
 
-  // 4. Clean clause compression without splitting inside comma-separated proper-noun lists
+  // 4. Clean clause compression
   const baseSentence = clean(candidateSentence || full).replace(
     leadingDiscourse,
     "",
   );
-  // Check if there is a predicate verb ("is", "focuses on", "helps", "requires", "uses", "combines", "allows", "means")
   const subjectMatch = baseSentence.match(
     /^([A-Z0-9][\w\s&/-]{3,42}?)\s+(?:is|are|was|were|focuses\s+on|helps|enables|requires|means|refers\s+to|combines|connects|provides|allows|turns|supports)\b/,
   );
@@ -190,8 +198,9 @@ function deriveStandaloneConcept(
     }
   }
 
-  // Otherwise take the first 5–6 meaningful words and strip trailing weak words/cliffhangers
-  const clause = baseSentence.split(/[;—–]|,\s+(?:which|while|because|and|so|but)\b/)[0];
+  const clause = baseSentence.split(
+    /[;—–]|,\s+(?:which|while|because|and|so|but)\b/,
+  )[0];
   const words = clause.split(/\s+/).filter(Boolean).slice(0, 6);
   const compressed = stripTrailingCliffhangers(words.join(" "));
   return {
@@ -225,7 +234,9 @@ function expandCompoundBlocks(
       );
       const tail = dualMatch[4] ? ` ${clean(dualMatch[4])}` : "";
       out.push({
-        presetTitle: /^ai\s+seo$/i.test(topic) ? "AI-Assisted SEO Workflows" : `${topic} Workflows`,
+        presetTitle: /^ai\s+seo$/i.test(topic)
+          ? "AI-Assisted SEO Workflows"
+          : `${topic} Workflows`,
         block: {
           ...block,
           text: `${/[.!?]$/.test(firstMeaning) ? firstMeaning : `${firstMeaning}.`}${tail}`,
@@ -265,7 +276,6 @@ export function buildSectionVisual(
       excluded++;
       continue;
     }
-    // Strip conversational filler sentences from narrative paragraphs
     if (b.kind === "paragraph") {
       const keptSentences = sentences(rawText).filter(
         (s) =>
@@ -287,7 +297,6 @@ export function buildSectionVisual(
   }
 
   const headings = [...new Set(eligible.map((b) => b.heading).filter(Boolean))];
-  // Prefer an author's explicit concept summary over treating every supporting H3 as a peer.
   const overviewList = eligible.filter(
     (b) =>
       !b.heading && b.kind === "list" && /^.{3,76}\s[—–]\s.{25,}$/.test(b.text),
@@ -305,16 +314,15 @@ export function buildSectionVisual(
             title,
             blocks: eligible.filter((b) => b.heading === title),
           }))
-        : (expanded.length === 1
-            ? sentences(expanded[0].block.text).map((text) => ({
-                title: undefined,
-                blocks: [{ ...expanded[0].block, text }],
-              }))
-            : expanded.map((item) => ({
-                title: item.presetTitle,
-                blocks: [item.block],
-              }))
-          );
+        : expanded.length === 1
+          ? sentences(expanded[0].block.text).map((text) => ({
+              title: undefined,
+              blocks: [{ ...expanded[0].block, text }],
+            }))
+          : expanded.map((item) => ({
+              title: item.presetTitle,
+              blocks: [item.block],
+            }));
 
   const points = groups
     .map((group, i) => {
@@ -472,6 +480,201 @@ export function recommendPrismLayout(
   if (brief.relationship === "sequence") return "timeline";
   return points > 3 ? "ribbon" : "editorial";
 }
+
+/**
+ * Generates a complete, visually diverse suite of section infographics across all
+ * substantive sections of an extracted article, cycling layouts, procedural SVG
+ * background shaders, card styles, and 2-tone headline highlights.
+ */
+export function buildAllArticleSectionVisuals(
+  sections: ArticleSourceSection[],
+  options: {
+    sourceUrl?: string;
+    domain?: string;
+    coverage?: ArticleSourceCoverage;
+    baseConfig?: BlogInfographicConfig;
+    brandTheme?: WebsiteBrandHint;
+  } = {},
+): BlogInfographicConfig[] {
+  const base = options.baseConfig || createPrismSample();
+  const contentCandidates = sections
+    .filter((s) => s.role === "content")
+    .map((section) => ({
+      section,
+      visual: buildSectionVisual(section, options.sourceUrl),
+    }))
+    .filter((item) => item.visual.nodes.length >= 2);
+
+  const pool =
+    contentCandidates.length > 0
+      ? contentCandidates
+      : sections
+          .map((section) => ({
+            section,
+            visual: buildSectionVisual(section, options.sourceUrl),
+          }))
+          .filter((item) => item.visual.nodes.length >= 2);
+
+  const selected = pool.slice(0, 12);
+  const total = selected.length;
+  const layoutCycle: PrismLayout[] = [
+    "editorial",
+    "ribbon",
+    "constellation",
+    "checklist",
+    "timeline",
+  ];
+  const patternCycle = BACKGROUND_PATTERNS.map((p) => p.id);
+  const cardStyleCycle = CARD_STYLES.map((c) => c.id);
+  const depthCycle = ["soft", "raised", "layered"] as const;
+
+  const hint = options.brandTheme;
+  const resolvedPaletteId =
+    hint?.isDark && BLOG_INFOGRAPHIC_PALETTES[base.paletteId]?.isLight
+      ? "indigo-cyber"
+      : base.paletteId;
+  const useDark =
+    hint?.isDark ?? !BLOG_INFOGRAPHIC_PALETTES[resolvedPaletteId]?.isLight;
+  const brandCustomColors = hint?.accent
+    ? brandColors(hint.accent, useDark)
+    : base.brand?.customColors;
+
+  let prevLayout: PrismLayout | undefined;
+
+  return selected.map(({ section, visual }, idx) => {
+    let layout: PrismLayout;
+    if (
+      /\b(vs\.?|versus|compare|comparison|difference|trade-off)\b/i.test(
+        section.title,
+      ) &&
+      visual.nodes.length % 2 === 0
+    ) {
+      layout = "comparison";
+    } else if (
+      visual.brief.relationship === "sequence" &&
+      prevLayout !== "timeline"
+    ) {
+      layout = "timeline";
+    } else if (
+      /\b(checklist|check|audit|verify|guide|rules|criteria)\b/i.test(
+        section.title,
+      ) &&
+      prevLayout !== "checklist"
+    ) {
+      layout = "checklist";
+    } else {
+      layout = layoutCycle[idx % layoutCycle.length];
+      if (layout === prevLayout) {
+        layout = layoutCycle[(idx + 1) % layoutCycle.length];
+      }
+    }
+    prevLayout = layout;
+
+    const autoHighlights = extractHeadlineHighlightPhrases(section.title).join(
+      ", ",
+    );
+    const domainLabel = (
+      hint?.siteName ||
+      options.domain ||
+      "Article Playbook"
+    ).slice(0, 32);
+
+    return withPrismLayout(
+      {
+        ...base,
+        id: `sec-vis-${section.id}-${idx + 1}`,
+        sectionId: section.id,
+        paletteId: resolvedPaletteId,
+        headline: section.title,
+        subheadline: "",
+        highlightWords: autoHighlights,
+        eyebrowLabel:
+          total > 1
+            ? `SECTION ${String(idx + 1).padStart(2, "0")} · ${domainLabel.toUpperCase()}`
+            : undefined,
+        slideCounter:
+          total > 1
+            ? `${String(idx + 1).padStart(2, "0")} / ${String(total).padStart(2, "0")}`
+            : undefined,
+        backgroundPattern: patternCycle[idx % patternCycle.length],
+        cardStyle: cardStyleCycle[idx % cardStyleCycle.length],
+        fontFamily: base.fontFamily || "inter-jakarta",
+        secondaryAccent: hint?.secondaryAccent || base.secondaryAccent,
+        depth: {
+          preset: depthCycle[idx % depthCycle.length],
+          strength: 65,
+        },
+        nodes: visual.nodes,
+        visualBrief: {
+          ...visual.brief,
+          articleCoverage: options.coverage,
+        },
+        footerSourceLabel: options.domain
+          ? `Source: ${options.domain}`
+          : base.footerSourceLabel,
+        altText: `${section.title}: ${visual.nodes.map((n) => n.title).join("; ")}`,
+        extractedBrand: hint || base.extractedBrand,
+        signature: {
+          ...normalizeSignature(base.signature),
+          name: base.signature?.name || hint?.siteName || options.domain || "",
+        },
+        brand: {
+          ...base.brand,
+          ...(brandCustomColors ? { customColors: brandCustomColors } : {}),
+        },
+      },
+      layout,
+    );
+  });
+}
+
+/**
+ * Cycles a section infographic through a fresh combination of layout,
+ * procedural background pattern, card surface style, and 2-tone highlights.
+ */
+export function shuffleInfographicVisualVariation(
+  config: BlogInfographicConfig,
+  step = 1,
+): BlogInfographicConfig {
+  const nonComparisonLayouts = PRISM_LAYOUTS.filter(
+    (l) => l.id !== "comparison" || config.nodes.length % 2 === 0,
+  ).map((l) => l.id);
+  const currLayoutIdx = Math.max(
+    0,
+    nonComparisonLayouts.indexOf(config.prismLayout || "editorial"),
+  );
+  const nextLayout =
+    nonComparisonLayouts[(currLayoutIdx + step) % nonComparisonLayouts.length];
+
+  const patterns = BACKGROUND_PATTERNS.map((p) => p.id);
+  const currPatIdx = Math.max(
+    0,
+    patterns.indexOf(config.backgroundPattern || "dots-glow"),
+  );
+  const nextPattern = patterns[(currPatIdx + step) % patterns.length];
+
+  const styles = CARD_STYLES.map((c) => c.id);
+  const currStyleIdx = Math.max(
+    0,
+    styles.indexOf(config.cardStyle || "glass-editorial"),
+  );
+  const nextStyle = styles[(currStyleIdx + step) % styles.length];
+
+  const highlights =
+    config.highlightWords ??
+    extractHeadlineHighlightPhrases(config.headline).join(", ");
+
+  return withPrismLayout(
+    {
+      ...config,
+      backgroundPattern: nextPattern,
+      cardStyle: nextStyle,
+      highlightWords: highlights,
+    },
+    nextLayout,
+  );
+}
+
 /** Direct writer adapter. It consumes section bodies, never re-scrapes generated article HTML. */
 export function visualFromWriterSection(
   section: BlogSectionNode,
@@ -492,7 +695,6 @@ export function visualFromWriterSection(
       ...section.infographicConfig,
       headline: section.h2Text,
       subheadline: "",
-
       nodes: result.nodes,
       visualBrief: result.brief,
     },

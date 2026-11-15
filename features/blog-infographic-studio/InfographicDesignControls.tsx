@@ -2,9 +2,17 @@
 import React from "react";
 import type { BlogInfographicConfig } from "@/lib/blog-writer/canonical-state";
 import {
+  BACKGROUND_PATTERNS,
+  CARD_STYLES,
   DEPTH_PRESETS,
+  FONT_FAMILIES,
   normalizeDepth,
   normalizeSignature,
+} from "@/lib/blog-infographic-studio/appearance";
+import type {
+  BackgroundPattern,
+  InfographicCardStyle,
+  InfographicFontFamily,
 } from "@/lib/blog-infographic-studio/appearance";
 
 const field =
@@ -14,6 +22,99 @@ type Props = {
   config: BlogInfographicConfig;
   onChange: (patch: Partial<BlogInfographicConfig>) => void;
 };
+
+export function InfographicProceduralStyleControls({
+  config,
+  onChange,
+}: Props) {
+  const activePattern = config.backgroundPattern || "dots-glow";
+  const activeCardStyle = config.cardStyle || "glass-editorial";
+  const activeFont = config.fontFamily || "system-arial";
+  return (
+    <section
+      className="space-y-4 border-t border-slate-200 pt-5 dark:border-slate-700"
+      aria-label="Procedural visual style"
+    >
+      <div>
+        <h3 className={heading}>Background shader &amp; pattern</h3>
+        <p className="mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+          Procedural SVG vector shaders keep backgrounds crisp at any zoom.
+        </p>
+        <div className="mt-2.5 grid grid-cols-1 gap-2">
+          {BACKGROUND_PATTERNS.map((pat) => (
+            <button
+              type="button"
+              key={pat.id}
+              aria-pressed={activePattern === pat.id}
+              onClick={() =>
+                onChange({ backgroundPattern: pat.id as BackgroundPattern })
+              }
+              className={`rounded-xl border px-3 py-2 text-left text-xs transition ${
+                activePattern === pat.id
+                  ? "border-indigo-500 bg-indigo-600 text-white"
+                  : "border-slate-300 hover:border-indigo-400 dark:border-slate-700"
+              }`}
+            >
+              <span className="block font-bold">{pat.label}</span>
+              <span
+                className={`mt-0.5 block text-[11px] ${
+                  activePattern === pat.id
+                    ? "text-indigo-100"
+                    : "text-slate-500 dark:text-slate-400"
+                }`}
+              >
+                {pat.description}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <h3 className={heading}>Card surface style</h3>
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          {CARD_STYLES.map((st) => (
+            <button
+              type="button"
+              key={st.id}
+              aria-pressed={activeCardStyle === st.id}
+              onClick={() =>
+                onChange({ cardStyle: st.id as InfographicCardStyle })
+              }
+              className={`min-h-10 rounded-xl border px-3 py-2 text-xs font-semibold ${
+                activeCardStyle === st.id
+                  ? "border-indigo-500 bg-indigo-600 text-white"
+                  : "border-slate-300 dark:border-slate-700"
+              }`}
+            >
+              {st.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <label className="block text-xs font-semibold">
+        Typography font family
+        <select
+          className={field}
+          value={activeFont}
+          onChange={(e) =>
+            onChange({
+              fontFamily: e.target.value as InfographicFontFamily,
+            })
+          }
+        >
+          {FONT_FAMILIES.map((f) => (
+            <option key={f.id} value={f.id}>
+              {f.label}
+            </option>
+          ))}
+        </select>
+      </label>
+    </section>
+  );
+}
+
 export function InfographicDepthControls({ config, onChange }: Props) {
   const depth = normalizeDepth(config.depth);
   const update = (key: keyof typeof depth, value: number | string) =>

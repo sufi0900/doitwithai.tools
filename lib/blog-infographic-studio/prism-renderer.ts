@@ -11,6 +11,7 @@ import {
   normalizeSignature,
   contrast,
   mixColor,
+  resolveFontStack,
 } from "./appearance";
 
 export type JSXNode =
@@ -300,6 +301,52 @@ function wrap(
   if (line) lines.push(line);
   return lines;
 }
+
+function segmentLineWithHighlights(
+  lineText: string,
+  highlights?: { phrase: string; color: string }[],
+): JSXNode {
+  if (!highlights || !highlights.length) return lineText;
+  const active = highlights.filter((h) => h.phrase.trim().length >= 2);
+  if (!active.length) return lineText;
+
+  // Build non-overlapping matches sorted by start index
+  const lower = lineText.toLowerCase();
+  const spans: { start: number; end: number; color: string }[] = [];
+  for (const h of active) {
+    const target = h.phrase.trim().toLowerCase();
+    let pos = 0;
+    while (pos < lower.length) {
+      const idx = lower.indexOf(target, pos);
+      if (idx === -1) break;
+      const end = idx + target.length;
+      const overlaps = spans.some((s) => idx < s.end && end > s.start);
+      if (!overlaps) {
+        spans.push({ start: idx, end, color: h.color });
+      }
+      pos = end;
+    }
+  }
+  if (!spans.length) return lineText;
+  spans.sort((a, b) => a.start - b.start);
+
+  const nodes: JSXNode[] = [];
+  let cursor = 0;
+  for (const s of spans) {
+    if (s.start > cursor) {
+      nodes.push(lineText.slice(cursor, s.start));
+    }
+    nodes.push(
+      el("tspan", { fill: s.color }, lineText.slice(s.start, s.end)),
+    );
+    cursor = s.end;
+  }
+  if (cursor < lineText.length) {
+    nodes.push(lineText.slice(cursor));
+  }
+  return nodes;
+}
+
 function textBlock(
   text: string,
   x: number,
@@ -309,6 +356,8 @@ function textBlock(
   fill: string,
   bold = false,
   center = false,
+  fontStack = "Arial, sans-serif",
+  highlights?: { phrase: string; color: string }[],
 ) {
   const lines = wrap(text, width, size, bold),
     lineHeight = size * 1.3;
@@ -320,18 +369,19 @@ function textBlock(
         x: center ? x + width / 2 : x,
         y: y + size,
         fontSize: size,
-        fontFamily: "Arial, sans-serif",
+        fontFamily: fontStack,
         fontWeight: bold ? 700 : 400,
         fill,
         textAnchor: center ? "middle" : "start",
       },
-      lines.map((line, i) =>
-        el(
+      lines.map((line, i) => {
+        const lineStr = line + (i < lines.length - 1 ? " " : "");
+        return el(
           "tspan",
           { x: center ? x + width / 2 : x, dy: i ? lineHeight : 0 },
-          line + (i < lines.length - 1 ? " " : ""),
-        ),
-      ),
+          segmentLineWithHighlights(lineStr, highlights),
+        );
+      }),
     ),
   };
 }
@@ -396,6 +446,9 @@ export function buildPrismScene(
     infographicColors(config);
   const depth = normalizeDepth(config.depth),
     signature = normalizeSignature(config.signature);
+  const bgPattern = config.backgroundPattern || "dots-glow";
+  const cardStyle = config.cardStyle || "glass-editorial";
+  const fontStack = resolveFontStack(config.fontFamily);
   const scale = Math.min(1.5, Math.max(0.7, config.brand?.logoScale || 1));
   const logo =
     signature.showLogo !== false &&
@@ -408,13 +461,14 @@ export function buildPrismScene(
   const hasSignature = Boolean(
     signature.visible && (logo || signature.name?.trim()),
   );
-  const hasFooterSig = Boolean(hasSignature && signature.placement === "footer");
+  const hasFooterSig = Boolean(
+    hasSignature && signature.placement === "footer",
+  );
   const hasFooterSource = Boolean(config.footerSourceLabel?.trim());
   const M = Math.round(W * 0.0667),
     contentW = W - M * 2;
   const signatureH = 44 * scale + (signature.padding || 12) * 2;
 
-  // Pre-calculate signature width so footer source and signature can share a single compact footer band
   const sigPad = signature.padding || 12,
     sigLw = logo ? 120 * scale : 0,
     sigLh = 40 * scale,
@@ -425,7 +479,9 @@ export function buildPrismScene(
         Math.max(100, widthOf(sigName, 22, true)),
       )
     : 0;
-  const sigNameHeight = sigName ? wrap(sigName, sigNameW, 22, true).length * 28.6 : 0;
+  const sigNameHeight = sigName
+    ? wrap(sigName, sigNameW, 22, true).length * 28.6
+    : 0;
   const sigBlockW = sigLw + (sigName && logo ? 18 : 0) + sigNameW + sigPad * 2;
   const shareFooterBand =
     hasFooterSig && hasFooterSource && sigBlockW + 240 <= contentW;
@@ -443,8 +499,21 @@ export function buildPrismScene(
   const issues: Issue[] = [],
     parts: JSXNode[] = [];
   const layout = config.prismLayout || "editorial";
-  // Namespaced definitions also work when several exported SVGs are embedded inline.
-  const prefix = `prism-${sourceId(JSON.stringify([layout, W, H, bg, bgEnd, surface, accent, colors, depth]))}`;
+  const prefix = `prism-${sourceId(
+    JSON.stringify([
+      layout,
+      W,
+      H,
+      bg,
+      bgEnd,
+      surface,
+      accent,
+      colors,
+      depth,
+      bgPattern,
+      cardStyle,
+    ]),
+  )}`;
   const svgId = (name: string) => `${prefix}-${name}`;
   const svgRef = (name: string) => `url(#${svgId(name)})`;
 
@@ -482,72 +551,176 @@ export function buildPrismScene(
         : 0;
   const shadow =
     depth.preset !== "flat" && strength > 0 ? { filter: svgRef("depth") } : {};
-  parts.push(
-    el("defs", {}, [
+
+  const defsChildren: JSXNode[] = [
+    el(
+      "linearGradient",
+      { id: svgId("bg"), x1: "0%", y1: "0%", x2: "100%", y2: "100%" },
+      [
+        el("stop", { offset: 0, stopColor: bg }),
+        el("stop", { offset: 1, stopColor: bgEnd }),
+      ],
+    ),
+    el(
+      "linearGradient",
+      { id: svgId("band"), x1: "0%", y1: "0%", x2: "100%", y2: "100%" },
+      [
+        el("stop", {
+          offset: 0,
+          stopColor: accent,
+          stopOpacity: light ? 0.14 : 0.28,
+        }),
+        el("stop", { offset: 1, stopColor: colors[1], stopOpacity: 0.025 }),
+      ],
+    ),
+    el("radialGradient", { id: svgId("glow") }, [
+      el("stop", { offset: 0, stopColor: accent, stopOpacity: 0.18 }),
+      el("stop", { offset: 1, stopColor: accent, stopOpacity: 0 }),
+    ]),
+    el("radialGradient", { id: svgId("glow-secondary") }, [
+      el("stop", {
+        offset: 0,
+        stopColor: colors[3],
+        stopOpacity: light ? 0.1 : 0.14,
+      }),
+      el("stop", { offset: 1, stopColor: colors[3], stopOpacity: 0 }),
+    ]),
+    el(
+      "clipPath",
+      { id: svgId("body-clip"), clipPathUnits: "userSpaceOnUse" },
+      rect(0, 0, W, Math.max(100, footerY - 12), "#000000"),
+    ),
+    el(
+      "filter",
+      {
+        id: svgId("depth"),
+        x: -80,
+        y: -80,
+        width: W + 160,
+        height: H + 160,
+        filterUnits: "userSpaceOnUse",
+        colorInterpolationFilters: "sRGB",
+      },
+      el("feDropShadow", {
+        dx,
+        dy: distance,
+        stdDeviation: depth.softness * strength,
+        floodColor: light ? "#142445" : "#000000",
+        floodOpacity: depth.opacity * strength,
+      }),
+    ),
+  ];
+
+  if (bgPattern === "dots-glow") {
+    defsChildren.push(
       el(
-        "linearGradient",
-        { id: svgId("bg"), x1: "0%", y1: "0%", x2: "100%", y2: "100%" },
-        [
-          el("stop", { offset: 0, stopColor: bg }),
-          el("stop", { offset: 1, stopColor: bgEnd }),
-        ],
-      ),
-      el(
-        "linearGradient",
-        { id: svgId("band"), x1: "0%", y1: "0%", x2: "100%", y2: "100%" },
-        [
-          el("stop", {
-            offset: 0,
-            stopColor: accent,
-            stopOpacity: light ? 0.14 : 0.28,
-          }),
-          el("stop", { offset: 1, stopColor: colors[1], stopOpacity: 0.025 }),
-        ],
-      ),
-      el("radialGradient", { id: svgId("glow") }, [
-        el("stop", { offset: 0, stopColor: accent, stopOpacity: 0.17 }),
-        el("stop", { offset: 1, stopColor: accent, stopOpacity: 0 }),
-      ]),
-      el(
-        "clipPath",
-        { id: svgId("body-clip"), clipPathUnits: "userSpaceOnUse" },
-        rect(0, 0, W, Math.max(100, footerY - 12), "#000000"),
-      ),
-      // User-space bounds encompass every surface, including the largest supported shadow.
-      el(
-        "filter",
+        "pattern",
         {
-          id: svgId("depth"),
-          x: -80,
-          y: -80,
-          width: W + 160,
-          height: H + 160,
-          filterUnits: "userSpaceOnUse",
-          colorInterpolationFilters: "sRGB",
+          id: svgId("dots"),
+          width: 28,
+          height: 28,
+          patternUnits: "userSpaceOnUse",
         },
-        el("feDropShadow", {
-          dx,
-          dy: distance,
-          stdDeviation: depth.softness * strength,
-          floodColor: light ? "#142445" : "#000000",
-          floodOpacity: depth.opacity * strength,
+        circle(2, 2, 1.35, accent, { opacity: light ? 0.12 : 0.16 }),
+      ),
+    );
+  } else if (bgPattern === "mesh-grid") {
+    defsChildren.push(
+      el(
+        "pattern",
+        {
+          id: svgId("grid"),
+          width: 48,
+          height: 48,
+          patternUnits: "userSpaceOnUse",
+        },
+        path("M 48 0 L 0 0 0 48", accent, 1, {
+          opacity: light ? 0.08 : 0.11,
         }),
       ),
-    ]),
-  );
+    );
+  }
+
+  parts.push(el("defs", {}, defsChildren));
   parts.push(
     rect(0, 0, W, H, svgRef("bg")),
-    circle(W * 0.98, H * 0.18, W * 0.65, svgRef("glow")),
+    circle(W * 0.96, H * 0.16, W * 0.62, svgRef("glow")),
+    circle(W * 0.06, H * 0.88, W * 0.52, svgRef("glow-secondary")),
   );
-  parts.push(
-    path(
-      `M ${W * 0.66} -70 C ${W * 0.2} ${H * 0.28}, ${W * 1.35} ${H * 0.4}, ${W * 0.8} ${H * 0.85}`,
-      accent,
-      90,
-      { opacity: 0.045 },
-    ),
-  );
-  // Drawing-only backgrounds: never put editor labels or made-up data in the artwork.
+
+  // Render procedural background pattern shader layer
+  if (bgPattern === "dots-glow") {
+    parts.push(
+      rect(0, 0, W, H, svgRef("dots")),
+      path(
+        `M ${W * 0.66} -70 C ${W * 0.2} ${H * 0.28}, ${W * 1.35} ${H * 0.4}, ${W * 0.8} ${H * 0.85}`,
+        accent,
+        90,
+        { opacity: 0.045 },
+      ),
+    );
+  } else if (bgPattern === "svg-waves") {
+    parts.push(
+      path(
+        `M -80 ${H * 0.18} C ${W * 0.28} ${H * 0.04}, ${W * 0.68} ${H * 0.32}, ${W + 80} ${H * 0.14}`,
+        accent,
+        64,
+        { opacity: light ? 0.055 : 0.08 },
+      ),
+      path(
+        `M -80 ${H * 0.56} C ${W * 0.34} ${H * 0.42}, ${W * 0.72} ${H * 0.7}, ${W + 80} ${H * 0.52}`,
+        colors[1],
+        52,
+        { opacity: light ? 0.045 : 0.07 },
+      ),
+      path(
+        `M -80 ${H * 0.86} C ${W * 0.3} ${H * 0.74}, ${W * 0.74} ${H * 0.96}, ${W + 80} ${H * 0.82}`,
+        colors[3],
+        44,
+        { opacity: light ? 0.04 : 0.06 },
+      ),
+    );
+  } else if (bgPattern === "mesh-grid") {
+    parts.push(
+      rect(0, 0, W, H, svgRef("grid")),
+      path(
+        `M ${W * 0.72} -60 C ${W * 0.25} ${H * 0.25}, ${W * 1.25} ${H * 0.45}, ${W * 0.78} ${H * 0.88}`,
+        accent,
+        70,
+        { opacity: 0.04 },
+      ),
+    );
+  } else if (bgPattern === "concentric-rings") {
+    parts.push(
+      circle(W * 0.92, H * 0.12, W * 0.22, "none", {
+        stroke: accent,
+        strokeWidth: 2,
+        strokeDasharray: "8 12",
+        opacity: 0.14,
+      }),
+      circle(W * 0.92, H * 0.12, W * 0.34, "none", {
+        stroke: colors[1],
+        strokeWidth: 1.5,
+        opacity: 0.09,
+      }),
+      circle(W * 0.08, H * 0.88, W * 0.28, "none", {
+        stroke: colors[3],
+        strokeWidth: 2,
+        strokeDasharray: "6 10",
+        opacity: 0.12,
+      }),
+    );
+  } else {
+    parts.push(
+      path(
+        `M ${W * 0.66} -70 C ${W * 0.2} ${H * 0.28}, ${W * 1.35} ${H * 0.4}, ${W * 0.8} ${H * 0.85}`,
+        accent,
+        90,
+        { opacity: 0.045 },
+      ),
+    );
+  }
+
   const surfaceRectInto = (
     target: JSXNode[],
     x: number,
@@ -555,6 +728,7 @@ export function buildPrismScene(
     w: number,
     h: number,
     tint = false,
+    accentColor = accent,
   ) => {
     if (depth.preset === "layered" && strength > 0)
       target.push(
@@ -563,18 +737,33 @@ export function buildPrismScene(
           y + 8 * strength,
           w,
           h,
-          mixColor(surface, accent, 0.18),
+          mixColor(surface, accentColor, 0.18),
           22,
         ),
       );
     target.push(
       rect(x, y, w, h, surface, 22, {
         ...shadow,
-        stroke: mixColor(surface, accent, 0.18),
-        strokeWidth: 1,
+        stroke:
+          cardStyle === "bordered-bento"
+            ? mixColor(surface, accentColor, 0.45)
+            : mixColor(surface, accentColor, 0.18),
+        strokeWidth: cardStyle === "bordered-bento" ? 2 : 1,
       }),
     );
-    if (tint) target.push(rect(x, y, w, h, svgRef("band"), 22));
+    if (tint || cardStyle === "playbook-contrast")
+      target.push(rect(x, y, w, h, svgRef("band"), 22));
+    if (cardStyle === "playbook-contrast") {
+      target.push(
+        rect(x, y + 14, 6, Math.max(20, h - 28), accentColor, 3),
+      );
+    } else if (cardStyle === "minimal-stripe") {
+      target.push(
+        path(`M ${x + 22} ${y + h - 2} H ${x + w - 22}`, accentColor, 2, {
+          opacity: 0.35,
+        }),
+      );
+    }
   };
   const medallionInto = (
     target: JSXNode[],
@@ -641,6 +830,8 @@ export function buildPrismScene(
           22,
           nameInk,
           true,
+          false,
+          fontStack,
         ).node,
       );
   };
@@ -649,10 +840,68 @@ export function buildPrismScene(
     drawSignature(28);
     headerTop = 28 + signatureH + 26;
   }
-  parts.push(
-    rect(M, headerTop, 58, 6, accent, 3),
-    rect(M + 69, headerTop, 23, 6, colors[1], 3),
-  );
+
+  const eyebrowText = config.eyebrowLabel?.trim() || "";
+  const slideCounterText = config.slideCounter?.trim() || "";
+  if (eyebrowText || slideCounterText) {
+    if (eyebrowText) {
+      const pillW = Math.min(
+        contentW - (slideCounterText ? 130 : 0),
+        Math.max(140, widthOf(eyebrowText.toUpperCase(), 15, true) + 44),
+      );
+      parts.push(
+        rect(M, headerTop - 8, pillW, 32, surface, 16, {
+          stroke: accent,
+          strokeOpacity: 0.45,
+          strokeWidth: 1.5,
+        }),
+        circle(M + 16, headerTop + 8, 4.5, colors[3]),
+        textBlock(
+          eyebrowText.toUpperCase(),
+          M + 28,
+          headerTop - 1,
+          pillW - 36,
+          15,
+          accent,
+          true,
+          false,
+          fontStack,
+        ).node,
+      );
+    } else {
+      parts.push(
+        rect(M, headerTop, 58, 6, accent, 3),
+        rect(M + 69, headerTop, 23, 6, colors[1], 3),
+      );
+    }
+    if (slideCounterText) {
+      const counterW = Math.max(88, widthOf(slideCounterText, 16, true) + 32);
+      parts.push(
+        rect(W - M - counterW, headerTop - 8, counterW, 32, surface, 16, {
+          stroke: mixColor(surface, ink, 0.2),
+          strokeWidth: 1,
+        }),
+        textBlock(
+          slideCounterText,
+          W - M - counterW,
+          headerTop - 1,
+          counterW,
+          15,
+          muted,
+          true,
+          true,
+          fontStack,
+        ).node,
+      );
+    }
+    headerTop += 14;
+  } else {
+    parts.push(
+      rect(M, headerTop, 58, 6, accent, 3),
+      rect(M + 69, headerTop, 23, 6, colors[1], 3),
+    );
+  }
+
   const nodes = config.nodes.slice(0, 6);
   const isSyntheticOverflow =
     config.headline.length > 220 || nodes.some((n) => n.detail.length > 600);
@@ -675,6 +924,17 @@ export function buildPrismScene(
         : config.headline.length > 68
           ? 50
           : 58;
+
+  const highlightPhrases = (config.highlightWords || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter((s) => s.length >= 2)
+    .slice(0, 3)
+    .map((phrase, idx) => ({
+      phrase,
+      color: idx === 0 ? accent : idx === 1 ? colors[3] : colors[1],
+    }));
+
   const headline = textBlock(
     config.headline,
     M,
@@ -683,12 +943,25 @@ export function buildPrismScene(
     headlineSize,
     ink,
     true,
+    false,
+    fontStack,
+    highlightPhrases,
   );
   parts.push(headline.node);
   let top = headerTop + 26 + headline.height + 16;
   if (config.subheadline.trim()) {
     const subSize = H <= 960 ? 22 : 25;
-    const sub = textBlock(config.subheadline, M, top, contentW, subSize, muted);
+    const sub = textBlock(
+      config.subheadline,
+      M,
+      top,
+      contentW,
+      subSize,
+      muted,
+      false,
+      false,
+      fontStack,
+    );
     parts.push(sub.node);
     top += sub.height + 16;
   }
@@ -705,6 +978,9 @@ export function buildPrismScene(
       );
   });
 
+  const hasCallout = Boolean(config.calloutText?.trim());
+  const calloutReserve = hasCallout ? 74 : 0;
+
   // Multi-pass adaptive typography and spacing solver so 2–6 points fit cleanly above footerY
   const candidateScales = isSyntheticOverflow
     ? [1.0]
@@ -714,7 +990,8 @@ export function buildPrismScene(
     const labelSize = Math.max(18, Math.round(32 * s));
     const bodySize = Math.max(15, Math.round(26 * s));
     const badgeSize = Math.max(13, Math.round(18 * s));
-    const badgeOffset = layout === "comparison" ? 0 : Math.max(20, Math.round(28 * s));
+    const badgeOffset =
+      layout === "comparison" ? 0 : Math.max(20, Math.round(28 * s));
     const titleGap = Math.max(6, Math.round(10 * s));
     const padY = Math.max(11, Math.round(18 * s));
     const minGap = Math.max(12, Math.round(20 * s));
@@ -735,7 +1012,8 @@ export function buildPrismScene(
       const labelH =
         Math.max(
           ...labels.map(
-            (t) => wrap(t, cellW - 48, headerFont, true).length * headerFont * 1.3,
+            (t) =>
+              wrap(t, cellW - 48, headerFont, true).length * headerFont * 1.3,
           ),
         ) + Math.round(24 * s);
       const textW = cellW - 118;
@@ -770,11 +1048,13 @@ export function buildPrismScene(
     }
 
     if (layout === "constellation") {
-      const orbitRy = Math.round((H <= 1400 ? 74 : 94) * Math.min(1, s + 0.08));
+      const orbitRy = Math.round(
+        (H <= 1400 ? 74 : 94) * Math.min(1, s + 0.08),
+      );
       const hubZoneH = orbitRy * 2 + Math.round(58 * s);
       const textW = contentW - 144;
-      const rowHeights = nodes.map(
-        (n) => Math.max(Math.round(92 * s), textHeight(n, textW) + padY * 2),
+      const rowHeights = nodes.map((n) =>
+        Math.max(Math.round(92 * s), textHeight(n, textW) + padY * 2),
       );
       const minTotal =
         hubZoneH +
@@ -801,8 +1081,8 @@ export function buildPrismScene(
       isChecklist = layout === "checklist";
     const textW = contentW - (isChecklist ? 228 : isTimeline ? 162 : 196);
     const minCardH = Math.round((isChecklist ? 128 : 120) * s);
-    const rowHeights = nodes.map(
-      (n) => Math.max(minCardH, textHeight(n, textW) + padY * 2),
+    const rowHeights = nodes.map((n) =>
+      Math.max(minCardH, textHeight(n, textW) + padY * 2),
     );
     const minTotal =
       rowHeights.reduce((a, b) => a + b, 0) +
@@ -822,7 +1102,7 @@ export function buildPrismScene(
     };
   };
 
-  const availBodyH = Math.max(120, footerY - 28 - top);
+  const availBodyH = Math.max(120, footerY - 28 - calloutReserve - top);
   let chosen = metricsForScale(candidateScales[0]);
   for (const cand of candidateScales) {
     const m = metricsForScale(cand);
@@ -860,6 +1140,8 @@ export function buildPrismScene(
       badgeSize,
       colors[i % 4],
       true,
+      false,
+      fontStack,
     );
     const title = textBlock(
       n.title,
@@ -869,6 +1151,8 @@ export function buildPrismScene(
       labelSize,
       ink,
       true,
+      false,
+      fontStack,
     );
     const detail = textBlock(
       n.detail,
@@ -877,6 +1161,9 @@ export function buildPrismScene(
       w,
       bodySize,
       muted,
+      false,
+      false,
+      fontStack,
     );
     if (badgeOffset) bodyParts.push(badge.node);
     bodyParts.push(title.node, detail.node);
@@ -917,6 +1204,7 @@ export function buildPrismScene(
         cellW,
         labelH,
         true,
+        colors[k],
       );
       bodyParts.push(
         textBlock(
@@ -927,6 +1215,8 @@ export function buildPrismScene(
           headerFont,
           ink,
           true,
+          false,
+          fontStack,
         ).node,
       );
     });
@@ -939,7 +1229,7 @@ export function buildPrismScene(
         const x = M + k * (cellW + gap);
         const ntH = textHeight(n, textW);
         const textY = y + Math.max(padY, Math.round((h - ntH) / 2));
-        surfaceRectInto(bodyParts, x, y, cellW, h);
+        surfaceRectInto(bodyParts, x, y, cellW, h, false, colors[k]);
         medallionInto(
           bodyParts,
           n,
@@ -969,7 +1259,8 @@ export function buildPrismScene(
           Math.max(1, nodes.length),
       ),
     );
-    const cy = top + orbitRy + Math.round(20 * fitScale) + Math.round(hubExtra * 0.45),
+    const cy =
+        top + orbitRy + Math.round(20 * fitScale) + Math.round(hubExtra * 0.45),
       cx = W / 2,
       radius = contentW * 0.34;
     bodyParts.push(
@@ -1025,6 +1316,7 @@ export function buildPrismScene(
       ink,
       true,
       true,
+      fontStack,
     );
     if (center.height > 50)
       addIssue(
@@ -1039,7 +1331,7 @@ export function buildPrismScene(
       const c = colors[i % 4];
       const ntH = textHeight(n, textW);
       const textY = y + Math.max(padY, Math.round((h - ntH) / 2));
-      surfaceRectInto(bodyParts, M, y, contentW, h, i % 2 === 0);
+      surfaceRectInto(bodyParts, M, y, contentW, h, i % 2 === 0, c);
       bodyParts.push(rect(M, y + 14, 5, Math.max(16, h - 28), c, 2));
       drawText(n, M + 28, textY, textW, i);
       medallionInto(
@@ -1092,7 +1384,7 @@ export function buildPrismScene(
       const textY = y + Math.max(padY, Math.round((h - ntH) / 2));
       const cy = y + h / 2;
       if (isTimeline) {
-        surfaceRectInto(bodyParts, M + 112, y, contentW - 112, h);
+        surfaceRectInto(bodyParts, M + 112, y, contentW - 112, h, false, c);
         bodyParts.push(
           circle(M + 42, cy, 32, surface, {
             ...shadow,
@@ -1110,11 +1402,12 @@ export function buildPrismScene(
             c,
             true,
             true,
+            fontStack,
           ).node,
         );
         drawText(n, M + 138, textY, textW, i);
       } else if (isChecklist) {
-        surfaceRectInto(bodyParts, M, y, contentW, h, i % 2 === 0);
+        surfaceRectInto(bodyParts, M, y, contentW, h, i % 2 === 0, c);
         bodyParts.push(
           rect(M + 24, cy - 21, 42, 42, c, 12),
           path(
@@ -1134,8 +1427,8 @@ export function buildPrismScene(
         );
       } else {
         const right = isRibbon && i % 2 === 1;
-        if (isRibbon) surfaceRectInto(bodyParts, M, y, contentW, h, true);
-        else surfaceRectInto(bodyParts, M, y, contentW, h, i % 2 === 0);
+        if (isRibbon) surfaceRectInto(bodyParts, M, y, contentW, h, true, c);
+        else surfaceRectInto(bodyParts, M, y, contentW, h, i % 2 === 0, c);
         const ix = right ? W - M - 70 : M + 68;
         medallionInto(
           bodyParts,
@@ -1150,6 +1443,43 @@ export function buildPrismScene(
       y += h + rowGap;
     });
     bottom = y - rowGap;
+  }
+
+  if (hasCallout && bottom + 68 <= footerY - 16) {
+    const calloutY = Math.min(footerY - 68, bottom + 18);
+    const badgeLabel = (config.calloutBadge?.trim() || "KEY TAKEAWAY").toUpperCase();
+    const badgeW = Math.max(110, widthOf(badgeLabel, 14, true) + 28);
+    bodyParts.push(
+      rect(M, calloutY, contentW, 52, surface, 14, {
+        stroke: colors[3],
+        strokeOpacity: 0.5,
+        strokeWidth: 1.5,
+      }),
+      rect(M + 12, calloutY + 11, badgeW, 30, colors[3], 8),
+      textBlock(
+        badgeLabel,
+        M + 12,
+        calloutY + 17,
+        badgeW,
+        14,
+        light ? "#FFFFFF" : "#0F172A",
+        true,
+        true,
+        fontStack,
+      ).node,
+      textBlock(
+        config.calloutText!.trim(),
+        M + badgeW + 26,
+        calloutY + 14,
+        contentW - badgeW - 40,
+        18,
+        ink,
+        true,
+        false,
+        fontStack,
+      ).node,
+    );
+    bottom = calloutY + 52;
   }
 
   parts.push(el("g", { clipPath: svgRef("body-clip") }, bodyParts));
@@ -1183,6 +1513,9 @@ export function buildPrismScene(
       sourceMaxW,
       18,
       muted,
+      false,
+      false,
+      fontStack,
     );
     if (footer.height > 46)
       addIssue(
@@ -1205,6 +1538,7 @@ export function buildPrismScene(
           "data-visual-engine": "prism-antv",
           "data-composition": layout,
           "data-depth": depth.preset,
+          "data-bg-pattern": bgPattern,
         },
         parts,
       ),

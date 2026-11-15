@@ -1,6 +1,8 @@
 /** Bounded, metadata-only brand hints from the already fetched page. No additional network calls. */
 export interface WebsiteBrandHint {
   accent?: string;
+  secondaryAccent?: string;
+  isDark?: boolean;
   siteName: string;
   source: "theme-color" | "css-variable" | "site-name";
 }
@@ -36,23 +38,48 @@ export function extractWebsiteBrand(
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, 64);
-  for (const meta of Array.from(
-    doc.querySelectorAll('meta[name="theme-color"]'),
-  ).slice(0, 8)) {
-    const accent = colorHint(meta.getAttribute("content"));
-    if (accent) return { accent, siteName, source: "theme-color" };
-  }
   const css = Array.from(doc.querySelectorAll("style"))
     .slice(0, 24)
     .map((n) => (n.textContent || "").slice(0, 12000))
     .join("\n")
     .slice(0, 96000);
+
+  let secondaryAccent: string | undefined;
+  const secondaryMatches = css.matchAll(
+    /--(?:brand-secondary|secondary(?:-color)?|accent-secondary)\s*:\s*([^;}]+)/gi,
+  );
+  for (const match of secondaryMatches) {
+    const cand = colorHint(match[1]);
+    if (cand) {
+      secondaryAccent = cand;
+      break;
+    }
+  }
+  const htmlEl = doc.documentElement;
+  const isDark =
+    htmlEl?.classList?.contains("dark") ||
+    htmlEl?.getAttribute("data-theme") === "dark" ||
+    doc.body?.classList?.contains("dark")
+      ? true
+      : undefined;
+
+  const extra = {
+    ...(secondaryAccent ? { secondaryAccent } : {}),
+    ...(isDark ? { isDark } : {}),
+  };
+
+  for (const meta of Array.from(
+    doc.querySelectorAll('meta[name="theme-color"]'),
+  ).slice(0, 8)) {
+    const accent = colorHint(meta.getAttribute("content"));
+    if (accent) return { accent, siteName, source: "theme-color", ...extra };
+  }
   const declarations = css.matchAll(
     /--(?:brand(?:-primary|-color)?|primary(?:-color)?|accent-color)\s*:\s*([^;}]+)/gi,
   );
   for (const match of declarations) {
     const accent = colorHint(match[1]);
-    if (accent) return { accent, siteName, source: "css-variable" };
+    if (accent) return { accent, siteName, source: "css-variable", ...extra };
   }
-  return { siteName, source: "site-name" };
+  return { siteName, source: "site-name", ...extra };
 }

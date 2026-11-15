@@ -10,7 +10,14 @@ import {
   fixedInfographicRatio,
   lockInfographicGeometry,
 } from "./layout-registry";
-import { isHex, normalizeDepth, normalizeSignature } from "./appearance";
+import {
+  BACKGROUND_PATTERNS,
+  CARD_STYLES,
+  FONT_FAMILIES,
+  isHex,
+  normalizeDepth,
+  normalizeSignature,
+} from "./appearance";
 import type { VisualBrief } from "./visual-brief";
 function importBrief(raw: VisualBrief | undefined): VisualBrief | undefined {
   if (!raw) return undefined;
@@ -88,10 +95,10 @@ export function patchInfographic(
 }
 export function selectInfographicTemplate(
   config: BlogInfographicConfig,
-  id: number,
+  templateId: number,
 ): BlogInfographicConfig {
   const spec =
-    BLOG_INFOGRAPHIC_25_TEMPLATES.find((t) => t.id === id) ||
+    BLOG_INFOGRAPHIC_25_TEMPLATES.find((t) => t.id === templateId) ||
     BLOG_INFOGRAPHIC_25_TEMPLATES[0];
   return patchInfographic(config, {
     templateId: spec.id,
@@ -102,56 +109,56 @@ export function selectInfographicTemplate(
   });
 }
 export function nodesFromText(raw: string): BlogInfographicNodeItem[] {
-  const lines = raw.trim().split(/\n+/).filter(Boolean);
-  const pieces = lines.length > 1 ? lines : raw.trim().split(/(?<=[.!?])\s+/);
-  const cleaned = pieces
+  return raw
+    .split(/\n+|(?<=[.!?])\s+(?=[A-Z0-9])/g)
     .map((s) => s.replace(/^\s*(?:[-*•]|\d+[.)])\s*/, "").trim())
-    .filter(Boolean);
-  // Keep overflow sentences in the final block so extraction never silently drops source text.
-  const bounded =
-    cleaned.length > 8
-      ? [...cleaned.slice(0, 7), cleaned.slice(7).join(" ")]
-      : cleaned;
-  return bounded.map((s, i) => {
-    const colon = s.indexOf(":");
-    const title =
-      colon > 0 && colon < 100
-        ? s.slice(0, colon)
-        : s.split(/\s+/).slice(0, 6).join(" ");
-    // Preserve the full sentence; never replace extracted text with sample marketing claims.
-    return {
-      id: `point-${i}-${Date.now()}`,
-      badge: String(i + 1).padStart(2, "0"),
-      title,
-      detail: colon > 0 && colon < 100 ? s.slice(colon + 1).trim() : s,
-      metricValue: "",
-    };
-  });
+    .filter((s) => s.length >= 6)
+    .slice(0, 8)
+    .map((line, i) => {
+      const colon = line.indexOf(":");
+      const hasLabel = colon > 2 && colon < 48;
+      const title = hasLabel
+        ? line.slice(0, colon).trim()
+        : line.split(/\s+/).slice(0, 6).join(" ");
+      const detail = hasLabel ? line.slice(colon + 1).trim() : line;
+      return {
+        id: `node-${Date.now()}-${i}`,
+        badge: String(i + 1).padStart(2, "0"),
+        title: title.slice(0, 120),
+        detail: (detail || title).slice(0, 360),
+        metricValue: "",
+      };
+    });
 }
 export function importInfographicProject(
-  json: string,
+  rawJson: string,
 ): BlogInfographicConfig[] {
   let parsed: unknown;
   try {
-    parsed = JSON.parse(json);
+    parsed = JSON.parse(rawJson);
   } catch {
-    throw new Error("This is not a valid JSON project.");
+    throw new Error("This file is not valid JSON.");
   }
-  const data = parsed as { version?: number; cards?: unknown[] };
-  if (
-    data?.version !== 1 ||
-    !Array.isArray(data.cards) ||
-    !data.cards.length ||
-    data.cards.length > 12
-  )
-    throw new Error("Choose an infographic project containing 1–12 sections.");
-  return data.cards.map((item, index) => {
-    const c = item as BlogInfographicConfig;
+  const list = Array.isArray((parsed as { cards?: unknown })?.cards)
+    ? (parsed as { cards: unknown[] }).cards
+    : Array.isArray(parsed)
+      ? parsed
+      : [parsed];
+  if (!list.length || list.length > 12)
+    throw new Error("A project can contain 1 to 12 section infographics.");
+  return list.map((item, index) => {
+    const c = item as Partial<BlogInfographicConfig>;
     if (
       !c ||
-      !BLOG_INFOGRAPHIC_25_TEMPLATES.some((t) => t.id === c.templateId) ||
-      !Object.hasOwn(ASPECT_RATIO_DIMENSIONS, c.aspectRatio) ||
-      !Object.hasOwn(BLOG_INFOGRAPHIC_PALETTES, c.paletteId) ||
+      typeof c.templateId !== "number" ||
+      c.templateId < 1 ||
+      c.templateId > 25 ||
+      !BLOG_INFOGRAPHIC_PALETTES[
+        c.paletteId as keyof typeof BLOG_INFOGRAPHIC_PALETTES
+      ] ||
+      !ASPECT_RATIO_DIMENSIONS[
+        c.aspectRatio as keyof typeof ASPECT_RATIO_DIMENSIONS
+      ] ||
       ![c.headline, c.subheadline, c.footerSourceLabel, c.altText].every(
         (x) => typeof x === "string" && x.length < 10000,
       ) ||
@@ -160,22 +167,16 @@ export function importInfographicProject(
       c.nodes.length > 8
     )
       throw new Error(`Section ${index + 1} has invalid content or settings.`);
-    if (
-      c.nodes.some(
-        (n) =>
-          !n ||
-          ![n.title, n.detail, n.badge, n.metricValue || ""].every(
-            (s) => typeof s === "string" && s.length < 10000,
-          ),
+    for (const n of c.nodes)
+      if (
+        !n ||
+        ![n.title, n.detail, n.badge, n.metricValue || ""].every(
+          (x) => typeof x === "string" && x.length < 5000,
+        )
       )
-    )
-      throw new Error(`Section ${index + 1} has an invalid point.`);
+        throw new Error(`A point in section ${index + 1} is incomplete.`);
     const brand = c.brand;
-    if (
-      brand &&
-      (typeof brand !== "object" ||
-        (brand.logoDataUrl && !isSafeInfographicImage(brand.logoDataUrl)))
-    )
+    if (brand?.logoDataUrl && !isSafeInfographicImage(brand.logoDataUrl))
       throw new Error(
         "This project contains an unsupported logo. Use a PNG, JPG or WebP image.",
       );
@@ -202,12 +203,52 @@ export function importInfographicProject(
       aspectRatio: fixedInfographicRatio(c),
       depth: normalizeDepth(c.depth),
       signature: normalizeSignature(c.signature),
+      backgroundPattern: BACKGROUND_PATTERNS.some(
+        (p) => p.id === c.backgroundPattern,
+      )
+        ? c.backgroundPattern
+        : undefined,
+      cardStyle: CARD_STYLES.some((s) => s.id === c.cardStyle)
+        ? c.cardStyle
+        : undefined,
+      fontFamily: FONT_FAMILIES.some((f) => f.id === c.fontFamily)
+        ? c.fontFamily
+        : undefined,
+      secondaryAccent: isHex(c.secondaryAccent)
+        ? c.secondaryAccent
+        : undefined,
+      highlightWords:
+        typeof c.highlightWords === "string"
+          ? c.highlightWords.slice(0, 240)
+          : undefined,
+      eyebrowLabel:
+        typeof c.eyebrowLabel === "string"
+          ? c.eyebrowLabel.slice(0, 80)
+          : undefined,
+      slideCounter:
+        typeof c.slideCounter === "string"
+          ? c.slideCounter.slice(0, 24)
+          : undefined,
+      calloutBadge:
+        typeof c.calloutBadge === "string"
+          ? c.calloutBadge.slice(0, 32)
+          : undefined,
+      calloutText:
+        typeof c.calloutText === "string"
+          ? c.calloutText.slice(0, 240)
+          : undefined,
       extractedBrand:
         c.extractedBrand && typeof c.extractedBrand.siteName === "string"
           ? {
               accent: isHex(c.extractedBrand.accent)
                 ? c.extractedBrand.accent
                 : undefined,
+              ...(isHex(c.extractedBrand.secondaryAccent)
+                ? { secondaryAccent: c.extractedBrand.secondaryAccent }
+                : {}),
+              ...(typeof c.extractedBrand.isDark === "boolean"
+                ? { isDark: c.extractedBrand.isDark }
+                : {}),
               siteName: c.extractedBrand.siteName.slice(0, 64),
               source: ["theme-color", "css-variable"].includes(
                 c.extractedBrand.source,
@@ -220,15 +261,17 @@ export function importInfographicProject(
       comparisonLabels:
         Array.isArray(c.comparisonLabels) &&
         c.comparisonLabels.length === 2 &&
-        c.comparisonLabels.every((v) => typeof v === "string" && v.length < 200)
-          ? c.comparisonLabels
+        c.comparisonLabels.every(
+          (x) => typeof x === "string" && x.length <= 120,
+        )
+          ? [c.comparisonLabels[0], c.comparisonLabels[1]]
           : undefined,
       centerLabel:
         typeof c.centerLabel === "string"
-          ? c.centerLabel.slice(0, 80)
+          ? c.centerLabel.slice(0, 120)
           : undefined,
       nodes: c.nodes.map((n, i) => ({
-        id: `import-point-${index}-${i}`,
+        id: `import-node-${Date.now()}-${index}-${i}`,
         title: n.title,
         detail: n.detail,
         badge: n.badge,
@@ -252,9 +295,10 @@ export function importInfographicProject(
       brand: brand
         ? {
             logoDataUrl: brand.logoDataUrl,
-            logoScale: Number.isFinite(brand.logoScale)
-              ? Math.min(1.5, Math.max(0.7, brand.logoScale!))
-              : 1,
+            logoScale:
+              typeof brand.logoScale === "number"
+                ? Math.min(1.5, Math.max(0.7, brand.logoScale))
+                : 1,
             logoStyle: ["white", "dark"].includes(brand.logoStyle || "")
               ? brand.logoStyle
               : "plain",

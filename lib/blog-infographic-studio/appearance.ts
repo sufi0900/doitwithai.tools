@@ -18,6 +18,99 @@ export interface InfographicSignature {
   align?: "left" | "right";
   padding?: number;
 }
+export type BackgroundPattern =
+  | "dots-glow"
+  | "svg-waves"
+  | "mesh-grid"
+  | "concentric-rings"
+  | "clean-gradient";
+
+export type InfographicCardStyle =
+  | "glass-editorial"
+  | "playbook-contrast"
+  | "bordered-bento"
+  | "minimal-stripe";
+
+export type InfographicFontFamily =
+  | "inter-jakarta"
+  | "space-grotesk"
+  | "editorial-serif"
+  | "system-arial";
+
+export const BACKGROUND_PATTERNS: {
+  id: BackgroundPattern;
+  label: string;
+  description: string;
+}[] = [
+  {
+    id: "dots-glow",
+    label: "Dot Matrix & Dual Glow",
+    description: "28px dot grid with primary and gold radial spotlights.",
+  },
+  {
+    id: "svg-waves",
+    label: "Flowing SVG Waves",
+    description: "Multi-layered harmonic bezier ribbons and corner glow.",
+  },
+  {
+    id: "mesh-grid",
+    label: "Architectural Grid",
+    description: "Precision technical grid lines with subtle vignette.",
+  },
+  {
+    id: "concentric-rings",
+    label: "Orbital Rings",
+    description: "Concentric geometric arcs with soft spotlight depth.",
+  },
+  {
+    id: "clean-gradient",
+    label: "Minimal Gradient",
+    description: "Restrained editorial gradient with quiet framing.",
+  },
+];
+
+export const CARD_STYLES: {
+  id: InfographicCardStyle;
+  label: string;
+}[] = [
+  { id: "glass-editorial", label: "Editorial Glass" },
+  { id: "playbook-contrast", label: "Playbook Contrast" },
+  { id: "bordered-bento", label: "Bordered Bento" },
+  { id: "minimal-stripe", label: "Minimal Stripe" },
+];
+
+export const FONT_FAMILIES: {
+  id: InfographicFontFamily;
+  label: string;
+  stack: string;
+}[] = [
+  {
+    id: "system-arial",
+    label: "Classic Clean (Arial)",
+    stack: "Arial, sans-serif",
+  },
+  {
+    id: "inter-jakarta",
+    label: "Modern Sans (Inter / Jakarta)",
+    stack: "Inter, 'Plus Jakarta Sans', Arial, sans-serif",
+  },
+  {
+    id: "space-grotesk",
+    label: "Tech Geometric (Space Grotesk)",
+    stack: "'Space Grotesk', Inter, Arial, sans-serif",
+  },
+  {
+    id: "editorial-serif",
+    label: "Executive Serif (Georgia)",
+    stack: "Georgia, 'Times New Roman', serif",
+  },
+];
+
+export function resolveFontStack(fontFamily?: InfographicFontFamily): string {
+  const found = FONT_FAMILIES.find((f) => f.id === fontFamily);
+  return found ? found.stack : "Arial, sans-serif";
+}
+
 export const DEPTH_PRESETS: DepthPreset[] = [
   "flat",
   "soft",
@@ -79,6 +172,11 @@ export function infographicColors(config: BlogInfographicConfig) {
     isHex(c?.accent) ? c.accent : p.accent,
     surface,
   );
+  const secondaryRaw = isHex(config.secondaryAccent)
+    ? config.secondaryAccent
+    : isHex(config.extractedBrand?.secondaryAccent)
+      ? config.extractedBrand!.secondaryAccent!
+      : p.accentSecondary;
   const muted = mixColor(ink, surface, 0.2);
   return {
     bg,
@@ -90,9 +188,9 @@ export function infographicColors(config: BlogInfographicConfig) {
     light,
     colors: [
       accent,
-      readableAccent(p.accentSecondary, surface),
+      readableAccent(secondaryRaw, surface),
       readableAccent(light ? "#8648BA" : "#D8B4FE", surface),
-      readableAccent(light ? "#A75A0A" : "#FBBF24", surface),
+      readableAccent(light ? "#A75A0A" : "#FBB040", surface),
     ],
   };
 }
@@ -134,4 +232,40 @@ export function normalizeSignature(
     align: raw?.align === "left" ? "left" : "right",
     padding: bounded(raw?.padding, 8, 24, 12),
   };
+}
+
+/**
+ * Automatically identifies 1–2 high-signal phrases from a section headline
+ * so the 2-tone headline renderer can highlight key concepts in primary/gold accents.
+ */
+export function extractHeadlineHighlightPhrases(
+  headline: string,
+  customHighlightWords?: string,
+): string[] {
+  if (customHighlightWords !== undefined) {
+    return customHighlightWords
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s) => s.length >= 2)
+      .slice(0, 3);
+  }
+  const clean = (headline || "").replace(/\s+/g, " ").trim();
+  if (!clean) return [];
+  const colonParts = clean.split(/:\s+|\s+[—–-]\s+/);
+  if (colonParts.length >= 2 && colonParts[0].length <= 42) {
+    const first = colonParts[0].trim();
+    const secondWords = colonParts[1]
+      .trim()
+      .split(/\s+/)
+      .slice(0, 3)
+      .join(" ")
+      .replace(/[?.!,;:]$/, "");
+    return [first, secondWords].filter((s) => s.length >= 3);
+  }
+  const words = clean.split(/\s+/);
+  if (words.length <= 4) {
+    return [words.slice(-2).join(" ")];
+  }
+  const tail = words.slice(-2).join(" ").replace(/[?.!,;:]$/, "");
+  return tail.length >= 3 ? [tail] : [];
 }

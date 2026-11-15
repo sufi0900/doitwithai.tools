@@ -22,6 +22,11 @@ import {
   importInfographicProject,
   patchInfographic,
 } from "../../lib/blog-infographic-studio/project";
+import {
+  buildAllArticleSectionVisuals,
+  sectionFromText,
+  shuffleInfographicVisualVariation,
+} from "../../lib/blog-infographic-studio/visual-brief";
 
 test("six distinct compositions keep every sample explanation within a fixed canvas across all eight themes", () => {
   const dimensions = {
@@ -253,8 +258,13 @@ test("writer export adapter normalizes a saved project's stale ratios without ch
     compileCompleteJsonLdGraph,
     compileHeadMetaTagsHtml,
   } = await import("../../lib/blog-infographic-studio/writer-export");
-  const aliasedCompiler = await import("@/lib/blog-writer/technical-seo-compiler");
-  assert.equal(aliasedCompiler.compileCleanCwvArticleHtml, compileCleanCwvArticleHtml);
+  const aliasedCompiler = await import(
+    "@/lib/blog-writer/technical-seo-compiler"
+  );
+  assert.equal(
+    aliasedCompiler.compileCleanCwvArticleHtml,
+    compileCleanCwvArticleHtml,
+  );
   const project = structuredClone(DEFAULT_FLAGSHIP_BLOG_PROJECT);
   project.sections = [project.sections[0]];
   const config = {
@@ -286,4 +296,76 @@ test("writer export adapter normalizes a saved project's stale ratios without ch
       'og:image:height" content="1920"',
     ),
   );
+});
+
+test("programmatic visual engine builds unique per-section infographics with procedural shaders, 2-tone highlights and editable layers", () => {
+  const sections = [
+    sectionFromText(
+      "The AI SEO Framework: AEO, GEO and AI Workflows",
+      "### Answer Engine Optimization\nAnswer engine optimization structures pages so direct questions are resolved in the first paragraph.\n### Generative Engine Optimization\nGenerative engine optimization supplies verifiable facts and citations that AI engines can reference.\n### AI-Assisted Workflows\nAI-assisted workflows accelerate research and schema validation while keeping human review in control.",
+      "sec-1",
+    ),
+    sectionFromText(
+      "Step-by-Step Implementation Process",
+      "### Audit Search Intent\nMap each target query to the exact problem the reader wants solved before drafting.\n### Structure Direct Answers\nPlace a concise 50-word explanation immediately under every H2 question heading.\n### Validate Technical Schema\nAttach BlogPosting and FAQPage JSON-LD markup so search crawlers parse entities cleanly.",
+      "sec-2",
+    ),
+    sectionFromText(
+      "Pre-Publish Quality Checklist",
+      "### Verify Primary Sources\nConfirm every statistic and benchmark links to its original study or primary dataset.\n### Check Mobile Readability\nInspect every diagram and comparison table on a narrow screen before publishing.",
+      "sec-3",
+    ),
+  ];
+
+  const suite = buildAllArticleSectionVisuals(sections, {
+    sourceUrl: "https://doitwithai.tools/ai-seo/what-is-ai-seo",
+    domain: "doitwithai.tools",
+    brandTheme: {
+      accent: "#4A6CF7",
+      secondaryAccent: "#FBB040",
+      isDark: true,
+      siteName: "DoItWithAI.tools",
+      source: "theme-color",
+    },
+  });
+
+  assert.equal(suite.length, 3);
+  // Consecutive sections receive distinct compositions and procedural background patterns
+  assert.notEqual(suite[0].prismLayout, suite[1].prismLayout);
+  assert.notEqual(suite[0].backgroundPattern, suite[1].backgroundPattern);
+  assert.equal(suite[0].paletteId, "indigo-cyber");
+  assert.equal(suite[0].slideCounter, "01 / 03");
+  assert.ok(suite[0].eyebrowLabel?.includes("SECTION 01"));
+  assert.ok(suite[0].highlightWords && suite[0].highlightWords.length > 0);
+
+  // Add a bottom callout bar and verify SVG rendering + JSON round-trip persistence
+  const customized = patchInfographic(suite[0], {
+    calloutBadge: "FREE TOOL",
+    calloutText: "Validate your schema with the JSON-LD Generator",
+    backgroundPattern: "svg-waves",
+    cardStyle: "playbook-contrast",
+    fontFamily: "inter-jakarta",
+  });
+  const scene = buildInfographicScene(customized);
+  assert.deepEqual(scene.issues, []);
+  const $ = load(scene.svg, { xmlMode: true });
+  assert.equal($("[data-bg-pattern]").attr("data-bg-pattern"), "svg-waves");
+  assert.ok($("text").text().includes(customized.headline));
+  assert.ok($("text").text().includes("FREE TOOL"));
+  assert.ok($("text").text().includes("Validate your schema"));
+
+  const [restored] = importInfographicProject(
+    JSON.stringify({ version: 1, cards: [customized] }),
+  );
+  assert.equal(restored.backgroundPattern, "svg-waves");
+  assert.equal(restored.cardStyle, "playbook-contrast");
+  assert.equal(restored.fontFamily, "inter-jakarta");
+  assert.equal(restored.calloutBadge, "FREE TOOL");
+  assert.equal(
+    restored.calloutText,
+    "Validate your schema with the JSON-LD Generator",
+  );
+
+  const shuffled = shuffleInfographicVisualVariation(restored, 1);
+  assert.notEqual(shuffled.backgroundPattern, restored.backgroundPattern);
 });
