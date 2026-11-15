@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs';
 for (const [file, state] of [['useGeneration.ts', 'w'], ['WriterWorkspace.tsx', 'nw']]) {
  test(`${file}: research refresh preserves imported evidence without manufacturing references`, () => {
   const source = readFileSync(new URL(`../../features/writer-workspace/${file}`, import.meta.url), 'utf8');
-  const start = source.indexOf(`const mergedRefs = [...${state}.references];`);
+  const start = source.indexOf(`const mergedRefs = [...${state}.references,`);
   assert.ok(start >= 0);
   const end = source.indexOf('references: mergedRefs.slice(0, 8)', start);
   assert.ok(end > start);

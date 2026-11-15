@@ -1,4 +1,5 @@
 "use client";
+import { collectResearchEvidence } from "./research-evidence";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { createPortal } from "react-dom";
@@ -528,6 +529,7 @@ export default function WriterWorkspace() {
 
   const refreshResearchPacket = async () => {
     if (researchBusy) return;
+    const researchProjectId = current.current.projectId;
     setResearchBusy(true);
     setMessage("");
     const directives = parseBriefDirectives(
@@ -562,10 +564,12 @@ export default function WriterWorkspace() {
         throw new Error(json?.error || "Could not refresh research links.");
       }
       const packet = json.packet as ResearchPacket;
+      const evidence = await collectResearchEvidence(packet.externalLinks || [], workspace(current.current).references);
+      if (current.current.projectId !== researchProjectId) return;
       update((now) => {
         const nw = workspace(now);
-        // Discovery links are navigation candidates, not extracted source evidence.
-        const mergedRefs = [...nw.references];
+        // Only readable page bodies returned by the source extractor become evidence.
+        const mergedRefs = [...nw.references, ...evidence.filter(ref => !nw.references.some(saved => saved.url === ref.url))].slice(0, 4);
         return {
           ...now,
           brandSiteUrl: now.brandSiteUrl || packet.siteScanned || site,
