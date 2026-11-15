@@ -808,7 +808,7 @@ export function LeftStudioPanel({
                 className={`${s.btn} ${s.primary} ${s.fullWidthBtn}`}
                 onClick={onApplyContentRefresh}
               >
-                <Zap className="w-3.5 h-3.5" aria-hidden /> Run 1-Click Content Refresh &amp; Decay Upgrade
+                <Zap className="w-3.5 h-3.5" aria-hidden /> Review content freshness
               </button>
             ) : null}
           </div>

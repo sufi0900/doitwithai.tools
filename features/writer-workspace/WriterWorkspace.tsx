@@ -1023,17 +1023,7 @@ export default function WriterWorkspace() {
                 );
               }}
               onApplyContentRefresh={() => {
-                let count = 0;
-                update((now) => {
-                  const res = applyContentRefreshUpgrade(now);
-                  count = res.changesApplied;
-                  return res.project;
-                });
-                setMessage(
-                  count > 0
-                    ? `Applied ${count} content refresh & anti-decay upgrade${count === 1 ? "" : "s"} (2026 recency signals, decision matrix & editorial verification note).`
-                    : "Your article already meets all 2026 content freshness and anti-decay benchmarks.",
-                );
+                setMessage("Review dated claims against current sources. Historical dates may be correct; update only facts you have checked. No dates or verification claims were changed automatically.");
               }}
               onWeaveSectionTakeaways={() => {
                 let count = 0;

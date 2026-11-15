@@ -896,13 +896,10 @@ test("V3.6 H2 statement-to-question converter, content freshness auditor, and 1-
   assert.match(qConverted.project.sections[0].h2Text, /\?$/);
 
   const refreshed = applyContentRefreshUpgrade(qConverted.project);
-  assert.ok(refreshed.changesApplied >= 2);
-  const afterFreshness = auditContentFreshnessAndDecay(refreshed.project);
-  assert.equal(afterFreshness.staleYearsFound.length, 0);
-  assert.equal(afterFreshness.hasCurrentYearSignal, true);
-  assert.equal(afterFreshness.hasComparisonTable, true);
-  assert.equal(afterFreshness.hasMethodologyDisclosure, true);
-  assert.equal(afterFreshness.freshnessScore, 100);
+  assert.equal(refreshed.changesApplied, 0);
+  assert.strictEqual(refreshed.project, qConverted.project);
+  assert.match(refreshed.project.metaPack.metaTitle, /2023/);
+  assert.equal(auditContentFreshnessAndDecay(refreshed.project).hasMethodologyDisclosure, false);
 });
 
 test("repair helpers are exported and preserve source facts and empty drafts", async () => {
