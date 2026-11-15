@@ -495,7 +495,8 @@ export function BlogInfographicStudio({
       onSaveConfig?.({
         ...active,
         sectionId: initialConfig?.sectionId || active.sectionId,
-        id: initialConfig?.id || active.id,\n        renderedPngDataUrl: canvas.toDataURL("image/png"),
+        id: initialConfig?.id || active.id,
+        renderedPngDataUrl: canvas.toDataURL("image/png"),
         renderedSvgMarkup: generateBlogInfographicSvg(active),
       });
       onClose?.();
@@ -555,7 +556,6 @@ export function BlogInfographicStudio({
       backgroundPattern: active.backgroundPattern,
       cardStyle: active.cardStyle,
       fontFamily: active.fontFamily,
-      secondaryAccent: active.secondaryAccent,
       extractedBrand: active.extractedBrand,
     };
     commit([...cards, card]);
@@ -1795,7 +1795,6 @@ export function BlogInfographicStudio({
                               depth: active.depth,
                               signature: active.signature,
                               fontFamily: active.fontFamily,
-                              secondaryAccent: active.secondaryAccent,
                               extractedBrand: active.extractedBrand,
                             }),
                           ),
