@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { toolPageEditsSchema, type ToolPageEdits } from "./tool-page-properties";
+import {
+  toolGradientPresets,
+  toolPageEditsSchema,
+  type ToolGradientPreset,
+  type ToolPageEdits,
+} from "./tool-page-properties";
 import { richNodeSchema } from "./rich-document";
 
 export const accentOptions = ["indigo", "cyan", "violet", "coral", "lime", "rose", "blue", "olive"] as const;
@@ -101,12 +106,17 @@ export const DEFAULT_PORTFOLIO_CONTENT = {
     approach: string;
     outcome: string;
     mediaIds: string[];
+    inputLabel?: string;
     defaultInput?: string;
+    secondaryInputLabel?: string;
     defaultSecondaryInput?: string;
     customCtaLabel?: string;
     heroHighlights?: string[];
     toolAccentHex?: string;
+    toolSecondaryAccentHex?: string;
     toolBackgroundHex?: string;
+    toolSurfaceHex?: string;
+    toolGradientPreset?: ToolGradientPreset;
     toolThemeMode?: "auto" | "dark" | "light";
     hideEducationSection?: boolean;
     hideFaqSection?: boolean;
@@ -128,9 +138,14 @@ export const DEFAULT_PORTFOLIO_CONTENT = {
       challenge: string;
       approach: string;
       outcome: string;
+      inputLabel?: string;
+      secondaryInputLabel?: string;
       customCtaLabel?: string;
       toolAccentHex?: string;
+      toolSecondaryAccentHex?: string;
       toolBackgroundHex?: string;
+      toolSurfaceHex?: string;
+      toolGradientPreset?: ToolGradientPreset;
     };
   }>,
   contact: { heading: "Let’s build something useful", email: "", location: "", cta: "Start a conversation", socials: [] as Array<{ id: string; platform: typeof socialPlatformOptions[number]; url: string }> },
@@ -155,12 +170,17 @@ const portfolioContentSchema = z.object({
     approach: z.string().trim().max(1800).default(""),
     outcome: z.string().trim().max(1200).default(""),
     mediaIds: z.array(z.string().min(1)).max(8).default([]),
+    inputLabel: z.string().trim().max(120).optional(),
     defaultInput: z.string().trim().max(2000).optional(),
+    secondaryInputLabel: z.string().trim().max(120).optional(),
     defaultSecondaryInput: z.string().trim().max(4000).optional(),
     customCtaLabel: z.string().trim().max(90).optional(),
     heroHighlights: z.array(z.string().trim().min(1).max(160)).max(6).optional(),
     toolAccentHex: z.string().trim().max(32).optional(),
+    toolSecondaryAccentHex: z.string().trim().max(32).optional(),
     toolBackgroundHex: z.string().trim().max(32).optional(),
+    toolSurfaceHex: z.string().trim().max(32).optional(),
+    toolGradientPreset: z.enum(toolGradientPresets).optional(),
     toolThemeMode: z.enum(["auto", "dark", "light"]).optional(),
     hideEducationSection: z.boolean().optional(),
     hideFaqSection: z.boolean().optional(),
@@ -191,9 +211,14 @@ const portfolioContentSchema = z.object({
         challenge: z.string().trim().max(1200).default(""),
         approach: z.string().trim().max(1800).default(""),
         outcome: z.string().trim().max(1200).default(""),
+        inputLabel: z.string().trim().max(120).optional(),
+        secondaryInputLabel: z.string().trim().max(120).optional(),
         customCtaLabel: z.string().trim().max(90).optional(),
         toolAccentHex: z.string().trim().max(32).optional(),
+        toolSecondaryAccentHex: z.string().trim().max(32).optional(),
         toolBackgroundHex: z.string().trim().max(32).optional(),
+        toolSurfaceHex: z.string().trim().max(32).optional(),
+        toolGradientPreset: z.enum(toolGradientPresets).optional(),
       })
       .optional(),
   })).max(8),

@@ -1,4 +1,9 @@
-import { isToolPageField, toolPageFields } from "./tool-page-properties";
+import {
+  isToolPageField,
+  toolGradientPresets,
+  toolPageFields,
+  type ToolGradientPreset,
+} from "./tool-page-properties";
 import { richNodeSchema } from "./rich-document";
 import { structuredBlockSchema } from "./site-document";
 import { z } from "zod";
@@ -113,12 +118,17 @@ export const siteCommandSchema = z.discriminatedUnion("type", [
       "challenge",
       "approach",
       "outcome",
+      "inputLabel",
       "defaultInput",
+      "secondaryInputLabel",
       "defaultSecondaryInput",
       "customCtaLabel",
       "heroHighlights",
       "toolAccentHex",
+      "toolSecondaryAccentHex",
       "toolBackgroundHex",
+      "toolSurfaceHex",
+      "toolGradientPreset",
       "toolThemeMode",
       "hideEducationSection",
       "hideFaqSection",
@@ -149,7 +159,7 @@ export const siteCommandSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("media.removeAsset"), mediaId: z.string().min(1) }),
   z.object({ type: z.literal("publishing.add"), kind: z.enum(["page", "post"]), title: z.string().trim().min(1).max(120).optional(), excerpt: z.string().trim().max(320).optional(), body: z.string().trim().max(4000).optional(), seoTitle: z.string().trim().max(70).optional(), seoDescription: z.string().trim().max(170).optional() }),
   z.object({ type: z.literal("publishing.update"), kind: z.enum(["page", "post"]), itemId: z.string().min(1), field: z.enum(["title", "slug", "seoTitle", "seoDescription", "coverMediaId", "navigationLabel", "excerpt", "tags"]), value: z.union([z.string(), z.array(z.string())]) }),
-  z.object({ type: z.literal("publishing.setContent"), kind: z.enum(["page", "post"]), itemId:z.string().min(1), richContent:richNodeSchema, blocks:z.array(structuredBlockSchema).max(200) }),
+  z.object({ type: z.literal("publishing.setContent"), kind: z.enum(["page", "post"]), itemId: z.string().min(1), richContent: richNodeSchema, blocks: z.array(structuredBlockSchema).max(200) }),
   upsertFromWriterStudioCommandSchema,
   z.object({ type: z.literal("publishing.remove"), kind: z.enum(["page", "post"]), itemId: z.string().min(1) }),
   z.object({ type: z.literal("publishing.setStatus"), kind: z.enum(["page", "post"]), itemId: z.string().min(1), status: z.enum(["draft", "published"]) }),
@@ -188,7 +198,7 @@ export function applySiteCommand(current: SiteDocument, candidate: unknown): Sit
   const command = siteCommandSchema.parse(candidate);
   let next: SiteDocument;
 
-  if(command.type.startsWith("block.") && "kind" in command && "itemId" in command && findPublishable(current,command.kind as "page"|"post",command.itemId)?.richContent) throw new Error("This page uses the continuous rich text editor. Open the page and edit its content there to preserve formatting.");
+  if (command.type.startsWith("block.") && "kind" in command && "itemId" in command && findPublishable(current, command.kind as "page" | "post", command.itemId)?.richContent) throw new Error("This page uses the continuous rich text editor. Open the page and edit its content there to preserve formatting.");
   switch (command.type) {
     case "voice.replaceText": {
       if (current.revision !== command.expectedRevision) throw new Error("The portfolio changed since the replacement review. Review the matches again before applying.");
@@ -531,6 +541,13 @@ export function applySiteCommand(current: SiteDocument, candidate: unknown): Sit
         if (command.field === "toolThemeMode" && value !== "auto" && value !== "dark" && value !== "light") {
           throw new Error("Theme mode must be auto, dark, or light.");
         }
+        if (
+          command.field === "toolGradientPreset" &&
+          value !== "" &&
+          !(toolGradientPresets as readonly string[]).includes(value)
+        ) {
+          throw new Error("Invalid tool gradient preset.");
+        }
       }
       if (command.field === "caseStudySlug" && typeof value === "string") {
         value = normalizeCaseStudySlug(value);
@@ -538,25 +555,65 @@ export function applySiteCommand(current: SiteDocument, candidate: unknown): Sit
         if (current.content.projects.some((entry) => entry.id !== command.itemId && entry.caseStudySlug === value)) throw new Error("Each case study needs a unique slug.");
       }
       if (JSON.stringify(item[command.field]) === JSON.stringify(value)) return current;
-      next = { ...current, content: { ...current.content, projects: current.content.projects.map((entry) => entry.id === command.itemId ? { ...entry, [command.field]: value, ...(isToolPageField(command.field) ? { toolPageEdits: { schemaVersion: 1 as const, baseline: { [command.field]: item[command.field] ?? null, ...item.toolPageEdits?.baseline } } } : {}) } : entry) }, ...nextRevision(current) };
+      next = {
+        ...current,
+        content: {
+          ...current.content,
+          projects: current.content.projects.map((entry) =>
+            entry.id === command.itemId
+              ? {
+                  ...entry,
+                  [command.field]: value,
+                  ...(isToolPageField(command.field)
+                    ? {
+                        toolPageEdits: {
+                          schemaVersion: 1 as const,
+                          baseline: {
+                            [command.field]: item[command.field] ?? null,
+                            ...item.toolPageEdits?.baseline,
+                          },
+                        },
+                      }
+                    : {}),
+                }
+              : entry,
+          ),
+        },
+        ...nextRevision(current),
+      };
       break;
     }
     case "project.resetPageProperty": {
-      const item = current.content.projects.find(entry => entry.id === command.itemId);
+      const item = current.content.projects.find((entry) => entry.id === command.itemId);
       if (!item) throw new Error("The requested tool does not exist.");
       const baseline = item.toolPageEdits?.baseline;
       if (!baseline || !Object.prototype.hasOwnProperty.call(baseline, command.field)) return current;
       const restored = baseline[command.field];
       const remaining = { ...baseline };
       delete remaining[command.field];
-      next = { ...current, content: { ...current.content, projects: current.content.projects.map(entry => entry.id === item.id ? { ...entry, [command.field]: restored === null ? undefined : restored, toolPageEdits: { schemaVersion: 1 as const, baseline: remaining } } : entry) }, ...nextRevision(current) };
+      next = {
+        ...current,
+        content: {
+          ...current.content,
+          projects: current.content.projects.map((entry) =>
+            entry.id === item.id
+              ? {
+                  ...entry,
+                  [command.field]: restored === null ? undefined : restored,
+                  toolPageEdits: { schemaVersion: 1 as const, baseline: remaining },
+                }
+              : entry,
+          ),
+        },
+        ...nextRevision(current),
+      };
       break;
     }
     case "project.syncCatalogToolVersion": {
       const item = current.content.projects.find((entry) => entry.id === command.itemId);
       if (!item) throw new Error("The requested tool does not exist.");
       const snapshot = {
-        pageProperties: Object.fromEntries(toolPageFields.map(field => [field, item[field] ?? null])),
+        pageProperties: Object.fromEntries(toolPageFields.map((field) => [field, item[field] ?? null])),
         toolPageEdits: item.toolPageEdits,
         ...(item.installedToolVersion ? { version: item.installedToolVersion } : {}),
         title: item.title,
@@ -568,9 +625,14 @@ export function applySiteCommand(current: SiteDocument, candidate: unknown): Sit
         challenge: item.challenge,
         approach: item.approach,
         outcome: item.outcome,
+        ...(item.inputLabel ? { inputLabel: item.inputLabel } : {}),
+        ...(item.secondaryInputLabel ? { secondaryInputLabel: item.secondaryInputLabel } : {}),
         ...(item.customCtaLabel ? { customCtaLabel: item.customCtaLabel } : {}),
         ...(item.toolAccentHex ? { toolAccentHex: item.toolAccentHex } : {}),
+        ...(item.toolSecondaryAccentHex ? { toolSecondaryAccentHex: item.toolSecondaryAccentHex } : {}),
         ...(item.toolBackgroundHex ? { toolBackgroundHex: item.toolBackgroundHex } : {}),
+        ...(item.toolSurfaceHex ? { toolSurfaceHex: item.toolSurfaceHex } : {}),
+        ...(item.toolGradientPreset ? { toolGradientPreset: item.toolGradientPreset as ToolGradientPreset } : {}),
       };
       const updated = {
         ...item,
@@ -616,10 +678,22 @@ export function applySiteCommand(current: SiteDocument, candidate: unknown): Sit
         challenge: snap.challenge,
         approach: snap.approach,
         outcome: snap.outcome,
+        inputLabel: snap.inputLabel,
+        secondaryInputLabel: snap.secondaryInputLabel,
         customCtaLabel: snap.customCtaLabel,
         toolAccentHex: snap.toolAccentHex,
+        toolSecondaryAccentHex: snap.toolSecondaryAccentHex,
         toolBackgroundHex: snap.toolBackgroundHex,
-        ...(snap.pageProperties ? Object.fromEntries(Object.entries(snap.pageProperties).map(([key, value]) => [key, value === null ? undefined : value])) : {}),
+        toolSurfaceHex: snap.toolSurfaceHex,
+        toolGradientPreset: snap.toolGradientPreset,
+        ...(snap.pageProperties
+          ? Object.fromEntries(
+              Object.entries(snap.pageProperties).map(([key, value]) => [
+                key,
+                value === null ? undefined : value,
+              ]),
+            )
+          : {}),
         toolPageEdits: snap.toolPageEdits,
         previousToolSnapshot: undefined,
       };
@@ -710,7 +784,7 @@ export function applySiteCommand(current: SiteDocument, candidate: unknown): Sit
       break;
     }
     case "publishing.setContent":
-      next = {...current, publishing:updatePublishable(current,command.kind,command.itemId,entry=>({...entry,richContent:command.richContent,blocks:command.blocks})),...nextRevision(current)};
+      next = { ...current, publishing: updatePublishable(current, command.kind, command.itemId, (entry) => ({ ...entry, richContent: command.richContent, blocks: command.blocks })), ...nextRevision(current) };
       break;
     case "publishing.upsertFromWriterStudio":
       next = applyUpsertFromWriterStudioCommand(current, command);
