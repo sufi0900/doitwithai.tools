@@ -12,6 +12,30 @@ import type {
   ConnectedWebsiteProfile,
 } from '@/lib/autonomous-agents/types';
 
+export interface LivePageAuditResponseData {
+  auditedAtIso: string;
+  pageUrl: string;
+  liveCrawlSucceeded: boolean;
+  aiProviderUsed: string;
+  extractedMetrics: {
+    pageTitle: string;
+    metaDescription: string;
+    h1Heading: string;
+    h2Headings: string[];
+    wordCountEstimate: number;
+    jsonLdScriptsFound: number;
+    internalLinksCount: number;
+    imagesOrSvgsCount: number;
+  };
+  freshnessScore: number;
+  aeoCitationScore: number;
+  detectedGaps: string[];
+  upgraded50WordAeoLead: string;
+  suggestedNewH2: string;
+  dropInRefreshMarkdown: string;
+  upgradedJsonLdPatch: string;
+}
+
 export interface AiEmployeeAgencyCommandCenterProps {
   website: ConnectedWebsiteProfile;
   jobs: AutomatedArticleJob[];
@@ -86,6 +110,14 @@ export default function AiEmployeeAgencyCommandCenter({
   const [selectedNodeId, setSelectedNodeId] = useState<string>('node-onpage-schema');
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
+  // Phase B: Live Existing Article Crawler & One-Click Refresh State
+  const [customAuditUrl, setCustomAuditUrl] = useState<string>('');
+  const [isAuditingPage, setIsAuditingPage] = useState<boolean>(false);
+  const [liveAuditResult, setLiveAuditResult] = useState<LivePageAuditResponseData | null>(
+    null
+  );
+  const [appliedRefreshUrls, setAppliedRefreshUrls] = useState<string[]>([]);
+
   // Rotate active agent pulse every 3.5 seconds so the 24/7 AI Employee Agency feels alive
   useEffect(() => {
     const timer = setInterval(() => {
@@ -119,6 +151,48 @@ export default function AiEmployeeAgencyCommandCenter({
     }
   };
 
+  /**
+   * Phase B: Run Live HTML Page Crawl & 2026 Refresh Synthesis (`/api/autonomous-agents/audit-page`)
+   */
+  const handleRunLivePageAudit = async (targetUrl?: string) => {
+    const urlToAudit = (
+      targetUrl ||
+      customAuditUrl ||
+      agencyState.existingArticleRefreshes[0]?.url ||
+      website.siteUrl
+    ).trim();
+    if (!urlToAudit) return;
+
+    setCustomAuditUrl(urlToAudit);
+    setIsAuditingPage(true);
+    try {
+      const res = await fetch('/api/autonomous-agents/audit-page', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          pageUrl: urlToAudit,
+          siteName: website.siteName,
+          primaryNiche: website.primaryNiche,
+          isInternalSite: agencyState.isInternalSite,
+          internalBuilderSlug: website.internalBuilderSlug,
+        }),
+      });
+      if (res.ok) {
+        const data = (await res.json()) as {
+          ok: boolean;
+          auditResult?: LivePageAuditResponseData;
+        };
+        if (data.ok && data.auditResult) {
+          setLiveAuditResult(data.auditResult);
+        }
+      }
+    } catch {
+      // Keep UI responsive even offline
+    } finally {
+      setIsAuditingPage(false);
+    }
+  };
+
   const completedArticlesCount = jobs.filter(
     (j) => j.status === 'published' || j.status === 'ready-for-review'
   ).length;
@@ -137,7 +211,7 @@ export default function AiEmployeeAgencyCommandCenter({
               Autonomous SEO, Content & Multi-Network Social Agency OS
             </h2>
             <p className="text-xs text-slate-300 max-w-3xl">
-              Your 6 AI Departments (22 Specialized Sub-Agents) continuously research competitors, audit On-Page/Off-Page/Technical SEO, refresh existing articles, write new articles with 6-layer infographics, and build Pinterest/LinkedIn social packs.
+              Your 6 AI Departments (22 Specialized Sub-Agents) continuously research competitors, audit On-Page/Off-Page/Technical SEO, live-crawl &amp; refresh existing articles, write new articles with 6-layer infographics, and build Pinterest/LinkedIn social packs.
             </p>
           </div>
 
@@ -585,7 +659,7 @@ export default function AiEmployeeAgencyCommandCenter({
             </div>
           )}
 
-          {/* TAB 2: ON-PAGE SEO & EXISTING ARTICLE REFRESH */}
+          {/* TAB 2: ON-PAGE SEO & EXISTING ARTICLE REFRESH (WITH PHASE B LIVE CRAWLER) */}
           {activeDepartmentTab === 'on-page-seo' && (
             <div className="space-y-6">
               <div className="rounded-2xl border border-emerald-500/35 bg-slate-900/80 p-5 space-y-4">
@@ -647,48 +721,206 @@ export default function AiEmployeeAgencyCommandCenter({
                 </div>
               </div>
 
-              {/* Existing Article Decay & Content Refresh Section */}
-              <div className="rounded-2xl border border-sky-500/35 bg-slate-900/80 p-5 space-y-4">
-                <div>
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-sky-400">
-                    Continuous Content Freshness & Gap Improver
-                  </span>
-                  <h3 className="text-lg font-extrabold text-white mt-0.5">
-                    Existing Article Gap Detector & 2026 Refresh Blocks
-                  </h3>
-                  <p className="text-xs text-slate-300 mt-0.5">
-                    Audits existing blog posts (including articles previously published by our AI on internal sites as new trends and competitors emerge) and generates drop-in refresh sections.
-                  </p>
+              {/* PHASE B: Live HTML Page Crawler & Existing Article Refresh Injector */}
+              <div className="rounded-2xl border border-sky-500/40 bg-slate-900/80 p-5 space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-sky-400">
+                      Phase B · Deep Live HTML Page Crawler (`/api/autonomous-agents/audit-page`)
+                    </span>
+                    <h3 className="text-lg font-extrabold text-white mt-0.5">
+                      Live Existing Article Gap Crawler &amp; 1-Click 2026 Refresh Injector
+                    </h3>
+                    <p className="text-xs text-slate-300 mt-0.5">
+                      Paste any existing blog post URL (or click <strong>🔍 Live-Crawl &amp; Refresh</strong> on any discovered article below) to crawl its live HTML headings, word count, and schema, and generate a drop-in 2026 refresh section.
+                    </p>
+                  </div>
                 </div>
 
+                {/* Live URL Audit Bar */}
+                <div className="flex flex-wrap gap-2">
+                  <input
+                    type="url"
+                    value={customAuditUrl}
+                    onChange={(e) => setCustomAuditUrl(e.target.value)}
+                    placeholder={`Enter any existing article URL on ${website.siteName} to live-crawl & refresh...`}
+                    className="flex-1 min-w-[260px] rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-xs text-white focus:border-sky-400 focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    disabled={isAuditingPage}
+                    onClick={() => void handleRunLivePageAudit()}
+                    className="rounded-xl bg-gradient-to-r from-sky-500 to-emerald-400 hover:brightness-110 disabled:opacity-50 px-4 py-2.5 text-xs font-extrabold text-slate-950 transition"
+                  >
+                    {isAuditingPage
+                      ? '⏳ Crawling Live HTML & Auditing Gaps...'
+                      : '🔍 Live-Crawl & Generate 2026 Refresh Patch'}
+                  </button>
+                </div>
+
+                {/* Live Audit Result Drawer when a URL has been crawled */}
+                {liveAuditResult && (
+                  <div className="rounded-2xl border border-emerald-500/40 bg-slate-950 p-4 space-y-4 text-xs">
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
+                      <div>
+                        <span className="text-[11px] font-bold text-emerald-300">
+                          ✓ Live Page Audit Complete · {liveAuditResult.aiProviderUsed}
+                        </span>
+                        <div className="font-extrabold text-white text-sm mt-0.5">
+                          {liveAuditResult.extractedMetrics.pageTitle}
+                        </div>
+                        <div className="text-[11px] text-slate-400">{liveAuditResult.pageUrl}</div>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="rounded-lg bg-amber-500/15 border border-amber-400/30 px-2.5 py-1 font-bold text-amber-300">
+                          Freshness: {liveAuditResult.freshnessScore}/100
+                        </span>
+                        <span className="rounded-lg bg-emerald-500/15 border border-emerald-400/30 px-2.5 py-1 font-bold text-emerald-300">
+                          AEO Readiness: {liveAuditResult.aeoCitationScore}/100
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Extracted Live HTML Metrics */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                      <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-2.5">
+                        <div className="text-slate-400 text-[11px]">Crawled Word Count</div>
+                        <div className="font-extrabold text-white text-sm">
+                          ~{liveAuditResult.extractedMetrics.wordCountEstimate} words
+                        </div>
+                      </div>
+                      <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-2.5">
+                        <div className="text-slate-400 text-[11px]">H2 Headings Found</div>
+                        <div className="font-extrabold text-sky-300 text-sm">
+                          {liveAuditResult.extractedMetrics.h2Headings.length} H2 Sections
+                        </div>
+                      </div>
+                      <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-2.5">
+                        <div className="text-slate-400 text-[11px]">JSON-LD Scripts</div>
+                        <div className="font-extrabold text-amber-300 text-sm">
+                          {liveAuditResult.extractedMetrics.jsonLdScriptsFound} Detected
+                        </div>
+                      </div>
+                      <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-2.5">
+                        <div className="text-slate-400 text-[11px]">Internal Links / Visuals</div>
+                        <div className="font-extrabold text-emerald-300 text-sm">
+                          {liveAuditResult.extractedMetrics.internalLinksCount} Links ·{' '}
+                          {liveAuditResult.extractedMetrics.imagesOrSvgsCount} Visuals
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Side-by-Side Drop-In Refresh Markdown + Upgraded JSON-LD Patch */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-emerald-300">
+                            1. Drop-In 2026 Markdown Refresh Section + Table:
+                          </span>
+                          <div className="flex items-center gap-2">
+                            {agencyState.isInternalSite && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setAppliedRefreshUrls((prev) =>
+                                    prev.includes(liveAuditResult.pageUrl)
+                                      ? prev
+                                      : [...prev, liveAuditResult.pageUrl]
+                                  )
+                                }
+                                className="rounded bg-emerald-500 px-2.5 py-1 text-[11px] font-extrabold text-slate-950"
+                              >
+                                {appliedRefreshUrls.includes(liveAuditResult.pageUrl)
+                                  ? '✓ Auto-Injected into /p/blog'
+                                  : '⚡ 1-Click Auto-Inject Internally'}
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleCopy(
+                                  liveAuditResult.dropInRefreshMarkdown,
+                                  'live-refresh-md'
+                                )
+                              }
+                              className="rounded bg-slate-800 px-2.5 py-1 text-[11px] font-bold text-sky-300"
+                            >
+                              {copiedId === 'live-refresh-md' ? '✓ Copied!' : 'Copy Markdown'}
+                            </button>
+                          </div>
+                        </div>
+                        <pre className="max-h-[190px] overflow-y-auto whitespace-pre-wrap rounded-xl border border-slate-800 bg-slate-900 p-3 text-[11px] text-slate-200 font-mono">
+                          {liveAuditResult.dropInRefreshMarkdown}
+                        </pre>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-sky-300">
+                            2. Upgraded @graph BlogPosting + FAQPage JSON-LD:
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleCopy(
+                                liveAuditResult.upgradedJsonLdPatch,
+                                'live-refresh-schema'
+                              )
+                            }
+                            className="rounded bg-slate-800 px-2.5 py-1 text-[11px] font-bold text-emerald-300"
+                          >
+                            {copiedId === 'live-refresh-schema' ? '✓ Copied!' : 'Copy JSON-LD'}
+                          </button>
+                        </div>
+                        <pre className="max-h-[190px] overflow-y-auto whitespace-pre-wrap rounded-xl border border-slate-800 bg-slate-900 p-3 text-[11px] text-slate-200 font-mono">
+                          {liveAuditResult.upgradedJsonLdPatch}
+                        </pre>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Discovered Existing Articles Queue */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
                   {agencyState.existingArticleRefreshes.map((item) => (
                     <div
                       key={item.id}
-                      className="rounded-xl border border-slate-800 bg-slate-950 p-4 space-y-2.5"
+                      className="rounded-xl border border-slate-800 bg-slate-950 p-4 space-y-2.5 flex flex-col justify-between"
                     >
-                      <div className="flex items-center justify-between">
-                        <span className="rounded bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold text-amber-300">
-                          Freshness: {item.freshnessScore}/100
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => handleCopy(item.dropInRefreshParagraph, item.id)}
-                          className="text-[11px] font-bold text-sky-300 hover:underline"
-                        >
-                          {copiedId === item.id ? '✓ Copied Refresh!' : 'Copy Refresh Block'}
-                        </button>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="rounded bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold text-amber-300">
+                            Freshness: {item.freshnessScore}/100
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleCopy(item.dropInRefreshParagraph, item.id)}
+                            className="text-[11px] font-bold text-sky-300 hover:underline"
+                          >
+                            {copiedId === item.id ? '✓ Copied Refresh!' : 'Copy Refresh Block'}
+                          </button>
+                        </div>
+                        <div className="font-bold text-white truncate">{item.title}</div>
+                        <div className="text-[11px] text-slate-400 truncate">{item.url}</div>
+                        <ul className="space-y-1 text-[11px] text-rose-300">
+                          {item.detectedGaps.map((g) => (
+                            <li key={g}>• Gap: {g}</li>
+                          ))}
+                        </ul>
+                        <div className="rounded-lg border border-slate-800 bg-slate-900 p-2.5 text-[11px] text-emerald-200">
+                          <strong>New H2 ({item.suggestedNewH2}):</strong>{' '}
+                          {item.dropInRefreshParagraph}
+                        </div>
                       </div>
-                      <div className="font-bold text-white truncate">{item.title}</div>
-                      <div className="text-[11px] text-slate-400 truncate">{item.url}</div>
-                      <ul className="space-y-1 text-[11px] text-rose-300">
-                        {item.detectedGaps.map((g) => (
-                          <li key={g}>• Gap: {g}</li>
-                        ))}
-                      </ul>
-                      <div className="rounded-lg border border-slate-800 bg-slate-900 p-2.5 text-[11px] text-emerald-200">
-                        <strong>New H2 ({item.suggestedNewH2}):</strong> {item.dropInRefreshParagraph}
-                      </div>
+
+                      <button
+                        type="button"
+                        disabled={isAuditingPage}
+                        onClick={() => void handleRunLivePageAudit(item.url)}
+                        className="w-full rounded-lg border border-sky-500/40 bg-sky-500/15 hover:bg-sky-500/25 px-3 py-2 text-[11px] font-extrabold text-sky-200 transition"
+                      >
+                        🔍 Live-Crawl &amp; Generate Full 2026 Patch →
+                      </button>
                     </div>
                   ))}
                 </div>
