@@ -355,12 +355,10 @@ const Header = () => {
 
   const isMenuActive = (path?: string) => {
     if (!path) return false;
-    if (path === "/agents") {
+    if (path === "/ai-content-writer") {
       return (
-        usePathName === "/agents" ||
-        usePathName.startsWith("/agents/") ||
-        usePathName === "/do-it-ai" ||
-        usePathName.startsWith("/do-it-ai/")
+        usePathName === "/ai-content-writer" ||
+        usePathName.startsWith("/ai-content-writer/")
       );
     }
     if (path === "/tools") {
@@ -453,7 +451,7 @@ const Header = () => {
                     const isDownloadToolsItem = menuItem.id === 106;
                     const isResourcesItem = menuItem.id === 6;
                     const hasMegaMenu =
-                      isToolsItem || isAgentsItem || isSeoHubItem || isPromptsItem || isResourcesItem;
+                      isToolsItem || isWriterItem || isAgentsItem || isSeoHubItem || isPromptsItem || isResourcesItem;
                     const hasDropdown =
                       hasMegaMenu || Boolean(menuItem.submenu);
 
@@ -469,10 +467,10 @@ const Header = () => {
                             href={menuItem.path}
                             prefetch={true}
                             className={`
-                              relative mb-5 mt-5 flex items-center justify-center rounded-xl border border-transparent px-3 py-2.5 text-sm backdrop-blur-sm transition-all duration-300 ease-in-out lg:mr-0 lg:inline-flex xl:px-3.5
+                              relative mb-5 mt-5 flex items-center justify-center whitespace-nowrap rounded-xl border border-transparent px-3 py-2 text-[13px] backdrop-blur-sm transition-all duration-300 ease-in-out lg:mr-0 lg:inline-flex xl:px-3.5 xl:text-sm
                               ${
                                 active
-                                  ? "scale-105 transform bg-gradient-to-r from-[#5271FF] to-[#4361EE] text-white shadow-lg shadow-[#5271FF]/30"
+                                  ? "scale-[1.03] transform bg-gradient-to-r from-[#5271FF] to-[#4361EE] text-white shadow-lg shadow-[#5271FF]/30"
                                   : "text-gray-700 transition-colors duration-300 ease-in-out hover:bg-gray-100/80 hover:text-[#5271FF] dark:text-gray-200 dark:hover:bg-gray-800/80 dark:hover:text-[#5271FF]"
                               }
                             `}
@@ -540,7 +538,7 @@ const Header = () => {
                           <button
                             type="button"
                             onClick={() => handleSubmenu(index)}
-                            className="mb-5 mt-5 flex cursor-pointer items-center justify-between rounded-xl px-3 py-2.5 text-sm font-semibold text-gray-700 transition-all duration-300 ease-in-out hover:bg-gray-100 group-hover:text-[#5271FF] dark:text-gray-200 dark:hover:bg-gray-800/70 dark:group-hover:text-[#5271FF] lg:inline-flex xl:px-3.5"
+                            className="mb-5 mt-5 flex cursor-pointer items-center justify-between whitespace-nowrap rounded-xl px-3 py-2 text-[13px] font-semibold text-gray-700 transition-all duration-300 ease-in-out hover:bg-gray-100 group-hover:text-[#5271FF] dark:text-gray-200 dark:hover:bg-gray-800/70 dark:group-hover:text-[#5271FF] lg:inline-flex xl:px-3.5 xl:text-sm"
                           >
                             <span className="relative z-10">
                               {menuItem.title}
@@ -681,6 +679,74 @@ const Header = () => {
                                       </div>
                                     </Link>
                                   ))}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* MEGA-MENU 2B: AI Content Writer Studio + Autonomous Agents OS */}
+                        {isWriterItem && (
+                          <div className="invisible absolute left-4 right-4 top-full z-50 mx-auto max-w-[920px] pt-2 opacity-0 transition-all duration-200 group-hover:visible group-hover:opacity-100">
+                            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-[0_28px_70px_-15px_rgba(15,23,42,0.28)] dark:border-slate-700/90 dark:bg-[#0D1527] dark:shadow-[0_28px_70px_-15px_rgba(0,0,0,0.75)]">
+                              <div className="grid grid-cols-12 gap-5">
+                                <Link
+                                  href="/ai-content-writer/automation"
+                                  className="col-span-6 flex flex-col justify-between rounded-2xl border border-emerald-500/35 bg-gradient-to-br from-emerald-500/10 via-sky-500/10 to-transparent p-5 transition hover:border-emerald-400 hover:shadow-md dark:border-emerald-500/35 dark:from-emerald-950/40 dark:to-slate-900"
+                                >
+                                  <div>
+                                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
+                                      ⚡ Phases 1–6 Live · 0-Auth LocalStorage
+                                    </span>
+                                    <p className="mt-3 text-base font-extrabold text-slate-900 dark:text-white">
+                                      Autonomous Agent &amp; Social OS
+                                    </p>
+                                    <p className="mt-1.5 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+                                      12 AI Agents: Sitemap &amp; Trends Scout, BYOK Gemini/Groq Article + 6-Layer Visual Runner, Arcads 5-Hook Social Matrix, Pinterest 2:3 &amp; LinkedIn 8-Slide Deck Exporter, Dual Publisher &amp; Winner-Clone Loop.
+                                    </p>
+                                  </div>
+                                  <span className="mt-4 inline-flex items-center gap-1.5 text-xs font-extrabold text-emerald-700 dark:text-emerald-300">
+                                    Open Automation Dashboard (/ai-content-writer/automation)
+                                    <ArrowRight size={13} />
+                                  </span>
+                                </Link>
+
+                                <div className="col-span-6 flex flex-col justify-between space-y-2.5">
+                                  <Link
+                                    href="/ai-content-writer"
+                                    className="block rounded-2xl border border-slate-200/80 bg-slate-50/70 p-3.5 transition hover:border-[#5271FF]/50 hover:bg-white dark:border-slate-800 dark:bg-slate-900/60 dark:hover:bg-slate-900"
+                                  >
+                                    <div className="flex items-center justify-between text-xs font-extrabold text-slate-900 dark:text-white">
+                                      <span>AI Content Writer Studio</span>
+                                      <ArrowRight size={13} className="text-[#5271FF]" />
+                                    </div>
+                                    <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                                      Guided article drafting, rich-text editor, inline infographics, SERP simulator &amp; Publishing Kit.
+                                    </p>
+                                  </Link>
+
+                                  <Link
+                                    href="/agents"
+                                    className="block rounded-2xl border border-slate-200/80 bg-slate-50/70 p-3.5 transition hover:border-[#5271FF]/50 hover:bg-white dark:border-slate-800 dark:bg-slate-900/60 dark:hover:bg-slate-900"
+                                  >
+                                    <div className="flex items-center justify-between text-xs font-extrabold text-slate-900 dark:text-white">
+                                      <span>10 Specialized AI Agents &amp; Do It AI</span>
+                                      <ArrowRight size={13} className="text-[#5271FF]" />
+                                    </div>
+                                    <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                                      Multi-step SEO repair, GEO citation auditing, SERP gap &amp; omni-channel distribution agents.
+                                    </p>
+                                  </Link>
+
+                                  <Link
+                                    href="/founder-hub/autonomous-agents"
+                                    className="block rounded-2xl border border-slate-200/80 bg-slate-50/70 p-3.5 transition hover:border-[#5271FF]/50 hover:bg-white dark:border-slate-800 dark:bg-slate-900/60 dark:hover:bg-slate-900"
+                                  >
+                                    <div className="flex items-center justify-between text-xs font-extrabold text-slate-900 dark:text-white">
+                                      <span>6-Phase Blueprint &amp; Specs Tracker</span>
+                                      <ArrowRight size={13} className="text-[#5271FF]" />
+                                    </div>
+                                  </Link>
                                 </div>
                               </div>
                             </div>
@@ -966,6 +1032,12 @@ const Header = () => {
                                       › Keyword Tools Review
                                     </Link>
                                     <Link
+                                      href="/prompts"
+                                      className="rounded-xl px-3 py-2 text-xs font-bold text-amber-600 transition hover:bg-amber-500/10 dark:text-amber-300 dark:hover:bg-slate-800"
+                                    >
+                                      › 650+ AI SEO Prompts
+                                    </Link>
+                                    <Link
                                       href="/blogs"
                                       className="rounded-xl px-3 py-2 text-xs font-bold text-[#5271FF] transition hover:bg-[#5271FF]/10 dark:text-[#9aabff] dark:hover:bg-slate-800"
                                     >
@@ -1163,18 +1235,44 @@ const Header = () => {
                                   </p>
                                   <div className="mt-3 space-y-2.5">
                                     <Link
-                                      href="/what-our-ai-tool-can-do"
+                                      href="/ai-content-writer/automation"
+                                      className="block rounded-xl border border-sky-500/35 bg-sky-500/[0.08] p-3 transition hover:border-sky-400 hover:shadow-sm dark:border-sky-500/40 dark:bg-sky-950/25"
+                                    >
+                                      <div className="flex items-center justify-between text-xs font-bold text-sky-700 dark:text-sky-300">
+                                        <span>Autonomous Agents &amp; Social OS</span>
+                                        <ArrowRight size={13} />
+                                      </div>
+                                      <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                                        All 6 Phases: Sitemap Scout, BYOK Batch Writer, Pinterest 2:3 Pins &amp; Winner Loop.
+                                      </p>
+                                    </Link>
+
+                                    <Link
+                                      href="/agents"
                                       className="block rounded-xl border border-slate-200/80 bg-white p-3 transition hover:border-[#5271FF]/50 hover:shadow-sm dark:border-slate-700/80 dark:bg-slate-900"
                                     >
                                       <div className="flex items-center justify-between text-xs font-bold text-slate-900 dark:text-white">
-                                        <span>What Our AI Tool Can Do</span>
+                                        <span>10 Specialized AI Agents &amp; Workspace</span>
                                         <ArrowRight
                                           size={13}
                                           className="text-[#5271FF]"
                                         />
                                       </div>
                                       <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
-                                        Detailed comparison: generic chatbots vs. our 90+ algorithmic SEO engines.
+                                        Autonomous SEO, AEO, GEO &amp; Content Gap Agents + Do It AI chat.
+                                      </p>
+                                    </Link>
+
+                                    <Link
+                                      href="/prompts"
+                                      className="block rounded-xl border border-amber-500/30 bg-amber-500/[0.06] p-3 transition hover:border-amber-400 hover:shadow-sm dark:border-amber-500/35 dark:bg-amber-950/20"
+                                    >
+                                      <div className="flex items-center justify-between text-xs font-bold text-amber-700 dark:text-amber-300">
+                                        <span>650+ Curated SEO Prompt Library</span>
+                                        <ArrowRight size={13} />
+                                      </div>
+                                      <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                                        Structured AEO, GEO, Keyword Research &amp; On-Page SEO prompts.
                                       </p>
                                     </Link>
 

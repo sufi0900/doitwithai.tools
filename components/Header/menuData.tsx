@@ -26,21 +26,9 @@ const menuData: Menu[] = [
     newTab: false,
   },
   {
-    id: 107,
-    title: "AI Agents",
-    path: "/agents",
-    newTab: false,
-  },
-  {
     id: 2,
     title: "SEO Hub",
     path: "/ai-seo",
-    newTab: false,
-  },
-  {
-    id: 102,
-    title: "Prompts",
-    path: "/prompts",
     newTab: false,
   },
   {
@@ -48,6 +36,30 @@ const menuData: Menu[] = [
     title: "Resources",
     newTab: false,
     submenu: [
+      {
+        id: 113,
+        title: "Autonomous Agents & Social OS",
+        path: "/ai-content-writer/automation",
+        newTab: false,
+      },
+      {
+        id: 107,
+        title: "10 Specialized AI Agents",
+        path: "/agents",
+        newTab: false,
+      },
+      {
+        id: 114,
+        title: "Do It AI Command Workspace",
+        path: "/do-it-ai",
+        newTab: false,
+      },
+      {
+        id: 102,
+        title: "650+ SEO Prompt Packs",
+        path: "/prompts",
+        newTab: false,
+      },
       {
         id: 110,
         title: "What Our AI Tool Can Do",
