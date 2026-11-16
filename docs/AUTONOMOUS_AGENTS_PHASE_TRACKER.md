@@ -8,6 +8,21 @@
 >
 > **Founder Hub Spec Route**: `/founder-hub/autonomous-agents`
 
+## Universal Navigation & 1-Click Testing Rule (Mandatory Across All Sprints)
+
+To ensure the Founder can test every newly built route or tool in **1 click** without ever typing URLs manually—and without breaking the single-row desktop header layout—all developers and AI agents MUST enforce these two rules:
+
+1. **Strict 6-Item Single-Row Navbar Cap (`components/Header/menuData.tsx` & `components/Header/index.tsx`)**:
+   * Top-level header navigation MUST NEVER exceed **6 top-level labels** (`Home`, `Tools`, `AI Content Writer`, `AI Website Builder`, `SEO Hub`, `Resources`). Never add a 7th top-level navbar item that could wrap the header onto two lines.
+2. **`Resources` Dropdown Front-of-Menu Testing Hub**:
+   * Whenever ANY new route, studio, or feature is created for testing, a highlighted **1-Click Testing Link** MUST be placed at the **very top of the `Resources` dropdown** (under a dedicated **"New & Testing Routes (1-Click Launch)"** header section) before all standard resource links.
+   * Currently pinned 1-click testing routes at the top of `Resources`:
+     * **Autonomous Agent OS (Phases 1–6 Studio)** → `/ai-content-writer/automation`
+     * **Founder Hub: 12-Agent Blueprint & Spec** → `/founder-hub/autonomous-agents`
+     * **6-Layer Blog Infographic Studio (`Prism Forge`)** → `/tools/blog-section-infographic-generator`
+     * **AI Content Writer Master Studio** → `/ai-content-writer`
+     * **AI Website Builder Studio** → `/ai-website-builder`
+
 ## Executive Overview & Current Progress Matrix
 
 The **2027 Autonomous Content, Visual & Social Agent Operating System** is structured into **6 sequential implementation phases** plus the **Progressive 1-Tap OAuth & Downloadable Pack Fallback Architecture (Phase 5B)**:
@@ -19,21 +34,12 @@ The **2027 Autonomous Content, Visual & Social Agent Operating System** is struc
 | **Phase 3** | **Free-Tier BYOK Multi-Agent Article & 6-Layer Visual Batch Runner** | **COMPLETED** | [`lib/autonomous-agents/byok-batch-runner.ts`](https://github.com/sufi0900/doitwithai.tools/blob/codex/infographic-studio-redesign/lib/autonomous-agents/byok-batch-runner.ts), [`features/autonomous-campaign-studio/AutonomousCampaignDashboard.tsx`](https://github.com/sufi0900/doitwithai.tools/blob/codex/infographic-studio-redesign/features/autonomous-campaign-studio/AutonomousCampaignDashboard.tsx) | `npx tsx --test tests/ai-tools/autonomous-agents-phase3.test.ts` |
 | **Phase 4** | **Arcads 5-Hook Social Atomizer, Pinterest 2:3 Pin Batch Exporter & LinkedIn PDF Carousel** | **COMPLETED** | [`lib/autonomous-agents/pinterest-carousel-exporter.ts`](https://github.com/sufi0900/doitwithai.tools/blob/codex/infographic-studio-redesign/lib/autonomous-agents/pinterest-carousel-exporter.ts), [`tests/ai-tools/autonomous-agents-phase4.test.ts`](https://github.com/sufi0900/doitwithai.tools/blob/codex/infographic-studio-redesign/tests/ai-tools/autonomous-agents-phase4.test.ts) | `npx tsx --test tests/ai-tools/autonomous-agents-phase4.test.ts` |
 | **Phase 5** | **Dual-Destination Auto-Publisher (Internal `/p/[slug]/blog` + External WordPress REST API & Social Connectors)** | **COMPLETED** | [`lib/autonomous-agents/publishers/internal-site-publisher.ts`](https://github.com/sufi0900/doitwithai.tools/blob/codex/infographic-studio-redesign/lib/autonomous-agents/publishers/internal-site-publisher.ts), [`lib/autonomous-agents/publishers/external-cms-publisher.ts`](https://github.com/sufi0900/doitwithai.tools/blob/codex/infographic-studio-redesign/lib/autonomous-agents/publishers/external-cms-publisher.ts), [`app/api/autonomous-agents/publish/route.ts`](https://github.com/sufi0900/doitwithai.tools/blob/codex/infographic-studio-redesign/app/api/autonomous-agents/publish/route.ts) | `npx tsx --test tests/ai-tools/autonomous-agents-phase5.test.ts` |
-| **Phase 5B** | **Progressive 1-Tap OAuth Sign-In + Automatic Downloadable Asset Pack Fallback** | **COMPLETED** | `lib/autonomous-agents/social-oauth-registry.ts`, `app/api/autonomous-agents/oauth/status/route.ts`, `app/api/autonomous-agents/oauth/[provider]/route.ts`, `tests/ai-tools/autonomous-agents-oauth-fallback.test.ts` | `npx tsx --test tests/ai-tools/autonomous-agents-oauth-fallback.test.ts` |
+| **Phase 5B** | **Progressive 1-Tap OAuth Sign-In + Automatic Downloadable Asset Pack Fallback** | **COMPLETED** | [`lib/autonomous-agents/social-oauth-registry.ts`](https://github.com/sufi0900/doitwithai.tools/blob/codex/infographic-studio-redesign/lib/autonomous-agents/social-oauth-registry.ts), [`app/api/autonomous-agents/oauth/status/route.ts`](https://github.com/sufi0900/doitwithai.tools/blob/codex/infographic-studio-redesign/app/api/autonomous-agents/oauth/status/route.ts), [`app/api/autonomous-agents/oauth/[provider]/route.ts`](https://github.com/sufi0900/doitwithai.tools/blob/codex/infographic-studio-redesign/app/api/autonomous-agents/oauth/%5Bprovider%5D/route.ts), [`tests/ai-tools/autonomous-agents-oauth-fallback.test.ts`](https://github.com/sufi0900/doitwithai.tools/blob/codex/infographic-studio-redesign/tests/ai-tools/autonomous-agents-oauth-fallback.test.ts) | `npx tsx --test tests/ai-tools/autonomous-agents-oauth-fallback.test.ts` |
 | **Phase 6** | **Closed-Loop Analytics, Winner-Clone Feedback & Optional Cloud Sync (Supabase + Inngest)** | **COMPLETED** | [`lib/autonomous-agents/winner-clone-loop.ts`](https://github.com/sufi0900/doitwithai.tools/blob/codex/infographic-studio-redesign/lib/autonomous-agents/winner-clone-loop.ts), [`inngest/autonomous-campaign.ts`](https://github.com/sufi0900/doitwithai.tools/blob/codex/infographic-studio-redesign/inngest/autonomous-campaign.ts), [`tests/ai-tools/autonomous-agents-phase6.test.ts`](https://github.com/sufi0900/doitwithai.tools/blob/codex/infographic-studio-redesign/tests/ai-tools/autonomous-agents-phase6.test.ts) | `npx tsx --test tests/ai-tools/autonomous-agents-phase6.test.ts` |
 
 ## Locked-In Social Media Connection Architecture: Progressive 1-Tap OAuth + Manual Downloadable Fallback
 
-To guarantee a frictionless user experience where **end-users never have to create developer accounts, `Client ID`s, or `Client Secret`s**, the platform enforces a **Progressive 1-Tap OAuth + Automatic Downloadable Pack Fallback Matrix** (`lib/autonomous-agents/social-oauth-registry.ts`):
-
-### Core Rules
-1. **Zero Developer Setup for End-Users**:
-   * Users never paste social API keys or developer credentials. When a social network is enabled on `doitwithai.tools`, the user simply clicks **"Sign In with 1 Tap"** (standard OAuth 2.0 flow) just like [Buffer](https://buffer.com/).
-2. **Progressive Platform Rollout (`detectConfiguredPlatformOAuthProviders`)**:
-   * The backend checks which official platform OAuth credentials are active in Vercel environment variables (`LINKEDIN_CLIENT_ID` / `LINKEDIN_CLIENT_SECRET` via [LinkedIn Share on LinkedIn](https://learn.microsoft.com/en-us/linkedin/consumer/integrations/self-serve/share-on-linkedin), `PINTEREST_APP_ID` / `PINTEREST_APP_SECRET` via [Pinterest API v5](https://developers.pinterest.com/docs/api/v5/introduction/?), `X_CLIENT_ID`, `META_INSTAGRAM_APP_ID`, etc.).
-   * Only platforms whose official API keys are active display an enabled **1-Tap Sign-In & Connect** button. As new platform API approvals arrive, adding the key pair to Vercel automatically unlocks 1-tap login for that network with zero code changes.
-
-### The 3 Execution Scenarios (Per-Channel Hybrid Routing)
+To guarantee a frictionless user experience where **end-users never have to create developer accounts, `Client ID`s, or `Client Secret`s**, the platform enforces a **Progressive 1-Tap OAuth + Automatic Downloadable Pack Fallback Matrix** ([`lib/autonomous-agents/social-oauth-registry.ts`](https://github.com/sufi0900/doitwithai.tools/blob/codex/infographic-studio-redesign/lib/autonomous-agents/social-oauth-registry.ts)):
 
 | Scenario | Platform API Key on Server | User 1-Tap Sign-In Status | Exact System Behavior (`executeHybridSocialDeliveryForJob`) |
 | :--- | :--- | :--- | :--- |
