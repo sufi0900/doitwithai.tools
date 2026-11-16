@@ -223,7 +223,20 @@ export function buildSectionVisual(
   const rawHeadings = useSubheadings ? subHeadings : primaryHeadings;
   let headings = rawHeadings;
   // When a section has > 6 headings (e.g. Phase 1..7 + child H4s), prioritize major H3/numbered headings
-  if (!useSubheadings && rawHeadings.length > 6) {
+  const sequenceGroups = new Map<string, string[]>();
+  for (const heading of rawHeadings) {
+    const match = heading.match(/^(step|phase|stage)\s+(\d+)\b/i);
+    if (!match) continue;
+    const key = match[1].toLowerCase();
+    const group = sequenceGroups.get(key) || [];
+    // Only prefer a complete consecutive sequence beginning at one.
+    if (Number(match[2]) === group.length + 1) group.push(heading);
+    sequenceGroups.set(key, group);
+  }
+  const sequence = [...sequenceGroups.values()].sort((a, b) => b.length - a.length)[0];
+  if (sequence && sequence.length >= 2 && /workflow|process|steps?|phases?|stages?|action plan/i.test(section.title)) {
+    headings = sequence;
+  } else if (!useSubheadings && rawHeadings.length > 6) {
     const phaseHeadings = rawHeadings.filter((h) =>
       /^(?:phase|step|pillar|stage|myth|mistake|\d+[.):])\s*/i.test(h),
     );
@@ -254,7 +267,7 @@ export function buildSectionVisual(
   if (overviewList.length >= 2 && overviewList.length <= 6) {
     groups = overviewList.map((b) => ({ blocks: [b] }));
   } else if (headings.length >= 2) {
-    if (headings.length < rawHeadings.length) {
+    if (headings !== sequence && headings.length < rawHeadings.length) {
       // Fold child heading blocks into the most recent prioritized parent heading
       const selectedSet = new Set(headings);
       const bucketMap = new Map<string, ArticleSourceBlock[]>(
@@ -309,9 +322,8 @@ export function buildSectionVisual(
       const nonFragmentCandidates = allCandidates.filter(
         (x) => !isRhetoricalOrFragmentSentence(x.sentence),
       );
-      const candidates = nonFragmentCandidates.length
-        ? nonFragmentCandidates
-        : allCandidates;
+      const candidates = nonFragmentCandidates;
+      if (!candidates.length) return null;
 
       const provisionalHeading = group.title || "";
       const headingWords = new Set(
@@ -353,7 +365,7 @@ export function buildSectionVisual(
           : candidates.filter((c) => !/[:;]$/.test(c.sentence))
       ).slice(0, 1);
 
-      if (!chosen.length && /[:;]$/.test(text)) return null;
+      if (!chosen.length) return null;
       const primarySentence = chosen[0]?.sentence || text;
       const derived = deriveStandaloneConcept(
         chosen[0]?.block.text || text,
