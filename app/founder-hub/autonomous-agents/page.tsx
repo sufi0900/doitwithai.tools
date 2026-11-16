@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import Link from 'next/link';
 import { AUTONOMOUS_AGENT_ROLES } from '@/lib/autonomous-agents/agent-roles';
-import { SIX_IMPLEMENTATION_PHASES } from '@/features/autonomous-campaign-studio/AutonomousCampaignDashboard';
+import { SIX_IMPLEMENTATION_PHASES } from '@/lib/autonomous-agents/phases-roadmap';
 
 export const dynamic = 'force-static';
 
@@ -32,7 +32,7 @@ export default function FounderHubAutonomousAgentsPage() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <span className="inline-flex items-center gap-2 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-3 py-1 text-xs font-bold text-emerald-300">
-                Phase 1 Live in Repository · 6-Phase Master Blueprint
+                All 6 Phases Completed &amp; Verified in Repository · 6-Phase Master Blueprint
               </span>
               <h1 className="mt-2 text-2xl font-bold text-white">
                 2027 Autonomous Content, Visual & Social Agent Operating System
@@ -52,7 +52,7 @@ export default function FounderHubAutonomousAgentsPage() {
                 href="/ai-content-writer/automation"
                 className="rounded-xl bg-sky-500 px-4 py-2 text-xs font-bold text-slate-950 hover:bg-sky-400 transition"
               >
-                Open Live Phase 1 Automation Studio →
+                Open Live 6-Phase Automation Studio →
               </Link>
             </div>
           </div>

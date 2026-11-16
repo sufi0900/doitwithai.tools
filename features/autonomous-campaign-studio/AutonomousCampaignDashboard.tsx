@@ -18,11 +18,31 @@ import {
   type WebsiteScoutReport,
 } from '@/lib/autonomous-agents/sitemap-trend-scout';
 import { renderPinterestPinPreviewSvg } from '@/lib/autonomous-agents/pin-svg-preview';
+import {
+  compileJobArticleMarkdown,
+  renderSectionInfographicSvg,
+  runByokJobWithCheckpoints,
+} from '@/lib/autonomous-agents/byok-batch-runner';
+import {
+  buildCompleteJobExportBundle,
+  buildLinkedinCarouselHtmlDeck,
+  buildPinterestBulkCsvSchedule,
+} from '@/lib/autonomous-agents/pinterest-carousel-exporter';
+import { publishJobToInternalWebsiteStore } from '@/lib/autonomous-agents/publishers/internal-site-publisher';
+import { dispatchExternalCmsAndSocialPublish } from '@/lib/autonomous-agents/publishers/external-cms-publisher';
+import {
+  evaluateCampaignWinnerCandidates,
+  exportStudioStateForCloudSync,
+  importStudioStateFromCloudSync,
+  runWinnerCloneAutoOptimizer,
+} from '@/lib/autonomous-agents/winner-clone-loop';
 import type {
   AutomatedArticleJob,
   AutonomousCampaign,
   AutonomousStudioStoreState,
   ConnectedWebsiteProfile,
+  PinterestPinCandidate,
+  SocialChannelConnection,
   WebsitePublishingMode,
 } from '@/lib/autonomous-agents/types';
 
@@ -33,96 +53,9 @@ type StudioTab =
   | 'connectors-byok'
   | 'phase-roadmap';
 
-export const SIX_IMPLEMENTATION_PHASES = [
-  {
-    phaseNumber: 1,
-    title: 'Phase 1: 12 Agent Roles, Contracts, Universal Visual Rules & No-Auth LocalStorage Sandbox',
-    status: 'completed' as const,
-    summary:
-      'Complete 12-agent registry, deterministic Low-KD Topic Radar, Arcads 5-hook social matrix, 3x 1000x1500 (2:3) Pinterest Pin SVG engine, and 100% browser localStorage persistence (`doitwithai_autonomous_studio_v1`) with zero compulsory sign-in.',
-    deliverables: [
-      'lib/autonomous-agents/types.ts & lib/autonomous-agents/agent-roles.ts',
-      'lib/autonomous-agents/arcads-social-engine.ts & lib/autonomous-agents/pin-svg-preview.ts',
-      'lib/autonomous-agents/local-storage-store.ts (No-Auth LocalStorage State Machine)',
-      'features/autonomous-campaign-studio/AutonomousCampaignDashboard.tsx & /ai-content-writer/automation',
-    ],
-    verificationCommand: 'npx tsx --test tests/ai-tools/autonomous-agents-phase1.test.ts',
-    handoffPromptForNextAi:
-      'Phase 1 is complete in lib/autonomous-agents/* and features/autonomous-campaign-studio/*.',
-  },
-  {
-    phaseNumber: 2,
-    title: 'Phase 2: Live Sitemap Crawler, Google Trends RSS & Low-KD Topical Map Engine',
-    status: 'completed' as const,
-    summary:
-      'Server-side sitemap.xml parser, HTML Brand DNA extractor, Google Trends Public RSS feed ingestion, and Google Autocomplete question expander with Jaccard anti-cannibalization deduplication.',
-    deliverables: [
-      'lib/autonomous-agents/sitemap-trend-scout.ts',
-      'app/api/autonomous-agents/scout/route.ts',
-      'tests/ai-tools/autonomous-agents-phase2.test.ts',
-    ],
-    verificationCommand: 'npx tsx --test tests/ai-tools/autonomous-agents-phase2.test.ts',
-    handoffPromptForNextAi:
-      'Phase 2 is complete in lib/autonomous-agents/sitemap-trend-scout.ts and app/api/autonomous-agents/scout/route.ts. Proceed to Phase 3 in docs/AUTONOMOUS_AGENTS_PHASE_TRACKER.md.',
-  },
-  {
-    phaseNumber: 3,
-    title: 'Phase 3: Free-Tier BYOK Multi-Agent Article & 6-Layer Visual Batch Runner',
-    status: 'ready' as const,
-    summary:
-      'Client-side BYOK execution for Gemini 2.5 Flash & Groq Llama 3.3 70B with automatic RPM cooldown pacing and 0-token 6-layer SVG section infographic embedding.',
-    deliverables: [
-      'lib/autonomous-agents/byok-batch-runner.ts',
-      'tests/ai-tools/autonomous-agents-phase3.test.ts',
-    ],
-    verificationCommand: 'npx tsx --test tests/ai-tools/autonomous-agents-phase3.test.ts',
-    handoffPromptForNextAi:
-      'Read docs/AUTONOMOUS_AGENTS_PHASE_TRACKER.md and lib/autonomous-agents/agent-roles.ts. Implement Phase 3 (Free-Tier BYOK Multi-Agent Article & 6-Layer Visual Batch Runner) in lib/autonomous-agents/byok-batch-runner.ts.',
-  },
-  {
-    phaseNumber: 4,
-    title: 'Phase 4: Arcads 5-Hook Social Atomizer, Pinterest 2:3 PNG Exporter & LinkedIn PDF Deck',
-    status: 'ready' as const,
-    summary:
-      'Batch rasterizer exporting 3x 1000x1500 Pinterest PNGs, 8-slide 1080x1350 LinkedIn PDF carousels, and Buffer/Pinterest bulk CSV schedules.',
-    deliverables: [
-      'lib/autonomous-agents/pinterest-carousel-exporter.ts',
-      'tests/ai-tools/autonomous-agents-phase4.test.ts',
-    ],
-    verificationCommand: 'npx tsx --test tests/ai-tools/autonomous-agents-phase4.test.ts',
-    handoffPromptForNextAi:
-      'Read docs/AUTONOMOUS_AGENTS_PHASE_TRACKER.md and lib/autonomous-agents/arcads-social-engine.ts. Implement Phase 4 (Pinterest 2:3 PNG Batch Exporter & LinkedIn PDF Carousel) in lib/autonomous-agents/pinterest-carousel-exporter.ts.',
-  },
-  {
-    phaseNumber: 5,
-    title: 'Phase 5: Dual-Destination Auto-Publisher (Internal /p/[slug]/blog + External WP/Buffer MCP)',
-    status: 'ready' as const,
-    summary:
-      'Direct publishing into DoItWithAI Website Builder sites (/p/[slug]/blog) and external WordPress REST API v2 Application Passwords + Buffer MCP / Pinterest API v5.',
-    deliverables: [
-      'lib/autonomous-agents/publishers/internal-site-publisher.ts',
-      'app/api/autonomous-agents/publish/route.ts',
-      'tests/ai-tools/autonomous-agents-phase5.test.ts',
-    ],
-    verificationCommand: 'npx tsx --test tests/ai-tools/autonomous-agents-phase5.test.ts',
-    handoffPromptForNextAi:
-      'Read docs/AUTONOMOUS_AGENTS_PHASE_TRACKER.md and lib/autonomous-agents/types.ts. Implement Phase 5 (Dual-Destination Auto-Publisher for Internal /p/[slug]/blog and External WordPress REST API / Buffer MCP).',
-  },
-  {
-    phaseNumber: 6,
-    title: 'Phase 6: Closed-Loop Analytics, Winner-Clone Feedback & Optional Cloud Sync',
-    status: 'ready' as const,
-    summary:
-      'Automated Winner-Clone weighting for future 5–15 post batches plus optional 1-click migration from browser localStorage to Supabase + Inngest durable cron queues.',
-    deliverables: [
-      'lib/autonomous-agents/winner-clone-loop.ts',
-      'tests/ai-tools/autonomous-agents-phase6.test.ts',
-    ],
-    verificationCommand: 'npx tsx --test tests/ai-tools/autonomous-agents-phase6.test.ts',
-    handoffPromptForNextAi:
-      'Read docs/AUTONOMOUS_AGENTS_PHASE_TRACKER.md and lib/autonomous-agents/local-storage-store.ts. Implement Phase 6 (Winner-Clone Loop & Optional Cloud Sync).',
-  },
-];
+import {
+  SIX_IMPLEMENTATION_PHASES,
+} from '@/lib/autonomous-agents/phases-roadmap';
 
 export default function AutonomousCampaignDashboard() {
   const [studioState, setStudioState] = useState<AutonomousStudioStoreState | null>(null);
@@ -156,6 +89,11 @@ export default function AutonomousCampaignDashboard() {
   );
   const [newCampaignCount, setNewCampaignCount] = useState<number>(5);
   const [isScoutingLive, setIsScoutingLive] = useState<boolean>(false);
+  const [isRunningByokJob, setIsRunningByokJob] = useState<boolean>(false);
+  const [isPublishingJob, setIsPublishingJob] = useState<boolean>(false);
+  const [selectedSectionIdx, setSelectedSectionIdx] = useState<number>(0);
+  const [statusMessage, setStatusMessage] = useState<string>('');
+  const [cloudSyncInput, setCloudSyncInput] = useState<string>('');
   const [latestScoutReport, setLatestScoutReport] = useState<WebsiteScoutReport | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
@@ -228,6 +166,239 @@ export default function AutonomousCampaignDashboard() {
       navigator.clipboard.writeText(text);
       setCopiedId(id);
       setTimeout(() => setCopiedId(null), 2000);
+    }
+  };
+
+  const downloadTextFile = (filename: string, content: string, mimeType: string) => {
+    if (typeof window === 'undefined') return;
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const selectedSectionSvg = useMemo(() => {
+    if (!selectedJob) return '';
+    if (selectedJob.sectionInfographicSvgs?.[selectedSectionIdx]) {
+      return selectedJob.sectionInfographicSvgs[selectedSectionIdx];
+    }
+    const sec =
+      selectedJob.outlineSections[selectedSectionIdx] || selectedJob.outlineSections[0];
+    if (!sec) return '';
+    return renderSectionInfographicSvg(sec, {
+      sectionIndex: selectedSectionIdx,
+      totalSections: selectedJob.outlineSections.length,
+      brandName: activeWebsite?.siteName || 'DoItWithAI.tools',
+      brandPrimaryHex: activeWebsite?.brandPrimaryHex || '#38BDF8',
+      brandSecondaryHex: activeWebsite?.brandSecondaryHex || '#10B981',
+    });
+  }, [selectedJob, selectedSectionIdx, activeWebsite]);
+
+  const winnerEvaluations = useMemo(() => {
+    if (!activeCampaign) return [];
+    return evaluateCampaignWinnerCandidates(activeCampaign);
+  }, [activeCampaign]);
+
+  const handleRunByokJob = async (jobId: string) => {
+    if (!studioState || !activeCampaign) return;
+    setIsRunningByokJob(true);
+    setStatusMessage('Phase 3 BYOK + 6-Layer Visual Runner executing section checkpoints...');
+    try {
+      const res = await runByokJobWithCheckpoints({
+        state: studioState,
+        campaignId: activeCampaign.id,
+        jobId,
+        skipCooldownInTests: true,
+        onCheckpoint: (nextState) => {
+          setStudioState(nextState);
+        },
+      });
+      setStudioState(res.state);
+      setStatusMessage(
+        `Phase 3 Complete (${res.providerUsed}): Compiled Markdown + ${res.sectionInfographicSvgs.length}× 1080×1350 Section Infographics.`
+      );
+    } finally {
+      setIsRunningByokJob(false);
+    }
+  };
+
+  const handlePublishSelectedJob = async () => {
+    if (!studioState || !activeCampaign || !selectedJob || !activeWebsite) return;
+    setIsPublishingJob(true);
+    setStatusMessage('Dispatching Phase 5 Dual-Destination Publisher...');
+    const nowIso = new Date().toISOString();
+
+    try {
+      let targetUrl = selectedJob.publishedUrl || '';
+      let effectiveStatus: 'published' | 'draft' | 'staged' = 'staged';
+      let socialCount = 0;
+      let summaryMsg = '';
+
+      if (activeWebsite.publishingMode === 'internal-doitwithai-site') {
+        const res = publishJobToInternalWebsiteStore({
+          job: selectedJob,
+          website: activeWebsite,
+        });
+        targetUrl = res.targetUrl;
+        effectiveStatus = 'published';
+        socialCount = selectedJob.arcadsVariations.length;
+        summaryMsg = `Published live to internal Website Builder store at ${res.targetUrl} with ${res.embeddedInfographicsCount} embedded 6-layer SVG infographics.`;
+      } else {
+        let externalResult: Awaited<
+          ReturnType<typeof dispatchExternalCmsAndSocialPublish>
+        > | null = null;
+        try {
+          const apiRes = await fetch('/api/autonomous-agents/publish', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              job: selectedJob,
+              website: activeWebsite,
+              approvalMode: activeCampaign.approvalMode,
+              confidenceThreshold: activeCampaign.confidenceThreshold,
+              socialConnections: studioState.socialConnections,
+            }),
+          });
+          if (apiRes.ok) {
+            const parsed = (await apiRes.json()) as {
+              ok: boolean;
+              result?: Awaited<ReturnType<typeof dispatchExternalCmsAndSocialPublish>>;
+            };
+            if (parsed.ok && parsed.result) externalResult = parsed.result;
+          }
+        } catch {
+          // Offline fallback handled below
+        }
+        if (!externalResult) {
+          externalResult = await dispatchExternalCmsAndSocialPublish({
+            job: selectedJob,
+            website: activeWebsite,
+            approvalMode: activeCampaign.approvalMode,
+            confidenceThreshold: activeCampaign.confidenceThreshold,
+            socialConnections: studioState.socialConnections,
+          });
+        }
+        targetUrl = externalResult.targetUrl;
+        effectiveStatus = externalResult.effectiveStatus;
+        socialCount = externalResult.socialDispatched.length;
+        summaryMsg = externalResult.message;
+      }
+
+      updateState((prev): AutonomousStudioStoreState => {
+        const campaigns: AutonomousCampaign[] = prev.campaigns.map(
+          (camp): AutonomousCampaign => {
+            if (camp.id !== activeCampaign.id) return camp;
+            const jobs: AutomatedArticleJob[] = camp.jobs.map(
+              (job): AutomatedArticleJob => {
+                if (job.id !== selectedJob.id) return job;
+                const nextStatus: AutomatedArticleJob['status'] =
+                  effectiveStatus === 'published' ? 'published' : 'ready-for-review';
+                const nextPins: PinterestPinCandidate[] = job.pinterestPins.map(
+                  (pin): PinterestPinCandidate => ({
+                    ...pin,
+                    status:
+                      effectiveStatus === 'published'
+                        ? 'scheduled-buffer'
+                        : pin.status,
+                  })
+                );
+                return {
+                  ...job,
+                  status: nextStatus,
+                  publishedUrl: targetUrl,
+                  pinterestPins: nextPins,
+                  lastPublishReport: {
+                    destination: activeWebsite.publishingMode,
+                    status: effectiveStatus,
+                    targetUrl,
+                    socialDispatchedCount: socialCount,
+                    publishedAtIso: nowIso,
+                  },
+                  updatedAtIso: nowIso,
+                };
+              }
+            );
+            return { ...camp, jobs, updatedAtIso: nowIso };
+          }
+        );
+        return { ...prev, campaigns, lastSavedAtIso: nowIso };
+      });
+      setStatusMessage(summaryMsg);
+    } finally {
+      setIsPublishingJob(false);
+    }
+  };
+
+  const handleDownloadCompleteBundle = () => {
+    if (!selectedJob || !activeWebsite) return;
+    const bundle = buildCompleteJobExportBundle(selectedJob, activeWebsite);
+    downloadTextFile(
+      `${selectedJob.urlSlug}-autonomous-asset-pack.json`,
+      JSON.stringify(bundle, null, 2),
+      'application/json'
+    );
+    setStatusMessage(
+      `Exported complete Phase 4 bundle (${bundle.sectionInfographicSvgs.length} section SVGs, ${bundle.pinterestPins.length} Pinterest 2:3 SVGs, 8-slide LinkedIn deck, JSON-LD @graph, Markdown & CSV).`
+    );
+  };
+
+  const handleDownloadPinterestCsv = () => {
+    if (!selectedJob || !activeWebsite) return;
+    const csv = buildPinterestBulkCsvSchedule(selectedJob, activeWebsite);
+    downloadTextFile(
+      `${selectedJob.urlSlug}-pinterest-day0-day8-schedule.csv`,
+      csv,
+      'text/csv;charset=utf-8'
+    );
+    setStatusMessage('Downloaded Day 0 / Day +4 / Day +8 Pinterest & Buffer bulk CSV.');
+  };
+
+  const handleDownloadLinkedinCarousel = () => {
+    if (!selectedJob || !activeWebsite) return;
+    const html = buildLinkedinCarouselHtmlDeck(selectedJob, activeWebsite);
+    downloadTextFile(
+      `${selectedJob.urlSlug}-linkedin-8-slide-carousel.html`,
+      html,
+      'text/html;charset=utf-8'
+    );
+    setStatusMessage('Downloaded 8-slide 1080×1350 print-to-PDF LinkedIn Carousel Deck.');
+  };
+
+  const handleRunWinnerCloneOptimizer = () => {
+    if (!studioState || !activeCampaign) return;
+    const res = runWinnerCloneAutoOptimizer(studioState, activeCampaign.id);
+    updateState(() => res.nextState);
+    setStatusMessage(
+      res.promotedWinners.length > 0
+        ? `Phase 6 Winner-Clone promoted ${res.promotedWinners.length} high-performing Pin/Hook formula(s) & cloned visual DNA to upcoming queued jobs.`
+        : `Phase 6 audited ${res.evaluations.length} Pinterest Pins against campaign median Save Rate and preserved top Winner Formulas.`
+    );
+  };
+
+  const handleExportCloudSync = () => {
+    if (!studioState) return;
+    const envelope = exportStudioStateForCloudSync(studioState);
+    const json = JSON.stringify(envelope, null, 2);
+    setCloudSyncInput(json);
+    handleCopy(json, 'cloud-sync');
+    setStatusMessage(`Exported checksummed Cloud Sync JSON (${envelope.workspaceChecksum}).`);
+  };
+
+  const handleImportCloudSync = () => {
+    if (!cloudSyncInput.trim()) return;
+    try {
+      const restored = importStudioStateFromCloudSync(cloudSyncInput);
+      setStudioState(restored);
+      setStatusMessage('Restored Autonomous Studio state cleanly from Cloud Sync JSON.');
+    } catch (err) {
+      setStatusMessage(
+        err instanceof Error ? err.message : 'Invalid Cloud Sync JSON payload.'
+      );
     }
   };
 
@@ -423,7 +594,7 @@ export default function AutonomousCampaignDashboard() {
           <div className="flex items-center gap-3">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 px-3 py-1 text-xs font-semibold text-emerald-300">
               <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-              Phases 1 & 2 Live · LocalStorage + Live Sitemap/Trends Scout
+              All 6 Phases Live · Zero-Auth LocalStorage + BYOK + Dual Publisher + Winner-Clone OS
             </span>
             <h1 className="text-base sm:text-lg font-bold tracking-tight text-white">
               DoItWithAI 2027 Autonomous Content, Visual & Social Agent OS
@@ -479,13 +650,13 @@ export default function AutonomousCampaignDashboard() {
             },
             {
               id: 'connectors-byok',
-              label: '4. Internal /p/[slug] vs External & BYOK',
-              badge: '$0 Free Tier',
+              label: '4. Connectors, BYOK & Winner-Clone Loop',
+              badge: '$0 Free + Cloud Sync',
             },
             {
               id: 'phase-roadmap',
               label: '5. 6-Phase AI Expert Execution Tracker',
-              badge: 'Phases 1–2 Complete',
+              badge: 'All 6 Phases Complete',
             },
           ].map((tab) => {
             const active = activeTab === tab.id;
@@ -517,6 +688,18 @@ export default function AutonomousCampaignDashboard() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+        {statusMessage && (
+          <div className="rounded-xl border border-sky-500/40 bg-sky-950/30 px-4 py-3 text-xs text-sky-200 flex items-center justify-between gap-3">
+            <span>{statusMessage}</span>
+            <button
+              type="button"
+              onClick={() => setStatusMessage('')}
+              className="text-slate-400 hover:text-white font-bold"
+            >
+              ✕
+            </button>
+          </div>
+        )}
         {/* Top KPI Strip */}
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
           <div className="rounded-xl border border-slate-800/90 bg-slate-900/60 p-4">
@@ -948,13 +1131,33 @@ export default function AutonomousCampaignDashboard() {
                         {selectedJob.topicTitle}
                       </h3>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={isRunningByokJob}
+                        onClick={() => handleRunByokJob(selectedJob.id)}
+                        className="rounded-lg bg-sky-500 hover:bg-sky-400 disabled:opacity-60 px-3 py-1.5 text-xs font-bold text-slate-950 transition"
+                      >
+                        {isRunningByokJob
+                          ? 'Running Phase 3 Checkpoints...'
+                          : '▶ Run Phase 3 BYOK + 6-Layer Visuals'}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isPublishingJob}
+                        onClick={handlePublishSelectedJob}
+                        className="rounded-lg bg-emerald-500 hover:bg-emerald-400 disabled:opacity-60 px-3 py-1.5 text-xs font-bold text-slate-950 transition"
+                      >
+                        {isPublishingJob
+                          ? 'Publishing...'
+                          : 'Publish / Stage Pack (Phase 5)'}
+                      </button>
                       <button
                         type="button"
                         onClick={() => setActiveTab('arcads-pinterest-lab')}
                         className="rounded-lg bg-amber-400/15 border border-amber-400/40 px-3 py-1.5 text-xs font-semibold text-amber-300 hover:bg-amber-400/25 transition"
                       >
-                        Open 3 Pinterest Pins & Arcads Matrix →
+                        Open 3 Pins & Arcads Matrix →
                       </button>
                     </div>
                   </div>
@@ -1046,6 +1249,77 @@ export default function AutonomousCampaignDashboard() {
                           </code>
                         </div>
                       )}
+                      {selectedJob.lastPublishReport && (
+                        <div className="rounded-lg border border-sky-500/30 bg-sky-500/10 p-2.5 text-xs text-sky-200 space-y-1">
+                          <div>
+                            Last Dispatch: <strong>{selectedJob.lastPublishReport.destination}</strong> (
+                            {selectedJob.lastPublishReport.status.toUpperCase()}) ·{' '}
+                            {selectedJob.lastPublishReport.socialDispatchedCount} social payloads
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Phase 3 Live 1080x1350 Section Infographic SVG & Compiled Markdown Preview */}
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 pt-2 border-t border-slate-800/80">
+                    <div className="lg:col-span-5 space-y-2.5">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="text-xs font-bold uppercase tracking-wider text-sky-400">
+                          6-Layer Section Infographic (1080×1350 SVG)
+                        </span>
+                        <div className="flex gap-1">
+                          {selectedJob.outlineSections.map((s, idx) => (
+                            <button
+                              key={s.h2 + idx}
+                              type="button"
+                              onClick={() => setSelectedSectionIdx(idx)}
+                              className={`rounded px-2 py-0.5 text-[11px] font-bold ${
+                                selectedSectionIdx === idx
+                                  ? 'bg-sky-500 text-slate-950'
+                                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                              }`}
+                            >
+                              S{idx + 1}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="rounded-xl border border-slate-800 bg-slate-950 p-2 flex items-center justify-center overflow-hidden">
+                        <div
+                          className="w-full max-w-[300px] rounded-lg overflow-hidden [&_svg]:w-full [&_svg]:h-auto"
+                          dangerouslySetInnerHTML={{ __html: selectedSectionSvg }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="lg:col-span-7 space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold uppercase tracking-wider text-emerald-300">
+                          Compiled SEO / GEO Markdown Article
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleCopy(
+                              selectedJob.compiledArticleMarkdown ||
+                                compileJobArticleMarkdown(selectedJob, activeWebsite!),
+                              `md-${selectedJob.id}`
+                            )
+                          }
+                          className="rounded bg-slate-800 hover:bg-slate-700 px-2.5 py-1 text-[11px] text-sky-300 font-semibold"
+                        >
+                          {copiedId === `md-${selectedJob.id}`
+                            ? '✓ Copied Markdown'
+                            : 'Copy Complete Article MD'}
+                        </button>
+                      </div>
+                      <pre className="h-[340px] overflow-y-auto whitespace-pre-wrap rounded-xl border border-slate-800 bg-slate-950 p-3.5 text-[11px] leading-relaxed text-slate-300 font-mono">
+                        {selectedJob.compiledArticleMarkdown ||
+                          (activeWebsite
+                            ? compileJobArticleMarkdown(selectedJob, activeWebsite)
+                            : '')}
+                      </pre>
                     </div>
                   </div>
                 </div>
@@ -1152,9 +1426,44 @@ export default function AutonomousCampaignDashboard() {
                       5-Hook × Multi-Channel Creative Variation Matrix
                     </h3>
                   </div>
-                  <span className="text-xs text-slate-400">
+                  <div className="text-xs text-slate-400">
                     1 Article → {selectedJob.arcadsVariations.length} Psychological Hook Angles
-                  </span>
+                  </div>
+                </div>
+
+                {/* Phase 4 Batch Asset Exporter Bar */}
+                <div className="rounded-xl border border-amber-400/30 bg-amber-950/15 p-3.5 flex flex-wrap items-center justify-between gap-2.5 text-xs">
+                  <div>
+                    <div className="font-bold text-amber-300">
+                      Phase 4 Multi-Channel Batch Exporter (0 Tokens)
+                    </div>
+                    <div className="text-[11px] text-slate-300">
+                      Package Markdown + JSON-LD + 4 Section SVGs + 3 Pinterest 2:3 Pins + 8-Slide LinkedIn Deck + CSV.
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleDownloadCompleteBundle}
+                      className="rounded-lg bg-amber-400 hover:bg-amber-300 px-3 py-1.5 font-bold text-slate-950 transition"
+                    >
+                      ⬇ Download Complete Asset Pack (MD + 3 Pins + LinkedIn + CSV)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleDownloadPinterestCsv}
+                      className="rounded-lg border border-slate-700 bg-slate-900 hover:border-sky-500/50 px-3 py-1.5 font-semibold text-sky-300 transition"
+                    >
+                      Pinterest/Buffer CSV
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleDownloadLinkedinCarousel}
+                      className="rounded-lg border border-slate-700 bg-slate-900 hover:border-emerald-500/50 px-3 py-1.5 font-semibold text-emerald-300 transition"
+                    >
+                      8-Slide LinkedIn Deck (HTML/PDF)
+                    </button>
+                  </div>
                 </div>
 
                 <div className="space-y-3">
@@ -1261,117 +1570,309 @@ export default function AutonomousCampaignDashboard() {
           </div>
         )}
 
-        {/* TAB 4: INTERNAL vs EXTERNAL CONNECTORS & FREE-TIER BYOK */}
+        {/* TAB 4: INTERNAL vs EXTERNAL CONNECTORS, FREE-TIER BYOK & PHASE 6 WINNER-CLONE LOOP */}
         {activeTab === 'connectors-byok' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Dual Destination Publishing Connectors */}
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 space-y-4">
-              <h2 className="text-base font-bold text-white">
-                Dual-Destination Publishing & Social Connectors
-              </h2>
-              <p className="text-xs text-slate-400">
-                Supports both Internal DoItWithAI Website Builder sites (
-                <code className="text-sky-300">/p/[slug]/blog</code>) and External user websites (WordPress REST API Application Passwords, Custom Webhooks, Buffer MCP, Postiz, and Pinterest API v5).
-              </p>
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Dual Destination Publishing Connectors */}
+              <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 space-y-4">
+                <h2 className="text-base font-bold text-white">
+                  Dual-Destination Publishing & Social Connectors
+                </h2>
+                <p className="text-xs text-slate-400">
+                  Supports both Internal DoItWithAI Website Builder sites (
+                  <code className="text-sky-300">/p/[slug]/blog</code>) and External user websites (WordPress REST API Application Passwords, Custom Webhooks, Buffer MCP, Postiz, and Pinterest API v5).
+                </p>
 
-              <div className="space-y-2.5 text-xs">
-                {studioState.socialConnections.map((conn) => (
-                  <div
-                    key={conn.channel}
-                    className="rounded-xl border border-slate-800 bg-slate-950/70 p-3 flex items-center justify-between"
-                  >
-                    <div>
-                      <div className="font-bold text-white">{conn.label}</div>
-                      <div className="text-[11px] text-slate-400">
-                        Handle: {conn.accountHandle} · Target: {conn.defaultBoardOrTarget}
-                      </div>
-                    </div>
-                    <span
-                      className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
-                        conn.enabled
-                          ? 'bg-emerald-500/20 text-emerald-300'
-                          : 'bg-slate-800 text-slate-400'
-                      }`}
+                <div className="space-y-2.5 text-xs">
+                  {studioState.socialConnections.map((conn) => (
+                    <div
+                      key={conn.channel}
+                      className="rounded-xl border border-slate-800 bg-slate-950/70 p-3 flex items-center justify-between gap-2"
                     >
-                      {conn.connectorMode}
-                    </span>
+                      <div>
+                        <div className="font-bold text-white">{conn.label}</div>
+                        <div className="text-[11px] text-slate-400">
+                          Handle: {conn.accountHandle} · Target: {conn.defaultBoardOrTarget}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          updateState((prev) => ({
+                            ...prev,
+                            socialConnections: prev.socialConnections.map(
+                              (item): SocialChannelConnection =>
+                                item.channel === conn.channel
+                                  ? { ...item, enabled: !item.enabled }
+                                  : item
+                            ),
+                          }))
+                        }
+                        className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold transition ${
+                          conn.enabled
+                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                            : 'bg-slate-800 text-slate-400'
+                        }`}
+                      >
+                        {conn.enabled ? `${conn.connectorMode} · ON` : 'OFF'}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                {activeWebsite && (
+                  <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-3.5 space-y-2.5 text-xs">
+                    <div className="font-bold text-sky-300 uppercase tracking-wider text-[11px]">
+                      External WordPress / Webhook Destination ({activeWebsite.siteName})
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      <input
+                        type="text"
+                        placeholder="WP Site URL (https://example.com)"
+                        value={activeWebsite.wordpressConfig?.endpointUrl || ''}
+                        onChange={(e) =>
+                          updateState((prev) => ({
+                            ...prev,
+                            websites: prev.websites.map(
+                              (w): ConnectedWebsiteProfile =>
+                                w.id === activeWebsite.id
+                                  ? {
+                                      ...w,
+                                      wordpressConfig: {
+                                        endpointUrl: e.target.value,
+                                        username: w.wordpressConfig?.username || '',
+                                        appPasswordMasked:
+                                          w.wordpressConfig?.appPasswordMasked || '',
+                                        defaultStatus:
+                                          w.wordpressConfig?.defaultStatus || 'draft',
+                                      },
+                                    }
+                                  : w
+                            ),
+                          }))
+                        }
+                        className="rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-slate-100"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Custom Webhook URL (Optional)"
+                        value={activeWebsite.webhookUrl || ''}
+                        onChange={(e) =>
+                          updateState((prev) => ({
+                            ...prev,
+                            websites: prev.websites.map(
+                              (w): ConnectedWebsiteProfile =>
+                                w.id === activeWebsite.id
+                                  ? { ...w, webhookUrl: e.target.value }
+                                  : w
+                            ),
+                          }))
+                        }
+                        className="rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-slate-100"
+                      />
+                    </div>
                   </div>
-                ))}
+                )}
+              </div>
+
+              {/* Free-Tier BYOK Configuration */}
+              <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 space-y-4">
+                <h2 className="text-base font-bold text-white">
+                  $0 Free-Tier BYOK Engine (Gemini + Groq) & RPM Pacing
+                </h2>
+                <p className="text-xs text-slate-400">
+                  Uses user-supplied free-tier keys (Google AI Studio Gemini 2.5 Flash or Groq Llama 3.3 70B) stored strictly in browser localStorage with automatic 429 fallback & RPM pacing.
+                </p>
+
+                <div className="space-y-3 text-xs">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-slate-300 font-medium mb-1">
+                        Gemini Free-Tier Key
+                      </label>
+                      <input
+                        type="password"
+                        placeholder="AIzaSy... (Local Only)"
+                        value={studioState.byokConfig.geminiFreeKeyMasked}
+                        onChange={(e) =>
+                          updateState((prev) => ({
+                            ...prev,
+                            byokConfig: {
+                              ...prev.byokConfig,
+                              geminiFreeKeyMasked: e.target.value,
+                            },
+                          }))
+                        }
+                        className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-300 font-medium mb-1">
+                        Groq Llama 3.3 Key
+                      </label>
+                      <input
+                        type="password"
+                        placeholder="gsk_... (Fallback Key)"
+                        value={studioState.byokConfig.groqFreeKeyMasked}
+                        onChange={(e) =>
+                          updateState((prev) => ({
+                            ...prev,
+                            byokConfig: {
+                              ...prev.byokConfig,
+                              groqFreeKeyMasked: e.target.value,
+                            },
+                          }))
+                        }
+                        className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-300 font-medium mb-1">
+                        RPM Cooldown (Sec)
+                      </label>
+                      <input
+                        type="number"
+                        min={5}
+                        max={120}
+                        value={studioState.byokConfig.rpmCooldownSeconds}
+                        onChange={(e) =>
+                          updateState((prev) => ({
+                            ...prev,
+                            byokConfig: {
+                              ...prev.byokConfig,
+                              rpmCooldownSeconds: Number(e.target.value) || 45,
+                            },
+                          }))
+                        }
+                        className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3.5 space-y-1.5">
+                    <div className="font-bold text-emerald-300">
+                      Token Efficiency Breakdown ({activeCampaign.targetArticleCount} Articles)
+                    </div>
+                    <div className="text-slate-300">
+                      • Per Article (Outline + Sections + Social Pack):{' '}
+                      <strong>{tokenBudget.tokensPerArticle.toLocaleString()} tokens</strong>
+                    </div>
+                    <div className="text-slate-300">
+                      • 6-Layer SVG Blog Visuals + 3 Pinterest 2:3 Pins:{' '}
+                      <strong>0 LLM tokens (Programmatic SVG Engine)</strong>
+                    </div>
+                    <div className="text-slate-300">
+                      • Total Campaign Duration with {studioState.byokConfig.rpmCooldownSeconds}s RPM Pacing:{' '}
+                      <strong>~{tokenBudget.estimatedMinutesWithCooldown} minutes</strong>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Free-Tier BYOK Configuration */}
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 space-y-4">
-              <h2 className="text-base font-bold text-white">
-                $0 Free-Tier BYOK Engine & RPM Pacing Calculator
-              </h2>
-              <p className="text-xs text-slate-400">
-                Uses user-supplied free-tier keys (Google AI Studio Gemini 2.5 Flash or Groq Llama 3.3 70B) stored strictly in browser localStorage with automatic RPM pacing.
-              </p>
-
-              <div className="space-y-3 text-xs">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Phase 6: Closed-Loop Winner-Clone Optimizer & Optional Cloud Sync */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              <div className="lg:col-span-7 rounded-2xl border border-purple-500/30 bg-slate-900/70 p-5 space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
-                    <label className="block text-slate-300 font-medium mb-1">
-                      Gemini Free-Tier Key (Local Only)
-                    </label>
-                    <input
-                      type="password"
-                      placeholder="AIzaSy... (Saved in localStorage)"
-                      value={studioState.byokConfig.geminiFreeKeyMasked}
-                      onChange={(e) =>
-                        updateState((prev) => ({
-                          ...prev,
-                          byokConfig: {
-                            ...prev.byokConfig,
-                            geminiFreeKeyMasked: e.target.value,
-                          },
-                        }))
-                      }
-                      className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
-                    />
+                    <span className="text-[11px] uppercase tracking-wider text-purple-300 font-semibold">
+                      Phase 6 · Closed-Loop Analytics Agent
+                    </span>
+                    <h3 className="text-base font-bold text-white">
+                      Winner-Clone Auto-Optimizer (&gt;= 20% Above Median Promoter)
+                    </h3>
                   </div>
-
-                  <div>
-                    <label className="block text-slate-300 font-medium mb-1">
-                      RPM Cooldown Pacing (Seconds)
-                    </label>
-                    <input
-                      type="number"
-                      min={5}
-                      max={120}
-                      value={studioState.byokConfig.rpmCooldownSeconds}
-                      onChange={(e) =>
-                        updateState((prev) => ({
-                          ...prev,
-                          byokConfig: {
-                            ...prev.byokConfig,
-                            rpmCooldownSeconds: Number(e.target.value) || 45,
-                          },
-                        }))
-                      }
-                      className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
-                    />
-                  </div>
+                  <button
+                    type="button"
+                    onClick={handleRunWinnerCloneOptimizer}
+                    className="rounded-lg bg-purple-500 hover:bg-purple-400 px-3.5 py-2 text-xs font-bold text-slate-950 transition"
+                  >
+                    ★ Run Winner-Clone Optimizer
+                  </button>
                 </div>
 
-                <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3.5 space-y-1.5">
-                  <div className="font-bold text-emerald-300">
-                    Token Efficiency Breakdown ({activeCampaign.targetArticleCount} Articles)
-                  </div>
-                  <div className="text-slate-300">
-                    • Per Article (Outline + Sections + Social Pack):{' '}
-                    <strong>{tokenBudget.tokensPerArticle.toLocaleString()} tokens</strong>
-                  </div>
-                  <div className="text-slate-300">
-                    • 6-Layer SVG Blog Visuals + 3 Pinterest 2:3 Pins:{' '}
-                    <strong>0 LLM tokens (Programmatic SVG Engine)</strong>
-                  </div>
-                  <div className="text-slate-300">
-                    • Total Campaign Duration with {studioState.byokConfig.rpmCooldownSeconds}s RPM Pacing:{' '}
-                    <strong>~{tokenBudget.estimatedMinutesWithCooldown} minutes</strong>
-                  </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-slate-800 text-slate-400">
+                        <th className="py-2 pr-3">Pin Variant</th>
+                        <th className="py-2 pr-3">Save Rate</th>
+                        <th className="py-2 pr-3">CTR</th>
+                        <th className="py-2 pr-3">vs Median</th>
+                        <th className="py-2">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/70">
+                      {winnerEvaluations.slice(0, 6).map((ev) => (
+                        <tr key={ev.pinId} className="text-slate-300">
+                          <td className="py-2 pr-3 font-medium text-white max-w-[240px] truncate">
+                            {ev.pinTitle}
+                          </td>
+                          <td className="py-2 pr-3 text-emerald-300 font-semibold">
+                            {ev.saveRatePercent}%
+                          </td>
+                          <td className="py-2 pr-3">{ev.outboundCtrPercent}%</td>
+                          <td className="py-2 pr-3 font-mono">{ev.outperformanceRatio}x</td>
+                          <td className="py-2">
+                            <span
+                              className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                                ev.qualifiesAsWinner
+                                  ? 'bg-purple-500/20 text-purple-200 border border-purple-500/40'
+                                  : 'bg-slate-800 text-slate-400'
+                              }`}
+                            >
+                              {ev.qualifiesAsWinner ? 'WINNER PROMOTED' : 'BASELINE'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
+              </div>
+
+              <div className="lg:col-span-5 rounded-2xl border border-slate-800 bg-slate-900/70 p-5 space-y-3.5 text-xs">
+                <div>
+                  <span className="text-[11px] uppercase tracking-wider text-sky-400 font-semibold">
+                    Optional Cloud Sync Bridge
+                  </span>
+                  <h3 className="text-base font-bold text-white">
+                    Export / Restore Autonomous Workspace JSON
+                  </h3>
+                  <p className="text-slate-400 mt-1">
+                    Sync <code className="text-slate-300">doitwithai_autonomous_studio_v1</code> with Supabase or migrate workspaces across browsers with checksum verification.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={handleExportCloudSync}
+                    className="rounded-lg bg-sky-500 hover:bg-sky-400 px-3 py-1.5 font-bold text-slate-950 transition"
+                  >
+                    {copiedId === 'cloud-sync'
+                      ? '✓ Copied Cloud Sync Envelope'
+                      : 'Export & Copy Sync JSON'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleImportCloudSync}
+                    className="rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 px-3 py-1.5 font-semibold text-white transition"
+                  >
+                    Restore from JSON
+                  </button>
+                </div>
+
+                <textarea
+                  rows={5}
+                  value={cloudSyncInput}
+                  onChange={(e) => setCloudSyncInput(e.target.value)}
+                  placeholder="Paste Cloud Sync JSON envelope here to restore campaigns, websites, BYOK settings & winner formulas..."
+                  className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 font-mono text-[11px] text-slate-300"
+                />
               </div>
             </div>
           </div>

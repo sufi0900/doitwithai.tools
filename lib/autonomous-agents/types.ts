@@ -186,6 +186,16 @@ export interface AutomatedArticleJob {
   geoReadiness: GeoCitationReadinessReport;
   arcadsVariations: ArcadsSocialVariation[];
   pinterestPins: PinterestPinCandidate[];
+  compiledArticleMarkdown?: string;
+  sectionInfographicSvgs?: string[];
+  byokProviderUsed?: "gemini-2.5-flash" | "groq-llama-3.3-70b" | "deterministic-zero-token";
+  lastPublishReport?: {
+    destination: string;
+    status: "published" | "draft" | "staged";
+    targetUrl: string;
+    socialDispatchedCount: number;
+    publishedAtIso: string;
+  };
   updatedAtIso: string;
 }
 
