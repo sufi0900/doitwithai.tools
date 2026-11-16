@@ -1,14 +1,26 @@
 /**
- * Phase 5: External CMS & Multi-Channel Social Publisher
- * (WordPress REST API v2 Application Passwords, Custom Webhook JSON,
- * Buffer MCP / GraphQL, Postiz, and Pinterest API v5).
+ * Phase 5 & 5B: External CMS & Hybrid Progressive 1-Tap OAuth + Downloadable Fallback Publisher
+ * (`lib/autonomous-agents/publishers/external-cms-publisher.ts`).
  *
- * Enforces `copilot-review-queue` vs `confidence-gated-90` guardrails and always
- * falls back cleanly to the Workspace Staging Queue if external credentials are absent
- * or offline.
+ * Enforces `copilot-review-queue` vs `confidence-gated-90` guardrails and implements
+ * the Founder-locked 3-Scenario Social Delivery Policy:
+ * - Scenario 1: Platform API key is active on server (e.g., LinkedIn), but user has NOT connected
+ *   -> automatically falls back to generating a 1-click Downloadable Asset Pack.
+ * - Scenario 2: User connects LinkedIn via 1-Tap OAuth, leaves Pinterest / X unconnected
+ *   -> LinkedIn auto-publishes directly while Pinterest / X generate Downloadable Asset Packs.
+ * - Scenario 3: Platform API key is pending approval -> channel operates in Manual Downloadable
+ *   Pack Mode automatically with zero errors or user friction.
  */
 
 import { buildCompleteJobExportBundle } from "../pinterest-carousel-exporter";
+import {
+  detectConfiguredPlatformOAuthProviders,
+  executeHybridSocialDeliveryForJob,
+  type HybridSocialExecutionReport,
+  type OneTapOAuthProviderId,
+  type PlatformOAuthAvailabilityMap,
+  type UserOAuthTokenRecord,
+} from "../social-oauth-registry";
 import type {
   AutomatedArticleJob,
   AutopilotApprovalMode,
@@ -25,6 +37,8 @@ export interface ExternalPublishDispatchInput {
   approvalMode: AutopilotApprovalMode;
   confidenceThreshold?: number;
   socialConnections?: SocialChannelConnection[];
+  platformOAuthAvailability?: PlatformOAuthAvailabilityMap;
+  connectedOAuthTokens?: Partial<Record<OneTapOAuthProviderId, UserOAuthTokenRecord>>;
   fetchImpl?: typeof fetch;
 }
 
@@ -32,6 +46,7 @@ export interface SocialChannelDispatchItem {
   channel: SocialChannelId;
   connectorMode: SocialConnectorMode;
   status: "scheduled" | "staged";
+  deliveryMode?: "auto-publish-oauth" | "manual-download-fallback";
   payloadPreview: Record<string, unknown>;
 }
 
@@ -43,6 +58,7 @@ export interface ExternalPublishDispatchResult {
   targetUrl: string;
   cmsResponseStatus?: number;
   socialDispatched: SocialChannelDispatchItem[];
+  hybridSocialReport: HybridSocialExecutionReport;
   message: string;
   dispatchedAtIso: string;
 }
@@ -150,8 +166,8 @@ export function buildWordPressRestPostPayload(
 }
 
 /**
- * Builds multi-channel social scheduling payloads for Buffer MCP (`mcp.buffer.com`),
- * Postiz (`gitroomhq/postiz-app`), and direct Pinterest API v5 (`POST /v5/pins`).
+ * Builds multi-channel social scheduling payloads for 1-Tap OAuth, Buffer MCP,
+ * Postiz, and Pinterest API v5 (`POST /v5/pins`).
  */
 export function buildSocialConnectorPayloads(
   job: AutomatedArticleJob,
@@ -239,8 +255,8 @@ export function buildSocialConnectorPayloads(
 }
 
 /**
- * Executes Phase 5 external CMS & social dispatch while strictly enforcing the
- * Confidence Gate (`approvalMode === "confidence-gated-90"` and score >= threshold).
+ * Executes Phase 5 & 5B external CMS + Progressive 1-Tap OAuth & Downloadable Fallback
+ * social dispatch while strictly enforcing the Confidence Gate (`>= threshold`).
  */
 export async function dispatchExternalCmsAndSocialPublish(
   input: ExternalPublishDispatchInput,
@@ -264,6 +280,16 @@ export async function dispatchExternalCmsAndSocialPublish(
       ? `/p/${website.internalBuilderSlug}/blog/${job.urlSlug}`
       : `${baseUrl}/blog/${job.urlSlug}`;
 
+  const platformAvailability =
+    input.platformOAuthAvailability ?? detectConfiguredPlatformOAuthProviders();
+  const hybridSocialReport = await executeHybridSocialDeliveryForJob({
+    job,
+    website,
+    connections: input.socialConnections ?? [],
+    platformAvailability,
+    connectedOAuthTokens: input.connectedOAuthTokens,
+  });
+
   const socialScheduleStatus: "scheduled" | "staged" = passedConfidenceGate
     ? "scheduled"
     : "staged";
@@ -272,7 +298,20 @@ export async function dispatchExternalCmsAndSocialPublish(
     website,
     input.socialConnections,
     socialScheduleStatus,
-  );
+  ).map((item): SocialChannelDispatchItem => {
+    const channelRes = hybridSocialReport.channelResults.find(
+      (r) => r.channel === item.channel,
+    );
+    return {
+      ...item,
+      deliveryMode: channelRes?.deliveryMode ?? "manual-download-fallback",
+    };
+  });
+
+  const socialSummarySuffix =
+    hybridSocialReport.autoPublishedChannels.length > 0
+      ? ` Auto-published via 1-Tap OAuth: ${hybridSocialReport.autoPublishedChannels.join(", ")}; Downloadable packs ready for: ${hybridSocialReport.manualFallbackChannels.join(", ")}.`
+      : ` Downloadable social asset packs ready for manual publishing (${hybridSocialReport.manualFallbackChannels.join(", ")}).`;
 
   // Path A: WordPress REST API v2
   if (website.publishingMode === "external-wordpress-rest") {
@@ -300,9 +339,12 @@ export async function dispatchExternalCmsAndSocialPublish(
           targetUrl: data.link || fallbackTargetUrl,
           cmsResponseStatus: res.status,
           socialDispatched,
-          message: res.ok
-            ? `WordPress REST API accepted post with status "${wpTargetStatus}".`
-            : `WordPress endpoint returned HTTP ${res.status}; saved to Workspace Staging Queue.`,
+          hybridSocialReport,
+          message:
+            (res.ok
+              ? `WordPress REST API accepted post with status "${wpTargetStatus}".`
+              : `WordPress endpoint returned HTTP ${res.status}; saved to Workspace Staging Queue.`) +
+            socialSummarySuffix,
           dispatchedAtIso: nowIso,
         };
       } catch {
@@ -313,7 +355,10 @@ export async function dispatchExternalCmsAndSocialPublish(
           passedConfidenceGate,
           targetUrl: fallbackTargetUrl,
           socialDispatched,
-          message: `WordPress endpoint unreachable; article (${wpTargetStatus}) & social pack staged cleanly.`,
+          hybridSocialReport,
+          message:
+            `WordPress endpoint unreachable; article (${wpTargetStatus}) & social pack staged cleanly.` +
+            socialSummarySuffix,
           dispatchedAtIso: nowIso,
         };
       }
@@ -326,10 +371,10 @@ export async function dispatchExternalCmsAndSocialPublish(
       passedConfidenceGate,
       targetUrl: fallbackTargetUrl,
       socialDispatched,
+      hybridSocialReport,
       message:
-        "WordPress Application Password not configured in sandbox; generated ready-to-push WP REST v2 payload (status: " +
-        wpTargetStatus +
-        ") in Staging Queue.",
+        `WordPress Application Password not configured in sandbox; generated ready-to-push WP REST v2 payload (status: ${wpTargetStatus}) in Staging Queue.` +
+        socialSummarySuffix,
       dispatchedAtIso: nowIso,
     };
   }
@@ -361,6 +406,7 @@ export async function dispatchExternalCmsAndSocialPublish(
             pinterestPinsCount: bundle.pinterestPins.length,
           },
           socialDispatched,
+          hybridSocialReport,
         }),
       });
       return {
@@ -375,9 +421,12 @@ export async function dispatchExternalCmsAndSocialPublish(
         targetUrl: fallbackTargetUrl,
         cmsResponseStatus: res.status,
         socialDispatched,
-        message: res.ok
-          ? `Dispatched webhook payload (HTTP ${res.status}) with ${bundle.sectionInfographicSvgs.length} SVG infographics and ${socialDispatched.length} social packs.`
-          : `Webhook returned HTTP ${res.status}; article & social pack preserved in Staging Queue.`,
+        hybridSocialReport,
+        message:
+          (res.ok
+            ? `Dispatched webhook payload (HTTP ${res.status}) with ${bundle.sectionInfographicSvgs.length} SVG infographics and ${socialDispatched.length} social packs.`
+            : `Webhook returned HTTP ${res.status}; article & social pack preserved in Staging Queue.`) +
+          socialSummarySuffix,
         dispatchedAtIso: nowIso,
       };
     } catch {
@@ -388,7 +437,10 @@ export async function dispatchExternalCmsAndSocialPublish(
         passedConfidenceGate,
         targetUrl: fallbackTargetUrl,
         socialDispatched,
-        message: "Webhook offline; preserved full article + social pack in Staging Queue.",
+        hybridSocialReport,
+        message:
+          "Webhook offline; preserved full article + social pack in Staging Queue." +
+          socialSummarySuffix,
         dispatchedAtIso: nowIso,
       };
     }
@@ -402,7 +454,10 @@ export async function dispatchExternalCmsAndSocialPublish(
     passedConfidenceGate,
     targetUrl: fallbackTargetUrl,
     socialDispatched,
-    message: `Staged Markdown/HTML, JSON-LD, 4 section SVGs & ${socialDispatched.length} Buffer/Pinterest payloads in Workspace Staging Queue.`,
+    hybridSocialReport,
+    message:
+      `Staged Markdown/HTML, JSON-LD, 4 section SVGs & ${socialDispatched.length} social payloads in Workspace Staging Queue.` +
+      socialSummarySuffix,
     dispatchedAtIso: nowIso,
   };
 }
