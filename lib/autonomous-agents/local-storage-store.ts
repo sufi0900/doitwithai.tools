@@ -17,6 +17,7 @@ import {
 } from "./arcads-social-engine";
 import type {
   ArcadsHookArchetype,
+  AutomatedArticleJob,
   AutonomousAgentId,
   AutonomousCampaign,
   AutonomousStudioStoreState,
@@ -298,92 +299,106 @@ export function advanceCampaignJobStep(
   );
   const nowIso = new Date().toISOString();
 
-  const campaigns = state.campaigns.map((camp) => {
-    if (camp.id !== campaignId) return camp;
-    const website =
-      state.websites.find((w) => w.id === camp.websiteId) || state.websites[0];
+  const campaigns: AutonomousCampaign[] = state.campaigns.map(
+    (camp): AutonomousCampaign => {
+      if (camp.id !== campaignId) return camp;
+      const website =
+        state.websites.find((w) => w.id === camp.websiteId) || state.websites[0];
 
-    const jobs = camp.jobs.map((job) => {
-      if (job.id !== jobId) return job;
+      const jobs: AutomatedArticleJob[] = camp.jobs.map(
+        (job): AutomatedArticleJob => {
+          if (job.id !== jobId) return job;
 
-      let nextCompleted: AutonomousAgentId[];
-      if (completeAll) {
-        nextCompleted = [...allAgentIds];
-      } else {
-        const missing = allAgentIds.filter(
-          (id) => !job.completedAgents.includes(id),
-        );
-        nextCompleted = missing.length
-          ? [...job.completedAgents, missing[0]]
-          : [...allAgentIds];
-      }
+          let nextCompleted: AutonomousAgentId[];
+          if (completeAll) {
+            nextCompleted = [...allAgentIds];
+          } else {
+            const missing = allAgentIds.filter(
+              (id) => !job.completedAgents.includes(id),
+            );
+            nextCompleted = missing.length
+              ? [...job.completedAgents, missing[0]]
+              : [...allAgentIds];
+          }
 
-      const remaining = allAgentIds.filter((id) => !nextCompleted.includes(id));
-      const activeAgent = remaining[0];
-      const geoReadiness = scoreGeoCitationReadiness(job);
-      const arcadsVariations =
-        job.arcadsVariations.length > 0
-          ? job.arcadsVariations
-          : buildArcadsSocialPackForJob(job, website, state.winnerFormulas);
-      const pinterestPins =
-        job.pinterestPins.length > 0
-          ? job.pinterestPins
-          : buildPinterestThreePinSuite(job, website, state.winnerFormulas);
+          const remaining = allAgentIds.filter(
+            (id) => !nextCompleted.includes(id),
+          );
+          const activeAgent = remaining[0];
+          const geoReadiness = scoreGeoCitationReadiness(job);
+          const arcadsVariations =
+            job.arcadsVariations.length > 0
+              ? job.arcadsVariations
+              : buildArcadsSocialPackForJob(job, website, state.winnerFormulas);
+          const pinterestPins =
+            job.pinterestPins.length > 0
+              ? job.pinterestPins
+              : buildPinterestThreePinSuite(job, website, state.winnerFormulas);
 
-      let status = job.status;
-      let publishedUrl = job.publishedUrl;
+          let status: AutomatedArticleJob["status"] = job.status;
+          let publishedUrl = job.publishedUrl;
 
-      if (remaining.length === 0) {
-        const autoPublishAllowed =
-          camp.approvalMode === "confidence-gated-90" &&
-          geoReadiness.overallScore >= camp.confidenceThreshold;
-        status = autoPublishAllowed ? "published" : "ready-for-review";
-        if (autoPublishAllowed) {
-          publishedUrl =
-            website.publishingMode === "internal-doitwithai-site" &&
-            website.internalBuilderSlug
-              ? `/p/${website.internalBuilderSlug}/blog/${job.urlSlug}`
-              : `${website.siteUrl.replace(/\/$/, "")}/blog/${job.urlSlug}`;
-        }
-      } else if (nextCompleted.length <= 3) {
-        status = "researching";
-      } else if (nextCompleted.length <= 5) {
-        status = "drafting-article";
-      } else if (nextCompleted.length === 6) {
-        status = "generating-visuals";
-      } else if (nextCompleted.length <= 10) {
-        status = "building-social-matrix";
-      } else {
-        status = "qa-critic-review";
-      }
+          if (remaining.length === 0) {
+            const autoPublishAllowed =
+              camp.approvalMode === "confidence-gated-90" &&
+              geoReadiness.overallScore >= camp.confidenceThreshold;
+            status = autoPublishAllowed ? "published" : "ready-for-review";
+            if (autoPublishAllowed) {
+              publishedUrl =
+                website.publishingMode === "internal-doitwithai-site" &&
+                website.internalBuilderSlug
+                  ? `/p/${website.internalBuilderSlug}/blog/${job.urlSlug}`
+                  : `${website.siteUrl.replace(/\/$/, "")}/blog/${job.urlSlug}`;
+            }
+          } else if (nextCompleted.length <= 3) {
+            status = "researching";
+          } else if (nextCompleted.length <= 5) {
+            status = "drafting-article";
+          } else if (nextCompleted.length === 6) {
+            status = "generating-visuals";
+          } else if (nextCompleted.length <= 10) {
+            status = "building-social-matrix";
+          } else {
+            status = "qa-critic-review";
+          }
+
+          const updatedPins: PinterestPinCandidate[] = pinterestPins.map(
+            (pin): PinterestPinCandidate => ({
+              ...pin,
+              status:
+                status === "published" ? "scheduled-buffer" : pin.status,
+            }),
+          );
+
+          return {
+            ...job,
+            completedAgents: nextCompleted,
+            activeAgent,
+            status,
+            publishedUrl,
+            geoReadiness,
+            arcadsVariations,
+            pinterestPins: updatedPins,
+            updatedAtIso: nowIso,
+          };
+        },
+      );
+
+      const allDone = jobs.every(
+        (j) => j.status === "published" || j.status === "ready-for-review",
+      );
+      const nextCampaignStatus: AutonomousCampaign["status"] = allDone
+        ? "completed"
+        : "running";
 
       return {
-        ...job,
-        completedAgents: nextCompleted,
-        activeAgent,
-        status,
-        publishedUrl,
-        geoReadiness,
-        arcadsVariations,
-        pinterestPins: pinterestPins.map((pin) => ({
-          ...pin,
-          status:
-            status === "published" ? "scheduled-buffer" : pin.status,
-        })),
+        ...camp,
+        status: nextCampaignStatus,
         updatedAtIso: nowIso,
+        jobs,
       };
-    });
-
-    const allDone = jobs.every(
-      (j) => j.status === "published" || j.status === "ready-for-review",
-    );
-    return {
-      ...camp,
-      status: allDone ? "completed" : "running",
-      updatedAtIso: nowIso,
-      jobs,
-    };
-  });
+    },
+  );
 
   return {
     ...state,
