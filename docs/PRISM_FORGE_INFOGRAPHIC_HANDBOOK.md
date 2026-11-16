@@ -105,3 +105,18 @@ Prefer the article body over surrounding page chrome. Preserve paragraph breaks 
 Select timelines for chronology, checklists for audits, and metric ribbons for quantified material. Use comparison columns only when the items fit the paired layout. Change surface treatments independently of the editorial relationship. Reuse the shared topic, copy, and icon helpers in URL-to-social consumers. Carry forward the user's branding and replace the previous article's takeaway, hub, and column labels.
 
 For the Python deck exporter, four through six cards use a two-column grid. Five-card layouts give the last card the full row. A two-card slide can request paired columns with `"kind": "comparison"`.
+
+## 17 November 2026 — Editorial planning and agency visual research
+
+The shared section builder now keeps an unambiguous run of numbered steps, phases or stages together for workflow sections. Groups with only rhetorical or fragment candidates are omitted. The studio can still produce generic titles: the short-title path preserves headings and the writer assigns its H2 directly. This milestone covers source selection. End-to-end preview and mobile export verification are pending.
+
+### Proposed next milestone
+
+1. Retain the article question and source-block IDs. Rank section opportunities by reader question, strength of evidence and distinctness from other proposed visuals. Return a skip reason for weak sections.
+2. Generate one editable editorial brief per selected relationship. Include a standalone takeaway, a new headline, typed slots, source IDs for each claim, and an accessible text equivalent. Distinguish dates from measurements and sequence from causation.
+3. Cache the brief by source revision and planner version. Choose from compatible compositions by relationship, item count, text fit, brand and destination. Derive visible counts from the final validated slots. Pass the same brief through standalone, writer and batch entry points.
+4. Use native SVG first. Pilot [AntV Infographic](https://github.com/antvis/Infographic) in an isolated browser renderer. Check offline assets, font metrics, edit round-trip, SVG export, mobile readability and preview builds before expanding its template catalog. Keep the renderer outside the Next.js prerender dependency graph.
+5. Reflow for blog, Pinterest and carousel separately. Use the existing Python Chromium deck exporter for social output after mapping approved slots to slide inputs. Store licenses, attribution, origin and permitted destinations with every reusable illustration or photograph. When no compatible stock exists, compose existing primitives, use owned imagery or offer budgeted optional image generation.
+6. Evaluate using the AI SEO article plus unrelated articles with tables, incomplete sequences and sparse text. Check source coverage, invented facts, copied headings, duplicate steps, clipping at mobile width, edit persistence and retry costs. Require a useful independent takeaway in a blind editorial review. Track image spend and human edit time per accepted graphic.
+
+Example acceptance case: the opening definition can become “AI SEO has two jobs” with two labeled panels about using AI during SEO work and making information accessible in AI search. Both panels retain their supporting passages. A seven-phase article roadmap must preserve all seven phases across panels or disclose the selected subset in its headline.
