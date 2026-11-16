@@ -223,18 +223,22 @@ export function buildSectionVisual(
   const rawHeadings = useSubheadings ? subHeadings : primaryHeadings;
   let headings = rawHeadings;
   // When a section has > 6 headings (e.g. Phase 1..7 + child H4s), prioritize major H3/numbered headings
-  const sequenceGroups = new Map<string, string[]>();
+  const sequenceGroups = new Map<string, { ordinal: number; heading: string }[]>();
   for (const heading of rawHeadings) {
     const match = heading.match(/^(step|phase|stage)\s+(\d+)\b/i);
     if (!match) continue;
     const key = match[1].toLowerCase();
     const group = sequenceGroups.get(key) || [];
-    // Only prefer a complete consecutive sequence beginning at one.
-    if (Number(match[2]) === group.length + 1) group.push(heading);
+    group.push({ ordinal: Number(match[2]), heading });
     sequenceGroups.set(key, group);
   }
-  const sequence = [...sequenceGroups.values()].sort((a, b) => b.length - a.length)[0];
-  if (sequence && sequence.length >= 2 && /workflow|process|steps?|phases?|stages?|action plan/i.test(section.title)) {
+  const completeGroups = [...sequenceGroups.values()].filter(
+    (group) => group.length >= 2 && group.every((item, index) => item.ordinal === index + 1),
+  );
+  const sequence = completeGroups.length === 1
+    ? completeGroups[0].map((item) => item.heading)
+    : undefined;
+  if (sequence && /\b(?:workflow|process|steps?|phases?|stages?|action plan)\b/i.test(section.title)) {
     headings = sequence;
   } else if (!useSubheadings && rawHeadings.length > 6) {
     const phaseHeadings = rawHeadings.filter((h) =>
