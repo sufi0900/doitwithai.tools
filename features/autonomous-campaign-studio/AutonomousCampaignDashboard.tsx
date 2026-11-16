@@ -283,16 +283,19 @@ export default function AutonomousCampaignDashboard() {
     }, 420);
 
     try {
-      const seeds = seedPrompts
-        .split('\n')
-        .map((s) => s.trim())
-        .filter(Boolean);
-
-      let scoutReport: WebsiteScoutReport | null = null;
+      const publishingMode: WebsitePublishingMode =
+        siteSourceMode === 'internal-builder'
+          ? 'internal-doitwithai-site'
+          : 'external-workspace-staging';
       const effectiveUrl =
         siteSourceMode === 'internal-builder'
-          ? `https://doitwithai.tools/p/${newInternalSlug}`
+          ? `https://doitwithai.tools/p/${newInternalSlug.trim()}`
           : newSiteUrl.trim() || 'https://doitwithai.tools';
+      const nowIso = new Date().toISOString();
+
+      let scoutReport: WebsiteScoutReport | null = null;
+      let newWebsite: ConnectedWebsiteProfile | null = null;
+      let generatedJobs: AutomatedArticleJob[] = [];
 
       try {
         const res = await fetch('/api/autonomous-agents/scout', {
@@ -301,114 +304,117 @@ export default function AutonomousCampaignDashboard() {
           body: JSON.stringify({
             siteUrl: effectiveUrl,
             primaryNiche: newSiteNiche,
-            seedTopics: seeds,
-            targetCount: 6,
-            installedTools: studioState.websites[0]?.installedTools ?? [],
+            seedTopicsOrPrompt: seedPrompts,
+            targetArticleCount: 6,
+            publishingMode,
+            internalBuilderSlug:
+              siteSourceMode === 'internal-builder' ? newInternalSlug.trim() : undefined,
+            existingSlugs: [],
+            winnerFormulas: studioState.winnerFormulas,
           }),
         });
         if (res.ok) {
-          const data = (await res.json()) as { ok: boolean; report?: WebsiteScoutReport };
-          if (data.ok && data.report) {
-            scoutReport = data.report;
+          const data = (await res.json()) as {
+            ok: boolean;
+            scoutReport?: WebsiteScoutReport;
+            websiteProfile?: ConnectedWebsiteProfile;
+            jobs?: AutomatedArticleJob[];
+          };
+          if (data.ok && data.scoutReport && data.websiteProfile && Array.isArray(data.jobs)) {
+            scoutReport = data.scoutReport;
+            newWebsite = data.websiteProfile;
+            generatedJobs = data.jobs.map(
+              (job, idx): AutomatedArticleJob => ({
+                ...job,
+                id: `job-${Date.now()}-${idx + 1}`,
+                status: 'queued',
+                completedAgents: ['website-brand-scout', 'trend-keyword-radar'],
+                activeAgent: 'topical-map-architect',
+                updatedAtIso: nowIso,
+              })
+            );
           }
         }
       } catch {
         // Offline / local fallback below
       }
 
-      if (!scoutReport) {
-        await new Promise((r) => setTimeout(r, 1200));
-        const rankedTopics = deduplicateAndRankLowKdTopics({
-          seedTopics: seeds,
-          trendItems: [],
-          autocompleteSuggestions: [
-            `${newSiteNiche.split(' ')[0] || 'AI'} workflow checklist`,
-            `how to automate ${newSiteNiche.split(' ')[0] || 'SEO'} step by step`,
-          ],
-          existingSitemapUrls: [],
-          installedTools: studioState.websites[0]?.installedTools ?? [],
-          targetCount: 6,
-        });
-        scoutReport = {
+      if (!scoutReport || !newWebsite || generatedJobs.length === 0) {
+        await new Promise((r) => setTimeout(r, 900));
+        const fallbackSiteName =
+          siteSourceMode === 'internal-builder'
+            ? `DoItWithAI Site (${newInternalSlug.trim()})`
+            : effectiveUrl.replace(/^https?:\/\//, '').split('/')[0] || 'My Website';
+
+        newWebsite = {
+          id: `site-${Date.now()}`,
+          siteName: fallbackSiteName,
           siteUrl: effectiveUrl,
-          crawledAtIso: new Date().toISOString(),
-          sitemapUrlsFound: 18,
-          sampleExistingUrls: [`${effectiveUrl}/blog`],
-          extractedBrand: {
-            siteTitle:
-              siteSourceMode === 'internal-builder'
-                ? `DoItWithAI Site (${newInternalSlug})`
-                : effectiveUrl.replace(/^https?:\/\//, '').split('/')[0] || 'My Website',
-            metaDescription: newSiteNiche,
-            detectedPrimaryHex: '#4A6CF7',
-            detectedSecondaryHex: '#FBB040',
-            h1Headings: [],
-            h2Headings: [],
-            internalLinks: [],
-          },
-          googleTrendsCount: 6,
-          autocompleteCount: 8,
-          rankedTopics,
+          publishingMode,
+          internalBuilderSlug:
+            siteSourceMode === 'internal-builder' ? newInternalSlug.trim() : undefined,
+          primaryNiche: newSiteNiche.trim(),
+          brandPrimaryHex: '#4A6CF7',
+          brandSecondaryHex: '#FBB040',
+          darkThemePreferred: true,
+          installedTools: studioState.websites[0]?.installedTools ?? [],
         };
-      }
 
-      setLatestScoutReport(scoutReport);
-      const nowIso = new Date().toISOString();
-      const publishingMode: WebsitePublishingMode =
-        siteSourceMode === 'internal-builder'
-          ? 'internal-doitwithai-site'
-          : 'external-workspace-staging';
+        const fallbackTrends = [
+          {
+            title: `${newSiteNiche.split(' ')[0] || 'AI'} workflow checklist`,
+            approxTraffic: '25K+ Rising',
+            source: 'autocomplete-gap' as const,
+          },
+          {
+            title: `how to automate ${newSiteNiche.split(' ')[0] || 'SEO'} step by step`,
+            approxTraffic: '20K+ Rising',
+            source: 'google-trends-rss' as const,
+          },
+        ];
 
-      const websiteId = `site-${Date.now()}`;
-      const newWebsite: ConnectedWebsiteProfile = {
-        id: websiteId,
-        siteName: scoutReport.extractedBrand.siteTitle || 'Connected Website',
-        siteUrl: effectiveUrl,
-        publishingMode,
-        internalBuilderSlug:
-          siteSourceMode === 'internal-builder' ? newInternalSlug.trim() : undefined,
-        primaryNiche: newSiteNiche.trim(),
-        brandPrimaryHex: scoutReport.extractedBrand.detectedPrimaryHex || '#4A6CF7',
-        brandSecondaryHex: scoutReport.extractedBrand.detectedSecondaryHex || '#FBB040',
-        darkThemePreferred: true,
-        installedTools: studioState.websites[0]?.installedTools ?? [],
-      };
+        const { jobs: rankedJobs, cannibalizedCandidates } = deduplicateAndRankLowKdTopics({
+          website: newWebsite,
+          seedTopicsOrPrompt: seedPrompts,
+          targetCount: 6,
+          existingBlogSlugs: [],
+          trendSignals: fallbackTrends,
+          winnerFormulas: studioState.winnerFormulas,
+        });
 
-      const templateJob = studioState.campaigns[0]?.jobs[0];
-      const generatedJobs: AutomatedArticleJob[] = scoutReport.rankedTopics.map(
-        (topic, idx): AutomatedArticleJob => {
-          const slug = topic.topicTitle
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, '-')
-            .replace(/^-|-$/g, '')
-            .slice(0, 64);
-
-          return {
-            ...(templateJob as AutomatedArticleJob),
+        generatedJobs = rankedJobs.map(
+          (job, idx): AutomatedArticleJob => ({
+            ...job,
             id: `job-${Date.now()}-${idx + 1}`,
-            orderIndex: idx + 1,
-            topicTitle: topic.topicTitle,
-            primaryKeyword: topic.primaryKeyword,
-            secondaryKeywords: topic.secondaryKeywords,
-            searchIntent: topic.searchIntent,
-            kdProxyScore: topic.kdProxyScore,
-            trendSource: topic.trendSource,
-            matchedInternalToolSlug: topic.matchedInternalToolSlug,
-            matchedInternalToolTitle: topic.matchedInternalToolTitle,
             status: 'queued',
             completedAgents: ['website-brand-scout', 'trend-keyword-radar'],
             activeAgent: 'topical-map-architect',
-            scheduledForIso: new Date(Date.now() + idx * 86_400_000).toISOString(),
-            metaTitle: `${topic.topicTitle} (2027 Guide)`.slice(0, 60),
-            metaDescription: `Step-by-step playbook for ${topic.primaryKeyword} with original infographics and actionable checklists.`.slice(
-              0,
-              155
-            ),
-            urlSlug: slug || `topic-${idx + 1}`,
             updatedAtIso: nowIso,
-          };
-        }
-      );
+          })
+        );
+
+        scoutReport = {
+          scoutedAtIso: nowIso,
+          targetSiteUrl: effectiveUrl,
+          liveFetchSucceeded: false,
+          sitemapUrlsFound: 18,
+          existingBlogSlugsCount: 0,
+          installedToolsCount: newWebsite.installedTools.length,
+          cannibalizationBlockedCount: cannibalizedCandidates.length,
+          cannibalizedCandidates,
+          extractedBrand: {
+            siteName: newWebsite.siteName,
+            brandPrimaryHex: newWebsite.brandPrimaryHex,
+            brandSecondaryHex: newWebsite.brandSecondaryHex,
+            darkThemePreferred: true,
+          },
+          trendSignals: fallbackTrends,
+          sampleIndexedUrls: [`${effectiveUrl}/blog`],
+        };
+      }
+
+      const websiteId = newWebsite.id;
+      setLatestScoutReport(scoutReport);
 
       const newCampaign: AutonomousCampaign = {
         id: `camp-${Date.now()}`,
