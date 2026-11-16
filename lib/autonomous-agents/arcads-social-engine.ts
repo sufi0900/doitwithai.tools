@@ -1,9 +1,10 @@
 /**
- * Phase 1 Foundation: Deterministic Low-KD Topic Radar, Arcads-Style Social
+ * Phase 1 Foundation: Niche-Intelligent Low-KD Topic Radar, Arcads-Style Social
  * Hook Variation Matrix, Pinterest 3-Pin Visual Planner & GEO Citation Scorer.
  *
- * Operates at 0 LLM tokens for instant browser testing and serves as the
- * deterministic backbone for Phase 2–4 live API/queue execution.
+ * Dynamically adapts to ANY website niche (e.g., Cats.com feline care, SaaS,
+ * healthcare, finance, e-commerce, or AI SEO) with variation-seeded topic angles
+ * so repeated runs on the same website produce fresh, non-repetitive topics.
  */
 
 import type {
@@ -28,134 +29,275 @@ export function slugifyTopic(text: string): string {
     .slice(0, 72);
 }
 
-const DEFAULT_TREND_TEMPLATES: Array<{
-  titlePattern: (niche: string, toolName: string) => string;
-  keywordPattern: (niche: string) => string;
+function toTitleCaseWords(text: string): string {
+  const minor = new Set(["a", "an", "the", "and", "or", "for", "to", "in", "on", "of", "vs", "with", "by"]);
+  return clean(text)
+    .split(/\s+/)
+    .map((word, idx) => {
+      const lower = word.toLowerCase();
+      if (idx > 0 && minor.has(lower)) return lower;
+      if (word.length <= 3 && /^[A-Z0-9]+$/.test(word)) return word;
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    })
+    .join(" ");
+}
+
+/**
+ * Extracts a clean, human-readable core subject from a website's niche, siteName, or domain
+ * so topic templates read naturally for ANY industry (e.g., "Cat Care & Nutrition", "Shopify Apps", "Dental Implants").
+ */
+export function extractCleanNicheSubject(website: ConnectedWebsiteProfile): {
+  subjectTitle: string;
+  subjectKeyword: string;
+  isAiSeoNiche: boolean;
+} {
+  const rawNiche = clean(website.primaryNiche || "");
+  const siteDomain = clean(website.siteName || website.siteUrl || "")
+    .replace(/^https?:\/\//i, "")
+    .replace(/^www\./i, "")
+    .split(/[/?#]/)[0]
+    .replace(/\.(com|org|net|io|co|ai|tools|app|dev|uk|us|ca)$/i, "")
+    .replace(/[-_]+/g, " ");
+
+  const isDefaultAiBoilerplate =
+    !rawNiche ||
+    /AI SEO,\s*Answer Engine Optimization \(GEO\)\s*&\s*Content Automation/i.test(rawNiche) ||
+    /AI Content Writing,\s*SEO\s*&\s*Marketing Automation/i.test(rawNiche);
+
+  const isDoItWithAiDomain = /doitwithai/i.test(website.siteUrl || website.siteName || "");
+
+  if (isDefaultAiBoilerplate && !isDoItWithAiDomain && siteDomain.length >= 2) {
+    const subjectTitle = toTitleCaseWords(siteDomain);
+    return {
+      subjectTitle,
+      subjectKeyword: siteDomain.toLowerCase(),
+      isAiSeoNiche: /\b(ai|seo|marketing|content|gpt|llm)\b/i.test(siteDomain),
+    };
+  }
+
+  const firstSegment = rawNiche.split(/[,;|·•]/)[0]?.trim() || siteDomain || "Digital Growth";
+  const subjectTitle = toTitleCaseWords(firstSegment);
+  const subjectKeyword = firstSegment
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .split(/\s+/)
+    .slice(0, 4)
+    .join(" ");
+
+  const isAiSeoNiche =
+    isDoItWithAiDomain ||
+    /\b(ai seo|answer engine|perplexity|json-ld|infographic|schema markup|content automation|blog writer)\b/i.test(
+      rawNiche,
+    );
+
+  return {
+    subjectTitle: subjectTitle || "Practical Strategy",
+    subjectKeyword: subjectKeyword || "strategy guide",
+    isAiSeoNiche,
+  };
+}
+
+/**
+ * Universal, niche-adaptive topic angle blueprints (24 diverse angles across 4 intent categories).
+ * Uses `variationSeed` offset so scanning the same website multiple times yields fresh topics every time.
+ */
+const UNIVERSAL_NICHE_TOPIC_ANGLES: Array<{
+  titlePattern: (subject: string, subTopic: string, year: string, brand: string) => string;
+  keywordPattern: (subjectKw: string, subTopicKw: string) => string;
   intent: AutomatedArticleJob["searchIntent"];
   kdProxy: number;
   trendSource: AutomatedArticleJob["trendSource"];
 }> = [
   {
-    titlePattern: (niche) =>
-      `How to Optimize ${niche} Content for AI Search Citations (5-Step Playbook)`,
-    keywordPattern: (niche) => `${niche.toLowerCase()} ai search optimization`,
-    intent: "step-by-step-howto",
-    kdProxy: 16,
-    trendSource: "google-trends-rss",
-  },
-  {
-    titlePattern: (niche, toolName) =>
-      `Manual ${niche} Workflows vs. Agentic Automation: Complete Comparison`,
-    keywordPattern: (niche) => `automated ${niche.toLowerCase()} workflow vs manual`,
-    intent: "comparison-vs",
-    kdProxy: 19,
+    titlePattern: (subject, subTopic, year) =>
+      `Complete ${subject} Guide (${year}): Essential Rules for ${toTitleCaseWords(subTopic)}`,
+    keywordPattern: (subjectKw, subTopicKw) => `${subjectKw} ${subTopicKw} guide`,
+    intent: "informational-guide",
+    kdProxy: 14,
     trendSource: "autocomplete-gap",
   },
   {
-    titlePattern: (niche, toolName) =>
-      `7 Technical ${niche} Mistakes That Block Google & Perplexity Indexing`,
-    keywordPattern: (niche) => `${niche.toLowerCase()} indexing audit checklist`,
-    intent: "informational-guide",
-    kdProxy: 14,
-    trendSource: "sitemap-cluster",
-  },
-  {
-    titlePattern: (niche, toolName) =>
-      `How to Use ${toolName} to Double Organic CTR Without Extra Backlinks`,
-    keywordPattern: (niche) => `improve ${niche.toLowerCase()} organic ctr`,
-    intent: "tool-playbook",
-    kdProxy: 18,
-    trendSource: "sitemap-cluster",
-  },
-  {
-    titlePattern: (niche) =>
-      `JSON-LD @graph Schema Markup for ${niche}: Entity Linking Guide`,
-    keywordPattern: (niche) => `${niche.toLowerCase()} json-ld schema graph`,
+    titlePattern: (subject, subTopic) =>
+      `7 Costly ${subject} Mistakes Beginners Make with ${toTitleCaseWords(subTopic)} (And How to Fix Them)`,
+    keywordPattern: (subjectKw, subTopicKw) => `common ${subjectKw} ${subTopicKw} mistakes`,
     intent: "step-by-step-howto",
-    kdProxy: 21,
-    trendSource: "google-trends-rss",
+    kdProxy: 12,
+    trendSource: "autocomplete-gap",
   },
   {
-    titlePattern: (niche) =>
-      `Zero-Click Search Survival Guide: Structuring 50-Word AEO Answer Blocks`,
-    keywordPattern: () => `zero click search aeo answer blocks`,
-    intent: "informational-guide",
-    kdProxy: 15,
-    trendSource: "google-trends-rss",
-  },
-  {
-    titlePattern: (niche) =>
-      `Programmatic Section Infographics vs. Stock Photos: Impact on Dwell Time`,
-    keywordPattern: () => `blog section infographics seo dwell time`,
+    titlePattern: (subject, subTopic, year) =>
+      `${toTitleCaseWords(subTopic)} vs. Traditional ${subject} Options: Side-by-Side ${year} Comparison`,
+    keywordPattern: (subjectKw, subTopicKw) => `${subTopicKw} vs traditional ${subjectKw}`,
     intent: "comparison-vs",
+    kdProxy: 17,
+    trendSource: "google-trends-rss",
+  },
+  {
+    titlePattern: (subject, subTopic) =>
+      `How to Choose the Best ${toTitleCaseWords(subTopic)} for ${subject}: 5-Step Decision Checklist`,
+    keywordPattern: (subjectKw, subTopicKw) => `how to choose ${subTopicKw} for ${subjectKw}`,
+    intent: "step-by-step-howto",
+    kdProxy: 15,
+    trendSource: "sitemap-cluster",
+  },
+  {
+    titlePattern: (subject, subTopic, year) =>
+      `Daily & Weekly ${subject} Routine: Proven ${toTitleCaseWords(subTopic)} Schedule for ${year}`,
+    keywordPattern: (subjectKw, subTopicKw) => `daily ${subjectKw} ${subTopicKw} checklist`,
+    intent: "tool-playbook",
     kdProxy: 13,
     trendSource: "autocomplete-gap",
   },
   {
-    titlePattern: (niche) =>
-      `Pinterest SEO & 2:3 Visual Pin Automation for ${niche} Websites`,
-    keywordPattern: (niche) => `pinterest seo strategy for ${niche.toLowerCase()}`,
-    intent: "step-by-step-howto",
-    kdProxy: 17,
-    trendSource: "google-trends-rss",
-  },
-  {
-    titlePattern: (niche) =>
-      `How to Audit Sentence Readability & Burstiness Without Diluting Technical Depth`,
-    keywordPattern: () => `technical seo readability burstiness audit`,
-    intent: "tool-playbook",
-    kdProxy: 15,
-    trendSource: "sitemap-cluster",
-  },
-  {
-    titlePattern: (niche) =>
-      `Topical Authority Map Architecture: Grouping Long-Tail Queries into Pillar Hubs`,
-    keywordPattern: () => `topical authority map keyword clustering`,
+    titlePattern: (subject, subTopic) =>
+      `Signs Your ${subject} Approach Needs an Upgrade: ${toTitleCaseWords(subTopic)} Diagnostic Guide`,
+    keywordPattern: (subjectKw, subTopicKw) => `${subjectKw} ${subTopicKw} warning signs`,
     intent: "informational-guide",
-    kdProxy: 22,
-    trendSource: "autocomplete-gap",
-  },
-  {
-    titlePattern: (niche) =>
-      `LinkedIn Carousel PDF Engineering: Turning Technical Guides into 8-Slide Decks`,
-    keywordPattern: () => `linkedin pdf carousel strategy b2b seo`,
-    intent: "step-by-step-howto",
     kdProxy: 16,
     trendSource: "google-trends-rss",
   },
   {
-    titlePattern: (niche) =>
-      `Internal Link Anchor Text Optimization: Automated Contextual Weaving Rules`,
-    keywordPattern: () => `internal link anchor text optimization rules`,
-    intent: "tool-playbook",
+    titlePattern: (subject, subTopic, year) =>
+      `Budget vs. Premium ${subject}: Where to Invest in ${toTitleCaseWords(subTopic)} (${year} Breakdown)`,
+    keywordPattern: (subjectKw, subTopicKw) => `${subjectKw} ${subTopicKw} cost comparison`,
+    intent: "comparison-vs",
     kdProxy: 18,
-    trendSource: "sitemap-cluster",
-  },
-  {
-    titlePattern: (niche) =>
-      `E-E-A-T Claim Verification: Grounding Statistics with Primary Source Links`,
-    keywordPattern: () => `eeat claim verification seo citations`,
-    intent: "informational-guide",
-    kdProxy: 20,
     trendSource: "autocomplete-gap",
   },
   {
-    titlePattern: (niche) =>
-      `Refreshing Decaying Articles: 6 Structural Upgrades for 2027 Search Engines`,
-    keywordPattern: () => `content decay refresh seo checklist`,
+    titlePattern: (subject, subTopic) =>
+      `First-Time ${subject} Starter Blueprint: Mastering ${toTitleCaseWords(subTopic)} in 30 Days`,
+    keywordPattern: (subjectKw, subTopicKw) => `${subjectKw} ${subTopicKw} for beginners`,
     intent: "step-by-step-howto",
-    kdProxy: 17,
+    kdProxy: 11,
+    trendSource: "sitemap-cluster",
+  },
+  {
+    titlePattern: (subject, subTopic) =>
+      `10 Expert-Backed ${subject} Questions Answered: ${toTitleCaseWords(subTopic)} Fact vs. Myth`,
+    keywordPattern: (subjectKw, subTopicKw) => `${subjectKw} ${subTopicKw} myths and facts`,
+    intent: "informational-guide",
+    kdProxy: 15,
     trendSource: "google-trends-rss",
   },
   {
-    titlePattern: (niche) =>
-      `Free-Tier AI Agent Orchestration: Running Multi-Step SEO Workflows at Zero Cost`,
-    keywordPattern: () => `free tier ai seo agent workflow automation`,
+    titlePattern: (subject, subTopic, year) =>
+      `How to Troubleshoot ${toTitleCaseWords(subTopic)} Challenges in ${subject} (${year} Playbook)`,
+    keywordPattern: (subjectKw, subTopicKw) => `troubleshoot ${subjectKw} ${subTopicKw}`,
+    intent: "step-by-step-howto",
+    kdProxy: 14,
+    trendSource: "autocomplete-gap",
+  },
+  {
+    titlePattern: (subject, subTopic) =>
+      `Seasonal & Long-Term ${subject} Maintenance: Keeping ${toTitleCaseWords(subTopic)} on Track`,
+    keywordPattern: (subjectKw, subTopicKw) => `long term ${subjectKw} ${subTopicKw} tips`,
     intent: "tool-playbook",
-    kdProxy: 12,
-    trendSource: "user-seed-prompt",
+    kdProxy: 19,
+    trendSource: "sitemap-cluster",
+  },
+  {
+    titlePattern: (subject, subTopic, year) =>
+      `What Top ${subject} Specialists Recommend for ${toTitleCaseWords(subTopic)} in ${year}`,
+    keywordPattern: (subjectKw, subTopicKw) => `expert ${subjectKw} ${subTopicKw} recommendations`,
+    intent: "informational-guide",
+    kdProxy: 20,
+    trendSource: "google-trends-rss",
   },
 ];
+
+/**
+ * Generates domain-intelligent sub-pillars from any website's niche or headings
+ * so fallback topics are deeply relevant (e.g., nutrition, health, behavior, breeds for cats.com).
+ */
+export function deriveNicheSubPillars(
+  website: ConnectedWebsiteProfile,
+  headings: string[] = [],
+): string[] {
+  const combinedText = `${website.siteName} ${website.primaryNiche} ${headings.join(" ")}`.toLowerCase();
+
+  if (/\b(cat|cats|feline|kitten|kitty|litter|purr)\b/.test(combinedText)) {
+    return [
+      "wet vs dry feline nutrition",
+      "indoor cat enrichment & behavior",
+      "kitten vaccination & health checks",
+      "litter box training & odor control",
+      "senior cat joint & dental care",
+      "hypoallergenic cat breeds & grooming",
+      "toxic houseplants & home safety",
+      "multi-cat household introduction",
+    ];
+  }
+  if (/\b(dog|dogs|canine|puppy|pet|vet)\b/.test(combinedText)) {
+    return [
+      "puppy crate training & socialization",
+      "balanced canine diet & nutrition",
+      "preventive veterinary care schedule",
+      "leash reactivity & positive reinforcement",
+      "senior dog mobility & wellness",
+      "grooming & coat health essentials",
+    ];
+  }
+  if (/\b(health|medical|wellness|fitness|nutrition|diet|clinic|dental)\b/.test(combinedText)) {
+    return [
+      "evidence-based daily habits",
+      "preventive screening & early signs",
+      "nutrition & recovery protocols",
+      "at-home vs clinical care options",
+      "long-term wellness tracking",
+      "patient preparation checklist",
+    ];
+  }
+  if (/\b(shop|ecommerce|store|retail|product|fashion|beauty|skincare)\b/.test(combinedText)) {
+    return [
+      "ingredient & material quality audit",
+      "daily routine & application order",
+      "budget vs luxury product comparison",
+      "seasonal care & storage tips",
+      "buyer sizing & compatibility guide",
+      "sustainable & eco-friendly alternatives",
+    ];
+  }
+  if (/\b(finance|invest|tax|accounting|crypto|mortgage|loan|wealth)\b/.test(combinedText)) {
+    return [
+      "risk management & portfolio allocation",
+      "fee structure & tax optimization",
+      "step-by-step qualification checklist",
+      "automated budgeting & cashflow",
+      "short-term vs long-term yield comparison",
+      "regulatory compliance & audit readiness",
+    ];
+  }
+
+  // Extract meaningful noun phrases from homepage headings if available
+  const fromHeadings = headings
+    .map((h) =>
+      clean(h)
+        .replace(/[^a-zA-Z0-9\s-]/g, " ")
+        .trim(),
+    )
+    .filter((h) => h.length >= 8 && h.length <= 48)
+    .slice(0, 6);
+
+  if (fromHeadings.length >= 3) {
+    return fromHeadings.map((h) => h.toLowerCase());
+  }
+
+  const rawSegments = (website.primaryNiche || "")
+    .split(/[,;|/&]+/)
+    .map((s) => clean(s).toLowerCase())
+    .filter((s) => s.length >= 3);
+
+  return [
+    ...(rawSegments.length >= 2 ? rawSegments : []),
+    "step-by-step implementation",
+    "quality & safety standards",
+    "cost vs value comparison",
+    "troubleshooting & best practices",
+    "beginner starter checklist",
+    "advanced optimization strategies",
+  ];
+}
 
 /**
  * Builds structured, standalone H2 sections for an automated article job.
@@ -167,109 +309,111 @@ export function buildStandaloneOutlineForTopic(
   topicTitle: string,
   primaryKeyword: string,
   toolTitle: string,
+  nicheSubject = "Core Strategy",
 ): AutomatedArticleJob["outlineSections"] {
-  const shortTopic = clean(topicTitle.split(/[:—–-]/)[0]).slice(0, 42);
+  const shortTopic = clean(topicTitle.split(/[:—–-]/)[0]).slice(0, 46);
+  const resourceLabel = toolTitle || `${nicheSubject} Resource Hub`;
   return [
     {
-      h2: `Core Architecture of ${shortTopic}`,
+      h2: `What You Need to Know About ${shortTopic}`,
       archetype: "framework",
-      summary: `Foundational pillars required to implement ${primaryKeyword} with measurable search and reader clarity.`,
+      summary: `Foundational principles, key evaluation criteria, and practical context for mastering ${primaryKeyword}.`,
       points: [
         {
           badge: "01",
-          title: "Entity-First Topic Scope",
-          detail: `Map core domain entities and user search intent before drafting prose so answer engines index unambiguous relationships.`,
+          title: "Core Fundamentals First",
+          detail: `Understand the primary factors that drive reliable outcomes when applying ${primaryKeyword} in real-world scenarios.`,
         },
         {
           badge: "02",
-          title: "40-Word Direct Answer Lead",
-          detail: `Open each major section with a self-contained summary paragraph that resolves the primary query without filler.`,
+          title: "Evidence-Based Criteria",
+          detail: `Evaluate options using measurable quality indicators rather than guesswork or marketing claims.`,
         },
         {
           badge: "03",
-          title: "Verified Primary Citations",
-          detail: `Anchor quantitative benchmarks and technical standards to official documentation links to strengthen E-E-A-T signals.`,
+          title: "Early Warning Signals",
+          detail: `Spot common red flags and preventable mistakes early before they compound into costly setbacks.`,
         },
         {
           badge: "04",
-          title: "Contextual Tool Integration",
-          detail: `Connect explanations directly to interactive utilities like ${toolTitle} so readers can apply the framework immediately.`,
+          title: "Practical Resource Alignment",
+          detail: `Pair foundational knowledge with trusted references like ${resourceLabel} for consistent execution.`,
         },
       ],
     },
     {
-      h2: `5-Step Execution Workflow for ${shortTopic}`,
+      h2: `Step-by-Step Action Plan for ${shortTopic}`,
       archetype: "process",
-      summary: `Sequential implementation pipeline designed for repeatable editorial and technical execution.`,
+      summary: `Sequential 4-stage workflow designed for clear, repeatable implementation of ${primaryKeyword}.`,
       points: [
         {
           badge: "01",
-          title: "Isolate Target Query Cluster",
-          detail: `Group long-tail search variations by shared SERP intent to prevent multi-page keyword cannibalization.`,
+          title: "Baseline Assessment",
+          detail: `Audit your current setup, goals, and constraints to establish an accurate starting benchmark.`,
         },
         {
           badge: "02",
-          title: "Structure H2 & H3 Hierarchy",
-          detail: `Assign each subheading a distinct job—process timeline, comparison matrix, or verification checklist.`,
+          title: "Structured Preparation",
+          detail: `Gather the right essentials, schedule checkpoints, and organize your environment before making changes.`,
         },
         {
           badge: "03",
-          title: "Synthesize Section Infographics",
-          detail: `Compile standalone concept cards with distinct vector icons and high-contrast typography for visual scanners.`,
+          title: "Consistent Daily Execution",
+          detail: `Follow the core routine step by step while monitoring immediate response and comfort levels.`,
         },
         {
           badge: "04",
-          title: "Weave Internal Tool Anchors",
-          detail: `Link naturally to ${toolTitle} using descriptive anchor phrases that match the reader's active task.`,
+          title: "Track & Refine Results",
+          detail: `Review progress after two weeks and fine-tune your approach using ${resourceLabel}.`,
         },
       ],
     },
     {
-      h2: `Manual Drafting vs. Autonomous Agent Workflow`,
+      h2: `${shortTopic}: Side-by-Side Comparison & Trade-Offs`,
       archetype: "comparison",
-      summary: `Side-by-side operational comparison evaluating speed, visual consistency, and citation readiness.`,
+      summary: `Objective comparison of traditional guesswork versus a structured, expert-guided approach to ${primaryKeyword}.`,
       points: [
         {
           badge: "A1",
-          title: "Unstructured Wall-of-Text Prose",
-          detail: `Manual single-prompt drafts often bury key answers under repetitive introductions and generic transitions.`,
+          title: "Reactive Trial and Error",
+          detail: `Inconsistent routines and unverified advice often lead to avoidable frustration and uneven results.`,
         },
         {
           badge: "B1",
-          title: "Snippet-Ready Modular Blocks",
-          detail: `Agentic workflows enforce 50-word AEO answer leads, structured tables, and scannable bullet hierarchies.`,
+          title: "Proactive Structured Plan",
+          detail: `Clear milestones and evidence-backed criteria deliver predictable, long-lasting improvements.`,
         },
         {
           badge: "A2",
-          title: "Disconnected Generic Graphics",
-          detail: `Stock images add zero informational value and fail to earn saves on Pinterest or LinkedIn feeds.`,
+          title: "Short-Term Quick Fixes",
+          detail: `Surface-level shortcuts mask underlying issues without addressing root causes.`,
         },
         {
           badge: "B2",
-          title: "Source-Grounded SVG Visuals",
-          detail: `Programmatic section infographics convert every H2 into a shareable, brand-matched visual summary.`,
+          title: "Sustainable Long-Term Care",
+          detail: `Holistic habits and verified checklists protect quality, safety, and long-term satisfaction.`,
         },
       ],
     },
     {
-      h2: `Frequently Asked Questions`,
+      h2: `Frequently Asked Questions About ${shortTopic}`,
       archetype: "faq",
-      summary: `Direct answers to common technical and operational questions around ${primaryKeyword}.`,
+      summary: `Direct, concise answers to the most common questions readers ask about ${primaryKeyword}.`,
       points: [
         {
           badge: "Q1",
-          title: `How does ${primaryKeyword} improve AI search citations?`,
-          detail: `Clear entity definitions, 50-word answer leads, and structured JSON-LD allow LLMs to extract verifiable citations accurately.`,
+          title: `What is the most important first step with ${primaryKeyword}?`,
+          detail: `Start by assessing your specific needs and establishing a simple, consistent baseline routine before introducing advanced changes.`,
         },
         {
           badge: "Q2",
-          title: `Why pair every article with standalone section infographics?`,
-          detail: `Visual concept cards increase reader comprehension on-page while creating ready-to-publish assets for Pinterest and LinkedIn.`,
+          title: `How quickly can you expect noticeable results from ${primaryKeyword}?`,
+          detail: `Most people observe initial positive indicators within one to two weeks of consistent application, with full benefits compounding over 30 days.`,
         },
         {
           badge: "Q3",
-          title: `Can this workflow run safely on free-tier AI API quotas?`,
-          detail: `Yes. Offloading 85% of analysis and SVG rendering to deterministic code keeps LLM usage under 6,500 tokens per article.`,
+          title: `What common mistakes should beginners avoid with ${primaryKeyword}?`,
+          detail: `Avoid changing multiple variables at once, skipping foundational checks, or relying on outdated one-size-fits-all advice.`,
         },
       ],
     },
@@ -315,7 +459,7 @@ export function scoreGeoCitationReadiness(
   else notes.push("Ensure every H2 section has >= 3 standalone visual points.");
 
   if (hasInternalToolLinks) score += 8;
-  else notes.push("Link to at least one relevant interactive tool.");
+  else notes.push("Link to at least one relevant internal page or resource.");
 
   const finalScore = Math.min(99, score);
   return {
@@ -359,14 +503,14 @@ export function buildArcadsSocialPackForJob(
   const toolName =
     job.matchedInternalToolTitle ||
     website.installedTools[0]?.title ||
-    "Free AI SEO Studio";
+    `${website.siteName} Resource Hub`;
   const corePoints =
     job.outlineSections[0]?.points ||
     job.outlineSections[1]?.points || [
       {
         badge: "01",
-        title: "Isolate Intent",
-        detail: "Map primary entities and user questions first.",
+        title: "Core Fundamentals",
+        detail: "Start with verified criteria and a clear baseline.",
       },
     ];
 
@@ -377,21 +521,21 @@ export function buildArcadsSocialPackForJob(
     {
       id: `${job.id}-arcads-1`,
       archetype: "contrarian-data",
-      archetypeLabel: "Hook 01 · Contrarian Data & Shift",
+      archetypeLabel: "Hook 01 · Contrarian Insight & Shift",
       channel: "linkedin",
-      hookLine: `Most websites still format content for 2020 blue links—and lose 80% of AI search citations on "${job.primaryKeyword}".`,
+      hookLine: `Most advice on "${job.primaryKeyword}" overlooks the 4 fundamentals that actually make the biggest difference.`,
       bodyCopy: [
-        `We audited how answer engines extract technical sources and rebuilt our workflow around 4 structural rules:`,
+        `We broke down "${job.topicTitle}" into a clear, actionable framework anyone can follow:`,
         ...corePoints
           .slice(0, 4)
           .map((p) => `→ ${p.title}: ${p.detail}`),
-        `Swipe through the 8-slide engineering breakdown below.`,
+        `Swipe through the 8-slide visual breakdown below.`,
       ].join("\n\n"),
-      ctaLine: `Try our ${toolName} and read the full guide: ${articleUrl}`,
+      ctaLine: `Explore ${toolName} and read the full guide: ${articleUrl}`,
       targetUrl: articleUrl,
       visualFormat: "linkedin-4x5-carousel",
       visualHeadline: job.topicTitle,
-      visualSubheadline: `4 Structural Shifts for Higher Citations`,
+      visualSubheadline: `4 Key Takeaways · ${website.siteName}`,
       visualPoints: corePoints.slice(0, 4),
       predictedCtrScore: Math.min(98, 91 + bonusCtr),
     },
@@ -400,58 +544,58 @@ export function buildArcadsSocialPackForJob(
       archetype: "numbered-playbook",
       archetypeLabel: "Hook 02 · Step-by-Step Playbook",
       channel: "pinterest",
-      hookLine: `The exact step-by-step playbook for ${job.topicTitle} (Save this checklist for your next audit):`,
+      hookLine: `The complete step-by-step guide to ${job.topicTitle} (Save this visual checklist for later):`,
       bodyCopy: [
-        `Want consistent rankings and AI citations for ${job.primaryKeyword}? Follow this repeatable sequence:`,
+        `Want reliable results with ${job.primaryKeyword}? Follow this simple sequence:`,
         ...(job.outlineSections[1]?.points || corePoints)
           .slice(0, 4)
           .map((p, idx) => `${idx + 1}. ${p.title} — ${p.detail}`),
       ].join("\n\n"),
-      ctaLine: `Full interactive guide + ${toolName} at ${website.siteName}`,
+      ctaLine: `Full guide + resources at ${website.siteName}`,
       targetUrl: articleUrl,
       visualFormat: "pinterest-2x3-pin",
-      visualHeadline: `5-Step ${clean(job.primaryKeyword)} Playbook`,
-      visualSubheadline: `Save-Ready Implementation Roadmap · ${website.siteName}`,
+      visualHeadline: `${toTitleCaseWords(clean(job.primaryKeyword))} Checklist`,
+      visualSubheadline: `Save-Ready Visual Guide · ${website.siteName}`,
       visualPoints: (job.outlineSections[1]?.points || corePoints).slice(0, 4),
       predictedCtrScore: Math.min(99, 94 + bonusCtr),
     },
     {
       id: `${job.id}-arcads-3`,
       archetype: "before-after-vs",
-      archetypeLabel: "Hook 03 · Manual vs. Agentic Comparison",
+      archetypeLabel: "Hook 03 · Side-by-Side Comparison",
       channel: "linkedin",
-      hookLine: `Old way: Spend 6 hours writing a wall of text that nobody finishes.\nNew way: Pair modular AEO blocks with standalone section infographics.`,
+      hookLine: `Old way: Relying on guesswork and scattered tips for ${job.primaryKeyword}.\nNew way: Following a structured, step-by-step checklist.`,
       bodyCopy: [
-        `Here is the side-by-side difference when executing ${job.primaryKeyword}:`,
+        `Here is the side-by-side difference when approaching ${job.primaryKeyword}:`,
         ...(job.outlineSections[2]?.points || corePoints)
           .slice(0, 4)
           .map((p) => `• ${p.title}: ${p.detail}`),
       ].join("\n\n"),
-      ctaLine: `Test the workflow live inside ${toolName}: ${articleUrl}`,
+      ctaLine: `Read the complete comparison at ${website.siteName}: ${articleUrl}`,
       targetUrl: articleUrl,
       visualFormat: "bento-card",
-      visualHeadline: `Manual Drafting vs. Agentic Workflow`,
-      visualSubheadline: `Side-by-Side Architecture Comparison`,
+      visualHeadline: `Guesswork vs. Proven Framework`,
+      visualSubheadline: `Side-by-Side Comparison · ${website.siteName}`,
       visualPoints: (job.outlineSections[2]?.points || corePoints).slice(0, 4),
       predictedCtrScore: Math.min(97, 89 + bonusCtr),
     },
     {
       id: `${job.id}-arcads-4`,
       archetype: "symptom-diagnostic",
-      archetypeLabel: "Hook 04 · Symptom Diagnostic Thread",
+      archetypeLabel: "Hook 04 · Quick Diagnostic Thread",
       channel: "x-twitter",
-      hookLine: `1/5 If your articles rank on page 1 but earn zero AI Overview citations or social saves, check these 4 structural gaps in your ${job.primaryKeyword} workflow 🧵👇`,
+      hookLine: `1/5 Struggling to get consistent results with ${job.primaryKeyword}? Watch out for these 4 common blind spots 🧵👇`,
       bodyCopy: [
-        `2/5 Gap 1 — ${corePoints[0]?.title}: ${corePoints[0]?.detail}`,
-        `3/5 Gap 2 — ${corePoints[1]?.title}: ${corePoints[1]?.detail}`,
-        `4/5 Gap 3 — ${corePoints[2]?.title}: ${corePoints[2]?.detail}`,
-        `5/5 Run the complete diagnostic with ${toolName}: ${articleUrl}`,
+        `2/5 Point 1 — ${corePoints[0]?.title}: ${corePoints[0]?.detail}`,
+        `3/5 Point 2 — ${corePoints[1]?.title}: ${corePoints[1]?.detail}`,
+        `4/5 Point 3 — ${corePoints[2]?.title}: ${corePoints[2]?.detail}`,
+        `5/5 Read the full guide on ${website.siteName}: ${articleUrl}`,
       ].join("\n\n"),
       ctaLine: `Bookmark the full guide: ${articleUrl}`,
       targetUrl: articleUrl,
       visualFormat: "thread-cards",
-      visualHeadline: `4 Structural Gaps Blocking Citations`,
-      visualSubheadline: `Diagnostic Checklist · ${website.siteName}`,
+      visualHeadline: `4 Key Rules for ${toTitleCaseWords(clean(job.primaryKeyword))}`,
+      visualSubheadline: `Quick Diagnostic · ${website.siteName}`,
       visualPoints: corePoints.slice(0, 4),
       predictedCtrScore: Math.min(96, 88 + bonusCtr),
     },
@@ -462,18 +606,18 @@ export function buildArcadsSocialPackForJob(
       channel: "instagram",
       hookLine:
         job.outlineSections[3]?.points[0]?.title ||
-        `How does ${job.primaryKeyword} impact search visibility in 2027?`,
+        `What is the best way to approach ${job.primaryKeyword}?`,
       bodyCopy: [
         job.aeoDirectAnswer50Words,
         ...(job.outlineSections[3]?.points || corePoints)
           .slice(0, 3)
           .map((p) => `Q: ${p.title}\nA: ${p.detail}`),
       ].join("\n\n"),
-      ctaLine: `Explore the interactive tool (${toolName}) at ${website.siteName}`,
+      ctaLine: `More guides & resources at ${website.siteName}`,
       targetUrl: articleUrl,
       visualFormat: "bento-card",
-      visualHeadline: `Key Questions Answered: ${clean(job.primaryKeyword)}`,
-      visualSubheadline: `FAQ Playbook · ${website.siteName}`,
+      visualHeadline: `Top Questions Answered: ${toTitleCaseWords(clean(job.primaryKeyword))}`,
+      visualSubheadline: `Expert FAQ Guide · ${website.siteName}`,
       visualPoints: (job.outlineSections[3]?.points || corePoints).slice(0, 3),
       predictedCtrScore: Math.min(95, 87 + bonusCtr),
     },
@@ -505,7 +649,8 @@ export function buildPinterestThreePinSuite(
     website.internalBuilderSlug
       ? `${baseUrl}/p/${website.internalBuilderSlug}/blog/${job.urlSlug}`
       : `${baseUrl}/blog/${job.urlSlug}`;
-  const boardName = `${website.primaryNiche || "AI & SEO"} Playbooks & Checklists`;
+  const { subjectTitle } = extractCleanNicheSubject(website);
+  const boardName = `${subjectTitle} Guides & Checklists`.slice(0, 60);
   const winner = winnerFormulas.find((w) => w.sourceChannel === "pinterest");
 
   const secProcess = job.outlineSections[1] || job.outlineSections[0];
@@ -518,8 +663,8 @@ export function buildPinterestThreePinSuite(
       pinVariantIndex: 1,
       angleLabel: "Step-by-Step Timeline",
       boardName,
-      pinTitle: `${job.topicTitle} (Step-by-Step Visual Playbook)`.slice(0, 98),
-      pinDescription: `Learn ${job.primaryKeyword} with this step-by-step visual guide from ${website.siteName}. Includes actionable workflow steps, verification rules, and free interactive tools.`.slice(
+      pinTitle: `${job.topicTitle} (Step-by-Step Visual Guide)`.slice(0, 98),
+      pinDescription: `Learn ${job.primaryKeyword} with this step-by-step visual guide from ${website.siteName}. Includes practical tips, key steps, and expert checklists.`.slice(
         0,
         480,
       ),
@@ -551,11 +696,11 @@ export function buildPinterestThreePinSuite(
       pinVariantIndex: 2,
       angleLabel: "Myth vs. Reality Comparison",
       boardName,
-      pinTitle: `Manual vs. Automated ${clean(job.primaryKeyword)}: Side-by-Side Guide`.slice(
+      pinTitle: `${toTitleCaseWords(clean(job.primaryKeyword))}: Side-by-Side Comparison Guide`.slice(
         0,
         98,
       ),
-      pinDescription: `Compare traditional manual drafting against modern agentic workflows for ${job.primaryKeyword}. Save this comparison chart from ${website.siteName} for your next content sprint.`.slice(
+      pinDescription: `Compare what works vs. what to avoid for ${job.primaryKeyword}. Save this visual comparison chart from ${website.siteName} for quick reference.`.slice(
         0,
         480,
       ),
@@ -587,11 +732,11 @@ export function buildPinterestThreePinSuite(
       pinVariantIndex: 3,
       angleLabel: "Actionable Checklist",
       boardName,
-      pinTitle: `${clean(job.primaryKeyword)} Audit Checklist & Key Questions Answered`.slice(
+      pinTitle: `${toTitleCaseWords(clean(job.primaryKeyword))} Checklist & Top Questions Answered`.slice(
         0,
         98,
       ),
-      pinDescription: `Quick verification checklist and FAQ cheat-sheet for ${job.primaryKeyword}. Built with ${website.siteName}${job.matchedInternalToolTitle ? ` and ${job.matchedInternalToolTitle}` : ""}.`.slice(
+      pinDescription: `Quick checklist and FAQ cheat-sheet for ${job.primaryKeyword}. Created by ${website.siteName}.`.slice(
         0,
         480,
       ),
@@ -624,12 +769,14 @@ export function buildPinterestThreePinSuite(
 /**
  * Discovers and builds `targetCount` (1 to 15) low-difficulty, high-intent
  * article automation jobs for the given website profile and user seed topics.
+ * Supports `variationSeed` so repeated runs on the same URL produce fresh topics!
  */
 export function discoverLowKdTopicsForWebsite(
   website: ConnectedWebsiteProfile,
   seedTopicsOrPrompt: string,
   targetCount: number,
   winnerFormulas: WinnerFormulaRecord[] = [],
+  options: { variationSeed?: number; headings?: string[] } = {},
 ): AutomatedArticleJob[] {
   const clampedCount = Math.max(1, Math.min(15, Math.round(targetCount || 5)));
   const userLines = (seedTopicsOrPrompt || "")
@@ -637,68 +784,92 @@ export function discoverLowKdTopicsForWebsite(
     .map((l) => l.replace(/^\s*(?:[-*•]|\d+[.)])\s*/, "").trim())
     .filter((l) => l.length >= 5);
 
+  const { subjectTitle, subjectKeyword, isAiSeoNiche } = extractCleanNicheSubject(website);
+  const subPillars = deriveNicheSubPillars(website, options.headings || []);
+  const seedOffset = Math.abs(Math.round(options.variationSeed ?? 0));
+  const year = "2026";
+
   const tools =
     website.installedTools.length > 0
       ? website.installedTools
-      : [
-          {
-            slug: "blog-section-infographic-generator",
-            title: "Free AI Blog Section Infographic Generator",
-            url: `${website.siteUrl.replace(/\/$/, "")}/tools/blog-section-infographic-generator`,
-          },
-          {
-            slug: "meta-title-generator",
-            title: "AI Meta Title & Pixel Optimizer",
-            url: `${website.siteUrl.replace(/\/$/, "")}/tools/meta-title-generator`,
-          },
-          {
-            slug: "on-page-ai-seo-analyzer",
-            title: "On-Page AI SEO Analyzer & Repair Agent",
-            url: `${website.siteUrl.replace(/\/$/, "")}/tools/on-page-ai-seo-analyzer`,
-          },
-          {
-            slug: "schema-markup-generator",
-            title: "JSON-LD Schema Markup & @graph Generator",
-            url: `${website.siteUrl.replace(/\/$/, "")}/tools/schema-markup-generator`,
-          },
-        ];
+      : isAiSeoNiche
+        ? [
+            {
+              slug: "blog-section-infographic-generator",
+              title: "Free AI Blog Section Infographic Generator",
+              url: `${website.siteUrl.replace(/\/$/, "")}/tools/blog-section-infographic-generator`,
+            },
+            {
+              slug: "meta-title-generator",
+              title: "AI Meta Title & Pixel Optimizer",
+              url: `${website.siteUrl.replace(/\/$/, "")}/tools/meta-title-generator`,
+            },
+            {
+              slug: "on-page-ai-seo-analyzer",
+              title: "On-Page AI SEO Analyzer & Repair Agent",
+              url: `${website.siteUrl.replace(/\/$/, "")}/tools/on-page-ai-seo-analyzer`,
+            },
+            {
+              slug: "schema-markup-generator",
+              title: "JSON-LD Schema Markup & @graph Generator",
+              url: `${website.siteUrl.replace(/\/$/, "")}/tools/schema-markup-generator`,
+            },
+          ]
+        : [
+            {
+              slug: slugifyTopic(`${subjectKeyword}-guide`) || "official-guide",
+              title: `${website.siteName} ${subjectTitle} Hub`,
+              url: website.siteUrl,
+            },
+          ];
 
   const jobs: AutomatedArticleJob[] = [];
   const nowMs = Date.now();
 
   for (let i = 0; i < clampedCount; i++) {
-    const matchedTool = tools[i % tools.length];
-    const tpl = DEFAULT_TREND_TEMPLATES[i % DEFAULT_TREND_TEMPLATES.length];
+    const matchedTool = tools[i % tools.length]!;
+    const angleIdx = (i + seedOffset) % UNIVERSAL_NICHE_TOPIC_ANGLES.length;
+    const pillarIdx = (i + seedOffset) % Math.max(1, subPillars.length);
+    const tpl = UNIVERSAL_NICHE_TOPIC_ANGLES[angleIdx]!;
+    const subPillar = subPillars[pillarIdx] || "essential best practices";
+    const subPillarKw = subPillar
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, "")
+      .split(/\s+/)
+      .slice(0, 3)
+      .join(" ");
+
     const customSeed = userLines[i];
 
     const topicTitle = customSeed
-      ? customSeed.length > 28
-        ? customSeed
-        : `${customSeed}: Complete ${website.primaryNiche} Playbook & Visual Guide`
-      : tpl.titlePattern(website.primaryNiche || "AI SEO", matchedTool.title);
+      ? customSeed.length > 26
+        ? toTitleCaseWords(customSeed)
+        : `${toTitleCaseWords(customSeed)}: Complete ${subjectTitle} Guide (${year})`
+      : tpl.titlePattern(subjectTitle, subPillar, year, website.siteName);
 
     const primaryKeyword = customSeed
       ? clean(customSeed)
           .toLowerCase()
           .replace(/[^a-z0-9\s-]/g, "")
           .split(/\s+/)
-          .slice(0, 5)
+          .slice(0, 6)
           .join(" ")
-      : tpl.keywordPattern(website.primaryNiche || "AI SEO");
+      : tpl.keywordPattern(subjectKeyword, subPillarKw);
 
     const urlSlug = slugifyTopic(primaryKeyword || topicTitle);
     const metaTitle = topicTitle.slice(0, 58);
     const metaDescription =
-      `Learn ${primaryKeyword} with step-by-step workflows, standalone section infographics, and ${matchedTool.title}.`.slice(
+      `Explore ${primaryKeyword} with step-by-step checklists, comparison tables, visual infographics, and expert guidance from ${website.siteName}.`.slice(
         0,
         156,
       );
-    const aeoDirectAnswer50Words = `Implementing ${primaryKeyword} requires structuring content around explicit entity definitions, placing a concise forty to sixty word answer summary beneath each primary heading, validating claims against primary documentation, and pairing key workflows with standalone section infographics and interactive tools like ${matchedTool.title} so both human readers and AI search engines extract immediate value.`;
+    const aeoDirectAnswer50Words = `Mastering ${primaryKeyword} starts with understanding core ${subjectTitle.toLowerCase()} fundamentals, following a structured step-by-step routine, comparing proven options against common pitfalls, and tracking measurable indicators over time so readers achieve reliable, lasting results with guidance from ${website.siteName}.`;
 
     const outlineSections = buildStandaloneOutlineForTopic(
       topicTitle,
       primaryKeyword,
       matchedTool.title,
+      subjectTitle,
     );
 
     const scheduledDate = new Date(nowMs + i * 24 * 60 * 60 * 1000).toISOString();
@@ -709,8 +880,8 @@ export function discoverLowKdTopicsForWebsite(
       primaryKeyword,
       secondaryKeywords: [
         `${primaryKeyword} checklist`,
-        `${primaryKeyword} examples`,
-        `${matchedTool.title.toLowerCase()}`,
+        `${primaryKeyword} tips`,
+        `best ${subjectKeyword} practices`,
       ],
       searchIntent: customSeed ? "step-by-step-howto" : tpl.intent,
       kdProxyScore: tpl.kdProxy + (i % 5),

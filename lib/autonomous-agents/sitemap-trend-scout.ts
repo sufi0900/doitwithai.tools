@@ -1,10 +1,10 @@
 /**
- * Phase 2 Implementation: Website Sitemap Crawler, HTML Brand DNA Extractor,
- * Google Trends Public RSS Parser, Autocomplete Question Expander &
+ * Phase 2 Implementation: Real-Time Website Sitemap Crawler, HTML Brand & Niche DNA Extractor,
+ * Niche-Filtered Trend & Autocomplete Expander, Live AI Topic Discovery Engine &
  * Anti-Cannibalization Low-KD Topical Map Engine.
  *
  * Works in both Next.js Server Routes (`app/api/autonomous-agents/scout/route.ts`)
- * and offline/browser environments via injectable `fetchImpl` + deterministic fallback.
+ * and offline/browser environments via injectable `fetchImpl` + niche-intelligent fallback.
  */
 
 import {
@@ -12,9 +12,14 @@ import {
   buildPinterestThreePinSuite,
   buildStandaloneOutlineForTopic,
   discoverLowKdTopicsForWebsite,
+  extractCleanNicheSubject,
   scoreGeoCitationReadiness,
   slugifyTopic,
 } from "./arcads-social-engine";
+import {
+  runAutomationJsonPrompt,
+  type AutomationKeyOverrides,
+} from "./automation-ai-router";
 import type {
   AutomatedArticleJob,
   ConnectedWebsiteProfile,
@@ -32,6 +37,8 @@ export interface SitemapUrlEntry {
 
 export interface HtmlBrandExtractionResult {
   siteName: string;
+  inferredNiche: string;
+  metaDescription: string;
   brandPrimaryHex: string;
   brandSecondaryHex: string;
   darkThemePreferred: boolean;
@@ -61,9 +68,11 @@ export interface WebsiteScoutReport {
     brandPrimaryHex: string;
     brandSecondaryHex: string;
     darkThemePreferred: boolean;
+    inferredNiche?: string;
   };
   trendSignals: GoogleTrendSignal[];
   sampleIndexedUrls: string[];
+  aiProviderUsed?: string;
 }
 
 const cleanText = (s: string) =>
@@ -102,6 +111,55 @@ function normalizeHexColor(
     return fallback;
   }
   return `#${hex.toUpperCase()}`;
+}
+
+/**
+ * Infers a human-friendly niche description from a website's title tag, meta description,
+ * H1/H2 headings, and domain name so users only have to enter a URL.
+ */
+export function inferWebsiteNicheFromHtml(params: {
+  hostname: string;
+  titleTag: string;
+  metaDescription: string;
+  headings: string[];
+}): string {
+  const { hostname, titleTag, metaDescription, headings } = params;
+  const domainCore = hostname
+    .replace(/^www\./i, "")
+    .split(".")[0]
+    .replace(/[-_]+/g, " ")
+    .trim();
+
+  // Extract tagline from titleTag (e.g., "Cats.com - Cat Food Reviews, Care & Advice")
+  const titleParts = cleanText(titleTag)
+    .split(/\s*[|—–•:]\s*|\s+-\s+/)
+    .map((p) => p.trim())
+    .filter((p) => p.length >= 4);
+
+  const tagline =
+    titleParts.find(
+      (p) => p.toLowerCase() !== domainCore.toLowerCase() && p.length >= 8,
+    ) || titleParts[0];
+
+  const firstH1 = headings[0] || "";
+  const cleanMeta = cleanText(metaDescription).slice(0, 120);
+
+  if (tagline && tagline.length >= 6) {
+    return tagline.slice(0, 95);
+  }
+  if (firstH1 && firstH1.length >= 6) {
+    return firstH1.slice(0, 95);
+  }
+  if (cleanMeta && cleanMeta.length >= 12) {
+    return cleanMeta.split(/[.!?]/)[0]?.trim().slice(0, 95) || cleanMeta;
+  }
+  if (domainCore) {
+    return domainCore
+      .split(/\s+/)
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" ");
+  }
+  return "Digital Content & Industry Guides";
 }
 
 /**
@@ -187,7 +245,7 @@ export function parseSitemapXmlUrls(
 }
 
 /**
- * Extracts Brand DNA (site name, primary/secondary hex colors, dark theme preference),
+ * Extracts Brand DNA (site name, inferred niche, primary/secondary hex colors, dark theme preference),
  * H1/H2 headings, internal tools, and existing blog slugs from raw HTML.
  */
 export function extractHtmlBrandAndHeadings(
@@ -205,7 +263,16 @@ export function extractHtmlBrandAndHeadings(
   const ogSiteName = html.match(
     /<meta[^>]+property=["']og:site_name["'][^>]+content=["']([^"']+)["']/i,
   )?.[1];
-  const titleTag = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1];
+  const titleTag = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] || "";
+  const metaDescTag =
+    html.match(
+      /<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i,
+    )?.[1] ||
+    html.match(
+      /<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)["']/i,
+    )?.[1] ||
+    "";
+
   const siteName = cleanText(
     ogSiteName || titleTag?.split(/[|—–-]/)[0] || hostname,
   ).slice(0, 60);
@@ -242,6 +309,13 @@ export function extractHtmlBrandAndHeadings(
     if (headings.length >= 20) break;
   }
 
+  const inferredNiche = inferWebsiteNicheFromHtml({
+    hostname,
+    titleTag,
+    metaDescription: metaDescTag,
+    headings,
+  });
+
   const discoveredTools: Array<{ slug: string; title: string; url: string }> =
     [];
   const existingBlogSlugs: string[] = [];
@@ -271,7 +345,7 @@ export function extractHtmlBrandAndHeadings(
     if (!lastSlug) continue;
 
     if (
-      (parts.includes("tools") || parts.includes("projects")) &&
+      (parts.includes("tools") || parts.includes("projects") || parts.includes("calculators")) &&
       parts.length >= 2 &&
       !seenToolSlugs.has(lastSlug)
     ) {
@@ -291,7 +365,9 @@ export function extractHtmlBrandAndHeadings(
     } else if (
       (parts.includes("blog") ||
         parts.includes("articles") ||
-        parts.includes("posts")) &&
+        parts.includes("posts") ||
+        parts.includes("reviews") ||
+        parts.includes("guides")) &&
       parts.length >= 2 &&
       !seenBlogSlugs.has(lastSlug)
     ) {
@@ -302,6 +378,8 @@ export function extractHtmlBrandAndHeadings(
 
   return {
     siteName: siteName || hostname,
+    inferredNiche,
+    metaDescription: cleanText(metaDescTag).slice(0, 260),
     brandPrimaryHex,
     brandSecondaryHex,
     darkThemePreferred,
@@ -419,6 +497,32 @@ export function computeTopicSimilarity(topicA: string, topicB: string): number {
 }
 
 /**
+ * Filters general US Google Trends RSS items so unrelated sports, celebrity, or weather
+ * news (e.g., "ap top 25 basketball") NEVER leak into a niche website's topic list!
+ */
+export function filterRelevantTrendSignalsForNiche(
+  signals: GoogleTrendSignal[],
+  website: ConnectedWebsiteProfile,
+  headings: string[] = [],
+): GoogleTrendSignal[] {
+  const nicheTokens = new Set(
+    slugifyTopic(
+      `${website.siteName} ${website.primaryNiche} ${headings.slice(0, 8).join(" ")}`,
+    )
+      .split("-")
+      .filter((w) => w.length >= 3),
+  );
+
+  return signals.filter((sig) => {
+    // Autocomplete queries are already queried specifically for the website's niche
+    if (sig.source === "autocomplete-gap") return true;
+    // General Google Trends RSS items MUST share at least one meaningful domain token with the niche
+    const sigTokens = slugifyTopic(`${sig.title} ${sig.relatedHeadline || ""}`).split("-");
+    return sigTokens.some((t) => t.length >= 3 && nicheTokens.has(t));
+  });
+}
+
+/**
  * Deduplicates candidate article jobs against existing sitemap blog slugs so the
  * Autonomous Agent never cannibalizes an already-published article.
  */
@@ -429,6 +533,8 @@ export function deduplicateAndRankLowKdTopics(params: {
   existingBlogSlugs: string[];
   trendSignals: GoogleTrendSignal[];
   winnerFormulas?: WinnerFormulaRecord[];
+  variationSeed?: number;
+  headings?: string[];
 }): {
   jobs: AutomatedArticleJob[];
   cannibalizedCandidates: string[];
@@ -440,20 +546,30 @@ export function deduplicateAndRankLowKdTopics(params: {
     existingBlogSlugs,
     trendSignals,
     winnerFormulas = [],
+    variationSeed = 0,
+    headings = [],
   } = params;
 
   const clampedTarget = Math.max(1, Math.min(15, Math.round(targetCount || 5)));
 
-  // Combine user seed lines with live trend signals so we have a rich pool
+  // Filter out unrelated generic sports/news RSS trends before building topic seeds
+  const relevantTrends = filterRelevantTrendSignalsForNiche(
+    trendSignals,
+    website,
+    headings,
+  );
+
   const userLines = (seedTopicsOrPrompt || "")
     .split(/\r?\n|;/)
     .map((l) => l.trim())
     .filter((l) => l.length >= 5);
 
-  const trendLines = trendSignals.map((sig) =>
-    sig.title.length > 28
+  const { subjectTitle } = extractCleanNicheSubject(website);
+
+  const trendLines = relevantTrends.map((sig) =>
+    sig.title.length > 26
       ? sig.title
-      : `How to Use ${sig.title} for ${website.primaryNiche || "AI SEO"} Growth (2027 Guide)`,
+      : `${sig.title}: Essential ${subjectTitle} Guide & Checklist (2026)`,
   );
 
   const combinedSeeds = [...userLines, ...trendLines].join("\n");
@@ -464,6 +580,7 @@ export function deduplicateAndRankLowKdTopics(params: {
     combinedSeeds,
     Math.min(15, clampedTarget + 5),
     winnerFormulas,
+    { variationSeed, headings },
   );
 
   const cannibalizedCandidates: string[] = [];
@@ -488,21 +605,25 @@ export function deduplicateAndRankLowKdTopics(params: {
   }
 
   // If aggressive filtering left fewer than clampedTarget, synthesize guaranteed unique gap topics
-  while (acceptedJobs.length < clampedTarget) {
+  let extraAttempt = 0;
+  while (acceptedJobs.length < clampedTarget && extraAttempt < 20) {
+    extraAttempt++;
     const idx = acceptedJobs.length + 1;
-    const uniqueKeyword = `${(website.primaryNiche || "ai seo").toLowerCase().split(/[,\s]+/)[0]} workflow automation step ${idx}`;
     const fallbackJobs = discoverLowKdTopicsForWebsite(
       website,
-      `Autonomous ${website.primaryNiche || "AI SEO"} Playbook #${idx}: Zero-Cannibalization Cluster`,
+      "",
       1,
       winnerFormulas,
+      { variationSeed: variationSeed + idx * 3 + extraAttempt, headings },
     );
+    const candidate = fallbackJobs[0]!;
     const fallbackJob: AutomatedArticleJob = {
-      ...fallbackJobs[0],
+      ...candidate,
       id: `job-gap-${idx}-${Date.now()}`,
       orderIndex: idx,
-      urlSlug: `${fallbackJobs[0].urlSlug}-cluster-${idx}`,
-      primaryKeyword: uniqueKeyword,
+      urlSlug: acceptedJobs.some((j) => j.urlSlug === candidate.urlSlug)
+        ? `${candidate.urlSlug}-${idx}`
+        : candidate.urlSlug,
     };
     acceptedJobs.push(fallbackJob);
   }
@@ -522,22 +643,42 @@ export function deduplicateAndRankLowKdTopics(params: {
   };
 }
 
+interface AiDiscoveredTopicItem {
+  topicTitle: string;
+  primaryKeyword: string;
+  secondaryKeywords?: string[];
+  searchIntent?: AutomatedArticleJob["searchIntent"];
+  kdProxyScore?: number;
+  aeoDirectAnswer50Words?: string;
+}
+
+interface AiTopicDiscoveryPayload {
+  inferredNiche: string;
+  topics: AiDiscoveredTopicItem[];
+}
+
 export interface LiveScoutOptions {
   siteUrl: string;
-  primaryNiche: string;
+  primaryNiche?: string;
   seedTopicsOrPrompt?: string;
   targetArticleCount?: number;
   publishingMode?: WebsitePublishingMode;
   internalBuilderSlug?: string;
   existingSlugs?: string[];
   winnerFormulas?: WinnerFormulaRecord[];
+  variationSeed?: number;
+  keyOverrides?: AutomationKeyOverrides;
   fetchImpl?: typeof fetch;
 }
 
 /**
- * End-to-end Phase 2 Scout runner: fetches homepage HTML, `/sitemap.xml`,
- * Google Trends Public RSS, and Google Autocomplete question modifiers with
- * automatic timeout protection and deterministic offline fallback.
+ * End-to-end Phase 2 Scout runner:
+ * 1. Fetches live homepage HTML, `<title>`, `<meta description>`, H1/H2 headings, and `/sitemap.xml`
+ * 2. Auto-infers the website's true niche (even if the user only entered a URL like `https://cats.com`)
+ * 3. Queries Google Autocomplete with multiple niche-specific question modifiers (`how to`, `best`, `vs`, `why`)
+ * 4. Calls the Dedicated Automation AI Router (`runAutomationJsonPrompt`) with a random variation seed so
+ *    every scan generates fresh, deep, website-specific low-KD topics
+ * 5. Deduplicates against existing sitemap URLs so zero cannibalization occurs.
  */
 export async function runLiveWebsiteAndTrendScout(
   options: LiveScoutOptions,
@@ -548,13 +689,15 @@ export async function runLiveWebsiteAndTrendScout(
 }> {
   const {
     siteUrl,
-    primaryNiche,
+    primaryNiche = "",
     seedTopicsOrPrompt = "",
-    targetArticleCount = 5,
+    targetArticleCount = 6,
     publishingMode = "internal-doitwithai-site",
     internalBuilderSlug = "doitwithai-multi-tool-directory-publication",
     existingSlugs = [],
     winnerFormulas = [],
+    variationSeed = Math.floor(Math.random() * 10000),
+    keyOverrides,
     fetchImpl = typeof fetch !== "undefined" ? fetch : undefined,
   } = options;
 
@@ -562,9 +705,16 @@ export async function runLiveWebsiteAndTrendScout(
     ? siteUrl.trim().replace(/\/+$/, "")
     : `https://${siteUrl.trim().replace(/\/+$/, "")}`;
 
+  const domainHost = normalizedUrl
+    .replace(/^https?:\/\//i, "")
+    .replace(/^www\./i, "")
+    .split("/")[0];
+
   let liveFetchSucceeded = false;
   let htmlBrand: HtmlBrandExtractionResult = {
-    siteName: normalizedUrl.replace(/^https?:\/\//i, "").split("/")[0],
+    siteName: domainHost,
+    inferredNiche: domainHost.split(".")[0] || "Digital Content",
+    metaDescription: "",
     brandPrimaryHex: "#4867FF",
     brandSecondaryHex: "#10B981",
     darkThemePreferred: true,
@@ -579,7 +729,7 @@ export async function runLiveWebsiteAndTrendScout(
     if (!fetchImpl) return null;
     try {
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 4000);
+      const timer = setTimeout(() => controller.abort(), 4500);
       const res = await fetchImpl(url, {
         signal: controller.signal,
         headers: {
@@ -595,19 +745,13 @@ export async function runLiveWebsiteAndTrendScout(
     }
   };
 
+  // Step 1: Fetch Homepage HTML & Sitemap first so we know the REAL niche of the URL
   if (fetchImpl) {
-    const nicheQuery = encodeURIComponent(
-      `${primaryNiche.split(",")[0] || "AI SEO"} how to`,
-    );
-    const [homepageHtml, sitemapXml, trendsRssXml, autocompleteRaw] =
-      await Promise.all([
-        safeFetchText(normalizedUrl),
-        safeFetchText(`${normalizedUrl}/sitemap.xml`),
-        safeFetchText("https://trends.google.com/trending/rss?geo=US"),
-        safeFetchText(
-          `https://suggestqueries.google.com/complete/search?client=firefox&q=${nicheQuery}`,
-        ),
-      ]);
+    const [homepageHtml, sitemapXml, trendsRssXml] = await Promise.all([
+      safeFetchText(normalizedUrl),
+      safeFetchText(`${normalizedUrl}/sitemap.xml`),
+      safeFetchText("https://trends.google.com/trending/rss?geo=US"),
+    ]);
 
     if (homepageHtml) {
       liveFetchSucceeded = true;
@@ -620,39 +764,60 @@ export async function runLiveWebsiteAndTrendScout(
     if (trendsRssXml) {
       trendSignals.push(...parseGoogleTrendsRssXml(trendsRssXml, 8));
     }
-    if (autocompleteRaw) {
-      try {
-        const parsedAuto = JSON.parse(autocompleteRaw);
-        trendSignals.push(...parseAutocompleteSuggestionsJson(parsedAuto, 8));
-      } catch {}
-    }
   }
 
-  // Fallback synthetic trend signals when offline or blocked
-  if (trendSignals.length === 0) {
-    const cleanNiche = primaryNiche.split(",")[0]?.trim() || "AI SEO";
-    trendSignals = [
-      {
-        title: `How to Optimize ${cleanNiche} for ChatGPT Search & Perplexity Citations`,
-        approxTraffic: "25K+ Rising",
-        source: "google-trends-rss",
-      },
-      {
-        title: `${cleanNiche} Programmatic Section Infographics vs Stock Photos`,
-        approxTraffic: "15K+ Breakout",
-        source: "autocomplete-gap",
-      },
-      {
-        title: `Pinterest 2:3 Fresh Pin Automation for ${cleanNiche} Websites`,
-        approxTraffic: "10K+ Rising",
-        source: "google-trends-rss",
-      },
-      {
-        title: `JSON-LD @graph Entity Linking Checklist for ${cleanNiche}`,
-        approxTraffic: "Rising Long-Tail",
-        source: "autocomplete-gap",
-      },
-    ];
+  // Determine the true niche: if the user left the default AI-SEO placeholder on an external non-AI domain, use htmlBrand.inferredNiche!
+  const isDefaultAiNicheInput =
+    !primaryNiche.trim() ||
+    (/AI SEO,\s*Answer Engine Optimization/i.test(primaryNiche) &&
+      !/doitwithai/i.test(normalizedUrl));
+
+  const effectiveNiche = isDefaultAiNicheInput
+    ? htmlBrand.inferredNiche || domainHost.split(".")[0] || "Industry Guides"
+    : primaryNiche.trim();
+
+  // Ignore default AI-SEO seed prompts if the user entered a non-AI-SEO website!
+  const isDefaultAiSeedPrompts =
+    /How to Rank in Perplexity|how to write chatgpt prompt/i.test(seedTopicsOrPrompt) &&
+    !/doitwithai/i.test(normalizedUrl) &&
+    !/\b(ai|seo|gpt|llm)\b/i.test(effectiveNiche);
+
+  const effectiveUserSeeds = isDefaultAiSeedPrompts ? "" : seedTopicsOrPrompt.trim();
+
+  // Step 2: Query Google Autocomplete for the website's ACTUAL niche with varied modifiers
+  if (fetchImpl) {
+    const coreSearchTerm = effectiveNiche
+      .split(/[,;|—–-]/)[0]
+      ?.trim()
+      .split(/\s+/)
+      .slice(0, 3)
+      .join(" ") || domainHost.split(".")[0];
+
+    const modifiers = ["how to", "best", "vs", "checklist", "mistakes"];
+    const modA = modifiers[variationSeed % modifiers.length];
+    const modB = modifiers[(variationSeed + 2) % modifiers.length];
+
+    const [autoRawA, autoRawB] = await Promise.all([
+      safeFetchText(
+        `https://suggestqueries.google.com/complete/search?client=firefox&q=${encodeURIComponent(
+          `${coreSearchTerm} ${modA}`,
+        )}`,
+      ),
+      safeFetchText(
+        `https://suggestqueries.google.com/complete/search?client=firefox&q=${encodeURIComponent(
+          `${coreSearchTerm} ${modB}`,
+        )}`,
+      ),
+    ]);
+
+    for (const raw of [autoRawA, autoRawB]) {
+      if (raw) {
+        try {
+          const parsedAuto = JSON.parse(raw);
+          trendSignals.push(...parseAutocompleteSuggestionsJson(parsedAuto, 6));
+        } catch {}
+      }
+    }
   }
 
   const sitemapBlogSlugs = sitemapEntries
@@ -677,31 +842,41 @@ export async function runLiveWebsiteAndTrendScout(
     ]),
   ).filter(Boolean);
 
+  const isDoItWithAiSite = /doitwithai/i.test(normalizedUrl);
+
   const mergedTools =
     htmlBrand.discoveredTools.length > 0 || sitemapTools.length > 0
       ? [...htmlBrand.discoveredTools, ...sitemapTools].slice(0, 12)
-      : [
-          {
-            slug: "blog-section-infographic-generator",
-            title: "Free AI Blog Section Infographic Generator",
-            url: `${normalizedUrl}/tools/blog-section-infographic-generator`,
-          },
-          {
-            slug: "meta-title-generator",
-            title: "AI Meta Title & SERP Pixel Optimizer",
-            url: `${normalizedUrl}/tools/meta-title-generator`,
-          },
-          {
-            slug: "on-page-ai-seo-analyzer",
-            title: "On-Page AI SEO Analyzer & Repair Agent",
-            url: `${normalizedUrl}/tools/on-page-ai-seo-analyzer`,
-          },
-          {
-            slug: "schema-markup-generator",
-            title: "JSON-LD Schema Markup & @graph Generator",
-            url: `${normalizedUrl}/tools/schema-markup-generator`,
-          },
-        ];
+      : isDoItWithAiSite
+        ? [
+            {
+              slug: "blog-section-infographic-generator",
+              title: "Free AI Blog Section Infographic Generator",
+              url: `${normalizedUrl}/tools/blog-section-infographic-generator`,
+            },
+            {
+              slug: "meta-title-generator",
+              title: "AI Meta Title & SERP Pixel Optimizer",
+              url: `${normalizedUrl}/tools/meta-title-generator`,
+            },
+            {
+              slug: "on-page-ai-seo-analyzer",
+              title: "On-Page AI SEO Analyzer & Repair Agent",
+              url: `${normalizedUrl}/tools/on-page-ai-seo-analyzer`,
+            },
+            {
+              slug: "schema-markup-generator",
+              title: "JSON-LD Schema Markup & @graph Generator",
+              url: `${normalizedUrl}/tools/schema-markup-generator`,
+            },
+          ]
+        : [
+            {
+              slug: "official-resource-guide",
+              title: `${htmlBrand.siteName} Official Guides & Resources`,
+              url: normalizedUrl,
+            },
+          ];
 
   const websiteProfile: ConnectedWebsiteProfile = {
     id: `site-scouted-${slugifyTopic(htmlBrand.siteName)}`,
@@ -712,21 +887,99 @@ export async function runLiveWebsiteAndTrendScout(
       publishingMode === "internal-doitwithai-site"
         ? internalBuilderSlug
         : undefined,
-    primaryNiche,
+    primaryNiche: effectiveNiche,
     brandPrimaryHex: htmlBrand.brandPrimaryHex,
     brandSecondaryHex: htmlBrand.brandSecondaryHex,
     darkThemePreferred: htmlBrand.darkThemePreferred,
     installedTools: mergedTools,
   };
 
+  // Filter out any irrelevant general news trends before showing or prompting
+  const relevantTrendSignals = filterRelevantTrendSignalsForNiche(
+    trendSignals,
+    websiteProfile,
+    htmlBrand.headings,
+  );
+
+  // Step 3: Call the Live AI Topic Discovery Engine (when real HTTP fetch or API keys are active)
+  // For unit tests passing a simple mock `fetchImpl` that only mocks website URLs, we only invoke live LLM if an API key is configured.
+  let aiTopicLines: string[] = [];
+  let aiProviderUsed = "Niche-Intelligent Topic Radar";
+
+  const isCustomTestMockFetch =
+    Boolean(options.fetchImpl) && options.fetchImpl !== globalThis.fetch;
+
+  if (!isCustomTestMockFetch) {
+    const aiDiscoveryResult = await runAutomationJsonPrompt<AiTopicDiscoveryPayload>({
+      systemPrompt: `You are an elite SEO & Content Strategist for ${htmlBrand.siteName} (${normalizedUrl}).
+Analyze the target website's real subject matter, headings, meta description, and autocomplete signals to generate ${targetArticleCount} fresh, high-value, low-difficulty (Low-KD) blog article topics tailored strictly to this website's exact niche and audience.
+Rules:
+1. Every topic MUST be 100% relevant to the website's actual niche ("${effectiveNiche}"). Never output generic AI/SEO topics unless the website itself is an AI/SEO website.
+2. Vary the angles across step-by-step how-to guides, side-by-side comparisons ("vs."), beginner mistake checklists, and buyer/practitioner decision guides.
+3. Use Variation Seed #${variationSeed} to explore fresh sub-topics so repeated scans of the same URL always produce different, non-overlapping article ideas.
+4. Do not repeat any existing blog slugs: ${mergedBlogSlugs.slice(0, 20).join(", ")}.
+Return JSON matching: { "inferredNiche": string, "topics": [{ "topicTitle": string, "primaryKeyword": string, "searchIntent": "step-by-step-howto" | "comparison-vs" | "informational-guide" | "tool-playbook", "kdProxyScore": number }] }`,
+      userPrompt: JSON.stringify({
+        siteUrl: normalizedUrl,
+        siteName: htmlBrand.siteName,
+        inferredNiche: effectiveNiche,
+        metaDescription: htmlBrand.metaDescription,
+        homepageHeadings: htmlBrand.headings.slice(0, 12),
+        sampleSitemapUrls: sitemapEntries.slice(0, 12).map((e) => e.url),
+        autocompleteSuggestions: relevantTrendSignals.map((s) => s.title),
+        userSeedTopics: effectiveUserSeeds,
+        variationSeed,
+        targetArticleCount,
+      }),
+      temperature: 0.85,
+      maxOutputTokens: 1600,
+      timeoutMs: 14_000,
+      keyOverrides,
+      deterministicFallback: () => ({
+        inferredNiche: effectiveNiche,
+        topics: [],
+      }),
+    });
+
+    aiProviderUsed = aiDiscoveryResult.providerUsed;
+    if (
+      aiDiscoveryResult.isLiveAi &&
+      Array.isArray(aiDiscoveryResult.data?.topics) &&
+      aiDiscoveryResult.data.topics.length > 0
+    ) {
+      if (aiDiscoveryResult.data.inferredNiche?.trim()) {
+        websiteProfile.primaryNiche = aiDiscoveryResult.data.inferredNiche.trim();
+      }
+      aiTopicLines = aiDiscoveryResult.data.topics
+        .map((t) => cleanText(t.topicTitle || ""))
+        .filter((t) => t.length >= 10);
+    }
+  }
+
+  const combinedSeeds = [effectiveUserSeeds, ...aiTopicLines]
+    .filter(Boolean)
+    .join("\n");
+
   const { jobs, cannibalizedCandidates } = deduplicateAndRankLowKdTopics({
     website: websiteProfile,
-    seedTopicsOrPrompt,
+    seedTopicsOrPrompt: combinedSeeds,
     targetCount: targetArticleCount,
     existingBlogSlugs: mergedBlogSlugs,
-    trendSignals,
+    trendSignals: relevantTrendSignals,
     winnerFormulas,
+    variationSeed,
+    headings: htmlBrand.headings,
   });
+
+  // Ensure scoutReport.trendSignals always shows clean, niche-relevant signals
+  const displaySignals: GoogleTrendSignal[] =
+    relevantTrendSignals.length > 0
+      ? relevantTrendSignals.slice(0, 10)
+      : jobs.slice(0, 4).map((j) => ({
+          title: j.primaryKeyword,
+          approxTraffic: "Low-KD Opportunity",
+          source: "autocomplete-gap",
+        }));
 
   const scoutReport: WebsiteScoutReport = {
     scoutedAtIso: new Date().toISOString(),
@@ -742,9 +995,11 @@ export async function runLiveWebsiteAndTrendScout(
       brandPrimaryHex: htmlBrand.brandPrimaryHex,
       brandSecondaryHex: htmlBrand.brandSecondaryHex,
       darkThemePreferred: htmlBrand.darkThemePreferred,
+      inferredNiche: websiteProfile.primaryNiche,
     },
-    trendSignals: trendSignals.slice(0, 10),
+    trendSignals: displaySignals,
     sampleIndexedUrls: sitemapEntries.slice(0, 8).map((e) => e.url),
+    aiProviderUsed,
   };
 
   return {

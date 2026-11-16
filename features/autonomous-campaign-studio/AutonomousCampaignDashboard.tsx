@@ -2,10 +2,12 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   AUTONOMOUS_AGENT_ROLES,
   calculateCampaignTokenBudget,
 } from '@/lib/autonomous-agents/agent-roles';
+import { FREE_LLM_AUTOMATION_PROVIDERS_GUIDE } from '@/lib/autonomous-agents/automation-ai-router';
 import {
   loadAutonomousStudioState,
   resetAutonomousStudioState,
@@ -34,6 +36,7 @@ import {
   importStudioStateFromCloudSync,
   runWinnerCloneAutoOptimizer,
 } from '@/lib/autonomous-agents/winner-clone-loop';
+import { syncAutomatedBatchToWriterStudio } from '@/lib/autonomous-agents/writer-studio-bridge';
 import { SIX_IMPLEMENTATION_PHASES } from '@/lib/autonomous-agents/phases-roadmap';
 import type {
   AutomatedArticleJob,
@@ -48,7 +51,7 @@ import type {
 export { SIX_IMPLEMENTATION_PHASES };
 
 type GuidedStepId = 1 | 2 | 3 | 4;
-
+type AutomationWorkflowMode = 'multi-article-batch' | 'autopilot-24h';
 type ResultPreviewTab = 'article' | 'infographics' | 'pinterest' | 'social-copy';
 
 const GUIDED_STEPS: Array<{
@@ -61,13 +64,13 @@ const GUIDED_STEPS: Array<{
     step: 1,
     shortLabel: 'Step 1 · Website URL',
     title: 'Connect Your Website',
-    subtitle: 'Paste your URL or pick your DoItWithAI site',
+    subtitle: 'Paste any URL or pick your DoItWithAI site',
   },
   {
     step: 2,
     shortLabel: 'Step 2 · Topic Ideas',
     title: 'Select Keyword Topics',
-    subtitle: 'Pick discovered low-KD topics or add your own',
+    subtitle: 'Pick real-time AI topics or add your own',
   },
   {
     step: 3,
@@ -77,67 +80,61 @@ const GUIDED_STEPS: Array<{
   },
   {
     step: 4,
-    shortLabel: 'Step 4 · Publish & Download',
-    title: 'Ready-Made Pack & Auto-Publish',
-    subtitle: 'Auto-published blog/social + 1-click downloads',
+    shortLabel: 'Step 4 · Studio & Publish',
+    title: 'Multi-Article Studio & Pack',
+    subtitle: 'Switch articles, publish to blog or download',
   },
 ];
 
 const SCAN_ANIMATION_STAGES = [
-  'Connecting to website & reading sitemap.xml...',
-  'Extracting Brand DNA (colors, niche & internal tools)...',
-  'Scanning Google Trends RSS & Search Autocomplete...',
-  'Filtering duplicate URLs & ranking Low-KD topics...',
+  'Fetching live homepage HTML, <title>, headings & sitemap.xml...',
+  'Auto-detecting Website Niche, Brand DNA & color palette...',
+  'Querying niche-specific Google Autocomplete & search gaps...',
+  'Generating fresh Low-KD article topics with zero cannibalization...',
 ];
 
 const PRODUCTION_STATIONS = [
   {
     id: 'briefing',
-    label: '1. Research & 50-Word Answer Lead',
-    detail: 'Structuring AEO direct answer, entity table & H2 outline',
+    label: '1. Deep Research & 50-Word AEO Lead',
+    detail: 'Structuring 50-word direct answer, LSI entities & H2/H3 outline',
   },
   {
     id: 'drafting',
-    label: '2. Full SEO / GEO Article Drafting',
-    detail: 'Writing zero-fluff technical sections & internal tool callouts',
+    label: '2. Full SEO / GEO Article Writer',
+    detail: 'Writing humanized H2/H3 sections, comparison table & FAQs',
   },
   {
     id: 'visuals',
     label: '3. 6-Layer Section Infographics (1080×1350)',
-    detail: 'Rendering 4 standalone SVG section graphics at 0 AI image tokens',
+    detail: 'Rendering 4 standalone SVG section graphics tailored to your brand',
   },
   {
     id: 'social',
     label: '4. Pinterest 2:3 Pins & 8-Slide LinkedIn Carousel',
-    detail: 'Building 3 vertical pins, 8-slide carousel deck & 5 scroll-stopper hooks',
+    detail: 'Building 3 vertical pins, 8-slide carousel deck & 5 social hooks',
   },
 ];
 
 export default function AutonomousCampaignDashboard() {
+  const router = useRouter();
   const [studioState, setStudioState] = useState<AutonomousStudioStoreState | null>(null);
   const [currentStep, setCurrentStep] = useState<GuidedStepId>(1);
+  const [workflowMode, setWorkflowMode] = useState<AutomationWorkflowMode>('multi-article-batch');
 
-  // Step 1 Onboarding Inputs
+  // Step 1 Onboarding Inputs (Clean & Non-Hardcoded so any URL works out of the box)
   const [siteSourceMode, setSiteSourceMode] = useState<'external-url' | 'internal-builder'>(
     'external-url'
   );
   const [newSiteUrl, setNewSiteUrl] = useState<string>('https://doitwithai.tools');
-  const [newSiteNiche, setNewSiteNiche] = useState<string>(
-    'AI SEO, Answer Engine Optimization (GEO) & Content Automation'
-  );
+  const [newSiteNiche, setNewSiteNiche] = useState<string>('');
   const [newInternalSlug, setNewInternalSlug] = useState<string>(
     'doitwithai-multi-tool-directory-publication'
   );
   const [showOptionalPromptBox, setShowOptionalPromptBox] = useState<boolean>(false);
-  const [seedPrompts, setSeedPrompts] = useState<string>(
-    [
-      'How to Rank in Perplexity & ChatGPT Search with 50-Word Answer Blocks',
-      'Programmatic 6-Layer Blog Section Infographics vs Stock Photos',
-      'Autonomous Pinterest 2:3 Infographic Pin Growth Strategy for SaaS',
-      'JSON-LD @graph Schema Markup Playbook for AI Search Citations',
-      '5-Step AI Content Editing & Readability Audit Workflow',
-    ].join('\n')
-  );
+  const [seedPrompts, setSeedPrompts] = useState<string>('');
+  const [targetBatchSize, setTargetBatchSize] = useState<number>(6);
+  const [scanVariationCounter, setScanVariationCounter] = useState<number>(1);
 
   // Step 1 Animated Scan State
   const [isScanningWebsite, setIsScanningWebsite] = useState<boolean>(false);
@@ -153,6 +150,7 @@ export default function AutonomousCampaignDashboard() {
   const [activeRunningJobId, setActiveRunningJobId] = useState<string>('');
   const [activeStationIdx, setActiveStationIdx] = useState<number>(0);
   const [completedJobIdsInRun, setCompletedJobIdsInRun] = useState<string[]>([]);
+  const [autopilotActiveBanner, setAutopilotActiveBanner] = useState<boolean>(false);
 
   // Step 4 Results & Delivery State
   const [selectedJobId, setSelectedJobId] = useState<string>('');
@@ -160,13 +158,14 @@ export default function AutonomousCampaignDashboard() {
   const [selectedSectionIdx, setSelectedSectionIdx] = useState<number>(0);
   const [selectedPinIndex, setSelectedPinIndex] = useState<number>(0);
   const [isPublishingJob, setIsPublishingJob] = useState<boolean>(false);
+  const [isOpeningWriterStudio, setIsOpeningWriterStudio] = useState<boolean>(false);
   const [statusMessage, setStatusMessage] = useState<string>('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  // Optional Power-User Drawer (Collapsed by default so beginners are never overwhelmed)
+  // Optional Power-User Drawer
   const [showAdvancedDrawer, setShowAdvancedDrawer] = useState<boolean>(false);
   const [advancedSubTab, setAdvancedSubTab] = useState<
-    'connections-byok' | 'winner-analytics' | 'agent-architecture'
+    'connections-byok' | 'free-api-guide' | 'winner-analytics' | 'agent-architecture'
   >('connections-byok');
   const [cloudSyncInput, setCloudSyncInput] = useState<string>('');
 
@@ -271,16 +270,29 @@ export default function AutonomousCampaignDashboard() {
   };
 
   /**
-   * STEP 1 -> STEP 2: Animated Website Scan & Topic Discovery
+   * STEP 1: Real-Time Website Scan & Dynamic AI Topic Discovery
+   * Supports both Step-by-Step Batch Mode (moves to Step 2) and 24-Hour Active Autopilot (chains directly into writing).
    */
-  const handleScanWebsiteAndDiscoverTopics = async () => {
-    if (!studioState) return;
+  const executeWebsiteScanAndTopicDiscovery = async (options?: {
+    autoStartWriting?: boolean;
+    forceFreshVariation?: boolean;
+  }): Promise<{
+    nextState: AutonomousStudioStoreState;
+    campaign: AutonomousCampaign;
+    website: ConnectedWebsiteProfile;
+    jobs: AutomatedArticleJob[];
+  } | null> => {
+    if (!studioState) return null;
     setIsScanningWebsite(true);
     setScanStageIndex(0);
 
+    const nextVariation = scanVariationCounter + (options?.forceFreshVariation ? 7 : 1);
+    setScanVariationCounter(nextVariation);
+    const variationSeed = Math.floor(Math.random() * 90000) + nextVariation * 13;
+
     const stageTimer = setInterval(() => {
       setScanStageIndex((prev) => (prev < SCAN_ANIMATION_STAGES.length - 1 ? prev + 1 : prev));
-    }, 420);
+    }, 380);
 
     try {
       const publishingMode: WebsitePublishingMode =
@@ -297,20 +309,30 @@ export default function AutonomousCampaignDashboard() {
       let newWebsite: ConnectedWebsiteProfile | null = null;
       let generatedJobs: AutomatedArticleJob[] = [];
 
+      // Collect existing slugs for this URL from previous campaigns so repeated scans never repeat topics!
+      const previousSlugsForUrl = studioState.campaigns
+        .flatMap((c) => c.jobs.map((j) => j.urlSlug))
+        .slice(0, 40);
+
       try {
         const res = await fetch('/api/autonomous-agents/scout', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             siteUrl: effectiveUrl,
-            primaryNiche: newSiteNiche,
-            seedTopicsOrPrompt: seedPrompts,
-            targetArticleCount: 6,
+            primaryNiche: newSiteNiche.trim(),
+            seedTopicsOrPrompt: showOptionalPromptBox ? seedPrompts.trim() : '',
+            targetArticleCount: targetBatchSize,
             publishingMode,
             internalBuilderSlug:
               siteSourceMode === 'internal-builder' ? newInternalSlug.trim() : undefined,
-            existingSlugs: [],
+            existingSlugs: previousSlugsForUrl,
             winnerFormulas: studioState.winnerFormulas,
+            variationSeed,
+            keyOverrides: {
+              geminiKey: studioState.byokConfig.geminiFreeKeyMasked,
+              groqKey: studioState.byokConfig.groqFreeKeyMasked,
+            },
           }),
         });
         if (res.ok) {
@@ -340,11 +362,19 @@ export default function AutonomousCampaignDashboard() {
       }
 
       if (!scoutReport || !newWebsite || generatedJobs.length === 0) {
-        await new Promise((r) => setTimeout(r, 900));
+        await new Promise((r) => setTimeout(r, 700));
+        const hostLabel =
+          effectiveUrl.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0] ||
+          'My Website';
+        const domainCore = hostLabel.split('.')[0] || 'Website';
+        const inferredNiche =
+          newSiteNiche.trim() ||
+          `${domainCore.charAt(0).toUpperCase() + domainCore.slice(1)} Guides & Best Practices`;
+
         const fallbackSiteName =
           siteSourceMode === 'internal-builder'
             ? `DoItWithAI Site (${newInternalSlug.trim()})`
-            : effectiveUrl.replace(/^https?:\/\//, '').split('/')[0] || 'My Website';
+            : hostLabel;
 
         newWebsite = {
           id: `site-${Date.now()}`,
@@ -353,33 +383,29 @@ export default function AutonomousCampaignDashboard() {
           publishingMode,
           internalBuilderSlug:
             siteSourceMode === 'internal-builder' ? newInternalSlug.trim() : undefined,
-          primaryNiche: newSiteNiche.trim(),
+          primaryNiche: inferredNiche,
           brandPrimaryHex: '#4A6CF7',
-          brandSecondaryHex: '#FBB040',
+          brandSecondaryHex: '#10B981',
           darkThemePreferred: true,
-          installedTools: studioState.websites[0]?.installedTools ?? [],
+          installedTools: /doitwithai/i.test(effectiveUrl)
+            ? studioState.websites[0]?.installedTools ?? []
+            : [
+                {
+                  slug: 'resource-guide',
+                  title: `${fallbackSiteName} Official Guides`,
+                  url: effectiveUrl,
+                },
+              ],
         };
-
-        const fallbackTrends = [
-          {
-            title: `${newSiteNiche.split(' ')[0] || 'AI'} workflow checklist`,
-            approxTraffic: '25K+ Rising',
-            source: 'autocomplete-gap' as const,
-          },
-          {
-            title: `how to automate ${newSiteNiche.split(' ')[0] || 'SEO'} step by step`,
-            approxTraffic: '20K+ Rising',
-            source: 'google-trends-rss' as const,
-          },
-        ];
 
         const { jobs: rankedJobs, cannibalizedCandidates } = deduplicateAndRankLowKdTopics({
           website: newWebsite,
-          seedTopicsOrPrompt: seedPrompts,
-          targetCount: 6,
-          existingBlogSlugs: [],
-          trendSignals: fallbackTrends,
+          seedTopicsOrPrompt: showOptionalPromptBox ? seedPrompts.trim() : '',
+          targetCount: targetBatchSize,
+          existingBlogSlugs: previousSlugsForUrl,
+          trendSignals: [],
           winnerFormulas: studioState.winnerFormulas,
+          variationSeed,
         });
 
         generatedJobs = rankedJobs.map(
@@ -398,7 +424,7 @@ export default function AutonomousCampaignDashboard() {
           targetSiteUrl: effectiveUrl,
           liveFetchSucceeded: false,
           sitemapUrlsFound: 18,
-          existingBlogSlugsCount: 0,
+          existingBlogSlugsCount: previousSlugsForUrl.length,
           installedToolsCount: newWebsite.installedTools.length,
           cannibalizationBlockedCount: cannibalizedCandidates.length,
           cannibalizedCandidates,
@@ -407,8 +433,13 @@ export default function AutonomousCampaignDashboard() {
             brandPrimaryHex: newWebsite.brandPrimaryHex,
             brandSecondaryHex: newWebsite.brandSecondaryHex,
             darkThemePreferred: true,
+            inferredNiche: newWebsite.primaryNiche,
           },
-          trendSignals: fallbackTrends,
+          trendSignals: generatedJobs.slice(0, 4).map((j) => ({
+            title: j.primaryKeyword,
+            approxTraffic: 'Low-KD Opportunity',
+            source: 'autocomplete-gap' as const,
+          })),
           sampleIndexedUrls: [`${effectiveUrl}/blog`],
         };
       }
@@ -418,32 +449,45 @@ export default function AutonomousCampaignDashboard() {
 
       const newCampaign: AutonomousCampaign = {
         id: `camp-${Date.now()}`,
-        name: `${newWebsite.siteName} · Autonomous Growth Campaign`,
+        name: `${newWebsite.siteName} · ${
+          workflowMode === 'autopilot-24h' ? '24-Hour Active Autopilot' : 'Multi-Article Batch'
+        }`,
         createdAtIso: nowIso,
         updatedAtIso: nowIso,
         websiteId,
-        seedTopicsOrPrompt: seedPrompts,
+        seedTopicsOrPrompt: showOptionalPromptBox ? seedPrompts.trim() : '',
         targetArticleCount: generatedJobs.length,
-        cadence: 'daily-1-article',
+        cadence: workflowMode === 'autopilot-24h' ? 'daily-1-article' : 'instant-test-batch',
         approvalMode: 'confidence-gated-90',
         confidenceThreshold: 90,
         status: 'draft',
         jobs: generatedJobs,
       };
 
-      updateState((prev) => ({
-        ...prev,
+      const nextState = saveAutonomousStudioState({
+        ...studioState,
         activeCampaignId: newCampaign.id,
-        websites: [newWebsite, ...prev.websites],
-        campaigns: [newCampaign, ...prev.campaigns],
+        websites: [newWebsite, ...studioState.websites],
+        campaigns: [newCampaign, ...studioState.campaigns],
         lastSavedAtIso: nowIso,
-      }));
+      });
 
+      setStudioState(nextState);
       setSelectedJobIds(generatedJobs.map((j) => j.id));
       if (generatedJobs[0]) {
         setSelectedJobId(generatedJobs[0].id);
       }
-      setCurrentStep(2);
+
+      if (!options?.autoStartWriting) {
+        setCurrentStep(2);
+      }
+
+      return {
+        nextState,
+        campaign: newCampaign,
+        website: newWebsite,
+        jobs: generatedJobs,
+      };
     } finally {
       clearInterval(stageTimer);
       setIsScanningWebsite(false);
@@ -472,7 +516,7 @@ export default function AutonomousCampaignDashboard() {
       topicTitle: title,
       primaryKeyword: title.toLowerCase(),
       searchIntent: 'step-by-step-howto',
-      kdProxyScore: 22,
+      kdProxyScore: 18,
       trendSource: 'user-seed-prompt',
       status: 'queued',
       urlSlug: slug || `custom-topic-${Date.now()}`,
@@ -496,93 +540,225 @@ export default function AutonomousCampaignDashboard() {
   };
 
   /**
-   * STEP 2 -> STEP 3 -> STEP 4: Animated Live Batch Execution + Auto-Publish / Ready-Made Pack
+   * STEP 2 -> STEP 3 -> STEP 4: Live Multi-Article Batch Execution
+   * Drafts every selected article sequentially through all 4 stations using `/api/autonomous-agents/generate-article`
+   * (connected to the dedicated Automation AI router + 6-Layer Infographic engine),
+   * syncs all completed articles to the Flagship Content Writer Studio IndexedDB, and opens Step 4.
    */
-  const handleStartAutonomousBatchRun = async () => {
-    if (!studioState || !activeCampaign || !activeWebsite) return;
-    const jobsToRun = activeCampaign.jobs.filter((j) => selectedJobIds.includes(j.id));
-    const targetJobs = jobsToRun.length > 0 ? jobsToRun : activeCampaign.jobs;
+  const executeBatchWritingPipeline = async (overrideContext?: {
+    state: AutonomousStudioStoreState;
+    campaign: AutonomousCampaign;
+    website: ConnectedWebsiteProfile;
+    jobsToWrite: AutomatedArticleJob[];
+    is24HourAutopilot?: boolean;
+  }) => {
+    const baseState = overrideContext?.state || studioState;
+    const targetCampaign = overrideContext?.campaign || activeCampaign;
+    const targetWebsite = overrideContext?.website || activeWebsite;
+    if (!baseState || !targetCampaign || !targetWebsite) return;
+
+    const jobsPool =
+      overrideContext?.jobsToWrite ||
+      targetCampaign.jobs.filter((j) => selectedJobIds.includes(j.id));
+    const targetJobs = jobsPool.length > 0 ? jobsPool : targetCampaign.jobs;
 
     setCurrentStep(3);
     setIsRunningBatch(true);
     setCompletedJobIdsInRun([]);
-    let workingState = studioState;
+    if (overrideContext?.is24HourAutopilot) {
+      setAutopilotActiveBanner(true);
+    }
+
+    let workingState = baseState;
+    const finishedJobs: AutomatedArticleJob[] = [];
 
     try {
       for (let i = 0; i < targetJobs.length; i++) {
         const job = targetJobs[i]!;
         setActiveRunningJobId(job.id);
 
-        for (let st = 0; st < PRODUCTION_STATIONS.length; st++) {
-          setActiveStationIdx(st);
-          await new Promise((r) => setTimeout(r, 260));
+        // Station 1 & 2 animation
+        setActiveStationIdx(0);
+        await new Promise((r) => setTimeout(r, 240));
+        setActiveStationIdx(1);
+
+        let completedJob: AutomatedArticleJob | null = null;
+
+        // Call server-side AI Article & Visual Generator endpoint first
+        try {
+          const apiRes = await fetch('/api/autonomous-agents/generate-article', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              job,
+              website: targetWebsite,
+              winnerFormulas: workingState.winnerFormulas,
+              keyOverrides: {
+                geminiKey: workingState.byokConfig.geminiFreeKeyMasked,
+                groqKey: workingState.byokConfig.groqFreeKeyMasked,
+              },
+            }),
+          });
+          if (apiRes.ok) {
+            const data = (await apiRes.json()) as {
+              ok: boolean;
+              job?: AutomatedArticleJob;
+            };
+            if (data.ok && data.job) {
+              completedJob = data.job;
+            }
+          }
+        } catch {
+          // Fall back to local BYOK / deterministic runner below
         }
 
-        const res = await runByokJobWithCheckpoints({
-          state: workingState,
-          campaignId: activeCampaign.id,
-          jobId: job.id,
-          skipCooldownInTests: true,
-          onCheckpoint: (nextState) => {
-            workingState = nextState;
-            setStudioState(nextState);
-          },
-        });
-        workingState = res.state;
+        // Station 3 & 4 animation
+        setActiveStationIdx(2);
+        await new Promise((r) => setTimeout(r, 220));
+        setActiveStationIdx(3);
+        await new Promise((r) => setTimeout(r, 220));
+
+        if (!completedJob) {
+          const localRes = await runByokJobWithCheckpoints({
+            state: workingState,
+            campaignId: targetCampaign.id,
+            jobId: job.id,
+            skipCooldownInTests: true,
+            onCheckpoint: (nextState) => {
+              workingState = nextState;
+              setStudioState(nextState);
+            },
+          });
+          workingState = localRes.state;
+          completedJob = localRes.job;
+        }
+
+        // Persist completedJob into workingState
+        const nowIso = new Date().toISOString();
+        let finalJob: AutomatedArticleJob = {
+          ...completedJob,
+          completedAgents: AUTONOMOUS_AGENT_ROLES.map((r) => r.id),
+          activeAgent: undefined,
+          status:
+            targetWebsite.publishingMode === 'internal-doitwithai-site'
+              ? 'published'
+              : 'ready-for-review',
+          updatedAtIso: nowIso,
+        };
 
         // If internal DoItWithAI Website Builder mode is active, auto-publish to /p/[slug]/blog
-        if (activeWebsite.publishingMode === 'internal-doitwithai-site') {
+        if (targetWebsite.publishingMode === 'internal-doitwithai-site') {
           const pubRes = publishJobToInternalWebsiteStore({
-            job: res.job,
-            website: activeWebsite,
+            job: finalJob,
+            website: targetWebsite,
           });
-          const nowIso = new Date().toISOString();
-          const updatedCampaigns: AutonomousCampaign[] = workingState.campaigns.map(
-            (camp): AutonomousCampaign => {
-              if (camp.id !== activeCampaign.id) return camp;
-              const updatedJobs: AutomatedArticleJob[] = camp.jobs.map(
-                (j): AutomatedArticleJob =>
-                  j.id === job.id
-                    ? {
-                        ...j,
-                        status: 'published',
-                        publishedUrl: pubRes.targetUrl,
-                        lastPublishReport: {
-                          destination: activeWebsite.publishingMode,
-                          status: 'published',
-                          targetUrl: pubRes.targetUrl,
-                          socialDispatchedCount: j.arcadsVariations.length,
-                          publishedAtIso: nowIso,
-                        },
-                        updatedAtIso: nowIso,
-                      }
-                    : j
-              );
-              return { ...camp, jobs: updatedJobs, updatedAtIso: nowIso };
-            }
-          );
-          workingState = saveAutonomousStudioState({
-            ...workingState,
-            campaigns: updatedCampaigns,
-            lastSavedAtIso: nowIso,
-          });
+          finalJob = {
+            ...finalJob,
+            status: 'published',
+            publishedUrl: pubRes.targetUrl,
+            lastPublishReport: {
+              destination: targetWebsite.publishingMode,
+              status: 'published',
+              targetUrl: pubRes.targetUrl,
+              socialDispatchedCount: finalJob.arcadsVariations.length,
+              publishedAtIso: nowIso,
+            },
+          };
         }
 
+        finishedJobs.push(finalJob);
+
+        const updatedCampaigns: AutonomousCampaign[] = workingState.campaigns.map(
+          (camp): AutonomousCampaign => {
+            if (camp.id !== targetCampaign.id) return camp;
+            const updatedJobs: AutomatedArticleJob[] = camp.jobs.map(
+              (j): AutomatedArticleJob => (j.id === finalJob.id ? finalJob : j)
+            );
+            return {
+              ...camp,
+              status: i === targetJobs.length - 1 ? 'completed' : 'running',
+              jobs: updatedJobs,
+              updatedAtIso: nowIso,
+            };
+          }
+        );
+
+        workingState = saveAutonomousStudioState({
+          ...workingState,
+          campaigns: updatedCampaigns,
+          lastSavedAtIso: nowIso,
+        });
+
         setStudioState(workingState);
-        setCompletedJobIdsInRun((prev) => [...prev, job.id]);
+        setCompletedJobIdsInRun((prev) => [...prev, finalJob.id]);
       }
 
-      if (targetJobs[0]) {
-        setSelectedJobId(targetJobs[0].id);
+      // Sync all completed articles in the batch to the Flagship Content Writer Studio IndexedDB
+      if (finishedJobs.length > 0) {
+        await syncAutomatedBatchToWriterStudio({
+          campaignId: targetCampaign.id,
+          campaignName: targetCampaign.name,
+          website: targetWebsite,
+          jobs: finishedJobs,
+          selectedJobId: finishedJobs[0]?.id,
+        });
+        setSelectedJobId(finishedJobs[0]!.id);
       }
+
       setStatusMessage(
-        activeWebsite.publishingMode === 'internal-doitwithai-site'
-          ? `All ${targetJobs.length} articles, section infographics & social packs are complete and auto-published to your DoItWithAI Website!`
-          : `All ${targetJobs.length} articles, 6-layer infographics, Pinterest 2:3 pins & LinkedIn carousels are ready!`
+        targetWebsite.publishingMode === 'internal-doitwithai-site'
+          ? `All ${finishedJobs.length} articles, 6-layer section infographics & social packs are complete and auto-published to your DoItWithAI Website!`
+          : `All ${finishedJobs.length} articles, 6-layer infographics, Pinterest 2:3 pins & LinkedIn carousels are complete and synced with the AI Content Writer Studio!`
       );
       setCurrentStep(4);
     } finally {
       setIsRunningBatch(false);
+    }
+  };
+
+  /**
+   * 1-CLICK 24-HOUR ACTIVE AUTOPILOT LAUNCHER:
+   * User only enters their Website URL -> Scans website live -> Discovers topics -> Writes full batch -> Auto-publishes / Stages packs!
+   */
+  const handleStart24HourActiveAutopilot = async () => {
+    setWorkflowMode('autopilot-24h');
+    const scanResult = await executeWebsiteScanAndTopicDiscovery({
+      autoStartWriting: true,
+      forceFreshVariation: true,
+    });
+    if (!scanResult) return;
+    await executeBatchWritingPipeline({
+      state: scanResult.nextState,
+      campaign: scanResult.campaign,
+      website: scanResult.website,
+      jobsToWrite: scanResult.jobs,
+      is24HourAutopilot: true,
+    });
+  };
+
+  /**
+   * Open the current multi-article batch directly inside the Flagship `/ai-content-writer` Studio
+   * with the Multi-Article Switcher Bar at the top!
+   */
+  const handleOpenInContentWriterStudio = async (targetJob?: AutomatedArticleJob) => {
+    if (!activeCampaign || !activeWebsite) return;
+    setIsOpeningWriterStudio(true);
+    try {
+      const jobsToSync = activeCampaign.jobs.filter((j) =>
+        selectedJobIds.includes(j.id)
+      );
+      const effectiveJobs =
+        jobsToSync.length > 0 ? jobsToSync : activeCampaign.jobs;
+      await syncAutomatedBatchToWriterStudio({
+        campaignId: activeCampaign.id,
+        campaignName: activeCampaign.name,
+        website: activeWebsite,
+        jobs: effectiveJobs,
+        selectedJobId: targetJob?.id || selectedJob?.id || effectiveJobs[0]?.id,
+      });
+      router.push('/ai-content-writer?batch=automation');
+    } finally {
+      setIsOpeningWriterStudio(false);
     }
   };
 
@@ -608,7 +784,7 @@ export default function AutonomousCampaignDashboard() {
         targetUrl = res.targetUrl;
         effectiveStatus = 'published';
         socialCount = selectedJob.arcadsVariations.length;
-        summaryMsg = `Auto-published live to ${res.targetUrl} with ${res.embeddedInfographicsCount} embedded 6-layer SVG infographics!`;
+        summaryMsg = `Published live to ${res.targetUrl} with ${res.embeddedInfographicsCount} embedded 6-layer SVG infographics!`;
       } else {
         const externalResult = await dispatchExternalCmsAndSocialPublish({
           job: selectedJob,
@@ -667,7 +843,22 @@ export default function AutonomousCampaignDashboard() {
       'application/json'
     );
     setStatusMessage(
-      `Downloaded complete ready-made pack (${bundle.sectionInfographicSvgs.length} section infographics, 3 Pinterest 2:3 Pins, 8-slide LinkedIn Carousel & Markdown).`
+      `Downloaded complete ready-made pack for "${selectedJob.topicTitle}" (${bundle.sectionInfographicSvgs.length} section infographics, 3 Pinterest 2:3 Pins, 8-slide LinkedIn Carousel & Markdown).`
+    );
+  };
+
+  const handleDownloadAllBatchBundles = () => {
+    if (!activeCampaign || !activeWebsite) return;
+    const allBundles = activeCampaign.jobs.map((job) =>
+      buildCompleteJobExportBundle(job, activeWebsite)
+    );
+    downloadTextFile(
+      `${activeWebsite.siteName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-all-${allBundles.length}-articles-pack.json`,
+      JSON.stringify(allBundles, null, 2),
+      'application/json'
+    );
+    setStatusMessage(
+      `Downloaded Master Multi-Article Pack containing all ${allBundles.length} articles, infographics, Pinterest Pins & social posts!`
     );
   };
 
@@ -740,36 +931,65 @@ export default function AutonomousCampaignDashboard() {
 
   return (
     <div className="min-h-screen bg-[#0B0F17] text-slate-100">
-      {/* Clean, Streamlined Top Bar */}
+      {/* Top Mode & Studio Bar */}
       <header className="border-b border-slate-800/80 bg-[#0F1623]/95 backdrop-blur sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-3 py-1 text-xs font-bold text-emerald-300">
               <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-              4-Step Guided Autopilot
+              Real-Time AI Content & Social OS
             </span>
             <h1 className="text-base sm:text-lg font-extrabold tracking-tight text-white">
-              AI Content, Infographic & Social Automation
+              Multi-Article Batch &amp; 24-Hour AI Autopilot
             </h1>
           </div>
 
-          <div className="flex items-center gap-2.5 text-xs">
+          {/* 3-Mode Unified Workflow Switcher */}
+          <div className="flex flex-wrap items-center gap-2 text-xs">
             <Link
               href="/ai-content-writer"
-              className="rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-1.5 font-medium text-slate-200 hover:bg-slate-700 transition"
+              className="rounded-xl border border-slate-700 bg-slate-800/80 px-3 py-1.5 font-semibold text-slate-200 hover:bg-slate-700 transition"
             >
-              ← Single Article Writer
+              1. Single Article Studio
             </Link>
             <button
               type="button"
-              onClick={() => setShowAdvancedDrawer((prev) => !prev)}
-              className={`rounded-lg border px-3 py-1.5 font-semibold transition ${
-                showAdvancedDrawer
+              onClick={() => {
+                setWorkflowMode('multi-article-batch');
+                setCurrentStep(1);
+              }}
+              className={`rounded-xl border px-3 py-1.5 font-bold transition ${
+                workflowMode === 'multi-article-batch'
                   ? 'border-sky-400 bg-sky-500/20 text-sky-200'
                   : 'border-slate-700 bg-slate-900 text-slate-300 hover:border-slate-600'
               }`}
             >
-              ⚙ {showAdvancedDrawer ? 'Hide Advanced Settings' : 'Advanced Settings (Optional)'}
+              2. Multi-Article Batch
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setWorkflowMode('autopilot-24h');
+                setCurrentStep(1);
+              }}
+              className={`rounded-xl border px-3 py-1.5 font-bold transition ${
+                workflowMode === 'autopilot-24h'
+                  ? 'border-amber-400 bg-amber-500/20 text-amber-200'
+                  : 'border-slate-700 bg-slate-900 text-slate-300 hover:border-slate-600'
+              }`}
+            >
+              ⚡ 3. 24-Hour Active Autopilot (URL Only)
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowAdvancedDrawer((prev) => !prev)}
+              className={`rounded-xl border px-3 py-1.5 font-semibold transition ${
+                showAdvancedDrawer
+                  ? 'border-purple-400 bg-purple-500/20 text-purple-200'
+                  : 'border-slate-700 bg-slate-900 text-slate-300 hover:border-slate-600'
+              }`}
+            >
+              ⚙ {showAdvancedDrawer ? 'Hide API & Settings' : 'API Keys & Settings'}
             </button>
           </div>
         </div>
@@ -789,16 +1009,20 @@ export default function AutonomousCampaignDashboard() {
           </div>
         )}
 
-        {/* MAIN 2-PANEL GUIDED WORKSPACE: Left 4-Step Rail + Right Active Step Canvas */}
+        {/* MAIN 2-PANEL GUIDED WORKSPACE */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* LEFT PANEL: Simple 4-Step Guided Stepper & Active Site Badge */}
+          {/* LEFT PANEL: 4-Step Guided Stepper & Active Site DNA */}
           <aside className="lg:col-span-4 xl:col-span-3 rounded-2xl border border-slate-800/90 bg-slate-900/70 p-4 space-y-4 lg:sticky lg:top-20">
             <div className="border-b border-slate-800 pb-3">
               <div className="text-[11px] font-bold uppercase tracking-wider text-sky-400">
-                Simple 4-Step Automation
+                {workflowMode === 'autopilot-24h'
+                  ? '⚡ 24-Hour Active Autopilot'
+                  : 'Simple 4-Step Automation'}
               </div>
               <p className="text-xs text-slate-400 mt-0.5">
-                Enter your URL, pick topics, and let the AI agents handle writing, visuals & social packs.
+                {workflowMode === 'autopilot-24h'
+                  ? 'Enter only your Website URL. AI continuously discovers topics, writes articles, designs visuals & stages social packs.'
+                  : 'Enter your URL, pick real-time low-KD topics, and let AI write all articles, infographics & social packs.'}
               </p>
             </div>
 
@@ -870,126 +1094,201 @@ export default function AutonomousCampaignDashboard() {
               </div>
               <div className="font-bold text-white truncate">{activeWebsite.siteName}</div>
               <div className="text-[11px] text-slate-400 truncate">{activeWebsite.siteUrl}</div>
+              <div className="text-[11px] text-sky-300 truncate">
+                Niche: {activeWebsite.primaryNiche}
+              </div>
               <div className="pt-1 flex items-center justify-between text-[11px] border-t border-slate-800/80">
-                <span className="text-slate-400">Mode:</span>
+                <span className="text-slate-400">Delivery:</span>
                 <span className="font-semibold text-emerald-300">
                   {activeWebsite.publishingMode === 'internal-doitwithai-site'
-                    ? 'Auto-Publish (/p/blog)'
+                    ? '1-Click Auto-Publish (/p/blog)'
                     : 'Ready-Made Export Pack'}
                 </span>
               </div>
             </div>
           </aside>
 
-          {/* RIGHT PANEL: Focused Single-Step Canvas */}
+          {/* RIGHT PANEL: Active Step Canvas */}
           <section className="lg:col-span-8 xl:col-span-9">
             {/* =========================================================
-                STEP 1: ENTER WEBSITE URL & ANIMATED AI SCANNER
+                STEP 1: ENTER WEBSITE URL & CHOOSE AUTOMATION MODE
                ========================================================= */}
             {currentStep === 1 && (
               <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6 sm:p-8 space-y-6">
-                <div className="max-w-2xl space-y-2">
+                <div className="max-w-3xl space-y-2">
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-sky-500/15 border border-sky-500/30 px-3 py-1 text-xs font-bold text-sky-300">
-                    Step 1 of 4 · Zero-Setup Onboarding
+                    Step 1 of 4 · Real-Time Website &amp; Niche Analysis
                   </span>
                   <h2 className="text-xl sm:text-2xl font-extrabold text-white">
-                    Where should our AI Agents publish or tailor your content?
+                    {workflowMode === 'autopilot-24h'
+                      ? '24-Hour Active AI Autopilot: Just Enter Your Website URL'
+                      : 'Enter Your Website URL to Discover Fresh, Niche-Specific Topics'}
                   </h2>
                   <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                    Just give us your website link (or choose a website you built on DoItWithAI). We will automatically scan your pages, brand colors, and Google Trends to find the best topics for you.
+                    Paste any website URL (like <code className="text-sky-300">https://cats.com</code> or your own domain). Our AI Scout fetches your live homepage headings, meta tags, brand colors, and Google Autocomplete queries to generate fresh topics tailored to your exact niche—never generic pre-built templates.
                   </p>
                 </div>
 
-                {/* Simple 2-Card Choice: External Website vs Internal DoItWithAI Website */}
+                {/* Workflow Mode Cards: Multi-Article Batch vs 24-Hour Autopilot */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   <button
                     type="button"
-                    onClick={() => setSiteSourceMode('external-url')}
+                    onClick={() => setWorkflowMode('multi-article-batch')}
                     className={`rounded-2xl border p-4 text-left transition ${
-                      siteSourceMode === 'external-url'
+                      workflowMode === 'multi-article-batch'
                         ? 'border-sky-500 bg-sky-500/15 shadow-md'
                         : 'border-slate-800 bg-slate-950/60 hover:border-slate-700'
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-extrabold text-white">
-                        🌐 My Own External Website URL
+                        📚 Mode A: Multi-Article Guided Batch
                       </span>
-                      {siteSourceMode === 'external-url' && (
+                      {workflowMode === 'multi-article-batch' && (
                         <span className="rounded-full bg-sky-500 px-2 py-0.5 text-[10px] font-bold text-slate-950">
-                          Selected
+                          Active
                         </span>
                       )}
                     </div>
                     <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
-                      Paste any website link (WordPress, Shopify, custom site). We scan your sitemap and prepare ready-to-publish articles, infographics & social packs.
+                      Scan your URL, review &amp; pick from discovered low-KD topics in Step 2, and watch AI write all selected articles + infographics + social packs.
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setWorkflowMode('autopilot-24h')}
+                    className={`rounded-2xl border p-4 text-left transition ${
+                      workflowMode === 'autopilot-24h'
+                        ? 'border-amber-400 bg-amber-500/15 shadow-md'
+                        : 'border-slate-800 bg-slate-950/60 hover:border-slate-700'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-extrabold text-white">
+                        ⚡ Mode B: 24-Hour Active Autopilot (1-Click URL Only)
+                      </span>
+                      {workflowMode === 'autopilot-24h' && (
+                        <span className="rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-bold text-slate-950">
+                          Active
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
+                      Zero manual topic picking required. Just give your URL—AI analyzes your site, picks the best topics, writes complete articles + visuals, and stages everything automatically.
+                    </p>
+                  </button>
+                </div>
+
+                {/* Website Destination Type: External Website vs Internal DoItWithAI Website */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <button
+                    type="button"
+                    onClick={() => setSiteSourceMode('external-url')}
+                    className={`rounded-2xl border p-3.5 text-left transition ${
+                      siteSourceMode === 'external-url'
+                        ? 'border-sky-500/70 bg-slate-950'
+                        : 'border-slate-800 bg-slate-950/50 hover:border-slate-700'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-extrabold text-white">
+                        🌐 External Website URL (WordPress, Shopify, Custom)
+                      </span>
+                      {siteSourceMode === 'external-url' && (
+                        <span className="text-[10px] font-bold text-sky-400">✓ Selected</span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      Generates 1-click downloadable Article + Infographic + Social Media packs (and auto-publishes social when connected).
                     </p>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setSiteSourceMode('internal-builder')}
-                    className={`rounded-2xl border p-4 text-left transition ${
+                    className={`rounded-2xl border p-3.5 text-left transition ${
                       siteSourceMode === 'internal-builder'
-                        ? 'border-emerald-500 bg-emerald-500/15 shadow-md'
-                        : 'border-slate-800 bg-slate-950/60 hover:border-slate-700'
+                        ? 'border-emerald-500/70 bg-slate-950'
+                        : 'border-slate-800 bg-slate-950/50 hover:border-slate-700'
                     }`}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-extrabold text-white">
-                        ⚡ My DoItWithAI Builder Website
+                      <span className="text-xs font-extrabold text-white">
+                        ⚡ My DoItWithAI Builder Website (`/p/[slug]/blog`)
                       </span>
                       {siteSourceMode === 'internal-builder' && (
-                        <span className="rounded-full bg-emerald-500 px-2 py-0.5 text-[10px] font-bold text-slate-950">
-                          Selected
-                        </span>
+                        <span className="text-[10px] font-bold text-emerald-400">✓ Selected</span>
                       )}
                     </div>
-                    <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
-                      Connect a site built in our AI Website Builder (`/p/[slug]/blog`). Completed articles and infographics publish to your blog 100% automatically.
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      1-click auto-publishes completed articles &amp; infographics directly to your DoItWithAI blog + downloadable social pack.
                     </p>
                   </button>
                 </div>
 
-                {/* Focused URL / Niche Inputs */}
+                {/* Focused URL & Optional Niche Inputs */}
                 <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-5 space-y-4">
-                  {siteSourceMode === 'external-url' ? (
-                    <div>
-                      <label className="block text-xs font-bold text-slate-200 mb-1.5">
-                        Your Website URL
-                      </label>
-                      <input
-                        type="url"
-                        value={newSiteUrl}
-                        onChange={(e) => setNewSiteUrl(e.target.value)}
-                        placeholder="https://yourwebsite.com"
-                        className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-white focus:border-sky-400 focus:outline-none"
-                      />
+                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
+                    <div className="sm:col-span-9">
+                      {siteSourceMode === 'external-url' ? (
+                        <div>
+                          <label className="block text-xs font-bold text-slate-200 mb-1.5">
+                            Your Website URL (Required)
+                          </label>
+                          <input
+                            type="url"
+                            value={newSiteUrl}
+                            onChange={(e) => setNewSiteUrl(e.target.value)}
+                            placeholder="https://cats.com or https://yourwebsite.com"
+                            className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-white focus:border-sky-400 focus:outline-none"
+                          />
+                        </div>
+                      ) : (
+                        <div>
+                          <label className="block text-xs font-bold text-slate-200 mb-1.5">
+                            Your DoItWithAI Website Slug (`/p/[slug]/blog`)
+                          </label>
+                          <input
+                            type="text"
+                            value={newInternalSlug}
+                            onChange={(e) => setNewInternalSlug(e.target.value)}
+                            placeholder="doitwithai-multi-tool-directory-publication"
+                            className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-white focus:border-emerald-400 focus:outline-none"
+                          />
+                        </div>
+                      )}
                     </div>
-                  ) : (
-                    <div>
+
+                    <div className="sm:col-span-3">
                       <label className="block text-xs font-bold text-slate-200 mb-1.5">
-                        Your DoItWithAI Website Slug (`/p/[slug]/blog`)
+                        Articles in Batch
                       </label>
-                      <input
-                        type="text"
-                        value={newInternalSlug}
-                        onChange={(e) => setNewInternalSlug(e.target.value)}
-                        placeholder="doitwithai-multi-tool-directory-publication"
-                        className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-white focus:border-emerald-400 focus:outline-none"
-                      />
+                      <select
+                        value={targetBatchSize}
+                        onChange={(e) => setTargetBatchSize(Number(e.target.value) || 5)}
+                        className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-3 text-sm font-bold text-white focus:border-sky-400 focus:outline-none"
+                      >
+                        <option value={3}>3 Articles</option>
+                        <option value={5}>5 Articles</option>
+                        <option value={6}>6 Articles</option>
+                        <option value={10}>10 Articles</option>
+                      </select>
                     </div>
-                  )}
+                  </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-200 mb-1.5">
-                      What is your website or business about? (Niche / Main Topic)
+                    <label className="block text-xs font-bold text-slate-200 mb-1">
+                      Website Niche / Main Topic{' '}
+                      <span className="text-slate-400 font-normal">
+                        (Optional — leave blank to auto-detect from your website HTML!)
+                      </span>
                     </label>
                     <input
                       type="text"
                       value={newSiteNiche}
                       onChange={(e) => setNewSiteNiche(e.target.value)}
-                      placeholder="e.g., AI SEO Tools, Digital Marketing, E-Commerce Growth"
+                      placeholder="Auto-detected from URL (or type e.g. Feline Nutrition & Cat Care, SaaS CRM, Skincare...)"
                       className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-2.5 text-sm text-white focus:border-sky-400 focus:outline-none"
                     />
                   </div>
@@ -1007,10 +1306,10 @@ export default function AutonomousCampaignDashboard() {
                     </button>
                     {showOptionalPromptBox && (
                       <textarea
-                        rows={4}
+                        rows={3}
                         value={seedPrompts}
                         onChange={(e) => setSeedPrompts(e.target.value)}
-                        placeholder="Enter one topic or idea per line (optional)..."
+                        placeholder="Enter one custom topic idea per line (leave empty for 100% AI topic discovery from your URL)..."
                         className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-900 p-3 text-xs text-slate-200"
                       />
                     )}
@@ -1023,7 +1322,7 @@ export default function AutonomousCampaignDashboard() {
                     <div className="flex items-center justify-between text-xs">
                       <span className="font-bold text-sky-300 flex items-center gap-2">
                         <span className="h-2.5 w-2.5 rounded-full bg-sky-400 animate-ping" />
-                        AI Brand & Topic Scout Agent Running...
+                        Real-Time Website &amp; Niche AI Scout Running...
                       </span>
                       <span className="text-slate-400">
                         Stage {scanStageIndex + 1} of {SCAN_ANIMATION_STAGES.length}
@@ -1055,18 +1354,33 @@ export default function AutonomousCampaignDashboard() {
                   </div>
                 )}
 
-                {/* Primary Step 1 CTA */}
+                {/* Primary Step 1 CTA Buttons */}
                 <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
-                  <button
-                    type="button"
-                    disabled={isScanningWebsite}
-                    onClick={handleScanWebsiteAndDiscoverTopics}
-                    className="rounded-xl bg-gradient-to-r from-sky-500 to-emerald-500 hover:from-sky-400 hover:to-emerald-400 disabled:opacity-60 px-6 py-3.5 text-sm font-extrabold text-slate-950 shadow-lg transition"
-                  >
-                    {isScanningWebsite
-                      ? 'Scanning Website & Discovering Topics...'
-                      : '1. Analyze Website & Generate Topic Ideas →'}
-                  </button>
+                  <div className="flex flex-wrap items-center gap-3">
+                    {workflowMode === 'autopilot-24h' ? (
+                      <button
+                        type="button"
+                        disabled={isScanningWebsite || isRunningBatch}
+                        onClick={() => void handleStart24HourActiveAutopilot()}
+                        className="rounded-xl bg-gradient-to-r from-amber-400 via-emerald-400 to-sky-400 hover:brightness-110 disabled:opacity-60 px-6 py-3.5 text-sm font-extrabold text-slate-950 shadow-lg transition"
+                      >
+                        {isScanningWebsite || isRunningBatch
+                          ? 'Running 24-Hour Autopilot Scan & Production...'
+                          : `⚡ Start 24-Hour Active Autopilot (${targetBatchSize} Articles + Visuals) →`}
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={isScanningWebsite}
+                        onClick={() => void executeWebsiteScanAndTopicDiscovery()}
+                        className="rounded-xl bg-gradient-to-r from-sky-500 to-emerald-500 hover:from-sky-400 hover:to-emerald-400 disabled:opacity-60 px-6 py-3.5 text-sm font-extrabold text-slate-950 shadow-lg transition"
+                      >
+                        {isScanningWebsite
+                          ? 'Scanning Website & Discovering Topics...'
+                          : '1. Analyze Website & Generate Fresh Topics →'}
+                      </button>
+                    )}
+                  </div>
 
                   {activeCampaign.jobs.length > 0 && (
                     <button
@@ -1074,7 +1388,7 @@ export default function AutonomousCampaignDashboard() {
                       onClick={() => setCurrentStep(2)}
                       className="text-xs font-semibold text-slate-400 hover:text-white"
                     >
-                      Skip scan & use current {activeCampaign.jobs.length} topics →
+                      View current {activeCampaign.jobs.length} topics →
                     </button>
                   )}
                 </div>
@@ -1082,31 +1396,50 @@ export default function AutonomousCampaignDashboard() {
             )}
 
             {/* =========================================================
-                STEP 2: REVIEW & SELECT TOPIC IDEAS (1-CLICK START)
+                STEP 2: REVIEW & SELECT TOPIC IDEAS (OR REGENERATE FRESH IDEAS)
                ========================================================= */}
             {currentStep === 2 && (
               <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6 sm:p-8 space-y-6">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div className="space-y-1.5">
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-3 py-1 text-xs font-bold text-emerald-300">
-                      Step 2 of 4 · Website Analyzed Successfully
+                      Step 2 of 4 · Real-Time Niche Topics Ready
                     </span>
                     <h2 className="text-xl sm:text-2xl font-extrabold text-white">
-                      Here are your recommended Low-KD Topics
+                      Recommended Low-KD Topics for {activeWebsite.siteName}
                     </h2>
                     <p className="text-xs sm:text-sm text-slate-300">
-                      We checked your sitemap and Google Trends to pick topics that won&apos;t cannibalize your existing pages. Keep them all selected or uncheck any topic you want to skip.
+                      Detected Niche:{' '}
+                      <strong className="text-sky-300">{activeWebsite.primaryNiche}</strong>. Click{' '}
+                      <strong>🔄 Generate Fresh Topic Ideas</strong> anytime to think of a brand-new set of non-overlapping topics for this website.
                     </p>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={handleStartAutonomousBatchRun}
-                    disabled={selectedJobIds.length === 0}
-                    className="rounded-xl bg-gradient-to-r from-emerald-400 to-sky-400 hover:from-emerald-300 hover:to-sky-300 disabled:opacity-50 px-5 py-3 text-xs sm:text-sm font-extrabold text-slate-950 shadow-lg transition"
-                  >
-                    ▶ Start Writing {selectedJobIds.length} Articles + Visuals Automatically →
-                  </button>
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <button
+                      type="button"
+                      disabled={isScanningWebsite}
+                      onClick={() =>
+                        void executeWebsiteScanAndTopicDiscovery({
+                          forceFreshVariation: true,
+                        })
+                      }
+                      className="rounded-xl border border-sky-400/50 bg-sky-500/15 hover:bg-sky-500/25 disabled:opacity-50 px-4 py-2.5 text-xs font-extrabold text-sky-200 transition"
+                    >
+                      {isScanningWebsite
+                        ? 'Thinking of New Topics...'
+                        : '🔄 Generate Fresh Topic Ideas'}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => void executeBatchWritingPipeline()}
+                      disabled={selectedJobIds.length === 0 || isRunningBatch}
+                      className="rounded-xl bg-gradient-to-r from-emerald-400 to-sky-400 hover:from-emerald-300 hover:to-sky-300 disabled:opacity-50 px-5 py-2.5 text-xs sm:text-sm font-extrabold text-slate-950 shadow-lg transition"
+                    >
+                      ▶ Start Writing {selectedJobIds.length} Articles + Visuals →
+                    </button>
+                  </div>
                 </div>
 
                 {/* Extracted Website DNA Summary Banner */}
@@ -1118,21 +1451,21 @@ export default function AutonomousCampaignDashboard() {
                     </div>
                   </div>
                   <div>
-                    <div className="text-slate-400">Sitemap & Trend Signals</div>
-                    <div className="font-bold text-emerald-300 mt-0.5">
-                      {latestScoutReport?.sitemapUrlsFound ?? 18} URLs · 0 Duplicates
+                    <div className="text-slate-400">Detected Niche</div>
+                    <div className="font-bold text-sky-300 truncate mt-0.5">
+                      {activeWebsite.primaryNiche}
                     </div>
                   </div>
                   <div>
-                    <div className="text-slate-400">Visual Output per Article</div>
-                    <div className="font-bold text-sky-300 mt-0.5">
-                      4 Infographics + 3 Pins + 8 Slides
+                    <div className="text-slate-400">AI Discovery Engine</div>
+                    <div className="font-bold text-emerald-300 truncate mt-0.5">
+                      {latestScoutReport?.aiProviderUsed || 'Niche Topic Radar'}
                     </div>
                   </div>
                   <div>
-                    <div className="text-slate-400">Selected Topics</div>
+                    <div className="text-slate-400">Selected Batch</div>
                     <div className="font-bold text-amber-300 mt-0.5">
-                      {selectedJobIds.length} of {activeCampaign.jobs.length} Selected
+                      {selectedJobIds.length} of {activeCampaign.jobs.length} Articles
                     </div>
                   </div>
                 </div>
@@ -1222,18 +1555,18 @@ export default function AutonomousCampaignDashboard() {
                   </button>
                   <button
                     type="button"
-                    onClick={handleStartAutonomousBatchRun}
-                    disabled={selectedJobIds.length === 0}
+                    onClick={() => void executeBatchWritingPipeline()}
+                    disabled={selectedJobIds.length === 0 || isRunningBatch}
                     className="rounded-xl bg-gradient-to-r from-emerald-400 to-sky-400 hover:from-emerald-300 hover:to-sky-300 disabled:opacity-50 px-6 py-3 text-sm font-extrabold text-slate-950 shadow-lg transition"
                   >
-                    ▶ Start Autonomous Writing & Visuals ({selectedJobIds.length} Topics) →
+                    ▶ Start Autonomous Writing &amp; Visuals ({selectedJobIds.length} Topics) →
                   </button>
                 </div>
               </div>
             )}
 
             {/* =========================================================
-                STEP 3: LIVE ANIMATED MULTI-AGENT EXECUTION PIPELINE
+                STEP 3: LIVE ANIMATED MULTI-ARTICLE EXECUTION PIPELINE
                ========================================================= */}
             {currentStep === 3 && (
               <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6 sm:p-8 space-y-6">
@@ -1241,22 +1574,66 @@ export default function AutonomousCampaignDashboard() {
                   <div className="space-y-1">
                     <span className="inline-flex items-center gap-2 rounded-full bg-sky-500/15 border border-sky-500/30 px-3 py-1 text-xs font-bold text-sky-300">
                       <span className="h-2 w-2 rounded-full bg-sky-400 animate-ping" />
-                      Step 3 of 4 · Autonomous Agents Working Live
+                      Step 3 of 4 · Sequential Multi-Article Production
                     </span>
                     <h2 className="text-xl sm:text-2xl font-extrabold text-white">
                       {isRunningBatch
-                        ? 'Your AI Agent Team is creating your articles, infographics & social pins...'
-                        : 'All selected articles & visuals are complete!'}
+                        ? `Writing Article ${completedJobIdsInRun.length + 1} of ${
+                            selectedJobIds.length || activeCampaign.jobs.length
+                          } + Section Infographics & Social Pack...`
+                        : 'All selected articles, infographics & social packs are complete!'}
                     </h2>
+                    <p className="text-xs text-slate-400">
+                      Each article is drafted sequentially with its own 50-word AEO answer, comparison table, 4 SVG infographics, 3 Pinterest pins, and 8-slide LinkedIn deck.
+                    </p>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => setCurrentStep(4)}
-                    className="rounded-xl bg-emerald-500 hover:bg-emerald-400 px-4 py-2.5 text-xs font-extrabold text-slate-950 transition"
-                  >
-                    View Finished Articles & Downloads (Step 4) →
-                  </button>
+                  {!isRunningBatch && (
+                    <button
+                      type="button"
+                      onClick={() => setCurrentStep(4)}
+                      className="rounded-xl bg-emerald-500 hover:bg-emerald-400 px-4 py-2.5 text-xs font-extrabold text-slate-950 transition"
+                    >
+                      Open Multi-Article Studio (Step 4) →
+                    </button>
+                  )}
+                </div>
+
+                {/* Overall Batch Progress Bar */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between text-xs text-slate-300 font-semibold">
+                    <span>
+                      Batch Progress: {completedJobIdsInRun.length} /{' '}
+                      {selectedJobIds.length || activeCampaign.jobs.length} Articles Completed
+                    </span>
+                    <span className="text-emerald-300">
+                      {Math.round(
+                        (completedJobIdsInRun.length /
+                          Math.max(1, selectedJobIds.length || activeCampaign.jobs.length)) *
+                          100
+                      )}
+                      %
+                    </span>
+                  </div>
+                  <div className="w-full h-2.5 rounded-full bg-slate-800 overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-sky-400 via-emerald-400 to-amber-300 transition-all duration-300"
+                      style={{
+                        width: `${Math.max(
+                          8,
+                          Math.round(
+                            ((completedJobIdsInRun.length +
+                              (isRunningBatch ? (activeStationIdx + 1) / 4 : 0)) /
+                              Math.max(
+                                1,
+                                selectedJobIds.length || activeCampaign.jobs.length
+                              )) *
+                              100
+                          )
+                        )}%`,
+                      }}
+                    />
+                  </div>
                 </div>
 
                 {/* Live Animated 4-Station Assembly Line */}
@@ -1330,19 +1707,19 @@ export default function AutonomousCampaignDashboard() {
                             </span>
                             <div className="min-w-0">
                               <div className="text-sm font-bold text-white truncate">
-                                {job.topicTitle}
+                                Article #{idx + 1}: {job.topicTitle}
                               </div>
                               <div className="text-[11px] text-slate-400">
                                 {isDone
-                                  ? '✓ Article + 4 Section Infographics + 3 Pinterest Pins + 8-Slide LinkedIn Deck Ready'
+                                  ? '✓ Full Article + 4 Section Infographics + 3 Pinterest Pins + 8-Slide LinkedIn Deck Ready'
                                   : isCurrent
                                     ? PRODUCTION_STATIONS[activeStationIdx]?.detail
-                                    : 'Waiting in queue...'}
+                                    : 'Queued — waiting for previous article to finish...'}
                               </div>
                             </div>
                           </div>
 
-                          {isDone && (
+                          {isDone && !isRunningBatch && (
                             <button
                               type="button"
                               onClick={() => {
@@ -1351,7 +1728,7 @@ export default function AutonomousCampaignDashboard() {
                               }}
                               className="rounded-lg bg-slate-800 hover:bg-slate-700 px-3 py-1.5 text-xs font-bold text-emerald-300"
                             >
-                              Inspect Result →
+                              Inspect in Studio →
                             </button>
                           )}
                         </div>
@@ -1362,41 +1739,107 @@ export default function AutonomousCampaignDashboard() {
             )}
 
             {/* =========================================================
-                STEP 4: READY-MADE RESULTS, AUTO-PUBLISH & 1-CLICK DOWNLOADS
+                STEP 4: UNIFIED MULTI-ARTICLE STUDIO DASHBOARD & SMART PUBLISH/DOWNLOAD
                ========================================================= */}
             {currentStep === 4 && selectedJob && (
               <div className="space-y-6">
-                {/* Top Delivery Summary Card: Website Scenario + Social Media Scenario */}
+                {autopilotActiveBanner && (
+                  <div className="rounded-2xl border border-amber-400/40 bg-amber-950/25 p-4 flex flex-wrap items-center justify-between gap-3 text-xs">
+                    <div className="space-y-0.5">
+                      <div className="font-extrabold text-amber-300 flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-amber-400 animate-ping" />
+                        ⚡ 24-Hour Active AI Autopilot Enabled for {activeWebsite.siteName}
+                      </div>
+                      <p className="text-slate-300">
+                        Your completed articles, infographics, and social media packs are saved in this browser workspace. Click &ldquo;Run Next 24h Autopilot Cycle&rdquo; anytime to discover &amp; generate the next fresh batch!
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => void handleStart24HourActiveAutopilot()}
+                      className="rounded-xl bg-amber-400 hover:bg-amber-300 px-4 py-2 text-xs font-extrabold text-slate-950 transition"
+                    >
+                      🔄 Run Next 24h Autopilot Cycle →
+                    </button>
+                  </div>
+                )}
+
+                {/* MULTI-ARTICLE SWITCHER BAR + FULL CONTENT WRITER STUDIO BRIDGE */}
                 <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6 space-y-5">
                   <div className="flex flex-wrap items-center justify-between gap-4">
                     <div>
                       <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-3 py-1 text-xs font-bold text-emerald-300">
-                        Step 4 of 4 · Everything Ready & Packaged
+                        Step 4 of 4 · Multi-Article Studio Dashboard ({activeCampaign.jobs.length}{' '}
+                        Articles Ready)
                       </span>
                       <h2 className="text-xl sm:text-2xl font-extrabold text-white mt-1.5">
-                        Your Articles, Infographics & Social Media Packs Are Ready
+                        Switch Between Your Generated Articles, Edit in Full Studio, Publish or Download
                       </h2>
                     </div>
 
-                    {/* Article Switcher Dropdown / Pills */}
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-slate-400">Viewing Article:</span>
-                      <select
-                        value={selectedJob.id}
-                        onChange={(e) => setSelectedJobId(e.target.value)}
-                        className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs font-bold text-white"
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <button
+                        type="button"
+                        disabled={isOpeningWriterStudio}
+                        onClick={() => void handleOpenInContentWriterStudio(selectedJob)}
+                        className="rounded-xl bg-gradient-to-r from-indigo-500 via-sky-500 to-emerald-400 hover:brightness-110 px-4 py-2.5 text-xs font-extrabold text-slate-950 shadow-lg transition"
                       >
-                        {activeCampaign.jobs.map((j, idx) => (
-                          <option key={j.id} value={j.id}>
-                            #{idx + 1}: {j.topicTitle.slice(0, 52)}
-                          </option>
-                        ))}
-                      </select>
+                        {isOpeningWriterStudio
+                          ? 'Opening Content Writer Studio...'
+                          : '✨ Open Batch in Full AI Content Writer Studio (With Article Switcher) →'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleDownloadAllBatchBundles}
+                        className="rounded-xl border border-slate-700 bg-slate-950 hover:bg-slate-800 px-3.5 py-2.5 text-xs font-bold text-slate-200 transition"
+                      >
+                        ⬇ Download All {activeCampaign.jobs.length} Articles (.JSON)
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Horizontal Multi-Article Switcher Tabs */}
+                  <div className="space-y-2">
+                    <div className="text-xs font-bold text-slate-400">
+                      Click any article below to switch active preview ({activeCampaign.jobs.length}{' '}
+                      articles in batch):
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {activeCampaign.jobs.map((job, idx) => {
+                        const isSelected = job.id === selectedJob.id;
+                        return (
+                          <button
+                            key={job.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedJobId(job.id);
+                              setSelectedSectionIdx(0);
+                              setSelectedPinIndex(0);
+                            }}
+                            className={`rounded-xl border px-3.5 py-2 text-xs font-bold transition flex items-center gap-2 max-w-[290px] ${
+                              isSelected
+                                ? 'border-sky-400 bg-sky-500/20 text-white shadow-sm'
+                                : 'border-slate-800 bg-slate-950/80 text-slate-300 hover:border-slate-700'
+                            }`}
+                          >
+                            <span
+                              className={`px-1.5 py-0.5 rounded text-[10px] font-extrabold ${
+                                isSelected
+                                  ? 'bg-sky-400 text-slate-950'
+                                  : 'bg-slate-800 text-slate-400'
+                              }`}
+                            >
+                              #{idx + 1}
+                            </span>
+                            <span className="truncate">{job.topicTitle}</span>
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
 
                   {/* Two Clear Delivery Cards: (1) Website Blog Delivery & (2) Social Media Delivery */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
                     {/* Card A: Website Blog Delivery */}
                     <div className="rounded-2xl border border-emerald-500/35 bg-slate-950/80 p-4 space-y-3">
                       <div className="flex items-center justify-between">
@@ -1405,17 +1848,17 @@ export default function AutonomousCampaignDashboard() {
                         </span>
                         <span className="rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-[10px] font-bold text-emerald-300">
                           {activeWebsite.publishingMode === 'internal-doitwithai-site'
-                            ? 'Auto-Published to Site'
-                            : 'Ready-Made Article Pack'}
+                            ? 'Internal DoItWithAI Site (/p/blog)'
+                            : 'External Website Pack'}
                         </span>
                       </div>
                       <p className="text-xs text-slate-300 leading-relaxed">
                         {activeWebsite.publishingMode === 'internal-doitwithai-site'
-                          ? `Automatically published to your DoItWithAI website (${
+                          ? `1-Click publishes directly to your DoItWithAI website (${
                               selectedJob.publishedUrl ||
                               `/p/${activeWebsite.internalBuilderSlug}/blog/${selectedJob.urlSlug}`
                             }) with all 4 SVG section infographics embedded.`
-                          : 'Your complete SEO/GEO article with 4 embedded section infographics and JSON-LD schema is ready to copy or auto-publish to WordPress.'}
+                          : `For external websites (${activeWebsite.siteUrl}), copy or download the complete Markdown/HTML article with 4 embedded section infographics & JSON-LD schema.`}
                       </p>
                       <div className="flex flex-wrap gap-2 pt-1">
                         <button
@@ -1427,8 +1870,22 @@ export default function AutonomousCampaignDashboard() {
                           {isPublishingJob
                             ? 'Publishing...'
                             : activeWebsite.publishingMode === 'internal-doitwithai-site'
-                              ? '✓ Sync / Update Internal Blog Post'
+                              ? '🚀 1-Click Publish to My DoItWithAI Website'
                               : 'Publish / Stage to Website'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            downloadTextFile(
+                              `${selectedJob.urlSlug}.md`,
+                              selectedJob.compiledArticleMarkdown ||
+                                compileJobArticleMarkdown(selectedJob, activeWebsite),
+                              'text/markdown;charset=utf-8'
+                            )
+                          }
+                          className="rounded-xl border border-slate-700 bg-slate-900 hover:bg-slate-800 px-3.5 py-2 text-xs font-bold text-slate-200 transition"
+                        >
+                          ⬇ Download Article (.MD)
                         </button>
                         <button
                           type="button"
@@ -1442,8 +1899,8 @@ export default function AutonomousCampaignDashboard() {
                           className="rounded-xl border border-slate-700 bg-slate-900 hover:bg-slate-800 px-3.5 py-2 text-xs font-bold text-slate-200 transition"
                         >
                           {copiedId === `copy-md-${selectedJob.id}`
-                            ? '✓ Copied Article Markdown!'
-                            : 'Copy Full Article'}
+                            ? '✓ Copied Article!'
+                            : 'Copy Article'}
                         </button>
                       </div>
                     </div>
@@ -1452,14 +1909,14 @@ export default function AutonomousCampaignDashboard() {
                     <div className="rounded-2xl border border-sky-500/35 bg-slate-950/80 p-4 space-y-3">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-extrabold uppercase tracking-wider text-sky-300">
-                          2. Social Media & Visuals Pack
+                          2. Social Media &amp; Visuals Pack
                         </span>
                         <span className="rounded-full bg-amber-400/20 px-2.5 py-0.5 text-[10px] font-bold text-amber-300">
-                          1-Click Downloads Ready
+                          1-Click Download Pack (Auto-Publishes When Social Connected)
                         </span>
                       </div>
                       <p className="text-xs text-slate-300 leading-relaxed">
-                        Connected accounts auto-publish directly. For any social account you haven&apos;t signed into yet, download the ready-made visuals and schedule files below in 1 click:
+                        Even if you publish to an internal DoItWithAI site or haven&apos;t connected social OAuth keys yet, your LinkedIn 8-Slide Carousel, 3 Pinterest 2:3 Pins &amp; 5 Social Posts are ready to download in 1 click:
                       </p>
                       <div className="flex flex-wrap gap-2 pt-1">
                         <button
@@ -1481,7 +1938,7 @@ export default function AutonomousCampaignDashboard() {
                           onClick={handleDownloadCompleteBundle}
                           className="rounded-xl border border-slate-700 bg-slate-900 hover:bg-slate-800 px-3 py-2 text-xs font-semibold text-slate-200 transition"
                         >
-                          ⬇ Full Pack (.JSON)
+                          ⬇ Complete Article + Social Pack (.JSON)
                         </button>
                       </div>
                     </div>
@@ -1493,7 +1950,8 @@ export default function AutonomousCampaignDashboard() {
                   <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4">
                     <div>
                       <div className="text-xs font-bold text-sky-400">
-                        GEO Citation Readiness Score: {selectedJob.geoReadiness.overallScore}/100
+                        GEO Citation Readiness Score: {selectedJob.geoReadiness.overallScore}/100 ·
+                        Primary Keyword: &ldquo;{selectedJob.primaryKeyword}&rdquo;
                       </div>
                       <h3 className="text-lg font-extrabold text-white mt-0.5">
                         {selectedJob.topicTitle}
@@ -1680,18 +2138,17 @@ export default function AutonomousCampaignDashboard() {
         </div>
 
         {/* =========================================================
-            OPTIONAL COLLAPSIBLE ADVANCED SETTINGS & STUDIO INSPECTOR
-            (Hidden by default so beginners only see the 4 simple steps)
+            OPTIONAL COLLAPSIBLE ADVANCED SETTINGS, DEDICATED ENV VARS & FREE API GUIDE
            ========================================================= */}
         {showAdvancedDrawer && (
           <section className="rounded-2xl border border-slate-700/80 bg-slate-900/90 p-6 space-y-5">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4">
               <div>
                 <span className="text-[11px] font-bold uppercase tracking-wider text-sky-400">
-                  Optional Power-User & Developer Controls
+                  Dedicated Automation API Keys, Social Connections &amp; Free LLM Providers
                 </span>
                 <h3 className="text-base font-extrabold text-white">
-                  Social Connections, Free-Tier BYOK Keys, Winner Analytics & 12-Agent Specs
+                  Isolated Automation Quota, Free-Tier LLM Guide, Social OAuth &amp; Winner Analytics
                 </h3>
               </div>
 
@@ -1700,15 +2157,19 @@ export default function AutonomousCampaignDashboard() {
                   [
                     {
                       id: 'connections-byok',
-                      label: '1. Social Connections, WordPress & BYOK Keys',
+                      label: '1. Social Connections & BYOK Keys',
+                    },
+                    {
+                      id: 'free-api-guide',
+                      label: '2. Dedicated Env Vars & Free LLM Quota Guide',
                     },
                     {
                       id: 'winner-analytics',
-                      label: '2. Winner-Clone Analytics & Cloud Backup',
+                      label: '3. Winner-Clone Analytics & Cloud Backup',
                     },
                     {
                       id: 'agent-architecture',
-                      label: '3. 12-Agent Specs & 6-Phase Roadmap',
+                      label: '4. 12-Agent Specs',
                     },
                   ] as const
                 ).map((tab) => (
@@ -1792,14 +2253,16 @@ export default function AutonomousCampaignDashboard() {
                 {/* Free-Tier BYOK Keys */}
                 <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4 space-y-3">
                   <div className="font-bold text-white text-sm">
-                    Optional Free-Tier BYOK API Keys (Stored Only in Browser)
+                    Dedicated Automation API Keys (Browser BYOK or Vercel Env Vars)
                   </div>
                   <p className="text-slate-400">
-                    Works out of the box with 0-token deterministic synthesis, or paste a free Gemini / Groq API key for live LLM drafting ({tokenBudget.tokensPerArticle.toLocaleString()} tokens/article).
+                    Paste a dedicated Gemini or Groq key below for instant browser testing ({tokenBudget.tokensPerArticle.toLocaleString()} tokens/article), or set <code className="text-sky-300">AUTONOMOUS_AUTOMATION_GEMINI_KEY</code> / <code className="text-sky-300">AUTONOMOUS_AUTOMATION_GROQ_KEY</code> in Vercel so automation never drains your main public tools&apos; quota.
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-slate-300 mb-1">Gemini Free API Key</label>
+                      <label className="block text-slate-300 mb-1">
+                        Dedicated Gemini Automation Key
+                      </label>
                       <input
                         type="password"
                         placeholder="AIzaSy..."
@@ -1817,7 +2280,9 @@ export default function AutonomousCampaignDashboard() {
                       />
                     </div>
                     <div>
-                      <label className="block text-slate-300 mb-1">Groq Free API Key</label>
+                      <label className="block text-slate-300 mb-1">
+                        Dedicated Groq Automation Key
+                      </label>
                       <input
                         type="password"
                         placeholder="gsk_..."
@@ -1835,6 +2300,42 @@ export default function AutonomousCampaignDashboard() {
                       />
                     </div>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {advancedSubTab === 'free-api-guide' && (
+              <div className="space-y-4 text-xs">
+                <div className="rounded-xl border border-sky-500/30 bg-sky-950/20 p-4 space-y-1.5">
+                  <div className="font-extrabold text-sky-300 text-sm">
+                    Isolated Environment Variables for AI Automation (Zero Impact on Public Tools)
+                  </div>
+                  <p className="text-slate-300 leading-relaxed">
+                    Add any of the following dedicated environment variables in your Vercel project settings (or <code className="text-sky-300">.env.local</code>). The Automation Engine automatically prioritizes these keys first before touching your general site keys:
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                  {FREE_LLM_AUTOMATION_PROVIDERS_GUIDE.map((item) => (
+                    <div
+                      key={item.id}
+                      className="rounded-xl border border-slate-800 bg-slate-950/80 p-4 space-y-2"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-extrabold text-white text-sm">{item.name}</span>
+                        <span className="rounded bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-300">
+                          {item.freeQuotaSummary}
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-sky-300 font-mono">
+                        Env Var: <strong>{item.dedicatedEnvVarName}</strong> (or{' '}
+                        {item.secondaryEnvVarName})
+                      </div>
+                      <p className="text-slate-400 leading-relaxed">
+                        {item.whyRecommendedForAutomation}
+                      </p>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
@@ -1872,7 +2373,7 @@ export default function AutonomousCampaignDashboard() {
                 </div>
 
                 <div className="lg:col-span-5 rounded-xl border border-slate-800 bg-slate-950/70 p-4 space-y-3">
-                  <div className="font-bold text-white text-sm">Workspace JSON Backup & Restore</div>
+                  <div className="font-bold text-white text-sm">Workspace JSON Backup &amp; Restore</div>
                   <div className="flex gap-2">
                     <button
                       type="button"

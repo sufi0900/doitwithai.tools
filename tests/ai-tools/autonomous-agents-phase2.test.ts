@@ -159,3 +159,82 @@ test("Phase 2 runLiveWebsiteAndTrendScout executes end-to-end with mocked fetch"
   assert.equal(res.jobs.length, 3);
   assert.ok(res.scoutReport.cannibalizationBlockedCount >= 1);
 });
+
+test("Phase 2 Real-Time Niche Discovery: non-AI domain (https://cats.com) infers feline niche, blocks unrelated sports trends ('ap top 25 basketball'), and varies topics across variationSeeds", async () => {
+  const catsMockFetch = (async (url: string | URL | Request) => {
+    const urlStr = String(url);
+    if (urlStr.endsWith("/sitemap.xml")) {
+      return new Response(
+        `<urlset><url><loc>https://cats.com/blog/best-wet-cat-food</loc></url></urlset>`,
+        { status: 200 },
+      );
+    }
+    if (urlStr.includes("trends.google.com")) {
+      // Unrelated US daily news trend that previously polluted cats.com topics
+      return new Response(
+        `<rss><channel><item><title>ap top 25 basketball</title><ht:approx_traffic>100K+</ht:approx_traffic></item></channel></rss>`,
+        { status: 200 },
+      );
+    }
+    if (urlStr.includes("suggestqueries.google.com")) {
+      return new Response(
+        JSON.stringify([
+          "cat care",
+          [
+            "how to transition indoor kittens to wet food",
+            "best litter box setup for multi cat homes",
+          ],
+        ]),
+        { status: 200 },
+      );
+    }
+    return new Response(
+      `<html><head><title>Cats.com - Cat Food Reviews, Feline Health & Care Advice</title><meta name="description" content="Expert veterinary cat care guides, wet and dry cat food reviews, and feline behavior tips." /></head><body><h1>Cat Care, Nutrition & Feline Health</h1><h2>Indoor Cat Enrichment</h2></body></html>`,
+      { status: 200 },
+    );
+  }) as typeof fetch;
+
+  const run1 = await runLiveWebsiteAndTrendScout({
+    siteUrl: "https://cats.com",
+    // Even if default AI-SEO placeholder was left in primaryNiche or seedTopicsOrPrompt:
+    primaryNiche: "AI SEO, Answer Engine Optimization (GEO) & Content Automation",
+    seedTopicsOrPrompt: "How to Rank in Perplexity & ChatGPT Search",
+    targetArticleCount: 6,
+    variationSeed: 1,
+    fetchImpl: catsMockFetch,
+  });
+
+  // 1. Must infer feline/cat niche from HTML instead of keeping AI SEO boilerplate
+  assert.match(run1.websiteProfile.primaryNiche, /Cat|Feline/i);
+
+  // 2. Zero basketball or unrelated AI-SEO topics in generated jobs
+  for (const job of run1.jobs) {
+    assert.ok(
+      !job.topicTitle.toLowerCase().includes("basketball"),
+      `Unexpected sports trend in topic: ${job.topicTitle}`,
+    );
+    assert.ok(
+      !job.topicTitle.toLowerCase().includes("perplexity"),
+      `Unexpected hardcoded AI-SEO template in topic: ${job.topicTitle}`,
+    );
+    assert.ok(
+      !job.topicTitle.toLowerCase().includes("json-ld"),
+      `Unexpected hardcoded JSON-LD template in topic: ${job.topicTitle}`,
+    );
+  }
+
+  // 3. Repeated scan with a different variationSeed produces fresh topic titles
+  const run2 = await runLiveWebsiteAndTrendScout({
+    siteUrl: "https://cats.com",
+    primaryNiche: "",
+    seedTopicsOrPrompt: "",
+    targetArticleCount: 6,
+    variationSeed: 5,
+    fetchImpl: catsMockFetch,
+  });
+
+  const run1Titles = run1.jobs.map((j) => j.topicTitle);
+  const run2Titles = run2.jobs.map((j) => j.topicTitle);
+  assert.notDeepEqual(run1Titles, run2Titles);
+});
+

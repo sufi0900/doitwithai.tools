@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import { createPortal } from "react-dom";
 import {
   CheckCircle2,
@@ -21,6 +22,11 @@ import {
   X,
 } from "lucide-react";
 import type { BlogInfographicConfig } from "@/lib/blog-writer/canonical-state";
+import {
+  clearWriterAutomationBatchManifest,
+  loadWriterAutomationBatchManifest,
+  type WriterAutomationBatchManifest,
+} from "@/lib/autonomous-agents/writer-studio-bridge";
 import { useWorkspace } from "./useWorkspace";
 import { useGeneration } from "./useGeneration";
 import {
@@ -148,7 +154,9 @@ export default function WriterWorkspace() {
         url: string;
       }>
     >([]),
-    [targetSiteId, setTargetSiteId] = useState<string>("");
+    [targetSiteId, setTargetSiteId] = useState<string>(""),
+    [batchManifest, setBatchManifest] =
+      useState<WriterAutomationBatchManifest | null>(null);
 
   const syncSiteInternalLinks = React.useCallback(
     (
@@ -220,6 +228,11 @@ export default function WriterWorkspace() {
       const fromQuery =
         new URLSearchParams(window.location.search).get("targetSiteId") || "";
       if (fromQuery) setTargetSiteId(fromQuery);
+      const manifest = loadWriterAutomationBatchManifest();
+      if (manifest) {
+        setBatchManifest(manifest);
+        setStudioUnlocked(true);
+      }
     }
     void loadConnectedWebsites();
     // Load once on mount; re-synced explicitly after publish.
@@ -924,6 +937,163 @@ export default function WriterWorkspace() {
         />
       ) : (
         <>
+          {/* MULTI-ARTICLE BATCH SWITCHER BAR (When synced from /ai-content-writer/automation) */}
+          {batchManifest && batchManifest.items.length > 0 && (
+            <section
+              aria-label="Multi-article automation batch switcher"
+              style={{
+                marginBottom: "18px",
+                padding: "14px 18px",
+                borderRadius: "16px",
+                border: "1px solid rgba(56, 189, 248, 0.35)",
+                background:
+                  "linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(12, 26, 48, 0.94))",
+                display: "grid",
+                gap: "12px",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: "10px",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      padding: "4px 10px",
+                      borderRadius: "999px",
+                      background: "rgba(16, 185, 129, 0.16)",
+                      border: "1px solid rgba(16, 185, 129, 0.4)",
+                      color: "#6ee7b7",
+                      fontSize: "11px",
+                      fontWeight: 800,
+                      letterSpacing: "0.04em",
+                    }}
+                  >
+                    ⚡ Multi-Article Batch Studio ({batchManifest.items.length} Articles)
+                  </span>
+                  <strong style={{ fontSize: "13.5px", color: "#f8fafc" }}>
+                    {batchManifest.siteName} ({batchManifest.siteUrl})
+                  </strong>
+                  <span style={{ fontSize: "12px", color: "#94a3b8" }}>
+                    Click any article tab below to edit its content, infographics, SEO meta &amp; social pack:
+                  </span>
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <Link
+                    href="/ai-content-writer/automation"
+                    style={{
+                      padding: "6px 12px",
+                      borderRadius: "9px",
+                      border: "1px solid rgba(56, 189, 248, 0.4)",
+                      background: "rgba(56, 189, 248, 0.12)",
+                      color: "#7dd3fc",
+                      fontSize: "12px",
+                      fontWeight: 700,
+                      textDecoration: "none",
+                    }}
+                  >
+                    ← Back to AI Automation Hub
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      clearWriterAutomationBatchManifest();
+                      setBatchManifest(null);
+                    }}
+                    style={{
+                      padding: "6px 10px",
+                      borderRadius: "9px",
+                      border: "1px solid rgba(148, 163, 184, 0.25)",
+                      background: "transparent",
+                      color: "#94a3b8",
+                      fontSize: "11.5px",
+                      cursor: "pointer",
+                    }}
+                    title="Hide batch switcher bar"
+                  >
+                    Dismiss Bar ✕
+                  </button>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: "8px",
+                }}
+              >
+                {batchManifest.items.map((item, idx) => {
+                  const isCurrent = p.projectId === item.projectId;
+                  return (
+                    <button
+                      key={item.projectId}
+                      type="button"
+                      onClick={async () => {
+                        gen.stop();
+                        try {
+                          await store.switchProject(item.projectId);
+                          setStudioUnlocked(true);
+                        } catch (err) {
+                          setMessage(errorText(err));
+                        }
+                      }}
+                      style={{
+                        padding: "8px 14px",
+                        borderRadius: "11px",
+                        border: isCurrent
+                          ? "1.5px solid #38bdf8"
+                          : "1px solid rgba(148, 163, 184, 0.25)",
+                        background: isCurrent
+                          ? "linear-gradient(135deg, rgba(56, 189, 248, 0.24), rgba(16, 185, 129, 0.2))"
+                          : "rgba(15, 23, 42, 0.8)",
+                        color: isCurrent ? "#ffffff" : "#cbd5e1",
+                        fontSize: "12px",
+                        fontWeight: isCurrent ? 800 : 600,
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "7px",
+                        maxWidth: "320px",
+                      }}
+                    >
+                      <span
+                        style={{
+                          padding: "2px 6px",
+                          borderRadius: "6px",
+                          background: isCurrent ? "#38bdf8" : "rgba(51, 65, 85, 0.9)",
+                          color: isCurrent ? "#020617" : "#94a3b8",
+                          fontSize: "10.5px",
+                          fontWeight: 800,
+                        }}
+                      >
+                        #{idx + 1}
+                      </span>
+                      <span
+                        style={{
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {item.topicTitle}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
           {/* FULL 4-ZONE STUDIO DASHBOARD */}
           <div className={styles.workspaceGrid}>
             <LeftStudioPanel
