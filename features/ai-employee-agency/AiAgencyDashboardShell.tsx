@@ -22,6 +22,7 @@ import type {
   ConnectedWebsiteProfile,
 } from '@/lib/autonomous-agents/types';
 import {
+  getAllAgencyEmployeesFlat,
   getDepartmentByTabId,
   type AgencySidebarTabId,
   type InteractiveOfficeNode,
@@ -35,6 +36,21 @@ import {
   scoreKeywordWithDoItWithAiEngine,
   type ScoredKeywordBrief,
 } from '@/lib/ai-employee-agency/handoff-orchestrator';
+import {
+  MODEL_PRICING_CATALOG,
+  buildAgencyCircleTelemetrySnapshot,
+  loadTokenTelemetrySnapshot,
+  saveTokenTelemetrySnapshot,
+  type AgencyCircleTelemetrySnapshot,
+  type AgencyLlmModelId,
+} from '@/lib/ai-employee-agency/token-telemetry-store';
+import {
+  loadAgencyMemoryStore,
+  routeSelectiveWorkflowInterrupt,
+  saveAgencyMemoryStore,
+  type AgencyMemoryStoreState,
+  type SelectiveInterruptRoutingPlan,
+} from '@/lib/ai-employee-agency/agent-memory-store';
 import InteractiveAgencyNodeCanvas from './InteractiveAgencyNodeCanvas';
 import FounderCommandChatDock, {
   type FounderChatMessage,
@@ -137,6 +153,28 @@ export default function AiAgencyDashboardShell() {
   const [isScoringKeywords, setIsScoringKeywords] = useState<boolean>(false);
   const [liveScoredBriefs, setLiveScoredBriefs] = useState<ScoredKeywordBrief[]>([]);
 
+  // V3 Phase 7: Real-Time 1-Circle Token & Cost Telemetry HUD State
+  const [selectedLlmModel, setSelectedLlmModel] =
+    useState<AgencyLlmModelId>('gemini-2.5-flash');
+  const [isFreeTierKeyMode, setIsFreeTierKeyMode] = useState<boolean>(true);
+  const [testApiKeyInput, setTestApiKeyInput] = useState<string>('');
+  const [isRunningTokenAudit, setIsRunningTokenAudit] = useState<boolean>(false);
+  const [tokenTelemetrySnapshot, setTokenTelemetrySnapshot] =
+    useState<AgencyCircleTelemetrySnapshot | null>(null);
+  const [llmGatewayNote, setLlmGatewayNote] = useState<string>(
+    'Free-Tier Shadow Telemetry Active · 90% Mechanical ($0.00) + 10% LLM Reasoning'
+  );
+
+  // V3 Phase 8: 3-Layer Agent Memory Bus, User-Taught Skills & Selective Interrupts
+  const [memoryStore, setMemoryStore] = useState<AgencyMemoryStoreState>(() =>
+    loadAgencyMemoryStore()
+  );
+  const [newSkillAgentId, setNewSkillAgentId] = useState<string>(
+    'sub-pinterest-2x3-specialist'
+  );
+  const [newSkillRuleInput, setNewSkillRuleInput] = useState<string>('');
+  const [customAssetTitleInput, setCustomAssetTitleInput] = useState<string>('');
+
   // Content Writing, LinkedIn Slide & Department Selection State
   const [selectedArticleId, setSelectedArticleId] = useState<string>('');
   const [activeLinkedInSlideIdx, setActiveLinkedInSlideIdx] = useState<number>(0);
@@ -150,20 +188,32 @@ export default function AiAgencyDashboardShell() {
   const [isChatDrawerExpanded, setIsChatDrawerExpanded] = useState<boolean>(false);
   const [chatMessages, setChatMessages] = useState<FounderChatMessage[]>([]);
 
+  const allFlatEmployees = useMemo(() => getAllAgencyEmployeesFlat(), []);
+
   useEffect(() => {
     const loaded = loadAutonomousStudioState();
     setStudioState(loaded);
     const firstCamp = loaded.campaigns[0];
+    const firstSite = loaded.websites[0];
     if (firstCamp?.jobs[0]) {
       setSelectedArticleId(firstCamp.jobs[0].id);
     }
+    const initialSnap = loadTokenTelemetrySnapshot({
+      siteName: firstSite?.siteName || 'DoItWithAI.tools',
+      activeTopicTitle:
+        firstCamp?.jobs[0]?.topicTitle || '2026 AI SEO Audit & Implementation Playbook',
+      modelId: 'gemini-2.5-flash',
+    });
+    setTokenTelemetrySnapshot(initialSnap);
+    setMemoryStore(loadAgencyMemoryStore());
+
     setChatMessages([
       {
         id: 'welcome-msg',
         sender: 'agent',
         agentName: 'Chief AI Officer & Founder Assistant',
         departmentBadge: 'Executive Office',
-        text: 'Welcome to your 24/7 AI Digital Agency Office. Tell me what you want to launch today (e.g. "Launch a new article on AI technical SEO checklists and prepare Pinterest + TikTok scripts"), or select any of our 36 AI Employees below to chat or voice-call 1-on-1.',
+        text: 'Welcome to your 24/7 AI Digital Agency Office. Tell me what you want to launch today, teach any specialist a permanent skill (e.g. "Remember: Always use emerald badges on Pinterest pins"), or select any of our 36 AI Employees below to chat or voice-call 1-on-1.',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       },
     ]);
@@ -213,6 +263,30 @@ export default function AiAgencyDashboardShell() {
   }, [activeCampaign, selectedArticleId]);
 
   const isInternalSite = activeWebsite?.publishingMode === 'internal-doitwithai-site';
+
+  // Recompute telemetry snapshot whenever model or free-tier toggle changes
+  const activeTelemetry: AgencyCircleTelemetrySnapshot = useMemo(() => {
+    if (
+      tokenTelemetrySnapshot &&
+      tokenTelemetrySnapshot.modelId === selectedLlmModel &&
+      tokenTelemetrySnapshot.isFreeTierKeyActive === isFreeTierKeyMode
+    ) {
+      return tokenTelemetrySnapshot;
+    }
+    return buildAgencyCircleTelemetrySnapshot({
+      siteName: activeWebsite?.siteName || 'DoItWithAI.tools',
+      activeTopicTitle:
+        selectedArticle?.topicTitle || '2026 AI SEO Audit & Implementation Playbook',
+      modelId: selectedLlmModel,
+      isFreeTierKeyActive: isFreeTierKeyMode,
+    });
+  }, [
+    tokenTelemetrySnapshot,
+    selectedLlmModel,
+    isFreeTierKeyMode,
+    activeWebsite?.siteName,
+    selectedArticle?.topicTitle,
+  ]);
 
   // Build the 6-Stage Paced Handoff Packet Chain
   const handoffPackets = useMemo(() => {
@@ -511,6 +585,153 @@ export default function AiAgencyDashboardShell() {
   };
 
   /**
+   * V3 Phase 8: Record a Selective Workflow Interrupt or User-Taught Skill in Shared Memory Bus
+   */
+  const handleRecordSelectiveInterrupt = (plan: SelectiveInterruptRoutingPlan) => {
+    setMemoryStore((prev) => {
+      const nextSkills = plan.learnedSkillRule
+        ? [plan.learnedSkillRule, ...prev.learnedSkills]
+        : prev.learnedSkills;
+      const nextEvents = [plan.memoryBusEvent, ...prev.sharedMemoryEvents].slice(
+        0,
+        15
+      );
+      return saveAgencyMemoryStore({
+        ...prev,
+        learnedSkills: nextSkills,
+        sharedMemoryEvents: nextEvents,
+      });
+    });
+  };
+
+  /**
+   * V3 Phase 8: Teach a Permanent Custom Skill Rule directly from the Executive Office UI
+   */
+  const handleTeachSkillFromForm = (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleaned = newSkillRuleInput.trim();
+    if (!cleaned) return;
+    const plan = routeSelectiveWorkflowInterrupt({
+      agentId: newSkillAgentId,
+      rawMessage: `Remember: ${cleaned}`,
+    });
+    handleRecordSelectiveInterrupt(plan);
+    setNewSkillRuleInput('');
+    setStatusToast(
+      `Taught permanent skill to ${plan.primaryAgentName}. Woke only ${plan.wokenAgentNames.join(
+        ' + '
+      )} (${plan.uninterruptedAgentCount} other agents uninterrupted).`
+    );
+  };
+
+  /**
+   * V3 Phase 8: Trigger a Selective Custom Visual Asset Override without interrupting other departments
+   */
+  const handleSelectiveCustomAssetUpload = (e: React.FormEvent) => {
+    e.preventDefault();
+    const assetTitle =
+      customAssetTitleInput.trim() || 'Founder Custom Product Screenshot (1000×1500)';
+    const plan = routeSelectiveWorkflowInterrupt({
+      agentId: 'sub-pinterest-2x3-specialist',
+      rawMessage: `Use uploaded custom image "${assetTitle}" for the active Pinterest 2:3 pin and LinkedIn carousel`,
+      customAssetUrl: `custom-upload://${encodeURIComponent(assetTitle)}`,
+    });
+    setMemoryStore((prev) =>
+      saveAgencyMemoryStore({
+        learnedSkills: prev.learnedSkills,
+        sharedMemoryEvents: [plan.memoryBusEvent, ...prev.sharedMemoryEvents].slice(
+          0,
+          15
+        ),
+        customUploadedAssets: [
+          {
+            id: `asset-${Date.now()}`,
+            title: assetTitle,
+            targetDepartmentTab: 'social-video-fleet',
+            assignedAgentId: 'sub-pinterest-2x3-specialist',
+            dataUriOrUrl: `custom-upload://${encodeURIComponent(assetTitle)}`,
+            uploadedAtIso: new Date().toISOString(),
+          },
+          ...prev.customUploadedAssets,
+        ],
+      })
+    );
+    setCustomAssetTitleInput('');
+    setStatusToast(
+      `Selective Asset Override Complete: Woke only ${plan.wokenAgentNames.join(
+        ' + '
+      )} while ${plan.uninterruptedAgentCount} other agents continued uninterrupted.`
+    );
+  };
+
+  /**
+   * V3 Phase 7: Run Live 1-Circle Token & Cost Audit via `/api/ai-employee-agency/orchestrate`
+   */
+  const handleRunLiveCircleTokenAudit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!activeWebsite || !activeCampaign) return;
+    setIsRunningTokenAudit(true);
+
+    try {
+      const res = await fetch('/api/ai-employee-agency/orchestrate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          siteUrl: activeWebsite.siteUrl,
+          siteName: activeWebsite.siteName,
+          primaryNiche: activeWebsite.primaryNiche,
+          seedKeywordQuery:
+            selectedArticle?.primaryKeyword || activeWebsite.primaryNiche,
+          isInternalSite,
+          existingSlugs: activeCampaign.jobs.map((j) => j.urlSlug),
+          modelId: selectedLlmModel,
+          apiKeyOverride: testApiKeyInput.trim() || undefined,
+          isFreeTierKey: isFreeTierKeyMode,
+        }),
+      });
+
+      if (res.ok) {
+        const data = (await res.json()) as {
+          ok: boolean;
+          circleTokenTelemetry?: AgencyCircleTelemetrySnapshot;
+          llmGatewayStatus?: {
+            telemetryNote?: string;
+          };
+        };
+        if (data.ok && data.circleTokenTelemetry) {
+          saveTokenTelemetrySnapshot(data.circleTokenTelemetry);
+          setTokenTelemetrySnapshot(data.circleTokenTelemetry);
+          if (data.llmGatewayStatus?.telemetryNote) {
+            setLlmGatewayNote(data.llmGatewayStatus.telemetryNote);
+          }
+          setStatusToast(
+            `1-Circle Token Telemetry Updated: ${data.circleTokenTelemetry.totalCircleTokens.toLocaleString()} tokens ($${data.circleTokenTelemetry.singleCircleShadowCostUsd.toFixed(
+              4
+            )} shadow cost · $${data.circleTokenTelemetry.singleCircleActualCostUsd.toFixed(
+              4
+            )} billed).`
+          );
+          setIsRunningTokenAudit(false);
+          return;
+        }
+      }
+    } catch {
+      // Deterministic local fallback if offline
+    }
+
+    const fallbackSnap = buildAgencyCircleTelemetrySnapshot({
+      siteName: activeWebsite.siteName,
+      activeTopicTitle:
+        selectedArticle?.topicTitle || '2026 AI SEO Audit & Implementation Playbook',
+      modelId: selectedLlmModel,
+      isFreeTierKeyActive: isFreeTierKeyMode,
+    });
+    saveTokenTelemetrySnapshot(fallbackSnap);
+    setTokenTelemetrySnapshot(fallbackSnap);
+    setIsRunningTokenAudit(false);
+  };
+
+  /**
    * Run Live Keyword Research & DoItWithAI KD Scorer
    */
   const handleRunLiveKeywordScorer = async (e?: React.FormEvent) => {
@@ -534,13 +755,21 @@ export default function AiAgencyDashboardShell() {
           seedKeywordQuery: querySeed,
           isInternalSite,
           existingSlugs: activeCampaign.jobs.map((j) => j.urlSlug),
+          modelId: selectedLlmModel,
+          apiKeyOverride: testApiKeyInput.trim() || undefined,
+          isFreeTierKey: isFreeTierKeyMode,
         }),
       });
       if (res.ok) {
         const data = (await res.json()) as {
           ok: boolean;
           scoredKeywordBriefs?: ScoredKeywordBrief[];
+          circleTokenTelemetry?: AgencyCircleTelemetrySnapshot;
         };
+        if (data.circleTokenTelemetry) {
+          saveTokenTelemetrySnapshot(data.circleTokenTelemetry);
+          setTokenTelemetrySnapshot(data.circleTokenTelemetry);
+        }
         if (data.ok && Array.isArray(data.scoredKeywordBriefs)) {
           setLiveScoredBriefs(data.scoredKeywordBriefs);
           setStatusToast(
@@ -591,7 +820,7 @@ export default function AiAgencyDashboardShell() {
       topicTitle: brief.recommendedH1Title,
       primaryKeyword: brief.keyword,
       secondaryKeywords: brief.paaQuestions.slice(0, 3),
-      searchIntent: 'Informational',
+      searchIntent: templateJob.searchIntent,
       kdProxyScore: brief.kdScore,
       urlSlug: brief.recommendedUrlSlug,
       status: 'drafting-article',
@@ -811,8 +1040,9 @@ export default function AiAgencyDashboardShell() {
                 <span className="hidden md:inline-block rounded-md bg-sky-500/15 border border-sky-500/30 px-2 py-0.5 text-[10px] font-bold text-sky-300">
                   {isInternalSite ? 'Internal Auto-Publish' : 'External Domain'}
                 </span>
-                <span className="hidden lg:inline-block rounded-md bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-mono font-bold text-emerald-300">
-                  Stage {activeHandoffStage}/6 · {activePacket.toAgentName}
+                <span className="hidden xl:inline-block rounded-md bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-mono font-bold text-emerald-300">
+                  1 Circle: {activeTelemetry.totalCircleTokens.toLocaleString()} tok · $
+                  {activeTelemetry.singleCircleShadowCostUsd.toFixed(4)}
                 </span>
               </div>
             </div>
@@ -1095,7 +1325,7 @@ export default function AiAgencyDashboardShell() {
               </div>
 
               {/* -------------------------------------------------------------
-                  TAB 1: EXECUTIVE OFFICE (KPIs + 1-CIRCLE TOKEN METER + 24H GRAPH + ALERTS)
+                  TAB 1: EXECUTIVE OFFICE (KPIs + PHASE 7 TOKEN HUD + PHASE 8 MEMORY BUS)
                  ------------------------------------------------------------- */}
               {activeSidebarTab === 'executive-office' && (
                 <div className="space-y-5">
@@ -1106,7 +1336,7 @@ export default function AiAgencyDashboardShell() {
                           Executive Command Center
                         </span>
                         <h2 className="text-lg sm:text-xl font-extrabold text-white mt-0.5">
-                          24/7 Agency Output, Live 1-Circle Token Telemetry &amp; Action Queue
+                          24/7 Agency Output, Live 1-Circle Token Telemetry &amp; 3-Layer Agent Memory
                         </h2>
                       </div>
                       <button
@@ -1147,10 +1377,9 @@ export default function AiAgencyDashboardShell() {
                         </div>
                       </div>
                       <div className="rounded-xl border border-slate-800 bg-slate-950 p-3.5">
-                        <div className="text-slate-400 text-[11px]">Social &amp; TikTok</div>
-                        <div className="text-base font-black text-sky-300 mt-1">
-                          {activeCampaign.jobs.length * 3} Pins ·{' '}
-                          {activeCampaign.jobs.length} Scripts
+                        <div className="text-slate-400 text-[11px]">30-Day Monthly Cost</div>
+                        <div className="text-base font-black text-sky-300 font-mono mt-1">
+                          ${activeTelemetry.projected30DayMonthlyCostUsd.toFixed(2)}/mo
                         </div>
                       </div>
                       <div className="rounded-xl border border-emerald-500/40 bg-emerald-950/20 p-3.5">
@@ -1158,7 +1387,278 @@ export default function AiAgencyDashboardShell() {
                           1-Circle Token Cost
                         </div>
                         <div className="text-base font-black text-white font-mono mt-1">
-                          16.3K tok · $0.0192
+                          {(activeTelemetry.totalCircleTokens / 1000).toFixed(1)}K tok · $
+                          {activeTelemetry.singleCircleShadowCostUsd.toFixed(4)}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* =============================================================
+                        V3 PHASE 7: REAL-TIME 1-CIRCLE TOKEN & SHADOW COST TELEMETRY HUD
+                       ============================================================= */}
+                    <div className="rounded-2xl border border-emerald-500/40 bg-slate-950 p-4 space-y-4 text-xs">
+                      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
+                        <div className="space-y-0.5">
+                          <div className="inline-flex items-center gap-2 font-extrabold text-emerald-300">
+                            <AgencyUiIcon name="cpu" className="w-4 h-4 text-emerald-400" />
+                            <span>
+                              Real-Time 1-Circle LLM Token &amp; Shadow Cost Telemetry Meter (Phase 7)
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-400">
+                            {llmGatewayNote} · Gross Margin:{' '}
+                            <strong className="text-emerald-300">
+                              {activeTelemetry.grossMarginAt49UsdPlanPercent}%
+                            </strong>{' '}
+                            (on $49/mo plan) or{' '}
+                            <strong className="text-sky-300">
+                              {activeTelemetry.grossMarginAt149UsdSeoAiTierPercent}%
+                            </strong>{' '}
+                            (vs SEO.AI $149/mo tier)
+                          </p>
+                        </div>
+
+                        {/* Model Switcher + Free/Paid Toggle + Run Live Circle Audit */}
+                        <form
+                          onSubmit={handleRunLiveCircleTokenAudit}
+                          className="flex flex-wrap items-center gap-2"
+                        >
+                          <select
+                            value={selectedLlmModel}
+                            onChange={(e) =>
+                              setSelectedLlmModel(e.target.value as AgencyLlmModelId)
+                            }
+                            className="rounded-xl border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-[11px] font-bold text-sky-300 focus:border-sky-400 focus:outline-none"
+                            aria-label="Select LLM model for token telemetry"
+                          >
+                            {Object.values(MODEL_PRICING_CATALOG).map((m) => (
+                              <option key={m.modelId} value={m.modelId}>
+                                {m.displayName} (${m.inputUsdPer1M}/1M in · ${m.outputUsdPer1M}
+                                /1M out)
+                              </option>
+                            ))}
+                          </select>
+
+                          <button
+                            type="button"
+                            onClick={() => setIsFreeTierKeyMode((prev) => !prev)}
+                            className={`rounded-xl border px-2.5 py-1.5 text-[11px] font-extrabold transition ${
+                              isFreeTierKeyMode
+                                ? 'border-emerald-400/50 bg-emerald-500/15 text-emerald-300'
+                                : 'border-amber-400/50 bg-amber-500/15 text-amber-300'
+                            }`}
+                          >
+                            {isFreeTierKeyMode
+                              ? 'Free API Key ($0 Billed + Shadow Meter)'
+                              : 'Paid Commercial Key Mode'}
+                          </button>
+
+                          <input
+                            type="password"
+                            value={testApiKeyInput}
+                            onChange={(e) => setTestApiKeyInput(e.target.value)}
+                            placeholder="Optional test key (AIza... / gsk_... / sk-...)"
+                            className="rounded-xl border border-slate-800 bg-slate-900 px-2.5 py-1.5 text-[11px] text-slate-200 placeholder-slate-500 focus:border-sky-400 focus:outline-none w-52"
+                          />
+
+                          <button
+                            type="submit"
+                            disabled={isRunningTokenAudit}
+                            className="rounded-xl bg-emerald-400 hover:bg-emerald-300 px-3 py-1.5 text-[11px] font-extrabold text-slate-950 transition disabled:opacity-50"
+                          >
+                            {isRunningTokenAudit
+                              ? 'Metering Circle...'
+                              : 'Meter 1 Full Circle Now'}
+                          </button>
+                        </form>
+                      </div>
+
+                      {/* 5-Stage Token & Mechanical Breakdown Table */}
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse text-[11px]">
+                          <thead>
+                            <tr className="border-b border-slate-800 text-slate-400 font-mono">
+                              <th className="py-2 pr-3">Circle Stage &amp; Department</th>
+                              <th className="py-2 pr-3">
+                                Zero-Cost Mechanical Work (90% · $0.00)
+                              </th>
+                              <th className="py-2 pr-3 text-right">Prompt Tok</th>
+                              <th className="py-2 pr-3 text-right">Output Tok</th>
+                              <th className="py-2 pr-3 text-right">Total Tok</th>
+                              <th className="py-2 text-right">Shadow Paid Cost</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-900">
+                            {activeTelemetry.stages.map((st) => (
+                              <tr key={st.stageNumber} className="hover:bg-slate-900/50">
+                                <td className="py-2.5 pr-3">
+                                  <div className="font-extrabold text-white">
+                                    Stage {st.stageNumber} · {st.departmentName}
+                                  </div>
+                                  <div className="text-[10.5px] text-slate-400">
+                                    {st.taskDescription}
+                                  </div>
+                                </td>
+                                <td className="py-2.5 pr-3">
+                                  <div className="flex flex-wrap gap-1">
+                                    {st.mechanicalZeroCostTasks.map((mTask) => (
+                                      <span
+                                        key={mTask}
+                                        className="rounded bg-slate-900 border border-slate-800 px-1.5 py-0.5 text-[10px] text-emerald-300"
+                                      >
+                                        {mTask}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </td>
+                                <td className="py-2.5 pr-3 text-right font-mono text-slate-300">
+                                  {st.promptTokens.toLocaleString()}
+                                </td>
+                                <td className="py-2.5 pr-3 text-right font-mono text-slate-300">
+                                  {st.completionTokens.toLocaleString()}
+                                </td>
+                                <td className="py-2.5 pr-3 text-right font-mono font-bold text-sky-300">
+                                  {st.totalTokens.toLocaleString()}
+                                </td>
+                                <td className="py-2.5 text-right font-mono font-bold text-emerald-300">
+                                  ${st.shadowPaidCostUsd.toFixed(4)}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                          <tfoot>
+                            <tr className="border-t border-slate-800 font-mono font-extrabold text-white">
+                              <td className="pt-2.5 pr-3" colSpan={2}>
+                                Total for 1 Complete End-to-End Agency Circle (All 36 Agents)
+                              </td>
+                              <td className="pt-2.5 pr-3 text-right text-slate-300">
+                                {activeTelemetry.totalPromptTokens.toLocaleString()}
+                              </td>
+                              <td className="pt-2.5 pr-3 text-right text-slate-300">
+                                {activeTelemetry.totalCompletionTokens.toLocaleString()}
+                              </td>
+                              <td className="pt-2.5 pr-3 text-right text-sky-300">
+                                {activeTelemetry.totalCircleTokens.toLocaleString()} tok
+                              </td>
+                              <td className="pt-2.5 text-right text-emerald-300">
+                                ${activeTelemetry.singleCircleShadowCostUsd.toFixed(4)} (Billed: $
+                                {activeTelemetry.singleCircleActualCostUsd.toFixed(4)})
+                              </td>
+                            </tr>
+                          </tfoot>
+                        </table>
+                      </div>
+                    </div>
+
+                    {/* =============================================================
+                        V3 PHASE 8: 3-LAYER AGENT MEMORY BUS, USER-TAUGHT SKILLS & SELECTIVE INTERRUPTS
+                       ============================================================= */}
+                    <div className="rounded-2xl border border-purple-500/40 bg-slate-950 p-4 space-y-4 text-xs">
+                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
+                        <div>
+                          <div className="inline-flex items-center gap-2 font-extrabold text-purple-300">
+                            <AgencyUiIcon name="sparkle" className="w-4 h-4 text-purple-400" />
+                            <span>
+                              3-Layer Trainable Agent Memory &amp; Selective Workflow Interruption (Phase 8)
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-400 mt-0.5">
+                            Teach permanent custom skills to any specialist or override a single visual asset—only the targeted agents wake up while up to 34/36 other agents continue working uninterrupted.
+                          </p>
+                        </div>
+                        <span className="rounded-xl border border-purple-500/40 bg-purple-500/15 px-3 py-1 text-[11px] font-mono font-bold text-purple-200">
+                          {memoryStore.learnedSkills.length} Learned Skills ·{' '}
+                          {memoryStore.sharedMemoryEvents.length} Memory Bus Events
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        {/* Left: Teach Permanent Custom Skill to Any Specialist */}
+                        <form
+                          onSubmit={handleTeachSkillFromForm}
+                          className="rounded-xl border border-slate-800 bg-slate-900/70 p-3.5 space-y-2.5"
+                        >
+                          <div className="font-extrabold text-sky-300">
+                            1. Teach Permanent Custom Skill Rule (Layer 2 Memory):
+                          </div>
+                          <select
+                            value={newSkillAgentId}
+                            onChange={(e) => setNewSkillAgentId(e.target.value)}
+                            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-[11px] font-bold text-slate-200"
+                            aria-label="Select specialist agent to train"
+                          >
+                            {allFlatEmployees.map((emp) => (
+                              <option key={emp.id} value={emp.id}>
+                                {emp.name} ({emp.departmentBadge})
+                              </option>
+                            ))}
+                          </select>
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              value={newSkillRuleInput}
+                              onChange={(e) => setNewSkillRuleInput(e.target.value)}
+                              placeholder='e.g. "Always include a 3-row pricing table in every H2 section"'
+                              className="flex-1 rounded-xl border border-slate-700 bg-slate-950 px-3 py-1.5 text-[11px] text-white placeholder-slate-500"
+                            />
+                            <button
+                              type="submit"
+                              className="rounded-xl bg-purple-500 hover:bg-purple-400 px-3.5 py-1.5 text-[11px] font-extrabold text-slate-950 shrink-0 transition"
+                            >
+                              Teach Skill
+                            </button>
+                          </div>
+
+                          <div className="space-y-1.5 pt-1 max-h-28 overflow-y-auto">
+                            {memoryStore.learnedSkills.slice(0, 4).map((sk) => (
+                              <div
+                                key={sk.id}
+                                className="rounded-lg border border-slate-800 bg-slate-950 px-2.5 py-1.5 text-[10.5px] text-slate-300"
+                              >
+                                <strong className="text-purple-300">{sk.agentName}:</strong>{' '}
+                                {sk.skillRuleText}
+                              </div>
+                            ))}
+                          </div>
+                        </form>
+
+                        {/* Right: Selective Visual Asset Override & Shared Memory Bus Log */}
+                        <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-3.5 space-y-2.5">
+                          <div className="font-extrabold text-emerald-300">
+                            2. Selective Custom Asset Override &amp; Shared Memory Bus:
+                          </div>
+                          <form
+                            onSubmit={handleSelectiveCustomAssetUpload}
+                            className="flex gap-2"
+                          >
+                            <input
+                              type="text"
+                              value={customAssetTitleInput}
+                              onChange={(e) => setCustomAssetTitleInput(e.target.value)}
+                              placeholder='Custom image label (e.g. "Founder Dashboard Screenshot 2:3")'
+                              className="flex-1 rounded-xl border border-slate-700 bg-slate-950 px-3 py-1.5 text-[11px] text-white placeholder-slate-500"
+                            />
+                            <button
+                              type="submit"
+                              className="rounded-xl bg-sky-500 hover:bg-sky-400 px-3 py-1.5 text-[11px] font-extrabold text-slate-950 shrink-0 transition"
+                            >
+                              Selective Override
+                            </button>
+                          </form>
+
+                          <div className="space-y-1.5 pt-1 max-h-36 overflow-y-auto">
+                            {memoryStore.sharedMemoryEvents.slice(0, 4).map((ev) => (
+                              <div
+                                key={ev.id}
+                                className="rounded-lg border border-slate-800 bg-slate-950 px-2.5 py-1.5 text-[10.5px] text-slate-300"
+                              >
+                                <span className="font-mono text-emerald-300 font-bold">
+                                  [{ev.eventType}]
+                                </span>{' '}
+                                {ev.summary}
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -2151,6 +2651,9 @@ export default function AiAgencyDashboardShell() {
           setIsFullCanvasGraphOpen(false);
           setIsGraphFullScreenViewport(false);
         }}
+        learnedSkills={memoryStore.learnedSkills}
+        sharedMemoryEvents={memoryStore.sharedMemoryEvents}
+        onRecordSelectiveInterrupt={handleRecordSelectiveInterrupt}
       />
     </div>
   );

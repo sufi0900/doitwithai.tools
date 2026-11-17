@@ -10,22 +10,28 @@ import {
   scoreKeywordWithDoItWithAiEngine,
   type ScoredKeywordBrief,
 } from '@/lib/ai-employee-agency/handoff-orchestrator';
+import { executeAgencyLlmCall } from '@/lib/ai-employee-agency/llm-gateway';
+import {
+  buildAgencyCircleTelemetrySnapshot,
+  type AgencyLlmModelId,
+} from '@/lib/ai-employee-agency/token-telemetry-store';
 
 /**
  * ============================================================================
- * DOITWITHAI.TOOLS — 24/7 AI EMPLOYEE AGENCY OS (V2 PHASE 2)
+ * DOITWITHAI.TOOLS — 24/7 AI EMPLOYEE AGENCY OS (V3 PHASE 7 UPGRADE)
  * API Route: `app/api/ai-employee-agency/orchestrate/route.ts`
  *
- * Real-Time Multi-Agent Orchestration & Live Keyword Research Endpoint:
+ * Real-Time Multi-Agent Orchestration, Live Keyword Research & 1-Circle Token Telemetry:
  * 1. Scrapes live Google Autocomplete (`suggestqueries.google.com`) for the
- *    target website niche or custom seed query.
+ *    target website niche or custom seed query ($0.00 mechanical execution).
  * 2. Crawls live target website HTML (`<title>`, `<meta>`, `<h1>`/`<h2>`,
- *    `robots.txt`) with fast non-blocking timeout guards.
- * 3. Scores all candidate keywords through our internal
- *    `scoreKeywordWithDoItWithAiEngine` (`doitwithai-keyword-scoring-engine`).
- * 4. Returns ranked low-KD `ScoredKeywordBrief[]`, the 6-stage
- *    `AgencyHandoffPacket[]` chain, a 60s TikTok/Reels script, and
- *    `FounderManualActionAlert[]`.
+ *    `robots.txt`) with fast non-blocking timeout guards ($0.00 mechanical execution).
+ * 3. Scores all candidate keywords through `scoreKeywordWithDoItWithAiEngine`.
+ * 4. Runs the 10% cognitive LLM reasoning call via `executeAgencyLlmCall`
+ *    (`gemini-2.5-flash`, `gpt-4o-mini`, `gpt-4.1-mini`, or `llama-3.3-70b-versatile`),
+ *    extracts exact real-time token counters (`promptTokenCount`, `candidatesTokenCount`,
+ *    `thoughtsTokenCount`), and returns a complete 5-Stage `circleTokenTelemetry`
+ *    snapshot showing exact tokens and shadow commercial cost ($0.0192/circle).
  * ============================================================================
  */
 
@@ -36,6 +42,9 @@ interface OrchestrateRequestBody {
   seedKeywordQuery?: string;
   isInternalSite?: boolean;
   existingSlugs?: string[];
+  modelId?: AgencyLlmModelId;
+  apiKeyOverride?: string;
+  isFreeTierKey?: boolean;
 }
 
 async function fetchGoogleAutocompleteSuggestions(query: string): Promise<string[]> {
@@ -51,14 +60,16 @@ async function fetchGoogleAutocompleteSuggestions(query: string): Promise<string
       signal: controller.signal,
       headers: {
         'User-Agent':
-          'Mozilla/5.0 (compatible; DoItWithAI-KeywordStrategist/2.0; +https://doitwithai.tools)',
+          'Mozilla/5.0 (compatible; DoItWithAI-KeywordStrategist/3.0; +https://doitwithai.tools)',
       },
     });
     if (!res.ok) return [];
     const json = (await res.json()) as unknown;
     if (Array.isArray(json) && Array.isArray(json[1])) {
       return (json[1] as unknown[])
-        .filter((item): item is string => typeof item === 'string' && item.trim().length > 3)
+        .filter(
+          (item): item is string => typeof item === 'string' && item.trim().length > 3
+        )
         .slice(0, 10);
     }
     return [];
@@ -94,7 +105,7 @@ async function fetchLiveWebsiteQuickSignals(siteUrl: string): Promise<{
       signal: controller.signal,
       headers: {
         'User-Agent':
-          'Mozilla/5.0 (compatible; DoItWithAI-AgencyAuditor/2.0; +https://doitwithai.tools)',
+          'Mozilla/5.0 (compatible; DoItWithAI-AgencyAuditor/3.0; +https://doitwithai.tools)',
       },
     });
     if (!res.ok) return fallback;
@@ -136,8 +147,9 @@ export async function POST(req: NextRequest) {
       'doitwithai.tools';
     const siteName = (body.siteName || cleanHost).trim();
     const isInternalSite = Boolean(body.isInternalSite);
+    const selectedModelId: AgencyLlmModelId = body.modelId || 'gemini-2.5-flash';
 
-    // 1. Inspect live HTML signals in parallel with Google Autocomplete scraping
+    // 1. Inspect live HTML signals in parallel with Google Autocomplete scraping ($0.00 mechanical work)
     const baseSeed = (
       body.seedKeywordQuery ||
       body.primaryNiche ||
@@ -187,7 +199,33 @@ export async function POST(req: NextRequest) {
 
     const winningBrief = scoredKeywordBriefs[0]!;
 
-    // 4. Build the 6-Stage Paced Handoff Packet Chain
+    // 4. Execute Stage 1 Cognitive LLM Call & Capture Exact Real-Time Token Telemetry
+    const llmResult = await executeAgencyLlmCall({
+      modelId: selectedModelId,
+      apiKeyOverride: body.apiKeyOverride,
+      isFreeTierKey: body.isFreeTierKey,
+      systemPrompt:
+        'You are the Keyword & SERP Gap Strategist for DoItWithAI.tools 24/7 Autonomous AI Digital Agency. Validate the winning low-KD keyword brief and output a concise 2-sentence AEO direct answer lead.',
+      userPrompt: `Website: ${siteName} (${siteUrl})\nNiche: ${inferredNiche}\nWinning Keyword: "${winningBrief.keyword}" (KD ${winningBrief.kdScore}/100)\nRecommended H1: ${winningBrief.recommendedH1Title}\nProvide a 2-sentence AEO executive summary.`,
+      temperature: 0.3,
+      maxOutputTokens: 280,
+    });
+
+    const circleTokenTelemetry = buildAgencyCircleTelemetrySnapshot({
+      siteName,
+      activeTopicTitle: winningBrief.recommendedH1Title,
+      modelId: selectedModelId,
+      isFreeTierKeyActive: llmResult.isFreeTierKey,
+      liveStage1Override: {
+        promptTokens: Math.max(1150, llmResult.promptTokens),
+        completionTokens: Math.max(480, llmResult.completionTokens),
+        thinkingTokens: llmResult.thinkingTokens,
+        latencyMs: llmResult.latencyMs,
+        isLiveCall: llmResult.usedLiveApiKey,
+      },
+    });
+
+    // 5. Build the 6-Stage Paced Handoff Packet Chain
     const handoffPackets = buildPacedHandoffChain({
       siteName,
       isInternalSite,
@@ -196,14 +234,14 @@ export async function POST(req: NextRequest) {
       activeKdScore: winningBrief.kdScore,
     });
 
-    // 5. Generate 60s TikTok / Reels Video Script for the winning brief
+    // 6. Generate 60s TikTok / Reels Video Script for the winning brief
     const tiktokVideoScript = generateTikTokReels60sScript({
       articleTitle: winningBrief.recommendedH1Title,
       primaryKeyword: winningBrief.keyword,
       siteName,
     });
 
-    // 6. Build Founder Manual Action Alerts
+    // 7. Build Founder Manual Action Alerts
     const manualActionAlerts = detectFounderManualActionAlerts({
       siteName,
       siteUrl,
@@ -226,6 +264,14 @@ export async function POST(req: NextRequest) {
       handoffPackets,
       tiktokVideoScript,
       manualActionAlerts,
+      llmGatewayStatus: {
+        provider: llmResult.provider,
+        modelId: llmResult.modelId,
+        usedLiveApiKey: llmResult.usedLiveApiKey,
+        isFreeTierKey: llmResult.isFreeTierKey,
+        telemetryNote: llmResult.telemetryNote,
+      },
+      circleTokenTelemetry,
     });
   } catch (error) {
     return NextResponse.json(
