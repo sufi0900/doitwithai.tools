@@ -428,7 +428,7 @@ export function buildSectionVisual(
       sectionId: section.id,
       sourceUrl,
       relationship:
-        /step[- ]by[- ]step|^step\s*\d|workflow|process|how to /i.test(
+        /step[- ]by[- ]step|^step\s*\d|\bworkflow\b|\bprocess\b|how to /i.test(
           section.title,
         )
           ? "sequence"
@@ -454,7 +454,7 @@ export function sectionFromText(
       const value = clean(s.replace(/^\s*(?:[-*•]|\d+[.)])\s+/, ""));
       return {
         id: `text-${sourceId(`${id}:${i}:${value}`)}`,
-        kind: m ? ("heading" as const) : ("paragraph" as const),
+        kind: m ? ("heading" as const) : /^\s*(?:[-*•]|\d+[.)])\s+/.test(s) ? ("list" as const) : ("paragraph" as const),
         text: m ? heading : value,
         heading: heading || undefined,
       };
@@ -532,8 +532,6 @@ export function buildAllArticleSectionVisuals(
     "editorial",
     "ribbon",
     "constellation",
-    "checklist",
-    "timeline",
   ];
   const paletteCycle: BlogInfographicConfig["paletteId"][] = [
     "indigo-cyber",
@@ -553,7 +551,7 @@ export function buildAllArticleSectionVisuals(
   let prevLayout: PrismLayout | undefined;
 
   return selected.map(({ section, intel, visual }, idx) => {
-    let nodesForSection = visual.nodes;
+    const nodesForSection = visual.nodes;
     let comparisonLabels: [string, string] | undefined;
 
     const rawComparisonCandidate =
@@ -578,15 +576,11 @@ export function buildAllArticleSectionVisuals(
     let layout: PrismLayout;
     if (intel.isFaq) {
       layout = prevLayout !== "checklist" ? "checklist" : "editorial";
-    } else if (hasBothComparisonSides && nodesForSection.length >= 2) {
-      if (nodesForSection.length % 2 === 1) {
-        nodesForSection = nodesForSection.slice(0, nodesForSection.length - 1);
-      }
+    } else if (hasBothComparisonSides && nodesForSection.length >= 2 && nodesForSection.length % 2 === 0) {
       layout = "comparison";
       comparisonLabels = derivedLabels;
     } else if (
-      visual.brief.relationship === "sequence" &&
-      prevLayout !== "timeline"
+      visual.brief.relationship === "sequence"
     ) {
       layout = "timeline";
     } else if (
@@ -619,9 +613,7 @@ export function buildAllArticleSectionVisuals(
               : count,
           )
         : section.title;
-    const { headline, subheadline } = synthesizeInfographicHeadlineAndSubheadline(
-      adjustedTitle,
-    );
+    const { headline, subheadline } = sectionHeadline(adjustedTitle, nodesForSection);
     const autoHighlights = extractHeadlineHighlightPhrases(headline).join(", ");
     const domainLabel = (
       hint?.siteName ||
@@ -739,6 +731,18 @@ export function shuffleInfographicVisualVariation(
   );
 }
 
+/** A short definition can carry its own headline when it names the subject. */
+function sectionHeadline(title: string, nodes: BlogInfographicNodeItem[]) {
+  const subject = clean(title).match(/^what (?:is|are) (.+?)\?$/i)?.[1];
+  const answer = subject && nodes.map(node => clean(node.detail)).find(detail =>
+    detail.length <= 72 && norm(detail).startsWith(norm(subject) + " ") &&
+    /[.!]$/.test(detail),
+  );
+  return answer
+    ? { headline: answer.replace(/[.!]$/, ""), subheadline: "" }
+    : synthesizeInfographicHeadlineAndSubheadline(title);
+}
+
 /** Direct writer adapter. It consumes section bodies, never re-scrapes generated article HTML. */
 export function visualFromWriterSection(
   section: BlogSectionNode,
@@ -758,8 +762,7 @@ export function visualFromWriterSection(
     withPrismLayout(
       {
         ...section.infographicConfig,
-        headline: section.h2Text,
-        subheadline: "",
+        ...sectionHeadline(section.h2Text, result.nodes),
         nodes: result.nodes,
         visualBrief: result.brief,
       },

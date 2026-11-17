@@ -125,7 +125,7 @@ export function renderPinterestPinPreviewSvg(
     })
     .join("\n");
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${escapeXml(
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" style="max-width:100%;height:auto" viewBox="0 0 ${W} ${H}" role="img" aria-label="${escapeXml(
     pin.altText || pin.pinTitle,
   )}">
   <defs>

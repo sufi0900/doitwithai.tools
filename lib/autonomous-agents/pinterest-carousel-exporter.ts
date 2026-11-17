@@ -129,9 +129,7 @@ export function buildLinkedinCarouselHtmlDeck(
   const sec = (idx: number) => sections[idx % Math.max(1, sections.length)];
   const compSection =
     sections.find((s) => s.archetype === "comparison") || sec(2);
-  const hookLead =
-    job.arcadsVariations[0]?.hookLine ||
-    `How leading teams execute ${job.primaryKeyword} for 2027 AI Search Citations.`;
+  const hookLead = job.arcadsVariations.find(v => v.channel === "linkedin")?.hookLine || job.metaDescription;
 
   const renderSectionSlide = (slideNum: number, sIdx: number) => {
     const s = sec(sIdx);
@@ -200,18 +198,18 @@ export function buildLinkedinCarouselHtmlDeck(
       <div class="slide-bg-grid"></div>
       <div class="slide-inner">
         <div class="top-row">
-          <span class="eyebrow">SLIDE 06 / 08 · BEFORE VS. AFTER ARCHITECTURE</span>
+          <span class="eyebrow">SLIDE 06 / 08 · ${compSection?.archetype === "comparison" ? "COMPARISON" : "SECTION TAKEAWAYS"}</span>
           <span class="brand-chip">${escapeHtml(website.siteName)}</span>
         </div>
         <h2 class="slide-title">${escapeHtml(compSection?.h2 || "Legacy Manual vs. Autonomous Agent Workflow")}</h2>
-        <p class="slide-sub">Side-by-side comparison of citation readiness, visual structure, and scalability.</p>
+        <p class="slide-sub">${escapeHtml(compSection?.summary || "")}</p>
         <div class="compare-grid">
           ${(compSection?.points || [])
             .slice(0, 4)
             .map(
               (pt, idx) => `
             <div class="concept-card ${idx % 2 === 1 ? "card-highlight" : ""}">
-              <div class="card-badge">${escapeHtml(pt.badge || (idx % 2 === 0 ? "BEFORE" : "AFTER"))}</div>
+              <div class="card-badge">${escapeHtml(pt.badge || String(idx + 1))}</div>
               <h3 class="card-title">${escapeHtml(pt.title)}</h3>
               <p class="card-detail">${escapeHtml(pt.detail)}</p>
             </div>`,
@@ -219,7 +217,7 @@ export function buildLinkedinCarouselHtmlDeck(
             .join("")}
         </div>
         <div class="footer-bar">
-          <span>Comparison Matrix · ${escapeHtml(job.primaryKeyword)}</span>
+          <span>${compSection?.archetype === "comparison" ? "Comparison" : "Takeaways"} · ${escapeHtml(job.primaryKeyword)}</span>
           <strong>${escapeHtml(website.siteName)}</strong>
         </div>
       </div>
@@ -500,7 +498,27 @@ export function buildArticleJsonLdGraph(
   };
 }
 
+function buildEditableProject(job: AutomatedArticleJob) {
+  const cards = job.outlineSections.map((section, index) => {
+    const sectionId = `${job.id}-section-${index + 1}`;
+    const sourceBlocks = section.points.map((point, i) => ({
+      id: `${sectionId}-point-${i + 1}`,
+      kind: "list" as const,
+      text: `${point.title}. ${point.detail}`,
+    }));
+    return {
+      headline: section.h2,
+      nodes: section.points.map((point, i) => ({
+        ...point, sourceBlockIds: [sourceBlocks[i].id],
+      })),
+      visualBrief: { sectionId, sourceBlocks, sourceKind: "campaign-draft" },
+    };
+  });
+  return { version: 1, cards };
+}
+
 export interface CompleteJobExportBundle {
+  editableProject: ReturnType<typeof buildEditableProject>;
   jobId: string;
   urlSlug: string;
   exportedAtIso: string;
@@ -576,6 +594,7 @@ export function buildCompleteJobExportBundle(
       : buildArcadsSocialPackForJob(job, website);
 
   return {
+    editableProject: buildEditableProject(job),
     jobId: job.id,
     urlSlug: job.urlSlug,
     exportedAtIso: new Date().toISOString(),

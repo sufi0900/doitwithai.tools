@@ -76,3 +76,18 @@ test("Phase 4 buildCompleteJobExportBundle packages Markdown, JSON-LD @graph, 4 
   assert.ok(bundle.socialScheduleCsv.includes("1000x1500"));
   assert.ok(bundle.linkedinCarouselHtmlDeck.includes('data-slide-index="8"'));
 });
+
+test("the downloadable campaign brief retains every outline point and its local evidence", () => {
+  const state = createDefaultAutonomousStudioState();
+  const job = state.campaigns[0].jobs[0];
+  const { editableProject } = buildCompleteJobExportBundle(job, state.websites[0]);
+  assert.equal(editableProject.cards.length, job.outlineSections.length);
+  for (const [index, card] of editableProject.cards.entries()) {
+    assert.equal(card.visualBrief.sourceKind, "campaign-draft");
+    assert.deepEqual(card.nodes.map(p => p.detail), job.outlineSections[index].points.map(p => p.detail));
+    for (const point of card.nodes) {
+      const block = card.visualBrief.sourceBlocks.find(b => b.id === point.sourceBlockIds[0]);
+      assert.equal(block?.text, `${point.title}. ${point.detail}`);
+    }
+  }
+});

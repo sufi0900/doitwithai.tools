@@ -8,6 +8,7 @@
  * completed step directly to browser localStorage (`doitwithai_autonomous_studio_v1`).
  */
 
+import { synthesizeInfographicHeadlineAndSubheadline } from "../blog-infographic-studio/skills/topic-intelligence";
 import { AUTONOMOUS_AGENT_ROLES } from "./agent-roles";
 import {
   buildArcadsSocialPackForJob,
@@ -396,7 +397,8 @@ export function renderSectionInfographicSvg(
   const gradId = `secBg-${secIdx}-${String(section.archetype)}`;
   const patternId = `secDots-${secIdx}`;
 
-  const headlineLines = wrapLines(section.h2, 34, 2);
+  const { headline } = synthesizeInfographicHeadlineAndSubheadline(section.h2);
+  const headlineLines = wrapLines(headline, 34, 2);
   const summaryLines = wrapLines(section.summary, 66, 2);
   const points = (section.points || []).slice(0, 6);
 
@@ -457,7 +459,9 @@ export function renderSectionInfographicSvg(
       .map((pt, idx) => {
         const y = headerBottomY + idx * (cardH + gap);
         const tLines = wrapLines(pt.title, 44, 2);
-        const dLines = wrapLines(pt.detail, 64, 3);
+        const detailStart = 58 + tLines.length * 30;
+        const detailCapacity = Math.floor((cardH - 12 - detailStart) / 25) + 1;
+        const dLines = wrapLines(pt.detail, 64, Math.min(3, Math.max(1, detailCapacity)));
         return `<g transform="translate(60, ${y})" data-infographic-node="${idx + 1}">
           <rect width="960" height="${cardH}" rx="20" fill="${theme.surface}" fill-opacity="0.92" stroke="${secondary}" stroke-opacity="0.45" stroke-width="2" />
           <rect x="26" y="26" width="70" height="42" rx="12" fill="${theme.badgeBg}" stroke="${accent}" stroke-width="1.5" />
@@ -485,7 +489,7 @@ export function renderSectionInfographicSvg(
       .join("\n");
   }
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${escapeXml(
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" style="max-width:100%;height:auto" viewBox="0 0 ${W} ${H}" role="img" aria-label="${escapeXml(
     section.h2,
   )}">
   <defs>

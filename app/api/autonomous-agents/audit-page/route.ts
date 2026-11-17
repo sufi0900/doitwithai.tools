@@ -1,3 +1,4 @@
+import { buildSectionVisual, sectionFromText } from "@/lib/blog-infographic-studio/visual-brief";
 import { NextResponse } from "next/server";
 import {
   runAutomationJsonPrompt,
@@ -42,6 +43,7 @@ export interface LivePageAuditResult {
   suggestedNewH2: string;
   dropInRefreshMarkdown: string;
   upgradedJsonLdPatch: string;
+  refreshPoints: Array<{ badge: string; title: string; detail: string }>;
   refreshInfographicSvg: string;
 }
 
@@ -288,33 +290,17 @@ Return a JSON object with:
     );
 
     // Also render a standalone 1080x1350 6-layer SVG infographic for the new refresh section
-    const refreshInfographicSvg = renderSectionInfographicSvg(
+    const content = dropInRefreshMarkdown.split("\n").filter(line =>
+      !/^\s*(?:\||##?\s)/.test(line)
+    ).join("\n");
+    const { nodes, brief } = buildSectionVisual(sectionFromText(suggestedNewH2, content));
+    const refreshPoints = nodes.map(({ badge, title, detail }) => ({ badge: badge || "", title, detail }));
+    const refreshInfographicSvg = refreshPoints.length >= 2 ? renderSectionInfographicSvg(
       {
         h2: suggestedNewH2,
-        archetype: "comparison",
-        summary: upgraded50WordAeoLead.slice(0, 140),
-        points: [
-          {
-            badge: "01",
-            title: "Audit Baseline Metrics",
-            detail: `Benchmark your current ${humanizedTopic.toLowerCase()} setup before modifying core workflows.`,
-          },
-          {
-            badge: "02",
-            title: "Add 50-Word AEO Lead",
-            detail: "Place a direct 45–55 word answer paragraph immediately below your primary H2.",
-          },
-          {
-            badge: "03",
-            title: "Compare 2026 Options",
-            detail: `Use side-by-side evaluation tables tailored to ${primaryNiche.toLowerCase()}.`,
-          },
-          {
-            badge: "04",
-            title: "Inject @graph Schema",
-            detail: "Connect BlogPosting and FAQPage entities for Google AI Overviews & Perplexity.",
-          },
-        ],
+        archetype: brief.relationship === "sequence" ? "process" : "framework",
+        summary: upgraded50WordAeoLead,
+        points: refreshPoints,
       },
       {
         sectionIndex: 0,
@@ -323,7 +309,7 @@ Return a JSON object with:
         brandPrimaryHex,
         brandSecondaryHex,
       }
-    );
+    ) : "";
 
     const result: LivePageAuditResult = {
       auditedAtIso: new Date().toISOString(),
@@ -348,6 +334,7 @@ Return a JSON object with:
       suggestedNewH2,
       dropInRefreshMarkdown,
       upgradedJsonLdPatch,
+      refreshPoints,
       refreshInfographicSvg,
     };
 

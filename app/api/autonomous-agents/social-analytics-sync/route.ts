@@ -3,7 +3,6 @@ import { extractCleanNicheSubject } from "@/lib/autonomous-agents/arcads-social-
 import type {
   AutomatedArticleJob,
   ConnectedWebsiteProfile,
-  WinnerFormulaRecord,
 } from "@/lib/autonomous-agents/types";
 
 export const runtime = "nodejs";
@@ -42,7 +41,6 @@ export interface SocialAnalyticsSyncResponse {
     hookFormula: string;
     rationale: string;
   };
-  winnerRecordForStore: WinnerFormulaRecord;
 }
 
 export async function POST(request: Request) {
@@ -58,13 +56,6 @@ export async function POST(request: Request) {
       ? extractCleanNicheSubject(website)
       : { subjectTitle: "AI SEO & Content", subjectKeyword: "ai seo" };
 
-    const hasPinterestToken = Boolean(
-      body.pinterestAccessToken || process.env.PINTEREST_ACCESS_TOKEN
-    );
-    const hasLinkedinToken = Boolean(
-      body.linkedinAccessToken || process.env.LINKEDIN_ACCESS_TOKEN
-    );
-
     const totalPinsCount = Math.max(3, jobs.length * 3);
     const totalCarouselsCount = Math.max(1, jobs.length);
 
@@ -72,9 +63,7 @@ export async function POST(request: Request) {
       {
         networkId: "pinterest",
         networkLabel: `Pinterest 2:3 Visual Pins (${totalPinsCount} Active Pins)`,
-        connectionSource: hasPinterestToken
-          ? "live-oauth-api"
-          : "telemetry-benchmark-simulator",
+        connectionSource: "telemetry-benchmark-simulator",
         impressions7d: totalPinsCount * 1420,
         savesOrBookmarks7d: totalPinsCount * 118,
         outboundClicks7d: totalPinsCount * 64,
@@ -88,9 +77,7 @@ export async function POST(request: Request) {
       {
         networkId: "linkedin",
         networkLabel: `LinkedIn 8-Slide PDF Carousels (${totalCarouselsCount} Decks)`,
-        connectionSource: hasLinkedinToken
-          ? "live-oauth-api"
-          : "telemetry-benchmark-simulator",
+        connectionSource: "telemetry-benchmark-simulator",
         impressions7d: totalCarouselsCount * 3850,
         savesOrBookmarks7d: totalCarouselsCount * 195,
         outboundClicks7d: totalCarouselsCount * 172,
@@ -118,20 +105,6 @@ export async function POST(request: Request) {
     ];
 
     const nowIso = new Date().toISOString();
-    const winnerRecordForStore: WinnerFormulaRecord = {
-      id: `winner-sync-${Date.now()}`,
-      label: `Front-Loaded ${nicheInfo.subjectTitle} Playbook Contrast (2:3) · ${siteName}`,
-      sourceChannel: "pinterest",
-      winningHookArchetype: "numbered-playbook",
-      winningPrismLayout: "comparison",
-      winningPaletteId: "indigo-cyber",
-      winningCardStyle: "playbook-contrast",
-      WinningBackgroundPattern: "dots-glow",
-      observedSaveRatePercent: 8.3,
-      observedCtrPercent: 4.5,
-      lockedAtIso: nowIso,
-    };
-
     const result: SocialAnalyticsSyncResponse = {
       syncedAtIso: nowIso,
       siteName,
@@ -145,7 +118,6 @@ export async function POST(request: Request) {
         rationale:
           "Outperformed baseline glossary cards by +34% in 7-day Pinterest Save Rate and +28% in LinkedIn swipe-through completion.",
       },
-      winnerRecordForStore,
     };
 
     return NextResponse.json({

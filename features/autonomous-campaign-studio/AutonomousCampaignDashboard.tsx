@@ -758,38 +758,50 @@ export default function AutonomousCampaignDashboard() {
     suggestedNewH2: string;
     upgraded50WordAeoLead: string;
     dropInRefreshMarkdown: string;
+    refreshPoints?: Array<{ badge: string; title: string; detail: string }>;
     refreshInfographicSvg?: string;
   }) => {
-    if (!activeCampaign || !activeWebsite) return;
+    if (!activeCampaign || !activeWebsite) return false;
+    const pageKey = (url: string) => {
+      try {
+        const page = new URL(url, activeWebsite.siteUrl);
+        return page.origin + page.pathname.replace(/\/+$/, '');
+      } catch { return ''; }
+    };
+    const target = pageKey(params.pageUrl);
+    const targetJob = activeCampaign.jobs.find(job => target && [
+      job.publishedUrl,
+      `/blog/${job.urlSlug}`,
+      activeWebsite.internalBuilderSlug && `/p/${activeWebsite.internalBuilderSlug}/blog/${job.urlSlug}`,
+    ].some(url => url && pageKey(url) === target));
+    if (!targetJob) {
+      setStatusMessage('This URL has no matching article in the active campaign. The refresh is available to copy.');
+      return false;
+    }
+    if (targetJob.compiledArticleMarkdown?.includes(params.dropInRefreshMarkdown)) return true;
     const nowIso = new Date().toISOString();
-
     updateState((prev) => {
       const updatedCampaigns = prev.campaigns.map((camp) => {
         if (camp.id !== activeCampaign.id) return camp;
-        const targetJob =
-          camp.jobs.find(
-            (j) =>
-              j.publishedUrl === params.pageUrl ||
-              params.pageUrl.endsWith(j.urlSlug)
-          ) || camp.jobs[0];
-
-        if (!targetJob) return camp;
-
         const updatedJobs = camp.jobs.map((job) => {
-          if (job.id !== targetJob.id) return job;
+          if (job.id !== targetJob.id || job.compiledArticleMarkdown?.includes(params.dropInRefreshMarkdown)) return job;
           const baseMd =
             job.compiledArticleMarkdown ||
             compileJobArticleMarkdown(job, activeWebsite);
           const refreshedMd = `${baseMd}\n\n${params.dropInRefreshMarkdown}`;
-          const nextSvgs = params.refreshInfographicSvg
-            ? [...(job.sectionInfographicSvgs || []), params.refreshInfographicSvg]
-            : job.sectionInfographicSvgs;
-
+          const refreshSection = {
+            h2: params.suggestedNewH2,
+            archetype: 'framework' as const,
+            summary: params.upgraded50WordAeoLead,
+            points: params.refreshPoints || [],
+          };
           const nextJob: AutomatedArticleJob = {
             ...job,
             aeoDirectAnswer50Words: params.upgraded50WordAeoLead,
             compiledArticleMarkdown: refreshedMd,
-            sectionInfographicSvgs: nextSvgs,
+            outlineSections: [...job.outlineSections, refreshSection],
+            sectionInfographicSvgs: [...job.outlineSections.map((_, i) =>
+              job.sectionInfographicSvgs?.[i] || ''), params.refreshInfographicSvg || ''],
             updatedAtIso: nowIso,
           };
 
@@ -813,6 +825,7 @@ export default function AutonomousCampaignDashboard() {
         ? `Auto-injected 2026 refresh section ("${params.suggestedNewH2}") & updated your internal DoItWithAI blog post!`
         : `Injected 2026 refresh section ("${params.suggestedNewH2}") into active article state!`
     );
+    return true;
   };
 
   /**

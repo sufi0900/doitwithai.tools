@@ -42,7 +42,8 @@ export interface LivePageAuditResponseData {
   suggestedNewH2: string;
   dropInRefreshMarkdown: string;
   upgradedJsonLdPatch: string;
-  refreshInfographicSvg?: string;
+  refreshPoints?: Array<{ badge: string; title: string; detail: string }>;
+    refreshInfographicSvg?: string;
 }
 
 export interface SocialNetworkTelemetrySnapshot {
@@ -89,8 +90,9 @@ export interface AiEmployeeAgencyCommandCenterProps {
     suggestedNewH2: string;
     upgraded50WordAeoLead: string;
     dropInRefreshMarkdown: string;
+    refreshPoints?: Array<{ badge: string; title: string; detail: string }>;
     refreshInfographicSvg?: string;
-  }) => void;
+  }) => boolean;
   onPromoteSocialWinnerFormula?: (winner: WinnerFormulaRecord) => void;
 }
 
@@ -1124,21 +1126,22 @@ export default function AiEmployeeAgencyCommandCenter({
                               <button
                                 type="button"
                                 onClick={() => {
-                                  setAppliedRefreshUrls((prev) =>
-                                    prev.includes(liveAuditResult.pageUrl)
-                                      ? prev
-                                      : [...prev, liveAuditResult.pageUrl]
-                                  );
-                                  onApplyArticleRefreshPatch?.({
+                                  const applied = onApplyArticleRefreshPatch?.({
                                     pageUrl: liveAuditResult.pageUrl,
                                     suggestedNewH2: liveAuditResult.suggestedNewH2,
                                     upgraded50WordAeoLead:
                                       liveAuditResult.upgraded50WordAeoLead,
                                     dropInRefreshMarkdown:
                                       liveAuditResult.dropInRefreshMarkdown,
+                                    refreshPoints: liveAuditResult.refreshPoints,
                                     refreshInfographicSvg:
                                       liveAuditResult.refreshInfographicSvg,
                                   });
+                                  if (applied) setAppliedRefreshUrls((prev) =>
+                                    prev.includes(liveAuditResult.pageUrl)
+                                      ? prev
+                                      : [...prev, liveAuditResult.pageUrl]
+                                  );
                                 }}
                                 className="rounded bg-emerald-500 hover:bg-emerald-400 px-2.5 py-1 text-[11px] font-extrabold text-slate-950"
                               >
@@ -1440,13 +1443,13 @@ export default function AiEmployeeAgencyCommandCenter({
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <span className="text-[11px] font-bold uppercase tracking-wider text-pink-300">
-                      Phase D · Live Social Analytics Ingestion &amp; Auto-Rebalancing (`/api/autonomous-agents/social-analytics-sync`)
+                      Phase D · Social benchmarks
                     </span>
                     <h3 className="text-lg font-extrabold text-white mt-0.5">
-                      Pinterest v5 &amp; LinkedIn Telemetry Sync + Winner Palette/Hook Auto-Rebalancer
+                      Pinterest and LinkedIn benchmark preview
                     </h3>
                     <p className="text-xs text-slate-300 mt-0.5">
-                      Ingests 7-day Save Rate, Outbound Clicks, and Carousel Swipe-Through metrics to automatically re-weight visual layout archetypes and scroll-stopper hooks for your next 24/7 cycle.
+                      Explore simulated engagement metrics and example visual treatments for the campaign.
                     </p>
                   </div>
 
@@ -1457,8 +1460,8 @@ export default function AiEmployeeAgencyCommandCenter({
                     className="rounded-xl bg-gradient-to-r from-pink-500 via-amber-400 to-emerald-400 hover:brightness-110 disabled:opacity-50 px-4 py-2.5 text-xs font-extrabold text-slate-950 shadow-lg transition"
                   >
                     {isSyncingSocialAnalytics
-                      ? '⏳ Syncing Pinterest v5 & LinkedIn Telemetry...'
-                      : '📈 Sync Live Social Analytics & Auto-Rebalance Winners'}
+                      ? 'Preparing benchmarks…'
+                      : 'Preview social benchmarks'}
                   </button>
                 </div>
 
@@ -1467,7 +1470,7 @@ export default function AiEmployeeAgencyCommandCenter({
                     <div className="rounded-xl border border-emerald-500/35 bg-slate-950 p-4 flex flex-wrap items-center justify-between gap-3">
                       <div className="space-y-1">
                         <div className="text-[11px] font-bold text-emerald-300">
-                          ★ Promoted &amp; Saved Winner Formula ({socialAnalytics.outperformanceMultiplier})
+                          Simulated winner formula ({socialAnalytics.outperformanceMultiplier})
                         </div>
                         <div className="font-extrabold text-white text-sm">
                           {socialAnalytics.promotedWinnerFormula.visualArchetype} ·{' '}

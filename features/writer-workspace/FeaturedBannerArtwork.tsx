@@ -99,7 +99,7 @@ export function FeaturedBannerArtwork({
       <div className={s.featuredBannerBar}>
         <div className={s.featuredBannerTitleGroup}>
           <ImageIcon className="w-4 h-4" aria-hidden />
-          <strong>16:9 Horizontal Featured Image</strong>
+          <strong>Featured Image</strong>
           <span className={s.dimBadge}>1200 × 630 px</span>
           <span
             className={altEval.score >= 80 ? s.altScoreGood : s.altScoreWarn}

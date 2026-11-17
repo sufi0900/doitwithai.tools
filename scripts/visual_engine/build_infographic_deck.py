@@ -15,7 +15,7 @@ from __future__ import annotations
 import argparse
 import html
 import json
-import os
+from tempfile import TemporaryDirectory
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -417,38 +417,66 @@ def main() -> None:
         help="Output self-contained HTML deck path.",
     )
     parser.add_argument("--output-pdf", help="Optional output PDF path (uses Playwright Chromium).")
+    parser.add_argument("--output-dir", help="New directory for one PNG per slide.")
+    parser.add_argument("--chromium", help="Optional installed Chromium executable.")
     args = parser.parse_args()
+    output_dir = Path(args.output_dir) if args.output_dir else None
+    if output_dir and output_dir.exists():
+        parser.error("Choose a new PNG directory for this export.")
+
+    from brief_to_deck import deck_from_section
 
     slides = DEFAULT_SLIDES
-    if args.input_json and os.path.exists(args.input_json):
+    if args.input_json:
+        if not Path(args.input_json).is_file():
+            parser.error("The supplied slide input does not exist.")
         with open(args.input_json, "r", encoding="utf-8") as f:
             data = json.load(f)
-            slides = data.get("slides", data) if isinstance(data, dict) else data
+            if isinstance(data, dict) and "editableProject" in data:
+                data = data["editableProject"]
+            if isinstance(data, dict) and "cards" in data:
+                slides = []
+                for index, card in enumerate(data["cards"], start=1):
+                    try:
+                        section = deck_from_section(card["headline"], card["nodes"],
+                                                    card["visualBrief"]["sourceBlocks"])
+                    except (KeyError, TypeError, ValueError) as error:
+                        parser.error(f"Section {index} needs a source-linked brief: {error}")
+                    slides.extend(section["slides"])
+            else:
+                slides = data.get("slides", data) if isinstance(data, dict) else data
 
+    if not isinstance(slides, list) or not slides or not all(isinstance(s, dict) for s in slides):
+        parser.error("Expected a nonempty list of slide objects.")
     html_content = build_deck_html(slides)
     out_html = Path(args.output_html)
     out_html.write_text(html_content, encoding="utf-8")
     print(f"Wrote self-contained HTML deck ({len(slides)} slides) -> {out_html}")
 
-    if args.output_pdf:
+    if args.output_pdf or output_dir:
         try:
             from playwright.sync_api import sync_playwright
 
             with sync_playwright() as p:
-                browser = p.chromium.launch()
+                browser = p.chromium.launch(executable_path=args.chromium)
                 page = browser.new_page(viewport={"width": 1080, "height": 1350})
                 page.goto(out_html.resolve().as_uri(), wait_until="networkidle")
-                page.pdf(
-                    path=args.output_pdf,
-                    width="1080px",
-                    height="1350px",
-                    print_background=True,
-                    margin={"top": "0px", "right": "0px", "bottom": "0px", "left": "0px"},
-                )
+                page.evaluate("document.fonts.ready")
+                if args.output_pdf:
+                    page.pdf(path=args.output_pdf, width="1080px", height="1350px",
+                             print_background=True, margin=dict.fromkeys(("top","right","bottom","left"), "0px"))
+                if output_dir:
+                    output_dir.parent.mkdir(parents=True, exist_ok=True)
+                    with TemporaryDirectory(dir=output_dir.parent) as temp:
+                        staged = Path(temp) / "slides"
+                        staged.mkdir()
+                        for index, slide in enumerate(page.locator(".slide").all(), start=1):
+                            slide.screenshot(path=staged / f"slide-{index:03d}.png")
+                        staged.rename(output_dir)
                 browser.close()
-            print(f"Exported pixel-exact PDF carousel -> {args.output_pdf}")
+            print("Requested exports complete.")
         except Exception as exc:
-            print(f"Playwright PDF export skipped ({exc}); open {out_html} in browser and Save as PDF.")
+            parser.exit(1, f"Export failed: {exc}\n")
 
 
 if __name__ == "__main__":
