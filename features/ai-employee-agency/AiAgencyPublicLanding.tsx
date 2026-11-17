@@ -17,6 +17,7 @@ import type {
   ConnectedWebsiteProfile,
   WebsitePublishingMode,
 } from '@/lib/autonomous-agents/types';
+import type { ScoredKeywordBrief } from '@/lib/ai-employee-agency/handoff-orchestrator';
 
 interface OnboardingStage {
   id: string;
@@ -108,7 +109,9 @@ const AGENCY_DEPARTMENTS_PREVIEW = [
 
 export default function AiAgencyPublicLanding() {
   const router = useRouter();
-  const [siteMode, setSiteMode] = useState<'external-url' | 'internal-builder'>('external-url');
+  const [siteMode, setSiteMode] = useState<'external-url' | 'internal-builder'>(
+    'external-url'
+  );
   const [websiteUrl, setWebsiteUrl] = useState<string>('https://doitwithai.tools');
   const [internalSlug, setInternalSlug] = useState<string>(
     'doitwithai-multi-tool-directory-publication'
@@ -122,6 +125,9 @@ export default function AiAgencyPublicLanding() {
   const [detectedSiteName, setDetectedSiteName] = useState<string>('');
   const [detectedPrimaryHex, setDetectedPrimaryHex] = useState<string>('#4A6CF7');
   const [detectedSecondaryHex, setDetectedSecondaryHex] = useState<string>('#10B981');
+  const [liveDiscoveredSummary, setLiveDiscoveredSummary] = useState<string>(
+    'Connecting to live website DOM & Google Autocomplete...'
+  );
 
   useEffect(() => {
     const loaded = loadAutonomousStudioState();
@@ -148,7 +154,6 @@ export default function AiAgencyPublicLanding() {
     setActiveStageIdx(0);
     setProgressPercent(8);
 
-    // Smooth visual stage progression while background scout runs
     const progressTimer = setInterval(() => {
       setProgressPercent((prev) => (prev < 96 ? prev + 3 : prev));
     }, 160);
@@ -171,24 +176,52 @@ export default function AiAgencyPublicLanding() {
       let generatedJobs: AutomatedArticleJob[] = [];
 
       try {
-        const res = await fetch('/api/autonomous-agents/scout', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            siteUrl: effectiveUrl,
-            primaryNiche: nicheHint.trim(),
-            seedTopicsOrPrompt: '',
-            targetArticleCount: 6,
-            publishingMode,
-            internalBuilderSlug:
-              siteMode === 'internal-builder' ? internalSlug.trim() : undefined,
-            existingSlugs: [],
-            winnerFormulas: studioState.winnerFormulas,
-            variationSeed: Date.now() % 10000,
-          }),
-        });
-        if (res.ok) {
-          const data = (await res.json()) as {
+        // Call both `/api/autonomous-agents/scout` and `/api/ai-employee-agency/orchestrate` in parallel
+        const [scoutRes, orchestrateRes] = await Promise.all([
+          fetch('/api/autonomous-agents/scout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              siteUrl: effectiveUrl,
+              primaryNiche: nicheHint.trim(),
+              seedTopicsOrPrompt: '',
+              targetArticleCount: 6,
+              publishingMode,
+              internalBuilderSlug:
+                siteMode === 'internal-builder' ? internalSlug.trim() : undefined,
+              existingSlugs: [],
+              winnerFormulas: studioState.winnerFormulas,
+              variationSeed: Date.now() % 10000,
+            }),
+          }).catch(() => null),
+          fetch('/api/ai-employee-agency/orchestrate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              siteUrl: effectiveUrl,
+              siteName: cleanHost,
+              primaryNiche: nicheHint.trim(),
+              isInternalSite: publishingMode === 'internal-doitwithai-site',
+              existingSlugs: [],
+            }),
+          }).catch(() => null),
+        ]);
+
+        if (orchestrateRes && orchestrateRes.ok) {
+          const orchData = (await orchestrateRes.json()) as {
+            ok: boolean;
+            winningKeywordBrief?: ScoredKeywordBrief;
+            scoredKeywordBriefs?: ScoredKeywordBrief[];
+          };
+          if (orchData.ok && orchData.winningKeywordBrief) {
+            setLiveDiscoveredSummary(
+              `✓ Scored ${orchData.scoredKeywordBriefs?.length || 8} live autocomplete keywords · #1 Winner: "${orchData.winningKeywordBrief.keyword}" (KD ${orchData.winningKeywordBrief.kdScore}/100) · 36 AI Employees Ready`
+            );
+          }
+        }
+
+        if (scoutRes && scoutRes.ok) {
+          const data = (await scoutRes.json()) as {
             ok: boolean;
             scoutReport?: WebsiteScoutReport;
             websiteProfile?: ConnectedWebsiteProfile;
@@ -293,8 +326,7 @@ export default function AiAgencyPublicLanding() {
         lastSavedAtIso: nowIso,
       });
 
-      // Ensure user experiences the full cinematic 6-stage animation before redirect
-      await new Promise((r) => setTimeout(r, 4400));
+      await new Promise((r) => setTimeout(r, 4200));
       setActiveStageIdx(ONBOARDING_TRANSITION_STAGES.length - 1);
       setProgressPercent(100);
       await new Promise((r) => setTimeout(r, 450));
@@ -306,9 +338,13 @@ export default function AiAgencyPublicLanding() {
     }
   };
 
+  // =========================================================================
+  // FULL-SCREEN CINEMATIC ONBOARDING & MULTI-AGENT ASSEMBLY TRANSITION VIEW
+  // =========================================================================
   if (isTransitioning) {
     return (
       <div className="min-h-screen bg-[#050914] text-white flex flex-col items-center justify-center p-4 sm:p-8 relative overflow-hidden">
+        {/* Ambient Animated Glows */}
         <div
           className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 h-[420px] w-[780px] rounded-full blur-[150px] opacity-30 transition-all duration-700"
           style={{ backgroundColor: detectedPrimaryHex }}
@@ -319,6 +355,7 @@ export default function AiAgencyPublicLanding() {
         />
 
         <div className="relative z-10 w-full max-w-4xl rounded-3xl border border-slate-800/90 bg-[#0A1122]/95 p-6 sm:p-10 shadow-2xl space-y-7">
+          {/* Top Radar & Progress Header */}
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-5">
             <div className="flex items-center gap-4 min-w-0">
               <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-sky-400/40 bg-sky-500/10">
@@ -333,6 +370,9 @@ export default function AiAgencyPublicLanding() {
                 <h1 className="text-lg sm:text-2xl font-extrabold text-white truncate mt-0.5">
                   Analyzing {detectedSiteName || websiteUrl} &amp; Assembling 8 AI Departments...
                 </h1>
+                <div className="text-[11px] text-emerald-300 font-medium truncate mt-1">
+                  {liveDiscoveredSummary}
+                </div>
               </div>
             </div>
 
@@ -346,6 +386,7 @@ export default function AiAgencyPublicLanding() {
             </div>
           </div>
 
+          {/* Animated Gradient Progress Bar */}
           <div className="space-y-2">
             <div className="h-3 w-full rounded-full bg-slate-900 border border-slate-800 overflow-hidden p-0.5">
               <div
@@ -366,6 +407,7 @@ export default function AiAgencyPublicLanding() {
             </div>
           </div>
 
+          {/* 6 Animated Telemetry Cards Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             {ONBOARDING_TRANSITION_STAGES.map((stage, idx) => {
               const isDone = idx < activeStageIdx;
@@ -416,8 +458,12 @@ export default function AiAgencyPublicLanding() {
     );
   }
 
+  // =========================================================================
+  // PUBLIC ZERO-NOISE LANDING PAGE (/ai-employee-agency)
+  // =========================================================================
   return (
     <div className="min-h-screen bg-[#060B16] text-slate-100 overflow-x-hidden">
+      {/* Minimalist Top Bar */}
       <header className="border-b border-slate-800/80 bg-[#091020]/90 backdrop-blur sticky top-0 z-30">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
@@ -426,7 +472,7 @@ export default function AiAgencyPublicLanding() {
               24/7 AI Digital Agency OS
             </span>
             <span className="text-sm font-bold text-slate-300 hidden sm:inline">
-              8 AI Department Managers · 24 Specialized Sub-Agents
+              8 AI Department Managers · 27 Specialized Sub-Agents
             </span>
           </div>
 
@@ -447,6 +493,7 @@ export default function AiAgencyPublicLanding() {
         </div>
       </header>
 
+      {/* Focused Single-Action Hero Section */}
       <main className="max-w-5xl mx-auto px-4 sm:px-6 pt-12 pb-20 space-y-14">
         <section className="text-center space-y-5 max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-2 rounded-full border border-amber-400/40 bg-amber-400/10 px-4 py-1.5 text-xs font-extrabold text-amber-300">
@@ -463,12 +510,16 @@ export default function AiAgencyPublicLanding() {
 
           <p className="text-sm sm:text-base text-slate-300 leading-relaxed max-w-2xl mx-auto">
             Enter your website URL once. Your dedicated team of{' '}
-            <strong className="text-white">8 AI Department Managers &amp; 24 Sub-Agents</strong>{' '}
+            <strong className="text-white">
+              8 AI Department Managers &amp; 27 Sub-Agents
+            </strong>{' '}
             continuously researches low-KD keywords, writes articles, designs 6-layer infographics, audits On-Page/Off-Page/Technical SEO, and scripts Pinterest, LinkedIn &amp; TikTok campaigns in real time.
           </p>
         </section>
 
+        {/* Zero-Clutter URL Onboarding Card */}
         <section className="max-w-3xl mx-auto rounded-3xl border border-sky-500/40 bg-gradient-to-b from-[#0E172C] to-[#090F1E] p-6 sm:p-8 shadow-2xl space-y-6">
+          {/* Destination Pill Switcher */}
           <div className="flex flex-wrap items-center justify-between gap-3">
             <span className="text-xs font-extrabold uppercase tracking-wider text-sky-400">
               Step 1 · Connect Your Website to Initialize Your AI Agency
@@ -558,6 +609,7 @@ export default function AiAgencyPublicLanding() {
           </div>
         </section>
 
+        {/* Clean 8-Department Overview Grid */}
         <section className="space-y-4">
           <div className="text-center space-y-1">
             <h2 className="text-xl sm:text-2xl font-extrabold text-white">

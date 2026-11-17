@@ -23,7 +23,6 @@ import type {
 } from '@/lib/autonomous-agents/types';
 import {
   SIDEBAR_DEPARTMENTS_FROM_REGISTRY,
-  getAllAgencyEmployeesFlat,
   getDepartmentByTabId,
   type AgencySidebarTabId,
   type InteractiveOfficeNode,
@@ -31,11 +30,16 @@ import {
 import {
   buildPacedHandoffChain,
   detectFounderManualActionAlerts,
+  generateDailyExecutiveTelemetrySeries,
+  generateLinkedIn8SlideCarouselDeck,
   generateTikTokReels60sScript,
   scoreKeywordWithDoItWithAiEngine,
   type ScoredKeywordBrief,
 } from '@/lib/ai-employee-agency/handoff-orchestrator';
 import InteractiveAgencyNodeCanvas from './InteractiveAgencyNodeCanvas';
+import FounderCommandChatDock, {
+  type FounderChatMessage,
+} from './FounderCommandChatDock';
 
 export type { AgencySidebarTabId, InteractiveOfficeNode };
 
@@ -56,29 +60,18 @@ export default function AiAgencyDashboardShell() {
   const [isScoringKeywords, setIsScoringKeywords] = useState<boolean>(false);
   const [liveScoredBriefs, setLiveScoredBriefs] = useState<ScoredKeywordBrief[]>([]);
 
-  // Content Writing & Department Selection State
+  // Content Writing, LinkedIn Slide & Department Selection State
   const [selectedArticleId, setSelectedArticleId] = useState<string>('');
+  const [activeLinkedInSlideIdx, setActiveLinkedInSlideIdx] = useState<number>(0);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [statusToast, setStatusToast] = useState<string>('');
 
-  // Unified Founder Command Bar & 1-on-1 Agent Chat / Voice Call State
+  // Unified Founder Command Bar & 1-on-1 Agent Chat / Voice Call State (Phase 5)
   const [chatTargetAgentId, setChatTargetAgentId] = useState<string>(
     'agent-chief-orchestrator'
   );
-  const [chatInput, setChatInput] = useState<string>('');
-  const [isVoiceCallActive, setIsVoiceCallActive] = useState<boolean>(false);
   const [isChatDrawerExpanded, setIsChatDrawerExpanded] = useState<boolean>(false);
-  const [chatMessages, setChatMessages] = useState<
-    Array<{
-      id: string;
-      sender: 'founder' | 'agent';
-      agentName: string;
-      text: string;
-      timestamp: string;
-    }>
-  >([]);
-
-  const allFlatEmployees = useMemo(() => getAllAgencyEmployeesFlat(), []);
+  const [chatMessages, setChatMessages] = useState<FounderChatMessage[]>([]);
 
   useEffect(() => {
     const loaded = loadAutonomousStudioState();
@@ -92,6 +85,7 @@ export default function AiAgencyDashboardShell() {
         id: 'welcome-msg',
         sender: 'agent',
         agentName: 'Chief AI Officer & Founder Assistant',
+        departmentBadge: 'Executive Office',
         text: 'Welcome to your 24/7 AI Digital Agency Office! Tell me what you want to launch today (e.g. "Launch a new article on AI technical SEO checklists and prepare Pinterest + TikTok scripts"), or select any of our 8 Department Managers and 27 Sub-Agents below to chat or voice-call 1-on-1.',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       },
@@ -168,6 +162,25 @@ export default function AiAgencyDashboardShell() {
       aeoAnswer50Words: activeJob?.aeoDirectAnswer50Words,
     });
   }, [selectedArticle, activeCampaign, activeWebsite]);
+
+  // Build the 8-Slide LinkedIn Carousel Deck (1080×1350) for the selected article
+  const activeLinkedInSlides = useMemo(() => {
+    const activeJob = selectedArticle || activeCampaign?.jobs[0];
+    return generateLinkedIn8SlideCarouselDeck({
+      articleTitle: activeJob?.topicTitle || '2026 Complete SEO Guide',
+      primaryKeyword: activeJob?.primaryKeyword || 'ai seo strategy',
+      siteName: activeWebsite?.siteName || 'DoItWithAI.tools',
+      brandPrimaryHex: activeWebsite?.brandPrimaryHex,
+      brandSecondaryHex: activeWebsite?.brandSecondaryHex,
+      sectionTitles: activeJob?.outlineSections.map((s) => s.h2),
+    });
+  }, [selectedArticle, activeCampaign, activeWebsite]);
+
+  // Build the 24-Hour Daily Executive Telemetry Series
+  const dailyTelemetrySeries = useMemo(
+    () => generateDailyExecutiveTelemetrySeries(activeCampaign?.jobs.length || 6),
+    [activeCampaign?.jobs.length]
+  );
 
   // Build the 12 Interconnected Core Digital Agency Office Nodes for `InteractiveAgencyNodeCanvas`
   const officeNodes: InteractiveOfficeNode[] = useMemo(() => {
@@ -663,167 +676,6 @@ export default function AiAgencyDashboardShell() {
     router.push('/ai-content-writer?batch=automation');
   };
 
-  /**
-   * Handle Founder Command Chat & 1-on-1 Agent Instructions (plus optional Web Speech synthesis)
-   */
-  const handleSendFounderCommand = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    const trimmed = chatInput.trim();
-    if (!trimmed || !studioState || !activeCampaign || !activeWebsite) return;
-
-    const targetEmployee =
-      allFlatEmployees.find((emp) => emp.id === chatTargetAgentId) ||
-      allFlatEmployees[0]!;
-    const nowTime = new Date().toLocaleTimeString([], {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-
-    const userMsg = {
-      id: `msg-${Date.now()}`,
-      sender: 'founder' as const,
-      agentName: 'Founder',
-      text: trimmed,
-      timestamp: nowTime,
-    };
-
-    setChatMessages((prev) => [...prev, userMsg]);
-    setChatInput('');
-    setIsChatDrawerExpanded(true);
-
-    const lower = trimmed.toLowerCase();
-    const wantsNewArticle =
-      lower.includes('article') ||
-      lower.includes('write') ||
-      lower.includes('launch') ||
-      lower.includes('blog') ||
-      lower.includes('topic') ||
-      lower.includes('keyword');
-
-    let replyText = '';
-    if (targetEmployee.id === 'agent-chief-orchestrator' && wantsNewArticle) {
-      const cleanedTopic = trimmed
-        .replace(
-          /^(today\s+)?(let's|lets|please|can you)?\s*(write|launch|create|publish)\s*(a\s+new\s+article\s+on|an\s+article\s+about|about|on)?/i,
-          ''
-        )
-        .trim();
-
-      const scoredBrief = scoreKeywordWithDoItWithAiEngine({
-        rawKeyword: cleanedTopic || activeWebsite.primaryNiche,
-        siteName: activeWebsite.siteName,
-        primaryNiche: activeWebsite.primaryNiche,
-        existingSlugs: activeCampaign.jobs.map((j) => j.urlSlug),
-      });
-
-      const templateJob = activeCampaign.jobs[0];
-      if (templateJob) {
-        const nowIso = new Date().toISOString();
-        const newJob: AutomatedArticleJob = {
-          ...templateJob,
-          id: `job-founder-${Date.now()}`,
-          topicTitle: scoredBrief.recommendedH1Title,
-          primaryKeyword: scoredBrief.keyword,
-          kdProxyScore: scoredBrief.kdScore,
-          urlSlug: scoredBrief.recommendedUrlSlug,
-          status: 'drafting-article',
-          updatedAtIso: nowIso,
-        };
-
-        const nextState = saveAutonomousStudioState({
-          ...studioState,
-          campaigns: studioState.campaigns.map((c) =>
-            c.id !== activeCampaign.id
-              ? c
-              : { ...c, jobs: [newJob, ...c.jobs], updatedAtIso: nowIso }
-          ),
-        });
-        setStudioState(nextState);
-        setSelectedArticleId(newJob.id);
-        setActiveHandoffStage(1);
-        setIsPacedHandoffRunning(true);
-      }
-
-      replyText = `Roger that! I have initialized a full cross-department campaign for "${scoredBrief.recommendedH1Title}" (KD ${scoredBrief.kdScore}/100):\n1. 🔑 Keyword Strategist locked the H1–H3 outline & 4 PAA questions.\n2. 🎨 Graphic Design Director is rendering the 1200×675 Featured Hero Image + 4× 1080×1350 section SVGs.\n3. ✍️ Content Manager & On-Page SEO Engineer are drafting the article, internal links & @graph schema.\n4. 📲 Social & TikTok Video Manager is staging the Pinterest 2:3 Pins, LinkedIn Carousel & 60s TikTok script.`;
-    } else {
-      replyText = `[${targetEmployee.name} · ${targetEmployee.departmentBadge}]: Equipped with skills [${targetEmployee.equippedSkills.join(
-        ', '
-      )}] and tools [${targetEmployee.equippedTools.join(
-        ', '
-      )}]. I have applied your instruction ("${trimmed}") to the active ${
-        activeWebsite.siteName
-      } department queue.`;
-    }
-
-    const agentReply = {
-      id: `msg-reply-${Date.now()}`,
-      sender: 'agent' as const,
-      agentName: targetEmployee.name,
-      text: replyText,
-      timestamp: nowTime,
-    };
-
-    setTimeout(() => {
-      setChatMessages((prev) => [...prev, agentReply]);
-      if (
-        isVoiceCallActive &&
-        typeof window !== 'undefined' &&
-        'speechSynthesis' in window
-      ) {
-        try {
-          window.speechSynthesis.cancel();
-          const utterance = new SpeechSynthesisUtterance(
-            replyText.replace(/[^\w\s.,!?:-]/g, '')
-          );
-          utterance.rate = 1.04;
-          window.speechSynthesis.speak(utterance);
-        } catch {
-          // Ignore browser speech synthesis restrictions
-        }
-      }
-    }, 550);
-  };
-
-  /**
-   * Toggle Web Speech API Voice Call (`SpeechRecognition` + `speechSynthesis`)
-   */
-  const handleToggleVoiceCall = () => {
-    if (isVoiceCallActive) {
-      setIsVoiceCallActive(false);
-      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-      }
-      return;
-    }
-
-    setIsVoiceCallActive(true);
-    setIsChatDrawerExpanded(true);
-
-    if (typeof window !== 'undefined') {
-      const SpeechRec =
-        (window as unknown as Record<string, unknown>).SpeechRecognition ||
-        (window as unknown as Record<string, unknown>).webkitSpeechRecognition;
-      if (typeof SpeechRec === 'function') {
-        try {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const recognition: any = new (SpeechRec as any)();
-          recognition.lang = 'en-US';
-          recognition.interimResults = false;
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          recognition.onresult = (event: any) => {
-            const transcript = event?.results?.[0]?.[0]?.transcript;
-            if (transcript) {
-              setChatInput(transcript);
-            }
-          };
-          recognition.start();
-        } catch {
-          // Fallback to voice-enabled text mode
-        }
-      }
-    }
-  };
-
   if (!studioState || !activeCampaign || !activeWebsite || !agencyState) {
     return (
       <div className="min-h-screen bg-[#060B16] text-slate-100 flex items-center justify-center p-8">
@@ -852,6 +704,9 @@ export default function AiAgencyDashboardShell() {
     publishedOrDraftCount: publishedOrDraftJobs.length,
     queuedCount: notYetStartedJobs.length,
   });
+
+  const currentLinkedInSlide =
+    activeLinkedInSlides[activeLinkedInSlideIdx] || activeLinkedInSlides[0]!;
 
   return (
     <div className="min-h-screen bg-[#060B16] text-slate-100 flex flex-col">
@@ -1111,7 +966,7 @@ export default function AiAgencyDashboardShell() {
               </div>
 
               {/* -------------------------------------------------------------
-                  TAB 1: EXECUTIVE OFFICE & FOUNDER BRIEF
+                  TAB 1: EXECUTIVE OFFICE & FOUNDER BRIEF (WITH 24H ACTIVITY GRAPH)
                  ------------------------------------------------------------- */}
               {activeSidebarTab === 'executive-office' && (
                 <div className="space-y-6">
@@ -1164,6 +1019,56 @@ export default function AiAgencyDashboardShell() {
                           {activeCampaign.jobs.length * 3} Pins ·{' '}
                           {activeCampaign.jobs.length} TikToks
                         </div>
+                      </div>
+                    </div>
+
+                    {/* 24-Hour Daily Agency Throughput & Telemetry Bar Graph */}
+                    <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4 space-y-3 text-xs">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="font-extrabold text-sky-300">
+                          📈 24-Hour Autonomous Department Throughput &amp; Verification Graph
+                        </span>
+                        <div className="flex items-center gap-3 text-[10px]">
+                          <span className="text-amber-300">■ Keywords Scored</span>
+                          <span className="text-purple-300">■ Sections &amp; SVGs</span>
+                          <span className="text-emerald-300">■ SEO &amp; QA Checks</span>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-7 gap-2 pt-2 items-end h-28">
+                        {dailyTelemetrySeries.map((pt) => {
+                          const hPct = Math.min(100, Math.max(18, pt.seoChecksPassed + 20));
+                          return (
+                            <div
+                              key={pt.timeLabel}
+                              className="flex flex-col items-center justify-end h-full gap-1.5"
+                            >
+                              <div className="w-full flex items-end justify-center gap-1 h-20">
+                                <div
+                                  className="w-2.5 rounded-t bg-amber-400/85"
+                                  style={{
+                                    height: `${Math.min(100, pt.keywordsScored * 1.8)}%`,
+                                  }}
+                                  title={`Keywords: ${pt.keywordsScored}`}
+                                />
+                                <div
+                                  className="w-2.5 rounded-t bg-purple-400/85"
+                                  style={{
+                                    height: `${Math.min(100, pt.svgsRendered * 2.5)}%`,
+                                  }}
+                                  title={`SVGs: ${pt.svgsRendered}`}
+                                />
+                                <div
+                                  className="w-2.5 rounded-t bg-emerald-400/90"
+                                  style={{ height: `${hPct}%` }}
+                                  title={`SEO Checks: ${pt.seoChecksPassed}`}
+                                />
+                              </div>
+                              <span className="text-[10px] font-mono text-slate-400">
+                                {pt.timeLabel}
+                              </span>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
 
@@ -1611,7 +1516,7 @@ export default function AiAgencyDashboardShell() {
               )}
 
               {/* -------------------------------------------------------------
-                  TAB 4: GRAPHIC & VISUAL DESIGNER DEPARTMENT
+                  TAB 4: GRAPHIC & VISUAL DESIGNER DEPARTMENT (ALL 4 SECTION SVGS + HERO)
                  ------------------------------------------------------------- */}
               {activeSidebarTab === 'graphic-design' && selectedArticle && (
                 <div className="rounded-2xl border border-pink-500/35 bg-slate-900/80 p-5 sm:p-6 space-y-6">
@@ -1620,14 +1525,30 @@ export default function AiAgencyDashboardShell() {
                       Department 3 · Creative &amp; Graphic Design Director
                     </span>
                     <h2 className="text-xl font-extrabold text-white mt-0.5">
-                      Featured Hero Image (16:9) &amp; 4× Standalone 6-Layer Section Infographics (1080×1350)
+                      Featured Hero Image (1200×675) &amp; All 4× Standalone 6-Layer Section Infographics (1080×1350)
                     </h2>
                   </div>
 
                   {/* Featured Hero Image Preview */}
                   <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4 space-y-3">
-                    <div className="text-xs font-extrabold text-sky-300">
-                      1. Featured Hero Image Designer Output ({selectedArticle.topicTitle}):
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="text-xs font-extrabold text-sky-300">
+                        1. Featured Hero Image Designer Output ({selectedArticle.topicTitle}):
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleCopy(
+                            renderFeaturedHeroImageSvg(selectedArticle, activeWebsite),
+                            'copy-hero-svg'
+                          )
+                        }
+                        className="rounded-lg bg-slate-800 px-3 py-1 text-[11px] font-bold text-emerald-300"
+                      >
+                        {copiedId === 'copy-hero-svg'
+                          ? '✓ Copied Hero SVG!'
+                          : 'Copy 1200×675 Hero SVG'}
+                      </button>
                     </div>
                     <div
                       className="w-full max-w-3xl mx-auto rounded-xl overflow-hidden border border-slate-800 [&_svg]:w-full [&_svg]:h-auto"
@@ -1640,13 +1561,13 @@ export default function AiAgencyDashboardShell() {
                     />
                   </div>
 
-                  {/* 4 Section Infographics Grid */}
+                  {/* All 4 Section Infographics Grid */}
                   <div className="space-y-3">
                     <div className="text-xs font-extrabold text-emerald-300">
-                      2. 6-Layer Section Infographics (1080×1350 Inline SVGs):
+                      2. All 4× Standalone 6-Layer Section Infographics (1080×1350 Inline SVGs · 0.00 CLS):
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {selectedArticle.outlineSections.slice(0, 2).map((sec, idx) => {
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                      {selectedArticle.outlineSections.slice(0, 4).map((sec, idx) => {
                         const svg = renderSectionInfographicSvg(sec, {
                           sectionIndex: idx,
                           totalSections: selectedArticle.outlineSections.length,
@@ -1654,18 +1575,28 @@ export default function AiAgencyDashboardShell() {
                           brandPrimaryHex: activeWebsite.brandPrimaryHex,
                           brandSecondaryHex: activeWebsite.brandSecondaryHex,
                         });
+                        const copyKey = `copy-sec-svg-${idx}`;
                         return (
                           <div
                             key={sec.h2 + idx}
-                            className="rounded-xl border border-slate-800 bg-slate-950 p-3 flex flex-col items-center gap-2"
+                            className="rounded-xl border border-slate-800 bg-slate-950 p-3 flex flex-col items-center justify-between gap-2.5"
                           >
                             <div className="text-xs font-bold text-white truncate max-w-full">
-                              Section {idx + 1}: {sec.h2}
+                              H2.{idx + 1}: {sec.h2}
                             </div>
                             <div
-                              className="w-full max-w-[280px] rounded-lg overflow-hidden [&_svg]:w-full [&_svg]:h-auto"
+                              className="w-full max-w-[240px] rounded-lg overflow-hidden [&_svg]:w-full [&_svg]:h-auto"
                               dangerouslySetInnerHTML={{ __html: svg }}
                             />
+                            <button
+                              type="button"
+                              onClick={() => handleCopy(svg, copyKey)}
+                              className="w-full rounded-lg bg-slate-900 hover:bg-slate-800 py-1.5 text-[10.5px] font-bold text-sky-300"
+                            >
+                              {copiedId === copyKey
+                                ? '✓ Copied SVG!'
+                                : `Copy Section ${idx + 1} SVG`}
+                            </button>
                           </div>
                         );
                       })}
@@ -1805,20 +1736,21 @@ export default function AiAgencyDashboardShell() {
 
               {/* -------------------------------------------------------------
                   TAB 8: SOCIAL MEDIA & TIKTOK / REELS VIDEO SCRIPT FLEET
+                  (Complete 4-Part Suite: 60s TikTok + 3× Pinterest 2:3 + 8-Slide LinkedIn + 5 Hooks)
                  ------------------------------------------------------------- */}
               {activeSidebarTab === 'social-video-fleet' && selectedArticle && (
                 <div className="space-y-6">
-                  <div className="rounded-2xl border border-rose-500/35 bg-slate-900/80 p-5 sm:p-6 space-y-5">
+                  <div className="rounded-2xl border border-rose-500/35 bg-slate-900/80 p-5 sm:p-6 space-y-6">
                     <div>
                       <span className="text-[11px] font-extrabold uppercase tracking-wider text-rose-300">
                         Department 8 · Social Media Manager + TikTok / Reels Video Script Sub-Agent
                       </span>
                       <h2 className="text-xl font-extrabold text-white mt-0.5">
-                        Pinterest 2:3 Pins, LinkedIn Carousel, X Threads &amp; 60s TikTok/Reels Video Script
+                        60s TikTok/Reels Storyboard, 3× Pinterest 2:3 Pins, 8-Slide LinkedIn Carousel &amp; X Threads
                       </h2>
                     </div>
 
-                    {/* TikTok / Reels Short-Form Video Script & Trend Card */}
+                    {/* PART 1: TikTok / Reels Short-Form Video Script & Trend Card */}
                     <div className="rounded-2xl border border-sky-500/40 bg-slate-950 p-5 space-y-3 text-xs">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div>
@@ -1850,55 +1782,154 @@ export default function AiAgencyDashboardShell() {
                       </pre>
                     </div>
 
-                    {/* Pinterest 2:3 + Social Hook Variations */}
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-                      <div className="lg:col-span-5 rounded-2xl border border-slate-800 bg-slate-950 p-4 flex flex-col items-center gap-3">
-                        <div className="text-xs font-bold text-amber-300">
-                          Pinterest 2:3 Vertical Pin (1000×1500 SVG)
+                    {/* PART 2: Interactive 8-Slide LinkedIn Carousel Previewer (1080×1350) */}
+                    <div className="rounded-2xl border border-indigo-500/40 bg-slate-950 p-5 space-y-4 text-xs">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                          <span className="rounded bg-indigo-500/20 px-2.5 py-0.5 text-[10px] font-extrabold text-indigo-300 uppercase">
+                            💼 LinkedIn 8-Slide PDF Carousel Specialist (1080×1350)
+                          </span>
+                          <h3 className="text-sm font-extrabold text-white mt-1">
+                            Interactive 8-Slide Executive Carousel Deck
+                          </h3>
                         </div>
-                        {selectedArticle.pinterestPins[0] && (
-                          <div
-                            className="w-full max-w-[260px] rounded-xl overflow-hidden [&_svg]:w-full [&_svg]:h-auto"
-                            dangerouslySetInnerHTML={{
-                              __html: renderPinterestPinPreviewSvg(
-                                selectedArticle.pinterestPins[0],
-                                activeWebsite.siteName
-                              ),
-                            }}
-                          />
-                        )}
+                        <div className="flex flex-wrap gap-1.5">
+                          {activeLinkedInSlides.map((slide, sIdx) => (
+                            <button
+                              key={slide.slideNumber}
+                              type="button"
+                              onClick={() => setActiveLinkedInSlideIdx(sIdx)}
+                              className={`rounded-lg px-2.5 py-1 text-[11px] font-extrabold transition ${
+                                activeLinkedInSlideIdx === sIdx
+                                  ? 'bg-sky-500 text-slate-950'
+                                  : 'bg-slate-900 text-slate-300 hover:bg-slate-800'
+                              }`}
+                            >
+                              Slide {slide.slideNumber}
+                            </button>
+                          ))}
+                        </div>
                       </div>
 
-                      <div className="lg:col-span-7 space-y-3 text-xs">
-                        {selectedArticle.arcadsVariations.slice(0, 3).map((v) => (
+                      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-center">
+                        <div className="lg:col-span-5 flex flex-col items-center">
                           <div
-                            key={v.id}
-                            className="rounded-xl border border-slate-800 bg-slate-950 p-4 space-y-1.5"
-                          >
-                            <div className="flex items-center justify-between">
-                              <span className="font-extrabold text-sky-300 uppercase text-[10px]">
-                                {v.channel} · {v.archetypeLabel}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  handleCopy(
-                                    `${v.hookLine}\n\n${v.bodyCopy}\n\n${v.ctaLine}`,
-                                    v.id
+                            className="w-full max-w-[270px] rounded-xl overflow-hidden border border-slate-800 [&_svg]:w-full [&_svg]:h-auto"
+                            dangerouslySetInnerHTML={{
+                              __html: currentLinkedInSlide.renderedSvg,
+                            }}
+                          />
+                        </div>
+                        <div className="lg:col-span-7 space-y-3">
+                          <div className="text-xs font-extrabold text-sky-300">
+                            {currentLinkedInSlide.slideRole}
+                          </div>
+                          <div className="text-base font-extrabold text-white">
+                            {currentLinkedInSlide.headline}
+                          </div>
+                          <p className="text-slate-300 leading-relaxed">
+                            {currentLinkedInSlide.supportingCopy}
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleCopy(
+                                activeLinkedInSlides
+                                  .map(
+                                    (s) =>
+                                      `[Slide ${s.slideNumber}/8 - ${s.slideRole}]\n${s.headline}\n${s.supportingCopy}`
                                   )
-                                }
-                                className="text-[11px] font-bold text-emerald-300"
-                              >
-                                {copiedId === v.id ? '✓ Copied!' : 'Copy Post'}
-                              </button>
+                                  .join('\n\n'),
+                                'copy-linkedin-deck'
+                              )
+                            }
+                            className="rounded-xl bg-indigo-500 hover:bg-indigo-400 px-4 py-2 font-extrabold text-slate-950"
+                          >
+                            {copiedId === 'copy-linkedin-deck'
+                              ? '✓ Copied All 8 LinkedIn Slides!'
+                              : 'Copy All 8 LinkedIn Carousel Slides'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* PART 3: All 3× Tall Pinterest 2:3 Vertical Pins + Social Hook Variations */}
+                    <div className="space-y-3">
+                      <div className="text-xs font-extrabold text-amber-300">
+                        📌 All 3× Tall Pinterest 2:3 Vertical Pins (1000×1500 SVGs + SEO Pin Copy):
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {selectedArticle.pinterestPins.slice(0, 3).map((pin, pIdx) => (
+                          <div
+                            key={pin.id || pIdx}
+                            className="rounded-2xl border border-slate-800 bg-slate-950 p-4 flex flex-col items-center justify-between gap-3 text-xs"
+                          >
+                            <div
+                              className="w-full max-w-[210px] rounded-xl overflow-hidden [&_svg]:w-full [&_svg]:h-auto"
+                              dangerouslySetInnerHTML={{
+                                __html: renderPinterestPinPreviewSvg(
+                                  pin,
+                                  activeWebsite.siteName
+                                ),
+                              }}
+                            />
+                            <div className="w-full space-y-1">
+                              <div className="font-bold text-white truncate">
+                                {pin.pinTitle}
+                              </div>
+                              <p className="text-[11px] text-slate-400 line-clamp-2">
+                                {pin.pinDescription}
+                              </p>
                             </div>
-                            <div className="font-bold text-white">{v.hookLine}</div>
-                            <p className="text-slate-300 whitespace-pre-line">
-                              {v.bodyCopy}
-                            </p>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleCopy(
+                                  `${pin.pinTitle}\n\n${pin.pinDescription}`,
+                                  `pin-copy-${pIdx}`
+                                )
+                              }
+                              className="w-full rounded-lg bg-slate-900 hover:bg-slate-800 py-1.5 text-[11px] font-bold text-amber-300"
+                            >
+                              {copiedId === `pin-copy-${pIdx}`
+                                ? '✓ Copied Pin SEO!'
+                                : `Copy Pin #${pIdx + 1} Title & Desc`}
+                            </button>
                           </div>
                         ))}
                       </div>
+                    </div>
+
+                    {/* PART 4: X/Threads, Facebook & Instagram Hook Variations */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 text-xs">
+                      {selectedArticle.arcadsVariations.slice(0, 3).map((v) => (
+                        <div
+                          key={v.id}
+                          className="rounded-xl border border-slate-800 bg-slate-950 p-4 space-y-1.5"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-extrabold text-sky-300 uppercase text-[10px]">
+                              {v.channel} · {v.archetypeLabel}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleCopy(
+                                  `${v.hookLine}\n\n${v.bodyCopy}\n\n${v.ctaLine}`,
+                                  v.id
+                                )
+                              }
+                              className="text-[11px] font-bold text-emerald-300"
+                            >
+                              {copiedId === v.id ? '✓ Copied!' : 'Copy Post'}
+                            </button>
+                          </div>
+                          <div className="font-bold text-white">{v.hookLine}</div>
+                          <p className="text-slate-300 whitespace-pre-line">
+                            {v.bodyCopy}
+                          </p>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -1953,97 +1984,33 @@ export default function AiAgencyDashboardShell() {
       </div>
 
       {/* =====================================================================
-          PERSISTENT BOTTOM FOUNDER COMMAND CHAT & VOICE CALL DOCK
-          (Talk to Chief AI Officer OR any of the 36 AI Employees in real time)
+          PHASE 5: PERSISTENT BOTTOM FOUNDER COMMAND CHAT & VOICE CALL DOCK
+          (`FounderCommandChatDock.tsx` + `/api/ai-employee-agency/agent-chat`)
          ===================================================================== */}
-      <footer className="sticky bottom-0 z-30 border-t border-slate-800 bg-[#080E1C]/95 backdrop-blur">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-3 space-y-3">
-          {/* Expandable Conversation Transcript Drawer */}
-          {isChatDrawerExpanded && (
-            <div className="rounded-2xl border border-slate-800 bg-slate-950/95 p-4 space-y-3 max-h-[240px] overflow-y-auto text-xs">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                <span className="font-extrabold text-sky-300">
-                  💬 Live Agency Intercom &amp; Voice Call Transcript
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setIsChatDrawerExpanded(false)}
-                  className="text-slate-400 hover:text-white font-bold"
-                >
-                  ▾ Minimize Chat
-                </button>
-              </div>
-              <div className="space-y-2">
-                {chatMessages.map((m) => (
-                  <div
-                    key={m.id}
-                    className={`rounded-xl p-3 ${
-                      m.sender === 'founder'
-                        ? 'bg-sky-500/15 border border-sky-500/30 text-white ml-8'
-                        : 'bg-slate-900 border border-slate-800 text-slate-200 mr-8'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between text-[10px] text-slate-400 mb-1">
-                      <span className="font-bold text-emerald-300">{m.agentName}</span>
-                      <span>{m.timestamp}</span>
-                    </div>
-                    <p className="whitespace-pre-line leading-relaxed">{m.text}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Unified Command Input Bar */}
-          <form
-            onSubmit={handleSendFounderCommand}
-            className="flex flex-wrap items-center gap-2.5"
-          >
-            {/* Agent Selector Dropdown (All 36 Managers + Sub-Agents) */}
-            <select
-              value={chatTargetAgentId}
-              onChange={(e) => setChatTargetAgentId(e.target.value)}
-              className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-xs font-extrabold text-sky-300 focus:border-sky-400 focus:outline-none max-w-[290px]"
-              aria-label="Select AI Employee to talk to"
-            >
-              {allFlatEmployees.map((emp) => (
-                <option key={emp.id} value={emp.id}>
-                  {emp.tier === 'sub-agent' ? '↳ ' : '★ '}
-                  {emp.name} ({emp.departmentBadge})
-                </option>
-              ))}
-            </select>
-
-            <input
-              type="text"
-              value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
-              onFocus={() => setIsChatDrawerExpanded(true)}
-              placeholder='Tell your Chief AI Officer or any Specialist Agent: e.g. "Today let&apos;s write and launch a new article on AI technical SEO audits"...'
-              className="flex-1 min-w-[240px] rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-xs text-white placeholder-slate-400 focus:border-sky-400 focus:outline-none"
-            />
-
-            <button
-              type="button"
-              onClick={handleToggleVoiceCall}
-              className={`rounded-xl border px-3.5 py-2.5 text-xs font-extrabold transition flex items-center gap-1.5 ${
-                isVoiceCallActive
-                  ? 'border-rose-400 bg-rose-500/20 text-rose-200 animate-pulse'
-                  : 'border-slate-700 bg-slate-900 text-slate-200 hover:border-sky-400'
-              }`}
-            >
-              <span>{isVoiceCallActive ? '🔴 End Voice Call' : '🎙️ Voice Call'}</span>
-            </button>
-
-            <button
-              type="submit"
-              className="rounded-xl bg-gradient-to-r from-sky-500 to-emerald-400 hover:brightness-110 px-5 py-2.5 text-xs font-extrabold text-slate-950 shadow-lg transition"
-            >
-              Send Command →
-            </button>
-          </form>
-        </div>
-      </footer>
+      <FounderCommandChatDock
+        siteName={activeWebsite.siteName}
+        siteUrl={activeWebsite.siteUrl}
+        primaryNiche={activeWebsite.primaryNiche}
+        activeArticleTitle={
+          selectedArticle?.topicTitle || '2026 AI SEO Audit & Implementation Playbook'
+        }
+        activeKeyword={
+          selectedArticle?.primaryKeyword || 'ai seo audit checklist'
+        }
+        isInternalSite={Boolean(isInternalSite)}
+        existingSlugs={activeCampaign.jobs.map((j) => j.urlSlug)}
+        chatTargetAgentId={chatTargetAgentId}
+        onChangeTargetAgentId={setChatTargetAgentId}
+        isChatDrawerExpanded={isChatDrawerExpanded}
+        onToggleChatDrawer={setIsChatDrawerExpanded}
+        messages={chatMessages}
+        onAppendMessage={(msg) => setChatMessages((prev) => [...prev, msg])}
+        onSpawnArticleFromBrief={handleHandOffScoredBriefToContentManager}
+        onSelectDepartmentTab={(tabId) => {
+          setActiveSidebarTab(tabId);
+          setIsFullCanvasGraphOpen(false);
+        }}
+      />
     </div>
   );
 }

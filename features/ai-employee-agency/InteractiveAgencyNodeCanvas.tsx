@@ -3,6 +3,7 @@
 import React, { useMemo, useRef, useState } from 'react';
 import {
   AGENCY_DEPARTMENT_REGISTRY,
+  SIDEBAR_DEPARTMENTS_FROM_REGISTRY,
   type AgencySidebarTabId,
   type InteractiveOfficeNode,
 } from '@/lib/ai-employee-agency/agent-registry';
@@ -10,7 +11,7 @@ import type { AgencyHandoffPacket } from '@/lib/ai-employee-agency/handoff-orche
 
 /**
  * ============================================================================
- * DOITWITHAI.TOOLS — 24/7 AI EMPLOYEE AGENCY OS (V2 PHASE 3)
+ * DOITWITHAI.TOOLS — 24/7 AI EMPLOYEE AGENCY OS (V2 PHASE 3 — AUDITED & POLISHED)
  * Component: `features/ai-employee-agency/InteractiveAgencyNodeCanvas.tsx`
  *
  * Full-Canvas Interactive Pan/Zoom Node Graph (Zero Clutter):
@@ -18,9 +19,10 @@ import type { AgencyHandoffPacket } from '@/lib/ai-employee-agency/handoff-orche
  * - Supports 2 topology modes:
  *   1. `core-12`: 12 Core Agency Desks (Executive + Department Managers + Key Squads)
  *   2. `expanded-36`: Full 36-Node Hierarchy (All 9 Leads + All 27 Sub-Agents)
- * - Supports Drag-to-Pan, Zoom In (+), Zoom Out (-), Fit View (⊡), Step Handoff,
- *   Hover Tooltips, and Click-to-Open Floating Agent Inspector Card with
- *   1-click Department Dashboard Redirect & 1-on-1 Agent Chat/Voice Call.
+ *      with generous 2340×840 viewBox so all 5 Social/TikTok sub-agents fit cleanly.
+ * - Supports Department Highlighting, Mouse-Wheel Zoom, Zoom In (+), Zoom Out (-),
+ *   Fit View (⊡), Drag-to-Pan, Step Handoff, Hover Tooltips, and Click-to-Open
+ *   Floating Agent Inspector Card.
  * ============================================================================
  */
 
@@ -42,6 +44,9 @@ export default function InteractiveAgencyNodeCanvas({
   onStartAgentChat,
 }: InteractiveAgencyNodeCanvasProps) {
   const [topologyMode, setTopologyMode] = useState<'core-12' | 'expanded-36'>('core-12');
+  const [departmentFilter, setDepartmentFilter] = useState<AgencySidebarTabId | 'all'>(
+    'all'
+  );
   const [zoomScale, setZoomScale] = useState<number>(1);
   const [panOffset, setPanOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isDraggingCanvas, setIsDraggingCanvas] = useState<boolean>(false);
@@ -105,7 +110,7 @@ export default function InteractiveAgencyNodeCanvas({
 
   const activeNodes = topologyMode === 'core-12' ? coreNodes : expandedNodes;
   const svgViewBox =
-    topologyMode === 'core-12' ? '0 0 1140 590' : '0 0 2320 760';
+    topologyMode === 'core-12' ? '0 0 1140 590' : '0 0 2340 840';
 
   const hoveredNode = useMemo(
     () => activeNodes.find((n) => n.id === hoveredNodeId) || null,
@@ -119,7 +124,7 @@ export default function InteractiveAgencyNodeCanvas({
 
   return (
     <div className="relative flex-1 min-h-[700px] w-full bg-[#050914] overflow-hidden select-none">
-      {/* Top-Left Floating Canvas Toolbar (Topology Switch, Zoom In/Out, Fit, Step Handoff) */}
+      {/* Top-Left Floating Canvas Toolbar (Topology Switch, Dept Filter, Zoom In/Out, Fit, Step Handoff) */}
       <div className="absolute top-4 left-4 z-20 flex flex-wrap items-center gap-2 rounded-2xl border border-slate-800 bg-slate-950/90 backdrop-blur px-3.5 py-2 shadow-xl text-xs">
         <span className="font-extrabold text-sky-300 mr-1">
           🌐 Digital Agency Office Canvas
@@ -159,10 +164,27 @@ export default function InteractiveAgencyNodeCanvas({
           </button>
         </div>
 
+        {/* Department Spotlight Filter */}
+        <select
+          value={departmentFilter}
+          onChange={(e) =>
+            setDepartmentFilter(e.target.value as AgencySidebarTabId | 'all')
+          }
+          className="rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1 text-[11px] font-bold text-slate-200 focus:border-sky-400 focus:outline-none"
+          aria-label="Filter node graph by department"
+        >
+          <option value="all">All 9 Departments</option>
+          {SIDEBAR_DEPARTMENTS_FROM_REGISTRY.map((d) => (
+            <option key={d.id} value={d.id}>
+              {d.icon} {d.label}
+            </option>
+          ))}
+        </select>
+
         <button
           type="button"
           onClick={() =>
-            setZoomScale((z) => Math.min(1.75, Number((z + 0.15).toFixed(2))))
+            setZoomScale((z) => Math.min(1.8, Number((z + 0.15).toFixed(2))))
           }
           className="rounded-lg bg-slate-800 hover:bg-slate-700 px-2.5 py-1 font-bold text-white"
           title="Zoom In"
@@ -172,7 +194,7 @@ export default function InteractiveAgencyNodeCanvas({
         <button
           type="button"
           onClick={() =>
-            setZoomScale((z) => Math.max(0.55, Number((z - 0.15).toFixed(2))))
+            setZoomScale((z) => Math.max(0.5, Number((z - 0.15).toFixed(2))))
           }
           className="rounded-lg bg-slate-800 hover:bg-slate-700 px-2.5 py-1 font-bold text-white"
           title="Zoom Out"
@@ -184,6 +206,7 @@ export default function InteractiveAgencyNodeCanvas({
           onClick={() => {
             setZoomScale(1);
             setPanOffset({ x: 0, y: 0 });
+            setDepartmentFilter('all');
           }}
           className="rounded-lg bg-slate-800 hover:bg-slate-700 px-2.5 py-1 font-bold text-slate-300"
         >
@@ -204,11 +227,19 @@ export default function InteractiveAgencyNodeCanvas({
         <span className="font-bold text-emerald-300">
           {activePacket.fromAgentName} → {activePacket.toAgentName}
         </span>
-        <span className="text-slate-400">· Drag to pan · Click any node</span>
+        <span className="text-slate-400">· Scroll to zoom · Drag to pan</span>
       </div>
 
-      {/* Interactive Drag & Zoom SVG Viewport */}
+      {/* Interactive Drag & Wheel-Zoom SVG Viewport */}
       <div
+        onWheel={(e) => {
+          if (e.ctrlKey || e.metaKey || Math.abs(e.deltaY) > 0) {
+            const delta = e.deltaY < 0 ? 0.08 : -0.08;
+            setZoomScale((z) =>
+              Math.min(1.8, Math.max(0.5, Number((z + delta).toFixed(2))))
+            );
+          }
+        }}
         onMouseDown={(e) => {
           setIsDraggingCanvas(true);
           dragStartRef.current = {
@@ -251,6 +282,11 @@ export default function InteractiveAgencyNodeCanvas({
             const parent = activeNodes.find((n) => n.id === node.parentNodeId);
             if (!parent) return null;
 
+            const isFilteredOut =
+              departmentFilter !== 'all' &&
+              node.departmentTab !== departmentFilter &&
+              parent.departmentTab !== departmentFilter;
+
             const x1 = parent.x;
             const y1 = parent.y + 38;
             const x2 = node.x;
@@ -263,7 +299,10 @@ export default function InteractiveAgencyNodeCanvas({
               hoveredNodeId === node.id;
 
             return (
-              <g key={`edge-${parent.id}-${node.id}`}>
+              <g
+                key={`edge-${parent.id}-${node.id}`}
+                opacity={isFilteredOut ? 0.18 : 1}
+              >
                 <path
                   d={pathD}
                   fill="none"
@@ -304,6 +343,11 @@ export default function InteractiveAgencyNodeCanvas({
             const isHovered = hoveredNodeId === node.id;
             const isClicked = clickedNodeId === node.id;
             const isWorkingNow = node.handoffStageOrder === activeHandoffStage;
+            const isDimmed =
+              departmentFilter !== 'all' &&
+              node.departmentTab !== departmentFilter &&
+              node.id !== 'agent-chief-orchestrator';
+
             const boxW = 232;
             const boxH = 76;
             const rx = node.x - boxW / 2;
@@ -312,6 +356,7 @@ export default function InteractiveAgencyNodeCanvas({
             return (
               <g
                 key={node.id}
+                opacity={isDimmed ? 0.25 : 1}
                 onMouseEnter={() => setHoveredNodeId(node.id)}
                 onMouseLeave={() => setHoveredNodeId(null)}
                 onClick={(e) => {
