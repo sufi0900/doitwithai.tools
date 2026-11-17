@@ -6,6 +6,12 @@ import {
   type AgencyDepartmentId,
   type AgencySubAgentNode,
 } from '@/lib/autonomous-agents/deep-research-agency-engine';
+import {
+  buildCloudHeartbeatMorningBriefing,
+  loadLatestMorningBriefing,
+  saveLatestMorningBriefing,
+  type CloudHeartbeatMorningBriefing,
+} from '@/lib/autonomous-agents/cloud-heartbeat-briefing';
 import type { WebsiteScoutReport } from '@/lib/autonomous-agents/sitemap-trend-scout';
 import type {
   AutomatedArticleJob,
@@ -34,6 +40,34 @@ export interface LivePageAuditResponseData {
   suggestedNewH2: string;
   dropInRefreshMarkdown: string;
   upgradedJsonLdPatch: string;
+}
+
+export interface SocialNetworkTelemetrySnapshot {
+  networkId: 'pinterest' | 'linkedin' | 'x-threads';
+  networkLabel: string;
+  connectionSource: 'live-oauth-api' | 'telemetry-benchmark-simulator';
+  impressions7d: number;
+  savesOrBookmarks7d: number;
+  outboundClicks7d: number;
+  saveRatePercent: number;
+  ctrPercent: number;
+  winningVisualArchetype: string;
+  winningHookFormula: string;
+  autoRebalanceAction: string;
+}
+
+export interface SocialAnalyticsSyncData {
+  syncedAtIso: string;
+  siteName: string;
+  overallSocialVelocityScore: number;
+  outperformanceMultiplier: string;
+  networkSnapshots: SocialNetworkTelemetrySnapshot[];
+  promotedWinnerFormula: {
+    visualArchetype: string;
+    colorPalettePair: string;
+    hookFormula: string;
+    rationale: string;
+  };
 }
 
 export interface AiEmployeeAgencyCommandCenterProps {
@@ -118,6 +152,18 @@ export default function AiEmployeeAgencyCommandCenter({
   );
   const [appliedRefreshUrls, setAppliedRefreshUrls] = useState<string[]>([]);
 
+  // Phase C: Persistent 24/7 Cloud Heartbeat & Morning Briefing State
+  const [showMorningBriefing, setShowMorningBriefing] = useState<boolean>(false);
+  const [isRunningCloudHeartbeat, setIsRunningCloudHeartbeat] = useState<boolean>(false);
+  const [morningBriefing, setMorningBriefing] =
+    useState<CloudHeartbeatMorningBriefing | null>(null);
+
+  // Phase D: Live Social Analytics Ingestion & Winner Auto-Rebalancing State
+  const [isSyncingSocialAnalytics, setIsSyncingSocialAnalytics] = useState<boolean>(false);
+  const [socialAnalytics, setSocialAnalytics] = useState<SocialAnalyticsSyncData | null>(
+    null
+  );
+
   // Rotate active agent pulse every 3.5 seconds so the 24/7 AI Employee Agency feels alive
   useEffect(() => {
     const timer = setInterval(() => {
@@ -125,6 +171,22 @@ export default function AiEmployeeAgencyCommandCenter({
     }, 3500);
     return () => clearInterval(timer);
   }, []);
+
+  // Load or initialize the 24/7 Morning Briefing for the active website
+  useEffect(() => {
+    const stored = loadLatestMorningBriefing();
+    if (stored && stored.websiteUrl === website.siteUrl) {
+      setMorningBriefing(stored);
+    } else {
+      const initial = buildCloudHeartbeatMorningBriefing({
+        website,
+        jobs,
+        scoutReport,
+        executionMode: 'browser-active-loop',
+      });
+      setMorningBriefing(initial);
+    }
+  }, [website, jobs, scoutReport]);
 
   const agencyState = useMemo(() => {
     return buildActiveAiEmployeeAgencyState({
@@ -193,6 +255,87 @@ export default function AiEmployeeAgencyCommandCenter({
     }
   };
 
+  /**
+   * Phase C: Trigger Persistent 24/7 Cloud Heartbeat Worker (`/api/autonomous-agents/cron-24h`)
+   */
+  const handleRunCloudHeartbeatNow = async () => {
+    setIsRunningCloudHeartbeat(true);
+    setShowMorningBriefing(true);
+    try {
+      const res = await fetch('/api/autonomous-agents/cron-24h', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          website,
+          jobs,
+          scoutReport,
+        }),
+      });
+      if (res.ok) {
+        const data = (await res.json()) as {
+          ok: boolean;
+          briefing?: CloudHeartbeatMorningBriefing;
+        };
+        if (data.ok && data.briefing) {
+          const saved = saveLatestMorningBriefing(data.briefing);
+          setMorningBriefing(saved);
+          return;
+        }
+      }
+      const fallback = saveLatestMorningBriefing(
+        buildCloudHeartbeatMorningBriefing({
+          website,
+          jobs,
+          scoutReport,
+          executionMode: 'manual-cloud-heartbeat',
+        })
+      );
+      setMorningBriefing(fallback);
+    } catch {
+      const fallback = saveLatestMorningBriefing(
+        buildCloudHeartbeatMorningBriefing({
+          website,
+          jobs,
+          scoutReport,
+          executionMode: 'manual-cloud-heartbeat',
+        })
+      );
+      setMorningBriefing(fallback);
+    } finally {
+      setIsRunningCloudHeartbeat(false);
+    }
+  };
+
+  /**
+   * Phase D: Sync Live Pinterest v5 & LinkedIn Analytics + Auto-Rebalance Winner Palettes/Hooks
+   */
+  const handleSyncSocialAnalyticsAndRebalance = async () => {
+    setIsSyncingSocialAnalytics(true);
+    try {
+      const res = await fetch('/api/autonomous-agents/social-analytics-sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          website,
+          jobs,
+        }),
+      });
+      if (res.ok) {
+        const data = (await res.json()) as {
+          ok: boolean;
+          analytics?: SocialAnalyticsSyncData;
+        };
+        if (data.ok && data.analytics) {
+          setSocialAnalytics(data.analytics);
+        }
+      }
+    } catch {
+      // Keep UI responsive even offline
+    } finally {
+      setIsSyncingSocialAnalytics(false);
+    }
+  };
+
   const completedArticlesCount = jobs.filter(
     (j) => j.status === 'published' || j.status === 'ready-for-review'
   ).length;
@@ -215,7 +358,7 @@ export default function AiEmployeeAgencyCommandCenter({
             </p>
           </div>
 
-          {/* Primary View Mode Switcher: Animated Node Graph vs Text Dashboard */}
+          {/* Primary View Mode Switcher: Animated Node Graph vs Text Dashboard + Morning Briefing */}
           <div className="flex flex-wrap items-center gap-2">
             <div className="inline-flex rounded-xl border border-slate-700 bg-slate-950 p-1">
               <button
@@ -241,6 +384,18 @@ export default function AiEmployeeAgencyCommandCenter({
                 📊 Multi-Department Text Dashboard
               </button>
             </div>
+
+            <button
+              type="button"
+              onClick={() => setShowMorningBriefing((prev) => !prev)}
+              className={`rounded-xl border px-3.5 py-2.5 text-xs font-extrabold transition ${
+                showMorningBriefing
+                  ? 'border-emerald-400 bg-emerald-500/20 text-emerald-200'
+                  : 'border-slate-700 bg-slate-950 text-sky-300 hover:border-sky-400'
+              }`}
+            >
+              ☀️ {showMorningBriefing ? 'Hide Morning Briefing' : '24/7 Morning Briefing'}
+            </button>
 
             <button
               type="button"
@@ -283,6 +438,91 @@ export default function AiEmployeeAgencyCommandCenter({
             </div>
           </div>
         </div>
+
+        {/* PHASE C: 24/7 Cloud Heartbeat & Daily AI Employee Morning Briefing Drawer */}
+        {showMorningBriefing && morningBriefing && (
+          <div className="rounded-2xl border border-emerald-500/40 bg-slate-950/95 p-5 space-y-4 text-xs mt-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
+              <div>
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wider text-emerald-300">
+                  <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
+                  Phase C · Persistent 24/7 Cloud Heartbeat &amp; Morning Briefing (`/api/autonomous-agents/cron-24h`)
+                </span>
+                <h3 className="text-base font-extrabold text-white mt-0.5">
+                  Daily AI Employee Morning Briefing for {morningBriefing.websiteName} (
+                  {morningBriefing.overallHealthDelta})
+                </h3>
+                <p className="text-[11px] text-slate-400">
+                  Last Heartbeat: {new Date(morningBriefing.generatedAtIso).toLocaleString()} ·
+                  Next Scheduled 24h Run:{' '}
+                  {new Date(morningBriefing.nextScheduledRunIso).toLocaleString()} · Engine:{' '}
+                  {morningBriefing.aiProviderUsed}
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  disabled={isRunningCloudHeartbeat}
+                  onClick={() => void handleRunCloudHeartbeatNow()}
+                  className="rounded-xl bg-gradient-to-r from-emerald-400 to-sky-400 hover:brightness-110 disabled:opacity-50 px-4 py-2 text-xs font-extrabold text-slate-950 transition"
+                >
+                  {isRunningCloudHeartbeat
+                    ? '⏳ Running 24h Cloud Heartbeat...'
+                    : '⚡ Run 24h Cloud Heartbeat Now'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleCopy(morningBriefing.vercelCronConfigSnippet, 'vercel-cron-cfg')
+                  }
+                  className="rounded-xl border border-slate-700 bg-slate-900 hover:bg-slate-800 px-3 py-2 text-xs font-bold text-sky-300"
+                >
+                  {copiedId === 'vercel-cron-cfg'
+                    ? '✓ Copied vercel.json!'
+                    : 'Copy vercel.json Cron'}
+                </button>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-slate-800 bg-slate-900/90 p-3.5 space-y-1.5">
+              <div className="font-bold text-emerald-300">Executive Overnight Summary:</div>
+              <p className="text-slate-200 leading-relaxed">
+                {morningBriefing.executiveMorningSummary}
+              </p>
+              <div className="text-sky-300 pt-1">
+                <strong>Next Queued Low-KD Topic Hook:</strong>{' '}
+                {morningBriefing.newlyGeneratedTopicHook}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {morningBriefing.departmentLogs.map((log) => (
+                <div
+                  key={log.departmentId}
+                  className="rounded-xl border border-slate-800 bg-slate-900/70 p-3 space-y-1"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-extrabold text-white">{log.departmentName}</span>
+                    <span
+                      className="rounded px-2 py-0.5 text-[10px] font-bold"
+                      style={{
+                        backgroundColor: `${log.accentHex}22`,
+                        color: log.accentHex,
+                      }}
+                    >
+                      {log.status.toUpperCase()}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-300">{log.actionSummary}</p>
+                  <div className="text-[11px] text-emerald-300 font-medium">
+                    → {log.measurableImpact}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* =====================================================================
@@ -1106,61 +1346,155 @@ export default function AiEmployeeAgencyCommandCenter({
             </div>
           )}
 
-          {/* TAB 6: MULTI-NETWORK SOCIAL MEDIA SUB-AGENT TREES */}
+          {/* TAB 6: MULTI-NETWORK SOCIAL MEDIA SUB-AGENT TREES + PHASE D LIVE ANALYTICS REBALANCER */}
           {activeDepartmentTab === 'social-media-fleet' && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-              {agencyState.socialAgentTrees.map((tree) => (
-                <div
-                  key={tree.networkId}
-                  className="rounded-2xl border border-slate-800 bg-slate-900/80 p-5 space-y-4"
-                >
+            <div className="space-y-6">
+              {/* PHASE D: Live Social Analytics Ingestion & Winner Auto-Rebalancer */}
+              <div className="rounded-2xl border border-pink-500/40 bg-slate-900/85 p-5 space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <span
-                      className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded"
-                      style={{
-                        backgroundColor: `${tree.accentHex}22`,
-                        color: tree.accentHex,
-                      }}
-                    >
-                      Dedicated Sub-Agent Tree
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-pink-300">
+                      Phase D · Live Social Analytics Ingestion &amp; Auto-Rebalancing (`/api/autonomous-agents/social-analytics-sync`)
                     </span>
-                    <h3 className="text-base font-extrabold text-white mt-1">
-                      {tree.networkName}
+                    <h3 className="text-lg font-extrabold text-white mt-0.5">
+                      Pinterest v5 &amp; LinkedIn Telemetry Sync + Winner Palette/Hook Auto-Rebalancer
                     </h3>
-                    <div className="text-[11px] text-slate-400 mt-0.5">
-                      Active Node: <strong className="text-white">{tree.activeSubAgentName}</strong>
-                    </div>
+                    <p className="text-xs text-slate-300 mt-0.5">
+                      Ingests 7-day Save Rate, Outbound Clicks, and Carousel Swipe-Through metrics to automatically re-weight visual layout archetypes and scroll-stopper hooks for your next 24/7 cycle.
+                    </p>
                   </div>
 
-                  <div className="space-y-2.5 text-xs">
-                    {tree.subAgents.map((sub) => (
-                      <div
-                        key={sub.id}
-                        className="rounded-xl border border-slate-800 bg-slate-950/90 p-3 space-y-1"
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="font-bold text-white">{sub.name}</span>
-                          <span
-                            className={`rounded-full px-2 py-0.5 text-[9.5px] font-extrabold ${
-                              sub.status === 'active-working'
-                                ? 'bg-sky-500/20 text-sky-300 animate-pulse'
-                                : sub.status === 'completed'
-                                  ? 'bg-emerald-500/20 text-emerald-300'
-                                  : 'bg-amber-500/20 text-amber-300'
-                            }`}
-                          >
-                            {sub.status.toUpperCase()}
-                          </span>
+                  <button
+                    type="button"
+                    disabled={isSyncingSocialAnalytics}
+                    onClick={() => void handleSyncSocialAnalyticsAndRebalance()}
+                    className="rounded-xl bg-gradient-to-r from-pink-500 via-amber-400 to-emerald-400 hover:brightness-110 disabled:opacity-50 px-4 py-2.5 text-xs font-extrabold text-slate-950 shadow-lg transition"
+                  >
+                    {isSyncingSocialAnalytics
+                      ? '⏳ Syncing Pinterest v5 & LinkedIn Telemetry...'
+                      : '📈 Sync Live Social Analytics & Auto-Rebalance Winners'}
+                  </button>
+                </div>
+
+                {socialAnalytics && (
+                  <div className="space-y-4 pt-2 border-t border-slate-800 text-xs">
+                    <div className="rounded-xl border border-emerald-500/35 bg-slate-950 p-4 flex flex-wrap items-center justify-between gap-3">
+                      <div className="space-y-1">
+                        <div className="text-[11px] font-bold text-emerald-300">
+                          ★ Promoted Winner Formula ({socialAnalytics.outperformanceMultiplier})
                         </div>
-                        <div className="text-[11px] text-slate-400">{sub.role}</div>
-                        <div className="text-[11px] text-emerald-300 pt-0.5">
-                          → {sub.liveOutputSummary}
+                        <div className="font-extrabold text-white text-sm">
+                          {socialAnalytics.promotedWinnerFormula.visualArchetype} ·{' '}
+                          {socialAnalytics.promotedWinnerFormula.hookFormula}
+                        </div>
+                        <div className="text-[11px] text-slate-400">
+                          {socialAnalytics.promotedWinnerFormula.rationale}
                         </div>
                       </div>
-                    ))}
+                      <span className="rounded-xl bg-emerald-500/15 border border-emerald-400/30 px-3 py-1.5 font-extrabold text-emerald-300">
+                        Velocity Score: {socialAnalytics.overallSocialVelocityScore}/100
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {socialAnalytics.networkSnapshots.map((snap) => (
+                        <div
+                          key={snap.networkId}
+                          className="rounded-xl border border-slate-800 bg-slate-950 p-4 space-y-2"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-extrabold text-white">{snap.networkLabel}</span>
+                            <span className="rounded bg-pink-500/15 px-2 py-0.5 text-[10px] font-bold text-pink-300">
+                              Save Rate: {snap.saveRatePercent}%
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-2 pt-1 text-[11px]">
+                            <div className="rounded bg-slate-900 p-2">
+                              <div className="text-slate-400">Impr (7d)</div>
+                              <div className="font-bold text-white">
+                                {snap.impressions7d.toLocaleString()}
+                              </div>
+                            </div>
+                            <div className="rounded bg-slate-900 p-2">
+                              <div className="text-slate-400">Saves</div>
+                              <div className="font-bold text-emerald-300">
+                                {snap.savesOrBookmarks7d.toLocaleString()}
+                              </div>
+                            </div>
+                            <div className="rounded bg-slate-900 p-2">
+                              <div className="text-slate-400">Clicks</div>
+                              <div className="font-bold text-sky-300">
+                                {snap.outboundClicks7d.toLocaleString()}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-[11px] text-amber-300">
+                            <strong>Winning Layout:</strong> {snap.winningVisualArchetype}
+                          </div>
+                          <div className="text-[11px] text-emerald-300">
+                            → {snap.autoRebalanceAction}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                {agencyState.socialAgentTrees.map((tree) => (
+                  <div
+                    key={tree.networkId}
+                    className="rounded-2xl border border-slate-800 bg-slate-900/80 p-5 space-y-4"
+                  >
+                    <div>
+                      <span
+                        className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded"
+                        style={{
+                          backgroundColor: `${tree.accentHex}22`,
+                          color: tree.accentHex,
+                        }}
+                      >
+                        Dedicated Sub-Agent Tree
+                      </span>
+                      <h3 className="text-base font-extrabold text-white mt-1">
+                        {tree.networkName}
+                      </h3>
+                      <div className="text-[11px] text-slate-400 mt-0.5">
+                        Active Node: <strong className="text-white">{tree.activeSubAgentName}</strong>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2.5 text-xs">
+                      {tree.subAgents.map((sub) => (
+                        <div
+                          key={sub.id}
+                          className="rounded-xl border border-slate-800 bg-slate-950/90 p-3 space-y-1"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-bold text-white">{sub.name}</span>
+                            <span
+                              className={`rounded-full px-2 py-0.5 text-[9.5px] font-extrabold ${
+                                sub.status === 'active-working'
+                                  ? 'bg-sky-500/20 text-sky-300 animate-pulse'
+                                  : sub.status === 'completed'
+                                    ? 'bg-emerald-500/20 text-emerald-300'
+                                    : 'bg-amber-500/20 text-amber-300'
+                              }`}
+                            >
+                              {sub.status.toUpperCase()}
+                            </span>
+                          </div>
+                          <div className="text-[11px] text-slate-400">{sub.role}</div>
+                          <div className="text-[11px] text-emerald-300 pt-0.5">
+                            → {sub.liveOutputSummary}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
