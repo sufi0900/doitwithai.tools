@@ -727,7 +727,7 @@ export function BlogInfographicStudio({
                       ),
                     );
                     commit(allVisuals);
-                    setActiveIdx(recIdx);
+                    setActiveIdx(allVisuals[0]?.id === "ai-seo-overview" ? 0 : recIdx);
                     notify(
                       `Generated ${allVisuals.length} unique section infographics across the article with distinct layouts and shaders. Click any section tab to edit.`,
                     );

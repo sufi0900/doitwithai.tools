@@ -1,3 +1,4 @@
+import { aiSeoOverview } from "./article-overview";
 import type {
   BlogInfographicConfig,
   BlogInfographicNodeItem,
@@ -550,7 +551,7 @@ export function buildAllArticleSectionVisuals(
   const hint = options.brandTheme;
   let prevLayout: PrismLayout | undefined;
 
-  return selected.map(({ section, intel, visual }, idx) => {
+  const sectionVisuals = selected.map(({ section, intel, visual }, idx) => {
     const nodesForSection = visual.nodes;
     let comparisonLabels: [string, string] | undefined;
 
@@ -682,6 +683,8 @@ export function buildAllArticleSectionVisuals(
       ),
     );
   });
+  const overview = aiSeoOverview(sections, base, options.sourceUrl);
+  return overview ? [overview, ...sectionVisuals] : sectionVisuals;
 }
 
 /**
