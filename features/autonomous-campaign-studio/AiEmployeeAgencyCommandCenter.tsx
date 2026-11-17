@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
+import type { AutomationKeyOverrides } from '@/lib/autonomous-agents/automation-ai-router';
 import {
   buildActiveAiEmployeeAgencyState,
   type AgencyDepartmentId,
@@ -16,6 +17,7 @@ import type { WebsiteScoutReport } from '@/lib/autonomous-agents/sitemap-trend-s
 import type {
   AutomatedArticleJob,
   ConnectedWebsiteProfile,
+  WinnerFormulaRecord,
 } from '@/lib/autonomous-agents/types';
 
 export interface LivePageAuditResponseData {
@@ -40,6 +42,7 @@ export interface LivePageAuditResponseData {
   suggestedNewH2: string;
   dropInRefreshMarkdown: string;
   upgradedJsonLdPatch: string;
+  refreshInfographicSvg?: string;
 }
 
 export interface SocialNetworkTelemetrySnapshot {
@@ -68,6 +71,7 @@ export interface SocialAnalyticsSyncData {
     hookFormula: string;
     rationale: string;
   };
+  winnerRecordForStore?: WinnerFormulaRecord;
 }
 
 export interface AiEmployeeAgencyCommandCenterProps {
@@ -76,9 +80,18 @@ export interface AiEmployeeAgencyCommandCenterProps {
   scoutReport: WebsiteScoutReport | null;
   activeWritingJobId?: string;
   isRunningBatch: boolean;
+  keyOverrides?: AutomationKeyOverrides;
   onSelectArticleForStudio: (job: AutomatedArticleJob) => void;
   onRunNext24hCycle: () => void;
   onOpenInWriterStudio: (job?: AutomatedArticleJob) => void;
+  onApplyArticleRefreshPatch?: (params: {
+    pageUrl: string;
+    suggestedNewH2: string;
+    upgraded50WordAeoLead: string;
+    dropInRefreshMarkdown: string;
+    refreshInfographicSvg?: string;
+  }) => void;
+  onPromoteSocialWinnerFormula?: (winner: WinnerFormulaRecord) => void;
 }
 
 const DEPARTMENT_TABS: Array<{
@@ -131,9 +144,12 @@ export default function AiEmployeeAgencyCommandCenter({
   scoutReport,
   activeWritingJobId,
   isRunningBatch,
+  keyOverrides,
   onSelectArticleForStudio,
   onRunNext24hCycle,
   onOpenInWriterStudio,
+  onApplyArticleRefreshPatch,
+  onPromoteSocialWinnerFormula,
 }: AiEmployeeAgencyCommandCenterProps) {
   const [viewMode, setViewMode] = useState<'animated-node-graph' | 'text-dashboard'>(
     'animated-node-graph'
@@ -235,8 +251,11 @@ export default function AiEmployeeAgencyCommandCenter({
           pageUrl: urlToAudit,
           siteName: website.siteName,
           primaryNiche: website.primaryNiche,
+          brandPrimaryHex: website.brandPrimaryHex,
+          brandSecondaryHex: website.brandSecondaryHex,
           isInternalSite: agencyState.isInternalSite,
           internalBuilderSlug: website.internalBuilderSlug,
+          keyOverrides,
         }),
       });
       if (res.ok) {
@@ -269,6 +288,7 @@ export default function AiEmployeeAgencyCommandCenter({
           website,
           jobs,
           scoutReport,
+          keyOverrides,
         }),
       });
       if (res.ok) {
@@ -327,6 +347,9 @@ export default function AiEmployeeAgencyCommandCenter({
         };
         if (data.ok && data.analytics) {
           setSocialAnalytics(data.analytics);
+          if (data.analytics.winnerRecordForStore && onPromoteSocialWinnerFormula) {
+            onPromoteSocialWinnerFormula(data.analytics.winnerRecordForStore);
+          }
         }
       }
     } catch {
@@ -341,30 +364,32 @@ export default function AiEmployeeAgencyCommandCenter({
   ).length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 min-w-0">
       {/* Top 24/7 Active AI Employee Agency Header & View Switcher */}
-      <div className="rounded-2xl border border-amber-400/40 bg-gradient-to-r from-slate-900 via-[#111A2E] to-slate-900 p-5 sm:p-6 shadow-xl space-y-4">
+      <div className="rounded-2xl border border-amber-400/40 bg-gradient-to-r from-slate-900 via-[#111A2E] to-slate-900 p-4 sm:p-6 shadow-xl space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="space-y-1">
+          <div className="space-y-1 min-w-0">
             <div className="inline-flex items-center gap-2 rounded-full bg-amber-400/15 border border-amber-400/40 px-3 py-1 text-xs font-extrabold text-amber-300">
-              <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-ping" />
-              24/7 Active Digital AI Employee Agency · Working Continuously for {website.siteName}
+              <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-ping shrink-0" />
+              <span className="truncate">
+                24/7 Active Digital AI Employee Agency · Working Continuously for {website.siteName}
+              </span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-extrabold text-white">
-              Autonomous SEO, Content & Multi-Network Social Agency OS
+            <h2 className="text-lg sm:text-2xl font-extrabold text-white">
+              Autonomous SEO, Content &amp; Multi-Network Social Agency OS
             </h2>
-            <p className="text-xs text-slate-300 max-w-3xl">
+            <p className="text-xs text-slate-300 max-w-3xl leading-relaxed">
               Your 6 AI Departments (22 Specialized Sub-Agents) continuously research competitors, audit On-Page/Off-Page/Technical SEO, live-crawl &amp; refresh existing articles, write new articles with 6-layer infographics, and build Pinterest/LinkedIn social packs.
             </p>
           </div>
 
           {/* Primary View Mode Switcher: Animated Node Graph vs Text Dashboard + Morning Briefing */}
           <div className="flex flex-wrap items-center gap-2">
-            <div className="inline-flex rounded-xl border border-slate-700 bg-slate-950 p-1">
+            <div className="inline-flex flex-wrap rounded-xl border border-slate-700 bg-slate-950 p-1">
               <button
                 type="button"
                 onClick={() => setViewMode('animated-node-graph')}
-                className={`rounded-lg px-3.5 py-2 text-xs font-extrabold transition ${
+                className={`rounded-lg px-3 py-2 text-xs font-extrabold transition ${
                   viewMode === 'animated-node-graph'
                     ? 'bg-gradient-to-r from-sky-500 to-emerald-400 text-slate-950 shadow'
                     : 'text-slate-300 hover:text-white'
@@ -375,7 +400,7 @@ export default function AiEmployeeAgencyCommandCenter({
               <button
                 type="button"
                 onClick={() => setViewMode('text-dashboard')}
-                className={`rounded-lg px-3.5 py-2 text-xs font-extrabold transition ${
+                className={`rounded-lg px-3 py-2 text-xs font-extrabold transition ${
                   viewMode === 'text-dashboard'
                     ? 'bg-gradient-to-r from-sky-500 to-emerald-400 text-slate-950 shadow'
                     : 'text-slate-300 hover:text-white'
@@ -411,13 +436,13 @@ export default function AiEmployeeAgencyCommandCenter({
         {/* Live Telemetry Strip */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 border-t border-slate-800/80 text-xs">
           <div className="rounded-xl border border-slate-800 bg-slate-950/70 px-3.5 py-2.5">
-            <div className="text-slate-400">Overall Site SEO & GEO Health</div>
+            <div className="text-slate-400">Overall Site SEO &amp; GEO Health</div>
             <div className="text-sm font-extrabold text-emerald-300 mt-0.5">
               {agencyState.overallHealthScore}/100 · Active Monitoring
             </div>
           </div>
           <div className="rounded-xl border border-slate-800 bg-slate-950/70 px-3.5 py-2.5">
-            <div className="text-slate-400">Articles & 6-Layer Visuals</div>
+            <div className="text-slate-400">Articles &amp; 6-Layer Visuals</div>
             <div className="text-sm font-extrabold text-sky-300 mt-0.5">
               {completedArticlesCount} / {jobs.length} Completed ({jobs.length * 4} SVGs)
             </div>
@@ -441,9 +466,9 @@ export default function AiEmployeeAgencyCommandCenter({
 
         {/* PHASE C: 24/7 Cloud Heartbeat & Daily AI Employee Morning Briefing Drawer */}
         {showMorningBriefing && morningBriefing && (
-          <div className="rounded-2xl border border-emerald-500/40 bg-slate-950/95 p-5 space-y-4 text-xs mt-3">
+          <div className="rounded-2xl border border-emerald-500/40 bg-slate-950/95 p-4 sm:p-5 space-y-4 text-xs mt-3">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
-              <div>
+              <div className="min-w-0">
                 <span className="inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wider text-emerald-300">
                   <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
                   Phase C · Persistent 24/7 Cloud Heartbeat &amp; Morning Briefing (`/api/autonomous-agents/cron-24h`)
@@ -532,7 +557,7 @@ export default function AiEmployeeAgencyCommandCenter({
       {viewMode === 'animated-node-graph' && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Left 8 Columns: Animated Interconnected SVG Node Workflow Canvas */}
-          <div className="lg:col-span-8 rounded-2xl border border-slate-800 bg-[#080D1A] p-4 sm:p-5 space-y-4">
+          <div className="lg:col-span-8 rounded-2xl border border-slate-800 bg-[#080D1A] p-4 sm:p-5 space-y-4 min-w-0">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
                 <span className="text-[11px] font-bold uppercase tracking-wider text-sky-400">
@@ -542,7 +567,7 @@ export default function AiEmployeeAgencyCommandCenter({
                   Live Interconnected AI Employee Agency Graph ({website.siteName})
                 </h3>
               </div>
-              <div className="flex items-center gap-3 text-[11px]">
+              <div className="flex flex-wrap items-center gap-3 text-[11px]">
                 <span className="inline-flex items-center gap-1.5 text-emerald-300">
                   <span className="h-2 w-2 rounded-full bg-emerald-400" /> Completed
                 </span>
@@ -556,9 +581,9 @@ export default function AiEmployeeAgencyCommandCenter({
             </div>
 
             {/* SVG + HTML Overlay Node Canvas */}
-            <div className="relative w-full overflow-x-auto rounded-2xl border border-slate-800/90 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:20px_20px] p-4">
+            <div className="relative w-full overflow-x-auto rounded-2xl border border-slate-800/90 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:20px_20px] p-3 sm:p-4">
               <svg
-                viewBox="0 0 880 510"
+                viewBox="0 0 880 500"
                 className="w-full min-w-[680px] h-auto select-none"
                 role="img"
                 aria-label="Animated AI Employee Agency Node Workflow"
@@ -571,7 +596,7 @@ export default function AiEmployeeAgencyCommandCenter({
                   </linearGradient>
                 </defs>
 
-                {/* Animated Bezier Edges Connecting Parent -> Child Sub-Agent Nodes */}
+                {/* Animated Bezier Edges + Traveling Glowing Data Pulses */}
                 {agencyState.subAgentNodes.map((node) => {
                   if (!node.parentNodeId) return null;
                   const parent = agencyState.subAgentNodes.find(
@@ -583,6 +608,7 @@ export default function AiEmployeeAgencyCommandCenter({
                   const x2 = node.nodePosition.x;
                   const y2 = node.nodePosition.y;
                   const midX = (x1 + x2) / 2;
+                  const pathId = `edge-path-${parent.id}-${node.id}`;
                   const pathD = `M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}`;
                   const isEdgeActive =
                     node.status === 'active-working' || selectedNode.id === node.id;
@@ -590,6 +616,7 @@ export default function AiEmployeeAgencyCommandCenter({
                   return (
                     <g key={`edge-${parent.id}-${node.id}`}>
                       <path
+                        id={pathId}
                         d={pathD}
                         fill="none"
                         stroke={isEdgeActive ? 'url(#edgeGradActive)' : '#1E293B'}
@@ -610,6 +637,13 @@ export default function AiEmployeeAgencyCommandCenter({
                           repeatCount="indefinite"
                         />
                       </path>
+                      <circle r={isEdgeActive ? 4 : 3} fill={node.accentHex}>
+                        <animateMotion
+                          dur={isEdgeActive ? '1.8s' : '3.4s'}
+                          repeatCount="indefinite"
+                          path={pathD}
+                        />
+                      </circle>
                     </g>
                   );
                 })}
@@ -618,7 +652,7 @@ export default function AiEmployeeAgencyCommandCenter({
                 {agencyState.subAgentNodes.map((node) => {
                   const isSelected = selectedNode.id === node.id;
                   const isWorking = node.status === 'active-working';
-                  const boxW = 210;
+                  const boxW = 216;
                   const boxH = 74;
                   const rx = node.nodePosition.x - boxW / 2;
                   const ry = node.nodePosition.y - boxH / 2;
@@ -700,7 +734,7 @@ export default function AiEmployeeAgencyCommandCenter({
                         fontWeight="700"
                         fontFamily="system-ui, sans-serif"
                       >
-                        {node.name.slice(0, 29)}
+                        {node.name.slice(0, 30)}
                       </text>
 
                       {/* Live Task Ticker */}
@@ -711,21 +745,47 @@ export default function AiEmployeeAgencyCommandCenter({
                         fontSize="9.5"
                         fontFamily="system-ui, sans-serif"
                       >
-                        {node.currentTaskTicker.slice(0, 33)}...
+                        {node.currentTaskTicker.slice(0, 34)}...
                       </text>
                     </g>
                   );
                 })}
               </svg>
             </div>
+
+            {/* Responsive Quick-Select Sub-Agent Pill Strip (Effortless on Mobile & Desktop) */}
+            <div className="space-y-1.5 pt-1">
+              <div className="text-[11px] font-bold text-slate-400">
+                Quick-Select Any Sub-Agent Node ({agencyState.subAgentNodes.length} Active Nodes):
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {agencyState.subAgentNodes.map((node) => {
+                  const isSel = selectedNode.id === node.id;
+                  return (
+                    <button
+                      key={`pill-${node.id}`}
+                      type="button"
+                      onClick={() => setSelectedNodeId(node.id)}
+                      className={`rounded-lg border px-2.5 py-1 text-[11px] font-bold transition ${
+                        isSel
+                          ? 'border-sky-400 bg-sky-500/20 text-white'
+                          : 'border-slate-800 bg-slate-950/80 text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      {node.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
 
           {/* Right 4 Columns: Clicked Node Live Inspector Card + 1-Click Jump to Text Dashboard */}
-          <div className="lg:col-span-4 rounded-2xl border border-sky-500/40 bg-slate-900/90 p-5 space-y-4 lg:sticky lg:top-20">
+          <div className="lg:col-span-4 rounded-2xl border border-sky-500/40 bg-slate-900/90 p-5 space-y-4 lg:sticky lg:top-20 min-w-0">
             <div className="flex items-center justify-between gap-2 border-b border-slate-800 pb-3">
-              <div>
+              <div className="min-w-0">
                 <span
-                  className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded"
+                  className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded inline-block"
                   style={{
                     backgroundColor: `${selectedNode.accentHex}22`,
                     color: selectedNode.accentHex,
@@ -745,11 +805,11 @@ export default function AiEmployeeAgencyCommandCenter({
               {selectedNode.liveSummaryMetrics.map((m) => (
                 <div
                   key={m.label}
-                  className="rounded-xl border border-slate-800 bg-slate-950/80 px-3 py-2 flex items-center justify-between text-xs"
+                  className="rounded-xl border border-slate-800 bg-slate-950/80 px-3 py-2 flex items-center justify-between gap-2 text-xs"
                 >
                   <span className="text-slate-400">{m.label}</span>
                   <span
-                    className={`font-bold ${
+                    className={`font-bold text-right ${
                       m.status === 'good'
                         ? 'text-emerald-300'
                         : m.status === 'warning'
@@ -777,7 +837,7 @@ export default function AiEmployeeAgencyCommandCenter({
                   {copiedId === selectedNode.id ? '✓ Copied!' : 'Copy Output'}
                 </button>
               </div>
-              <pre className="max-h-[210px] overflow-y-auto whitespace-pre-wrap rounded-xl border border-slate-800 bg-slate-950 p-3 text-[11px] leading-relaxed text-slate-200 font-mono">
+              <pre className="max-h-[210px] overflow-x-auto overflow-y-auto whitespace-pre-wrap break-words rounded-xl border border-slate-800 bg-slate-950 p-3 text-[11px] leading-relaxed text-slate-200 font-mono">
                 {selectedNode.liveOutputSnippet}
               </pre>
             </div>
@@ -802,7 +862,7 @@ export default function AiEmployeeAgencyCommandCenter({
           (Distinct, purpose-built layout & tools for each of the 6 Departments)
          ===================================================================== */}
       {viewMode === 'text-dashboard' && (
-        <div className="space-y-6">
+        <div className="space-y-6 min-w-0">
           {/* 6 Department Navigation Pills */}
           <div className="flex flex-wrap gap-2">
             {DEPARTMENT_TABS.map((tab) => {
@@ -833,7 +893,7 @@ export default function AiEmployeeAgencyCommandCenter({
                     Hidden Background Deep Research Engine
                   </span>
                   <h3 className="text-lg font-extrabold text-white mt-0.5">
-                    Extracted Brand Voice & Editorial Rubric
+                    Extracted Brand Voice &amp; Editorial Rubric
                   </h3>
                 </div>
                 <div className="space-y-3 text-xs">
@@ -851,7 +911,7 @@ export default function AiEmployeeAgencyCommandCenter({
                     </div>
                   </div>
                   <div className="rounded-xl border border-slate-800 bg-slate-950 p-3.5 space-y-1">
-                    <div className="font-bold text-emerald-300">Sentence Rhythm & AEO Rule</div>
+                    <div className="font-bold text-emerald-300">Sentence Rhythm &amp; AEO Rule</div>
                     <p className="text-slate-300 leading-relaxed">
                       {agencyState.deepResearch.brandVoiceRubric.sentenceRhythmRule}
                     </p>
@@ -871,7 +931,7 @@ export default function AiEmployeeAgencyCommandCenter({
                     SERP Intent Gap Analysis
                   </span>
                   <h3 className="text-lg font-extrabold text-white mt-0.5">
-                    Competitor Teardowns & Exploitable Content Gaps
+                    Competitor Teardowns &amp; Exploitable Content Gaps
                   </h3>
                 </div>
                 <div className="space-y-3 text-xs">
@@ -899,7 +959,7 @@ export default function AiEmployeeAgencyCommandCenter({
             </div>
           )}
 
-          {/* TAB 2: ON-PAGE SEO & EXISTING ARTICLE REFRESH (WITH PHASE B LIVE CRAWLER) */}
+          {/* TAB 2: ON-PAGE SEO & EXISTING ARTICLE REFRESH (WITH PHASE B LIVE CRAWLER + SVG) */}
           {activeDepartmentTab === 'on-page-seo' && (
             <div className="space-y-6">
               <div className="rounded-2xl border border-emerald-500/35 bg-slate-900/80 p-5 space-y-4">
@@ -909,7 +969,7 @@ export default function AiEmployeeAgencyCommandCenter({
                       On-Page SEO Sub-Agent Fleet (Schema, Internal Links, Meta/Headers, robots.txt)
                     </span>
                     <h3 className="text-lg font-extrabold text-white mt-0.5">
-                      Continuous On-Page SEO Audit & Ready-Made Code Patches
+                      Continuous On-Page SEO Audit &amp; Ready-Made Code Patches
                     </h3>
                   </div>
                   <span className="rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-extrabold text-emerald-300">
@@ -923,12 +983,12 @@ export default function AiEmployeeAgencyCommandCenter({
                   {agencyState.onPageAuditItems.map((item) => (
                     <div
                       key={item.id}
-                      className="rounded-xl border border-slate-800 bg-slate-950/90 p-4 space-y-2.5 text-xs"
+                      className="rounded-xl border border-slate-800 bg-slate-950/90 p-4 space-y-2.5 text-xs min-w-0"
                     >
                       <div className="flex items-center justify-between gap-2">
                         <span className="font-extrabold text-white">{item.title}</span>
                         <span
-                          className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                          className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold shrink-0 ${
                             item.status === 'auto-fixed' || item.status === 'healthy'
                               ? 'bg-emerald-500/20 text-emerald-300'
                               : 'bg-amber-500/20 text-amber-300'
@@ -953,7 +1013,7 @@ export default function AiEmployeeAgencyCommandCenter({
                           {copiedId === item.id ? '✓ Copied!' : 'Copy Snippet'}
                         </button>
                       </div>
-                      <pre className="max-h-[140px] overflow-y-auto whitespace-pre-wrap rounded-lg border border-slate-800 bg-slate-900 p-2.5 text-[10.5px] text-slate-200 font-mono">
+                      <pre className="max-h-[140px] overflow-x-auto overflow-y-auto whitespace-pre-wrap break-words rounded-lg border border-slate-800 bg-slate-900 p-2.5 text-[10.5px] text-slate-200 font-mono">
                         {item.generatedCodeOrCopy}
                       </pre>
                     </div>
@@ -972,7 +1032,7 @@ export default function AiEmployeeAgencyCommandCenter({
                       Live Existing Article Gap Crawler &amp; 1-Click 2026 Refresh Injector
                     </h3>
                     <p className="text-xs text-slate-300 mt-0.5">
-                      Paste any existing blog post URL (or click <strong>🔍 Live-Crawl &amp; Refresh</strong> on any discovered article below) to crawl its live HTML headings, word count, and schema, and generate a drop-in 2026 refresh section.
+                      Paste any existing blog post URL (or click <strong>🔍 Live-Crawl &amp; Refresh</strong> on any discovered article below) to crawl its live HTML headings, word count, and schema, and generate a drop-in 2026 refresh section + 6-layer SVG infographic.
                     </p>
                   </div>
                 </div>
@@ -984,7 +1044,7 @@ export default function AiEmployeeAgencyCommandCenter({
                     value={customAuditUrl}
                     onChange={(e) => setCustomAuditUrl(e.target.value)}
                     placeholder={`Enter any existing article URL on ${website.siteName} to live-crawl & refresh...`}
-                    className="flex-1 min-w-[260px] rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-xs text-white focus:border-sky-400 focus:outline-none"
+                    className="flex-1 min-w-[240px] rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-xs text-white focus:border-sky-400 focus:outline-none"
                   />
                   <button
                     type="button"
@@ -1002,14 +1062,16 @@ export default function AiEmployeeAgencyCommandCenter({
                 {liveAuditResult && (
                   <div className="rounded-2xl border border-emerald-500/40 bg-slate-950 p-4 space-y-4 text-xs">
                     <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
-                      <div>
+                      <div className="min-w-0">
                         <span className="text-[11px] font-bold text-emerald-300">
                           ✓ Live Page Audit Complete · {liveAuditResult.aiProviderUsed}
                         </span>
-                        <div className="font-extrabold text-white text-sm mt-0.5">
+                        <div className="font-extrabold text-white text-sm mt-0.5 truncate">
                           {liveAuditResult.extractedMetrics.pageTitle}
                         </div>
-                        <div className="text-[11px] text-slate-400">{liveAuditResult.pageUrl}</div>
+                        <div className="text-[11px] text-slate-400 truncate">
+                          {liveAuditResult.pageUrl}
+                        </div>
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="rounded-lg bg-amber-500/15 border border-amber-400/30 px-2.5 py-1 font-bold text-amber-300">
@@ -1050,72 +1112,96 @@ export default function AiEmployeeAgencyCommandCenter({
                       </div>
                     </div>
 
-                    {/* Side-by-Side Drop-In Refresh Markdown + Upgraded JSON-LD Patch */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <div className="flex items-center justify-between">
-                          <span className="font-bold text-emerald-300">
-                            1. Drop-In 2026 Markdown Refresh Section + Table:
-                          </span>
-                          <div className="flex items-center gap-2">
-                            {agencyState.isInternalSite && (
+                    {/* Side-by-Side Drop-In Refresh Markdown + Upgraded JSON-LD Patch + Refresh SVG */}
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+                      <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-1.5 min-w-0">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <span className="font-bold text-emerald-300">
+                              1. Drop-In 2026 Markdown Refresh Section:
+                            </span>
+                            <div className="flex items-center gap-2">
                               <button
                                 type="button"
-                                onClick={() =>
+                                onClick={() => {
                                   setAppliedRefreshUrls((prev) =>
                                     prev.includes(liveAuditResult.pageUrl)
                                       ? prev
                                       : [...prev, liveAuditResult.pageUrl]
-                                  )
-                                }
-                                className="rounded bg-emerald-500 px-2.5 py-1 text-[11px] font-extrabold text-slate-950"
+                                  );
+                                  onApplyArticleRefreshPatch?.({
+                                    pageUrl: liveAuditResult.pageUrl,
+                                    suggestedNewH2: liveAuditResult.suggestedNewH2,
+                                    upgraded50WordAeoLead:
+                                      liveAuditResult.upgraded50WordAeoLead,
+                                    dropInRefreshMarkdown:
+                                      liveAuditResult.dropInRefreshMarkdown,
+                                    refreshInfographicSvg:
+                                      liveAuditResult.refreshInfographicSvg,
+                                  });
+                                }}
+                                className="rounded bg-emerald-500 hover:bg-emerald-400 px-2.5 py-1 text-[11px] font-extrabold text-slate-950"
                               >
                                 {appliedRefreshUrls.includes(liveAuditResult.pageUrl)
-                                  ? '✓ Auto-Injected into /p/blog'
-                                  : '⚡ 1-Click Auto-Inject Internally'}
+                                  ? '✓ Injected into Article'
+                                  : '⚡ 1-Click Inject Refresh'}
                               </button>
-                            )}
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleCopy(
+                                    liveAuditResult.dropInRefreshMarkdown,
+                                    'live-refresh-md'
+                                  )
+                                }
+                                className="rounded bg-slate-800 px-2.5 py-1 text-[11px] font-bold text-sky-300"
+                              >
+                                {copiedId === 'live-refresh-md' ? '✓ Copied!' : 'Copy'}
+                              </button>
+                            </div>
+                          </div>
+                          <pre className="max-h-[210px] overflow-x-auto overflow-y-auto whitespace-pre-wrap break-words rounded-xl border border-slate-800 bg-slate-900 p-3 text-[11px] text-slate-200 font-mono">
+                            {liveAuditResult.dropInRefreshMarkdown}
+                          </pre>
+                        </div>
+
+                        <div className="space-y-1.5 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-sky-300">
+                              2. Upgraded @graph JSON-LD Patch:
+                            </span>
                             <button
                               type="button"
                               onClick={() =>
                                 handleCopy(
-                                  liveAuditResult.dropInRefreshMarkdown,
-                                  'live-refresh-md'
+                                  liveAuditResult.upgradedJsonLdPatch,
+                                  'live-refresh-schema'
                                 )
                               }
-                              className="rounded bg-slate-800 px-2.5 py-1 text-[11px] font-bold text-sky-300"
+                              className="rounded bg-slate-800 px-2.5 py-1 text-[11px] font-bold text-emerald-300"
                             >
-                              {copiedId === 'live-refresh-md' ? '✓ Copied!' : 'Copy Markdown'}
+                              {copiedId === 'live-refresh-schema' ? '✓ Copied!' : 'Copy JSON-LD'}
                             </button>
                           </div>
+                          <pre className="max-h-[210px] overflow-x-auto overflow-y-auto whitespace-pre-wrap break-words rounded-xl border border-slate-800 bg-slate-900 p-3 text-[11px] text-slate-200 font-mono">
+                            {liveAuditResult.upgradedJsonLdPatch}
+                          </pre>
                         </div>
-                        <pre className="max-h-[190px] overflow-y-auto whitespace-pre-wrap rounded-xl border border-slate-800 bg-slate-900 p-3 text-[11px] text-slate-200 font-mono">
-                          {liveAuditResult.dropInRefreshMarkdown}
-                        </pre>
                       </div>
 
-                      <div className="space-y-1.5">
-                        <div className="flex items-center justify-between">
-                          <span className="font-bold text-sky-300">
-                            2. Upgraded @graph BlogPosting + FAQPage JSON-LD:
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleCopy(
-                                liveAuditResult.upgradedJsonLdPatch,
-                                'live-refresh-schema'
-                              )
-                            }
-                            className="rounded bg-slate-800 px-2.5 py-1 text-[11px] font-bold text-emerald-300"
-                          >
-                            {copiedId === 'live-refresh-schema' ? '✓ Copied!' : 'Copy JSON-LD'}
-                          </button>
+                      {liveAuditResult.refreshInfographicSvg && (
+                        <div className="lg:col-span-4 rounded-xl border border-slate-800 bg-slate-900 p-3 flex flex-col items-center gap-2">
+                          <div className="text-[11px] font-bold text-purple-300">
+                            3. New 1080×1350 Refresh Infographic SVG
+                          </div>
+                          <div
+                            className="w-full max-w-[220px] rounded-lg overflow-hidden [&_svg]:w-full [&_svg]:h-auto"
+                            dangerouslySetInnerHTML={{
+                              __html: liveAuditResult.refreshInfographicSvg,
+                            }}
+                          />
                         </div>
-                        <pre className="max-h-[190px] overflow-y-auto whitespace-pre-wrap rounded-xl border border-slate-800 bg-slate-900 p-3 text-[11px] text-slate-200 font-mono">
-                          {liveAuditResult.upgradedJsonLdPatch}
-                        </pre>
-                      </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -1125,10 +1211,10 @@ export default function AiEmployeeAgencyCommandCenter({
                   {agencyState.existingArticleRefreshes.map((item) => (
                     <div
                       key={item.id}
-                      className="rounded-xl border border-slate-800 bg-slate-950 p-4 space-y-2.5 flex flex-col justify-between"
+                      className="rounded-xl border border-slate-800 bg-slate-950 p-4 space-y-2.5 flex flex-col justify-between min-w-0"
                     >
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
+                      <div className="space-y-2 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
                           <span className="rounded bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold text-amber-300">
                             Freshness: {item.freshnessScore}/100
                           </span>
@@ -1173,10 +1259,10 @@ export default function AiEmployeeAgencyCommandCenter({
             <div className="rounded-2xl border border-amber-500/35 bg-slate-900/80 p-5 space-y-4">
               <div>
                 <span className="text-[11px] font-bold uppercase tracking-wider text-amber-300">
-                  Off-Page Authority, Niche Directories & Journalist PR Agent
+                  Off-Page Authority, Niche Directories &amp; Journalist PR Agent
                 </span>
                 <h3 className="text-lg font-extrabold text-white mt-0.5">
-                  Ready-to-Send Backlink Outreach, Directory Bios & Data Pitches
+                  Ready-to-Send Backlink Outreach, Directory Bios &amp; Data Pitches
                 </h3>
               </div>
 
@@ -1184,9 +1270,9 @@ export default function AiEmployeeAgencyCommandCenter({
                 {agencyState.offPageOpportunities.map((opp) => (
                   <div
                     key={opp.id}
-                    className="rounded-xl border border-slate-800 bg-slate-950/90 p-4 space-y-2.5"
+                    className="rounded-xl border border-slate-800 bg-slate-950/90 p-4 space-y-2.5 min-w-0"
                   >
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-2">
                       <span className="rounded bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-300">
                         {opp.priority} Priority · {opp.status}
                       </span>
@@ -1200,10 +1286,10 @@ export default function AiEmployeeAgencyCommandCenter({
                     </div>
                     <div className="font-extrabold text-white text-sm">{opp.targetName}</div>
                     <div className="text-[11px] text-sky-300">{opp.authorityEstimate}</div>
-                    <div className="text-[11px] text-slate-400 font-mono">
+                    <div className="text-[11px] text-slate-400 font-mono break-words">
                       Search / Target: {opp.actionUrlOrQuery}
                     </div>
-                    <pre className="max-h-[160px] overflow-y-auto whitespace-pre-wrap rounded-lg border border-slate-800 bg-slate-900 p-2.5 text-[11px] text-slate-200 font-sans">
+                    <pre className="max-h-[160px] overflow-x-auto overflow-y-auto whitespace-pre-wrap break-words rounded-lg border border-slate-800 bg-slate-900 p-2.5 text-[11px] text-slate-200 font-sans">
                       {opp.readyMadePitchOrSnippet}
                     </pre>
                   </div>
@@ -1217,10 +1303,10 @@ export default function AiEmployeeAgencyCommandCenter({
             <div className="rounded-2xl border border-cyan-500/35 bg-slate-900/80 p-5 space-y-4">
               <div>
                 <span className="text-[11px] font-bold uppercase tracking-wider text-cyan-300">
-                  Technical & Local Entity SEO Monitor
+                  Technical &amp; Local Entity SEO Monitor
                 </span>
                 <h3 className="text-lg font-extrabold text-white mt-0.5">
-                  Core Web Vitals, Sitemap Indexation & Brand Entity Disambiguation
+                  Core Web Vitals, Sitemap Indexation &amp; Brand Entity Disambiguation
                 </h3>
               </div>
 
@@ -1228,9 +1314,9 @@ export default function AiEmployeeAgencyCommandCenter({
                 {agencyState.technicalLocalItems.map((item) => (
                   <div
                     key={item.id}
-                    className="rounded-xl border border-slate-800 bg-slate-950/90 p-4 space-y-2.5"
+                    className="rounded-xl border border-slate-800 bg-slate-950/90 p-4 space-y-2.5 min-w-0"
                   >
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-2">
                       <span
                         className={`rounded px-2 py-0.5 text-[10px] font-bold ${
                           item.status === 'passing'
@@ -1250,7 +1336,7 @@ export default function AiEmployeeAgencyCommandCenter({
                     </div>
                     <div className="font-extrabold text-white text-sm">{item.label}</div>
                     <p className="text-slate-300 leading-relaxed">{item.diagnosticDetail}</p>
-                    <pre className="max-h-[140px] overflow-y-auto whitespace-pre-wrap rounded-lg border border-slate-800 bg-slate-900 p-2.5 text-[10.5px] text-slate-200 font-mono">
+                    <pre className="max-h-[140px] overflow-x-auto overflow-y-auto whitespace-pre-wrap break-words rounded-lg border border-slate-800 bg-slate-900 p-2.5 text-[10.5px] text-slate-200 font-mono">
                       {item.fixSnippet}
                     </pre>
                   </div>
@@ -1265,10 +1351,10 @@ export default function AiEmployeeAgencyCommandCenter({
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <span className="text-[11px] font-bold uppercase tracking-wider text-purple-300">
-                    Autonomous Content & 6-Layer Infographic Department
+                    Autonomous Content &amp; 6-Layer Infographic Department
                   </span>
                   <h3 className="text-lg font-extrabold text-white mt-0.5">
-                    Active & Completed Articles ({completedArticlesCount} of {jobs.length} Ready)
+                    Active &amp; Completed Articles ({completedArticlesCount} of {jobs.length} Ready)
                   </h3>
                 </div>
                 <button
@@ -1288,7 +1374,7 @@ export default function AiEmployeeAgencyCommandCenter({
                   return (
                     <div
                       key={job.id}
-                      className={`rounded-xl border p-4 flex flex-col justify-between gap-3 ${
+                      className={`rounded-xl border p-4 flex flex-col justify-between gap-3 min-w-0 ${
                         isWritingNow
                           ? 'border-sky-400 bg-sky-950/30'
                           : isDone
@@ -1296,8 +1382,8 @@ export default function AiEmployeeAgencyCommandCenter({
                             : 'border-slate-800 bg-slate-950/60'
                       }`}
                     >
-                      <div className="space-y-1.5">
-                        <div className="flex items-center justify-between">
+                      <div className="space-y-1.5 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
                           <span className="rounded bg-slate-800 px-2 py-0.5 text-[10px] font-bold text-slate-300">
                             Article #{idx + 1} · KD {job.kdProxyScore}
                           </span>
@@ -1329,7 +1415,7 @@ export default function AiEmployeeAgencyCommandCenter({
                           onClick={() => onSelectArticleForStudio(job)}
                           className="rounded-lg bg-sky-500/20 border border-sky-500/40 hover:bg-sky-500/30 px-3 py-1.5 text-[11px] font-bold text-sky-200"
                         >
-                          Preview Article, 4 Infographics & Pins →
+                          Preview Article, 4 Infographics &amp; Pins →
                         </button>
                         <button
                           type="button"
@@ -1381,7 +1467,7 @@ export default function AiEmployeeAgencyCommandCenter({
                     <div className="rounded-xl border border-emerald-500/35 bg-slate-950 p-4 flex flex-wrap items-center justify-between gap-3">
                       <div className="space-y-1">
                         <div className="text-[11px] font-bold text-emerald-300">
-                          ★ Promoted Winner Formula ({socialAnalytics.outperformanceMultiplier})
+                          ★ Promoted &amp; Saved Winner Formula ({socialAnalytics.outperformanceMultiplier})
                         </div>
                         <div className="font-extrabold text-white text-sm">
                           {socialAnalytics.promotedWinnerFormula.visualArchetype} ·{' '}
@@ -1400,11 +1486,11 @@ export default function AiEmployeeAgencyCommandCenter({
                       {socialAnalytics.networkSnapshots.map((snap) => (
                         <div
                           key={snap.networkId}
-                          className="rounded-xl border border-slate-800 bg-slate-950 p-4 space-y-2"
+                          className="rounded-xl border border-slate-800 bg-slate-950 p-4 space-y-2 min-w-0"
                         >
-                          <div className="flex items-center justify-between">
+                          <div className="flex items-center justify-between gap-2">
                             <span className="font-extrabold text-white">{snap.networkLabel}</span>
-                            <span className="rounded bg-pink-500/15 px-2 py-0.5 text-[10px] font-bold text-pink-300">
+                            <span className="rounded bg-pink-500/15 px-2 py-0.5 text-[10px] font-bold text-pink-300 shrink-0">
                               Save Rate: {snap.saveRatePercent}%
                             </span>
                           </div>
@@ -1445,11 +1531,11 @@ export default function AiEmployeeAgencyCommandCenter({
                 {agencyState.socialAgentTrees.map((tree) => (
                   <div
                     key={tree.networkId}
-                    className="rounded-2xl border border-slate-800 bg-slate-900/80 p-5 space-y-4"
+                    className="rounded-2xl border border-slate-800 bg-slate-900/80 p-5 space-y-4 min-w-0"
                   >
                     <div>
                       <span
-                        className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded"
+                        className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded inline-block"
                         style={{
                           backgroundColor: `${tree.accentHex}22`,
                           color: tree.accentHex,
@@ -1474,7 +1560,7 @@ export default function AiEmployeeAgencyCommandCenter({
                           <div className="flex items-center justify-between gap-2">
                             <span className="font-bold text-white">{sub.name}</span>
                             <span
-                              className={`rounded-full px-2 py-0.5 text-[9.5px] font-extrabold ${
+                              className={`rounded-full px-2 py-0.5 text-[9.5px] font-extrabold shrink-0 ${
                                 sub.status === 'active-working'
                                   ? 'bg-sky-500/20 text-sky-300 animate-pulse'
                                   : sub.status === 'completed'

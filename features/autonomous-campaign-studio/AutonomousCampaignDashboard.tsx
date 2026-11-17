@@ -47,6 +47,7 @@ import type {
   PinterestPinCandidate,
   SocialChannelConnection,
   WebsitePublishingMode,
+  WinnerFormulaRecord,
 } from '@/lib/autonomous-agents/types';
 
 export { SIX_IMPLEMENTATION_PHASES };
@@ -157,7 +158,6 @@ export default function AutonomousCampaignDashboard() {
   const [activeStationIdx, setActiveStationIdx] = useState<number>(0);
   const [completedJobIdsInRun, setCompletedJobIdsInRun] = useState<string[]>([]);
   const [transitionBannerText, setTransitionBannerText] = useState<string>('');
-  const [autopilotActiveBanner, setAutopilotActiveBanner] = useState<boolean>(false);
   const [show24hAgencyCommandCenter, setShow24hAgencyCommandCenter] = useState<boolean>(true);
 
   // Step 4 Results & Delivery State
@@ -570,7 +570,6 @@ export default function AutonomousCampaignDashboard() {
     setCompletedJobIdsInRun([]);
     setTransitionBannerText('');
     if (overrideContext?.is24HourAutopilot) {
-      setAutopilotActiveBanner(true);
       setShow24hAgencyCommandCenter(true);
     }
 
@@ -749,6 +748,91 @@ export default function AutonomousCampaignDashboard() {
       jobsToWrite: scanResult.jobs,
       is24HourAutopilot: true,
     });
+  };
+
+  /**
+   * Phase B Callback: Persist a 1-Click Article Refresh Patch into `studioState` (and re-publish internal blog post if applicable)
+   */
+  const handleApplyArticleRefreshPatch = (params: {
+    pageUrl: string;
+    suggestedNewH2: string;
+    upgraded50WordAeoLead: string;
+    dropInRefreshMarkdown: string;
+    refreshInfographicSvg?: string;
+  }) => {
+    if (!activeCampaign || !activeWebsite) return;
+    const nowIso = new Date().toISOString();
+
+    updateState((prev) => {
+      const updatedCampaigns = prev.campaigns.map((camp) => {
+        if (camp.id !== activeCampaign.id) return camp;
+        const targetJob =
+          camp.jobs.find(
+            (j) =>
+              j.publishedUrl === params.pageUrl ||
+              params.pageUrl.endsWith(j.urlSlug)
+          ) || camp.jobs[0];
+
+        if (!targetJob) return camp;
+
+        const updatedJobs = camp.jobs.map((job) => {
+          if (job.id !== targetJob.id) return job;
+          const baseMd =
+            job.compiledArticleMarkdown ||
+            compileJobArticleMarkdown(job, activeWebsite);
+          const refreshedMd = `${baseMd}\n\n${params.dropInRefreshMarkdown}`;
+          const nextSvgs = params.refreshInfographicSvg
+            ? [...(job.sectionInfographicSvgs || []), params.refreshInfographicSvg]
+            : job.sectionInfographicSvgs;
+
+          const nextJob: AutomatedArticleJob = {
+            ...job,
+            aeoDirectAnswer50Words: params.upgraded50WordAeoLead,
+            compiledArticleMarkdown: refreshedMd,
+            sectionInfographicSvgs: nextSvgs,
+            updatedAtIso: nowIso,
+          };
+
+          if (activeWebsite.publishingMode === 'internal-doitwithai-site') {
+            publishJobToInternalWebsiteStore({
+              job: nextJob,
+              website: activeWebsite,
+            });
+          }
+          return nextJob;
+        });
+
+        return { ...camp, jobs: updatedJobs, updatedAtIso: nowIso };
+      });
+
+      return { ...prev, campaigns: updatedCampaigns, lastSavedAtIso: nowIso };
+    });
+
+    setStatusMessage(
+      activeWebsite.publishingMode === 'internal-doitwithai-site'
+        ? `Auto-injected 2026 refresh section ("${params.suggestedNewH2}") & updated your internal DoItWithAI blog post!`
+        : `Injected 2026 refresh section ("${params.suggestedNewH2}") into active article state!`
+    );
+  };
+
+  /**
+   * Phase D Callback: Persist newly promoted Social Winner Formula into `studioState.winnerFormulas`
+   */
+  const handlePromoteSocialWinnerFormula = (winner: WinnerFormulaRecord) => {
+    const nowIso = new Date().toISOString();
+    updateState((prev) => ({
+      ...prev,
+      winnerFormulas: [
+        winner,
+        ...prev.winnerFormulas.filter(
+          (w) => w.winningPinAngle !== winner.winningPinAngle
+        ),
+      ].slice(0, 12),
+      lastSavedAtIso: nowIso,
+    }));
+    setStatusMessage(
+      `Synced live social telemetry & promoted winning formula "${winner.winningPinAngle}" (${winner.saveRatePercent}% Save Rate) to future 24/7 cycles!`
+    );
   };
 
   /**
@@ -937,23 +1021,23 @@ export default function AutonomousCampaignDashboard() {
     return (
       <div className="min-h-screen bg-[#0B0F17] text-slate-100 flex items-center justify-center p-8">
         <div className="text-sm text-slate-400 animate-pulse">
-          Loading Autonomous Content & 24/7 AI Employee Agency OS...
+          Loading Autonomous Content &amp; 24/7 AI Employee Agency OS...
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0B0F17] text-slate-100">
+    <div className="min-h-screen bg-[#0B0F17] text-slate-100 overflow-x-hidden">
       {/* Top Mode & Studio Bar */}
       <header className="border-b border-slate-800/80 bg-[#0F1623]/95 backdrop-blur sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-3 py-1 text-xs font-bold text-emerald-300">
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-3 py-1 text-xs font-bold text-emerald-300 shrink-0">
               <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
               Universal Deep Research + 24/7 AI Agency
             </span>
-            <h1 className="text-base sm:text-lg font-extrabold tracking-tight text-white">
+            <h1 className="text-base sm:text-lg font-extrabold tracking-tight text-white truncate">
               Multi-Article Batch &amp; 24/7 AI Employee Agency OS
             </h1>
           </div>
@@ -973,7 +1057,7 @@ export default function AutonomousCampaignDashboard() {
                 setCurrentStep(1);
               }}
               className={`rounded-xl border px-3 py-1.5 font-bold transition ${
-                workflowMode === 'multi-article-batch'
+                workflowMode === 'multi-article-batch' && currentStep !== 4
                   ? 'border-sky-400 bg-sky-500/20 text-sky-200'
                   : 'border-slate-700 bg-slate-900 text-slate-300 hover:border-slate-600'
               }`}
@@ -1027,14 +1111,14 @@ export default function AutonomousCampaignDashboard() {
         {/* MAIN 2-PANEL GUIDED WORKSPACE */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* LEFT PANEL: 4-Step Guided Stepper & Active Site DNA */}
-          <aside className="lg:col-span-4 xl:col-span-3 rounded-2xl border border-slate-800/90 bg-slate-900/70 p-4 space-y-4 lg:sticky lg:top-20">
+          <aside className="lg:col-span-4 xl:col-span-3 rounded-2xl border border-slate-800/90 bg-slate-900/70 p-4 space-y-4 lg:sticky lg:top-20 min-w-0">
             <div className="border-b border-slate-800 pb-3">
               <div className="text-[11px] font-bold uppercase tracking-wider text-sky-400">
                 {workflowMode === 'autopilot-24h'
                   ? '⚡ 24/7 Active AI Employee Agency'
                   : 'Simple 4-Step Automation'}
               </div>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">
                 {workflowMode === 'autopilot-24h'
                   ? 'Enter only your Website URL. 6 AI Departments audit On-Page, Off-Page & Technical SEO, write articles, and build social packs 24/7.'
                   : 'Enter your URL, pick real-time low-KD topics, and let AI write all articles, infographics & social packs.'}
@@ -1124,12 +1208,12 @@ export default function AutonomousCampaignDashboard() {
           </aside>
 
           {/* RIGHT PANEL: Active Step Canvas */}
-          <section className="lg:col-span-8 xl:col-span-9">
+          <section className="lg:col-span-8 xl:col-span-9 min-w-0">
             {/* =========================================================
                 STEP 1: ENTER WEBSITE URL & CHOOSE AUTOMATION MODE
                ========================================================= */}
             {currentStep === 1 && (
-              <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6 sm:p-8 space-y-6">
+              <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 sm:p-8 space-y-6">
                 <div className="max-w-3xl space-y-2">
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-sky-500/15 border border-sky-500/30 px-3 py-1 text-xs font-bold text-sky-300">
                     Step 1 of 4 · Universal Deep Research &amp; Niche Analysis
@@ -1155,12 +1239,12 @@ export default function AutonomousCampaignDashboard() {
                         : 'border-slate-800 bg-slate-950/60 hover:border-slate-700'
                     }`}
                   >
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-2">
                       <span className="text-sm font-extrabold text-white">
                         📚 Mode A: Multi-Article Guided Batch (3–10 Articles)
                       </span>
                       {workflowMode === 'multi-article-batch' && (
-                        <span className="rounded-full bg-sky-500 px-2 py-0.5 text-[10px] font-bold text-slate-950">
+                        <span className="rounded-full bg-sky-500 px-2 py-0.5 text-[10px] font-bold text-slate-950 shrink-0">
                           Active
                         </span>
                       )}
@@ -1179,12 +1263,12 @@ export default function AutonomousCampaignDashboard() {
                         : 'border-slate-800 bg-slate-950/60 hover:border-slate-700'
                     }`}
                   >
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-2">
                       <span className="text-sm font-extrabold text-white">
                         ⚡ Mode B: 24/7 Active AI Employee Agency (Full OS)
                       </span>
                       {workflowMode === 'autopilot-24h' && (
-                        <span className="rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-bold text-slate-950">
+                        <span className="rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-bold text-slate-950 shrink-0">
                           Active
                         </span>
                       )}
@@ -1206,12 +1290,12 @@ export default function AutonomousCampaignDashboard() {
                         : 'border-slate-800 bg-slate-950/50 hover:border-slate-700'
                     }`}
                   >
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-2">
                       <span className="text-xs font-extrabold text-white">
                         🌐 External Website URL (WordPress, Shopify, Custom)
                       </span>
                       {siteSourceMode === 'external-url' && (
-                        <span className="text-[10px] font-bold text-sky-400">✓ Selected</span>
+                        <span className="text-[10px] font-bold text-sky-400 shrink-0">✓ Selected</span>
                       )}
                     </div>
                     <p className="text-[11px] text-slate-400 mt-1">
@@ -1228,12 +1312,12 @@ export default function AutonomousCampaignDashboard() {
                         : 'border-slate-800 bg-slate-950/50 hover:border-slate-700'
                     }`}
                   >
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-2">
                       <span className="text-xs font-extrabold text-white">
                         ⚡ My DoItWithAI Builder Website (`/p/[slug]/blog`)
                       </span>
                       {siteSourceMode === 'internal-builder' && (
-                        <span className="text-[10px] font-bold text-emerald-400">✓ Selected</span>
+                        <span className="text-[10px] font-bold text-emerald-400 shrink-0">✓ Selected</span>
                       )}
                     </div>
                     <p className="text-[11px] text-slate-400 mt-1">
@@ -1243,7 +1327,7 @@ export default function AutonomousCampaignDashboard() {
                 </div>
 
                 {/* Focused URL & Optional Niche Inputs */}
-                <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-5 space-y-4">
+                <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4 sm:p-5 space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
                     <div className="sm:col-span-9">
                       {siteSourceMode === 'external-url' ? (
@@ -1400,7 +1484,10 @@ export default function AutonomousCampaignDashboard() {
                   {activeCampaign.jobs.length > 0 && (
                     <button
                       type="button"
-                      onClick={() => setCurrentStep(4)}
+                      onClick={() => {
+                        setShow24hAgencyCommandCenter(true);
+                        setCurrentStep(4);
+                      }}
                       className="text-xs font-semibold text-sky-400 hover:text-white"
                     >
                       Open 24/7 AI Agency Graph &amp; {activeCampaign.jobs.length} Ready Articles →
@@ -1414,7 +1501,7 @@ export default function AutonomousCampaignDashboard() {
                 STEP 2: REVIEW & SELECT TOPIC IDEAS (OR REGENERATE FRESH IDEAS)
                ========================================================= */}
             {currentStep === 2 && (
-              <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6 sm:p-8 space-y-6">
+              <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 sm:p-8 space-y-6">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div className="space-y-1.5">
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-3 py-1 text-xs font-bold text-emerald-300">
@@ -1584,7 +1671,7 @@ export default function AutonomousCampaignDashboard() {
                 STEP 3: LIVE ANIMATED MULTI-ARTICLE EXECUTION PIPELINE
                ========================================================= */}
             {currentStep === 3 && (
-              <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6 sm:p-8 space-y-6">
+              <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 sm:p-8 space-y-6">
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   <div className="space-y-1">
                     <span className="inline-flex items-center gap-2 rounded-full bg-sky-500/15 border border-sky-500/30 px-3 py-1 text-xs font-bold text-sky-300">
@@ -1714,7 +1801,7 @@ export default function AutonomousCampaignDashboard() {
                         >
                           <div className="flex items-center gap-3 min-w-0">
                             <span
-                              className={`h-7 w-7 rounded-full flex items-center justify-center text-xs font-extrabold ${
+                              className={`h-7 w-7 rounded-full flex items-center justify-center text-xs font-extrabold shrink-0 ${
                                 isDone
                                   ? 'bg-emerald-500 text-slate-950'
                                   : isCurrent
@@ -1761,12 +1848,12 @@ export default function AutonomousCampaignDashboard() {
                 STEP 4: 24/7 AI EMPLOYEE AGENCY COMMAND CENTER + MULTI-ARTICLE STUDIO
                ========================================================= */}
             {currentStep === 4 && selectedJob && (
-              <div className="space-y-6">
+              <div className="space-y-6 min-w-0">
                 {/* Toggle Bar for 24/7 Active AI Employee Agency Node Graph & 6 Departments */}
-                <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-800 bg-slate-900/80 px-5 py-3.5 text-xs">
-                  <div className="flex items-center gap-2.5">
-                    <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-ping" />
-                    <span className="font-extrabold text-white">
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-800 bg-slate-900/80 px-4 sm:px-5 py-3.5 text-xs">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-ping shrink-0" />
+                    <span className="font-extrabold text-white truncate">
                       24/7 Active AI Employee Agency (Animated Node Graph + On-Page, Off-Page, Tech SEO &amp; Social)
                     </span>
                   </div>
@@ -1788,6 +1875,10 @@ export default function AutonomousCampaignDashboard() {
                     scoutReport={latestScoutReport}
                     activeWritingJobId={activeRunningJobId || selectedJob.id}
                     isRunningBatch={isRunningBatch}
+                    keyOverrides={{
+                      geminiKey: studioState.byokConfig.geminiFreeKeyMasked,
+                      groqKey: studioState.byokConfig.groqFreeKeyMasked,
+                    }}
                     onSelectArticleForStudio={(job) => {
                       setSelectedJobId(job.id);
                       setSelectedSectionIdx(0);
@@ -1795,11 +1886,13 @@ export default function AutonomousCampaignDashboard() {
                     }}
                     onRunNext24hCycle={() => void handleStart24HourActiveAutopilot()}
                     onOpenInWriterStudio={(job) => void handleOpenInContentWriterStudio(job)}
+                    onApplyArticleRefreshPatch={handleApplyArticleRefreshPatch}
+                    onPromoteSocialWinnerFormula={handlePromoteSocialWinnerFormula}
                   />
                 )}
 
                 {/* MULTI-ARTICLE SWITCHER BAR + FULL CONTENT WRITER STUDIO BRIDGE */}
-                <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6 space-y-5">
+                <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 sm:p-6 space-y-5 min-w-0">
                   <div className="flex flex-wrap items-center justify-between gap-4">
                     <div>
                       <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-3 py-1 text-xs font-bold text-emerald-300">
@@ -1857,7 +1950,7 @@ export default function AutonomousCampaignDashboard() {
                             }`}
                           >
                             <span
-                              className={`px-1.5 py-0.5 rounded text-[10px] font-extrabold ${
+                              className={`px-1.5 py-0.5 rounded text-[10px] font-extrabold shrink-0 ${
                                 isSelected
                                   ? 'bg-sky-400 text-slate-950'
                                   : 'bg-slate-800 text-slate-400'
@@ -1875,18 +1968,18 @@ export default function AutonomousCampaignDashboard() {
                   {/* Two Clear Delivery Cards: (1) Website Blog Delivery & (2) Social Media Delivery */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
                     {/* Card A: Website Blog Delivery */}
-                    <div className="rounded-2xl border border-emerald-500/35 bg-slate-950/80 p-4 space-y-3">
-                      <div className="flex items-center justify-between">
+                    <div className="rounded-2xl border border-emerald-500/35 bg-slate-950/80 p-4 space-y-3 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
                         <span className="text-xs font-extrabold uppercase tracking-wider text-emerald-300">
                           1. Website Blog Post Delivery
                         </span>
-                        <span className="rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-[10px] font-bold text-emerald-300">
+                        <span className="rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-[10px] font-bold text-emerald-300 shrink-0">
                           {activeWebsite.publishingMode === 'internal-doitwithai-site'
                             ? 'Internal DoItWithAI Site (/p/blog)'
                             : 'External Website Pack'}
                         </span>
                       </div>
-                      <p className="text-xs text-slate-300 leading-relaxed">
+                      <p className="text-xs text-slate-300 leading-relaxed break-words">
                         {activeWebsite.publishingMode === 'internal-doitwithai-site'
                           ? `1-Click publishes directly to your DoItWithAI website (${
                               selectedJob.publishedUrl ||
@@ -1940,13 +2033,13 @@ export default function AutonomousCampaignDashboard() {
                     </div>
 
                     {/* Card B: Social Media Delivery */}
-                    <div className="rounded-2xl border border-sky-500/35 bg-slate-950/80 p-4 space-y-3">
-                      <div className="flex items-center justify-between">
+                    <div className="rounded-2xl border border-sky-500/35 bg-slate-950/80 p-4 space-y-3 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
                         <span className="text-xs font-extrabold uppercase tracking-wider text-sky-300">
                           2. Social Media &amp; Visuals Pack
                         </span>
-                        <span className="rounded-full bg-amber-400/20 px-2.5 py-0.5 text-[10px] font-bold text-amber-300">
-                          1-Click Download Pack (Auto-Publishes When Social Connected)
+                        <span className="rounded-full bg-amber-400/20 px-2.5 py-0.5 text-[10px] font-bold text-amber-300 shrink-0">
+                          1-Click Download Pack
                         </span>
                       </div>
                       <p className="text-xs text-slate-300 leading-relaxed">
@@ -1980,9 +2073,9 @@ export default function AutonomousCampaignDashboard() {
                 </div>
 
                 {/* Clean 4-Pill Visual Preview Switcher for Selected Job */}
-                <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6 space-y-5">
+                <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 sm:p-6 space-y-5 min-w-0">
                   <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4">
-                    <div>
+                    <div className="min-w-0">
                       <div className="text-xs font-bold text-sky-400">
                         GEO Citation Readiness Score: {selectedJob.geoReadiness.overallScore}/100 ·
                         Primary Keyword: &ldquo;{selectedJob.primaryKeyword}&rdquo;
@@ -2024,7 +2117,7 @@ export default function AutonomousCampaignDashboard() {
                         <strong className="text-emerald-300">50-Word AI Answer Lead: </strong>
                         {selectedJob.aeoDirectAnswer50Words}
                       </div>
-                      <pre className="max-h-[460px] overflow-y-auto whitespace-pre-wrap rounded-xl border border-slate-800 bg-slate-950 p-4 text-xs leading-relaxed text-slate-200 font-sans">
+                      <pre className="max-h-[460px] overflow-x-auto overflow-y-auto whitespace-pre-wrap break-words rounded-xl border border-slate-800 bg-slate-950 p-4 text-xs leading-relaxed text-slate-200 font-sans">
                         {selectedJob.compiledArticleMarkdown ||
                           compileJobArticleMarkdown(selectedJob, activeWebsite)}
                       </pre>
@@ -2137,9 +2230,9 @@ export default function AutonomousCampaignDashboard() {
                       {selectedJob.arcadsVariations.map((variation) => (
                         <div
                           key={variation.id}
-                          className="rounded-xl border border-slate-800 bg-slate-950/90 p-4 space-y-2 text-xs"
+                          className="rounded-xl border border-slate-800 bg-slate-950/90 p-4 space-y-2 text-xs min-w-0"
                         >
-                          <div className="flex items-center justify-between">
+                          <div className="flex items-center justify-between gap-2">
                             <span className="rounded bg-sky-500/15 px-2 py-0.5 text-[10px] font-bold text-sky-300 uppercase">
                               {variation.channel} · {variation.archetypeLabel}
                             </span>
@@ -2160,7 +2253,9 @@ export default function AutonomousCampaignDashboard() {
                           <p className="text-slate-300 whitespace-pre-line leading-relaxed">
                             {variation.bodyCopy}
                           </p>
-                          <div className="text-sky-300 font-medium">{variation.ctaLine}</div>
+                          <div className="text-sky-300 font-medium break-words">
+                            {variation.ctaLine}
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -2175,7 +2270,7 @@ export default function AutonomousCampaignDashboard() {
             OPTIONAL COLLAPSIBLE ADVANCED SETTINGS, DEDICATED ENV VARS & FREE API GUIDE
            ========================================================= */}
         {showAdvancedDrawer && (
-          <section className="rounded-2xl border border-slate-700/80 bg-slate-900/90 p-6 space-y-5">
+          <section className="rounded-2xl border border-slate-700/80 bg-slate-900/90 p-5 sm:p-6 space-y-5">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4">
               <div>
                 <span className="text-[11px] font-bold uppercase tracking-wider text-sky-400">

@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
-import { runAutomationJsonPrompt } from "@/lib/autonomous-agents/automation-ai-router";
+import {
+  runAutomationJsonPrompt,
+  type AutomationKeyOverrides,
+} from "@/lib/autonomous-agents/automation-ai-router";
 import {
   buildCloudHeartbeatMorningBriefing,
   type CloudHeartbeatMorningBriefing,
@@ -12,6 +15,7 @@ import type {
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 45;
 
 const DEFAULT_CRON_WEBSITE: ConnectedWebsiteProfile = {
   id: "site-doitwithai-main",
@@ -56,13 +60,7 @@ export interface Cron24hPostRequest {
   website?: ConnectedWebsiteProfile;
   jobs?: AutomatedArticleJob[];
   scoutReport?: WebsiteScoutReport | null;
-  keyOverrides?: {
-    geminiKey?: string;
-    groqKey?: string;
-    openRouterKey?: string;
-    cerebrasKey?: string;
-    mistralKey?: string;
-  };
+  keyOverrides?: AutomationKeyOverrides;
 }
 
 /**
@@ -81,8 +79,15 @@ export async function POST(request: Request) {
       newlyGeneratedTopicHook: string;
     }
 
+    const buildDeterministicHeartbeat = (): AiHeartbeatSynthesis => ({
+      executiveMorningSummary: `Over the last 24-hour cycle for ${website.siteName}, your 6 AI Employee Departments audited sitemap URLs, verified @graph JSON-LD schema and <580px SERP title ceilings, prepared ${
+        Math.max(1, jobs.length)
+      } long-form articles with standalone 1080×1350 section infographics, and staged Pinterest 2:3 Pins + LinkedIn 8-slide carousel decks.`,
+      newlyGeneratedTopicHook: `2026 ${website.primaryNiche.split(",")[0] || website.siteName} Benchmark: How to Cut Setup Friction by 40% Using Structured Checklists`,
+    });
+
     const aiRes = await runAutomationJsonPrompt<AiHeartbeatSynthesis>({
-      systemInstruction:
+      systemPrompt:
         "You are the Chief Autonomous AI Officer for a 24/7 SEO, Content & Social Media Agency. Return strictly valid JSON with no markdown fences.",
       userPrompt: `Generate a concise 24-Hour Morning Briefing for this website:
 - Website Name: ${website.siteName}
@@ -96,8 +101,10 @@ Return a JSON object with:
   "newlyGeneratedTopicHook": "One fresh, high-intent Low-KD article title discovered for tomorrow's 24h cycle"
 }`,
       temperature: 0.4,
-      maxTokens: 500,
+      maxOutputTokens: 500,
+      timeoutMs: 12_000,
       keyOverrides: body.keyOverrides,
+      deterministicFallback: buildDeterministicHeartbeat,
     });
 
     const briefing: CloudHeartbeatMorningBriefing = buildCloudHeartbeatMorningBriefing({
@@ -105,9 +112,7 @@ Return a JSON object with:
       jobs,
       scoutReport: body.scoutReport,
       executionMode: "manual-cloud-heartbeat",
-      aiProviderUsed: aiRes.ok
-        ? `${aiRes.provider} (${aiRes.model})`
-        : "Deterministic 24/7 Heartbeat Synthesizer",
+      aiProviderUsed: aiRes.providerUsed,
       customExecutiveSummary: aiRes.data?.executiveMorningSummary,
       customRisingTopicHook: aiRes.data?.newlyGeneratedTopicHook,
     });

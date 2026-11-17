@@ -1,22 +1,23 @@
 import { NextResponse } from "next/server";
-import { runAutomationJsonPrompt } from "@/lib/autonomous-agents/automation-ai-router";
+import {
+  runAutomationJsonPrompt,
+  type AutomationKeyOverrides,
+} from "@/lib/autonomous-agents/automation-ai-router";
+import { renderSectionInfographicSvg } from "@/lib/autonomous-agents/byok-batch-runner";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 45;
 
 export interface LivePageAuditRequest {
   pageUrl: string;
   siteName?: string;
   primaryNiche?: string;
+  brandPrimaryHex?: string;
+  brandSecondaryHex?: string;
   isInternalSite?: boolean;
   internalBuilderSlug?: string;
-  keyOverrides?: {
-    geminiKey?: string;
-    groqKey?: string;
-    openRouterKey?: string;
-    cerebrasKey?: string;
-    mistralKey?: string;
-  };
+  keyOverrides?: AutomationKeyOverrides;
 }
 
 export interface LivePageAuditResult {
@@ -41,6 +42,7 @@ export interface LivePageAuditResult {
   suggestedNewH2: string;
   dropInRefreshMarkdown: string;
   upgradedJsonLdPatch: string;
+  refreshInfographicSvg: string;
 }
 
 function stripTags(html: string): string {
@@ -68,7 +70,7 @@ function extractTagContents(html: string, tag: string, maxItems = 12): string[] 
 
 export async function POST(request: Request) {
   try {
-    const body = (await request.json()) as LivePageAuditRequest;
+    const body = (await request.json().catch(() => ({}))) as LivePageAuditRequest;
     const rawUrl = (body.pageUrl || "").trim();
     if (!rawUrl) {
       return NextResponse.json(
@@ -80,20 +82,22 @@ export async function POST(request: Request) {
     const pageUrl = /^https?:\/\//i.test(rawUrl) ? rawUrl : `https://${rawUrl}`;
     const siteName = (body.siteName || "Website").trim();
     const primaryNiche = (body.primaryNiche || "Digital Strategy & Guides").trim();
+    const brandPrimaryHex = body.brandPrimaryHex || "#4A6CF7";
+    const brandSecondaryHex = body.brandSecondaryHex || "#10B981";
 
     let liveCrawlSucceeded = false;
     let pageTitle = "";
     let metaDescription = "";
     let h1Heading = "";
     let h2Headings: string[] = [];
-    let wordCountEstimate = 640;
+    let wordCountEstimate = 680;
     let jsonLdScriptsFound = 0;
-    let internalLinksCount = 3;
+    let internalLinksCount = 4;
     let imagesOrSvgsCount = 1;
 
     try {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 5500);
+      const timeout = setTimeout(() => controller.abort(), 5000);
       const res = await fetch(pageUrl, {
         headers: {
           "User-Agent":
@@ -180,8 +184,29 @@ export async function POST(request: Request) {
       faqAnswer: string;
     }
 
+    const buildDeterministicRefresh = (): AiRefreshPayload => {
+      const defaultLead = `To get measurable results with ${humanizedTopic.toLowerCase()} in 2026, prioritize structured baseline criteria, eliminate high-friction bottlenecks first, and validate every stage against clear weekly benchmarks. Pairing step-by-step checklists with side-by-side comparisons prevents costly trial-and-error and improves long-term consistency across your workflow.`;
+      const defaultH2 = `2026 ${humanizedTopic} Comparison Matrix & Step-by-Step Checklist`;
+      return {
+        freshnessScore: liveCrawlSucceeded ? 74 : 71,
+        aeoCitationScore: 78,
+        detectedGaps: [
+          jsonLdScriptsFound === 0
+            ? "Missing connected @graph JSON-LD (BlogPosting + FAQPage) schema markup"
+            : "Existing schema lacks FAQPage entity nodes for AI Answer Engine citations",
+          "Missing a 45–55 word direct AEO Answer Lead immediately below the primary H2",
+          `No 2026 side-by-side comparison matrix benchmarking ${humanizedTopic.toLowerCase()} options`,
+        ],
+        upgraded50WordAeoLead: defaultLead,
+        suggestedNewH2: defaultH2,
+        dropInRefreshMarkdown: `## ${defaultH2}\n\n${defaultLead}\n\n| Evaluation Criteria | Outdated Approach | 2026 Best-Practice Protocol |\n| :--- | :--- | :--- |\n| **Primary Focus** | Generic, unverified guesswork | Evidence-backed ${primaryNiche.toLowerCase()} benchmarks |\n| **Implementation Speed** | Slow manual trial and error | 15-minute structured checklist |\n| **Long-Term Reliability** | Inconsistent outcomes | Measurable weekly compounding gains |\n\n* **Audit Your Baseline First**: Document your current ${humanizedTopic.toLowerCase()} metrics before changing core variables.\n* **Apply the 80/20 Priority Filter**: Focus on the top two high-impact levers highlighted in the table above.\n* **Review Every 30 Days**: Re-verify performance against updated 2026 benchmarks.`,
+        faqQuestion: `What is the fastest way to improve ${humanizedTopic.toLowerCase()} in 2026?`,
+        faqAnswer: `Start by replacing ad-hoc routines with a documented 3-step benchmark checklist, tracking weekly outcomes, and auditing key bottlenecks every 30 days.`,
+      };
+    };
+
     const aiResponse = await runAutomationJsonPrompt<AiRefreshPayload>({
-      systemInstruction:
+      systemPrompt:
         "You are a Senior Technical & On-Page GEO/AEO Content Refresh Architect. Return strictly valid JSON with no markdown fences.",
       userPrompt: `Audit this existing blog page and generate a 2026 Content Refresh & Gap Patch:
 - URL: ${pageUrl}
@@ -204,39 +229,27 @@ Return a JSON object with:
   "faqAnswer": "Direct 40-word answer"
 }`,
       temperature: 0.35,
-      maxTokens: 1400,
+      maxOutputTokens: 1400,
+      timeoutMs: 14_000,
       keyOverrides: body.keyOverrides,
+      deterministicFallback: buildDeterministicRefresh,
     });
 
+    const fallback = buildDeterministicRefresh();
+    const payload = aiResponse.data || fallback;
+
     const detectedGaps =
-      aiResponse.data?.detectedGaps && aiResponse.data.detectedGaps.length > 0
-        ? aiResponse.data.detectedGaps
-        : [
-            jsonLdScriptsFound === 0
-              ? "Missing connected @graph JSON-LD (BlogPosting + FAQPage) schema markup"
-              : "Existing schema lacks FAQPage entity nodes for AI Answer Engine citations",
-            "Missing a 45–55 word direct AEO Answer Lead immediately below the primary H2",
-            `No 2026 side-by-side comparison matrix benchmarking ${humanizedTopic.toLowerCase()} options`,
-          ];
+      Array.isArray(payload.detectedGaps) && payload.detectedGaps.length > 0
+        ? payload.detectedGaps
+        : fallback.detectedGaps;
 
     const upgraded50WordAeoLead =
-      aiResponse.data?.upgraded50WordAeoLead ||
-      `To get measurable results with ${humanizedTopic.toLowerCase()} in 2026, prioritize structured baseline criteria, eliminate high-friction bottlenecks first, and validate every stage against clear weekly benchmarks. Pairing step-by-step checklists with side-by-side comparisons prevents costly trial-and-error and improves long-term consistency across your workflow.`;
-
-    const suggestedNewH2 =
-      aiResponse.data?.suggestedNewH2 ||
-      `2026 ${humanizedTopic} Comparison Matrix & Step-by-Step Checklist`;
-
+      payload.upgraded50WordAeoLead || fallback.upgraded50WordAeoLead;
+    const suggestedNewH2 = payload.suggestedNewH2 || fallback.suggestedNewH2;
     const dropInRefreshMarkdown =
-      aiResponse.data?.dropInRefreshMarkdown ||
-      `## ${suggestedNewH2}\n\n${upgraded50WordAeoLead}\n\n| Evaluation Criteria | Outdated Approach | 2026 Best-Practice Protocol |\n| :--- | :--- | :--- |\n| **Primary Focus** | Generic, unverified guesswork | Evidence-backed ${primaryNiche.toLowerCase()} benchmarks |\n| **Implementation Speed** | Slow manual trial and error | 15-minute structured checklist |\n| **Long-Term Reliability** | Inconsistent outcomes | Measurable weekly compounding gains |\n\n* **Audit Your Baseline First**: Document your current ${humanizedTopic.toLowerCase()} metrics before changing core variables.\n* **Apply the 80/20 Priority Filter**: Focus on the top two high-impact levers highlighted in the table above.\n* **Review Every 30 Days**: Re-verify performance against updated 2026 benchmarks.`;
-
-    const faqQ =
-      aiResponse.data?.faqQuestion ||
-      `What is the fastest way to improve ${humanizedTopic.toLowerCase()} in 2026?`;
-    const faqA =
-      aiResponse.data?.faqAnswer ||
-      `Start by replacing ad-hoc routines with a documented 3-step benchmark checklist, tracking weekly outcomes, and auditing key bottlenecks every 30 days.`;
+      payload.dropInRefreshMarkdown || fallback.dropInRefreshMarkdown;
+    const faqQ = payload.faqQuestion || fallback.faqQuestion;
+    const faqA = payload.faqAnswer || fallback.faqAnswer;
 
     const upgradedJsonLdPatch = JSON.stringify(
       {
@@ -274,13 +287,49 @@ Return a JSON object with:
       2
     );
 
+    // Also render a standalone 1080x1350 6-layer SVG infographic for the new refresh section
+    const refreshInfographicSvg = renderSectionInfographicSvg(
+      {
+        h2: suggestedNewH2,
+        archetype: "comparison",
+        summary: upgraded50WordAeoLead.slice(0, 140),
+        points: [
+          {
+            badge: "01",
+            title: "Audit Baseline Metrics",
+            detail: `Benchmark your current ${humanizedTopic.toLowerCase()} setup before modifying core workflows.`,
+          },
+          {
+            badge: "02",
+            title: "Add 50-Word AEO Lead",
+            detail: "Place a direct 45–55 word answer paragraph immediately below your primary H2.",
+          },
+          {
+            badge: "03",
+            title: "Compare 2026 Options",
+            detail: `Use side-by-side evaluation tables tailored to ${primaryNiche.toLowerCase()}.`,
+          },
+          {
+            badge: "04",
+            title: "Inject @graph Schema",
+            detail: "Connect BlogPosting and FAQPage entities for Google AI Overviews & Perplexity.",
+          },
+        ],
+      },
+      {
+        sectionIndex: 0,
+        totalSections: 1,
+        brandName: siteName,
+        brandPrimaryHex,
+        brandSecondaryHex,
+      }
+    );
+
     const result: LivePageAuditResult = {
       auditedAtIso: new Date().toISOString(),
       pageUrl,
       liveCrawlSucceeded,
-      aiProviderUsed: aiResponse.ok
-        ? `${aiResponse.provider} (${aiResponse.model})`
-        : "Deterministic Deep-Refresh Synthesizer",
+      aiProviderUsed: aiResponse.providerUsed,
       extractedMetrics: {
         pageTitle,
         metaDescription:
@@ -292,13 +341,14 @@ Return a JSON object with:
         internalLinksCount,
         imagesOrSvgsCount,
       },
-      freshnessScore: aiResponse.data?.freshnessScore ?? (liveCrawlSucceeded ? 74 : 71),
-      aeoCitationScore: aiResponse.data?.aeoCitationScore ?? 78,
+      freshnessScore: payload.freshnessScore ?? fallback.freshnessScore,
+      aeoCitationScore: payload.aeoCitationScore ?? fallback.aeoCitationScore,
       detectedGaps,
       upgraded50WordAeoLead,
       suggestedNewH2,
       dropInRefreshMarkdown,
       upgradedJsonLdPatch,
+      refreshInfographicSvg,
     };
 
     return NextResponse.json({

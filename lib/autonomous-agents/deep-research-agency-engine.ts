@@ -3,13 +3,13 @@
  * (`lib/autonomous-agents/deep-research-agency-engine.ts`)
  *
  * Powers both:
- * 1. The Hidden Background Deep Research Team (used globally across 6–10 Article Batch Mode
+ * 1. The Hidden Background Deep Research Team (used globally across 3–10 Article Batch Mode
  *    and 24/7 Autopilot to extract Brand Voice, Sitemap Gaps, SERP Competitor Teardowns,
  *    Long-Tail Question Clusters, and E-E-A-T Fact Verification without exposing raw
  *    complexity to beginners).
- * 2. The 24/7 Active AI Employee Agency Command Center (5 Specialized Departments &
- *    22 Sub-Agent Nodes with Dual-View support: Interactive Animated Node Graph View +
- *    Department-Specific Text Dashboard View).
+ * 2. The 24/7 Active AI Employee Agency Command Center (6 Specialized Departments &
+ *    10 Interconnected Visual Sub-Agent Nodes + 12 Social Sub-Agents with Dual-View support:
+ *    Interactive Animated Node Graph View + Department-Specific Text Dashboard View).
  */
 
 import { extractCleanNicheSubject, slugifyTopic } from "./arcads-social-engine";
@@ -39,7 +39,7 @@ export interface AgencySubAgentNode {
   progressPercent: number;
   currentTaskTicker: string;
   accentHex: string;
-  /** Normalized SVG canvas coordinates (0..1000 x, 0..560 y) for the Animated Node Graph */
+  /** Mathematically centered SVG canvas coordinates (viewBox 0 0 880 520) */
   nodePosition: { x: number; y: number };
   parentNodeId?: string;
   /** Summary metrics shown when the user clicks this node in the Animated Graph */
@@ -352,22 +352,40 @@ export function buildActiveAiEmployeeAgencyState(params: {
   ];
 
   // 3. Existing Article Decay & Content Refresh Candidates (Works for both Internal & External sites)
-  const existingUrls =
-    scoutReport?.sampleIndexedUrls && scoutReport.sampleIndexedUrls.length > 0
-      ? scoutReport.sampleIndexedUrls
-      : [
-          `${baseUrl}/blog/${slugifyTopic(subjectKeyword)}-guide`,
-          `${baseUrl}/blog/best-${slugifyTopic(subjectKeyword)}-tips`,
-        ];
+  const internalPublishedUrls = jobs
+    .filter((j) => j.publishedUrl)
+    .map((j) => ({ url: j.publishedUrl!, title: j.topicTitle }));
 
-  const existingArticleRefreshes: ExistingArticleRefreshCandidate[] = existingUrls
-    .slice(0, 3)
-    .map((url, idx) => ({
+  const existingUrls: Array<{ url: string; title: string }> =
+    internalPublishedUrls.length > 0
+      ? internalPublishedUrls.slice(0, 3)
+      : scoutReport?.sampleIndexedUrls && scoutReport.sampleIndexedUrls.length > 0
+        ? scoutReport.sampleIndexedUrls.slice(0, 3).map((u, idx) => ({
+            url: u,
+            title: `${subjectTitle} Post #${idx + 1} (${u.split("/").pop() || "guide"})`,
+          }))
+        : [
+            {
+              url: `${baseUrl}/blog/${slugifyTopic(subjectKeyword)}-guide`,
+              title: `${subjectTitle} Complete Guide`,
+            },
+            {
+              url: `${baseUrl}/blog/best-${slugifyTopic(subjectKeyword)}-tips`,
+              title: `Best ${subjectTitle} Tips & Checklist`,
+            },
+            {
+              url: `${baseUrl}/blog/${slugifyTopic(subjectKeyword)}-mistakes`,
+              title: `Common ${subjectTitle} Mistakes to Avoid`,
+            },
+          ];
+
+  const existingArticleRefreshes: ExistingArticleRefreshCandidate[] = existingUrls.map(
+    (entry, idx) => ({
       id: `refresh-${idx + 1}`,
-      url,
-      title: `${subjectTitle} Legacy Post #${idx + 1} (${url.split("/").pop() || "overview"})`,
+      url: entry.url,
+      title: entry.title,
       sourceType: isInternalSite ? "internal-ai-published" : "external-sitemap-page",
-      freshnessScore: 68 + idx * 6,
+      freshnessScore: 70 + idx * 5,
       detectedGaps: [
         `Missing ${year} comparison table comparing modern ${subjectKeyword} options`,
         "No 50-word AEO direct answer block below the primary H2 heading",
@@ -375,7 +393,8 @@ export function buildActiveAiEmployeeAgencyState(params: {
       ],
       suggestedNewH2: `${year} Updated ${subjectTitle} Comparison & Key Benchmarks`,
       dropInRefreshParagraph: `Updated for ${year}: Recent shifts in ${subjectKeyword} show that structured, evidence-backed routines consistently outperform ad-hoc approaches. Use the comparison matrix and visual checklist below to benchmark your current setup in under 10 minutes.`,
-    }));
+    })
+  );
 
   // 4. Off-Page SEO & Authority Department Opportunities
   const offPageOpportunities: OffPageOpportunityItem[] = [
@@ -592,10 +611,12 @@ export function buildActiveAiEmployeeAgencyState(params: {
     },
   ];
 
-  // 7. Build the 16 Interconnected Visual Sub-Agent Nodes for the Interactive Animated Node Graph
+  // 7. Build the 10 Mathematically Centered Visual Sub-Agent Nodes for the Interactive Animated Node Graph
+  //    3-Column Balanced Grid across 880x520 SVG viewBox:
+  //    Col 1 (x = 145) · Col 2 (x = 440) · Col 3 (x = 735)
   const rotatingActiveIdx = tickCounter % 6;
   const subAgentNodes: AgencySubAgentNode[] = [
-    // Deep Research Cluster (Top Left)
+    // Column 1: Deep Research & Off-Page Authority (x = 145)
     {
       id: "node-deep-brand-sitemap",
       departmentId: "deep-research",
@@ -608,7 +629,7 @@ export function buildActiveAiEmployeeAgencyState(params: {
         scoutReport?.sitemapUrlsFound ?? 18
       } URLs & locked "${website.primaryNiche}" brand voice`,
       accentHex: "#38BDF8",
-      nodePosition: { x: 140, y: 95 },
+      nodePosition: { x: 145, y: 100 },
       liveSummaryTitle: `Brand DNA & Sitemap Gap Report (${website.siteName})`,
       liveSummaryMetrics: [
         { label: "Detected Niche", value: website.primaryNiche || subjectTitle, status: "good" },
@@ -638,7 +659,7 @@ export function buildActiveAiEmployeeAgencyState(params: {
       progressPercent: 100,
       currentTaskTicker: `Mapped ${jobs.length} low-KD topic clusters & 3 competitor gaps`,
       accentHex: "#38BDF8",
-      nodePosition: { x: 140, y: 215 },
+      nodePosition: { x: 145, y: 240 },
       parentNodeId: "node-deep-brand-sitemap",
       liveSummaryTitle: "Competitor Gap & Long-Tail Keyword Matrix",
       liveSummaryMetrics: [
@@ -651,8 +672,28 @@ export function buildActiveAiEmployeeAgencyState(params: {
         .join("\n"),
       targetDashboardTab: "deep-research",
     },
+    {
+      id: "node-offpage-pr-links",
+      departmentId: "off-page-seo",
+      departmentLabel: "Off-Page SEO Dept",
+      name: "Digital PR & Backlink Gap Agent",
+      shortRole: "Drafts journalist data pitches & directory listings",
+      status: rotatingActiveIdx === 3 ? "active-working" : "monitoring",
+      progressPercent: 88,
+      currentTaskTicker: "Prepared 3 high-DR Digital PR pitches & niche directory listings",
+      accentHex: "#F59E0B",
+      nodePosition: { x: 145, y: 380 },
+      parentNodeId: "node-deep-competitor-keywords",
+      liveSummaryTitle: "Off-Page Authority, Directory & PR Pitch Pack",
+      liveSummaryMetrics: [
+        { label: "Digital PR Pitches", value: "Ready to Send", status: "good" },
+        { label: "Target Authority", value: "DR 55–85 Publications", status: "info" },
+      ],
+      liveOutputSnippet: offPageOpportunities[0]!.readyMadePitchOrSnippet,
+      targetDashboardTab: "off-page-seo",
+    },
 
-    // On-Page SEO Cluster (Top Center)
+    // Column 2: On-Page SEO & Technical/Local Entity SEO (x = 440)
     {
       id: "node-onpage-schema",
       departmentId: "on-page-seo",
@@ -663,7 +704,7 @@ export function buildActiveAiEmployeeAgencyState(params: {
       progressPercent: 100,
       currentTaskTicker: "Compiled @graph JSON-LD with BlogPosting & FAQPage nodes",
       accentHex: "#10B981",
-      nodePosition: { x: 420, y: 80 },
+      nodePosition: { x: 440, y: 80 },
       parentNodeId: "node-deep-brand-sitemap",
       liveSummaryTitle: "Live @graph JSON-LD Schema Markup",
       liveSummaryMetrics: [
@@ -683,7 +724,7 @@ export function buildActiveAiEmployeeAgencyState(params: {
       progressPercent: 100,
       currentTaskTicker: `Verified ${jobs.length} SERP titles & hub-and-spoke internal links`,
       accentHex: "#10B981",
-      nodePosition: { x: 420, y: 195 },
+      nodePosition: { x: 440, y: 195 },
       parentNodeId: "node-onpage-schema",
       liveSummaryTitle: "Internal Linking & SERP Pixel Width Audit",
       liveSummaryMetrics: [
@@ -703,7 +744,7 @@ export function buildActiveAiEmployeeAgencyState(params: {
       progressPercent: 92,
       currentTaskTicker: `Monitoring ${existingArticleRefreshes.length} existing pages for 2026 freshness gaps`,
       accentHex: "#10B981",
-      nodePosition: { x: 420, y: 310 },
+      nodePosition: { x: 440, y: 310 },
       parentNodeId: "node-onpage-links-meta",
       liveSummaryTitle: "robots.txt AI Crawler Rules & Content Refresh Queue",
       liveSummaryMetrics: [
@@ -717,28 +758,6 @@ export function buildActiveAiEmployeeAgencyState(params: {
       liveOutputSnippet: onPageAuditItems[3]!.generatedCodeOrCopy,
       targetDashboardTab: "on-page-seo",
     },
-
-    // Off-Page & Technical SEO Cluster (Bottom Left / Center)
-    {
-      id: "node-offpage-pr-links",
-      departmentId: "off-page-seo",
-      departmentLabel: "Off-Page SEO Dept",
-      name: "Digital PR & Backlink Gap Agent",
-      shortRole: "Drafts journalist data pitches & directory listings",
-      status: rotatingActiveIdx === 3 ? "active-working" : "monitoring",
-      progressPercent: 88,
-      currentTaskTicker: "Prepared 3 high-DR Digital PR pitches & niche directory listings",
-      accentHex: "#F59E0B",
-      nodePosition: { x: 140, y: 360 },
-      parentNodeId: "node-deep-competitor-keywords",
-      liveSummaryTitle: "Off-Page Authority, Directory & PR Pitch Pack",
-      liveSummaryMetrics: [
-        { label: "Digital PR Pitches", value: "Ready to Send", status: "good" },
-        { label: "Target Authority", value: "DR 55–85 Publications", status: "info" },
-      ],
-      liveOutputSnippet: offPageOpportunities[0]!.readyMadePitchOrSnippet,
-      targetDashboardTab: "off-page-seo",
-    },
     {
       id: "node-tech-local-seo",
       departmentId: "technical-local-seo",
@@ -749,7 +768,7 @@ export function buildActiveAiEmployeeAgencyState(params: {
       progressPercent: 95,
       currentTaskTicker: "0.00 CLS inline SVG verification & Organization sameAs schema ready",
       accentHex: "#06B6D4",
-      nodePosition: { x: 420, y: 435 },
+      nodePosition: { x: 440, y: 425 },
       parentNodeId: "node-onpage-robots-refresh",
       liveSummaryTitle: "Technical & Local Entity SEO Diagnostic",
       liveSummaryMetrics: [
@@ -760,7 +779,7 @@ export function buildActiveAiEmployeeAgencyState(params: {
       targetDashboardTab: "technical-local-seo",
     },
 
-    // Autonomous Content & 6-Layer Visual Production Cluster (Right Center)
+    // Column 3: Autonomous Content & Social Media Agent Fleet (x = 735)
     {
       id: "node-content-writer",
       departmentId: "content-production",
@@ -778,7 +797,7 @@ export function buildActiveAiEmployeeAgencyState(params: {
           } Done)`
         : `${completedJobsCount}/${jobs.length} Articles + 6-Layer Infographics Ready`,
       accentHex: "#8B5CF6",
-      nodePosition: { x: 700, y: 140 },
+      nodePosition: { x: 735, y: 120 },
       parentNodeId: "node-onpage-schema",
       liveSummaryTitle: `Autonomous Article & 6-Layer Infographic Studio (${completedJobsCount}/${jobs.length} Ready)`,
       liveSummaryMetrics: [
@@ -799,8 +818,6 @@ export function buildActiveAiEmployeeAgencyState(params: {
         "50-word AEO direct answer lead + 4 H2 sections + 4 standalone 6-layer infographics.",
       targetDashboardTab: "content-production",
     },
-
-    // Social Media Agent Fleet Cluster (Far Right)
     {
       id: "node-social-pinterest",
       departmentId: "social-media-fleet",
@@ -811,7 +828,7 @@ export function buildActiveAiEmployeeAgencyState(params: {
       progressPercent: 100,
       currentTaskTicker: `Generated ${jobs.length * 3} vertical 1000×1500 Pinterest Pins + Bulk CSV`,
       accentHex: "#EC4899",
-      nodePosition: { x: 700, y: 300 },
+      nodePosition: { x: 735, y: 265 },
       parentNodeId: "node-content-writer",
       liveSummaryTitle: "Pinterest 5-Agent Visual Pipeline (1000×1500 2:3 Pins)",
       liveSummaryMetrics: [
@@ -835,7 +852,7 @@ export function buildActiveAiEmployeeAgencyState(params: {
         jobs.length * 5
       } Hooks`,
       accentHex: "#EC4899",
-      nodePosition: { x: 700, y: 435 },
+      nodePosition: { x: 735, y: 410 },
       parentNodeId: "node-social-pinterest",
       liveSummaryTitle: "LinkedIn 8-Slide Carousel & Multi-Channel Hook Matrix",
       liveSummaryMetrics: [
@@ -856,7 +873,7 @@ export function buildActiveAiEmployeeAgencyState(params: {
     generatedAtIso: new Date().toISOString(),
     website,
     isInternalSite,
-    overallHealthScore: 94,
+    overallHealthScore: 95,
     activeWorkingAgentId: activeNode.id,
     activeWritingJobId: activeJob?.id,
     deepResearch,
