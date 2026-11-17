@@ -1,130 +1,57 @@
-# DoItWithAI.tools — 24/7 Autonomous AI Digital Agency OS (V2 Re-Architecture & Master Blueprint)
+# DoItWithAI.tools — 24/7 Autonomous AI Digital Agency OS (V2 & V3 Master Blueprint)
 
 > **Repository**: [`sufi0900/doitwithai.tools`](https://github.com/sufi0900/doitwithai.tools)  
 > **Branch**: [`codex/infographic-studio-redesign`](https://github.com/sufi0900/doitwithai.tools/tree/codex/infographic-studio-redesign)  
-> **New Public Landing Page Route**: `/ai-employee-agency`  
-> **New Dedicated Agency Workspace Route**: `/ai-employee-agency/dashboard`  
-> **Content Writer Bridge Route**: `/ai-content-writer` & `/ai-content-writer/automation` (Mode B redirects to `/ai-employee-agency`)
+> **Public Landing Page Route**: `/ai-employee-agency`  
+> **Dedicated Agency Workspace Route**: `/ai-employee-agency/dashboard`  
+> **Companion Editorial HTML Blueprint**: `docs/ai-agency-llm-economics-and-workflow-plan.html`
 
 ---
 
-## 1. Executive Strategy: Why Separate `/ai-employee-agency` & `/ai-employee-agency/dashboard`?
+## 1. Executive Summary & Unit Economics (90% Deterministic Code + 10% LLM Intelligence)
 
-### 1.1 SEO, Paid Acquisition & Product Positioning Best Practices
-Separating the **24/7 Active AI Employee Agency** from `/ai-content-writer` into its own dedicated route hierarchy is the strongest architectural and SEO decision ([GetSpike SaaS Landing Page Best Practices](https://getspike.ai/blog/saas-landing-page-best-practices/), [LynxDigital URL & Slug Best Practices](https://www.lynxdigital.com/kb/seo/url-and-slug-best-practices)):
+### 1.1 Why Our Hybrid Architecture Beats Competitors on Both Quality & Profit Margin
+- **90% Zero-Cost Deterministic Execution ($0.00)**: Live website HTML crawling (`<title>`, `<meta>`, `H1–H3`, `robots.txt`, `sitemap.xml`), Google Autocomplete scraping, SERP pixel-width math (`<580px`), 0.00 CLS `1200×675` Hero SVG and `4× 1080×1350` 6-Layer Section Infographic rendering, 60fps Node Graph animations, and CMS REST API publishing all run on deterministic TypeScript code without spending a single API token.
+- **10% High-Intelligence LLM API Layer ($0.0192 per Full Agency Circle)**: External LLM API calls ([Gemini 2.5 Flash](https://creditforstartups.com/pricing/gemini-api-pricing) at `$0.30/1M in, $2.50/1M out`, [OpenAI GPT-4o-mini](https://www.aipricing.guru/models/gpt-4o-mini/) at `$0.15/1M in, $0.60/1M out`, or [Groq Llama 3.3 70B](https://www.spheron.network/blog/groq-api-pricing-2026-cost-per-token-vs-gpu-rental/) at `$0.59/1M in, $0.79/1M out`) are reserved strictly for high-value cognitive tasks:
+  1. **Keyword & Topic Strategist (`2,100 tokens` · `$0.0019`)**: Competitor SERP gap analysis, intent clustering, and original H1–H3 outline synthesis.
+  2. **Content Production Manager (`7,500 tokens` · `$0.0099`)**: 50-word AEO direct answer lead, 2,000-word human-rhythm H2/H3 prose, comparison matrix, and contextual link weaving.
+  3. **Graphic Design Data Extractor (`1,300 tokens` · `$0.0015`)**: Extracts structured quantitative metrics and callout labels to feed our deterministic SVG vector engine.
+  4. **On-Page, Off-Page & Technical SEO Diagnostics (`2,400 tokens` · `$0.0024`)**: 2026 content-decay refresh blocks, journalist HARO pitches, and backlink outreach emails.
+  5. **Social, TikTok 60s Video Script & Google Ads RSA Copy (`3,000 tokens` · `$0.0035`)**: 60s TikTok/Reels storyboard, 8-slide LinkedIn carousel copy, Pinterest SEO descriptions, and Google Ads RSA headlines/descriptions.
+- **Total Cost for 1 Complete End-to-End Agency Circle**: **`16,300 tokens` = `$0.0192` (~1.9 cents)** on Gemini 2.5 Flash (or **`$0.0054`** on GPT-4o-mini).
+- **How Free-Tier Testing Tracks 100% Real-Time Token Usage**: Even on a $0 Free API Key from [Google AI Studio](https://aistudio.google.com/docs/rate-limits) or [Groq Cloud](https://localaimaster.com/blog/groq-api-free-guide), every API response returns exact token counters (`usageMetadata.promptTokenCount` and `candidatesTokenCount`). Our **Real-Time 1-Circle Token & Cost Telemetry Meter** multiplies those live counters by official paid rates so we see exact token usage and dollar cost in real time before commercial launch.
 
-| Route / Slug | Primary Purpose & User Experience | Primary SEO & Commercial Intent |
+---
+
+## 2. Reverse-Engineering `SEO.AI` ($149/mo Single Site & $299/mo Multi-Site)
+
+Based on public documentation from [SEO.AI](https://seo.ai/), [SEO.AI Pricing & FAQ](https://seo.ai/pricing), [SEO.AI WordPress Setup Guide](https://seo.ai/blog/how-to-set-up-the-wordpress-integration), [BlogSEO's 2026 Teardown](https://www.blogseo.io/blogseo-vs-autoseo), and [eesel AI's Review](https://www.eesel.ai/blog/seo-ai-review):
+
+| SEO.AI Feature ($149/mo) | How SEO.AI Works Under the Hood | Our DoItWithAI.tools Implementation (Phases 6–10) |
 | :--- | :--- | :--- |
-| **`/ai-employee-agency`** | **Public Marketing & Zero-Noise URL Onboarding Page**: Focused single-input hero where the user enters only their **Website URL** and watches the cinematic multi-stage analysis & agency team assembly animation before auto-redirecting to `/ai-employee-agency/dashboard`. | Targets commercial high-ticket keywords: *"24/7 AI SEO & Digital Marketing Agency"*, *"Autonomous AI Employees for Website Growth"*, *"Automated SEO, Content & Social Media Agency"*. Ready for standalone paid ads & social promotion. |
-| **`/ai-employee-agency/dashboard`** | **Dedicated Left-Sidebar + Right-Workspace Agency OS**: Standard SaaS dashboard layout with 8 Department Tabs on the left, a dedicated workspace on the right, a 1-click **Full-Canvas Interactive Pan/Zoom Node Graph**, and a **Unified Founder Chat & Voice Command Bar**. | Protected/Workspace application route ready for future Google Sign-In gating (`/ai-employee-agency/dashboard?site=...`). |
-| **`/ai-content-writer`** & **`/ai-content-writer/automation`** | **Content Writing & Multi-Article Batch Studio**: Keeps Mode A (Multi-Article Guided Batch) for users focused purely on writing articles/keywords. Clicking **Mode B (`24/7 Active AI Employee Agency`)** immediately redirects the user to `/ai-employee-agency`. | Targets content-specific queries: *"AI blog writer"*, *"bulk AI article generator"*, *"SEO content writer with infographics"*. |
-
-### 1.2 Universal 6-Item Navbar Cap Compliance
-* Top-level navbar remains strictly capped at **6 items** (`Home`, `AI Tools`, `AI Extensions`, `Blog`, `Resources`, `Founder Hub`).
-* Both **`⚡ 24/7 AI Employee Agency (Landing)`** (`/ai-employee-agency`) and **`🏢 AI Agency Live Dashboard`** (`/ai-employee-agency/dashboard`) will be placed at the very top of the **`Resources`** dropdown with a `LIVE V2` badge for 1-click testing.
+| **Targets Google & ChatGPT visibility** | Formats articles with direct-answer blocks, FAQ schema, and product feed text enrichment ([SEO.AI ChatGPT Guide](https://seo.ai/blog/what-product-attributes-improve-chatgpt-ranking)). | **Built + Upgraded**: 50-word AEO direct answer lead, connected `@graph` JSON-LD, and `OAI-SearchBot` / `PerplexityBot` `robots.txt` rules. |
+| **Backlinks from real non-spammy websites** | **“The Backlink Club”** ([BlogSEO](https://www.blogseo.io/blogseo-vs-autoseo), [SEO.AI](https://seo.ai/)): An automated reciprocal link-exchange network across opted-in customer websites connected via CMS plugins. | **Phase 9 (`backlink-exchange-club.ts`)**: Opt-in **DoItWithAI Verified Niche Link-Exchange Network** that auto-weaves contextual links between non-competing customer sites + HARO/Gmail PR outreach. |
+| **Builds and optimizes Google Ads** | Generates Google Ads Responsive Search Ad (RSA) headlines, descriptions, and keyword lists per article ([BlogSEO](https://www.blogseo.io/blogseo-vs-autoseo)). | **Phase 9 (`google-ads-agent.ts`)**: Generates 15 RSA headlines (`<=30 chars`), 4 descriptions (`<=90 chars`), negative keywords, and Google Ads Editor CSV export. |
+| **SEO specialists review & make spot checks** | Automated QA rubric + random sample spot-checks or support-ticket reviews ([SEO.AI FAQ](https://seo.ai/pricing)). | **Phase 9**: 100% private 150-point automated E-E-A-T gate by default + **Opt-In “Request Human Expert Spot-Check”** toggle (zero privacy leaks). |
+| **Connects to WordPress, Webflow, Wix, Shopify in minutes** | Built-in [WordPress Application Passwords](https://seo.ai/blog/how-to-set-up-the-wordpress-integration) (`POST /wp-json/wp/v2/posts`), Shopify Admin API, Webflow CMS API, or Custom Webhook. | **Phase 10 (`cms-connectors.ts`)**: 1-click WordPress Application Password REST API, Shopify Blog API, Webflow CMS API, and Universal Webhook connectors. |
 
 ---
 
-## 2. Complete Digital Agency Hierarchy: 8 Main Agents (Managers) & 24 Specialized Sub-Agents
+## 3. Complete Series of Implementation Phases (Completed Phases 1–6 + Upcoming V3 Phases 7–10)
 
-Modeled on the **Hybrid Supervisor + Handoff Architecture** ([LangGraph Multi-Agent Supervisor](https://reference.langchain.com/python/langgraph-supervisor), [LangChain Multi-Agent Architecture Guide](https://www.langchain.com/blog/choosing-the-right-multi-agent-architecture), [CrewAI Hierarchical Process](https://docs.crewai.com/v1.10.1/en/learn/hierarchical-process)), every department has a **Manager/Lead Agent** that coordinates specialized **Sub-Agents**, and every agent has a modular `skills[]` and `tools[]` registry so we can continuously upgrade its backend capabilities.
+### 3.1 Completed Foundation Phases (Phases 1–6 — Live on `codex/infographic-studio-redesign`)
+- **Phase 1 (`d4dd34c` & `624cbf7`)**: Dedicated `/ai-employee-agency` public landing page, 6-stage cinematic onboarding transition, `/ai-employee-agency/dashboard` workspace route, Mode B redirect from `/ai-content-writer/automation`, and top-of-`Resources` header links.
+- **Phase 2 (`f822ba3`)**: 36-Agent Modular Registry (`lib/ai-employee-agency/agent-registry.ts`), 6-Stage Paced Handoff Orchestrator & DoItWithAI Keyword KD Scorer (`lib/ai-employee-agency/handoff-orchestrator.ts`), and `/api/ai-employee-agency/orchestrate`.
+- **Phase 3 (`f822ba3`)**: Full-Canvas Interactive Node Graph (`features/ai-employee-agency/InteractiveAgencyNodeCanvas.tsx`) with 12 Core Desks vs. 36 Expanded Agents.
+- **Phase 4 & Phase 5 (`de16834`)**: 9 Department Workspaces, 24h Executive Activity Graph, 4× 6-Layer Section SVGs, 8-Slide LinkedIn Carousel, 3× Pinterest 2:3 Pins, 60s TikTok Storyboard, and `FounderCommandChatDock.tsx` + `/api/ai-employee-agency/agent-chat`.
+- **Phase 6 (`[COMPLETED]`)**: Custom geometric SVG Icon Library (`AgencySvgIcons.tsx`), 100% Full-Screen Node Graph (`fixed inset-0 z-[100]`) with non-overlapping Bottom-Right Floating Zoom Dock (`InteractiveAgencyNodeCanvas.tsx`), zero-truncation Left Sidebar & 1-Circle Token Cost KPI (`AiAgencyDashboardShell.tsx`), and right-side floating chat clearance (`FounderCommandChatDock.tsx`).
 
-| Dept ID & Sidebar Tab | Main Agent (Manager / Lead) | Specialized Sub-Agents (Visible in Node Graph & Dept View) | Equipped Backend Skills & Tools (`skills[]` / `tools[]`) |
-| :--- | :--- | :--- | :--- |
-| **0. Executive Office** (`executive-office`) | **Chief AI Officer & Founder Assistant** (`agent-chief-orchestrator`) | 1. `Daily Briefing & Telemetry Synthesizer`<br>2. `Founder Manual Action Escalator`<br>3. `Scenario & Task Dispatcher` | `founder-intent-parser`, `cross-department-handoff-router`, `manual-blocker-detector`, `voice-speech-synthesis` |
-| **1. Keyword Research** (`keyword-strategist`) | **Keyword & Topic Strategist** (`agent-keyword-lead`) | 1. `Live Web & Autocomplete Trend Scout`<br>2. `DoItWithAI Keyword KD & Intent Scorer`<br>3. `Heading Structure (H1-H3) & Cluster Architect` | `google-autocomplete-live-scraper`, `doitwithai-keyword-scoring-engine`, `sitemap-cannibalization-guard`, `serp-intent-classifier` |
-| **2. Content Writing** (`content-writing`) | **Content Production Manager** (`agent-content-manager`) | 1. `Long-Form GEO/AEO Section Writer`<br>2. `Meta Title (<580px) & Description Specialist`<br>3. `Internal & External Link Weaver`<br>4. `Connected @graph JSON-LD Schema Writer` | `geo-50word-lead-writer`, `human-rhythm-stylist`, `contextual-anchor-link-mapper`, `jsonld-graph-compiler`, `writer-studio-bridge` |
-| **3. Graphic & Visuals** (`graphic-design`) | **Creative & Graphic Design Director** (`agent-design-director`) | 1. `Featured Hero Image Designer`<br>2. `6-Layer Section Infographic Architect (1080×1350)`<br>3. `Social Carousel & 2:3 Vertical Pin Designer` | `featured-hero-svg-generator`, `six-layer-infographic-engine`, `brand-palette-contrast-checker`, `zero-cls-vector-optimizer` |
-| **4. On-Page SEO** (`on-page-seo`) | **On-Page SEO Lead Engineer** (`agent-onpage-lead`) | 1. `Live DOM Heading & Word-Count Auditor`<br>2. `Content Decay & 2026 Refresh Injector`<br>3. `SERP Pixel & Schema Compliance Verifier` | `live-html-page-crawler`, `content-decay-gap-analyzer`, `drop-in-refresh-markdown-generator`, `internal-link-orphan-detector` |
-| **5. Off-Page SEO** (`off-page-seo`) | **Off-Page Authority & Digital PR Lead** (`agent-offpage-lead`) | 1. `Competitor Backlink & Link-Magnet Scout`<br>2. `Journalist Data Pitch & HARO/Qwoted Writer`<br>3. `Niche Directory & Unlinked Mention Agent` | `backlink-gap-heuristics`, `data-pr-pitch-composer`, `directory-submission-packager`, `embeddable-infographic-code-builder` |
-| **6. Technical & Local SEO** (`technical-seo`) | **Technical & Local SEO Architect** (`agent-technical-lead`) | 1. `Core Web Vitals (LCP/CLS) & Speed Auditor`<br>2. `robots.txt, AI Crawler & Canonical Guard`<br>3. `Local Business & Knowledge Graph Entity Agent` | `robots-txt-ai-bot-validator`, `sitemap-xml-health-checker`, `organization-sameas-schema-builder`, `founder-manual-fix-escalator` |
-| **7. QA & Publishing** (`qa-publishing`) | **Quality Assurance & Publishing Controller** (`agent-qa-publisher`) | 1. `150-Point Readability, E-E-A-T & Anti-Fluff Gate`<br>2. `Internal Site Auto-Publisher (/p/[slug]/blog)`<br>3. `External CMS Draft & Webhook Packager` | `150pt-geo-quality-gate`, `anti-cliche-linter`, `internal-blog-store-publisher`, `external-cms-draft-packager` |
-| **8. Social & Video Fleet** (`social-video-fleet`) | **Social Media & Viral Video Manager** (`agent-social-manager`) | 1. `Pinterest 2:3 Visual Growth Specialist`<br>2. `LinkedIn 8-Slide PDF Carousel Specialist`<br>3. `Facebook & Instagram Bento Specialist`<br>4. `X (Twitter) & Threads Viral Thread Writer`<br>5. `TikTok, Reels & Shorts Video Script & Trend Agent` | `pinterest-2x3-pin-compiler`, `linkedin-8slide-html-pdf-builder`, `viral-thread-atomizer`, `tiktok-trend-hook-analyzer`, `short-form-video-storyboard-writer` |
+### 3.2 V3 Production & Commercialization Roadmap (Phases 6–10)
 
----
-
-## 3. Real-Time Inter-Agent Communication & Deliberate Pacing Protocol
-
-To make the agency feel like a **living, breathing Digital Office** rather than a static instant dump, the **Stateful Handoff Engine (`lib/ai-employee-agency/handoff-orchestrator.ts`)** executes tasks with **deliberate visual pacing (`2.0s–3.2s` per stage)** and visible **Handoff Data Packets**:
-
-1. **Stage 1 — Founder Scenario or 24/7 Trigger → `Chief AI Officer`**:
-   * Triggered either automatically on onboarding/24h cycle OR when the Founder types/speaks in the Command Chat (e.g., *"Launch a new article on technical SEO audits and prepare Pinterest + TikTok scripts"*).
-2. **Stage 2 — `Chief AI Officer` → `Keyword & Topic Strategist`**:
-   * The Keyword Agent activates (`⚡ Working`), runs `google-autocomplete-live-scraper` + `doitwithai-keyword-scoring-engine`, generates a list of candidate keywords with KD scores, selects the #1 priority keyword + H1–H3 outline, and sends a **Handoff Packet** (`SELECTED_KEYWORD_BRIEF`) along the animated connector to the **Content Production Manager**.
-3. **Stage 3 — `Content Production Manager` → Parallel/Sequential Sub-Agent Delegation**:
-   * Upon receiving the keyword brief, the Content Manager distributes tasks:
-     * Sends a visual brief packet to **`Creative & Graphic Design Director`** → `Featured Hero Image Designer` + `6-Layer Section Infographic Architect` start rendering the featured image and 4 section SVGs.
-     * Dispatches `Long-Form Section Writer` (drafts H2/H3 + 50-word AEO lead), `Meta Specialist` (writes title/description), and `Internal/External Link Weaver` (inserts contextual links).
-4. **Stage 4 — `Content Production Manager` + `On-Page SEO Lead` → `QA & Publishing Controller`**:
-   * The assembled article + featured image + 4 section SVGs + `@graph` schema pass to `QA & Readability Gatekeeper`.
-   * Once QA approves (`96/100 Pass`), `Publishing Controller` checks the website mode:
-     * **Internal DoItWithAI Website**: Automatically publishes to `/p/[slug]/blog/[article-slug]` and marks the article card **`🟢 Published`**.
-     * **External Website**: Packages the complete draft + schema + visuals and marks the article card **`📘 Draft Ready (Manual/CMS Push)`**.
-5. **Stage 5 — `QA & Publishing Controller` → `Social Media & Viral Video Manager`**:
-   * Sends the finalized article URL and key takeaways to the Social Manager, which sequentially activates:
-     * `Pinterest Specialist` (3 tall `1000×1500` pins)
-     * `LinkedIn Specialist` (8-slide `1080×1350` carousel deck)
-     * `Facebook/IG Specialist` + `X/Threads Specialist` (multi-post thread & bento cards)
-     * `TikTok / Reels Video Script Agent` (analyzes trending short-form formats in the niche and writes a 60-second scene-by-scene video script with 3-second visual/verbal hook, B-roll cues, and caption).
-
----
-
-## 4. Zero-Noise Onboarding & Standard Left-Sidebar Dashboard UX
-
-### 4.1 `/ai-employee-agency` — Clean Public Landing Page + Full-Screen Animated Analysis Transition
-* **Zero Clutter Hero**: No Mode A / Mode B cards, no wall of text. Just a bold agency headline, a single **Website URL Input Bar** (`https://yourwebsite.com` or select an internal DoItWithAI site), and **`🚀 Launch My 24/7 AI Digital Agency`**.
-* **Full-Screen Animated Analysis & Office Assembly Transition**:
-  * As soon as the user submits their URL, the screen transitions into a dedicated **Cinematic Agency Initialization View** showing:
-    1. Live Website HTML, Brand Palette & Sitemap Crawl (`0% → 25%`)
-    2. Keyword Strategist & Competitor Intent Gap Radar (`25% → 50%`)
-    3. On-Page, Off-Page & Technical SEO Diagnostic Scan (`50% → 75%`)
-    4. Assembling Your 8 AI Department Managers & 24 Sub-Agents (`75% → 100%`)
-  * Automatically redirects to **`/ai-employee-agency/dashboard`** upon completion.
-
-### 4.2 `/ai-employee-agency/dashboard` — Left Department Sidebar + Dedicated Right Canvas
-* **Top Header Bar**:
-  * Displays the active website domain, live agency status ticker (*"Keyword Strategist handing off 'AI SEO Audit Checklist' to Content Manager..."*), and the primary view toggle button: **`🌐 Live Animated AI Agency Node Graph`** vs. **`📊 Department Workspace View`**.
-* **Left Sidebar Navigation (Always Accessible)**:
-  * Lists the 9 clean views:
-    1. `🏢 Executive Office & Founder Brief` (Today's activity timeline graph + **Manual Founder Action Required** alerts—e.g., when an external website has a technical SEO or `robots.txt` issue that requires manual Founder intervention)
-    2. `🔑 Keyword & Topic Strategist`
-    3. `✍️ Content Writing Studio`
-    4. `🎨 Graphic & Visual Design`
-    5. `🛠️ On-Page SEO & Refresh`
-    6. `📣 Off-Page SEO & Digital PR`
-    7. `⚙️ Technical & Local SEO`
-    8. `📲 Social Media & TikTok Scripts`
-    9. `✅ QA & Publishing Queue`
-* **Right Main Area — Mode 1: Department Workspace View**:
-  * Shows **ONLY** the clicked department's clean dashboard.
-  * **Special Design for `✍️ Content Writing Studio` Tab**:
-    * Top KPI strip showing `Published / Drafts Ready`, `Actively Writing Now`, and `Not Yet Started (Queued)`.
-    * **Unique Article Status Boxes Grid**:
-      * **Box Type 1 (`🟢 Published` for internal sites / `📘 Draft Ready` for external sites)**: Shows the completed article title, featured image + 4 section infographics badge, QA score, and 1-click buttons to **Open in Full Content Writer Studio (`/ai-content-writer`)**, **Preview/Edit**, or **Download/Publish**.
-      * **Box Type 2 (`⚡ Actively Writing Now`)**: Live animated card showing which sub-agent (`Keyword Handoff → Featured Image → Section Writer → Link Weaver → Schema → QA`) is working on this article right now with a real-time step progress bar.
-      * **Box Type 3 (`⚪ Not Yet Started`)**: Placed at the end of the grid for upcoming slots, clearly showing *"Not Yet Started — Waiting for Keyword Strategist handoff"* with a **`▶ Start Writing Now`** button.
-* **Right Main Area — Mode 2: Full-Canvas Interactive Pan/Zoom Node Graph (`🌐 Live Animated AI Agency Node Graph`)**:
-  * When clicked, the **entire right-side workspace** becomes a **100% full-canvas interactive node graph** ([n8n AI Workflow Canvas](https://n8n.io/ai-agents/)) with **zero text blocks or clutter below or beside it**:
-    * **Interactive Controls**: `Zoom In (+)`, `Zoom Out (-)`, `Fit to Screen (⊡)`, `Drag to Pan`, and `Play/Pause Live Pacing`.
-    * **Hover Any Node**: Displays a crisp floating tooltip over the node with its current status, active sub-task, and latest handoff summary.
-    * **Click Any Node**: Opens a clean floating **Agent Inspector Card** with:
-      1. Live work output & equipped skills/tools badges.
-      2. **`💬 Chat / Voice Call with This Agent`** (opens 1-on-1 conversation with that agent).
-      3. **`Open Full [Department] Dashboard →`** (switches the right-side canvas directly to that department's tab!).
-
-### 4.3 Persistent Founder Command Chat & Voice Bar (`FounderCommandChatDock.tsx`)
-* Docked at the bottom of `/ai-employee-agency/dashboard`:
-  * **Global Assistant Mode (`Chief AI Officer`)**: The Founder can type or use the microphone button (`🎙️ Voice Call`) to say: *"Today let's write and launch a new article on AI technical SEO checklists"* or *"What did the agency finish today?"*. The Chief AI Officer immediately triggers all relevant departments (Keyword → Content → Graphic Design → On-Page → Off-Page → QA → Social/TikTok) in sequence!
-  * **1-on-1 Specialist Mode**: The Founder can switch the target dropdown to any individual AI Employee (e.g., `Keyword Strategist`, `TikTok Video Script Agent`, `On-Page SEO Lead`, `Graphic Designer`) to chat directly, critique its work, or assign a custom task.
-
----
-
-## 5. Series of Implementation Phases (Step-by-Step Engineering Roadmap)
-
-| Phase | Milestone & Exact Files to Create / Upgrade | Key Deliverables |
+| Phase | Milestone & Target Files | Exact Engineering Deliverables |
 | :--- | :--- | :--- |
-| **Phase 1 (COMPLETED)** | **Dedicated Routes (`/ai-employee-agency` & `/ai-employee-agency/dashboard`), Cinematic Onboarding & Cross-Route Redirects**<br>• `app/ai-employee-agency/page.tsx`<br>• `app/ai-employee-agency/dashboard/page.tsx`<br>• `features/ai-employee-agency/AiAgencyPublicLanding.tsx`<br>• `features/ai-employee-agency/AiAgencyDashboardShell.tsx`<br>• `features/autonomous-campaign-studio/AutonomousCampaignDashboard.tsx`<br>• `components/Header/menuData.tsx` | 1. Clean, zero-noise `/ai-employee-agency` landing page with single Website URL input.<br>2. Full-screen animated 6-stage Deep Analysis & Agency Team Assembly transition that redirects to `/ai-employee-agency/dashboard`.<br>3. Clicking Mode B on `/ai-content-writer/automation` redirects cleanly to `/ai-employee-agency`.<br>4. Top of `Resources` dropdown updated with direct test links. |
-| **Phase 2** | **8-Department / 24-Sub-Agent Modular Registry & Paced Handoff Orchestrator**<br>• `lib/ai-employee-agency/agent-registry.ts`<br>• `lib/ai-employee-agency/handoff-orchestrator.ts`<br>• `app/api/ai-employee-agency/orchestrate/route.ts` | 1. Complete registry of 8 Main Agents + 24 Sub-Agents with `skills[]`, `tools[]`, and department mappings.<br>2. Deliberate, real-time paced handoff engine (`Keyword Strategist → Content Manager → Graphic Designer + Link/Schema Sub-Agents → QA → Publisher → Social & TikTok Video Manager`).<br>3. Integration of our internal Keyword Tool scoring engine into the `Keyword Strategist` agent. |
-| **Phase 3** | **Full-Canvas Interactive Pan/Zoom Node Graph Expansion (Sub-Agent Expansion Nodes + Custom Edge Inspector)**<br>• `features/ai-employee-agency/InteractiveAgencyNodeCanvas.tsx` | 1. Expandable sub-agent clusters for all 24 sub-agents on the full-right-area interactive canvas.<br>2. Smooth Zoom In, Zoom Out, Reset View, Drag-to-Pan, and animated glowing packets moving between parent/child nodes.<br>3. Hover tooltip + Click floating card with `"Open [Department] Dashboard →"` and `"💬 Chat with Agent"`. |
-| **Phase 4** | **Deepened Department Dashboards (Live Keyword Tool Scorer, Multi-Box Content Studio & TikTok Storyboard Builder)**<br>• `features/ai-employee-agency/departments/*` | 1. Live interactive tools inside each of the 9 Left-Sidebar tabs.<br>2. **`Executive Office`** tab with Daily Activity Graph + **Manual Founder Action Required** alerts.<br>3. **`Content Writing Studio`** tab with unique `Published` / `Draft Ready`, `Actively Writing Now`, and `Not Yet Started` boxes + bridge to `/ai-content-writer`. |
-| **Phase 5** | **Live AI Backend for Unified Founder Command Chat & Web Speech Voice Call Dock**<br>• `features/ai-employee-agency/FounderCommandChatDock.tsx`<br>• `app/api/ai-employee-agency/agent-chat/route.ts` | 1. Live LLM-powered `/api/ai-employee-agency/agent-chat` endpoint.<br>2. Talk to `Chief AI Officer` to launch a full multi-department article/campaign scenario from a single sentence.<br>3. Talk 1-on-1 (text or Web Speech API voice call) with any individual AI Employee to inspect, refine, or assign tasks. |
+| **Phase 6 [COMPLETED]** | **UI/UX Editorial Polish, Custom SVG Iconography & Full-Screen (`100vw × 100vh`) Non-Overlapping Node Graph**<br>• `features/ai-employee-agency/AgencySvgIcons.tsx`<br>• `features/ai-employee-agency/InteractiveAgencyNodeCanvas.tsx`<br>• `features/ai-employee-agency/AiAgencyDashboardShell.tsx`<br>• `docs/ai-agency-llm-economics-and-workflow-plan.html`<br>• `docs/AI_EMPLOYEE_AGENCY_V2_MASTER_BLUEPRINT.md` | 1. **Replace All Emojis with Custom Geometric SVG Icons** across the Left Sidebar, Header, Department Cards, Node Graph, and Command Bar.<br>2. **Fix Node Graph Toolbar Overlap**: Move Zoom In (`+`), Zoom Out (`-`), Fit View (`⊡`), and Step controls into a clean **Bottom-Right Floating Control Dock** so top bars never collide.<br>3. **Add `⛶ Expand Full Screen` Mode**: Clicking Expand opens the Node Graph in `fixed inset-0 z-[100] w-screen h-screen` full-monitor mode with pan/zoom controls.<br>4. **Redesign Left Sidebar, Header & Department Tabs**: Widen sidebar labels so text never truncates (`Content Writing S...` fixed), humanize and declutter card typography, and add right-side clearance in the bottom command bar so the global chat widget never overlaps `Send Command`. |
+| **Phase 7 [NEXT]** | **Unified Free/Paid LLM Gateway (`Gemini 2.5 Flash` + `Groq` + `OpenAI`) & Real-Time 1-Circle Token/Cost Telemetry HUD**<br>• `lib/ai-employee-agency/llm-gateway.ts`<br>• `lib/ai-employee-agency/token-telemetry-store.ts`<br>• `app/api/ai-employee-agency/orchestrate/route.ts` | 1. Server-side LLM router supporting Google AI Studio Free/Paid API keys (`gemini-2.5-flash`), Groq Free/Paid keys (`llama-3.3-70b-versatile`), and OpenAI (`gpt-4o-mini` / `gpt-4.1-mini`) + optional browser BYOK.<br>2. Exact token extraction (`promptTokenCount`, `candidatesTokenCount`, `thoughtsTokenCount`) on every call.<br>3. **Real-Time 1-Circle Token & Cost Telemetry Meter** in the Executive Office showing live tokens per department, cost per 1 full circle (`~$0.0192`), and 30-day projected monthly cost (`~$0.58–$1.20/mo`). |
+| **Phase 8** | **Per-Agent System Prompts, User-Teachable Skills (`userLearnedSkills[]`), Shared Memory Bus & Selective Interrupt Routing**<br>• `lib/ai-employee-agency/agent-memory-store.ts`<br>• `app/api/ai-employee-agency/agent-chat/route.ts`<br>• `features/ai-employee-agency/FounderCommandChatDock.tsx` | 1. **3-Layer Agent Context Stack**: (a) Core SOP System Prompt, (b) User-Taught Custom Skills (`userLearnedSkills[]`) learned directly from chat instructions, and (c) `SharedAgencyMemoryBus`.<br>2. **Selective Workflow Interruption**: Uploading a custom image or instructing a specific specialist (e.g., Pinterest Specialist) wakes *only* the relevant agents while keeping all other departments uninterrupted yet passively updated via the shared memory bus. |
+| **Phase 9** | **`SEO.AI` ($149/mo) Challenger Suite: Automatic Customer Backlink Exchange Network ("Backlink Club"), Google Ads RSA Builder & Spot-Check QA**<br>• `lib/ai-employee-agency/backlink-exchange-club.ts`<br>• `lib/ai-employee-agency/google-ads-agent.ts`<br>• `features/ai-employee-agency/AiAgencyDashboardShell.tsx` | 1. **DoItWithAI Verified Niche Link-Exchange Network ("Backlink Club")**: Matches non-competing customer websites in related niches, weaves contextual backlinks automatically, and tracks Domain Rating growth.<br>2. **Google Ads RSA & Keyword Campaign Sub-Agent**: Generates 15 RSA headlines (`<=30 chars`), 4 descriptions (`<=90 chars`), negative keywords, and Google Ads CSV export per article.<br>3. **Privacy-First 150-Point Automated QA + Opt-In Expert Spot-Check Toggle**. |
+| **Phase 10** | **1-Click No-Code CMS Auto-Publishing (WordPress, Shopify, Webflow & Webhooks) + Staggered 24/7 Hourly Heartbeat Scheduler**<br>• `lib/ai-employee-agency/cms-connectors.ts`<br>• `lib/ai-employee-agency/heartbeat-scheduler.ts`<br>• `app/api/ai-employee-agency/publish-cms/route.ts` | 1. **1-Click CMS Auto-Publish Connectors**: WordPress Application Passwords (`POST /wp-json/wp/v2/posts`), Shopify Admin Blog API, Webflow CMS API, and Universal Webhook URL.<br>2. **Staggered 24/7 Heartbeat Scheduler**: Every 2h Off-Page PR Scout, Every 4h Social Drip, Every 6h Technical Zero-Token Check, Every 12h On-Page Decay Refresh, and Every 24h Full Article Circle + Gmail/Social OAuth hooks. |

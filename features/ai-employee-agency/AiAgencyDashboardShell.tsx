@@ -22,7 +22,6 @@ import type {
   ConnectedWebsiteProfile,
 } from '@/lib/autonomous-agents/types';
 import {
-  SIDEBAR_DEPARTMENTS_FROM_REGISTRY,
   getDepartmentByTabId,
   type AgencySidebarTabId,
   type InteractiveOfficeNode,
@@ -40,8 +39,84 @@ import InteractiveAgencyNodeCanvas from './InteractiveAgencyNodeCanvas';
 import FounderCommandChatDock, {
   type FounderChatMessage,
 } from './FounderCommandChatDock';
+import { AgencyUiIcon, DepartmentSvgIcon } from './AgencySvgIcons';
 
 export type { AgencySidebarTabId, InteractiveOfficeNode };
+
+/**
+ * Clean, single-line sidebar navigation items with zero-truncation labels
+ */
+const CLEAN_SIDEBAR_NAV: Array<{
+  id: AgencySidebarTabId;
+  title: string;
+  subtitle: string;
+  accentHex: string;
+  teamCountLabel: string;
+}> = [
+  {
+    id: 'executive-office',
+    title: 'Executive Office',
+    subtitle: '24h graph, token cost & alerts',
+    accentHex: '#38BDF8',
+    teamCountLabel: '4 Agents',
+  },
+  {
+    id: 'keyword-strategist',
+    title: 'Keyword Strategist',
+    subtitle: 'Live autocomplete & KD scorer',
+    accentHex: '#F59E0B',
+    teamCountLabel: '4 Agents',
+  },
+  {
+    id: 'content-writing',
+    title: 'Content Studio',
+    subtitle: 'Published, writing & queued',
+    accentHex: '#8B5CF6',
+    teamCountLabel: '5 Agents',
+  },
+  {
+    id: 'graphic-design',
+    title: 'Visual & SVG Studio',
+    subtitle: 'Hero banner & 4× 6-layer SVGs',
+    accentHex: '#EC4899',
+    teamCountLabel: '4 Agents',
+  },
+  {
+    id: 'on-page-seo',
+    title: 'On-Page SEO',
+    subtitle: 'DOM audit, links & 2026 refresh',
+    accentHex: '#10B981',
+    teamCountLabel: '4 Agents',
+  },
+  {
+    id: 'off-page-seo',
+    title: 'Off-Page & Digital PR',
+    subtitle: 'Backlinks, directories & pitches',
+    accentHex: '#F97316',
+    teamCountLabel: '4 Agents',
+  },
+  {
+    id: 'technical-seo',
+    title: 'Technical & Entity SEO',
+    subtitle: '0.00 CLS, robots.txt & schema',
+    accentHex: '#06B6D4',
+    teamCountLabel: '4 Agents',
+  },
+  {
+    id: 'social-video-fleet',
+    title: 'Social & TikTok Fleet',
+    subtitle: 'Pinterest, LinkedIn & 60s video',
+    accentHex: '#F43F5E',
+    teamCountLabel: '6 Agents',
+  },
+  {
+    id: 'qa-publishing',
+    title: 'QA & Publishing',
+    subtitle: '150-pt gate & CMS delivery',
+    accentHex: '#22C55E',
+    teamCountLabel: '4 Agents',
+  },
+];
 
 export default function AiAgencyDashboardShell() {
   const router = useRouter();
@@ -49,6 +124,8 @@ export default function AiAgencyDashboardShell() {
   const [activeSidebarTab, setActiveSidebarTab] =
     useState<AgencySidebarTabId>('executive-office');
   const [isFullCanvasGraphOpen, setIsFullCanvasGraphOpen] = useState<boolean>(false);
+  const [isGraphFullScreenViewport, setIsGraphFullScreenViewport] =
+    useState<boolean>(false);
 
   // Deliberate Paced Handoff Simulation State (Slow, visible real-time movement: 2.8s per stage)
   const [isPacedHandoffRunning, setIsPacedHandoffRunning] = useState<boolean>(true);
@@ -66,7 +143,7 @@ export default function AiAgencyDashboardShell() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [statusToast, setStatusToast] = useState<string>('');
 
-  // Unified Founder Command Bar & 1-on-1 Agent Chat / Voice Call State (Phase 5)
+  // Unified Founder Command Bar & 1-on-1 Agent Chat / Voice Call State
   const [chatTargetAgentId, setChatTargetAgentId] = useState<string>(
     'agent-chief-orchestrator'
   );
@@ -86,7 +163,7 @@ export default function AiAgencyDashboardShell() {
         sender: 'agent',
         agentName: 'Chief AI Officer & Founder Assistant',
         departmentBadge: 'Executive Office',
-        text: 'Welcome to your 24/7 AI Digital Agency Office! Tell me what you want to launch today (e.g. "Launch a new article on AI technical SEO checklists and prepare Pinterest + TikTok scripts"), or select any of our 8 Department Managers and 27 Sub-Agents below to chat or voice-call 1-on-1.',
+        text: 'Welcome to your 24/7 AI Digital Agency Office. Tell me what you want to launch today (e.g. "Launch a new article on AI technical SEO checklists and prepare Pinterest + TikTok scripts"), or select any of our 36 AI Employees below to chat or voice-call 1-on-1.',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       },
     ]);
@@ -137,7 +214,7 @@ export default function AiAgencyDashboardShell() {
 
   const isInternalSite = activeWebsite?.publishingMode === 'internal-doitwithai-site';
 
-  // Build the 6-Stage Paced Handoff Packet Chain from `handoff-orchestrator.ts`
+  // Build the 6-Stage Paced Handoff Packet Chain
   const handoffPackets = useMemo(() => {
     const activeJob = selectedArticle || activeCampaign?.jobs[0];
     return buildPacedHandoffChain({
@@ -182,7 +259,7 @@ export default function AiAgencyDashboardShell() {
     [activeCampaign?.jobs.length]
   );
 
-  // Build the 12 Interconnected Core Digital Agency Office Nodes for `InteractiveAgencyNodeCanvas`
+  // Build the 12 Interconnected Core Digital Agency Office Nodes
   const officeNodes: InteractiveOfficeNode[] = useMemo(() => {
     const siteName = activeWebsite?.siteName || 'Your Website';
     const jobs = activeCampaign?.jobs || [];
@@ -434,7 +511,7 @@ export default function AiAgencyDashboardShell() {
   };
 
   /**
-   * Run Live Keyword Research & DoItWithAI KD Scorer (`/api/ai-employee-agency/orchestrate` + local engine)
+   * Run Live Keyword Research & DoItWithAI KD Scorer
    */
   const handleRunLiveKeywordScorer = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -467,7 +544,7 @@ export default function AiAgencyDashboardShell() {
         if (data.ok && Array.isArray(data.scoredKeywordBriefs)) {
           setLiveScoredBriefs(data.scoredKeywordBriefs);
           setStatusToast(
-            `✓ Keyword Strategist scored ${data.scoredKeywordBriefs.length} live autocomplete keywords via DoItWithAI KD Engine!`
+            `Keyword Strategist scored ${data.scoredKeywordBriefs.length} live autocomplete keywords via DoItWithAI KD Engine.`
           );
           setIsScoringKeywords(false);
           return;
@@ -494,7 +571,7 @@ export default function AiAgencyDashboardShell() {
     );
     setLiveScoredBriefs(scored);
     setStatusToast(
-      `✓ Keyword Strategist scored ${scored.length} low-KD keyword briefs for "${querySeed}"!`
+      `Keyword Strategist scored ${scored.length} low-KD keyword briefs for "${querySeed}".`
     );
     setIsScoringKeywords(false);
   };
@@ -514,7 +591,7 @@ export default function AiAgencyDashboardShell() {
       topicTitle: brief.recommendedH1Title,
       primaryKeyword: brief.keyword,
       secondaryKeywords: brief.paaQuestions.slice(0, 3),
-      searchIntent: 'informational-guide',
+      searchIntent: 'Informational',
       kdProxyScore: brief.kdScore,
       urlSlug: brief.recommendedUrlSlug,
       status: 'drafting-article',
@@ -534,7 +611,7 @@ export default function AiAgencyDashboardShell() {
     setActiveHandoffStage(2);
     setActiveSidebarTab('content-writing');
     setStatusToast(
-      `⚡ Keyword Strategist handed off "${brief.keyword}" (KD ${brief.kdScore}) to Content Production Manager — actively writing now!`
+      `Keyword Strategist handed off "${brief.keyword}" (KD ${brief.kdScore}) to Content Production Manager.`
     );
   };
 
@@ -598,7 +675,7 @@ export default function AiAgencyDashboardShell() {
     if (!studioState || !activeCampaign || !activeWebsite) return;
     setSelectedArticleId(jobToStart.id);
     setStatusToast(
-      `Keyword Strategist handed off "${jobToStart.primaryKeyword}" to Content Production Manager — writing & rendering visuals now...`
+      `Keyword Strategist handed off "${jobToStart.primaryKeyword}" to Content Production Manager — drafting & rendering visuals now...`
     );
 
     const nowIso = new Date().toISOString();
@@ -656,8 +733,8 @@ export default function AiAgencyDashboardShell() {
     setStudioState(markDone);
     setStatusToast(
       isInternal
-        ? `✓ Completed & Auto-Published "${jobToStart.topicTitle}" to ${publishedUrl}!`
-        : `✓ Completed Draft, Featured Image, 4 Section Infographics & Social Pack for "${jobToStart.topicTitle}"!`
+        ? `Completed & Auto-Published "${jobToStart.topicTitle}" to ${publishedUrl}.`
+        : `Completed Draft, Featured Image, 4 Section Infographics & Social Pack for "${jobToStart.topicTitle}".`
     );
   };
 
@@ -711,67 +788,93 @@ export default function AiAgencyDashboardShell() {
   return (
     <div className="min-h-screen bg-[#060B16] text-slate-100 flex flex-col">
       {/* =====================================================================
-          TOP AGENCY COMMAND HEADER BAR (With 1-Click Full-Canvas Node Graph Toggle)
+          SLEEK TOP AGENCY COMMAND HEADER BAR (SVG Icons · Zero Noise)
          ===================================================================== */}
       <header className="border-b border-slate-800/90 bg-[#0A1122]/95 backdrop-blur sticky top-0 z-30">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
-          {/* Left: Brand & Live Paced Handoff Ticker */}
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-3">
+          {/* Left: Change URL + Website Identity + Active Stage Pill */}
           <div className="flex items-center gap-3 min-w-0">
             <Link
               href="/ai-employee-agency"
-              className="rounded-xl border border-slate-700 bg-slate-900 hover:bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-300 shrink-0 transition"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700/80 bg-slate-900 hover:bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-300 shrink-0 transition"
             >
-              ← Change URL
+              <AgencyUiIcon name="arrow-left" className="w-3.5 h-3.5" />
+              <span>Change Website</span>
             </Link>
+
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-ping shrink-0" />
+                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping shrink-0" />
                 <span className="text-sm sm:text-base font-extrabold text-white truncate">
-                  {activeWebsite.siteName} · 24/7 AI Employee Agency Office
+                  {activeWebsite.siteName}
                 </span>
-                <span className="hidden md:inline-block rounded-full bg-sky-500/15 border border-sky-500/30 px-2.5 py-0.5 text-[10px] font-extrabold text-sky-300">
-                  {isInternalSite
-                    ? 'Internal Auto-Publish (/p/blog)'
-                    : 'External Site Mode'}
+                <span className="hidden md:inline-block rounded-md bg-sky-500/15 border border-sky-500/30 px-2 py-0.5 text-[10px] font-bold text-sky-300">
+                  {isInternalSite ? 'Internal Auto-Publish' : 'External Domain'}
                 </span>
-              </div>
-              <div className="text-[11px] text-emerald-300 font-medium truncate mt-0.5">
-                {activePacket.tickerHeadline}
+                <span className="hidden lg:inline-block rounded-md bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-mono font-bold text-emerald-300">
+                  Stage {activeHandoffStage}/6 · {activePacket.toAgentName}
+                </span>
               </div>
             </div>
           </div>
 
-          {/* Right: Primary View Toggle (Full-Canvas Node Graph vs Department Dashboard) */}
+          {/* Right: Workspace vs Node Graph Toggle + Direct Full-Screen Expand + Flow Pause */}
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              onClick={() => setIsFullCanvasGraphOpen((prev) => !prev)}
-              className={`rounded-xl px-4 py-2 text-xs font-extrabold transition shadow-lg flex items-center gap-2 ${
+              onClick={() => {
+                setIsFullCanvasGraphOpen((prev) => !prev);
+                if (isFullCanvasGraphOpen) {
+                  setIsGraphFullScreenViewport(false);
+                }
+              }}
+              className={`inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition shadow ${
                 isFullCanvasGraphOpen
                   ? 'bg-gradient-to-r from-amber-400 via-emerald-400 to-sky-400 text-slate-950'
                   : 'border border-sky-400/60 bg-sky-500/20 text-sky-200 hover:bg-sky-500/30'
               }`}
             >
+              <AgencyUiIcon
+                name={isFullCanvasGraphOpen ? 'dashboard-grid' : 'node-graph'}
+                className="w-3.5 h-3.5"
+              />
               <span>
                 {isFullCanvasGraphOpen
-                  ? '📊 Return to Department Workspace View'
-                  : '🌐 Live Animated AI Agency Node Graph (Full Canvas)'}
+                  ? 'Return to Department Tabs'
+                  : 'Live Agency Node Graph'}
               </span>
             </button>
 
             <button
               type="button"
-              onClick={() => setIsPacedHandoffRunning((prev) => !prev)}
-              className="rounded-xl border border-slate-700 bg-slate-900 hover:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-200 transition"
+              onClick={() => {
+                setIsFullCanvasGraphOpen(true);
+                setIsGraphFullScreenViewport(true);
+              }}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-400/50 bg-emerald-500/15 hover:bg-emerald-500/25 px-3 py-2 text-xs font-extrabold text-emerald-200 transition"
+              title="Open Node Graph in 100% Full Screen"
             >
-              {isPacedHandoffRunning ? '⏸ Pause Live Flow' : '▶ Resume Live Flow'}
+              <AgencyUiIcon name="expand-fullscreen" className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Full Screen Graph</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsPacedHandoffRunning((prev) => !prev)}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-900 hover:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-200 transition"
+            >
+              <AgencyUiIcon
+                name={isPacedHandoffRunning ? 'pause' : 'play'}
+                className="w-3.5 h-3.5 text-sky-400"
+              />
+              <span>{isPacedHandoffRunning ? 'Pause Flow' : 'Resume Flow'}</span>
             </button>
           </div>
         </div>
       </header>
 
       {statusToast && (
-        <div className="bg-emerald-950/90 border-b border-emerald-500/40 px-6 py-2.5 text-xs text-emerald-200 flex items-center justify-between">
+        <div className="bg-emerald-950/90 border-b border-emerald-500/40 px-6 py-2 text-xs text-emerald-200 flex items-center justify-between">
           <span>{statusToast}</span>
           <button
             type="button"
@@ -784,20 +887,22 @@ export default function AiAgencyDashboardShell() {
       )}
 
       {/* =====================================================================
-          MAIN BODY: STANDARD LEFT DEPARTMENT SIDEBAR + FULL RIGHT WORKSPACE
+          MAIN BODY: REFINED LEFT SIDEBAR (SVG ICONS · ZERO TRUNCATION) + RIGHT WORKSPACE
          ===================================================================== */}
       <div className="flex-1 max-w-[1600px] w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-0">
-        {/* LEFT SIDEBAR: Website Tabs & 9 Agency Departments */}
-        <aside className="lg:col-span-3 xl:col-span-2 border-b lg:border-b-0 lg:border-r border-slate-800/90 bg-[#091020] p-3.5 space-y-3">
+        {/* LEFT SIDEBAR: 9 Clean Department Tabs with Geometric SVG Icons */}
+        <aside className="lg:col-span-3 xl:col-span-3 2xl:col-span-2 border-b lg:border-b-0 lg:border-r border-slate-800/90 bg-[#080F1E] p-3.5 space-y-3">
           <div className="px-2 py-1 flex items-center justify-between">
-            <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
-              Agency Departments ({SIDEBAR_DEPARTMENTS_FROM_REGISTRY.length})
-            </div>
-            <span className="text-[10px] font-mono text-emerald-400">36 Agents</span>
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+              Departments (9)
+            </span>
+            <span className="rounded-md bg-emerald-500/15 px-2 py-0.5 text-[10px] font-mono font-bold text-emerald-300">
+              36 AI Agents
+            </span>
           </div>
 
-          <nav className="space-y-1.5" aria-label="AI Agency Departments">
-            {SIDEBAR_DEPARTMENTS_FROM_REGISTRY.map((dept) => {
+          <nav className="space-y-1" aria-label="AI Agency Departments">
+            {CLEAN_SIDEBAR_NAV.map((dept) => {
               const isSelected =
                 !isFullCanvasGraphOpen && activeSidebarTab === dept.id;
               return (
@@ -807,25 +912,35 @@ export default function AiAgencyDashboardShell() {
                   onClick={() => {
                     setActiveSidebarTab(dept.id);
                     setIsFullCanvasGraphOpen(false);
+                    setIsGraphFullScreenViewport(false);
                   }}
-                  className={`w-full text-left rounded-xl px-3 py-2.5 border transition flex items-start gap-2.5 ${
+                  className={`w-full text-left rounded-xl px-3 py-2.5 border transition flex items-center gap-3 ${
                     isSelected
-                      ? 'border-sky-400 bg-sky-500/15 text-white shadow-sm'
-                      : 'border-transparent bg-slate-950/40 text-slate-300 hover:bg-slate-900 hover:border-slate-800'
+                      ? 'border-sky-400/80 bg-sky-500/15 text-white shadow-sm'
+                      : 'border-transparent bg-slate-950/40 text-slate-300 hover:bg-slate-900/90 hover:border-slate-800'
                   }`}
                 >
-                  <span className="text-base shrink-0 mt-0.5">{dept.icon}</span>
+                  <span
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border"
+                    style={{
+                      backgroundColor: `${dept.accentHex}18`,
+                      borderColor: `${dept.accentHex}45`,
+                      color: dept.accentHex,
+                    }}
+                  >
+                    <DepartmentSvgIcon tabId={dept.id} className="w-4 h-4" />
+                  </span>
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-1">
-                      <span className="text-xs font-extrabold truncate">
-                        {dept.label}
+                    <div className="flex items-center justify-between gap-1.5">
+                      <span className="text-xs font-bold text-white leading-tight">
+                        {dept.title}
                       </span>
-                      <span className="text-[9px] rounded bg-slate-800 px-1.5 py-0.5 text-slate-300 shrink-0">
-                        1+{dept.subAgentCount}
+                      <span className="text-[9.5px] font-mono text-slate-400 shrink-0">
+                        {dept.teamCountLabel}
                       </span>
                     </div>
-                    <div className="text-[10px] text-slate-400 truncate mt-0.5">
-                      {dept.shortRole}
+                    <div className="text-[10.5px] text-slate-400 truncate mt-0.5">
+                      {dept.subtitle}
                     </div>
                   </div>
                 </button>
@@ -833,47 +948,50 @@ export default function AiAgencyDashboardShell() {
             })}
           </nav>
 
-          {/* Quick Full-Canvas Graph Launcher Card in Sidebar */}
+          {/* Full-Screen Node Graph Quick Card in Sidebar */}
           <div className="pt-2 border-t border-slate-800/80">
             <button
               type="button"
-              onClick={() => setIsFullCanvasGraphOpen(true)}
-              className={`w-full rounded-xl border p-3 text-left transition ${
-                isFullCanvasGraphOpen
-                  ? 'border-amber-400 bg-amber-500/15 text-amber-200'
-                  : 'border-slate-800 bg-slate-950/70 text-sky-300 hover:border-sky-500/40'
-              }`}
+              onClick={() => {
+                setIsFullCanvasGraphOpen(true);
+                setIsGraphFullScreenViewport(true);
+              }}
+              className="w-full rounded-xl border border-sky-500/35 bg-sky-500/10 hover:bg-sky-500/20 p-3 text-left transition space-y-1"
             >
-              <div className="text-xs font-extrabold flex items-center justify-between">
-                <span>🌐 Full Node Graph</span>
-                <span className="text-[10px] rounded bg-emerald-500/20 px-1.5 py-0.5 text-emerald-300">
-                  12 / 36 Nodes
+              <div className="text-xs font-extrabold text-sky-300 flex items-center justify-between">
+                <span className="inline-flex items-center gap-1.5">
+                  <AgencyUiIcon name="expand-fullscreen" className="w-3.5 h-3.5" />
+                  <span>Full-Screen Node Graph</span>
                 </span>
+                <span className="text-[10px] font-mono text-emerald-300">100% View</span>
               </div>
-              <p className="text-[10px] text-slate-400 mt-1">
-                Zoom, pan, hover &amp; click any agent node to inspect or chat.
+              <p className="text-[10.5px] text-slate-400 leading-snug">
+                Expand the 36-agent interactive graph across your entire screen.
               </p>
             </button>
           </div>
         </aside>
 
         {/* =====================================================================
-            RIGHT MAIN AREA:
-            - When `isFullCanvasGraphOpen === true`: 100% FULL-CANVAS INTERACTIVE NODE GRAPH (`InteractiveAgencyNodeCanvas`)
-            - When `isFullCanvasGraphOpen === false`: Selected Department's Dedicated Dashboard
+            RIGHT MAIN WORKSPACE AREA
            ===================================================================== */}
-        <main className="lg:col-span-9 xl:col-span-10 min-w-0 flex flex-col">
+        <main className="lg:col-span-9 xl:col-span-9 2xl:col-span-10 min-w-0 flex flex-col">
           {isFullCanvasGraphOpen ? (
             <InteractiveAgencyNodeCanvas
               coreNodes={officeNodes}
               activeHandoffStage={activeHandoffStage}
               activePacket={activePacket}
+              isFullScreenViewport={isGraphFullScreenViewport}
+              onToggleFullScreenViewport={() =>
+                setIsGraphFullScreenViewport((prev) => !prev)
+              }
               onStepNextStage={() =>
                 setActiveHandoffStage((prev) => (prev >= 6 ? 1 : prev + 1))
               }
               onSelectDepartmentTab={(tabId) => {
                 setActiveSidebarTab(tabId);
                 setIsFullCanvasGraphOpen(false);
+                setIsGraphFullScreenViewport(false);
               }}
               onStartAgentChat={(agentId) => {
                 setChatTargetAgentId(agentId);
@@ -881,40 +999,51 @@ export default function AiAgencyDashboardShell() {
               }}
             />
           ) : (
-            <div className="p-4 sm:p-7 space-y-6 flex-1">
+            <div className="p-4 sm:p-6 space-y-5 flex-1">
               {/* -------------------------------------------------------------
-                  PERSISTENT DEPARTMENT MANAGER + SUB-AGENTS ROSTER STRIP
-                  (Shows the Manager & Sub-Agents for whichever tab is active)
+                  COMPACT DEPARTMENT MANAGER & SUB-AGENTS HEADER BAR
                  ------------------------------------------------------------- */}
               <div className="rounded-2xl border border-slate-800/90 bg-[#0A1224] p-4 space-y-3 text-xs">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-lg">{currentDepartmentRegistry.sidebarIcon}</span>
+                  <div className="flex items-center gap-3">
+                    <span
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border"
+                      style={{
+                        backgroundColor: `${currentDepartmentRegistry.accentHex}18`,
+                        borderColor: `${currentDepartmentRegistry.accentHex}50`,
+                        color: currentDepartmentRegistry.accentHex,
+                      }}
+                    >
+                      <DepartmentSvgIcon
+                        tabId={activeSidebarTab}
+                        className="w-4 h-4"
+                      />
+                    </span>
                     <div>
                       <div className="text-[10px] font-extrabold uppercase tracking-wider text-sky-400">
-                        {currentDepartmentRegistry.departmentBadge} · Department Manager &amp;{' '}
-                        {currentDepartmentRegistry.subAgents.length} Specialized Sub-Agents
+                        {currentDepartmentRegistry.departmentBadge} · 1 Lead Manager +{' '}
+                        {currentDepartmentRegistry.subAgents.length} Sub-Agents
                       </div>
                       <div className="text-sm font-extrabold text-white">
-                        Lead Manager: {currentDepartmentRegistry.name}
+                        {currentDepartmentRegistry.name}
                       </div>
                     </div>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setChatTargetAgentId(currentDepartmentRegistry.id);
-                        setIsChatDrawerExpanded(true);
-                      }}
-                      className="rounded-xl border border-purple-400/40 bg-purple-500/15 hover:bg-purple-500/25 px-3 py-1.5 text-[11px] font-extrabold text-purple-200 transition"
-                    >
-                      💬 Chat / Voice Call with {currentDepartmentRegistry.name}
-                    </button>
-                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setChatTargetAgentId(currentDepartmentRegistry.id);
+                      setIsChatDrawerExpanded(true);
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-purple-400/40 bg-purple-500/15 hover:bg-purple-500/25 px-3 py-1.5 text-[11px] font-extrabold text-purple-200 transition"
+                  >
+                    <AgencyUiIcon name="chat" className="w-3.5 h-3.5" />
+                    <span>Message {currentDepartmentRegistry.name}</span>
+                  </button>
                 </div>
 
-                {/* Sub-Agents Pills Row */}
+                {/* Compact Sub-Agents Row */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 pt-1">
                   {currentDepartmentRegistry.subAgents.map((sub) => (
                     <div
@@ -926,7 +1055,7 @@ export default function AiAgencyDashboardShell() {
                           <span
                             className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded"
                             style={{
-                              backgroundColor: `${sub.accentHex}22`,
+                              backgroundColor: `${sub.accentHex}20`,
                               color: sub.accentHex,
                             }}
                           >
@@ -940,7 +1069,7 @@ export default function AiAgencyDashboardShell() {
                             }}
                             className="text-[10px] font-bold text-sky-300 hover:underline"
                           >
-                            💬 Chat 1-on-1
+                            Chat 1-on-1 →
                           </button>
                         </div>
                         <div className="font-extrabold text-white text-xs mt-1.5">
@@ -956,7 +1085,7 @@ export default function AiAgencyDashboardShell() {
                             key={tool}
                             className="rounded bg-slate-900 px-1.5 py-0.5 text-[9.5px] font-mono text-emerald-300"
                           >
-                            ⚙ {tool}
+                            {tool}
                           </span>
                         ))}
                       </div>
@@ -966,58 +1095,70 @@ export default function AiAgencyDashboardShell() {
               </div>
 
               {/* -------------------------------------------------------------
-                  TAB 1: EXECUTIVE OFFICE & FOUNDER BRIEF (WITH 24H ACTIVITY GRAPH)
+                  TAB 1: EXECUTIVE OFFICE (KPIs + 1-CIRCLE TOKEN METER + 24H GRAPH + ALERTS)
                  ------------------------------------------------------------- */}
               {activeSidebarTab === 'executive-office' && (
-                <div className="space-y-6">
-                  <div className="rounded-2xl border border-sky-500/35 bg-slate-900/80 p-5 sm:p-6 space-y-5">
+                <div className="space-y-5">
+                  <div className="rounded-2xl border border-sky-500/35 bg-slate-900/80 p-5 space-y-5">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
                         <span className="text-[11px] font-extrabold uppercase tracking-wider text-sky-400">
-                          Executive Office · Founder Daily Overview &amp; Live Handoff Telemetry
+                          Executive Command Center
                         </span>
-                        <h2 className="text-xl font-extrabold text-white mt-0.5">
-                          Today&apos;s Autonomous Agency Output &amp; Manual Founder Action Queue
+                        <h2 className="text-lg sm:text-xl font-extrabold text-white mt-0.5">
+                          24/7 Agency Output, Live 1-Circle Token Telemetry &amp; Action Queue
                         </h2>
                       </div>
                       <button
                         type="button"
-                        onClick={() => setIsFullCanvasGraphOpen(true)}
-                        className="rounded-xl bg-sky-500 hover:bg-sky-400 px-4 py-2 text-xs font-extrabold text-slate-950 transition"
+                        onClick={() => {
+                          setIsFullCanvasGraphOpen(true);
+                          setIsGraphFullScreenViewport(true);
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-sky-500 hover:bg-sky-400 px-3.5 py-2 text-xs font-extrabold text-slate-950 transition"
                       >
-                        🌐 Open Full-Canvas Interactive Node Graph →
+                        <AgencyUiIcon name="expand-fullscreen" className="w-3.5 h-3.5" />
+                        <span>Launch Full-Screen Node Graph</span>
                       </button>
                     </div>
 
-                    {/* Top 4 Executive KPI Cards */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 text-xs">
-                      <div className="rounded-xl border border-slate-800 bg-slate-950 p-4">
-                        <div className="text-slate-400">Keywords &amp; Topics Researched</div>
-                        <div className="text-lg font-black text-amber-300 mt-1">
-                          {activeCampaign.jobs.length} Low-KD Clusters
+                    {/* Top 5 Executive KPI & Token Cost Cards */}
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-xs">
+                      <div className="rounded-xl border border-slate-800 bg-slate-950 p-3.5">
+                        <div className="text-slate-400 text-[11px]">Low-KD Clusters</div>
+                        <div className="text-base font-black text-amber-300 mt-1">
+                          {activeCampaign.jobs.length} Topics Locked
                         </div>
                       </div>
-                      <div className="rounded-xl border border-slate-800 bg-slate-950 p-4">
-                        <div className="text-slate-400">
-                          {isInternalSite ? 'Articles Published' : 'Article Drafts Ready'}
+                      <div className="rounded-xl border border-slate-800 bg-slate-950 p-3.5">
+                        <div className="text-slate-400 text-[11px]">
+                          {isInternalSite ? 'Published Live' : 'Drafts Staged'}
                         </div>
-                        <div className="text-lg font-black text-emerald-300 mt-1">
+                        <div className="text-base font-black text-emerald-300 mt-1">
                           {publishedOrDraftJobs.length} Done · {activelyWritingJobs.length}{' '}
-                          Writing
+                          Active
                         </div>
                       </div>
-                      <div className="rounded-xl border border-slate-800 bg-slate-950 p-4">
-                        <div className="text-slate-400">Visuals &amp; Infographics</div>
-                        <div className="text-lg font-black text-pink-300 mt-1">
+                      <div className="rounded-xl border border-slate-800 bg-slate-950 p-3.5">
+                        <div className="text-slate-400 text-[11px]">6-Layer Visual SVGs</div>
+                        <div className="text-base font-black text-pink-300 mt-1">
                           {activeCampaign.jobs.length} Hero +{' '}
-                          {activeCampaign.jobs.length * 4} SVGs
+                          {activeCampaign.jobs.length * 4} Cards
                         </div>
                       </div>
-                      <div className="rounded-xl border border-slate-800 bg-slate-950 p-4">
-                        <div className="text-slate-400">Social &amp; TikTok Scripts</div>
-                        <div className="text-lg font-black text-sky-300 mt-1">
+                      <div className="rounded-xl border border-slate-800 bg-slate-950 p-3.5">
+                        <div className="text-slate-400 text-[11px]">Social &amp; TikTok</div>
+                        <div className="text-base font-black text-sky-300 mt-1">
                           {activeCampaign.jobs.length * 3} Pins ·{' '}
-                          {activeCampaign.jobs.length} TikToks
+                          {activeCampaign.jobs.length} Scripts
+                        </div>
+                      </div>
+                      <div className="rounded-xl border border-emerald-500/40 bg-emerald-950/20 p-3.5">
+                        <div className="text-emerald-300 text-[11px] font-bold">
+                          1-Circle Token Cost
+                        </div>
+                        <div className="text-base font-black text-white font-mono mt-1">
+                          16.3K tok · $0.0192
                         </div>
                       </div>
                     </div>
@@ -1026,7 +1167,7 @@ export default function AiAgencyDashboardShell() {
                     <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4 space-y-3 text-xs">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <span className="font-extrabold text-sky-300">
-                          📈 24-Hour Autonomous Department Throughput &amp; Verification Graph
+                          24-Hour Autonomous Department Throughput &amp; Verification Graph
                         </span>
                         <div className="flex items-center gap-3 text-[10px]">
                           <span className="text-amber-300">■ Keywords Scored</span>
@@ -1076,7 +1217,7 @@ export default function AiAgencyDashboardShell() {
                     <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4 space-y-3 text-xs">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <span className="font-extrabold text-emerald-300">
-                          ⚡ Real-Time Inter-Agent Handoff Protocol (Stage {activeHandoffStage}/6 ·{' '}
+                          Active Inter-Agent Handoff (Stage {activeHandoffStage}/6 ·{' '}
                           {activePacket.packetCode})
                         </span>
                         <span className="text-[11px] text-slate-400">
@@ -1115,8 +1256,11 @@ export default function AiAgencyDashboardShell() {
                     {/* Manual Founder Action Required Alerts */}
                     <div className="rounded-2xl border border-amber-400/40 bg-amber-950/20 p-4 space-y-3 text-xs">
                       <div className="flex items-center justify-between">
-                        <span className="font-extrabold text-amber-300 uppercase tracking-wider">
-                          ⚠️ Founder Manual Action Queue ({manualActionAlerts.length} Items)
+                        <span className="inline-flex items-center gap-1.5 font-extrabold text-amber-300 uppercase tracking-wider">
+                          <AgencyUiIcon name="alert-triangle" className="w-4 h-4" />
+                          <span>
+                            Founder Manual Action Queue ({manualActionAlerts.length})
+                          </span>
                         </span>
                         <span className="text-[11px] text-slate-400">
                           Escalated by Technical SEO &amp; Publishing Agents
@@ -1153,13 +1297,13 @@ export default function AiAgencyDashboardShell() {
                   TAB 2: KEYWORD & TOPIC STRATEGIST DEPARTMENT
                  ------------------------------------------------------------- */}
               {activeSidebarTab === 'keyword-strategist' && (
-                <div className="rounded-2xl border border-amber-500/35 bg-slate-900/80 p-5 sm:p-6 space-y-5">
+                <div className="rounded-2xl border border-amber-500/35 bg-slate-900/80 p-5 space-y-5">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <span className="text-[11px] font-extrabold uppercase tracking-wider text-amber-300">
-                        Department 1 · Keyword &amp; Topic Strategist (Web Search + DoItWithAI KD Engine)
+                        Department 1 · Keyword &amp; Topic Strategist
                       </span>
-                      <h2 className="text-xl font-extrabold text-white mt-0.5">
+                      <h2 className="text-lg sm:text-xl font-extrabold text-white mt-0.5">
                         Live Keyword Discovery, KD Scoring &amp; H1–H3 Heading Handoff Queue
                       </h2>
                     </div>
@@ -1168,7 +1312,7 @@ export default function AiAgencyDashboardShell() {
                       onClick={() => setActiveSidebarTab('content-writing')}
                       className="rounded-xl bg-amber-400 hover:bg-amber-300 px-4 py-2 text-xs font-extrabold text-slate-950 transition"
                     >
-                      View Handoff in Content Writing Studio →
+                      Open Content Writing Studio →
                     </button>
                   </div>
 
@@ -1181,7 +1325,7 @@ export default function AiAgencyDashboardShell() {
                       type="text"
                       value={liveSeedQuery}
                       onChange={(e) => setLiveSeedQuery(e.target.value)}
-                      placeholder={`Enter any seed keyword or topic for ${activeWebsite.siteName} (e.g. "ai technical seo audit", "saas content strategy")...`}
+                      placeholder={`Enter any seed keyword or topic for ${activeWebsite.siteName} (e.g. "ai technical seo audit")...`}
                       className="flex-1 min-w-[240px] rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2.5 text-xs text-white placeholder-slate-400 focus:border-amber-400 focus:outline-none"
                     />
                     <button
@@ -1190,8 +1334,8 @@ export default function AiAgencyDashboardShell() {
                       className="rounded-xl bg-gradient-to-r from-amber-400 to-emerald-400 hover:brightness-110 px-4 py-2.5 text-xs font-extrabold text-slate-950 shadow-lg transition disabled:opacity-50"
                     >
                       {isScoringKeywords
-                        ? '⚡ Scraping Web Autocomplete & Scoring KD...'
-                        : '🔍 Run Live Web Autocomplete + DoItWithAI KD Scorer'}
+                        ? 'Scraping Web Autocomplete & Scoring KD...'
+                        : 'Run Live Autocomplete + DoItWithAI KD Scorer'}
                     </button>
                   </form>
 
@@ -1199,7 +1343,7 @@ export default function AiAgencyDashboardShell() {
                   {liveScoredBriefs.length > 0 && (
                     <div className="space-y-3">
                       <div className="text-xs font-extrabold text-emerald-300">
-                        ✨ Newly Scored Live Autocomplete Briefs (Ready for 1-Click Handoff to Content Production Manager):
+                        Newly Scored Live Autocomplete Briefs (Ready for 1-Click Handoff):
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 text-xs">
                         {liveScoredBriefs.slice(0, 4).map((brief) => (
@@ -1213,7 +1357,8 @@ export default function AiAgencyDashboardShell() {
                                   KD {brief.kdScore}/100 · {brief.difficultyLabel}
                                 </span>
                                 <span className="text-[11px] text-amber-300 font-mono">
-                                  Vol: {brief.estimatedMonthlyVolume}/mo · CPC {brief.cpcEstimateUsd}
+                                  Vol: {brief.estimatedMonthlyVolume}/mo · CPC{' '}
+                                  {brief.cpcEstimateUsd}
                                 </span>
                               </div>
                               <div className="text-sm font-extrabold text-white">
@@ -1230,7 +1375,7 @@ export default function AiAgencyDashboardShell() {
                               }
                               className="w-full rounded-xl bg-emerald-400 hover:bg-emerald-300 py-2 px-3 text-xs font-extrabold text-slate-950 transition"
                             >
-                              ⚡ Hand Off Keyword Brief to Content Production Manager →
+                              Hand Off Brief to Content Production Manager →
                             </button>
                           </div>
                         ))}
@@ -1248,39 +1393,32 @@ export default function AiAgencyDashboardShell() {
                         <div className="space-y-2">
                           <div className="flex items-center justify-between gap-2">
                             <span className="rounded bg-amber-500/15 px-2.5 py-0.5 text-[10px] font-extrabold text-amber-300">
-                              Keyword Cluster #{idx + 1} · KD {job.kdProxyScore}/100 (Low
-                              Difficulty)
+                              Cluster #{idx + 1} · KD {job.kdProxyScore}/100
                             </span>
                             <span className="text-[11px] font-bold text-sky-300">
                               {job.searchIntent}
                             </span>
                           </div>
                           <div className="text-sm font-extrabold text-white">
-                            Primary Keyword: &ldquo;{job.primaryKeyword}&rdquo;
+                            &ldquo;{job.primaryKeyword}&rdquo;
                           </div>
                           <div className="text-xs text-slate-300">
-                            <strong>Target Article Title:</strong> {job.topicTitle}
+                            <strong>H1 Title:</strong> {job.topicTitle}
                           </div>
                           <div className="rounded-xl border border-slate-800 bg-slate-900 p-2.5 space-y-1 text-[11px] text-slate-300">
-                            <div className="font-bold text-emerald-300">
-                              Finalized H2 Heading Structure:
-                            </div>
                             {job.outlineSections.map((sec, sIdx) => (
                               <div key={sec.h2 + sIdx} className="truncate">
-                                H2.{sIdx + 1}: {sec.h2} ({sec.archetype})
+                                H2.{sIdx + 1}: {sec.h2}
                               </div>
                             ))}
                           </div>
                         </div>
 
                         <div className="flex items-center justify-between pt-2 border-t border-slate-800">
-                          <span className="text-[11px] text-slate-400">
-                            Handoff Status:{' '}
-                            <strong className="text-emerald-300">
-                              {job.status === 'queued'
-                                ? 'Ready to Hand Off to Content Writer'
-                                : '✓ Handed Off to Content Production Manager'}
-                            </strong>
+                          <span className="text-[11px] text-emerald-300 font-semibold">
+                            {job.status === 'queued'
+                              ? 'Queued for Handoff'
+                              : 'Handed Off to Content Studio'}
                           </span>
                           <button
                             type="button"
@@ -1294,8 +1432,8 @@ export default function AiAgencyDashboardShell() {
                             className="rounded-lg bg-sky-500/20 border border-sky-500/40 hover:bg-sky-500/30 px-3 py-1.5 text-[11px] font-extrabold text-sky-200"
                           >
                             {job.status === 'queued'
-                              ? '⚡ Hand Off to Content Writer Now →'
-                              : 'Inspect in Content Studio →'}
+                              ? 'Start Writing Now →'
+                              : 'Inspect in Studio →'}
                           </button>
                         </div>
                       </div>
@@ -1305,21 +1443,21 @@ export default function AiAgencyDashboardShell() {
               )}
 
               {/* -------------------------------------------------------------
-                  TAB 3: CONTENT WRITING STUDIO (WITH PUBLISHED / DRAFT / WRITING / NOT YET STARTED BOXES)
+                  TAB 3: CONTENT WRITING STUDIO (PUBLISHED / WRITING / NOT STARTED BOXES)
                  ------------------------------------------------------------- */}
               {activeSidebarTab === 'content-writing' && (
-                <div className="space-y-6">
-                  <div className="rounded-2xl border border-purple-500/35 bg-slate-900/80 p-5 sm:p-6 space-y-5">
+                <div className="space-y-5">
+                  <div className="rounded-2xl border border-purple-500/35 bg-slate-900/80 p-5 space-y-5">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
                         <span className="text-[11px] font-extrabold uppercase tracking-wider text-purple-300">
-                          Department 2 · Content Production Manager &amp; 4 Writing Sub-Agents
+                          Department 2 · Content Production Studio
                         </span>
-                        <h2 className="text-xl font-extrabold text-white mt-0.5">
-                          Live Article Pipeline Board ({publishedOrDraftJobs.length}{' '}
+                        <h2 className="text-lg sm:text-xl font-extrabold text-white mt-0.5">
+                          Article Pipeline ({publishedOrDraftJobs.length}{' '}
                           {isInternalSite ? 'Published' : 'Drafts Ready'} ·{' '}
-                          {activelyWritingJobs.length} Writing Now ·{' '}
-                          {notYetStartedJobs.length} Not Yet Started)
+                          {activelyWritingJobs.length} Writing · {notYetStartedJobs.length}{' '}
+                          Queued)
                         </h2>
                       </div>
                       <button
@@ -1327,13 +1465,14 @@ export default function AiAgencyDashboardShell() {
                         onClick={() =>
                           void handleOpenInContentWriterStudio(selectedArticle)
                         }
-                        className="rounded-xl bg-gradient-to-r from-indigo-500 via-sky-500 to-emerald-400 hover:brightness-110 px-4 py-2.5 text-xs font-extrabold text-slate-950 shadow-lg transition"
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-indigo-500 via-sky-500 to-emerald-400 hover:brightness-110 px-4 py-2 text-xs font-extrabold text-slate-950 shadow-lg transition"
                       >
-                        ✨ Open Full AI Content Writer Studio (/ai-content-writer) →
+                        <AgencyUiIcon name="external-link" className="w-3.5 h-3.5" />
+                        <span>Open in AI Content Writer Studio</span>
                       </button>
                     </div>
 
-                    {/* Unique Status Boxes Grid: (1) Published/Draft Ready, (2) Actively Writing Now, (3) Not Yet Started */}
+                    {/* Unique Status Boxes Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 text-xs">
                       {activeCampaign.jobs.map((job, idx) => {
                         const isDone =
@@ -1345,11 +1484,11 @@ export default function AiAgencyDashboardShell() {
                         const isNotStarted = job.status === 'queued';
 
                         const activeSubAgentNames = [
-                          '1/5 · Keyword Handoff Brief Received',
-                          '2/5 · Graphic Designer Rendering Featured Hero Image',
-                          '3/5 · Section Writer Drafting H2s & 50w AEO Lead',
-                          '4/5 · Meta Title (<580px) & Internal Link Weaver',
-                          '5/5 · @graph JSON-LD Schema & QA Readability Check',
+                          'Step 1/5 · Keyword Handoff Brief Locked',
+                          'Step 2/5 · Rendering 1200×675 Featured Hero SVG',
+                          'Step 3/5 · Drafting H2 Sections & 50w AEO Lead',
+                          'Step 4/5 · Verifying <580px Meta & Internal Links',
+                          'Step 5/5 · Compiling @graph Schema & QA Gate',
                         ];
 
                         return (
@@ -1360,11 +1499,10 @@ export default function AiAgencyDashboardShell() {
                                 ? 'border-sky-400 bg-sky-950/30 shadow-lg'
                                 : isDone
                                   ? 'border-emerald-500/45 bg-slate-950/90'
-                                  : 'border-slate-800 border-dashed bg-slate-950/45 opacity-80'
+                                  : 'border-slate-800 border-dashed bg-slate-950/45 opacity-85'
                             }`}
                           >
                             <div className="space-y-2.5">
-                              {/* Status Header Pill */}
                               <div className="flex items-center justify-between gap-2">
                                 <span className="font-mono text-[11px] font-bold text-slate-400">
                                   Slot #{idx + 1} · KD {job.kdProxyScore}
@@ -1372,18 +1510,18 @@ export default function AiAgencyDashboardShell() {
                                 {isDone && (
                                   <span className="rounded-full bg-emerald-500/20 border border-emerald-500/40 px-2.5 py-0.5 text-[10px] font-extrabold text-emerald-300">
                                     {isInternalSite
-                                      ? '🟢 PUBLISHED LIVE'
-                                      : '📘 DRAFT READY (EXTERNAL SITE)'}
+                                      ? 'PUBLISHED LIVE'
+                                      : 'DRAFT READY'}
                                   </span>
                                 )}
                                 {isWriting && (
                                   <span className="rounded-full bg-sky-400 text-slate-950 px-2.5 py-0.5 text-[10px] font-extrabold animate-pulse">
-                                    ⚡ ACTIVELY WRITING NOW
+                                    ACTIVELY WRITING
                                   </span>
                                 )}
                                 {isNotStarted && (
                                   <span className="rounded-full bg-slate-800 border border-slate-700 px-2.5 py-0.5 text-[10px] font-extrabold text-slate-400">
-                                    ⚪ NOT YET STARTED
+                                    NOT YET STARTED
                                   </span>
                                 )}
                               </div>
@@ -1399,7 +1537,6 @@ export default function AiAgencyDashboardShell() {
                                 </strong>
                               </div>
 
-                              {/* Dynamic Sub-Agent Activity Inside Box */}
                               {isWriting && (
                                 <div className="rounded-xl border border-sky-500/30 bg-slate-900/90 p-3 space-y-2">
                                   <div className="text-[11px] font-bold text-sky-300">
@@ -1419,25 +1556,24 @@ export default function AiAgencyDashboardShell() {
                               {isDone && (
                                 <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-2.5 text-[11px] text-slate-300 space-y-1">
                                   <div>
-                                    ✓ 50-Word AEO Lead &amp; {job.outlineSections.length} H2
+                                    • 50-Word AEO Lead &amp; {job.outlineSections.length} H2
                                     Sections
                                   </div>
                                   <div>
-                                    ✓ 1 Featured Hero Image + 4× 1080×1350 Section SVGs
+                                    • 1 Hero Banner + 4× 1080×1350 Section SVGs
                                   </div>
-                                  <div>✓ Meta Tags, Internal Links &amp; @graph Schema</div>
+                                  <div>• Meta Tags, Internal Links &amp; @graph Schema</div>
                                 </div>
                               )}
 
                               {isNotStarted && (
                                 <div className="rounded-xl border border-slate-800/80 bg-slate-900/40 p-2.5 text-[11px] text-slate-400">
-                                  Waiting in queue for Keyword Strategist handoff &amp;
-                                  Content Manager slot.
+                                  Queued for Keyword Strategist handoff &amp; Content Manager
+                                  slot.
                                 </div>
                               )}
                             </div>
 
-                            {/* Box Action Footer */}
                             <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-800/80">
                               {isNotStarted ? (
                                 <button
@@ -1445,7 +1581,7 @@ export default function AiAgencyDashboardShell() {
                                   onClick={() => void handleStartQueuedArticleNow(job)}
                                   className="w-full rounded-xl bg-sky-500 hover:bg-sky-400 py-2 px-3 text-xs font-extrabold text-slate-950 transition"
                                 >
-                                  ▶ Start Writing via AI Agency Pipeline
+                                  Start Writing via Agency Pipeline →
                                 </button>
                               ) : (
                                 <>
@@ -1454,7 +1590,7 @@ export default function AiAgencyDashboardShell() {
                                     onClick={() => setSelectedArticleId(job.id)}
                                     className="flex-1 rounded-xl border border-sky-500/40 bg-sky-500/15 hover:bg-sky-500/25 py-1.5 px-2.5 text-[11px] font-bold text-sky-200"
                                   >
-                                    Inspect Article
+                                    Inspect Draft
                                   </button>
                                   <button
                                     type="button"
@@ -1463,7 +1599,7 @@ export default function AiAgencyDashboardShell() {
                                     }
                                     className="rounded-xl bg-slate-800 hover:bg-slate-700 py-1.5 px-2.5 text-[11px] font-bold text-emerald-300"
                                   >
-                                    Open Studio →
+                                    Edit in Studio →
                                   </button>
                                 </>
                               )}
@@ -1498,11 +1634,17 @@ export default function AiAgencyDashboardShell() {
                                 'copy-active-article'
                               )
                             }
-                            className="rounded-lg bg-slate-800 px-3 py-1.5 font-bold text-sky-300"
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-slate-800 px-3 py-1.5 font-bold text-sky-300"
                           >
-                            {copiedId === 'copy-active-article'
-                              ? '✓ Copied Markdown!'
-                              : 'Copy Full Article Markdown'}
+                            <AgencyUiIcon
+                              name={copiedId === 'copy-active-article' ? 'check' : 'copy'}
+                              className="w-3.5 h-3.5"
+                            />
+                            <span>
+                              {copiedId === 'copy-active-article'
+                                ? 'Copied Markdown'
+                                : 'Copy Full Article Markdown'}
+                            </span>
                           </button>
                         </div>
                         <pre className="max-h-[320px] overflow-x-auto overflow-y-auto whitespace-pre-wrap break-words rounded-xl border border-slate-800 bg-slate-900 p-4 text-xs text-slate-200 font-sans leading-relaxed">
@@ -1519,12 +1661,12 @@ export default function AiAgencyDashboardShell() {
                   TAB 4: GRAPHIC & VISUAL DESIGNER DEPARTMENT (ALL 4 SECTION SVGS + HERO)
                  ------------------------------------------------------------- */}
               {activeSidebarTab === 'graphic-design' && selectedArticle && (
-                <div className="rounded-2xl border border-pink-500/35 bg-slate-900/80 p-5 sm:p-6 space-y-6">
+                <div className="rounded-2xl border border-pink-500/35 bg-slate-900/80 p-5 space-y-6">
                   <div>
                     <span className="text-[11px] font-extrabold uppercase tracking-wider text-pink-300">
-                      Department 3 · Creative &amp; Graphic Design Director
+                      Department 3 · Visual &amp; SVG Infographic Studio
                     </span>
-                    <h2 className="text-xl font-extrabold text-white mt-0.5">
+                    <h2 className="text-lg sm:text-xl font-extrabold text-white mt-0.5">
                       Featured Hero Image (1200×675) &amp; All 4× Standalone 6-Layer Section Infographics (1080×1350)
                     </h2>
                   </div>
@@ -1533,7 +1675,7 @@ export default function AiAgencyDashboardShell() {
                   <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4 space-y-3">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="text-xs font-extrabold text-sky-300">
-                        1. Featured Hero Image Designer Output ({selectedArticle.topicTitle}):
+                        1. Featured Hero Banner SVG ({selectedArticle.topicTitle}):
                       </div>
                       <button
                         type="button"
@@ -1546,7 +1688,7 @@ export default function AiAgencyDashboardShell() {
                         className="rounded-lg bg-slate-800 px-3 py-1 text-[11px] font-bold text-emerald-300"
                       >
                         {copiedId === 'copy-hero-svg'
-                          ? '✓ Copied Hero SVG!'
+                          ? 'Copied Hero SVG'
                           : 'Copy 1200×675 Hero SVG'}
                       </button>
                     </div>
@@ -1564,7 +1706,7 @@ export default function AiAgencyDashboardShell() {
                   {/* All 4 Section Infographics Grid */}
                   <div className="space-y-3">
                     <div className="text-xs font-extrabold text-emerald-300">
-                      2. All 4× Standalone 6-Layer Section Infographics (1080×1350 Inline SVGs · 0.00 CLS):
+                      2. All 4× Standalone 6-Layer Section Infographics (1080×1350 Vector Cards · 0.00 CLS):
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                       {selectedArticle.outlineSections.slice(0, 4).map((sec, idx) => {
@@ -1594,7 +1736,7 @@ export default function AiAgencyDashboardShell() {
                               className="w-full rounded-lg bg-slate-900 hover:bg-slate-800 py-1.5 text-[10.5px] font-bold text-sky-300"
                             >
                               {copiedId === copyKey
-                                ? '✓ Copied SVG!'
+                                ? 'Copied SVG'
                                 : `Copy Section ${idx + 1} SVG`}
                             </button>
                           </div>
@@ -1609,13 +1751,13 @@ export default function AiAgencyDashboardShell() {
                   TAB 5: ON-PAGE SEO & ARTICLE REFRESH ENGINEER
                  ------------------------------------------------------------- */}
               {activeSidebarTab === 'on-page-seo' && (
-                <div className="rounded-2xl border border-emerald-500/35 bg-slate-900/80 p-5 sm:p-6 space-y-5">
+                <div className="rounded-2xl border border-emerald-500/35 bg-slate-900/80 p-5 space-y-5">
                   <div>
                     <span className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-300">
-                      Department 4 · On-Page SEO Engineer &amp; Content Refresh Sub-Agents
+                      Department 4 · On-Page SEO &amp; Content Decay Refresh
                     </span>
-                    <h2 className="text-xl font-extrabold text-white mt-0.5">
-                      Meta Tags, Internal Link Graph, @graph JSON-LD &amp; Existing Article Refreshes
+                    <h2 className="text-lg sm:text-xl font-extrabold text-white mt-0.5">
+                      Meta Tags, Internal Link Graph, @graph JSON-LD &amp; 2026 Article Refreshes
                     </h2>
                   </div>
 
@@ -1632,7 +1774,7 @@ export default function AiAgencyDashboardShell() {
                             onClick={() => handleCopy(item.generatedCodeOrCopy, item.id)}
                             className="rounded bg-slate-800 px-2.5 py-1 text-[11px] font-bold text-emerald-300 shrink-0"
                           >
-                            {copiedId === item.id ? '✓ Copied!' : 'Copy Code'}
+                            {copiedId === item.id ? 'Copied' : 'Copy Code'}
                           </button>
                         </div>
                         <p className="text-slate-300">{item.currentFinding}</p>
@@ -1649,12 +1791,12 @@ export default function AiAgencyDashboardShell() {
                   TAB 6: OFF-PAGE SEO & DIGITAL PR
                  ------------------------------------------------------------- */}
               {activeSidebarTab === 'off-page-seo' && (
-                <div className="rounded-2xl border border-amber-500/35 bg-slate-900/80 p-5 sm:p-6 space-y-5">
+                <div className="rounded-2xl border border-amber-500/35 bg-slate-900/80 p-5 space-y-5">
                   <div>
                     <span className="text-[11px] font-extrabold uppercase tracking-wider text-amber-300">
-                      Department 5 · Off-Page SEO, Backlink Gaps &amp; Digital PR
+                      Department 5 · Off-Page SEO, Backlinks &amp; Digital PR
                     </span>
-                    <h2 className="text-xl font-extrabold text-white mt-0.5">
+                    <h2 className="text-lg sm:text-xl font-extrabold text-white mt-0.5">
                       Journalist Data Pitches, Niche Directories &amp; Infographic Link Magnets
                     </h2>
                   </div>
@@ -1675,7 +1817,7 @@ export default function AiAgencyDashboardShell() {
                             }
                             className="text-[11px] font-bold text-emerald-300"
                           >
-                            {copiedId === opp.id ? '✓ Copied!' : 'Copy Pitch'}
+                            {copiedId === opp.id ? 'Copied' : 'Copy Pitch'}
                           </button>
                         </div>
                         <div className="font-extrabold text-white text-sm">
@@ -1694,13 +1836,13 @@ export default function AiAgencyDashboardShell() {
                   TAB 7: TECHNICAL & LOCAL ENTITY SEO
                  ------------------------------------------------------------- */}
               {activeSidebarTab === 'technical-seo' && (
-                <div className="rounded-2xl border border-cyan-500/35 bg-slate-900/80 p-5 sm:p-6 space-y-5">
+                <div className="rounded-2xl border border-cyan-500/35 bg-slate-900/80 p-5 space-y-5">
                   <div>
                     <span className="text-[11px] font-extrabold uppercase tracking-wider text-cyan-300">
                       Department 6 · Technical &amp; Local Entity SEO Architect
                     </span>
-                    <h2 className="text-xl font-extrabold text-white mt-0.5">
-                      Core Web Vitals (0.00 CLS), Sitemap Canonicals &amp; Entity Schema
+                    <h2 className="text-lg sm:text-xl font-extrabold text-white mt-0.5">
+                      Core Web Vitals (0.00 CLS), AI Crawler robots.txt &amp; Entity Schema
                     </h2>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
@@ -1718,7 +1860,7 @@ export default function AiAgencyDashboardShell() {
                             onClick={() => handleCopy(item.fixSnippet, item.id)}
                             className="text-[11px] font-bold text-sky-300"
                           >
-                            {copiedId === item.id ? '✓ Copied!' : 'Copy Snippet'}
+                            {copiedId === item.id ? 'Copied' : 'Copy Snippet'}
                           </button>
                         </div>
                         <div className="font-extrabold text-white text-sm">
@@ -1736,26 +1878,25 @@ export default function AiAgencyDashboardShell() {
 
               {/* -------------------------------------------------------------
                   TAB 8: SOCIAL MEDIA & TIKTOK / REELS VIDEO SCRIPT FLEET
-                  (Complete 4-Part Suite: 60s TikTok + 3× Pinterest 2:3 + 8-Slide LinkedIn + 5 Hooks)
                  ------------------------------------------------------------- */}
               {activeSidebarTab === 'social-video-fleet' && selectedArticle && (
                 <div className="space-y-6">
-                  <div className="rounded-2xl border border-rose-500/35 bg-slate-900/80 p-5 sm:p-6 space-y-6">
+                  <div className="rounded-2xl border border-rose-500/35 bg-slate-900/80 p-5 space-y-6">
                     <div>
                       <span className="text-[11px] font-extrabold uppercase tracking-wider text-rose-300">
-                        Department 8 · Social Media Manager + TikTok / Reels Video Script Sub-Agent
+                        Department 8 · Omnichannel Social &amp; Short-Form Video Fleet
                       </span>
-                      <h2 className="text-xl font-extrabold text-white mt-0.5">
+                      <h2 className="text-lg sm:text-xl font-extrabold text-white mt-0.5">
                         60s TikTok/Reels Storyboard, 3× Pinterest 2:3 Pins, 8-Slide LinkedIn Carousel &amp; X Threads
                       </h2>
                     </div>
 
-                    {/* PART 1: TikTok / Reels Short-Form Video Script & Trend Card */}
+                    {/* PART 1: TikTok / Reels Short-Form Video Script */}
                     <div className="rounded-2xl border border-sky-500/40 bg-slate-950 p-5 space-y-3 text-xs">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div>
                           <span className="rounded bg-sky-500/20 px-2.5 py-0.5 text-[10px] font-extrabold text-sky-300 uppercase">
-                            🎬 TikTok / Instagram Reels / YouTube Shorts Script Agent
+                            TikTok / Instagram Reels / YouTube Shorts Script Agent
                           </span>
                           <h3 className="text-base font-extrabold text-white mt-1">
                             60-Second Viral Hook &amp; Visual Storyboard for &ldquo;
@@ -1773,7 +1914,7 @@ export default function AiAgencyDashboardShell() {
                           className="rounded-xl bg-sky-500 hover:bg-sky-400 px-3.5 py-2 font-extrabold text-slate-950"
                         >
                           {copiedId === 'copy-tiktok'
-                            ? '✓ Copied TikTok Script!'
+                            ? 'Copied TikTok Script'
                             : 'Copy 60s TikTok Script'}
                         </button>
                       </div>
@@ -1782,12 +1923,12 @@ export default function AiAgencyDashboardShell() {
                       </pre>
                     </div>
 
-                    {/* PART 2: Interactive 8-Slide LinkedIn Carousel Previewer (1080×1350) */}
+                    {/* PART 2: Interactive 8-Slide LinkedIn Carousel Previewer */}
                     <div className="rounded-2xl border border-indigo-500/40 bg-slate-950 p-5 space-y-4 text-xs">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div>
                           <span className="rounded bg-indigo-500/20 px-2.5 py-0.5 text-[10px] font-extrabold text-indigo-300 uppercase">
-                            💼 LinkedIn 8-Slide PDF Carousel Specialist (1080×1350)
+                            LinkedIn 8-Slide PDF Carousel Specialist (1080×1350)
                           </span>
                           <h3 className="text-sm font-extrabold text-white mt-1">
                             Interactive 8-Slide Executive Carousel Deck
@@ -1846,17 +1987,17 @@ export default function AiAgencyDashboardShell() {
                             className="rounded-xl bg-indigo-500 hover:bg-indigo-400 px-4 py-2 font-extrabold text-slate-950"
                           >
                             {copiedId === 'copy-linkedin-deck'
-                              ? '✓ Copied All 8 LinkedIn Slides!'
+                              ? 'Copied All 8 Slides'
                               : 'Copy All 8 LinkedIn Carousel Slides'}
                           </button>
                         </div>
                       </div>
                     </div>
 
-                    {/* PART 3: All 3× Tall Pinterest 2:3 Vertical Pins + Social Hook Variations */}
+                    {/* PART 3: All 3× Tall Pinterest 2:3 Vertical Pins */}
                     <div className="space-y-3">
                       <div className="text-xs font-extrabold text-amber-300">
-                        📌 All 3× Tall Pinterest 2:3 Vertical Pins (1000×1500 SVGs + SEO Pin Copy):
+                        All 3× Tall Pinterest 2:3 Vertical Pins (1000×1500 SVGs + SEO Pin Copy):
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {selectedArticle.pinterestPins.slice(0, 3).map((pin, pIdx) => (
@@ -1892,7 +2033,7 @@ export default function AiAgencyDashboardShell() {
                               className="w-full rounded-lg bg-slate-900 hover:bg-slate-800 py-1.5 text-[11px] font-bold text-amber-300"
                             >
                               {copiedId === `pin-copy-${pIdx}`
-                                ? '✓ Copied Pin SEO!'
+                                ? 'Copied Pin SEO'
                                 : `Copy Pin #${pIdx + 1} Title & Desc`}
                             </button>
                           </div>
@@ -1921,7 +2062,7 @@ export default function AiAgencyDashboardShell() {
                               }
                               className="text-[11px] font-bold text-emerald-300"
                             >
-                              {copiedId === v.id ? '✓ Copied!' : 'Copy Post'}
+                              {copiedId === v.id ? 'Copied' : 'Copy Post'}
                             </button>
                           </div>
                           <div className="font-bold text-white">{v.hookLine}</div>
@@ -1939,12 +2080,12 @@ export default function AiAgencyDashboardShell() {
                   TAB 9: QA & PUBLISHING CONTROLLER
                  ------------------------------------------------------------- */}
               {activeSidebarTab === 'qa-publishing' && (
-                <div className="rounded-2xl border border-emerald-500/35 bg-slate-900/80 p-5 sm:p-6 space-y-4">
+                <div className="rounded-2xl border border-emerald-500/35 bg-slate-900/80 p-5 space-y-4">
                   <div>
                     <span className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-300">
-                      Department 7 · Quality Assurance &amp; Autonomous Publishing Controller
+                      Department 7 · Quality Assurance &amp; Publishing Controller
                     </span>
-                    <h2 className="text-xl font-extrabold text-white mt-0.5">
+                    <h2 className="text-lg sm:text-xl font-extrabold text-white mt-0.5">
                       150-Point GEO/AEO Readability Gate &amp; Destination Delivery Status
                     </h2>
                   </div>
@@ -1971,7 +2112,7 @@ export default function AiAgencyDashboardShell() {
                           onClick={() => void handleStartQueuedArticleNow(job)}
                           className="rounded-lg bg-emerald-500 hover:bg-emerald-400 px-3 py-1.5 font-extrabold text-slate-950 shrink-0"
                         >
-                          {isInternalSite ? '🚀 Auto-Publish' : '📘 Stage Draft'}
+                          {isInternalSite ? 'Auto-Publish' : 'Stage Draft'}
                         </button>
                       </div>
                     ))}
@@ -1984,8 +2125,7 @@ export default function AiAgencyDashboardShell() {
       </div>
 
       {/* =====================================================================
-          PHASE 5: PERSISTENT BOTTOM FOUNDER COMMAND CHAT & VOICE CALL DOCK
-          (`FounderCommandChatDock.tsx` + `/api/ai-employee-agency/agent-chat`)
+          PERSISTENT BOTTOM FOUNDER COMMAND CHAT & VOICE CALL DOCK
          ===================================================================== */}
       <FounderCommandChatDock
         siteName={activeWebsite.siteName}
@@ -2009,6 +2149,7 @@ export default function AiAgencyDashboardShell() {
         onSelectDepartmentTab={(tabId) => {
           setActiveSidebarTab(tabId);
           setIsFullCanvasGraphOpen(false);
+          setIsGraphFullScreenViewport(false);
         }}
       />
     </div>
