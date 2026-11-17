@@ -120,17 +120,16 @@ export async function POST(request: Request) {
     const nowIso = new Date().toISOString();
     const winnerRecordForStore: WinnerFormulaRecord = {
       id: `winner-sync-${Date.now()}`,
-      discoveredAtIso: nowIso,
+      label: `Front-Loaded ${nicheInfo.subjectTitle} Playbook Contrast (2:3) · ${siteName}`,
       sourceChannel: "pinterest",
       winningHookArchetype: "numbered-playbook",
-      winningPinAngle: `Front-Loaded ${nicheInfo.subjectTitle} Playbook Contrast (2:3)`,
-      winningPalettePair: {
-        primaryHex,
-        secondaryHex,
-      },
-      saveRatePercent: 8.3,
-      outboundClickRatePercent: 4.5,
-      notes: `Auto-promoted via Phase D Social Telemetry Sync (+34% above niche median save rate for ${siteName}).`,
+      winningPrismLayout: "comparison",
+      winningPaletteId: "indigo-cyber",
+      winningCardStyle: "playbook-contrast",
+      WinningBackgroundPattern: "dots-glow",
+      observedSaveRatePercent: 8.3,
+      observedCtrPercent: 4.5,
+      lockedAtIso: nowIso,
     };
 
     const result: SocialAnalyticsSyncResponse = {

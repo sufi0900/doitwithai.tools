@@ -825,13 +825,13 @@ export default function AutonomousCampaignDashboard() {
       winnerFormulas: [
         winner,
         ...prev.winnerFormulas.filter(
-          (w) => w.winningPinAngle !== winner.winningPinAngle
+          (w) => w.label !== winner.label
         ),
       ].slice(0, 12),
       lastSavedAtIso: nowIso,
     }));
     setStatusMessage(
-      `Synced live social telemetry & promoted winning formula "${winner.winningPinAngle}" (${winner.saveRatePercent}% Save Rate) to future 24/7 cycles!`
+      `Synced live social telemetry & promoted winning formula "${winner.label}" (${winner.observedSaveRatePercent}% Save Rate) to future 24/7 cycles!`
     );
   };
 
