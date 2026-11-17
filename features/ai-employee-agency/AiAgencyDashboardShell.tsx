@@ -514,7 +514,7 @@ export default function AiAgencyDashboardShell() {
       topicTitle: brief.recommendedH1Title,
       primaryKeyword: brief.keyword,
       secondaryKeywords: brief.paaQuestions.slice(0, 3),
-      searchIntent: 'Informational',
+      searchIntent: 'informational-guide',
       kdProxyScore: brief.kdScore,
       urlSlug: brief.recommendedUrlSlug,
       status: 'drafting-article',

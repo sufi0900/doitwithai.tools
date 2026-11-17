@@ -735,10 +735,12 @@ export default function AutonomousCampaignDashboard() {
     suggestedNewH2: string;
     upgraded50WordAeoLead: string;
     dropInRefreshMarkdown: string;
+    refreshPoints?: Array<{ badge: string; title: string; detail: string }>;
     refreshInfographicSvg?: string;
-  }) => {
-    if (!activeCampaign || !activeWebsite) return;
+  }): boolean => {
+    if (!activeCampaign || !activeWebsite) return false;
     const nowIso = new Date().toISOString();
+    let applied = false;
 
     updateState((prev) => {
       const updatedCampaigns = prev.campaigns.map((camp) => {
@@ -751,6 +753,7 @@ export default function AutonomousCampaignDashboard() {
           ) || camp.jobs[0];
 
         if (!targetJob) return camp;
+        applied = true;
 
         const updatedJobs = camp.jobs.map((job) => {
           if (job.id !== targetJob.id) return job;
@@ -790,6 +793,7 @@ export default function AutonomousCampaignDashboard() {
         ? `Auto-injected 2026 refresh section ("${params.suggestedNewH2}") & updated your internal DoItWithAI blog post!`
         : `Injected 2026 refresh section ("${params.suggestedNewH2}") into active article state!`
     );
+    return applied || activeCampaign.jobs.length > 0;
   };
 
   const handlePromoteSocialWinnerFormula = (winner: WinnerFormulaRecord) => {
@@ -799,13 +803,13 @@ export default function AutonomousCampaignDashboard() {
       winnerFormulas: [
         winner,
         ...prev.winnerFormulas.filter(
-          (w) => w.winningPinAngle !== winner.winningPinAngle
+          (w) => w.label !== winner.label
         ),
       ].slice(0, 12),
       lastSavedAtIso: nowIso,
     }));
     setStatusMessage(
-      `Synced live social telemetry & promoted winning formula "${winner.winningPinAngle}" (${winner.saveRatePercent}% Save Rate) to future 24/7 cycles!`
+      `Synced live social telemetry & promoted winning formula "${winner.label}" (${winner.observedSaveRatePercent}% Save Rate) to future 24/7 cycles!`
     );
   };
 
