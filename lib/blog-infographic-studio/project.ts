@@ -249,6 +249,10 @@ export function importInfographicProject(
         typeof c.calloutText === "string"
           ? c.calloutText.slice(0, 240)
           : undefined,
+      sceneIllustration:
+        typeof c.sceneIllustration === "string"
+          ? c.sceneIllustration.slice(0, 80)
+          : undefined,
       extractedBrand:
         c.extractedBrand && typeof c.extractedBrand.siteName === "string"
           ? {

@@ -19,6 +19,10 @@ import {
   isInfographicTopicIcon,
   scoreSemanticIconCandidates,
 } from "./skills/semantic-iconography";
+import {
+  getVectorSceneById,
+  matchVectorSceneForTopic,
+} from "@/lib/visual-stock/vector-scenes";
 
 export type JSXNode =
   | string
@@ -68,6 +72,9 @@ function renderNode(node: JSXNode): string {
     return node.map(renderNode).join("");
   }
   const { type, props = {} } = node;
+  if (type === "__raw_svg__") {
+    return String(props.svg || "");
+  }
   const { children, ...rest } = props;
   const attrEntries: string[] = [];
   for (const [key, val] of Object.entries(rest)) {
@@ -699,6 +706,36 @@ export function buildPrismScene(
         accent,
         90,
         { opacity: 0.045 },
+      ),
+    );
+  }
+
+  // Render commercial-safe recolorable vector scene illustration in top-right header backdrop
+  if (config.sceneIllustration !== "none") {
+    const activeScene =
+      getVectorSceneById(config.sceneIllustration) ||
+      matchVectorSceneForTopic(
+        `${config.headline} ${config.subheadline}`,
+        layout,
+      );
+    const sceneMarkup = activeScene.renderSvgNodes({
+      primary: accent,
+      secondary: colors[1] || accent,
+      surface,
+      ink,
+      muted,
+    });
+    const sceneX = Math.round(W - M - 210);
+    const sceneY = Math.round(Math.max(24, M * 0.42));
+    parts.push(
+      el(
+        "g",
+        {
+          transform: `translate(${sceneX}, ${sceneY}) scale(0.82)`,
+          opacity: light ? 0.24 : 0.28,
+          "data-vector-scene": activeScene.id,
+        },
+        el("__raw_svg__", { svg: sceneMarkup }),
       ),
     );
   }

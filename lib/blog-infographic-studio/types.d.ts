@@ -33,6 +33,8 @@ declare module "@/lib/blog-writer/canonical-state" {
     slideCounter?: string;
     calloutBadge?: string;
     calloutText?: string;
+    /** Optional commercial-safe vector scene illustration ID from `lib/visual-stock/vector-scenes.ts` (or `"none"`). */
+    sceneIllustration?: string;
     extractedBrand?: {
       accent?: string;
       secondaryAccent?: string;

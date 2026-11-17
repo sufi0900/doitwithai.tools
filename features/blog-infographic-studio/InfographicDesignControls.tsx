@@ -14,6 +14,7 @@ import type {
   InfographicCardStyle,
   InfographicFontFamily,
 } from "@/lib/blog-infographic-studio/appearance";
+import { VECTOR_SCENE_CATALOG } from "@/lib/visual-stock/vector-scenes";
 
 const field =
   "mt-2 w-full rounded-lg border border-slate-300 bg-transparent p-2.5 text-sm dark:border-slate-700";
@@ -30,6 +31,7 @@ export function InfographicProceduralStyleControls({
   const activePattern = config.backgroundPattern || "dots-glow";
   const activeCardStyle = config.cardStyle || "glass-editorial";
   const activeFont = config.fontFamily || "system-arial";
+  const activeScene = config.sceneIllustration || "";
   return (
     <section
       className="space-y-4 border-t border-slate-200 pt-5 dark:border-slate-700"
@@ -107,6 +109,27 @@ export function InfographicProceduralStyleControls({
           {FONT_FAMILIES.map((f) => (
             <option key={f.id} value={f.id}>
               {f.label}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <label className="block text-xs font-semibold">
+        Editable vector scene illustration (MIT / CC0 stock)
+        <select
+          className={field}
+          value={activeScene}
+          onChange={(e) =>
+            onChange({
+              sceneIllustration: e.target.value || undefined,
+            })
+          }
+        >
+          <option value="">Auto-match section topic</option>
+          <option value="none">No scene illustration</option>
+          {VECTOR_SCENE_CATALOG.map((scene) => (
+            <option key={scene.id} value={scene.id}>
+              {scene.title} ({scene.category})
             </option>
           ))}
         </select>

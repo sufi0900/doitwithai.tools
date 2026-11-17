@@ -731,6 +731,39 @@ export function BlogInfographicStudio({
                     notify(
                       `Generated ${allVisuals.length} unique section infographics across the article with distinct layouts and shaders. Click any section tab to edit.`,
                     );
+                    void (async () => {
+                      try {
+                        const res = await fetch("/api/ai-tools/infographic-plan", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            sections: data.sections,
+                            sourceUrl: data.url,
+                            domain: data.domain,
+                            baseConfig: active,
+                          }),
+                        });
+                        if (!res.ok) return;
+                        const planned = (await res.json()) as {
+                          visuals?: BlogInfographicConfig[];
+                          providerUsed?: string;
+                        };
+                        if (
+                          Array.isArray(planned.visuals) &&
+                          planned.visuals.length > 0 &&
+                          planned.providerUsed &&
+                          planned.providerUsed !== "deterministic-baseline" &&
+                          planned.providerUsed !== "deterministic-fallback"
+                        ) {
+                          setCards(planned.visuals.map(lockInfographicGeometry));
+                          notify(
+                            `AI Visual Director (${planned.providerUsed}) refined ${planned.visuals.length} section infographics with source-verified concepts & vector scenes.`,
+                          );
+                        }
+                      } catch {
+                        // Keep deterministic visuals on network/offline error
+                      }
+                    })();
                     return;
                   }
                   setError(
@@ -884,6 +917,48 @@ export function BlogInfographicStudio({
                         ).length
                       }
                       )
+                    </button>
+                    <button
+                      type="button"
+                      className={button}
+                      disabled={busy}
+                      onClick={() =>
+                        void run(async () => {
+                          const res = await fetch(
+                            "/api/ai-tools/infographic-plan",
+                            {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({
+                                sections: extractedArticle.sections,
+                                sourceUrl: extractedArticle.url,
+                                domain: extractedArticle.domain,
+                                baseConfig: active,
+                              }),
+                            },
+                          );
+                          if (!res.ok) {
+                            throw new Error("AI visual planning request failed.");
+                          }
+                          const planned = (await res.json()) as {
+                            visuals?: BlogInfographicConfig[];
+                            providerUsed?: string;
+                          };
+                          if (
+                            Array.isArray(planned.visuals) &&
+                            planned.visuals.length > 0
+                          ) {
+                            commit(planned.visuals.map(lockInfographicGeometry));
+                            setActiveIdx(0);
+                            notify(
+                              `AI Visual Director (${planned.providerUsed || "verified planner"}) synthesized ${planned.visuals.length} section visuals.`,
+                            );
+                          }
+                        })
+                      }
+                    >
+                      <Sparkles size={14} />
+                      AI Re-Synthesize Visuals
                     </button>
                     {cards.length > 1 && (
                       <button
@@ -2036,6 +2111,41 @@ export function BlogInfographicStudio({
                   aria-label="Zoom in"
                 >
                   <ZoomIn size={14} />
+                </button>
+              </div>
+            </div>
+            <div
+              className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 bg-slate-50/80 px-4 py-2.5 text-xs dark:border-slate-800 dark:bg-slate-900/70"
+              aria-label="Interactive canvas layer inspector"
+            >
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="font-bold text-slate-600 dark:text-slate-300">
+                  Quick inspect:
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPanel("content")}
+                  className="rounded-full border border-slate-300 bg-white px-2.5 py-1 font-semibold text-slate-700 hover:border-indigo-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                >
+                  Headline
+                </button>
+                {active.nodes.map((node, ni) => (
+                  <button
+                    type="button"
+                    key={node.id}
+                    onClick={() => setPanel("content")}
+                    className="rounded-full border border-slate-300 bg-white px-2.5 py-1 font-semibold text-slate-700 hover:border-indigo-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                    title={node.title}
+                  >
+                    Point {ni + 1}: {node.title.slice(0, 18)}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setPanel("design")}
+                  className="rounded-full border border-indigo-300 bg-indigo-50 px-2.5 py-1 font-semibold text-indigo-700 hover:border-indigo-500 dark:border-indigo-500/40 dark:bg-indigo-950/40 dark:text-indigo-200"
+                >
+                  Scene art &amp; shader
                 </button>
               </div>
             </div>

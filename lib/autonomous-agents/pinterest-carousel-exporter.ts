@@ -17,6 +17,7 @@ import {
   renderSectionInfographicSvg,
 } from "./byok-batch-runner";
 import { renderPinterestPinPreviewSvg } from "./pin-svg-preview";
+import { matchVectorSceneForTopic } from "@/lib/visual-stock/vector-scenes";
 import type {
   ArcadsSocialVariation,
   AutomatedArticleJob,
@@ -129,26 +130,56 @@ export function buildLinkedinCarouselHtmlDeck(
   const sec = (idx: number) => sections[idx % Math.max(1, sections.length)];
   const compSection =
     sections.find((s) => s.archetype === "comparison") || sec(2);
-  const hookLead = job.arcadsVariations.find(v => v.channel === "linkedin")?.hookLine || job.metaDescription;
+  const hookLead =
+    job.arcadsVariations.find((v) => v.channel === "linkedin")?.hookLine ||
+    job.metaDescription;
+
+  const sceneSvgFor = (text: string, layout: string, idx: number) => {
+    const matched = matchVectorSceneForTopic(text, layout, idx);
+    const inner = matched.renderSvgNodes({
+      primary: primaryHex,
+      secondary: secondaryHex,
+      surface: "#131D3A",
+      ink: "#F8FAFC",
+      muted: "#94A3B8",
+    });
+    return `<svg class="scene-art" viewBox="0 0 240 160" width="210" height="140" role="img" aria-label="${escapeHtml(matched.title)}" data-vector-scene="${matched.id}">${inner}</svg>`;
+  };
 
   const renderSectionSlide = (slideNum: number, sIdx: number) => {
     const s = sec(sIdx);
     const cards = (s?.points || []).slice(0, 4);
+    const archetypeVariant =
+      slideNum === 3
+        ? "step-flow"
+        : slideNum === 4
+          ? "spotlight-stack"
+          : "bento-grid";
+    const sceneArt = sceneSvgFor(
+      `${s?.h2 || ""} ${s?.summary || ""}`,
+      slideNum === 3 ? "timeline" : "editorial",
+      sIdx,
+    );
     return `
-    <section class="slide" data-slide-index="${slideNum}">
+    <section class="slide slide-${archetypeVariant}" data-slide-index="${slideNum}" data-slide-archetype="${archetypeVariant}">
       <div class="slide-bg-grid"></div>
       <div class="slide-inner">
         <div class="top-row">
           <span class="eyebrow">SLIDE 0${slideNum} / 08 · ${escapeHtml((s?.archetype || "FRAMEWORK").toUpperCase())}</span>
           <span class="brand-chip">${escapeHtml(website.siteName)}</span>
         </div>
-        <h2 class="slide-title">${escapeHtml(s?.h2 || job.topicTitle)}</h2>
-        <p class="slide-sub">${escapeHtml(s?.summary || "")}</p>
-        <div class="cards-grid">
+        <div class="header-with-scene">
+          <div class="header-copy">
+            <h2 class="slide-title">${escapeHtml(s?.h2 || job.topicTitle)}</h2>
+            <p class="slide-sub">${escapeHtml(s?.summary || "")}</p>
+          </div>
+          ${sceneArt}
+        </div>
+        <div class="cards-grid layout-${archetypeVariant}">
           ${cards
             .map(
               (pt, i) => `
-            <div class="concept-card">
+            <div class="concept-card ${i === 0 && archetypeVariant === "spotlight-stack" ? "card-spotlight" : ""}">
               <div class="card-badge">${escapeHtml(pt.badge || `0${i + 1}`)}</div>
               <h3 class="card-title">${escapeHtml(pt.title)}</h3>
               <p class="card-detail">${escapeHtml(pt.detail)}</p>
@@ -164,9 +195,16 @@ export function buildLinkedinCarouselHtmlDeck(
     </section>`;
   };
 
+  const coverScene = sceneSvgFor(job.topicTitle, "editorial", 0);
+  const compareScene = sceneSvgFor(
+    compSection?.h2 || "Comparison",
+    "comparison",
+    5,
+  );
+
   const slidesHtml = [
     // Slide 1: Hook Cover
-    `<section class="slide slide-cover" data-slide-index="1">
+    `<section class="slide slide-cover" data-slide-index="1" data-slide-archetype="magazine-cover">
       <div class="slide-bg-grid"></div>
       <div class="slide-inner">
         <div class="top-row">
@@ -174,7 +212,10 @@ export function buildLinkedinCarouselHtmlDeck(
           <span class="brand-chip">${escapeHtml(website.siteName)}</span>
         </div>
         <div class="cover-center">
-          <div class="metric-pill">GEO Readiness Score: ${job.geoReadiness.overallScore}/100 · KD Proxy ${job.kdProxyScore}/100</div>
+          <div class="header-with-scene">
+            <div class="metric-pill">GEO Readiness Score: ${job.geoReadiness.overallScore}/100 · KD Proxy ${job.kdProxyScore}/100</div>
+            ${coverScene}
+          </div>
           <h1 class="cover-headline">${escapeHtml(job.topicTitle)}</h1>
           <p class="cover-hook">${escapeHtml(hookLead)}</p>
           <div class="answer-box">
@@ -188,21 +229,26 @@ export function buildLinkedinCarouselHtmlDeck(
         </div>
       </div>
     </section>`,
-    // Slides 2–5: Section Concept Cards
+    // Slides 2–5: Section Concept Cards with distinct layout archetypes
     renderSectionSlide(2, 0),
     renderSectionSlide(3, 1),
     renderSectionSlide(4, 2),
     renderSectionSlide(5, 3),
     // Slide 6: Side-by-Side Comparison Matrix
-    `<section class="slide" data-slide-index="6">
+    `<section class="slide" data-slide-index="6" data-slide-archetype="vs-comparison">
       <div class="slide-bg-grid"></div>
       <div class="slide-inner">
         <div class="top-row">
           <span class="eyebrow">SLIDE 06 / 08 · ${compSection?.archetype === "comparison" ? "COMPARISON" : "SECTION TAKEAWAYS"}</span>
           <span class="brand-chip">${escapeHtml(website.siteName)}</span>
         </div>
-        <h2 class="slide-title">${escapeHtml(compSection?.h2 || "Legacy Manual vs. Autonomous Agent Workflow")}</h2>
-        <p class="slide-sub">${escapeHtml(compSection?.summary || "")}</p>
+        <div class="header-with-scene">
+          <div class="header-copy">
+            <h2 class="slide-title">${escapeHtml(compSection?.h2 || "Legacy Manual vs. Autonomous Agent Workflow")}</h2>
+            <p class="slide-sub">${escapeHtml(compSection?.summary || "")}</p>
+          </div>
+          ${compareScene}
+        </div>
         <div class="compare-grid">
           ${(compSection?.points || [])
             .slice(0, 4)
@@ -358,12 +404,29 @@ export function buildLinkedinCarouselHtmlDeck(
     color: #E2E8F0;
   }
   .answer-label { font-size: 15px; font-weight: 800; text-transform: uppercase; color: ${primaryHex}; margin-bottom: 10px; }
+  .header-with-scene { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+  .header-copy { display: flex; flex-direction: column; gap: 10px; flex: 1; }
+  .scene-art { flex-shrink: 0; filter: drop-shadow(0 8px 20px rgba(0,0,0,0.35)); }
   .cards-grid, .compare-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 24px;
     flex: 1;
     align-content: center;
+  }
+  .cards-grid.layout-step-flow {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .cards-grid.layout-step-flow .concept-card {
+    flex-direction: row;
+    align-items: center;
+    padding: 20px 26px;
+  }
+  .card-spotlight {
+    grid-column: span 2;
+    border-color: ${primaryHex};
+    background: rgba(56, 189, 248, 0.1);
   }
   .concept-card {
     background: rgba(19, 29, 58, 0.92);

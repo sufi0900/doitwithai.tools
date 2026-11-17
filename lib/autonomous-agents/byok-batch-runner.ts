@@ -9,6 +9,7 @@
  */
 
 import { synthesizeInfographicHeadlineAndSubheadline } from "../blog-infographic-studio/skills/topic-intelligence";
+import { matchVectorSceneForTopic } from "../visual-stock/vector-scenes";
 import { AUTONOMOUS_AGENT_ROLES } from "./agent-roles";
 import {
   buildArcadsSocialPackForJob,
@@ -489,6 +490,23 @@ export function renderSectionInfographicSvg(
       .join("\n");
   }
 
+  const matchedScene = matchVectorSceneForTopic(
+    `${section.h2} ${section.summary}`,
+    section.archetype === "comparison"
+      ? "comparison"
+      : section.archetype === "process"
+        ? "timeline"
+        : "editorial",
+    secIdx,
+  );
+  const sceneMarkup = matchedScene.renderSvgNodes({
+    primary: accent,
+    secondary,
+    surface: theme.surface,
+    ink: "#FFFFFF",
+    muted: "#94A3B8",
+  });
+
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" style="max-width:100%;height:auto" viewBox="0 0 ${W} ${H}" role="img" aria-label="${escapeXml(
     section.h2,
   )}">
@@ -503,6 +521,9 @@ export function renderSectionInfographicSvg(
   </defs>
   <rect width="${W}" height="${H}" fill="url(#${gradId})" />
   <rect width="${W}" height="${H}" fill="url(#${patternId})" />
+  <g transform="translate(800, 34) scale(0.92)" opacity="0.82" data-vector-scene="${matchedScene.id}">
+    ${sceneMarkup}
+  </g>
   <g transform="translate(60, 44)">
     <rect width="380" height="40" rx="20" fill="${theme.badgeBg}" fill-opacity="0.9" stroke="${accent}" stroke-width="1.5" />
     <text x="20" y="26" fill="${accent}" font-family="Inter, system-ui, sans-serif" font-size="15" font-weight="800" letter-spacing="1">${escapeXml(

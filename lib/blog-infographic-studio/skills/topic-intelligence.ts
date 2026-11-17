@@ -187,17 +187,42 @@ export function synthesizeInfographicHeadlineAndSubheadline(
   articleTitle?: string,
 ): { headline: string; subheadline: string } {
   const cleaned = rewriteDependentSectionTitle(rawTitle, articleTitle);
-  if (cleaned.length <= 58) {
-    return { headline: cleaned, subheadline: "" };
+
+  // Bare definitional question: "What Is AI SEO?" or "What Are Answer Engines?"
+  const bareWhatIs = cleaned.match(
+    /^what\s+(?:is|are)\s+(?:an?\s+|the\s+)?(.{2,44}?)\?$/i,
+  );
+  if (bareWhatIs) {
+    const subject = cleanText(bareWhatIs[1]);
+    return {
+      headline: `${subject}: Core Pillars & Practical Workflow`,
+      subheadline: `How ${subject} works in practice and why it matters.`,
+    };
   }
 
   // Question + descriptive tail: "What Is AI SEO? Definition, Meaning, and Why It Matters in 2026"
-  const qMatch = cleaned.match(/^(.{10,56}?\?)\s+(.{12,})$/);
+  const qMatch = cleaned.match(/^(.{6,56}?\?)\s+(.{8,})$/);
   if (qMatch) {
+    const qHead = cleanText(qMatch[1]);
+    const qSub = cleanText(qMatch[2]);
+    const whatSubject = qHead.match(
+      /^what\s+(?:is|are)\s+(?:an?\s+|the\s+)?(.{2,44}?)\?$/i,
+    );
+    if (whatSubject) {
+      const subject = cleanText(whatSubject[1]);
+      return {
+        headline: `${subject}: ${qSub.length <= 42 ? qSub : "Core Pillars & Workflow"}`,
+        subheadline: qSub.length > 42 ? qSub : `Key concepts and practical execution for ${subject}.`,
+      };
+    }
     return {
-      headline: cleanText(qMatch[1]),
-      subheadline: cleanText(qMatch[2]),
+      headline: qHead,
+      subheadline: qSub,
     };
+  }
+
+  if (cleaned.length <= 58) {
+    return { headline: cleaned, subheadline: "" };
   }
 
   // Colon / em-dash split: "E-E-A-T: The Universal Quality Standard That Connects..." or "How to Optimize...: A Practical Strategy..."

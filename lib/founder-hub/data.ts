@@ -1690,4 +1690,34 @@ We engineered \`PortableToolHeroBar\` across our tool pages with two built-in vi
     commits: ["Oct 29–Nov 2 Foundation Commits"],
     status: "Completed & Live",
   },
+  {
+    id: "log-sprint-14-visual-engine-vector-stock-planner",
+    sprintNumber: 14,
+    date: "2026-11-17",
+    title: "5-Phase Visual Engine Upgrade: Commercial-Safe Editable Vector Stock Library, LLM Semantic Visual Planner & Multi-Archetype Social Renderers",
+    category: "Flagship Tool Overhaul",
+    founderRequestSummary:
+      "Upgrade the Blog Section Infographic Studio, AI Content Writer, and AI Employee Agency visual engine with a rich commercial-safe editable stock library (unDraw / OpenPeeps style SVG scenes + zero-cost photo stock resolver), an LLM Semantic Visual Director that reframes generic headings into thesis headlines with verified sourceBlockIds and percentage qualifiers, and distinct visual archetypes for Pinterest 2:3 Pins and LinkedIn 4:5 Carousels.",
+    aiStrategicBlueprint:
+      "Built lib/visual-stock/vector-scenes.ts (16 recolorable MIT/CC0 vector scenes), lib/visual-stock/stock-resolver.ts (verified stock selection + Pexels/Pixabay resolver), lib/blog-infographic-studio/percentage-review.ts, app/api/ai-tools/infographic-plan/route.ts, and upgraded prism-renderer.ts, pin-svg-preview.ts, pinterest-carousel-exporter.ts, byok-batch-runner.ts, and antv-pilot/pilot.cjs.",
+    aiImplementationDetails: [
+      "Created 16 commercial-safe, multi-layered recolorable SVG vector scenes in lib/visual-stock/vector-scenes.ts and stock-resolver.ts with automatic topic matching and Pexels/Pixabay commercial-safe photo fallback.",
+      "Built /api/ai-tools/infographic-plan powered by runAutomationJsonPrompt with strict sourceBlockIds and percentage qualifier verification (lib/blog-infographic-studio/percentage-review.ts).",
+      "Upgraded synthesizeInfographicHeadlineAndSubheadline, sectionHeadline, and buildUniversalArticleOverview so definitional questions ('What Is AI SEO?') become standalone thesis headlines and multi-section articles synthesize an Executive Overview visual.",
+      "Upgraded Pinterest 2:3 Pins (pin-svg-preview.ts), LinkedIn 4:5 Carousels (pinterest-carousel-exporter.ts), and isolated AntV 18-template router (scripts/visual_engine/antv-pilot/pilot.cjs) with distinct visual archetypes and embedded vector scenes.",
+    ],
+    blogPostDraftMarkdown: `# How We Built a Zero-Cost, Source-Verified Visual Engine With Editable Vector Scenes & Multi-Archetype Social Exports`,
+    filesTouched: [
+      "lib/visual-stock/vector-scenes.ts",
+      "lib/visual-stock/stock-resolver.ts",
+      "lib/blog-infographic-studio/percentage-review.ts",
+      "app/api/ai-tools/infographic-plan/route.ts",
+      "lib/blog-infographic-studio/prism-renderer.ts",
+      "lib/autonomous-agents/pin-svg-preview.ts",
+      "lib/autonomous-agents/pinterest-carousel-exporter.ts",
+      "scripts/visual_engine/antv-pilot/pilot.cjs",
+    ],
+    commits: ["codex/infographic-studio-redesign"],
+    status: "Completed & Live",
+  },
 ];

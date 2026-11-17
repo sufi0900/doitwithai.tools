@@ -1,4 +1,4 @@
-import { aiSeoOverview } from "./article-overview";
+import { aiSeoOverview, buildUniversalArticleOverview } from "./article-overview";
 import type {
   BlogInfographicConfig,
   BlogInfographicNodeItem,
@@ -501,6 +501,7 @@ export function buildAllArticleSectionVisuals(
     coverage?: ArticleSourceCoverage;
     baseConfig?: BlogInfographicConfig;
     brandTheme?: WebsiteBrandHint;
+    includeUniversalOverview?: boolean;
   } = {},
 ): BlogInfographicConfig[] {
   const base = options.baseConfig || createPrismSample();
@@ -683,7 +684,17 @@ export function buildAllArticleSectionVisuals(
       ),
     );
   });
-  const overview = aiSeoOverview(sections, base, options.sourceUrl);
+  const overview =
+    aiSeoOverview(sections, base, options.sourceUrl) ||
+    (options.includeUniversalOverview
+      ? buildUniversalArticleOverview(
+          sections,
+          sectionVisuals,
+          base,
+          options.sourceUrl,
+          options.domain,
+        )
+      : undefined);
   return overview ? [overview, ...sectionVisuals] : sectionVisuals;
 }
 
@@ -736,14 +747,31 @@ export function shuffleInfographicVisualVariation(
 
 /** A short definition can carry its own headline when it names the subject. */
 function sectionHeadline(title: string, nodes: BlogInfographicNodeItem[]) {
-  const subject = clean(title).match(/^what (?:is|are) (.+?)\?$/i)?.[1];
-  const answer = subject && nodes.map(node => clean(node.detail)).find(detail =>
-    detail.length <= 72 && norm(detail).startsWith(norm(subject) + " ") &&
-    /[.!]$/.test(detail),
-  );
-  return answer
-    ? { headline: answer.replace(/[.!]$/, ""), subheadline: "" }
-    : synthesizeInfographicHeadlineAndSubheadline(title);
+  const subject = clean(title).match(/^what (?:is|are) (?:an?\s+|the\s+)?(.+?)\?$/i)?.[1];
+  const answer =
+    subject &&
+    nodes
+      .map((node) => clean(node.detail))
+      .find(
+        (detail) =>
+          detail.length <= 84 &&
+          norm(detail).startsWith(norm(subject) + " ") &&
+          /[.!]$/.test(detail),
+      );
+  if (answer) {
+    return { headline: answer.replace(/[.!]$/, ""), subheadline: "" };
+  }
+  if (subject && nodes.length >= 2) {
+    const k1 = clean(nodes[0].title).slice(0, 24);
+    const k2 = clean(nodes[1].title).slice(0, 24);
+    if (k1 && k2 && !k1.endsWith("?") && !k2.endsWith("?")) {
+      return {
+        headline: `${subject}: ${k1} & ${k2}`,
+        subheadline: `Core pillars and practical execution for ${subject}.`,
+      };
+    }
+  }
+  return synthesizeInfographicHeadlineAndSubheadline(title);
 }
 
 /** Direct writer adapter. It consumes section bodies, never re-scrapes generated article HTML. */

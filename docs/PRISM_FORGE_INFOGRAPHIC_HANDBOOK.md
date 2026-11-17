@@ -120,3 +120,23 @@ The shared section builder now keeps an unambiguous run of numbered steps, phase
 6. Evaluate using the AI SEO article plus unrelated articles with tables, incomplete sequences and sparse text. Check source coverage, invented facts, copied headings, duplicate steps, clipping at mobile width, edit persistence and retry costs. Require a useful independent takeaway in a blind editorial review. Track image spend and human edit time per accepted graphic.
 
 Example acceptance case: the opening definition can become “AI SEO has two jobs” with two labeled panels about using AI during SEO work and making information accessible in AI search. Both panels retain their supporting passages. A seven-phase article roadmap must preserve all seven phases across panels or disclose the selected subset in its headline.
+
+## 15. 5-Phase Visual Engine & Commercial-Safe Editable Vector Stock Library (Shipped)
+
+To power `/tools/blog-section-infographic-generator`, `/ai-content-writer`, and `/ai-employee-agency` with agency-grade, zero-cost, source-verified visuals across blog sections, Pinterest `2:3` Pins, and LinkedIn `4:5` Carousels:
+
+1. **LLM Semantic Visual Planner + Deterministic Thesis Headline Reframing (`/api/ai-tools/infographic-plan`, `topic-intelligence.ts`, `visual-brief.ts`, `article-overview.ts`)**:
+   - Generic definitional question headings (`"What Is X?"`) are automatically reframed into standalone editorial thesis headlines (`"X: Core Pillars & Practical Workflow"` or `"X: Pillar 1 & Pillar 2"`).
+   - `buildUniversalArticleOverview` synthesizes a cross-article Executive Overview infographic for any multi-section article (preserving `aiSeoOverview` compatibility).
+   - `/api/ai-tools/infographic-plan` routes extracted `ArticleSourceSection[]` through the free-tier LLM waterfall (`runAutomationJsonPrompt`: Gemini 2.5 Flash → Groq Llama 3.3 70B → Cerebras → OpenRouter → Mistral → deterministic planner) while enforcing `sourceBlockIds[]` grounding and `reviewCardPercentages` (`lib/blog-infographic-studio/percentage-review.ts`) so no invented or qualifier-stripped percentages ever pass.
+2. **Commercial-Safe Editable Vector Scene & Stock Library (`lib/visual-stock/vector-scenes.ts`, `lib/visual-stock/stock-resolver.ts`)**:
+   - Provides **16 multi-layered, recolorable MIT unDraw / CC0 OpenPeeps style SVG scene illustrations** (`VECTOR_SCENE_CATALOG`) across 8 categories (`ai-seo`, `analytics-data`, `workflow-automation`, `comparison-strategy`, `ecommerce-growth`, `lifestyle-care`, `editorial-knowledge`, `audit-security`) that adapt dynamically to any client brand palette (`primary`, `secondary`, `surface`, `ink`, `muted`).
+   - `selectVerifiedStockAsset` ports `scripts/visual_engine/stock_selection.py` to TypeScript and pairs shared vector scenes with optional zero-cost commercial-safe photo stock search (`searchFreeCommercialPhotoStock` via Pexels/Pixabay APIs with full license and attribution tracking).
+3. **Multi-Archetype Renderers Across Blog, Pinterest `2:3`, LinkedIn `4:5` & Isolated AntV Catalog**:
+   - `lib/blog-infographic-studio/prism-renderer.ts` embeds recolored vector scene illustrations (`config.sceneIllustration`) in the header backdrop with zero text clipping.
+   - `lib/autonomous-agents/pin-svg-preview.ts` renders **3 distinct `1000×1500` (`2:3`) Pinterest Pin visual archetypes** (Editorial Magazine Cover + Vector Scene Art, Vertical Connected Flowchart Step Map, and Side-by-Side VS Split Matrix).
+   - `lib/autonomous-agents/pinterest-carousel-exporter.ts` and `lib/autonomous-agents/byok-batch-runner.ts` embed recolorable vector scene illustrations and varied slide archetypes (`magazine-cover`, `bento-grid`, `step-flow`, `spotlight-stack`, `vs-comparison`) across the 8-slide `1080×1350` LinkedIn Carousel deck and autonomous section infographics.
+   - `scripts/visual_engine/antv-pilot/pilot.cjs` expands the isolated AntV SSR template router (`ANTV_TEMPLATE_CATALOG` & `planInfographic`) to 18+ templates across `sequence`, `comparison`, `list`, `chart`, `hierarchy`, and `quadrant` while keeping `@antv/infographic` isolated from the Next.js server bundle.
+4. **Interactive Canvas Layer Inspector & Scene Picker (`BlogInfographicStudio.tsx`, `InfographicDesignControls.tsx`)**:
+   - Users can switch vector scene illustrations in Design controls, trigger **AI Re-Synthesize Visuals** from the URL extraction bar, and jump directly to headline, points, or scene art via the **Interactive canvas layer inspector**.
+
