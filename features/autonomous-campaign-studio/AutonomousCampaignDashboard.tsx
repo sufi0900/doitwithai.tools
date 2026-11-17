@@ -129,7 +129,6 @@ export default function AutonomousCampaignDashboard() {
   const [currentStep, setCurrentStep] = useState<GuidedStepId>(1);
   const [workflowMode, setWorkflowMode] = useState<AutomationWorkflowMode>('multi-article-batch');
 
-  // Step 1 Onboarding Inputs (Clean & Non-Hardcoded so any URL works out of the box)
   const [siteSourceMode, setSiteSourceMode] = useState<'external-url' | 'internal-builder'>(
     'external-url'
   );
@@ -143,16 +142,13 @@ export default function AutonomousCampaignDashboard() {
   const [targetBatchSize, setTargetBatchSize] = useState<number>(6);
   const [scanVariationCounter, setScanVariationCounter] = useState<number>(1);
 
-  // Step 1 Animated Scan State
   const [isScanningWebsite, setIsScanningWebsite] = useState<boolean>(false);
   const [scanStageIndex, setScanStageIndex] = useState<number>(0);
   const [latestScoutReport, setLatestScoutReport] = useState<WebsiteScoutReport | null>(null);
 
-  // Step 2 Topic Selection State
   const [selectedJobIds, setSelectedJobIds] = useState<string[]>([]);
   const [customTopicInput, setCustomTopicInput] = useState<string>('');
 
-  // Step 3 Live Animated Production State
   const [isRunningBatch, setIsRunningBatch] = useState<boolean>(false);
   const [activeRunningJobId, setActiveRunningJobId] = useState<string>('');
   const [activeStationIdx, setActiveStationIdx] = useState<number>(0);
@@ -160,7 +156,6 @@ export default function AutonomousCampaignDashboard() {
   const [transitionBannerText, setTransitionBannerText] = useState<string>('');
   const [show24hAgencyCommandCenter, setShow24hAgencyCommandCenter] = useState<boolean>(true);
 
-  // Step 4 Results & Delivery State
   const [selectedJobId, setSelectedJobId] = useState<string>('');
   const [resultPreviewTab, setResultPreviewTab] = useState<ResultPreviewTab>('article');
   const [selectedSectionIdx, setSelectedSectionIdx] = useState<number>(0);
@@ -170,7 +165,6 @@ export default function AutonomousCampaignDashboard() {
   const [statusMessage, setStatusMessage] = useState<string>('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  // Optional Power-User Drawer
   const [showAdvancedDrawer, setShowAdvancedDrawer] = useState<boolean>(false);
   const [advancedSubTab, setAdvancedSubTab] = useState<
     'connections-byok' | 'free-api-guide' | 'winner-analytics' | 'agent-architecture'
@@ -277,9 +271,6 @@ export default function AutonomousCampaignDashboard() {
     URL.revokeObjectURL(url);
   };
 
-  /**
-   * STEP 1: Real-Time Website Scan, Hidden Background Deep Research & Dynamic AI Topic Discovery
-   */
   const executeWebsiteScanAndTopicDiscovery = async (options?: {
     autoStartWriting?: boolean;
     forceFreshVariation?: boolean;
@@ -500,9 +491,6 @@ export default function AutonomousCampaignDashboard() {
     }
   };
 
-  /**
-   * STEP 2: Add a custom topic on the fly
-   */
   const handleAddCustomTopic = () => {
     if (!customTopicInput.trim() || !activeCampaign || !studioState) return;
     const title = customTopicInput.trim();
@@ -545,9 +533,6 @@ export default function AutonomousCampaignDashboard() {
     setCustomTopicInput('');
   };
 
-  /**
-   * STEP 2 -> STEP 3 -> STEP 4: Live Multi-Article Batch Execution with Granular Sub-Stage Animations
-   */
   const executeBatchWritingPipeline = async (overrideContext?: {
     state: AutonomousStudioStoreState;
     campaign: AutonomousCampaign;
@@ -584,7 +569,6 @@ export default function AutonomousCampaignDashboard() {
           `Now working on Article #${i + 1} of ${targetJobs.length}: "${job.topicTitle}"`
         );
 
-        // Station 1 & 2 animation
         setActiveStationIdx(0);
         await new Promise((r) => setTimeout(r, 220));
         setActiveStationIdx(1);
@@ -618,7 +602,6 @@ export default function AutonomousCampaignDashboard() {
           // Fall back to local BYOK / deterministic runner below
         }
 
-        // Station 3, 4 & 5 animation (Linking/Schema -> 6-Layer Infographics -> Social Pack)
         setActiveStationIdx(2);
         await new Promise((r) => setTimeout(r, 180));
         setActiveStationIdx(3);
@@ -730,9 +713,6 @@ export default function AutonomousCampaignDashboard() {
     }
   };
 
-  /**
-   * 1-CLICK 24-HOUR ACTIVE AUTOPILOT LAUNCHER:
-   */
   const handleStart24HourActiveAutopilot = async () => {
     setWorkflowMode('autopilot-24h');
     setShow24hAgencyCommandCenter(true);
@@ -750,58 +730,43 @@ export default function AutonomousCampaignDashboard() {
     });
   };
 
-  /**
-   * Phase B Callback: Persist a 1-Click Article Refresh Patch into `studioState` (and re-publish internal blog post if applicable)
-   */
   const handleApplyArticleRefreshPatch = (params: {
     pageUrl: string;
     suggestedNewH2: string;
     upgraded50WordAeoLead: string;
     dropInRefreshMarkdown: string;
-    refreshPoints?: Array<{ badge: string; title: string; detail: string }>;
     refreshInfographicSvg?: string;
   }) => {
-    if (!activeCampaign || !activeWebsite) return false;
-    const pageKey = (url: string) => {
-      try {
-        const page = new URL(url, activeWebsite.siteUrl);
-        return page.origin + page.pathname.replace(/\/+$/, '');
-      } catch { return ''; }
-    };
-    const target = pageKey(params.pageUrl);
-    const targetJob = activeCampaign.jobs.find(job => target && [
-      job.publishedUrl,
-      `/blog/${job.urlSlug}`,
-      activeWebsite.internalBuilderSlug && `/p/${activeWebsite.internalBuilderSlug}/blog/${job.urlSlug}`,
-    ].some(url => url && pageKey(url) === target));
-    if (!targetJob) {
-      setStatusMessage('This URL has no matching article in the active campaign. The refresh is available to copy.');
-      return false;
-    }
-    if (targetJob.compiledArticleMarkdown?.includes(params.dropInRefreshMarkdown)) return true;
+    if (!activeCampaign || !activeWebsite) return;
     const nowIso = new Date().toISOString();
+
     updateState((prev) => {
       const updatedCampaigns = prev.campaigns.map((camp) => {
         if (camp.id !== activeCampaign.id) return camp;
+        const targetJob =
+          camp.jobs.find(
+            (j) =>
+              j.publishedUrl === params.pageUrl ||
+              params.pageUrl.endsWith(j.urlSlug)
+          ) || camp.jobs[0];
+
+        if (!targetJob) return camp;
+
         const updatedJobs = camp.jobs.map((job) => {
-          if (job.id !== targetJob.id || job.compiledArticleMarkdown?.includes(params.dropInRefreshMarkdown)) return job;
+          if (job.id !== targetJob.id) return job;
           const baseMd =
             job.compiledArticleMarkdown ||
             compileJobArticleMarkdown(job, activeWebsite);
           const refreshedMd = `${baseMd}\n\n${params.dropInRefreshMarkdown}`;
-          const refreshSection = {
-            h2: params.suggestedNewH2,
-            archetype: 'framework' as const,
-            summary: params.upgraded50WordAeoLead,
-            points: params.refreshPoints || [],
-          };
+          const nextSvgs = params.refreshInfographicSvg
+            ? [...(job.sectionInfographicSvgs || []), params.refreshInfographicSvg]
+            : job.sectionInfographicSvgs;
+
           const nextJob: AutomatedArticleJob = {
             ...job,
             aeoDirectAnswer50Words: params.upgraded50WordAeoLead,
             compiledArticleMarkdown: refreshedMd,
-            outlineSections: [...job.outlineSections, refreshSection],
-            sectionInfographicSvgs: [...job.outlineSections.map((_, i) =>
-              job.sectionInfographicSvgs?.[i] || ''), params.refreshInfographicSvg || ''],
+            sectionInfographicSvgs: nextSvgs,
             updatedAtIso: nowIso,
           };
 
@@ -825,12 +790,8 @@ export default function AutonomousCampaignDashboard() {
         ? `Auto-injected 2026 refresh section ("${params.suggestedNewH2}") & updated your internal DoItWithAI blog post!`
         : `Injected 2026 refresh section ("${params.suggestedNewH2}") into active article state!`
     );
-    return true;
   };
 
-  /**
-   * Phase D Callback: Persist newly promoted Social Winner Formula into `studioState.winnerFormulas`
-   */
   const handlePromoteSocialWinnerFormula = (winner: WinnerFormulaRecord) => {
     const nowIso = new Date().toISOString();
     updateState((prev) => ({
@@ -838,19 +799,16 @@ export default function AutonomousCampaignDashboard() {
       winnerFormulas: [
         winner,
         ...prev.winnerFormulas.filter(
-          (w) => w.label !== winner.label
+          (w) => w.winningPinAngle !== winner.winningPinAngle
         ),
       ].slice(0, 12),
       lastSavedAtIso: nowIso,
     }));
     setStatusMessage(
-      `Synced live social telemetry & promoted winning formula "${winner.label}" (${winner.observedSaveRatePercent}% Save Rate) to future 24/7 cycles!`
+      `Synced live social telemetry & promoted winning formula "${winner.winningPinAngle}" (${winner.saveRatePercent}% Save Rate) to future 24/7 cycles!`
     );
   };
 
-  /**
-   * Open the current multi-article batch directly inside `/ai-content-writer`
-   */
   const handleOpenInContentWriterStudio = async (targetJob?: AutomatedArticleJob) => {
     if (!activeCampaign || !activeWebsite) return;
     setIsOpeningWriterStudio(true);
@@ -873,9 +831,6 @@ export default function AutonomousCampaignDashboard() {
     }
   };
 
-  /**
-   * STEP 4: Publish or Stage Selected Job
-   */
   const handlePublishSelectedJob = async () => {
     if (!studioState || !activeCampaign || !selectedJob || !activeWebsite) return;
     setIsPublishingJob(true);
@@ -1042,7 +997,6 @@ export default function AutonomousCampaignDashboard() {
 
   return (
     <div className="min-h-screen bg-[#0B0F17] text-slate-100 overflow-x-hidden">
-      {/* Top Mode & Studio Bar */}
       <header className="border-b border-slate-800/80 bg-[#0F1623]/95 backdrop-blur sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
@@ -1055,7 +1009,6 @@ export default function AutonomousCampaignDashboard() {
             </h1>
           </div>
 
-          {/* 3-Mode Unified Workflow Switcher */}
           <div className="flex flex-wrap items-center gap-2 text-xs">
             <Link
               href="/ai-content-writer"
@@ -1077,21 +1030,12 @@ export default function AutonomousCampaignDashboard() {
             >
               2. Multi-Article Batch
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                setWorkflowMode('autopilot-24h');
-                setShow24hAgencyCommandCenter(true);
-                setCurrentStep(4);
-              }}
-              className={`rounded-xl border px-3 py-1.5 font-bold transition ${
-                workflowMode === 'autopilot-24h' && currentStep === 4
-                  ? 'border-amber-400 bg-amber-500/20 text-amber-200'
-                  : 'border-slate-700 bg-slate-900 text-slate-300 hover:border-slate-600'
-              }`}
+            <Link
+              href="/ai-employee-agency"
+              className="rounded-xl border border-amber-400/60 bg-amber-500/15 hover:bg-amber-500/25 px-3 py-1.5 font-extrabold text-amber-200 transition"
             >
-              🌐 3. 24/7 AI Employee Agency (Node Graph + 6 Depts)
-            </button>
+              🌐 3. 24/7 AI Employee Agency (/ai-employee-agency) →
+            </Link>
             <button
               type="button"
               onClick={() => setShowAdvancedDrawer((prev) => !prev)}
@@ -1121,9 +1065,7 @@ export default function AutonomousCampaignDashboard() {
           </div>
         )}
 
-        {/* MAIN 2-PANEL GUIDED WORKSPACE */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* LEFT PANEL: 4-Step Guided Stepper & Active Site DNA */}
           <aside className="lg:col-span-4 xl:col-span-3 rounded-2xl border border-slate-800/90 bg-slate-900/70 p-4 space-y-4 lg:sticky lg:top-20 min-w-0">
             <div className="border-b border-slate-800 pb-3">
               <div className="text-[11px] font-bold uppercase tracking-wider text-sky-400">
@@ -1187,7 +1129,6 @@ export default function AutonomousCampaignDashboard() {
               })}
             </nav>
 
-            {/* Compact Active Website Summary Card */}
             <div className="rounded-xl border border-slate-800 bg-slate-950/80 p-3.5 space-y-2 text-xs">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
@@ -1220,11 +1161,7 @@ export default function AutonomousCampaignDashboard() {
             </div>
           </aside>
 
-          {/* RIGHT PANEL: Active Step Canvas */}
           <section className="lg:col-span-8 xl:col-span-9 min-w-0">
-            {/* =========================================================
-                STEP 1: ENTER WEBSITE URL & CHOOSE AUTOMATION MODE
-               ========================================================= */}
             {currentStep === 1 && (
               <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 sm:p-8 space-y-6">
                 <div className="max-w-3xl space-y-2">
@@ -1241,7 +1178,6 @@ export default function AutonomousCampaignDashboard() {
                   </p>
                 </div>
 
-                {/* Workflow Mode Cards: Multi-Article Batch vs 24/7 AI Employee Agency */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   <button
                     type="button"
@@ -1269,30 +1205,23 @@ export default function AutonomousCampaignDashboard() {
 
                   <button
                     type="button"
-                    onClick={() => setWorkflowMode('autopilot-24h')}
-                    className={`rounded-2xl border p-4 text-left transition ${
-                      workflowMode === 'autopilot-24h'
-                        ? 'border-amber-400 bg-amber-500/15 shadow-md'
-                        : 'border-slate-800 bg-slate-950/60 hover:border-slate-700'
-                    }`}
+                    onClick={() => router.push('/ai-employee-agency')}
+                    className="rounded-2xl border border-amber-400/50 bg-amber-500/10 hover:bg-amber-500/20 p-4 text-left transition shadow-md"
                   >
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-sm font-extrabold text-white">
-                        ⚡ Mode B: 24/7 Active AI Employee Agency (Full OS)
+                        ⚡ Mode B: 24/7 Active AI Employee Agency (Dedicated OS)
                       </span>
-                      {workflowMode === 'autopilot-24h' && (
-                        <span className="rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-bold text-slate-950 shrink-0">
-                          Active
-                        </span>
-                      )}
+                      <span className="rounded-full bg-amber-400 px-2.5 py-0.5 text-[10px] font-extrabold text-slate-950 shrink-0">
+                        Open /ai-employee-agency →
+                      </span>
                     </div>
-                    <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
-                      Just enter your URL and leave. 6 AI Departments (On-Page, Off-Page, Technical/Local SEO, Article Refresh, Writer &amp; Social Sub-Agents) work 24/7 with an interactive Animated Node Graph.
+                    <p className="text-xs text-slate-300 mt-1.5 leading-relaxed">
+                      Redirects to the dedicated 24/7 AI Digital Agency landing page &amp; workspace (/ai-employee-agency/dashboard) with 8 Departments, 24 Sub-Agents, Full-Canvas Zoom/Pan Node Graph &amp; Voice Call.
                     </p>
                   </button>
                 </div>
 
-                {/* Website Destination Type: External Website vs Internal DoItWithAI Website */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   <button
                     type="button"
@@ -1339,7 +1268,6 @@ export default function AutonomousCampaignDashboard() {
                   </button>
                 </div>
 
-                {/* Focused URL & Optional Niche Inputs */}
                 <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4 sm:p-5 space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
                     <div className="sm:col-span-9">
@@ -1405,7 +1333,6 @@ export default function AutonomousCampaignDashboard() {
                     />
                   </div>
 
-                  {/* Optional Seed Topics Collapse */}
                   <div>
                     <button
                       type="button"
@@ -1428,7 +1355,6 @@ export default function AutonomousCampaignDashboard() {
                   </div>
                 </div>
 
-                {/* Animated Live Scanner Feedback when scanning */}
                 {isScanningWebsite && (
                   <div className="rounded-2xl border border-sky-500/40 bg-sky-950/25 p-5 space-y-3">
                     <div className="flex items-center justify-between text-xs">
@@ -1466,53 +1392,30 @@ export default function AutonomousCampaignDashboard() {
                   </div>
                 )}
 
-                {/* Primary Step 1 CTA Buttons */}
                 <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
                   <div className="flex flex-wrap items-center gap-3">
-                    {workflowMode === 'autopilot-24h' ? (
-                      <button
-                        type="button"
-                        disabled={isScanningWebsite || isRunningBatch}
-                        onClick={() => void handleStart24HourActiveAutopilot()}
-                        className="rounded-xl bg-gradient-to-r from-amber-400 via-emerald-400 to-sky-400 hover:brightness-110 disabled:opacity-60 px-6 py-3.5 text-sm font-extrabold text-slate-950 shadow-lg transition"
-                      >
-                        {isScanningWebsite || isRunningBatch
-                          ? 'Initializing 24/7 AI Employee Agency & Deep Research...'
-                          : `⚡ Activate 24/7 AI Employee Agency (${targetBatchSize} Articles + 6 SEO/Social Depts) →`}
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        disabled={isScanningWebsite}
-                        onClick={() => void executeWebsiteScanAndTopicDiscovery()}
-                        className="rounded-xl bg-gradient-to-r from-sky-500 to-emerald-500 hover:from-sky-400 hover:to-emerald-400 disabled:opacity-60 px-6 py-3.5 text-sm font-extrabold text-slate-950 shadow-lg transition"
-                      >
-                        {isScanningWebsite
-                          ? 'Scanning Website & Discovering Topics...'
-                          : '1. Analyze Website & Generate Fresh Topics →'}
-                      </button>
-                    )}
-                  </div>
-
-                  {activeCampaign.jobs.length > 0 && (
                     <button
                       type="button"
-                      onClick={() => {
-                        setShow24hAgencyCommandCenter(true);
-                        setCurrentStep(4);
-                      }}
-                      className="text-xs font-semibold text-sky-400 hover:text-white"
+                      disabled={isScanningWebsite}
+                      onClick={() => void executeWebsiteScanAndTopicDiscovery()}
+                      className="rounded-xl bg-gradient-to-r from-sky-500 to-emerald-500 hover:from-sky-400 hover:to-emerald-400 disabled:opacity-60 px-6 py-3.5 text-sm font-extrabold text-slate-950 shadow-lg transition"
                     >
-                      Open 24/7 AI Agency Graph &amp; {activeCampaign.jobs.length} Ready Articles →
+                      {isScanningWebsite
+                        ? 'Scanning Website & Discovering Topics...'
+                        : '1. Analyze Website & Generate Fresh Topics →'}
                     </button>
-                  )}
+                  </div>
+
+                  <Link
+                    href="/ai-employee-agency/dashboard"
+                    className="text-xs font-extrabold text-amber-300 hover:text-white"
+                  >
+                    Open Dedicated 24/7 AI Agency Dashboard (/ai-employee-agency/dashboard) →
+                  </Link>
                 </div>
               </div>
             )}
 
-            {/* =========================================================
-                STEP 2: REVIEW & SELECT TOPIC IDEAS (OR REGENERATE FRESH IDEAS)
-               ========================================================= */}
             {currentStep === 2 && (
               <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 sm:p-8 space-y-6">
                 <div className="flex flex-wrap items-start justify-between gap-4">
@@ -1557,7 +1460,6 @@ export default function AutonomousCampaignDashboard() {
                   </div>
                 </div>
 
-                {/* Extracted Website DNA Summary Banner */}
                 <div className="rounded-xl border border-slate-800 bg-slate-950/80 p-4 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
                   <div>
                     <div className="text-slate-400">Website Analyzed</div>
@@ -1585,7 +1487,6 @@ export default function AutonomousCampaignDashboard() {
                   </div>
                 </div>
 
-                {/* Quick Add Custom Topic Bar */}
                 <div className="flex flex-wrap gap-2">
                   <input
                     type="text"
@@ -1606,7 +1507,6 @@ export default function AutonomousCampaignDashboard() {
                   </button>
                 </div>
 
-                {/* Selectable Topic Cards Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                   {activeCampaign.jobs.map((job, idx) => {
                     const checked = selectedJobIds.includes(job.id);
@@ -1659,7 +1559,6 @@ export default function AutonomousCampaignDashboard() {
                   })}
                 </div>
 
-                {/* Bottom Step Navigation */}
                 <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-800">
                   <button
                     type="button"
@@ -1680,9 +1579,6 @@ export default function AutonomousCampaignDashboard() {
               </div>
             )}
 
-            {/* =========================================================
-                STEP 3: LIVE ANIMATED MULTI-ARTICLE EXECUTION PIPELINE
-               ========================================================= */}
             {currentStep === 3 && (
               <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 sm:p-8 space-y-6">
                 <div className="flex flex-wrap items-center justify-between gap-4">
@@ -1711,12 +1607,11 @@ export default function AutonomousCampaignDashboard() {
                       onClick={() => setCurrentStep(4)}
                       className="rounded-xl bg-emerald-500 hover:bg-emerald-400 px-4 py-2.5 text-xs font-extrabold text-slate-950 transition"
                     >
-                      Open 24/7 Agency &amp; Multi-Article Studio (Step 4) →
+                      Open Multi-Article Studio (Step 4) →
                     </button>
                   )}
                 </div>
 
-                {/* Overall Batch Progress Bar */}
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between text-xs text-slate-300 font-semibold">
                     <span>
@@ -1755,7 +1650,6 @@ export default function AutonomousCampaignDashboard() {
                   </div>
                 </div>
 
-                {/* Live Animated 5-Station Assembly Line */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
                   {PRODUCTION_STATIONS.map((station, idx) => {
                     const active = isRunningBatch && activeStationIdx === idx;
@@ -1793,7 +1687,6 @@ export default function AutonomousCampaignDashboard() {
                   })}
                 </div>
 
-                {/* Per-Article Live Progress List */}
                 <div className="space-y-2.5">
                   {activeCampaign.jobs
                     .filter((j) => selectedJobIds.includes(j.id))
@@ -1857,28 +1750,21 @@ export default function AutonomousCampaignDashboard() {
               </div>
             )}
 
-            {/* =========================================================
-                STEP 4: 24/7 AI EMPLOYEE AGENCY COMMAND CENTER + MULTI-ARTICLE STUDIO
-               ========================================================= */}
             {currentStep === 4 && selectedJob && (
               <div className="space-y-6 min-w-0">
-                {/* Toggle Bar for 24/7 Active AI Employee Agency Node Graph & 6 Departments */}
-                <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-800 bg-slate-900/80 px-4 sm:px-5 py-3.5 text-xs">
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-400/40 bg-slate-900/90 px-4 sm:px-5 py-3.5 text-xs">
                   <div className="flex items-center gap-2.5 min-w-0">
                     <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-ping shrink-0" />
                     <span className="font-extrabold text-white truncate">
-                      24/7 Active AI Employee Agency (Animated Node Graph + On-Page, Off-Page, Tech SEO &amp; Social)
+                      Want the Full 24/7 AI Digital Agency Office (Left-Sidebar, 8 Depts, Full-Canvas Zoom/Pan Node Graph &amp; Voice Call)?
                     </span>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setShow24hAgencyCommandCenter((prev) => !prev)}
-                    className="rounded-xl border border-sky-400/50 bg-sky-500/15 hover:bg-sky-500/25 px-3.5 py-1.5 font-extrabold text-sky-200 transition"
+                  <Link
+                    href="/ai-employee-agency/dashboard"
+                    className="rounded-xl bg-gradient-to-r from-amber-400 to-emerald-400 px-3.5 py-1.5 font-extrabold text-slate-950 transition"
                   >
-                    {show24hAgencyCommandCenter
-                      ? '▾ Hide 24/7 AI Agency Node Graph'
-                      : '▸ Show 24/7 AI Agency Node Graph & 6 Departments'}
-                  </button>
+                    🏢 Open /ai-employee-agency/dashboard →
+                  </Link>
                 </div>
 
                 {show24hAgencyCommandCenter && (
@@ -1904,7 +1790,6 @@ export default function AutonomousCampaignDashboard() {
                   />
                 )}
 
-                {/* MULTI-ARTICLE SWITCHER BAR + FULL CONTENT WRITER STUDIO BRIDGE */}
                 <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 sm:p-6 space-y-5 min-w-0">
                   <div className="flex flex-wrap items-center justify-between gap-4">
                     <div>
@@ -1938,7 +1823,6 @@ export default function AutonomousCampaignDashboard() {
                     </div>
                   </div>
 
-                  {/* Horizontal Multi-Article Switcher Tabs */}
                   <div className="space-y-2">
                     <div className="text-xs font-bold text-slate-400">
                       Click any article below to switch active preview ({activeCampaign.jobs.length}{' '}
@@ -1978,9 +1862,7 @@ export default function AutonomousCampaignDashboard() {
                     </div>
                   </div>
 
-                  {/* Two Clear Delivery Cards: (1) Website Blog Delivery & (2) Social Media Delivery */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
-                    {/* Card A: Website Blog Delivery */}
                     <div className="rounded-2xl border border-emerald-500/35 bg-slate-950/80 p-4 space-y-3 min-w-0">
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-xs font-extrabold uppercase tracking-wider text-emerald-300">
@@ -2045,7 +1927,6 @@ export default function AutonomousCampaignDashboard() {
                       </div>
                     </div>
 
-                    {/* Card B: Social Media Delivery */}
                     <div className="rounded-2xl border border-sky-500/35 bg-slate-950/80 p-4 space-y-3 min-w-0">
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-xs font-extrabold uppercase tracking-wider text-sky-300">
@@ -2085,7 +1966,6 @@ export default function AutonomousCampaignDashboard() {
                   </div>
                 </div>
 
-                {/* Clean 4-Pill Visual Preview Switcher for Selected Job */}
                 <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 sm:p-6 space-y-5 min-w-0">
                   <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4">
                     <div className="min-w-0">
@@ -2123,7 +2003,6 @@ export default function AutonomousCampaignDashboard() {
                     </div>
                   </div>
 
-                  {/* Preview Mode 1: Full Article */}
                   {resultPreviewTab === 'article' && (
                     <div className="space-y-3">
                       <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/20 p-3.5 text-xs text-slate-200">
@@ -2137,7 +2016,6 @@ export default function AutonomousCampaignDashboard() {
                     </div>
                   )}
 
-                  {/* Preview Mode 2: 4 Section Infographics */}
                   {resultPreviewTab === 'infographics' && (
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
                       <div className="md:col-span-5 space-y-2">
@@ -2187,7 +2065,6 @@ export default function AutonomousCampaignDashboard() {
                     </div>
                   )}
 
-                  {/* Preview Mode 3: 3 Tall Pinterest 2:3 Pins */}
                   {resultPreviewTab === 'pinterest' && selectedPin && (
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
                       <div className="md:col-span-5 space-y-2.5">
@@ -2237,7 +2114,6 @@ export default function AutonomousCampaignDashboard() {
                     </div>
                   )}
 
-                  {/* Preview Mode 4: 5 Ready-to-Post Social Hooks */}
                   {resultPreviewTab === 'social-copy' && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                       {selectedJob.arcadsVariations.map((variation) => (
@@ -2279,9 +2155,6 @@ export default function AutonomousCampaignDashboard() {
           </section>
         </div>
 
-        {/* =========================================================
-            OPTIONAL COLLAPSIBLE ADVANCED SETTINGS, DEDICATED ENV VARS & FREE API GUIDE
-           ========================================================= */}
         {showAdvancedDrawer && (
           <section className="rounded-2xl border border-slate-700/80 bg-slate-900/90 p-5 sm:p-6 space-y-5">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4">
@@ -2344,7 +2217,6 @@ export default function AutonomousCampaignDashboard() {
 
             {advancedSubTab === 'connections-byok' && (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 text-xs">
-                {/* Social 1-Tap OAuth vs Manual Download Fallback */}
                 <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4 space-y-3">
                   <div className="font-bold text-white text-sm">
                     Social Channels (1-Tap Sign-In when API Key Active · Automatic Download Fallback)
@@ -2392,7 +2264,6 @@ export default function AutonomousCampaignDashboard() {
                   </div>
                 </div>
 
-                {/* Free-Tier BYOK Keys */}
                 <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4 space-y-3">
                   <div className="font-bold text-white text-sm">
                     Dedicated Automation API Keys (Browser BYOK or Vercel Env Vars)
