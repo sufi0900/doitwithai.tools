@@ -275,7 +275,7 @@ export async function POST(req: NextRequest) {
       siteUrl,
       primaryKeyword: winningBrief.keyword,
       articleTitle: winningBrief.recommendedH1Title,
-      urlSlug: winningBrief.urlSlug,
+      urlSlug: winningBrief.recommendedUrlSlug,
     });
 
     const qa150PointRubric = evaluate150PointQaAndSpotCheck({

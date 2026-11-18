@@ -129,12 +129,19 @@ export async function executeAgencyLlmCall(
       });
 
       if (res.ok) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const data: any = await res.json();
+        const data = (await res.json()) as {
+          candidates?: Array<{
+            content?: { parts?: Array<{ text?: string }> };
+          }>;
+          usageMetadata?: {
+            promptTokenCount?: number;
+            candidatesTokenCount?: number;
+            thoughtsTokenCount?: number;
+          };
+        };
         const outputText: string =
           data?.candidates?.[0]?.content?.parts
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            ?.map((p: any) => p?.text || '')
+            ?.map((p) => p?.text || '')
             .join('\n')
             .trim() || '';
 
@@ -204,8 +211,10 @@ export async function executeAgencyLlmCall(
       });
 
       if (res.ok) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const data: any = await res.json();
+        const data = (await res.json()) as {
+          choices?: Array<{ message?: { content?: string } }>;
+          usage?: { prompt_tokens?: number; completion_tokens?: number };
+        };
         const outputText: string =
           data?.choices?.[0]?.message?.content?.trim() || '';
         const usage = data?.usage || {};

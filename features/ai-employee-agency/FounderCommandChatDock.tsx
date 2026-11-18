@@ -299,12 +299,20 @@ export default function FounderCommandChatDock({
         (window as unknown as Record<string, unknown>).webkitSpeechRecognition;
       if (typeof SpeechRec === 'function') {
         try {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const recognition: any = new (SpeechRec as any)();
+          type SpeechRecognitionResultEvent = {
+            results?: ArrayLike<ArrayLike<{ transcript?: string }>>;
+          };
+          type SpeechRecognitionInstance = {
+            lang: string;
+            interimResults: boolean;
+            onresult: ((event: SpeechRecognitionResultEvent) => void) | null;
+            start: () => void;
+          };
+          const SpeechRecCtor = SpeechRec as new () => SpeechRecognitionInstance;
+          const recognition = new SpeechRecCtor();
           recognition.lang = 'en-US';
           recognition.interimResults = false;
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          recognition.onresult = (event: any) => {
+          recognition.onresult = (event) => {
             const transcript = event?.results?.[0]?.[0]?.transcript;
             if (transcript) {
               setChatInput(transcript);

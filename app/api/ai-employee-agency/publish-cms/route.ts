@@ -94,8 +94,10 @@ export async function POST(req: NextRequest) {
         });
 
         if (wpRes.ok) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const wpData: any = await wpRes.json();
+          const wpData = (await wpRes.json()) as {
+            id?: number | string;
+            link?: string;
+          };
           const result: CmsPublishExecutionResult = {
             ok: true,
             platformId: 'wordpress-rest',
