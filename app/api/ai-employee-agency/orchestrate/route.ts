@@ -24,24 +24,6 @@ import {
   generateGoogleAdsRsaCampaignPack,
 } from '@/lib/ai-employee-agency/google-ads-agent';
 
-/**
- * ============================================================================
- * DOITWITHAI.TOOLS — 24/7 AI EMPLOYEE AGENCY OS (V3 PHASES 7–10 + V4 PHASE 12)
- * API Route: `app/api/ai-employee-agency/orchestrate/route.ts`
- *
- * Real-Time Multi-Agent Orchestration, Live Keyword Research, 3-Layer Memory,
- * Zero-Based Session Token Telemetry (`KEY_SLOT_*`) & Google Ads / 150-Pt QA:
- * 1. Scrapes live Google Autocomplete (`suggestqueries.google.com`) ($0.00).
- * 2. Crawls live target website HTML (`<title>`, `<meta>`, `<h1>`/`<h2>`) ($0.00).
- * 3. Scores all candidate keywords through `scoreKeywordWithDoItWithAiEngine`.
- * 4. Compiles the 3-Layer Trainable Agent Context Stack (`buildAgentThreeLayerPromptStack`).
- * 5. Runs the 10% cognitive LLM reasoning call via `executeAgencyLlmCall`, extracts
- *    exact real-time token counters + `apiKeySlot` (`KEY_SLOT_*`), and returns both
- *    `stage1TokenEvent` (for zero-based session increments) and `circleTokenTelemetry`.
- * 6. Synthesizes the Google Ads RSA Campaign Pack and 150-Point QA Rubric.
- * ============================================================================
- */
-
 interface OrchestrateRequestBody {
   siteUrl?: string;
   siteName?: string;
@@ -158,7 +140,6 @@ export async function POST(req: NextRequest) {
     const isInternalSite = Boolean(body.isInternalSite);
     const selectedModelId: AgencyLlmModelId = body.modelId || 'gemini-2.5-flash';
 
-    // 1. Inspect live HTML signals in parallel with Google Autocomplete scraping ($0.00 mechanical work)
     const baseSeed = (
       body.seedKeywordQuery ||
       body.primaryNiche ||
@@ -179,7 +160,6 @@ export async function POST(req: NextRequest) {
       liveSignals.pageTitle.split('|')[0]?.split('-')[0]?.trim() ||
       `${siteName} Digital Growth`;
 
-    // 2. Combine live autocomplete queries with high-intent long-tail modifiers
     const rawCandidatePool = Array.from(
       new Set([
         ...suggestBatchA,
@@ -193,7 +173,6 @@ export async function POST(req: NextRequest) {
       ])
     ).slice(0, 8);
 
-    // 3. Score every candidate keyword with the DoItWithAI Keyword KD Engine
     const scoredKeywordBriefs: ScoredKeywordBrief[] = rawCandidatePool
       .map((kw, idx) =>
         scoreKeywordWithDoItWithAiEngine({
@@ -208,7 +187,6 @@ export async function POST(req: NextRequest) {
 
     const winningBrief = scoredKeywordBriefs[0]!;
 
-    // 4. Build the 3-Layer Agent Context Stack for Keyword Strategist (`mgr-keyword-strategist`)
     const threeLayerStack = buildAgentThreeLayerPromptStack({
       agentId: 'mgr-keyword-strategist',
       siteName,
@@ -222,7 +200,6 @@ export async function POST(req: NextRequest) {
       sharedEvents: [],
     });
 
-    // 5. Execute Stage 1 Cognitive LLM Call & Capture Exact Real-Time Token Telemetry
     const llmResult = await executeAgencyLlmCall({
       modelId: selectedModelId,
       apiKeyOverride: body.apiKeyOverride,
@@ -247,7 +224,6 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // 6. Build the 6-Stage Paced Handoff Packet Chain
     const handoffPackets = buildPacedHandoffChain({
       siteName,
       isInternalSite,
@@ -256,20 +232,18 @@ export async function POST(req: NextRequest) {
       activeKdScore: winningBrief.kdScore,
     });
 
-    // 7. Generate 60s TikTok / Reels Video Script for the winning brief
     const tiktokVideoScript = generateTikTokReels60sScript({
       articleTitle: winningBrief.recommendedH1Title,
       primaryKeyword: winningBrief.keyword,
       siteName,
     });
 
-    // 8. Build Google Ads RSA Campaign Pack & 150-Point Automated QA Rubric (Phase 9)
     const googleAdsCampaignPack = generateGoogleAdsRsaCampaignPack({
       siteName,
       siteUrl,
       primaryKeyword: winningBrief.keyword,
       articleTitle: winningBrief.recommendedH1Title,
-      urlSlug: winningBrief.urlSlug,
+      urlSlug: winningBrief.recommendedUrlSlug,
     });
 
     const qa150PointRubric = evaluate150PointQaAndSpotCheck({
@@ -278,7 +252,6 @@ export async function POST(req: NextRequest) {
       isSpotCheckOptedIn: Boolean(body.isSpotCheckOptedIn),
     });
 
-    // 9. Build Founder Manual Action Alerts
     const manualActionAlerts = detectFounderManualActionAlerts({
       siteName,
       siteUrl,

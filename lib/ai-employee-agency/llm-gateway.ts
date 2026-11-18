@@ -4,14 +4,7 @@
  * Module: `lib/ai-employee-agency/llm-gateway.ts`
  *
  * Unified Server-Side Free/Paid LLM Gateway (`Gemini 2.5 Flash`, `Groq Llama 3.3 70B`,
- * `OpenAI GPT-4o-mini` / `GPT-4.1-mini`):
- * - Supports server environment variables (`GEMINI_API_KEY`, `GOOGLE_GENERATIVE_AI_API_KEY`,
- *   `GROQ_API_KEY`, `OPENAI_API_KEY`) as well as optional Founder test key overrides
- *   passed strictly over HTTPS to the server route (never exposed in public bundles).
- * - Extracts exact token telemetry (`promptTokenCount`, `candidatesTokenCount`,
- *   `thoughtsTokenCount` on Gemini; `prompt_tokens`, `completion_tokens` on Groq/OpenAI),
- *   tags every call with its `apiKeySlot` (`KEY_SLOT_*`), and computes live shadow
- *   commercial cost so even a $0 Free API Key displays 100% accurate token & dollar usage.
+ * `OpenAI GPT-4o-mini` / `GPT-4.1-mini`) — strict TypeScript (zero `any`).
  * ============================================================================
  */
 
@@ -52,10 +45,6 @@ export interface AgencyLlmResponse {
   telemetryNote: string;
 }
 
-/**
- * Estimates token count deterministically (~4 chars per token) when running
- * in zero-key fallback mode so shadow telemetry remains 100% realistic.
- */
 export function estimateTokensFromText(text: string): number {
   const cleaned = (text || '').trim();
   if (!cleaned) return 0;
@@ -93,10 +82,6 @@ function resolveServerApiKey(
   return { apiKey: '', hasOverride: false };
 }
 
-/**
- * Executes an AI Employee cognitive task via Google Gemini, Groq LPU, or OpenAI
- * and returns exact real-time token usage + shadow commercial cost + KEY_SLOT_*.
- */
 export async function executeAgencyLlmCall(
   req: AgencyLlmRequest
 ): Promise<AgencyLlmResponse> {
@@ -109,7 +94,6 @@ export async function executeAgencyLlmCall(
   const isFreeTierKey =
     req.isFreeTierKey !== undefined ? req.isFreeTierKey : spec.supportsFreeTierKey;
 
-  // 1. Live Google AI Studio / Gemini Developer API Call (`gemini-2.5-flash`)
   if (provider === 'gemini' && apiKey) {
     try {
       const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${encodeURIComponent(
@@ -137,12 +121,19 @@ export async function executeAgencyLlmCall(
       });
 
       if (res.ok) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const data: any = await res.json();
+        const data = (await res.json()) as {
+          candidates?: Array<{
+            content?: { parts?: Array<{ text?: string }> };
+          }>;
+          usageMetadata?: {
+            promptTokenCount?: number;
+            candidatesTokenCount?: number;
+            thoughtsTokenCount?: number;
+          };
+        };
         const outputText: string =
           data?.candidates?.[0]?.content?.parts
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            ?.map((p: any) => p?.text || '')
+            ?.map((p) => p?.text || '')
             .join('\n')
             .trim() || '';
 
@@ -192,7 +183,6 @@ export async function executeAgencyLlmCall(
     }
   }
 
-  // 2. Live OpenAI or Groq OpenAI-Compatible Chat Completions Call
   if ((provider === 'openai' || provider === 'groq') && apiKey) {
     try {
       const endpoint =
@@ -219,8 +209,10 @@ export async function executeAgencyLlmCall(
       });
 
       if (res.ok) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const data: any = await res.json();
+        const data = (await res.json()) as {
+          choices?: Array<{ message?: { content?: string } }>;
+          usage?: { prompt_tokens?: number; completion_tokens?: number };
+        };
         const outputText: string =
           data?.choices?.[0]?.message?.content?.trim() || '';
         const usage = data?.usage || {};
@@ -268,7 +260,6 @@ export async function executeAgencyLlmCall(
     }
   }
 
-  // 3. Zero-Key Deterministic Hybrid Mode with Exact Shadow Token Metering
   const promptTokens = estimateTokensFromText(
     `${req.systemPrompt}\n${req.userPrompt}`
   );

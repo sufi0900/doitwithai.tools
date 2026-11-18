@@ -29,23 +29,6 @@ import {
 } from '@/lib/ai-employee-agency/workspace-knowledge-snapshot';
 import { AgencyUiIcon } from './AgencySvgIcons';
 
-/**
- * ============================================================================
- * DOITWITHAI.TOOLS — 24/7 AI EMPLOYEE AGENCY OS (V4 PHASE 13 REDESIGN)
- * Component: `features/ai-employee-agency/FounderCommandChatDock.tsx`
- *
- * Right-Side Slide-Over Copilot & 36-Agent Messenger Drawer:
- * - Replaces the cramped bottom bar with a full-height 420px Right-Side
- *   Slide-Over Drawer + 1-click Full-Screen Chat mode + sleek Floating Launcher.
- * - Defaults to General ChatGPT-Style Workspace Assistant (no agent required)
- *   with a 1-click switcher to any of the 36 AI Employees or Voice Call.
- * - Injects live `WorkspaceKnowledgeSnapshot` (published/draft blogs, designs,
- *   SEO/AI health scores, schedule, and zero-based session tokens) on every turn.
- * - Zero robotic debug prefixes in replies; clean token & memory pills below.
- * - Full Dual-Theme Light & Dark Mode support.
- * ============================================================================
- */
-
 export interface FounderChatMessage {
   id: string;
   sender: 'founder' | 'agent';
@@ -469,12 +452,19 @@ export default function FounderCommandChatDock({
         (window as unknown as Record<string, unknown>).webkitSpeechRecognition;
       if (typeof SpeechRec === 'function') {
         try {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const recognition: any = new (SpeechRec as any)();
+          type BrowserSpeechRecognition = {
+            lang: string;
+            interimResults: boolean;
+            onresult: (event: {
+              results?: ArrayLike<ArrayLike<{ transcript?: string }>>;
+            }) => void;
+            start: () => void;
+          };
+          const SpeechRecCtor = SpeechRec as new () => BrowserSpeechRecognition;
+          const recognition = new SpeechRecCtor();
           recognition.lang = 'en-US';
           recognition.interimResults = false;
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          recognition.onresult = (event: any) => {
+          recognition.onresult = (event) => {
             const transcript = event?.results?.[0]?.[0]?.transcript;
             if (transcript) {
               setChatInput(transcript);
