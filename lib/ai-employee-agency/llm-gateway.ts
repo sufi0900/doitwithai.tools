@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * DOITWITHAI.TOOLS — 24/7 AI EMPLOYEE AGENCY OS (V3 PHASE 7)
+ * DOITWITHAI.TOOLS — 24/7 AI EMPLOYEE AGENCY OS (V3 PHASE 7 + V4 PHASE 12)
  * Module: `lib/ai-employee-agency/llm-gateway.ts`
  *
  * Unified Server-Side Free/Paid LLM Gateway (`Gemini 2.5 Flash`, `Groq Llama 3.3 70B`,
@@ -9,17 +9,19 @@
  *   `GROQ_API_KEY`, `OPENAI_API_KEY`) as well as optional Founder test key overrides
  *   passed strictly over HTTPS to the server route (never exposed in public bundles).
  * - Extracts exact token telemetry (`promptTokenCount`, `candidatesTokenCount`,
- *   `thoughtsTokenCount` on Gemini; `prompt_tokens`, `completion_tokens` on Groq/OpenAI)
- *   and computes live shadow commercial cost so even a $0 Free API Key displays
- *   100% accurate token & dollar usage in real time.
+ *   `thoughtsTokenCount` on Gemini; `prompt_tokens`, `completion_tokens` on Groq/OpenAI),
+ *   tags every call with its `apiKeySlot` (`KEY_SLOT_*`), and computes live shadow
+ *   commercial cost so even a $0 Free API Key displays 100% accurate token & dollar usage.
  * ============================================================================
  */
 
 import {
   MODEL_PRICING_CATALOG,
   computeTokenCostUsd,
+  resolveApiKeySlotId,
   type AgencyLlmModelId,
   type AgencyLlmProviderId,
+  type ApiKeySlotId,
 } from './token-telemetry-store';
 
 export interface AgencyLlmRequest {
@@ -36,6 +38,7 @@ export interface AgencyLlmResponse {
   ok: boolean;
   provider: AgencyLlmProviderId;
   modelId: AgencyLlmModelId;
+  apiKeySlot: ApiKeySlotId;
   outputText: string;
   usedLiveApiKey: boolean;
   isFreeTierKey: boolean;
@@ -62,32 +65,37 @@ export function estimateTokensFromText(text: string): number {
 function resolveServerApiKey(
   provider: AgencyLlmProviderId,
   apiKeyOverride?: string
-): string {
+): { apiKey: string; hasOverride: boolean } {
   if (apiKeyOverride && apiKeyOverride.trim().length > 8) {
-    return apiKeyOverride.trim();
+    return { apiKey: apiKeyOverride.trim(), hasOverride: true };
   }
-  if (typeof process === 'undefined' || !process.env) return '';
+  if (typeof process === 'undefined' || !process.env) {
+    return { apiKey: '', hasOverride: false };
+  }
 
   if (provider === 'gemini') {
-    return (
-      process.env.GEMINI_API_KEY ||
-      process.env.GOOGLE_GENERATIVE_AI_API_KEY ||
-      process.env.GOOGLE_API_KEY ||
-      ''
-    ).trim();
+    return {
+      apiKey: (
+        process.env.GEMINI_API_KEY ||
+        process.env.GOOGLE_GENERATIVE_AI_API_KEY ||
+        process.env.GOOGLE_API_KEY ||
+        ''
+      ).trim(),
+      hasOverride: false,
+    };
   }
   if (provider === 'groq') {
-    return (process.env.GROQ_API_KEY || '').trim();
+    return { apiKey: (process.env.GROQ_API_KEY || '').trim(), hasOverride: false };
   }
   if (provider === 'openai') {
-    return (process.env.OPENAI_API_KEY || '').trim();
+    return { apiKey: (process.env.OPENAI_API_KEY || '').trim(), hasOverride: false };
   }
-  return '';
+  return { apiKey: '', hasOverride: false };
 }
 
 /**
  * Executes an AI Employee cognitive task via Google Gemini, Groq LPU, or OpenAI
- * and returns exact real-time token usage + shadow commercial cost.
+ * and returns exact real-time token usage + shadow commercial cost + KEY_SLOT_*.
  */
 export async function executeAgencyLlmCall(
   req: AgencyLlmRequest
@@ -97,7 +105,7 @@ export async function executeAgencyLlmCall(
   const spec =
     MODEL_PRICING_CATALOG[modelId] || MODEL_PRICING_CATALOG['gemini-2.5-flash'];
   const provider = spec.provider;
-  const apiKey = resolveServerApiKey(provider, req.apiKeyOverride);
+  const { apiKey, hasOverride } = resolveServerApiKey(provider, req.apiKeyOverride);
   const isFreeTierKey =
     req.isFreeTierKey !== undefined ? req.isFreeTierKey : spec.supportsFreeTierKey;
 
@@ -129,19 +137,12 @@ export async function executeAgencyLlmCall(
       });
 
       if (res.ok) {
-        const data = (await res.json()) as {
-          candidates?: Array<{
-            content?: { parts?: Array<{ text?: string }> };
-          }>;
-          usageMetadata?: {
-            promptTokenCount?: number;
-            candidatesTokenCount?: number;
-            thoughtsTokenCount?: number;
-          };
-        };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const data: any = await res.json();
         const outputText: string =
           data?.candidates?.[0]?.content?.parts
-            ?.map((p) => p?.text || '')
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            ?.map((p: any) => p?.text || '')
             .join('\n')
             .trim() || '';
 
@@ -159,11 +160,18 @@ export async function executeAgencyLlmCall(
           completionTokens,
           thinkingTokens,
         });
+        const apiKeySlot = resolveApiKeySlotId({
+          provider,
+          isFreeTierKey,
+          hasKeyOverride: hasOverride,
+          usedLiveApiKey: true,
+        });
 
         return {
           ok: true,
           provider,
           modelId,
+          apiKeySlot,
           outputText,
           usedLiveApiKey: true,
           isFreeTierKey,
@@ -174,9 +182,9 @@ export async function executeAgencyLlmCall(
           shadowPaidCostUsd,
           actualCostUsd: isFreeTierKey ? 0 : shadowPaidCostUsd,
           latencyMs: Date.now() - startTime,
-          telemetryNote: `Live Gemini API usageMetadata captured (${totalTokens} tokens · Shadow Cost $${shadowPaidCostUsd.toFixed(
+          telemetryNote: `Live Gemini API (${apiKeySlot}) captured ${totalTokens.toLocaleString()} tokens · Shadow Cost $${shadowPaidCostUsd.toFixed(
             5
-          )})`,
+          )}`,
         };
       }
     } catch {
@@ -211,10 +219,8 @@ export async function executeAgencyLlmCall(
       });
 
       if (res.ok) {
-        const data = (await res.json()) as {
-          choices?: Array<{ message?: { content?: string } }>;
-          usage?: { prompt_tokens?: number; completion_tokens?: number };
-        };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const data: any = await res.json();
         const outputText: string =
           data?.choices?.[0]?.message?.content?.trim() || '';
         const usage = data?.usage || {};
@@ -230,11 +236,18 @@ export async function executeAgencyLlmCall(
           completionTokens,
           thinkingTokens: 0,
         });
+        const apiKeySlot = resolveApiKeySlotId({
+          provider,
+          isFreeTierKey,
+          hasKeyOverride: hasOverride,
+          usedLiveApiKey: true,
+        });
 
         return {
           ok: true,
           provider,
           modelId,
+          apiKeySlot,
           outputText,
           usedLiveApiKey: true,
           isFreeTierKey,
@@ -245,9 +258,9 @@ export async function executeAgencyLlmCall(
           shadowPaidCostUsd,
           actualCostUsd: isFreeTierKey ? 0 : shadowPaidCostUsd,
           latencyMs: Date.now() - startTime,
-          telemetryNote: `Live ${provider.toUpperCase()} usage captured (${totalTokens} tokens · Shadow Cost $${shadowPaidCostUsd.toFixed(
+          telemetryNote: `Live ${provider.toUpperCase()} (${apiKeySlot}) captured ${totalTokens.toLocaleString()} tokens · Shadow Cost $${shadowPaidCostUsd.toFixed(
             5
-          )})`,
+          )}`,
         };
       }
     } catch {
@@ -259,7 +272,7 @@ export async function executeAgencyLlmCall(
   const promptTokens = estimateTokensFromText(
     `${req.systemPrompt}\n${req.userPrompt}`
   );
-  const simulatedCompletionTokens = 650;
+  const simulatedCompletionTokens = 280;
   const totalTokens = promptTokens + simulatedCompletionTokens;
   const shadowPaidCostUsd = computeTokenCostUsd({
     modelId,
@@ -267,11 +280,18 @@ export async function executeAgencyLlmCall(
     completionTokens: simulatedCompletionTokens,
     thinkingTokens: 0,
   });
+  const apiKeySlot = resolveApiKeySlotId({
+    provider,
+    isFreeTierKey: true,
+    hasKeyOverride: false,
+    usedLiveApiKey: false,
+  });
 
   return {
     ok: true,
     provider,
     modelId,
+    apiKeySlot,
     outputText: '',
     usedLiveApiKey: false,
     isFreeTierKey: true,
@@ -281,7 +301,7 @@ export async function executeAgencyLlmCall(
     totalTokens,
     shadowPaidCostUsd,
     actualCostUsd: 0,
-    latencyMs: Math.max(180, Date.now() - startTime),
-    telemetryNote: `Hybrid Shadow Token Meter active (${totalTokens} tokens metered at ${spec.displayName} rates · $0.00 billed)`,
+    latencyMs: Math.max(120, Date.now() - startTime),
+    telemetryNote: `Shadow Token Meter (${apiKeySlot}) active · ${totalTokens.toLocaleString()} tokens metered at ${spec.displayName} rates ($0.00 billed)`,
   };
 }

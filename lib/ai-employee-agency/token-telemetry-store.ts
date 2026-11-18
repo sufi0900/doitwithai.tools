@@ -1,20 +1,22 @@
 /**
  * ============================================================================
- * DOITWITHAI.TOOLS — 24/7 AI EMPLOYEE AGENCY OS (V3 PHASE 7)
+ * DOITWITHAI.TOOLS — 24/7 AI EMPLOYEE AGENCY OS (V3 PHASE 7 + V4 PHASE 12)
  * Module: `lib/ai-employee-agency/token-telemetry-store.ts`
  *
- * Real-Time 1-Circle Token & Cost Telemetry Engine (Free & Paid API Keys):
- * - Tracks exact input (`promptTokenCount`), output (`candidatesTokenCount`),
- *   and thinking (`thoughtsTokenCount`) tokens across all 5 cognitive LLM stages
- *   of 1 complete end-to-end AI Digital Agency Circle.
- * - Even when testing with a $0 Free API Key (Google AI Studio Gemini 2.5 Flash
- *   or Groq Llama 3.3 70B), every API response returns exact token counters.
- *   This module computes both the Actual Cost ($0.00 on Free Key) and the
- *   Shadow Commercial Cost ($0.0192 per circle on Gemini 2.5 Flash or $0.0054
- *   on OpenAI GPT-4o-mini) so the Founder has 100% real-time unit-economics
- *   visibility before commercial launch.
+ * Zero-Based Real-Time Per-Agent & Chat Token Telemetry Ledger + 1-Circle Unit Economics:
+ * - V4 Phase 12 Upgrade: Initializes every live session strictly at `0 tokens ($0.0000)`
+ *   across all 36 AI Employees + the Founder Chat Box (`chat-copilot-box`), with a
+ *   1-click `Reset Session to 0` action and `KEY_SLOT_*` attribution on every call.
+ * - Tracks exact input (`promptTokenCount`), output (`candidatesTokenCount`), and
+ *   thinking (`thoughtsTokenCount`) tokens in real time as each agent or chat message
+ *   executes, computing both Actual Billed Cost ($0.00 on Free Key) and Shadow
+ *   Commercial Cost at published API pricing.
+ * - Preserves the 5-Stage 1-Circle Reference Unit Economics calculator for SaaS
+ *   gross-margin modeling ($49/mo and $149/mo tiers).
  * ============================================================================
  */
+
+import { getAllAgencyEmployeesFlat } from './agent-registry';
 
 export type AgencyLlmProviderId = 'gemini' | 'openai' | 'groq';
 
@@ -23,6 +25,15 @@ export type AgencyLlmModelId =
   | 'gpt-4o-mini'
   | 'gpt-4.1-mini'
   | 'llama-3.3-70b-versatile';
+
+export type ApiKeySlotId =
+  | 'KEY_SLOT_GEMINI_FREE'
+  | 'KEY_SLOT_GEMINI_PAID'
+  | 'KEY_SLOT_GROQ_FREE'
+  | 'KEY_SLOT_GROQ_PAID'
+  | 'KEY_SLOT_OPENAI_PAID'
+  | 'KEY_SLOT_CUSTOM_OVERRIDE'
+  | 'KEY_SLOT_MECHANICAL_ZERO';
 
 export interface LlmModelPricingSpec {
   modelId: AgencyLlmModelId;
@@ -84,6 +95,27 @@ export const MODEL_PRICING_CATALOG: Record<AgencyLlmModelId, LlmModelPricingSpec
   },
 };
 
+export function resolveApiKeySlotId(params: {
+  provider: AgencyLlmProviderId;
+  isFreeTierKey: boolean;
+  hasKeyOverride?: boolean;
+  usedLiveApiKey?: boolean;
+}): ApiKeySlotId {
+  if (params.hasKeyOverride && params.usedLiveApiKey) {
+    return 'KEY_SLOT_CUSTOM_OVERRIDE';
+  }
+  if (!params.usedLiveApiKey && params.usedLiveApiKey !== undefined) {
+    return 'KEY_SLOT_MECHANICAL_ZERO';
+  }
+  if (params.provider === 'gemini') {
+    return params.isFreeTierKey ? 'KEY_SLOT_GEMINI_FREE' : 'KEY_SLOT_GEMINI_PAID';
+  }
+  if (params.provider === 'groq') {
+    return params.isFreeTierKey ? 'KEY_SLOT_GROQ_FREE' : 'KEY_SLOT_GROQ_PAID';
+  }
+  return 'KEY_SLOT_OPENAI_PAID';
+}
+
 export interface CircleStageTokenRecord {
   stageNumber: 1 | 2 | 3 | 4 | 5;
   departmentName: string;
@@ -122,7 +154,90 @@ export interface AgencyCircleTelemetrySnapshot {
   stages: CircleStageTokenRecord[];
 }
 
+/**
+ * ============================================================================
+ * V4 PHASE 12: ZERO-BASED REAL-TIME PER-AGENT & CHAT TOKEN TELEMETRY LEDGER
+ * ============================================================================
+ */
+
+export const CHAT_BOX_LEDGER_ROW_ID = 'chat-copilot-box';
+
+export interface AgentSessionTokenRow {
+  rowId: string;
+  displayName: string;
+  roleBadge: string;
+  departmentName: string;
+  departmentTab: string;
+  isChatBox: boolean;
+  apiKeySlot: ApiKeySlotId;
+  modelId: AgencyLlmModelId;
+  apiCallsCount: number;
+  promptTokens: number;
+  completionTokens: number;
+  thinkingTokens: number;
+  totalTokens: number;
+  shadowCostUsd: number;
+  actualCostUsd: number;
+  lastActionSummary: string;
+  lastUpdatedIso: string | null;
+  status: 'idle' | 'active';
+}
+
+export interface SessionTokenLedgerEvent {
+  eventId: string;
+  timestampIso: string;
+  rowId: string;
+  actorName: string;
+  actionLabel: string;
+  apiKeySlot: ApiKeySlotId;
+  modelId: AgencyLlmModelId;
+  promptTokens: number;
+  completionTokens: number;
+  thinkingTokens: number;
+  totalTokens: number;
+  shadowCostUsd: number;
+  actualCostUsd: number;
+  usedLiveApiKey: boolean;
+}
+
+export interface ZeroBasedSessionTokenLedger {
+  sessionId: string;
+  startedAtIso: string;
+  lastResetAtIso: string;
+  siteName: string;
+  activeModelId: AgencyLlmModelId;
+  isFreeTierKeyActive: boolean;
+  activeKeySlot: ApiKeySlotId;
+  totalApiCalls: number;
+  totalPromptTokens: number;
+  totalCompletionTokens: number;
+  totalThinkingTokens: number;
+  totalSessionTokens: number;
+  totalShadowCostUsd: number;
+  totalActualCostUsd: number;
+  chatBoxTokens: number;
+  chatBoxShadowCostUsd: number;
+  activeAgentsCount: number;
+  rows: AgentSessionTokenRow[];
+  recentEvents: SessionTokenLedgerEvent[];
+}
+
+export interface RecordTokenUsageDelta {
+  rowId: string;
+  actionLabel: string;
+  modelId: AgencyLlmModelId;
+  apiKeySlot?: ApiKeySlotId;
+  promptTokens: number;
+  completionTokens: number;
+  thinkingTokens?: number;
+  shadowCostUsd?: number;
+  actualCostUsd?: number;
+  usedLiveApiKey?: boolean;
+  isFreeTierKey?: boolean;
+}
+
 const TELEMETRY_STORAGE_KEY = 'doitwithai_agency_v3_token_telemetry_v1';
+const ZERO_BASED_LEDGER_STORAGE_KEY = 'doitwithai_agency_v4_zero_token_ledger_v1';
 
 /**
  * Computes exact USD cost from input + output + thinking tokens for a given model
@@ -142,7 +257,354 @@ export function computeTokenCostUsd(params: {
 }
 
 /**
- * Builds a complete 5-Stage 1-Circle Token & Cost Telemetry Snapshot
+ * Creates a clean Zero-Based Session Token Ledger initialized strictly at
+ * 0 tokens ($0.0000) across the Founder Chat Box + all 36 AI Employees.
+ */
+export function createZeroBasedSessionTokenLedger(params: {
+  siteName: string;
+  modelId?: AgencyLlmModelId;
+  isFreeTierKeyActive?: boolean;
+}): ZeroBasedSessionTokenLedger {
+  const nowIso = new Date().toISOString();
+  const modelId: AgencyLlmModelId = params.modelId || 'gemini-2.5-flash';
+  const spec = MODEL_PRICING_CATALOG[modelId] || MODEL_PRICING_CATALOG['gemini-2.5-flash'];
+  const isFree =
+    params.isFreeTierKeyActive !== undefined
+      ? params.isFreeTierKeyActive
+      : spec.supportsFreeTierKey;
+  const defaultSlot = resolveApiKeySlotId({
+    provider: spec.provider,
+    isFreeTierKey: isFree,
+    usedLiveApiKey: true,
+  });
+
+  const chatBoxRow: AgentSessionTokenRow = {
+    rowId: CHAT_BOX_LEDGER_ROW_ID,
+    displayName: 'Founder Copilot & Agent Chat Box',
+    roleBadge: 'Interactive Chat',
+    departmentName: 'Workspace Copilot',
+    departmentTab: 'executive-overview',
+    isChatBox: true,
+    apiKeySlot: defaultSlot,
+    modelId,
+    apiCallsCount: 0,
+    promptTokens: 0,
+    completionTokens: 0,
+    thinkingTokens: 0,
+    totalTokens: 0,
+    shadowCostUsd: 0,
+    actualCostUsd: 0,
+    lastActionSummary: 'Idle — 0 messages metered in current session',
+    lastUpdatedIso: null,
+    status: 'idle',
+  };
+
+  const agentRows: AgentSessionTokenRow[] = getAllAgencyEmployeesFlat().map((emp) => ({
+    rowId: emp.id,
+    displayName: emp.name,
+    roleBadge: emp.isDepartmentManager ? 'Dept Manager' : 'Sub-Agent',
+    departmentName: emp.departmentBadge,
+    departmentTab: emp.departmentTab,
+    isChatBox: false,
+    apiKeySlot: defaultSlot,
+    modelId,
+    apiCallsCount: 0,
+    promptTokens: 0,
+    completionTokens: 0,
+    thinkingTokens: 0,
+    totalTokens: 0,
+    shadowCostUsd: 0,
+    actualCostUsd: 0,
+    lastActionSummary: 'Idle — awaiting task execution',
+    lastUpdatedIso: null,
+    status: 'idle',
+  }));
+
+  return {
+    sessionId: `session-${Date.now()}`,
+    startedAtIso: nowIso,
+    lastResetAtIso: nowIso,
+    siteName: params.siteName,
+    activeModelId: modelId,
+    isFreeTierKeyActive: isFree,
+    activeKeySlot: defaultSlot,
+    totalApiCalls: 0,
+    totalPromptTokens: 0,
+    totalCompletionTokens: 0,
+    totalThinkingTokens: 0,
+    totalSessionTokens: 0,
+    totalShadowCostUsd: 0,
+    totalActualCostUsd: 0,
+    chatBoxTokens: 0,
+    chatBoxShadowCostUsd: 0,
+    activeAgentsCount: 0,
+    rows: [chatBoxRow, ...agentRows],
+    recentEvents: [],
+  };
+}
+
+/**
+ * Recomputes all aggregate totals from `rows` cleanly to prevent drift.
+ */
+function recomputeLedgerTotals(
+  ledger: ZeroBasedSessionTokenLedger
+): ZeroBasedSessionTokenLedger {
+  let totalApiCalls = 0;
+  let totalPromptTokens = 0;
+  let totalCompletionTokens = 0;
+  let totalThinkingTokens = 0;
+  let totalSessionTokens = 0;
+  let totalShadowCostUsd = 0;
+  let totalActualCostUsd = 0;
+  let chatBoxTokens = 0;
+  let chatBoxShadowCostUsd = 0;
+  let activeAgentsCount = 0;
+
+  for (const row of ledger.rows) {
+    totalApiCalls += row.apiCallsCount;
+    totalPromptTokens += row.promptTokens;
+    totalCompletionTokens += row.completionTokens;
+    totalThinkingTokens += row.thinkingTokens;
+    totalSessionTokens += row.totalTokens;
+    totalShadowCostUsd += row.shadowCostUsd;
+    totalActualCostUsd += row.actualCostUsd;
+
+    if (row.isChatBox) {
+      chatBoxTokens += row.totalTokens;
+      chatBoxShadowCostUsd += row.shadowCostUsd;
+    } else if (row.apiCallsCount > 0 || row.totalTokens > 0) {
+      activeAgentsCount += 1;
+    }
+  }
+
+  return {
+    ...ledger,
+    totalApiCalls,
+    totalPromptTokens,
+    totalCompletionTokens,
+    totalThinkingTokens,
+    totalSessionTokens,
+    totalShadowCostUsd: Number(totalShadowCostUsd.toFixed(6)),
+    totalActualCostUsd: Number(totalActualCostUsd.toFixed(6)),
+    chatBoxTokens,
+    chatBoxShadowCostUsd: Number(chatBoxShadowCostUsd.toFixed(6)),
+    activeAgentsCount,
+  };
+}
+
+/**
+ * Records a real-time token consumption event against a specific agent or the Chat Box.
+ */
+export function recordSessionTokenUsage(
+  ledger: ZeroBasedSessionTokenLedger,
+  delta: RecordTokenUsageDelta
+): ZeroBasedSessionTokenLedger {
+  const nowIso = new Date().toISOString();
+  const modelId = delta.modelId || ledger.activeModelId;
+  const spec = MODEL_PRICING_CATALOG[modelId] || MODEL_PRICING_CATALOG['gemini-2.5-flash'];
+  const promptTokens = Math.max(0, Math.round(delta.promptTokens));
+  const completionTokens = Math.max(0, Math.round(delta.completionTokens));
+  const thinkingTokens = Math.max(0, Math.round(delta.thinkingTokens || 0));
+  const totalTokens = promptTokens + completionTokens + thinkingTokens;
+
+  if (totalTokens <= 0) {
+    return ledger;
+  }
+
+  const shadowCostUsd =
+    delta.shadowCostUsd !== undefined
+      ? Number(delta.shadowCostUsd.toFixed(6))
+      : computeTokenCostUsd({
+          modelId,
+          promptTokens,
+          completionTokens,
+          thinkingTokens,
+        });
+
+  const isFree =
+    delta.isFreeTierKey !== undefined ? delta.isFreeTierKey : ledger.isFreeTierKeyActive;
+  const actualCostUsd =
+    delta.actualCostUsd !== undefined
+      ? Number(delta.actualCostUsd.toFixed(6))
+      : isFree
+      ? 0
+      : shadowCostUsd;
+
+  const resolvedSlot: ApiKeySlotId =
+    delta.apiKeySlot ||
+    resolveApiKeySlotId({
+      provider: spec.provider,
+      isFreeTierKey: isFree,
+      usedLiveApiKey: delta.usedLiveApiKey ?? false,
+    });
+
+  let matchedActorName = 'Workspace Copilot';
+  let foundTarget = false;
+
+  const updatedRows = ledger.rows.map((row) => {
+    if (row.rowId !== delta.rowId) return row;
+    foundTarget = true;
+    matchedActorName = row.displayName;
+    return {
+      ...row,
+      apiKeySlot: resolvedSlot,
+      modelId,
+      apiCallsCount: row.apiCallsCount + 1,
+      promptTokens: row.promptTokens + promptTokens,
+      completionTokens: row.completionTokens + completionTokens,
+      thinkingTokens: row.thinkingTokens + thinkingTokens,
+      totalTokens: row.totalTokens + totalTokens,
+      shadowCostUsd: Number((row.shadowCostUsd + shadowCostUsd).toFixed(6)),
+      actualCostUsd: Number((row.actualCostUsd + actualCostUsd).toFixed(6)),
+      lastActionSummary: delta.actionLabel,
+      lastUpdatedIso: nowIso,
+      status: 'active' as const,
+    };
+  });
+
+  // Fallback to Chat Box row if an unknown rowId was passed
+  const finalRows = foundTarget
+    ? updatedRows
+    : updatedRows.map((row) => {
+        if (row.rowId !== CHAT_BOX_LEDGER_ROW_ID) return row;
+        matchedActorName = row.displayName;
+        return {
+          ...row,
+          apiKeySlot: resolvedSlot,
+          modelId,
+          apiCallsCount: row.apiCallsCount + 1,
+          promptTokens: row.promptTokens + promptTokens,
+          completionTokens: row.completionTokens + completionTokens,
+          thinkingTokens: row.thinkingTokens + thinkingTokens,
+          totalTokens: row.totalTokens + totalTokens,
+          shadowCostUsd: Number((row.shadowCostUsd + shadowCostUsd).toFixed(6)),
+          actualCostUsd: Number((row.actualCostUsd + actualCostUsd).toFixed(6)),
+          lastActionSummary: delta.actionLabel,
+          lastUpdatedIso: nowIso,
+          status: 'active' as const,
+        };
+      });
+
+  const newEvent: SessionTokenLedgerEvent = {
+    eventId: `tok-evt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    timestampIso: nowIso,
+    rowId: foundTarget ? delta.rowId : CHAT_BOX_LEDGER_ROW_ID,
+    actorName: matchedActorName,
+    actionLabel: delta.actionLabel,
+    apiKeySlot: resolvedSlot,
+    modelId,
+    promptTokens,
+    completionTokens,
+    thinkingTokens,
+    totalTokens,
+    shadowCostUsd,
+    actualCostUsd,
+    usedLiveApiKey: Boolean(delta.usedLiveApiKey),
+  };
+
+  return recomputeLedgerTotals({
+    ...ledger,
+    activeModelId: modelId,
+    activeKeySlot: resolvedSlot,
+    rows: finalRows,
+    recentEvents: [newEvent, ...ledger.recentEvents].slice(0, 40),
+  });
+}
+
+/**
+ * Maps the 5 cognitive stages of a completed Agency Circle audit onto their
+ * responsible Department Managers inside the Zero-Based Session Ledger.
+ */
+const STAGE_TO_AGENT_ID: Record<1 | 2 | 3 | 4 | 5, string> = {
+  1: 'mgr-keyword-strategist',
+  2: 'mgr-content-production',
+  3: 'mgr-graphic-design',
+  4: 'mgr-onpage-seo',
+  5: 'mgr-social-media-video',
+};
+
+export function recordCircleOrchestrationIntoLedger(
+  ledger: ZeroBasedSessionTokenLedger,
+  circleSnap: AgencyCircleTelemetrySnapshot,
+  options?: {
+    apiKeySlot?: ApiKeySlotId;
+    usedLiveApiKey?: boolean;
+    stageOnly?: 1;
+  }
+): ZeroBasedSessionTokenLedger {
+  const stagesToApply = options?.stageOnly
+    ? circleSnap.stages.filter((s) => s.stageNumber === options.stageOnly)
+    : circleSnap.stages;
+
+  let next = ledger;
+  for (const st of stagesToApply) {
+    const agentId = STAGE_TO_AGENT_ID[st.stageNumber] || 'mgr-keyword-strategist';
+    next = recordSessionTokenUsage(next, {
+      rowId: agentId,
+      actionLabel: `Stage ${st.stageNumber}: ${st.taskDescription.slice(0, 82)}`,
+      modelId: circleSnap.modelId,
+      apiKeySlot: options?.apiKeySlot,
+      promptTokens: st.promptTokens,
+      completionTokens: st.completionTokens,
+      thinkingTokens: st.thinkingTokens,
+      shadowCostUsd: st.shadowPaidCostUsd,
+      actualCostUsd: st.actualCostUsd,
+      usedLiveApiKey:
+        options?.usedLiveApiKey ?? st.executionSource === 'live-api-key',
+      isFreeTierKey: circleSnap.isFreeTierKeyActive,
+    });
+  }
+  return next;
+}
+
+export function loadZeroBasedSessionTokenLedger(params: {
+  siteName: string;
+  modelId?: AgencyLlmModelId;
+  isFreeTierKeyActive?: boolean;
+}): ZeroBasedSessionTokenLedger {
+  if (typeof window !== 'undefined') {
+    try {
+      const raw = window.localStorage.getItem(ZERO_BASED_LEDGER_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as ZeroBasedSessionTokenLedger;
+        if (parsed && Array.isArray(parsed.rows) && parsed.rows.length >= 2) {
+          return parsed;
+        }
+      }
+    } catch {
+      // Fallback to clean zero-based ledger
+    }
+  }
+  return createZeroBasedSessionTokenLedger(params);
+}
+
+export function saveZeroBasedSessionTokenLedger(
+  ledger: ZeroBasedSessionTokenLedger
+): ZeroBasedSessionTokenLedger {
+  if (typeof window !== 'undefined') {
+    try {
+      window.localStorage.setItem(
+        ZERO_BASED_LEDGER_STORAGE_KEY,
+        JSON.stringify(ledger)
+      );
+    } catch {
+      // Ignore storage quota restrictions
+    }
+  }
+  return ledger;
+}
+
+export function resetZeroBasedSessionTokenLedger(params: {
+  siteName: string;
+  modelId?: AgencyLlmModelId;
+  isFreeTierKeyActive?: boolean;
+}): ZeroBasedSessionTokenLedger {
+  const fresh = createZeroBasedSessionTokenLedger(params);
+  return saveZeroBasedSessionTokenLedger(fresh);
+}
+
+/**
+ * Builds a complete 5-Stage 1-Circle Reference Token & Cost Telemetry Snapshot
  * (combines any live API call token metrics with the 5-stage circle breakdown)
  */
 export function buildAgencyCircleTelemetrySnapshot(params: {
@@ -302,7 +764,6 @@ export function buildAgencyCircleTelemetrySnapshot(params: {
   );
   const singleCircleActualCostUsd = isFree ? 0 : singleCircleShadowCostUsd;
 
-  // 30 full agency circles per month (1 full article + 4 infographics + SEO + 5 social channels every day)
   const projected30DayMonthlyCostUsd = Number(
     (singleCircleShadowCostUsd * 30).toFixed(3)
   );

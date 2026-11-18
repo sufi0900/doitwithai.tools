@@ -19,20 +19,15 @@ import {
 
 /**
  * ============================================================================
- * DOITWITHAI.TOOLS — 24/7 AI EMPLOYEE AGENCY OS (V3 PHASE 8 UPGRADE)
+ * DOITWITHAI.TOOLS — 24/7 AI EMPLOYEE AGENCY OS (V3 PHASE 8 + V4 PHASE 12)
  * API Route: `app/api/ai-employee-agency/agent-chat/route.ts`
  *
- * 3-Layer Trainable Agent Context Stack & Selective Workflow Interrupt Endpoint:
- * 1. Builds the 3-Layer Prompt Stack for the target AI Employee:
- *    - Layer 1: Core Specialist Identity & SOP (`agent-registry.ts`)
- *    - Layer 2: User-Taught Custom Skills (`userLearnedSkills[]`)
- *    - Layer 3: Shared Agency Memory Bus (`sharedMemoryEvents[]`)
- * 2. Runs `routeSelectiveWorkflowInterrupt` so that teaching a skill, uploading
- *    a custom visual asset, or commanding a single specialist wakes ONLY the
- *    required specialist + department manager while keeping up to 34/36 other
- *    agents uninterrupted.
- * 3. Calls `executeAgencyLlmCall` (when an API key is active) or synthesizes a
- *    precision domain response with live token & shadow cost telemetry.
+ * 3-Layer Trainable Agent Context Stack, Selective Interrupt & Zero-Based Token Metering:
+ * 1. Builds the 3-Layer Prompt Stack for the target AI Employee.
+ * 2. Runs `routeSelectiveWorkflowInterrupt` so only targeted specialists wake up.
+ * 3. Calls `executeAgencyLlmCall` and returns full `tokenUsage` including `apiKeySlot`
+ *    (`KEY_SLOT_*`), `thinkingTokens`, `shadowPaidCostUsd`, and `actualCostUsd` for
+ *    real-time incrementing in the V4 Phase 12 Zero-Based Token Telemetry Ledger.
  * ============================================================================
  */
 
@@ -51,6 +46,7 @@ interface AgentChatRequestBody {
   customAssetUrl?: string;
   modelId?: AgencyLlmModelId;
   apiKeyOverride?: string;
+  isFreeTierKey?: boolean;
 }
 
 export async function POST(req: NextRequest) {
@@ -106,6 +102,7 @@ export async function POST(req: NextRequest) {
     const llmCall = await executeAgencyLlmCall({
       modelId: body.modelId || 'gemini-2.5-flash',
       apiKeyOverride: body.apiKeyOverride,
+      isFreeTierKey: body.isFreeTierKey,
       systemPrompt: promptStack.systemPrompt,
       userPrompt: rawMessage,
       temperature: 0.35,
@@ -220,10 +217,15 @@ export async function POST(req: NextRequest) {
       selectiveInterruptPlan: interruptPlan,
       learnedSkillRule: interruptPlan.learnedSkillRule,
       tokenUsage: {
+        modelId: llmCall.modelId,
+        apiKeySlot: llmCall.apiKeySlot,
+        usedLiveApiKey: llmCall.usedLiveApiKey,
         promptTokens: llmCall.promptTokens,
         completionTokens: llmCall.completionTokens,
+        thinkingTokens: llmCall.thinkingTokens,
         totalTokens: llmCall.totalTokens,
         shadowPaidCostUsd: llmCall.shadowPaidCostUsd,
+        actualCostUsd: llmCall.actualCostUsd,
       },
       timestamp: new Date().toLocaleTimeString([], {
         hour: '2-digit',

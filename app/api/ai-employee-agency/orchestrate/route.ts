@@ -26,25 +26,19 @@ import {
 
 /**
  * ============================================================================
- * DOITWITHAI.TOOLS — 24/7 AI EMPLOYEE AGENCY OS (V3 PHASES 7–10 UNIFIED ROUTE)
+ * DOITWITHAI.TOOLS — 24/7 AI EMPLOYEE AGENCY OS (V3 PHASES 7–10 + V4 PHASE 12)
  * API Route: `app/api/ai-employee-agency/orchestrate/route.ts`
  *
  * Real-Time Multi-Agent Orchestration, Live Keyword Research, 3-Layer Memory,
- * 1-Circle Token Telemetry & Google Ads / 150-Pt QA Synthesis:
- * 1. Scrapes live Google Autocomplete (`suggestqueries.google.com`) for the
- *    target website niche or custom seed query ($0.00 mechanical execution).
- * 2. Crawls live target website HTML (`<title>`, `<meta>`, `<h1>`/`<h2>`,
- *    `robots.txt`) with fast non-blocking timeout guards ($0.00 mechanical execution).
+ * Zero-Based Session Token Telemetry (`KEY_SLOT_*`) & Google Ads / 150-Pt QA:
+ * 1. Scrapes live Google Autocomplete (`suggestqueries.google.com`) ($0.00).
+ * 2. Crawls live target website HTML (`<title>`, `<meta>`, `<h1>`/`<h2>`) ($0.00).
  * 3. Scores all candidate keywords through `scoreKeywordWithDoItWithAiEngine`.
- * 4. Compiles the 3-Layer Trainable Agent Context Stack (`buildAgentThreeLayerPromptStack`)
- *    including any Founder-taught `userLearnedSkills[]`.
- * 5. Runs the 10% cognitive LLM reasoning call via `executeAgencyLlmCall`
- *    (`gemini-2.5-flash`, `gpt-4o-mini`, `gpt-4.1-mini`, or `llama-3.3-70b-versatile`),
- *    extracts exact real-time token counters (`promptTokenCount`, `candidatesTokenCount`,
- *    `thoughtsTokenCount`), and returns a complete 5-Stage `circleTokenTelemetry`
- *    snapshot showing exact tokens and shadow commercial cost ($0.0192/circle).
- * 6. Synthesizes the Google Ads RSA Campaign Pack (`generateGoogleAdsRsaCampaignPack`)
- *    and Privacy-First 150-Point QA Rubric (`evaluate150PointQaAndSpotCheck`).
+ * 4. Compiles the 3-Layer Trainable Agent Context Stack (`buildAgentThreeLayerPromptStack`).
+ * 5. Runs the 10% cognitive LLM reasoning call via `executeAgencyLlmCall`, extracts
+ *    exact real-time token counters + `apiKeySlot` (`KEY_SLOT_*`), and returns both
+ *    `stage1TokenEvent` (for zero-based session increments) and `circleTokenTelemetry`.
+ * 6. Synthesizes the Google Ads RSA Campaign Pack and 150-Point QA Rubric.
  * ============================================================================
  */
 
@@ -245,8 +239,8 @@ export async function POST(req: NextRequest) {
       modelId: selectedModelId,
       isFreeTierKeyActive: llmResult.isFreeTierKey,
       liveStage1Override: {
-        promptTokens: Math.max(1150, llmResult.promptTokens),
-        completionTokens: Math.max(480, llmResult.completionTokens),
+        promptTokens: llmResult.promptTokens,
+        completionTokens: llmResult.completionTokens,
         thinkingTokens: llmResult.thinkingTokens,
         latencyMs: llmResult.latencyMs,
         isLiveCall: llmResult.usedLiveApiKey,
@@ -275,7 +269,7 @@ export async function POST(req: NextRequest) {
       siteUrl,
       primaryKeyword: winningBrief.keyword,
       articleTitle: winningBrief.recommendedH1Title,
-      urlSlug: winningBrief.recommendedUrlSlug,
+      urlSlug: winningBrief.urlSlug,
     });
 
     const qa150PointRubric = evaluate150PointQaAndSpotCheck({
@@ -313,9 +307,22 @@ export async function POST(req: NextRequest) {
       llmGatewayStatus: {
         provider: llmResult.provider,
         modelId: llmResult.modelId,
+        apiKeySlot: llmResult.apiKeySlot,
         usedLiveApiKey: llmResult.usedLiveApiKey,
         isFreeTierKey: llmResult.isFreeTierKey,
         telemetryNote: llmResult.telemetryNote,
+      },
+      stage1TokenEvent: {
+        agentId: 'mgr-keyword-strategist',
+        modelId: llmResult.modelId,
+        apiKeySlot: llmResult.apiKeySlot,
+        promptTokens: llmResult.promptTokens,
+        completionTokens: llmResult.completionTokens,
+        thinkingTokens: llmResult.thinkingTokens,
+        totalTokens: llmResult.totalTokens,
+        shadowPaidCostUsd: llmResult.shadowPaidCostUsd,
+        actualCostUsd: llmResult.actualCostUsd,
+        usedLiveApiKey: llmResult.usedLiveApiKey,
       },
       circleTokenTelemetry,
     });
