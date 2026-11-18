@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   getAllAgencyEmployeesFlat,
   type AgencySidebarTabId,
@@ -22,22 +22,27 @@ import {
   type AgencyLlmModelId,
   type ApiKeySlotId,
 } from '@/lib/ai-employee-agency/token-telemetry-store';
+import {
+  GENERAL_COPILOT_AGENT_ID,
+  answerFromWorkspaceKnowledge,
+  type WorkspaceKnowledgeSnapshot,
+} from '@/lib/ai-employee-agency/workspace-knowledge-snapshot';
 import { AgencyUiIcon } from './AgencySvgIcons';
 
 /**
  * ============================================================================
- * DOITWITHAI.TOOLS — 24/7 AI EMPLOYEE AGENCY OS (V3 PHASE 8 + V4 PHASE 12)
+ * DOITWITHAI.TOOLS — 24/7 AI EMPLOYEE AGENCY OS (V4 PHASE 13 REDESIGN)
  * Component: `features/ai-employee-agency/FounderCommandChatDock.tsx`
  *
- * Persistent Unified Founder Command Chat, 3-Layer Skill Teaching & Voice Call Dock:
- * - Uses crisp geometric SVG icons (`AgencyUiIcon`) instead of cartoon emojis.
- * - Includes right-side padding (`pr-16 sm:pr-20`) so the global floating
- *   chat button at the bottom-right of the site never overlaps `Send Command`.
- * - V3 Phase 8 Upgrade: Supports teaching permanent custom skills (`Remember: ...`)
- *   to any of the 36 AI Employees and triggers Selective Workflow Interruption.
- * - V4 Phase 12 Upgrade: Passes active LLM model/key settings and reports real-time
- *   per-turn token usage (`KEY_SLOT_*`, prompt/output/thinking tokens, shadow cost)
- *   to the Zero-Based Session Token Telemetry Ledger.
+ * Right-Side Slide-Over Copilot & 36-Agent Messenger Drawer:
+ * - Replaces the cramped bottom bar with a full-height 420px Right-Side
+ *   Slide-Over Drawer + 1-click Full-Screen Chat mode + sleek Floating Launcher.
+ * - Defaults to General ChatGPT-Style Workspace Assistant (no agent required)
+ *   with a 1-click switcher to any of the 36 AI Employees or Voice Call.
+ * - Injects live `WorkspaceKnowledgeSnapshot` (published/draft blogs, designs,
+ *   SEO/AI health scores, schedule, and zero-based session tokens) on every turn.
+ * - Zero robotic debug prefixes in replies; clean token & memory pills below.
+ * - Full Dual-Theme Light & Dark Mode support.
  * ============================================================================
  */
 
@@ -49,6 +54,7 @@ export interface FounderChatMessage {
   text: string;
   timestamp: string;
   selectiveInterruptSummary?: string;
+  tokenCountBadge?: number;
 }
 
 interface FounderCommandChatDockProps {
@@ -87,32 +93,32 @@ interface FounderCommandChatDockProps {
     usedLiveApiKey: boolean;
     actionLabel: string;
   }) => void;
+  workspaceKnowledge?: WorkspaceKnowledgeSnapshot;
+  isLightTheme?: boolean;
 }
 
-const QUICK_SCENARIO_CHIPS = [
+const QUICK_PROMPTS = [
   {
-    label: 'Launch New Article + Social Campaign',
+    label: 'Live Workspace Summary',
+    prompt: 'Give me a quick status summary of my site, articles, designs, and token usage.',
+    targetAgentId: GENERAL_COPILOT_AGENT_ID,
+  },
+  {
+    label: 'How Many Blogs Published?',
+    prompt: 'How many blogs are published or drafted right now, and what are their titles?',
+    targetAgentId: GENERAL_COPILOT_AGENT_ID,
+  },
+  {
+    label: 'Launch New Article Campaign',
     prompt:
-      'Today let’s write and launch a new article on AI technical SEO audit checklists and prepare Pinterest + 60s TikTok scripts',
+      'Launch a new article on AI technical SEO audit checklists and prepare Pinterest + 60s TikTok scripts',
     targetAgentId: 'agent-chief-orchestrator',
   },
   {
-    label: 'Teach Custom Skill to Pinterest Agent',
+    label: 'Teach Permanent Rule',
     prompt:
       'Remember: Always use emerald #10B981 callout badges and 5-word top hooks on every 1000×1500 Pinterest 2:3 pin',
     targetAgentId: 'sub-pinterest-2x3-specialist',
-  },
-  {
-    label: 'Selective Custom Image Override',
-    prompt:
-      'Use my uploaded custom product screenshot for the active Pinterest 2:3 pin and LinkedIn carousel without interrupting other departments',
-    targetAgentId: 'sub-pinterest-2x3-specialist',
-  },
-  {
-    label: 'Write 60s TikTok & Reels Script',
-    prompt:
-      'Write a 60-second TikTok and Reels script with a 3-second pattern-interrupt hook for our active article',
-    targetAgentId: 'sub-tiktok-reels-script-agent',
   },
 ];
 
@@ -139,12 +145,39 @@ export default function FounderCommandChatDock({
   isFreeTierKeyMode = true,
   testApiKeyInput = '',
   onRecordChatTokenUsage,
+  workspaceKnowledge,
+  isLightTheme = false,
 }: FounderCommandChatDockProps) {
   const [chatInput, setChatInput] = useState<string>('');
   const [isSending, setIsSending] = useState<boolean>(false);
   const [isVoiceCallActive, setIsVoiceCallActive] = useState<boolean>(false);
+  const [isFullScreenChat, setIsFullScreenChat] = useState<boolean>(false);
+  const [activeModeAgentId, setActiveModeAgentId] = useState<string>(
+    GENERAL_COPILOT_AGENT_ID
+  );
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   const allFlatEmployees = useMemo(() => getAllAgencyEmployeesFlat(), []);
+
+  useEffect(() => {
+    if (chatTargetAgentId && chatTargetAgentId !== 'agent-chief-orchestrator') {
+      setActiveModeAgentId(chatTargetAgentId);
+    }
+  }, [chatTargetAgentId]);
+
+  useEffect(() => {
+    if (isChatDrawerExpanded) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages.length, isChatDrawerExpanded]);
+
+  const isGeneralMode = activeModeAgentId === GENERAL_COPILOT_AGENT_ID;
+  const activeSpecialist = useMemo(
+    () =>
+      allFlatEmployees.find((emp) => emp.id === activeModeAgentId) ||
+      allFlatEmployees[0]!,
+    [allFlatEmployees, activeModeAgentId]
+  );
 
   const speakAgentReplyIfActive = (text: string) => {
     if (
@@ -155,7 +188,7 @@ export default function FounderCommandChatDock({
       try {
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(
-          text.replace(/[^\w\s.,!?:-]/g, '')
+          text.replace(/[*`#]/g, '').replace(/[^\w\s.,!?:-]/g, '')
         );
         utterance.rate = 1.04;
         window.speechSynthesis.speak(utterance);
@@ -172,14 +205,20 @@ export default function FounderCommandChatDock({
     const trimmed = rawText.trim();
     if (!trimmed) return;
 
-    const effectiveAgentId = overrideAgentId || chatTargetAgentId;
-    if (overrideAgentId && overrideAgentId !== chatTargetAgentId) {
-      onChangeTargetAgentId(overrideAgentId);
+    const effectiveAgentId = overrideAgentId || activeModeAgentId;
+    if (overrideAgentId) {
+      setActiveModeAgentId(overrideAgentId);
+      if (overrideAgentId !== GENERAL_COPILOT_AGENT_ID) {
+        onChangeTargetAgentId(overrideAgentId);
+      }
     }
 
-    const targetEmployee =
-      allFlatEmployees.find((emp) => emp.id === effectiveAgentId) ||
-      allFlatEmployees[0]!;
+    const effectiveIsGeneral = effectiveAgentId === GENERAL_COPILOT_AGENT_ID;
+    const targetEmployee = effectiveIsGeneral
+      ? allFlatEmployees[0]!
+      : allFlatEmployees.find((emp) => emp.id === effectiveAgentId) ||
+        allFlatEmployees[0]!;
+
     const nowTime = new Date().toLocaleTimeString([], {
       hour: '2-digit',
       minute: '2-digit',
@@ -188,7 +227,7 @@ export default function FounderCommandChatDock({
     onAppendMessage({
       id: `msg-founder-${Date.now()}`,
       sender: 'founder',
-      agentName: 'Founder',
+      agentName: 'You',
       text: trimmed,
       timestamp: nowTime,
     });
@@ -215,6 +254,7 @@ export default function FounderCommandChatDock({
           modelId: selectedLlmModel,
           apiKeyOverride: testApiKeyInput.trim() || undefined,
           isFreeTierKey: isFreeTierKeyMode,
+          workspaceKnowledge,
         }),
       });
 
@@ -251,21 +291,27 @@ export default function FounderCommandChatDock({
           if (data.recommendedTabRedirect) {
             onSelectDepartmentTab(data.recommendedTabRedirect);
           }
+
+          let meteredTotalTokens: number | undefined;
           if (data.tokenUsage && onRecordChatTokenUsage) {
             const pTok = Number(data.tokenUsage.promptTokens) || 0;
             const cTok = Number(data.tokenUsage.completionTokens) || 0;
             const tTok = Number(data.tokenUsage.thinkingTokens) || 0;
+            meteredTotalTokens =
+              Number(data.tokenUsage.totalTokens) || pTok + cTok + tTok;
             const usedModel = data.tokenUsage.modelId || selectedLlmModel;
             const spec =
               MODEL_PRICING_CATALOG[usedModel] ||
               MODEL_PRICING_CATALOG['gemini-2.5-flash'];
             onRecordChatTokenUsage({
               agentId: effectiveAgentId,
-              agentName: data.agentName || targetEmployee.name,
+              agentName:
+                data.agentName ||
+                (effectiveIsGeneral ? 'Workspace Copilot' : targetEmployee.name),
               promptTokens: pTok,
               completionTokens: cTok,
               thinkingTokens: tTok,
-              totalTokens: Number(data.tokenUsage.totalTokens) || pTok + cTok + tTok,
+              totalTokens: meteredTotalTokens,
               shadowPaidCostUsd: Number(data.tokenUsage.shadowPaidCostUsd) || 0,
               actualCostUsd: Number(data.tokenUsage.actualCostUsd) || 0,
               apiKeySlot:
@@ -277,18 +323,31 @@ export default function FounderCommandChatDock({
                 }),
               modelId: usedModel,
               usedLiveApiKey: Boolean(data.tokenUsage.usedLiveApiKey),
-              actionLabel: `Chat → ${data.agentName || targetEmployee.name}: "${trimmed.slice(0, 64)}"`,
+              actionLabel: `Copilot → ${
+                data.agentName ||
+                (effectiveIsGeneral ? 'Workspace Copilot' : targetEmployee.name)
+              }: "${trimmed.slice(0, 60)}"`,
             });
           }
+
           onAppendMessage({
             id: `msg-agent-${Date.now()}`,
             sender: 'agent',
-            agentName: data.agentName || targetEmployee.name,
-            departmentBadge: data.departmentBadge || targetEmployee.departmentBadge,
+            agentName:
+              data.agentName ||
+              (effectiveIsGeneral ? 'Workspace Copilot' : targetEmployee.name),
+            departmentBadge:
+              data.departmentBadge ||
+              (effectiveIsGeneral
+                ? 'General AI Assistant'
+                : targetEmployee.departmentBadge),
             text: data.replyText,
             timestamp: data.timestamp || nowTime,
             selectiveInterruptSummary:
-              data.selectiveInterruptPlan?.memoryBusEvent.summary,
+              data.selectiveInterruptPlan?.learnedSkillRule
+                ? `Saved rule: ${data.selectiveInterruptPlan.learnedSkillRule.skillRuleText}`
+                : undefined,
+            tokenCountBadge: meteredTotalTokens,
           });
           speakAgentReplyIfActive(data.replyText);
           setIsSending(false);
@@ -300,7 +359,7 @@ export default function FounderCommandChatDock({
     }
 
     const localInterrupt = routeSelectiveWorkflowInterrupt({
-      agentId: effectiveAgentId,
+      agentId: targetEmployee.id,
       rawMessage: trimmed,
     });
     if (onRecordSelectiveInterrupt) {
@@ -309,16 +368,18 @@ export default function FounderCommandChatDock({
 
     const lower = trimmed.toLowerCase();
     const wantsNewArticle =
-      lower.includes('article') ||
-      lower.includes('write') ||
       lower.includes('launch') ||
-      lower.includes('blog');
+      lower.includes('write a new') ||
+      lower.includes('new article') ||
+      lower.includes('create an article');
 
     let fallbackReply = '';
     if (localInterrupt.learnedSkillRule) {
-      fallbackReply = `[${targetEmployee.name} · Permanent Skill Saved]: Added rule "${localInterrupt.learnedSkillRule.skillRuleText}" to Layer 2 memory. Woke only ${localInterrupt.wokenAgentNames.join(
-        ' + '
-      )} while ${localInterrupt.uninterruptedAgentCount} other agents continued uninterrupted.`;
+      fallbackReply = `Got it — I've saved your permanent rule for **${siteName}**:\n\n> "${localInterrupt.learnedSkillRule.skillRuleText}"\n\n${localInterrupt.wokenAgentNames.join(
+        ' and '
+      )} will apply it while the other ${
+        localInterrupt.uninterruptedAgentCount
+      } agents keep running uninterrupted.`;
     } else if (wantsNewArticle) {
       const cleanedTopic = trimmed
         .replace(
@@ -333,25 +394,35 @@ export default function FounderCommandChatDock({
         existingSlugs,
       });
       onSpawnArticleFromBrief(scored);
-      fallbackReply = `[${targetEmployee.name}]: Initialized full cross-department campaign for "${scored.recommendedH1Title}" (KD ${scored.kdScore}/100). Keyword Strategist → Content Manager → Graphic Designer → QA → Social & TikTok Fleet are now executing in sequence.`;
+      fallbackReply = `I've initialized a full cross-department campaign for **"${scored.recommendedH1Title}"** (KD ${scored.kdScore}/100). Keyword Strategist, Content Manager, Visual Studio, and Social Fleet are now lined up in sequence.`;
+    } else if (workspaceKnowledge) {
+      fallbackReply =
+        answerFromWorkspaceKnowledge(trimmed, workspaceKnowledge) ||
+        `I'm connected to your live **${siteName}** workspace (${workspaceKnowledge.totalArticlesCount} articles, ${workspaceKnowledge.totalVisualAssetsCount} visual assets, and ${workspaceKnowledge.sessionTokensUsed.toLocaleString()} session tokens used). Ask about your blogs, designs, SEO health, schedule, or switch to any of the 36 specialists above.`;
     } else {
-      fallbackReply = `[${targetEmployee.name} · ${targetEmployee.departmentBadge}]: Applied your directive ("${trimmed}") to ${siteName}. Selective Interrupt Router woke ${localInterrupt.wokenAgentNames.join(
-        ' + '
-      )} while ${localInterrupt.uninterruptedAgentCount} other agents continued uninterrupted.`;
+      fallbackReply = `Done — I've applied your request ("${trimmed}") to **${siteName}**.`;
     }
+
+    const estPrompt = Math.max(48, Math.ceil(trimmed.length / 3.85) + 120);
+    const estCompletion = Math.max(36, Math.ceil(fallbackReply.length / 3.85));
+    const estTotal = estPrompt + estCompletion;
 
     onAppendMessage({
       id: `msg-agent-${Date.now()}`,
       sender: 'agent',
-      agentName: targetEmployee.name,
-      departmentBadge: targetEmployee.departmentBadge,
+      agentName: effectiveIsGeneral ? 'Workspace Copilot' : targetEmployee.name,
+      departmentBadge: effectiveIsGeneral
+        ? 'General AI Assistant'
+        : targetEmployee.departmentBadge,
       text: fallbackReply,
       timestamp: nowTime,
-      selectiveInterruptSummary: localInterrupt.memoryBusEvent.summary,
+      selectiveInterruptSummary: localInterrupt.learnedSkillRule
+        ? `Saved rule: ${localInterrupt.learnedSkillRule.skillRuleText}`
+        : undefined,
+      tokenCountBadge: estTotal,
     });
+
     if (onRecordChatTokenUsage) {
-      const estPrompt = Math.max(48, Math.ceil(trimmed.length / 3.85) + 120);
-      const estCompletion = Math.max(36, Math.ceil(fallbackReply.length / 3.85));
       const estShadow = computeTokenCostUsd({
         modelId: selectedLlmModel,
         promptTokens: estPrompt,
@@ -360,19 +431,22 @@ export default function FounderCommandChatDock({
       });
       onRecordChatTokenUsage({
         agentId: effectiveAgentId,
-        agentName: targetEmployee.name,
+        agentName: effectiveIsGeneral ? 'Workspace Copilot' : targetEmployee.name,
         promptTokens: estPrompt,
         completionTokens: estCompletion,
         thinkingTokens: 0,
-        totalTokens: estPrompt + estCompletion,
+        totalTokens: estTotal,
         shadowPaidCostUsd: estShadow,
         actualCostUsd: 0,
         apiKeySlot: 'KEY_SLOT_MECHANICAL_ZERO',
         modelId: selectedLlmModel,
         usedLiveApiKey: false,
-        actionLabel: `Chat (Local Meter) → ${targetEmployee.name}: "${trimmed.slice(0, 56)}"`,
+        actionLabel: `Copilot (Local Meter) → ${
+          effectiveIsGeneral ? 'Workspace Copilot' : targetEmployee.name
+        }: "${trimmed.slice(0, 56)}"`,
       });
     }
+
     speakAgentReplyIfActive(fallbackReply);
     setIsSending(false);
   };
@@ -414,49 +488,194 @@ export default function FounderCommandChatDock({
     }
   };
 
+  const drawerBg = isLightTheme
+    ? 'bg-white border-slate-200 text-slate-900'
+    : 'bg-[#080F1E] border-slate-800 text-slate-100';
+  const headerBg = isLightTheme
+    ? 'bg-slate-50 border-slate-200'
+    : 'bg-[#0B1427] border-slate-800';
+  const subtleText = isLightTheme ? 'text-slate-500' : 'text-slate-400';
+  const inputBg = isLightTheme
+    ? 'bg-slate-50 border-slate-300 text-slate-900 placeholder-slate-400'
+    : 'bg-slate-950 border-slate-700 text-white placeholder-slate-400';
+
   return (
-    <footer className="sticky bottom-0 z-30 border-t border-slate-800/90 bg-[#080E1C]/95 backdrop-blur">
-      {/* Right-side clearance (`pr-16 sm:pr-20`) ensures floating site chat bubble never overlaps `Send Command` */}
-      <div className="max-w-[1600px] mx-auto pl-4 sm:pl-6 pr-16 sm:pr-20 py-2.5 space-y-2.5">
-        {isChatDrawerExpanded && (
-          <div className="rounded-2xl border border-slate-800 bg-slate-950/95 p-4 space-y-3 max-h-[280px] overflow-y-auto text-xs shadow-2xl">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2">
-              <div className="flex items-center gap-2">
-                <AgencyUiIcon name="chat" className="w-4 h-4 text-sky-400" />
-                <span className="font-extrabold text-sky-300">
-                  Live Agency Intercom, Skill Trainer &amp; Selective Specialist Interrupt Dock
-                </span>
-                <span className="rounded-md bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-mono text-emerald-300">
-                  {learnedSkills.length} Learned Skills Active
-                </span>
-                {isVoiceCallActive && (
-                  <span className="rounded-full bg-rose-500/20 border border-rose-400/40 px-2.5 py-0.5 text-[10px] font-extrabold text-rose-300 animate-pulse">
-                    Live Voice Call Active (TTS + Mic)
-                  </span>
-                )}
+    <>
+      {!isChatDrawerExpanded && (
+        <button
+          type="button"
+          onClick={() => onToggleChatDrawer(true)}
+          className="fixed bottom-5 right-5 z-40 inline-flex items-center gap-2.5 rounded-full bg-gradient-to-r from-sky-500 via-blue-600 to-emerald-500 hover:brightness-110 px-4 py-2.5 text-xs font-extrabold text-white shadow-2xl shadow-sky-500/25 transition-all"
+          title="Open Workspace Copilot & 36-Agent Messenger"
+        >
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-300 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-300" />
+          </span>
+          <AgencyUiIcon name="chat" className="w-4 h-4" />
+          <span>Ask Copilot</span>
+          {workspaceKnowledge && (
+            <span className="hidden sm:inline-block rounded-full bg-slate-950/30 px-2 py-0.5 text-[10px] font-mono">
+              {workspaceKnowledge.sessionTokensUsed.toLocaleString()} tok
+            </span>
+          )}
+        </button>
+      )}
+
+      {isChatDrawerExpanded && (
+        <aside
+          className={`fixed z-50 flex flex-col border-l shadow-2xl transition-all duration-200 ${drawerBg} ${
+            isFullScreenChat
+              ? 'inset-0 w-screen h-screen border-l-0'
+              : 'top-0 right-0 h-dvh w-full sm:w-[420px] lg:w-[440px]'
+          }`}
+          aria-label="Workspace Copilot and Agent Messenger Drawer"
+        >
+          <div className={`border-b px-4 py-3 space-y-2.5 shrink-0 ${headerBg}`}>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="h-7 w-7 rounded-xl bg-gradient-to-br from-sky-500 to-emerald-400 flex items-center justify-center text-slate-950 shrink-0">
+                  <AgencyUiIcon name="sparkle" className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-extrabold truncate">
+                    {isGeneralMode ? 'Workspace Copilot' : activeSpecialist.name}
+                  </div>
+                  <div className={`text-[10px] truncate ${subtleText}`}>
+                    {isGeneralMode
+                      ? `Live context: ${siteName} · ${
+                          workspaceKnowledge?.totalArticlesCount ?? 0
+                        } articles`
+                      : `${activeSpecialist.departmentBadge} · 3-Layer Memory`}
+                  </div>
+                </div>
               </div>
-              <button
-                type="button"
-                onClick={() => onToggleChatDrawer(false)}
-                className="text-slate-400 hover:text-white font-bold"
-              >
-                Minimize Chat
-              </button>
+
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleToggleVoiceCall}
+                  className={`rounded-lg border p-1.5 transition ${
+                    isVoiceCallActive
+                      ? 'border-rose-400 bg-rose-500/20 text-rose-400 animate-pulse'
+                      : isLightTheme
+                      ? 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
+                      : 'border-slate-700 bg-slate-900 text-slate-300 hover:text-white'
+                  }`}
+                  title={isVoiceCallActive ? 'End Voice Mode' : 'Start Voice Mode'}
+                >
+                  <AgencyUiIcon
+                    name={isVoiceCallActive ? 'mic-off' : 'mic'}
+                    className="w-3.5 h-3.5"
+                  />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsFullScreenChat((prev) => !prev)}
+                  className={`rounded-lg border p-1.5 transition ${
+                    isLightTheme
+                      ? 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
+                      : 'border-slate-700 bg-slate-900 text-slate-300 hover:text-white'
+                  }`}
+                  title={
+                    isFullScreenChat
+                      ? 'Exit Full-Screen Chat'
+                      : 'Expand Full-Screen Chat'
+                  }
+                >
+                  <AgencyUiIcon
+                    name={
+                      isFullScreenChat
+                        ? 'collapse-fullscreen'
+                        : 'expand-fullscreen'
+                    }
+                    className="w-3.5 h-3.5"
+                  />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsFullScreenChat(false);
+                    onToggleChatDrawer(false);
+                  }}
+                  className={`rounded-lg border px-2 py-1 text-[11px] font-bold transition ${
+                    isLightTheme
+                      ? 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
+                      : 'border-slate-700 bg-slate-900 text-slate-300 hover:text-white'
+                  }`}
+                  title="Close Copilot Drawer"
+                >
+                  Close
+                </button>
+              </div>
             </div>
 
-            {/* 1-Click Quick Scenario & Skill-Teaching Trigger Chips */}
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-[10px] font-bold uppercase text-slate-400 mr-1">
-                Quick Scenarios &amp; Skill Training:
+            <div className="flex items-center gap-2">
+              <select
+                value={activeModeAgentId}
+                onChange={(e) => {
+                  const nextId = e.target.value;
+                  setActiveModeAgentId(nextId);
+                  if (nextId !== GENERAL_COPILOT_AGENT_ID) {
+                    onChangeTargetAgentId(nextId);
+                  }
+                }}
+                className={`flex-1 rounded-xl border px-2.5 py-1.5 text-[11px] font-bold focus:border-sky-400 focus:outline-none ${inputBg}`}
+                aria-label="Switch between General Workspace Copilot and 36 AI Specialists"
+              >
+                <option value={GENERAL_COPILOT_AGENT_ID}>
+                  ★ General Workspace Copilot (Default ChatGPT Mode)
+                </option>
+                {allFlatEmployees.map((emp) => (
+                  <option key={emp.id} value={emp.id}>
+                    {emp.tier === 'sub-agent' ? '↳ ' : '• '}
+                    {emp.name} ({emp.departmentBadge})
+                  </option>
+                ))}
+              </select>
+              <span className="rounded-lg bg-emerald-500/15 border border-emerald-500/30 px-2 py-1 text-[10px] font-mono font-bold text-emerald-400 shrink-0">
+                {learnedSkills.length} Skills
               </span>
-              {QUICK_SCENARIO_CHIPS.map((chip) => (
+            </div>
+          </div>
+
+          {workspaceKnowledge && (
+            <div
+              className={`border-b px-4 py-1.5 flex flex-wrap items-center justify-between gap-2 text-[10px] font-mono shrink-0 ${
+                isLightTheme
+                  ? 'bg-sky-50/70 border-slate-200 text-slate-600'
+                  : 'bg-slate-900/60 border-slate-800/80 text-slate-400'
+              }`}
+            >
+              <span>
+                Blogs: <strong>{workspaceKnowledge.publishedArticlesCount}</strong> pub ·{' '}
+                <strong>{workspaceKnowledge.draftArticlesCount}</strong> draft
+              </span>
+              <span>
+                SEO: <strong>{workspaceKnowledge.seoHealthScore}</strong> · AI:{' '}
+                <strong>{workspaceKnowledge.aiDiscoverabilityScore}</strong>
+              </span>
+              <span className="text-emerald-400 font-bold">
+                {workspaceKnowledge.sessionTokensUsed.toLocaleString()} tok ($
+                {workspaceKnowledge.sessionShadowCostUsd.toFixed(4)})
+              </span>
+            </div>
+          )}
+
+          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 text-xs">
+            <div className="flex flex-wrap gap-1.5 pb-1">
+              {QUICK_PROMPTS.map((chip) => (
                 <button
                   key={chip.label}
                   type="button"
                   onClick={() =>
                     void dispatchCommandMessage(chip.prompt, chip.targetAgentId)
                   }
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900 hover:border-sky-500/50 hover:text-sky-200 px-2.5 py-1 text-[11px] font-semibold text-slate-300 transition"
+                  className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10.5px] font-semibold transition ${
+                    isLightTheme
+                      ? 'border-slate-200 bg-slate-50 text-slate-700 hover:border-sky-400 hover:text-sky-700'
+                      : 'border-slate-800 bg-slate-900/80 text-slate-300 hover:border-sky-500/50 hover:text-sky-200'
+                  }`}
                 >
                   <AgencyUiIcon name="sparkle" className="w-3 h-3 text-sky-400" />
                   <span>{chip.label}</span>
@@ -464,94 +683,87 @@ export default function FounderCommandChatDock({
               ))}
             </div>
 
-            {/* Transcript Messages */}
-            <div className="space-y-2">
-              {messages.map((m) => (
+            {messages.map((m) => (
+              <div
+                key={m.id}
+                className={`flex flex-col ${
+                  m.sender === 'founder' ? 'items-end' : 'items-start'
+                }`}
+              >
                 <div
-                  key={m.id}
-                  className={`rounded-xl p-3 space-y-1.5 ${
+                  className={`max-w-[88%] rounded-2xl px-3.5 py-2.5 space-y-1.5 ${
                     m.sender === 'founder'
-                      ? 'bg-sky-500/15 border border-sky-500/30 text-white ml-8'
-                      : 'bg-slate-900 border border-slate-800 text-slate-200 mr-8'
+                      ? 'bg-sky-600 text-white rounded-br-sm'
+                      : isLightTheme
+                      ? 'bg-slate-100 border border-slate-200 text-slate-800 rounded-bl-sm'
+                      : 'bg-slate-900 border border-slate-800 text-slate-200 rounded-bl-sm'
                   }`}
                 >
-                  <div className="flex items-center justify-between text-[10px] text-slate-400">
-                    <span className="font-bold text-emerald-300">
+                  <div
+                    className={`flex items-center justify-between gap-3 text-[10px] ${
+                      m.sender === 'founder' ? 'text-sky-100' : subtleText
+                    }`}
+                  >
+                    <span className="font-bold">
                       {m.agentName}
                       {m.departmentBadge ? ` · ${m.departmentBadge}` : ''}
                     </span>
                     <span>{m.timestamp}</span>
                   </div>
-                  <p className="whitespace-pre-line leading-relaxed">{m.text}</p>
-                  {m.selectiveInterruptSummary && (
-                    <div className="rounded-lg border border-sky-500/30 bg-slate-950/90 px-2.5 py-1 text-[10.5px] font-mono text-sky-300">
-                      Memory Bus: {m.selectiveInterruptSummary}
+                  <p className="whitespace-pre-line leading-relaxed text-[12px]">
+                    {m.text}
+                  </p>
+                  {(m.selectiveInterruptSummary || m.tokenCountBadge) && (
+                    <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                      {m.selectiveInterruptSummary && (
+                        <span className="rounded-md bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 text-[9.5px] font-mono text-emerald-400">
+                          {m.selectiveInterruptSummary}
+                        </span>
+                      )}
+                      {m.tokenCountBadge !== undefined && m.tokenCountBadge > 0 && (
+                        <span className="rounded-md bg-sky-500/15 border border-sky-500/30 px-1.5 py-0.5 text-[9.5px] font-mono text-sky-400">
+                          +{m.tokenCountBadge.toLocaleString()} tok
+                        </span>
+                      )}
                     </div>
                   )}
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Unified Command Input Bar */}
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            void dispatchCommandMessage(chatInput);
-          }}
-          className="flex flex-wrap items-center gap-2"
-        >
-          {/* Agent Selector Dropdown (All 36 Managers + Sub-Agents) */}
-          <select
-            value={chatTargetAgentId}
-            onChange={(e) => onChangeTargetAgentId(e.target.value)}
-            className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-extrabold text-sky-300 focus:border-sky-400 focus:outline-none max-w-[270px]"
-            aria-label="Select AI Employee to talk to"
-          >
-            {allFlatEmployees.map((emp) => (
-              <option key={emp.id} value={emp.id}>
-                {emp.tier === 'sub-agent' ? '↳ ' : '• '}
-                {emp.name} ({emp.departmentBadge})
-              </option>
+              </div>
             ))}
-          </select>
+            <div ref={messagesEndRef} />
+          </div>
 
-          <input
-            type="text"
-            value={chatInput}
-            onChange={(e) => setChatInput(e.target.value)}
-            onFocus={() => onToggleChatDrawer(true)}
-            placeholder='Command an agent or teach a permanent skill (e.g. "Remember: Always include a 50-word AEO answer lead")...'
-            className="flex-1 min-w-[220px] rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2 text-xs text-white placeholder-slate-400 focus:border-sky-400 focus:outline-none"
-          />
-
-          <button
-            type="button"
-            onClick={handleToggleVoiceCall}
-            className={`rounded-xl border px-3 py-2 text-xs font-extrabold transition inline-flex items-center gap-1.5 ${
-              isVoiceCallActive
-                ? 'border-rose-400 bg-rose-500/20 text-rose-200 animate-pulse'
-                : 'border-slate-700 bg-slate-900 text-slate-200 hover:border-sky-400'
-            }`}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              void dispatchCommandMessage(chatInput);
+            }}
+            className={`border-t p-3 space-y-2 shrink-0 ${headerBg}`}
           >
-            <AgencyUiIcon
-              name={isVoiceCallActive ? 'mic-off' : 'mic'}
-              className="w-3.5 h-3.5"
-            />
-            <span>{isVoiceCallActive ? 'End Voice' : 'Voice Call'}</span>
-          </button>
-
-          <button
-            type="submit"
-            disabled={isSending}
-            className="rounded-xl bg-gradient-to-r from-sky-500 to-emerald-400 hover:brightness-110 px-4 py-2 text-xs font-extrabold text-slate-950 shadow-lg transition inline-flex items-center gap-1.5 disabled:opacity-50"
-          >
-            <AgencyUiIcon name="send" className="w-3.5 h-3.5" />
-            <span>{isSending ? 'Routing...' : 'Send Command'}</span>
-          </button>
-        </form>
-      </div>
-    </footer>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                placeholder={
+                  isGeneralMode
+                    ? `Ask anything about ${siteName}, blogs, SEO, or tokens...`
+                    : `Message ${activeSpecialist.name} or teach a rule ("Remember: ...")...`
+                }
+                className={`flex-1 rounded-xl border px-3 py-2 text-xs focus:border-sky-400 focus:outline-none ${inputBg}`}
+              />
+              <button
+                type="submit"
+                disabled={isSending || !chatInput.trim()}
+                className="rounded-xl bg-gradient-to-r from-sky-500 to-emerald-400 hover:brightness-110 px-3.5 py-2 text-xs font-extrabold text-slate-950 shadow transition inline-flex items-center gap-1.5 disabled:opacity-50 shrink-0"
+              >
+                <AgencyUiIcon name="send" className="w-3.5 h-3.5" />
+                <span>{isSending ? '...' : 'Send'}</span>
+              </button>
+            </div>
+          </form>
+        </aside>
+      )}
+    </>
   );
 }
