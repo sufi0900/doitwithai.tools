@@ -2,7 +2,7 @@
 /* eslint-disable react/no-unescaped-entities */
 "use client";
 
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { Providers } from "./providers";
@@ -110,22 +110,23 @@ export default function ClientLayoutShell({ children }) {
     !isStandaloneWebsiteRoute;
   const isFounderHubPage =
     pathname === "/founder-hub" || pathname.startsWith("/founder-hub/");
+  const isAgencyDashboardPage =
+    pathname === "/ai-employee-agency/dashboard" ||
+    pathname.startsWith("/ai-employee-agency/dashboard/");
+  const isLockedAppShell = isDoItAiPage || isAgencyDashboardPage;
   const [isEmbeddedView, setIsEmbeddedView] = useState(false);
-  const useIsoLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
-  useIsoLayoutEffect(() => {
+  useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     const embedMode =
-      params.get("embed") === "1" ||
-      params.get("embed") === "true" ||
-      params.get("app") === "1";
+      params.get("embed") === "1" || params.get("app") === "1";
     setIsEmbeddedView(embedMode);
   }, [pathname]);
 
   useEffect(() => {
     if (typeof document === "undefined") return;
-    if (isDoItAiPage) {
+    if (isLockedAppShell) {
       const prevBodyOverflow = document.body.style.overflow;
       const prevHtmlOverflow = document.documentElement.style.overflow;
       document.body.style.overflow = "hidden";
@@ -135,7 +136,7 @@ export default function ClientLayoutShell({ children }) {
         document.documentElement.style.overflow = prevHtmlOverflow;
       };
     }
-  }, [isDoItAiPage]);
+  }, [isLockedAppShell]);
 
   const isSlugPage =
     pathname.startsWith("/ai-tools/") ||
@@ -196,7 +197,7 @@ export default function ClientLayoutShell({ children }) {
               className={
                 isEmbeddedView || isFounderHubPage || isStandaloneWebsiteRoute
                   ? "min-h-screen"
-                  : isDoItAiPage
+                  : isLockedAppShell
                     ? "h-dvh pt-[80px] overflow-hidden"
                     : isHomePage
                       ? ""
@@ -206,9 +207,9 @@ export default function ClientLayoutShell({ children }) {
               {children}
             </main>
 
-            {!isDoItAiPage && !isEmbeddedView && !isFounderHubPage && !isStandaloneWebsiteRoute && <Footer />}
-            {!isDoItAiPage && !isEmbeddedView && !isFounderHubPage && !isStandaloneWebsiteRoute && <ScrollToTop />}
-            {!isDoItAiPage && !isEmbeddedView && !isFounderHubPage && !isStandaloneWebsiteRoute && <SiteAssistant />}
+            {!isLockedAppShell && !isEmbeddedView && !isFounderHubPage && !isStandaloneWebsiteRoute && <Footer />}
+            {!isLockedAppShell && !isEmbeddedView && !isFounderHubPage && !isStandaloneWebsiteRoute && <ScrollToTop />}
+            {!isLockedAppShell && !isEmbeddedView && !isFounderHubPage && !isStandaloneWebsiteRoute && <SiteAssistant />}
           </CacheProvider>
 
           <Toaster position="bottom-center" />
