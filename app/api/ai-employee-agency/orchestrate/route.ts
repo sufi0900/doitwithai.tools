@@ -15,23 +15,36 @@ import {
   buildAgencyCircleTelemetrySnapshot,
   type AgencyLlmModelId,
 } from '@/lib/ai-employee-agency/token-telemetry-store';
+import {
+  buildAgentThreeLayerPromptStack,
+  type UserLearnedSkillRule,
+} from '@/lib/ai-employee-agency/agent-memory-store';
+import {
+  evaluate150PointQaAndSpotCheck,
+  generateGoogleAdsRsaCampaignPack,
+} from '@/lib/ai-employee-agency/google-ads-agent';
 
 /**
  * ============================================================================
- * DOITWITHAI.TOOLS — 24/7 AI EMPLOYEE AGENCY OS (V3 PHASE 7 UPGRADE)
+ * DOITWITHAI.TOOLS — 24/7 AI EMPLOYEE AGENCY OS (V3 PHASES 7–10 UNIFIED ROUTE)
  * API Route: `app/api/ai-employee-agency/orchestrate/route.ts`
  *
- * Real-Time Multi-Agent Orchestration, Live Keyword Research & 1-Circle Token Telemetry:
+ * Real-Time Multi-Agent Orchestration, Live Keyword Research, 3-Layer Memory,
+ * 1-Circle Token Telemetry & Google Ads / 150-Pt QA Synthesis:
  * 1. Scrapes live Google Autocomplete (`suggestqueries.google.com`) for the
  *    target website niche or custom seed query ($0.00 mechanical execution).
  * 2. Crawls live target website HTML (`<title>`, `<meta>`, `<h1>`/`<h2>`,
  *    `robots.txt`) with fast non-blocking timeout guards ($0.00 mechanical execution).
  * 3. Scores all candidate keywords through `scoreKeywordWithDoItWithAiEngine`.
- * 4. Runs the 10% cognitive LLM reasoning call via `executeAgencyLlmCall`
+ * 4. Compiles the 3-Layer Trainable Agent Context Stack (`buildAgentThreeLayerPromptStack`)
+ *    including any Founder-taught `userLearnedSkills[]`.
+ * 5. Runs the 10% cognitive LLM reasoning call via `executeAgencyLlmCall`
  *    (`gemini-2.5-flash`, `gpt-4o-mini`, `gpt-4.1-mini`, or `llama-3.3-70b-versatile`),
  *    extracts exact real-time token counters (`promptTokenCount`, `candidatesTokenCount`,
  *    `thoughtsTokenCount`), and returns a complete 5-Stage `circleTokenTelemetry`
  *    snapshot showing exact tokens and shadow commercial cost ($0.0192/circle).
+ * 6. Synthesizes the Google Ads RSA Campaign Pack (`generateGoogleAdsRsaCampaignPack`)
+ *    and Privacy-First 150-Point QA Rubric (`evaluate150PointQaAndSpotCheck`).
  * ============================================================================
  */
 
@@ -45,6 +58,8 @@ interface OrchestrateRequestBody {
   modelId?: AgencyLlmModelId;
   apiKeyOverride?: string;
   isFreeTierKey?: boolean;
+  userLearnedSkills?: UserLearnedSkillRule[];
+  isSpotCheckOptedIn?: boolean;
 }
 
 async function fetchGoogleAutocompleteSuggestions(query: string): Promise<string[]> {
@@ -199,14 +214,27 @@ export async function POST(req: NextRequest) {
 
     const winningBrief = scoredKeywordBriefs[0]!;
 
-    // 4. Execute Stage 1 Cognitive LLM Call & Capture Exact Real-Time Token Telemetry
+    // 4. Build the 3-Layer Agent Context Stack for Keyword Strategist (`mgr-keyword-strategist`)
+    const threeLayerStack = buildAgentThreeLayerPromptStack({
+      agentId: 'mgr-keyword-strategist',
+      siteName,
+      siteUrl,
+      primaryNiche: inferredNiche,
+      activeArticleTitle: winningBrief.recommendedH1Title,
+      activeKeyword: winningBrief.keyword,
+      learnedSkills: Array.isArray(body.userLearnedSkills)
+        ? body.userLearnedSkills
+        : [],
+      sharedEvents: [],
+    });
+
+    // 5. Execute Stage 1 Cognitive LLM Call & Capture Exact Real-Time Token Telemetry
     const llmResult = await executeAgencyLlmCall({
       modelId: selectedModelId,
       apiKeyOverride: body.apiKeyOverride,
       isFreeTierKey: body.isFreeTierKey,
-      systemPrompt:
-        'You are the Keyword & SERP Gap Strategist for DoItWithAI.tools 24/7 Autonomous AI Digital Agency. Validate the winning low-KD keyword brief and output a concise 2-sentence AEO direct answer lead.',
-      userPrompt: `Website: ${siteName} (${siteUrl})\nNiche: ${inferredNiche}\nWinning Keyword: "${winningBrief.keyword}" (KD ${winningBrief.kdScore}/100)\nRecommended H1: ${winningBrief.recommendedH1Title}\nProvide a 2-sentence AEO executive summary.`,
+      systemPrompt: threeLayerStack.systemPrompt,
+      userPrompt: `Website: ${siteName} (${siteUrl})\nNiche: ${inferredNiche}\nWinning Keyword: "${winningBrief.keyword}" (KD ${winningBrief.kdScore}/100)\nRecommended H1: ${winningBrief.recommendedH1Title}\nProvide a concise 2-sentence AEO direct answer lead adhering to all active user-learned skill rules.`,
       temperature: 0.3,
       maxOutputTokens: 280,
     });
@@ -225,7 +253,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // 5. Build the 6-Stage Paced Handoff Packet Chain
+    // 6. Build the 6-Stage Paced Handoff Packet Chain
     const handoffPackets = buildPacedHandoffChain({
       siteName,
       isInternalSite,
@@ -234,14 +262,29 @@ export async function POST(req: NextRequest) {
       activeKdScore: winningBrief.kdScore,
     });
 
-    // 6. Generate 60s TikTok / Reels Video Script for the winning brief
+    // 7. Generate 60s TikTok / Reels Video Script for the winning brief
     const tiktokVideoScript = generateTikTokReels60sScript({
       articleTitle: winningBrief.recommendedH1Title,
       primaryKeyword: winningBrief.keyword,
       siteName,
     });
 
-    // 7. Build Founder Manual Action Alerts
+    // 8. Build Google Ads RSA Campaign Pack & 150-Point Automated QA Rubric (Phase 9)
+    const googleAdsCampaignPack = generateGoogleAdsRsaCampaignPack({
+      siteName,
+      siteUrl,
+      primaryKeyword: winningBrief.keyword,
+      articleTitle: winningBrief.recommendedH1Title,
+      urlSlug: winningBrief.urlSlug,
+    });
+
+    const qa150PointRubric = evaluate150PointQaAndSpotCheck({
+      articleTitle: winningBrief.recommendedH1Title,
+      primaryKeyword: winningBrief.keyword,
+      isSpotCheckOptedIn: Boolean(body.isSpotCheckOptedIn),
+    });
+
+    // 9. Build Founder Manual Action Alerts
     const manualActionAlerts = detectFounderManualActionAlerts({
       siteName,
       siteUrl,
@@ -263,7 +306,10 @@ export async function POST(req: NextRequest) {
       scoredKeywordBriefs,
       handoffPackets,
       tiktokVideoScript,
+      googleAdsCampaignPack,
+      qa150PointRubric,
       manualActionAlerts,
+      activeSkillRulesInjected: threeLayerStack.activeAgentLearnedSkills.length,
       llmGatewayStatus: {
         provider: llmResult.provider,
         modelId: llmResult.modelId,

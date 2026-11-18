@@ -17,7 +17,13 @@ import type {
   ConnectedWebsiteProfile,
   WebsitePublishingMode,
 } from '@/lib/autonomous-agents/types';
+import type { AgencySidebarTabId } from '@/lib/ai-employee-agency/agent-registry';
 import type { ScoredKeywordBrief } from '@/lib/ai-employee-agency/handoff-orchestrator';
+import {
+  AgencyUiIcon,
+  DepartmentSvgIcon,
+  type AgencyUiIconName,
+} from './AgencySvgIcons';
 
 interface OnboardingStage {
   id: string;
@@ -51,9 +57,9 @@ const ONBOARDING_TRANSITION_STAGES: OnboardingStage[] = [
   },
   {
     id: 'stage-seo',
-    label: '4. Initializing On-Page, Off-Page & Technical SEO Engineers',
-    sublabel: 'Auditing @graph JSON-LD schema, internal link spokes, robots.txt & CWV...',
-    departmentBadge: 'SEO Engineering Fleet',
+    label: '4. Initializing On-Page, Off-Page, Backlink Club & Google Ads Engineers',
+    sublabel: 'Auditing @graph JSON-LD schema, Backlink Club swaps, RSA ad packs & CWV...',
+    departmentBadge: 'SEO & Ads Engineering Fleet',
     accentHex: '#06B6D4',
   },
   {
@@ -65,45 +71,154 @@ const ONBOARDING_TRANSITION_STAGES: OnboardingStage[] = [
   },
   {
     id: 'stage-social-tiktok',
-    label: '6. Connecting Social Media & TikTok/Reels Video Script Fleet',
-    sublabel: 'Assembling Pinterest 2:3, LinkedIn 8-Slide, X/Threads & TikTok Storyboard Agents...',
-    departmentBadge: 'Social & Video Fleet',
+    label: '6. Connecting Social Media, TikTok Video Fleet & 1-Click CMS Publishers',
+    sublabel: 'Assembling Pinterest 2:3, LinkedIn 8-Slide, TikTok Storyboard & WordPress/Shopify/Webflow connectors...',
+    departmentBadge: 'Social & CMS Auto-Publish Fleet',
     accentHex: '#EC4899',
   },
 ];
 
-const AGENCY_DEPARTMENTS_PREVIEW = [
+const AGENCY_DEPARTMENTS_PREVIEW: Array<{
+  tabId: AgencySidebarTabId;
+  title: string;
+  badge: string;
+  role: string;
+}> = [
   {
-    title: '🔑 Keyword & Topic Strategist',
-    role: 'Finds low-KD keywords via live web autocomplete + our internal Keyword Engine and hands off the winning brief to Content Writing.',
+    tabId: 'keyword-strategist',
+    title: 'Keyword & Topic Strategist',
+    badge: '1 Manager + 3 Sub-Agents',
+    role: 'Scrapes live Google Autocomplete and scores low-KD topics via our internal Keyword Engine before handing off winning briefs.',
   },
   {
-    title: '✍️ Content Writing Manager + 4 Sub-Agents',
+    tabId: 'content-writing',
+    title: 'Content Writing Studio',
+    badge: '1 Manager + 4 Sub-Agents',
     role: 'Coordinates Long-Form Section Writer, Meta Title/Desc Specialist, Internal/External Link Weaver & @graph Schema Compiler.',
   },
   {
-    title: '🎨 Creative & Graphic Design Director',
-    role: 'Generates Featured Hero Images, 4× standalone 1080×1350 section infographics, 1000×1500 Pinterest 2:3 pins & LinkedIn carousels.',
+    tabId: 'graphic-design',
+    title: 'Creative & Visual Studio',
+    badge: '1 Manager + 3 Sub-Agents',
+    role: 'Renders 1200×675 Featured Hero SVGs, 4× standalone 1080×1350 6-layer infographics, 1000×1500 Pinterest 2:3 pins & 8-slide LinkedIn decks.',
   },
   {
-    title: '🛠️ On-Page SEO & Content Refresh Lead',
-    role: 'Audits live HTML headings, SERP pixel limits, internal link maps, and injects 2026 refresh blocks into decaying articles.',
+    tabId: 'on-page-seo',
+    title: 'On-Page SEO & Refresh Lead',
+    badge: '1 Manager + 3 Sub-Agents',
+    role: 'Audits live HTML headings, <580px SERP pixel widths, internal link maps, and injects 2026 refresh blocks into decaying articles.',
   },
   {
-    title: '📣 Off-Page SEO & Digital PR Manager',
-    role: 'Identifies competitor backlink gaps, niche resource directories, and ready-to-send journalist data pitches.',
+    tabId: 'off-page-seo',
+    title: 'Off-Page, Backlink Club & Ads',
+    badge: '1 Manager + 3 Sub-Agents',
+    role: 'Runs the Verified Niche Backlink Exchange Network ("The Backlink Club"), Digital PR pitches, and Google Ads RSA Campaign Builder.',
   },
   {
-    title: '⚙️ Technical & Local Entity SEO Architect',
-    role: 'Monitors zero-CLS inline SVGs, robots.txt AI crawler permissions, canonicals, and escalates manual Founder fixes.',
+    tabId: 'technical-seo',
+    title: 'Technical & Local Entity SEO',
+    badge: '1 Manager + 3 Sub-Agents',
+    role: 'Enforces 0.00 CLS inline SVGs, audits robots.txt for GPTBot/PerplexityBot/Google-Extended, and flags manual Founder fixes.',
   },
   {
-    title: '📲 Social Media & TikTok Video Fleet',
-    role: 'Dedicated sub-agents for Pinterest, LinkedIn, Facebook/IG, X/Threads, and 60-second TikTok/Reels video scripts.',
+    tabId: 'qa-publishing',
+    title: '150-Pt QA & 1-Click CMS Publish',
+    badge: '1 Manager + 3 Sub-Agents',
+    role: 'Grades every package against our 150-point automated rubric and auto-publishes to WordPress, Shopify, Webflow, or Universal Webhooks.',
   },
   {
-    title: '🎙️ Founder Executive Assistant (Chat & Voice)',
-    role: 'Talk or voice-call with your Chief AI Officer or any individual AI Employee in real time to launch new campaigns.',
+    tabId: 'social-video-fleet',
+    title: 'Social & TikTok Video Fleet',
+    badge: '1 Manager + 5 Sub-Agents',
+    role: 'Dedicated sub-agents for Pinterest, LinkedIn, Facebook/IG, X/Threads, and 60-second TikTok/Reels hook-to-CTA storyboards.',
+  },
+];
+
+const V3_ENTERPRISE_PILLARS: Array<{
+  icon: AgencyUiIconName;
+  badge: string;
+  title: string;
+  description: string;
+}> = [
+  {
+    icon: 'cpu',
+    badge: '90% Mechanical / 10% LLM',
+    title: 'Real-Time 1-Circle Token & Cost HUD',
+    description:
+      'Track exact input, output, and thinking tokens across all 5 cognitive handoffs (~$0.0192 per full article + visual + social circle on Gemini 2.5 Flash).',
+  },
+  {
+    icon: 'sparkle',
+    badge: '3-Layer Context Stack',
+    title: 'Trainable AI Employees & Custom Skills',
+    description:
+      'Teach any specialist permanent rules in natural chat ("Always include a TL;DR table under H1"). Selective routing wakes only the affected 1–2 agents.',
+  },
+  {
+    icon: 'external-link',
+    badge: 'SEO.AI $149/mo Challenger',
+    title: 'Verified Niche Backlink Exchange Club',
+    description:
+      'Contextual in-article backlink swaps with niche-matched, non-spammy partner domains (DR 54–74) plus automated anchor-text verification.',
+  },
+  {
+    icon: 'dashboard-grid',
+    badge: 'Search + Paid Synergy',
+    title: 'Google Ads RSA & Keyword Sub-Agent',
+    description:
+      'Automatically generates 15 character-validated RSA headlines (<=30 chars), 4 descriptions (<=90 chars), negative keywords & Google Ads Editor CSV.',
+  },
+  {
+    icon: 'check-shield',
+    badge: 'Zero-Developer Setup',
+    title: '1-Click WordPress, Shopify & Webflow Publish',
+    description:
+      'Connect WordPress Application Passwords, Shopify Admin Blog API, Webflow CMS v2, or Universal Webhooks to publish articles + infographics in one click.',
+  },
+  {
+    icon: 'node-graph',
+    badge: 'Zero 429 Rate Limits',
+    title: 'Staggered 24/7 Autonomous Heartbeat',
+    description:
+      'Spreads crawl, keyword gap, drafting, SVG rendering, and social scheduling across the 24-hour clock so free and paid API keys never collide.',
+  },
+];
+
+const CHALLENGER_COMPARISON_ROWS = [
+  {
+    capability: '24/7 Autonomous Keyword, Content & Technical SEO Agent',
+    seoAi: 'Included ($149/mo Single Site · $299/mo Multi-Site)',
+    doItWithAi: '36 Specialized Agents Across 9 Departments (Included)',
+  },
+  {
+    capability: 'Visual Infographics & Social Assets per Article',
+    seoAi: 'Text + Basic Featured Image Only',
+    doItWithAi: '1200×675 Hero + 4× 6-Layer 1080×1350 SVGs + Pinterest & LinkedIn Decks',
+  },
+  {
+    capability: 'Verified Niche Backlink Exchange ("Backlink Club")',
+    seoAi: 'Automatic Customer Link-Exchange Network',
+    doItWithAi: 'Niche-Matched Contextual Link-Swap Network + Digital PR Outreach Pack',
+  },
+  {
+    capability: 'Google Ads RSA & Keyword Campaign Builder',
+    seoAi: 'Included in $149/mo Plan',
+    doItWithAi: '15 RSA Headlines (<=30c) + 4 Descriptions (<=90c) + Google Ads CSV Export',
+  },
+  {
+    capability: 'No-Code CMS Auto-Publishing Connectors',
+    seoAi: 'WordPress, Shopify, Webflow & Wix',
+    doItWithAi: 'WordPress App Passwords, Shopify, Webflow, Webhook & Native /p/[slug]/blog',
+  },
+  {
+    capability: 'Content Quality Assurance & Privacy Architecture',
+    seoAi: 'Internal Human Staff Read Customer Drafts for Spot Checks',
+    doItWithAi: '100% Private 150-Pt Automated QA Gate + Opt-In Encrypted Spot-Check Toggle',
+  },
+  {
+    capability: 'Trainable Agent Memory & Live Token Cost Transparency',
+    seoAi: 'Black-Box Prompts · Hidden Token Costs',
+    doItWithAi: '3-Layer Trainable Skill Rules + Live Per-Circle Token & USD Cost HUD',
   },
 ];
 
@@ -176,7 +291,6 @@ export default function AiAgencyPublicLanding() {
       let generatedJobs: AutomatedArticleJob[] = [];
 
       try {
-        // Call both `/api/autonomous-agents/scout` and `/api/ai-employee-agency/orchestrate` in parallel
         const [scoutRes, orchestrateRes] = await Promise.all([
           fetch('/api/autonomous-agents/scout', {
             method: 'POST',
@@ -215,7 +329,7 @@ export default function AiAgencyPublicLanding() {
           };
           if (orchData.ok && orchData.winningKeywordBrief) {
             setLiveDiscoveredSummary(
-              `✓ Scored ${orchData.scoredKeywordBriefs?.length || 8} live autocomplete keywords · #1 Winner: "${orchData.winningKeywordBrief.keyword}" (KD ${orchData.winningKeywordBrief.kdScore}/100) · 36 AI Employees Ready`
+              `Scored ${orchData.scoredKeywordBriefs?.length || 8} live autocomplete keywords · #1 Winner: "${orchData.winningKeywordBrief.keyword}" (KD ${orchData.winningKeywordBrief.kdScore}/100) · 36 AI Employees Ready`
             );
           }
         }
@@ -344,7 +458,6 @@ export default function AiAgencyPublicLanding() {
   if (isTransitioning) {
     return (
       <div className="min-h-screen bg-[#050914] text-white flex flex-col items-center justify-center p-4 sm:p-8 relative overflow-hidden">
-        {/* Ambient Animated Glows */}
         <div
           className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 h-[420px] w-[780px] rounded-full blur-[150px] opacity-30 transition-all duration-700"
           style={{ backgroundColor: detectedPrimaryHex }}
@@ -355,12 +468,11 @@ export default function AiAgencyPublicLanding() {
         />
 
         <div className="relative z-10 w-full max-w-4xl rounded-3xl border border-slate-800/90 bg-[#0A1122]/95 p-6 sm:p-10 shadow-2xl space-y-7">
-          {/* Top Radar & Progress Header */}
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-5">
             <div className="flex items-center gap-4 min-w-0">
-              <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-sky-400/40 bg-sky-500/10">
+              <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-sky-400/40 bg-sky-500/10 text-sky-300">
                 <span className="absolute inset-0 rounded-2xl border border-sky-400/50 animate-ping opacity-30" />
-                <span className="text-2xl">🏢</span>
+                <DepartmentSvgIcon tabId="executive-office" className="w-6 h-6" />
               </div>
               <div className="min-w-0">
                 <div className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-sky-400">
@@ -368,7 +480,7 @@ export default function AiAgencyPublicLanding() {
                   Initializing Your 24/7 AI Digital Agency Office
                 </div>
                 <h1 className="text-lg sm:text-2xl font-extrabold text-white truncate mt-0.5">
-                  Analyzing {detectedSiteName || websiteUrl} &amp; Assembling 8 AI Departments...
+                  Analyzing {detectedSiteName || websiteUrl} &amp; Assembling 36 AI Employees...
                 </h1>
                 <div className="text-[11px] text-emerald-300 font-medium truncate mt-1">
                   {liveDiscoveredSummary}
@@ -386,7 +498,6 @@ export default function AiAgencyPublicLanding() {
             </div>
           </div>
 
-          {/* Animated Gradient Progress Bar */}
           <div className="space-y-2">
             <div className="h-3 w-full rounded-full bg-slate-900 border border-slate-800 overflow-hidden p-0.5">
               <div
@@ -407,7 +518,6 @@ export default function AiAgencyPublicLanding() {
             </div>
           </div>
 
-          {/* 6 Animated Telemetry Cards Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             {ONBOARDING_TRANSITION_STAGES.map((stage, idx) => {
               const isDone = idx < activeStageIdx;
@@ -435,9 +545,13 @@ export default function AiAgencyPublicLanding() {
                     </span>
                     <span className="text-xs font-extrabold">
                       {isDone ? (
-                        <span className="text-emerald-400">✓ ONLINE</span>
+                        <span className="inline-flex items-center gap-1 text-emerald-400">
+                          <AgencyUiIcon name="check" className="w-3.5 h-3.5" /> ONLINE
+                        </span>
                       ) : isCurrent ? (
-                        <span className="text-sky-300 animate-pulse">⚡ ANALYZING...</span>
+                        <span className="inline-flex items-center gap-1 text-sky-300 animate-pulse">
+                          <AgencyUiIcon name="sparkle" className="w-3.5 h-3.5" /> ANALYZING...
+                        </span>
                       ) : (
                         <span className="text-slate-500">QUEUED</span>
                       )}
@@ -459,7 +573,7 @@ export default function AiAgencyPublicLanding() {
   }
 
   // =========================================================================
-  // PUBLIC ZERO-NOISE LANDING PAGE (/ai-employee-agency)
+  // PUBLIC ZERO-NOISE LANDING PAGE (/ai-employee-agency) — V3 EDITION
   // =========================================================================
   return (
     <div className="min-h-screen bg-[#060B16] text-slate-100 overflow-x-hidden">
@@ -469,35 +583,40 @@ export default function AiAgencyPublicLanding() {
           <div className="flex items-center gap-2.5">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-3 py-1 text-xs font-extrabold text-emerald-300">
               <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
-              24/7 AI Digital Agency OS
+              24/7 AI Digital Agency OS · V3 Enterprise
             </span>
-            <span className="text-sm font-bold text-slate-300 hidden sm:inline">
-              8 AI Department Managers · 27 Specialized Sub-Agents
+            <span className="text-xs sm:text-sm font-bold text-slate-300 hidden sm:inline">
+              9 Departments · 36 Trainable AI Employees · 1-Click CMS Auto-Publish
             </span>
           </div>
 
           <div className="flex items-center gap-2.5 text-xs">
             <Link
               href="/ai-content-writer"
-              className="rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2 font-semibold text-slate-300 hover:text-white transition"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2 font-semibold text-slate-300 hover:text-white transition"
             >
-              ← AI Content Writer Studio
+              <AgencyUiIcon name="arrow-left" className="w-3.5 h-3.5" />
+              <span>AI Content Writer Studio</span>
             </Link>
             <Link
               href="/ai-employee-agency/dashboard"
-              className="rounded-xl bg-sky-500/20 border border-sky-400/50 hover:bg-sky-500/30 px-3.5 py-2 font-extrabold text-sky-200 transition"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-sky-500/20 border border-sky-400/50 hover:bg-sky-500/30 px-3.5 py-2 font-extrabold text-sky-200 transition"
             >
-              🏢 Open Live Agency Dashboard →
+              <DepartmentSvgIcon tabId="executive-office" className="w-3.5 h-3.5" />
+              <span>Open Live Agency Dashboard</span>
+              <AgencyUiIcon name="arrow-right" className="w-3.5 h-3.5" />
             </Link>
           </div>
         </div>
       </header>
 
-      {/* Focused Single-Action Hero Section */}
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 pt-12 pb-20 space-y-14">
+      {/* Main Content */}
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 pt-12 pb-20 space-y-16">
+        {/* Hero Header */}
         <section className="text-center space-y-5 max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-2 rounded-full border border-amber-400/40 bg-amber-400/10 px-4 py-1.5 text-xs font-extrabold text-amber-300">
-            <span>⚡ Zero Complex Setup · Just Enter Your Website URL</span>
+            <AgencyUiIcon name="sparkle" className="w-3.5 h-3.5" />
+            <span>Zero Developer Setup · Connects to WordPress, Shopify &amp; Webflow in 60s</span>
           </div>
 
           <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-white leading-tight">
@@ -511,41 +630,42 @@ export default function AiAgencyPublicLanding() {
           <p className="text-sm sm:text-base text-slate-300 leading-relaxed max-w-2xl mx-auto">
             Enter your website URL once. Your dedicated team of{' '}
             <strong className="text-white">
-              8 AI Department Managers &amp; 27 Sub-Agents
+              9 AI Department Leads &amp; 27 Specialized Sub-Agents
             </strong>{' '}
-            continuously researches low-KD keywords, writes articles, designs 6-layer infographics, audits On-Page/Off-Page/Technical SEO, and scripts Pinterest, LinkedIn &amp; TikTok campaigns in real time.
+            researches low-KD keywords, writes E-E-A-T articles, renders 6-layer SVG infographics, swaps niche backlinks, builds Google Ads RSA packs, and auto-publishes to your CMS 24/7.
           </p>
         </section>
 
         {/* Zero-Clutter URL Onboarding Card */}
         <section className="max-w-3xl mx-auto rounded-3xl border border-sky-500/40 bg-gradient-to-b from-[#0E172C] to-[#090F1E] p-6 sm:p-8 shadow-2xl space-y-6">
-          {/* Destination Pill Switcher */}
           <div className="flex flex-wrap items-center justify-between gap-3">
             <span className="text-xs font-extrabold uppercase tracking-wider text-sky-400">
-              Step 1 · Connect Your Website to Initialize Your AI Agency
+              Step 1 · Connect Your Website to Initialize Your 36 AI Employees
             </span>
             <div className="inline-flex rounded-xl border border-slate-700 bg-slate-950 p-1 text-xs">
               <button
                 type="button"
                 onClick={() => setSiteMode('external-url')}
-                className={`rounded-lg px-3 py-1.5 font-bold transition ${
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-bold transition ${
                   siteMode === 'external-url'
                     ? 'bg-sky-500 text-slate-950'
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
-                🌐 External Website URL
+                <AgencyUiIcon name="external-link" className="w-3.5 h-3.5" />
+                <span>External Website URL</span>
               </button>
               <button
                 type="button"
                 onClick={() => setSiteMode('internal-builder')}
-                className={`rounded-lg px-3 py-1.5 font-bold transition ${
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-bold transition ${
                   siteMode === 'internal-builder'
                     ? 'bg-emerald-400 text-slate-950'
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
-                ⚡ My DoItWithAI Site (/p/slug)
+                <AgencyUiIcon name="sparkle" className="w-3.5 h-3.5" />
+                <span>My DoItWithAI Site (/p/slug)</span>
               </button>
             </div>
           </div>
@@ -554,7 +674,7 @@ export default function AiAgencyPublicLanding() {
             {siteMode === 'external-url' ? (
               <div>
                 <label className="block text-xs font-bold text-slate-200 mb-2">
-                  Enter Your Website URL
+                  Enter Your Website URL (WordPress, Shopify, Webflow, Custom, etc.)
                 </label>
                 <input
                   type="url"
@@ -596,40 +716,144 @@ export default function AiAgencyPublicLanding() {
 
             <button
               type="submit"
-              className="w-full rounded-2xl bg-gradient-to-r from-sky-500 via-emerald-400 to-amber-400 hover:brightness-110 py-4 px-6 text-base font-black text-slate-950 shadow-xl transition active:scale-[0.99]"
+              className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-sky-500 via-emerald-400 to-amber-400 hover:brightness-110 py-4 px-6 text-base font-black text-slate-950 shadow-xl transition active:scale-[0.99]"
             >
-              🚀 Analyze My Website &amp; Launch 24/7 AI Digital Agency →
+              <AgencyUiIcon name="play" className="w-4 h-4" />
+              <span>Analyze My Website &amp; Launch 24/7 AI Digital Agency</span>
+              <AgencyUiIcon name="arrow-right" className="w-4 h-4" />
             </button>
           </form>
 
           <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-800/80 text-[11px] text-slate-400">
-            <span>✓ Real-Time Animated Inter-Agent Handoffs</span>
-            <span>✓ Full-Canvas Zoom/Pan Node Graph</span>
-            <span>✓ Direct 1-on-1 Agent Chat &amp; Voice Call</span>
+            <span className="inline-flex items-center gap-1.5">
+              <AgencyUiIcon name="check" className="w-3.5 h-3.5 text-emerald-400" />
+              <span>100% Full-Screen Interactive Node Graph</span>
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <AgencyUiIcon name="check" className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Trainable 3-Layer Agent Memory</span>
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <AgencyUiIcon name="check" className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Live Per-Circle Token &amp; Cost Telemetry</span>
+            </span>
+          </div>
+        </section>
+
+        {/* V3 Enterprise Pillars Grid */}
+        <section className="space-y-5">
+          <div className="text-center space-y-1.5 max-w-2xl mx-auto">
+            <div className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-400">
+              V3 Autonomous Architecture
+            </div>
+            <h2 className="text-xl sm:text-2xl font-extrabold text-white">
+              6 Enterprise Capabilities Built Into Every AI Agency Workspace
+            </h2>
+            <p className="text-xs text-slate-400">
+              Engineered to outperform legacy $149/mo–$299/mo single-agent SEO tools with 90% deterministic mechanical execution and 10% surgical LLM reasoning.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {V3_ENTERPRISE_PILLARS.map((pillar) => (
+              <div
+                key={pillar.title}
+                className="rounded-2xl border border-slate-800/90 bg-[#0B1324]/90 p-5 space-y-2.5 hover:border-sky-500/40 transition"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-sky-500/30 bg-sky-500/10 text-sky-300">
+                    <AgencyUiIcon name={pillar.icon} className="w-4 h-4" />
+                  </span>
+                  <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-extrabold text-emerald-300">
+                    {pillar.badge}
+                  </span>
+                </div>
+                <h3 className="text-sm font-extrabold text-white">{pillar.title}</h3>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  {pillar.description}
+                </p>
+              </div>
+            ))}
           </div>
         </section>
 
         {/* Clean 8-Department Overview Grid */}
-        <section className="space-y-4">
+        <section className="space-y-5">
           <div className="text-center space-y-1">
             <h2 className="text-xl sm:text-2xl font-extrabold text-white">
-              Meet Your 8 Autonomous AI Department Managers
+              Meet Your Autonomous AI Department Managers &amp; Sub-Agents
             </h2>
             <p className="text-xs text-slate-400">
-              Every department communicates in real time and reports directly to your `/ai-employee-agency/dashboard`.
+              Every department communicates via typed handoff packets and reports directly to your `/ai-employee-agency/dashboard`.
             </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {AGENCY_DEPARTMENTS_PREVIEW.map((dept) => (
               <div
-                key={dept.title}
-                className="rounded-2xl border border-slate-800/90 bg-slate-900/60 p-4 space-y-2 hover:border-sky-500/40 transition"
+                key={dept.tabId}
+                className="rounded-2xl border border-slate-800/90 bg-slate-900/60 p-4 space-y-2.5 hover:border-sky-500/40 transition"
               >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-slate-700 bg-slate-950 text-sky-300">
+                    <DepartmentSvgIcon tabId={dept.tabId} className="w-4 h-4" />
+                  </span>
+                  <span className="rounded-md bg-slate-800/90 px-2 py-0.5 text-[10px] font-bold text-slate-300">
+                    {dept.badge}
+                  </span>
+                </div>
                 <div className="text-sm font-extrabold text-white">{dept.title}</div>
                 <p className="text-xs text-slate-400 leading-relaxed">{dept.role}</p>
               </div>
             ))}
+          </div>
+        </section>
+
+        {/* Competitive Architecture Comparison Table */}
+        <section className="rounded-3xl border border-slate-800/90 bg-[#0A1122]/90 p-5 sm:p-7 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <div className="text-[11px] font-extrabold uppercase tracking-wider text-amber-300">
+                Commercial Benchmark Comparison
+              </div>
+              <h2 className="text-lg sm:text-xl font-extrabold text-white mt-0.5">
+                DoItWithAI 24/7 AI Agency OS vs. $149/mo Single-Agent SEO Platforms
+              </h2>
+            </div>
+            <Link
+              href="/ai-employee-agency/dashboard"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-500/20 border border-emerald-400/40 px-3.5 py-2 text-xs font-extrabold text-emerald-200 hover:bg-emerald-500/30 transition"
+            >
+              <span>Inspect All 36 Agents Live</span>
+              <AgencyUiIcon name="arrow-right" className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="border-b border-slate-800 text-[11px] uppercase tracking-wider text-slate-400">
+                  <th className="py-3 pr-4">Capability / Department Layer</th>
+                  <th className="py-3 px-4">Legacy $149/mo SEO Agent (e.g. SEO.AI)</th>
+                  <th className="py-3 pl-4 text-emerald-300">
+                    DoItWithAI.tools 24/7 AI Digital Agency OS (V3)
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/60">
+                {CHALLENGER_COMPARISON_ROWS.map((row) => (
+                  <tr key={row.capability} className="hover:bg-slate-900/40">
+                    <td className="py-3 pr-4 font-bold text-white">
+                      {row.capability}
+                    </td>
+                    <td className="py-3 px-4 text-slate-400">{row.seoAi}</td>
+                    <td className="py-3 pl-4 font-semibold text-emerald-200">
+                      {row.doItWithAi}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </section>
       </main>
