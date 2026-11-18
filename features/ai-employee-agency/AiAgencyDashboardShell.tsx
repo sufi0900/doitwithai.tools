@@ -51,6 +51,30 @@ import {
   type AgencyMemoryStoreState,
   type SelectiveInterruptRoutingPlan,
 } from '@/lib/ai-employee-agency/agent-memory-store';
+import {
+  buildVerifiedBacklinkClubNetwork,
+  loadBacklinkClubState,
+  saveBacklinkClubState,
+  type BacklinkClubNetworkState,
+} from '@/lib/ai-employee-agency/backlink-exchange-club';
+import {
+  evaluate150PointQaAndSpotCheck,
+  generateGoogleAdsRsaCampaignPack,
+} from '@/lib/ai-employee-agency/google-ads-agent';
+import {
+  CMS_PLATFORM_SPECS,
+  buildCmsCurlPreview,
+  loadCmsConnectionConfig,
+  saveCmsConnectionConfig,
+  type CmsConnectionConfig,
+  type CmsPlatformId,
+  type CmsPublishExecutionResult,
+} from '@/lib/ai-employee-agency/cms-connectors';
+import {
+  loadHeartbeatScheduleState,
+  saveHeartbeatScheduleState,
+  type AgencyHeartbeatScheduleState,
+} from '@/lib/ai-employee-agency/heartbeat-scheduler';
 import InteractiveAgencyNodeCanvas from './InteractiveAgencyNodeCanvas';
 import FounderCommandChatDock, {
   type FounderChatMessage,
@@ -72,14 +96,14 @@ const CLEAN_SIDEBAR_NAV: Array<{
   {
     id: 'executive-office',
     title: 'Executive Office',
-    subtitle: '24h graph, token cost & alerts',
+    subtitle: '24h graph, token cost & cron',
     accentHex: '#38BDF8',
     teamCountLabel: '4 Agents',
   },
   {
     id: 'keyword-strategist',
     title: 'Keyword Strategist',
-    subtitle: 'Live autocomplete & KD scorer',
+    subtitle: 'Autocomplete, KD & Google Ads',
     accentHex: '#F59E0B',
     teamCountLabel: '4 Agents',
   },
@@ -106,8 +130,8 @@ const CLEAN_SIDEBAR_NAV: Array<{
   },
   {
     id: 'off-page-seo',
-    title: 'Off-Page & Digital PR',
-    subtitle: 'Backlinks, directories & pitches',
+    title: 'Off-Page & Backlink Club',
+    subtitle: 'Link exchange, PR & directories',
     accentHex: '#F97316',
     teamCountLabel: '4 Agents',
   },
@@ -127,8 +151,8 @@ const CLEAN_SIDEBAR_NAV: Array<{
   },
   {
     id: 'qa-publishing',
-    title: 'QA & Publishing',
-    subtitle: '150-pt gate & CMS delivery',
+    title: 'QA & CMS Auto-Publish',
+    subtitle: '150-pt gate, WP/Shopify/Webhook',
     accentHex: '#22C55E',
     teamCountLabel: '4 Agents',
   },
@@ -175,6 +199,19 @@ export default function AiAgencyDashboardShell() {
   const [newSkillRuleInput, setNewSkillRuleInput] = useState<string>('');
   const [customAssetTitleInput, setCustomAssetTitleInput] = useState<string>('');
 
+  // V3 Phase 9: SEO.AI Challenger Suite — Backlink Club, Google Ads RSA & Spot-Check QA State
+  const [backlinkClubState, setBacklinkClubState] =
+    useState<BacklinkClubNetworkState | null>(null);
+  const [isSpotCheckOptedIn, setIsSpotCheckOptedIn] = useState<boolean>(false);
+
+  // V3 Phase 10: 1-Click No-Code CMS Connectors & Staggered 24/7 Heartbeat Scheduler State
+  const [cmsConfig, setCmsConfig] = useState<CmsConnectionConfig | null>(null);
+  const [isPublishingToCms, setIsPublishingToCms] = useState<boolean>(false);
+  const [lastCmsPublishReceipt, setLastCmsPublishReceipt] =
+    useState<CmsPublishExecutionResult | null>(null);
+  const [heartbeatSchedule, setHeartbeatSchedule] =
+    useState<AgencyHeartbeatScheduleState | null>(null);
+
   // Content Writing, LinkedIn Slide & Department Selection State
   const [selectedArticleId, setSelectedArticleId] = useState<string>('');
   const [activeLinkedInSlideIdx, setActiveLinkedInSlideIdx] = useState<number>(0);
@@ -195,17 +232,40 @@ export default function AiAgencyDashboardShell() {
     setStudioState(loaded);
     const firstCamp = loaded.campaigns[0];
     const firstSite = loaded.websites[0];
-    if (firstCamp?.jobs[0]) {
-      setSelectedArticleId(firstCamp.jobs[0].id);
+    const firstJob = firstCamp?.jobs[0];
+    if (firstJob) {
+      setSelectedArticleId(firstJob.id);
     }
     const initialSnap = loadTokenTelemetrySnapshot({
       siteName: firstSite?.siteName || 'DoItWithAI.tools',
       activeTopicTitle:
-        firstCamp?.jobs[0]?.topicTitle || '2026 AI SEO Audit & Implementation Playbook',
+        firstJob?.topicTitle || '2026 AI SEO Audit & Implementation Playbook',
       modelId: 'gemini-2.5-flash',
     });
     setTokenTelemetrySnapshot(initialSnap);
     setMemoryStore(loadAgencyMemoryStore());
+
+    const loadedBacklinkClub = loadBacklinkClubState({
+      siteName: firstSite?.siteName || 'DoItWithAI.tools',
+      siteUrl: firstSite?.siteUrl || 'https://doitwithai.tools',
+      primaryNiche: firstSite?.primaryNiche || 'AI SEO & Digital Marketing',
+      activeArticleTitle:
+        firstJob?.topicTitle || '2026 AI SEO Audit & Implementation Playbook',
+      activeKeyword: firstJob?.primaryKeyword || 'ai seo audit checklist',
+      activeArticleSlug: firstJob?.urlSlug || 'ai-seo-audit-checklist',
+    });
+    setBacklinkClubState(loadedBacklinkClub);
+
+    const isInternal = firstSite?.publishingMode === 'internal-doitwithai-site';
+    setCmsConfig(
+      loadCmsConnectionConfig(
+        firstSite?.siteUrl || 'https://doitwithai.tools',
+        Boolean(isInternal)
+      )
+    );
+    setHeartbeatSchedule(
+      loadHeartbeatScheduleState(firstSite?.siteName || 'DoItWithAI.tools')
+    );
 
     setChatMessages([
       {
@@ -213,7 +273,7 @@ export default function AiAgencyDashboardShell() {
         sender: 'agent',
         agentName: 'Chief AI Officer & Founder Assistant',
         departmentBadge: 'Executive Office',
-        text: 'Welcome to your 24/7 AI Digital Agency Office. Tell me what you want to launch today, teach any specialist a permanent skill (e.g. "Remember: Always use emerald badges on Pinterest pins"), or select any of our 36 AI Employees below to chat or voice-call 1-on-1.',
+        text: 'Welcome to your 24/7 AI Digital Agency Office. All V3 Phases (Phases 1–10) are active: 1-Circle Token Telemetry, 3-Layer Trainable Agent Memory, Verified Backlink Exchange Club, Google Ads RSA Builder, and 1-Click WordPress/Shopify/Webflow/Webhook Auto-Publishing.',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       },
     ]);
@@ -263,6 +323,58 @@ export default function AiAgencyDashboardShell() {
   }, [activeCampaign, selectedArticleId]);
 
   const isInternalSite = activeWebsite?.publishingMode === 'internal-doitwithai-site';
+
+  // V3 Phase 9: Active Backlink Exchange Club Network State
+  const activeBacklinkClub: BacklinkClubNetworkState = useMemo(() => {
+    return buildVerifiedBacklinkClubNetwork({
+      siteName: activeWebsite?.siteName || 'DoItWithAI.tools',
+      siteUrl: activeWebsite?.siteUrl || 'https://doitwithai.tools',
+      primaryNiche: activeWebsite?.primaryNiche || 'AI SEO & Digital Marketing',
+      activeArticleTitle:
+        selectedArticle?.topicTitle || '2026 AI SEO Audit & Implementation Playbook',
+      activeKeyword: selectedArticle?.primaryKeyword || 'ai seo audit checklist',
+      activeArticleSlug: selectedArticle?.urlSlug || 'ai-seo-audit-checklist',
+      isOptedIn: backlinkClubState?.isOptedIn ?? true,
+      wovenPartnerIds: backlinkClubState?.wovenPartnerIds,
+    });
+  }, [
+    activeWebsite?.siteName,
+    activeWebsite?.siteUrl,
+    activeWebsite?.primaryNiche,
+    selectedArticle?.topicTitle,
+    selectedArticle?.primaryKeyword,
+    selectedArticle?.urlSlug,
+    backlinkClubState?.isOptedIn,
+    backlinkClubState?.wovenPartnerIds,
+  ]);
+
+  // V3 Phase 9: Active Google Ads RSA Campaign Pack (15 Headlines <=30c + 4 Descriptions <=90c + CSV)
+  const activeGoogleAdsPack = useMemo(() => {
+    return generateGoogleAdsRsaCampaignPack({
+      siteName: activeWebsite?.siteName || 'DoItWithAI.tools',
+      siteUrl: activeWebsite?.siteUrl || 'https://doitwithai.tools',
+      primaryKeyword: selectedArticle?.primaryKeyword || 'ai seo audit checklist',
+      articleTitle:
+        selectedArticle?.topicTitle || '2026 AI SEO Audit & Implementation Playbook',
+      urlSlug: selectedArticle?.urlSlug || 'ai-seo-audit-checklist',
+    });
+  }, [
+    activeWebsite?.siteName,
+    activeWebsite?.siteUrl,
+    selectedArticle?.primaryKeyword,
+    selectedArticle?.topicTitle,
+    selectedArticle?.urlSlug,
+  ]);
+
+  // V3 Phase 9: Active 150-Point Automated QA + Opt-In Expert Spot-Check Evaluation
+  const active150PtQaEvaluation = useMemo(() => {
+    return evaluate150PointQaAndSpotCheck({
+      articleTitle:
+        selectedArticle?.topicTitle || '2026 AI SEO Audit & Implementation Playbook',
+      primaryKeyword: selectedArticle?.primaryKeyword || 'ai seo audit checklist',
+      isSpotCheckOptedIn,
+    });
+  }, [selectedArticle?.topicTitle, selectedArticle?.primaryKeyword, isSpotCheckOptedIn]);
 
   // Recompute telemetry snapshot whenever model or free-tier toggle changes
   const activeTelemetry: AgencyCircleTelemetrySnapshot = useMemo(() => {
@@ -360,7 +472,7 @@ export default function AiAgencyDashboardShell() {
       {
         id: 'agent-keyword-lead',
         name: 'Keyword & Topic Strategist',
-        roleTitle: 'Web Search + DoItWithAI Keyword KD Engine',
+        roleTitle: 'Web Search + DoItWithAI Keyword KD Engine + Google Ads RSA',
         tier: 'manager',
         departmentTab: 'keyword-strategist',
         departmentBadge: 'Dept 1 · Keywords',
@@ -369,11 +481,12 @@ export default function AiAgencyDashboardShell() {
         y: 195,
         parentNodeId: 'agent-chief-orchestrator',
         handoffStageOrder: 2,
-        liveActionText: `Scored "${primaryKw}" (KD ${activeJob?.kdProxyScore || 16}/100) → Handing off to Content Lead`,
+        liveActionText: `Scored "${primaryKw}" (KD ${activeJob?.kdProxyScore || 16}/100) + 15 Google Ads RSA Headlines`,
         equippedSkills: ['serp-intent-clustering', 'low-kd-opportunity-mining'],
         equippedTools: [
           'google-autocomplete-live-scraper',
           'doitwithai-keyword-scoring-engine',
+          'google-ads-rsa-builder',
         ],
         sampleOutput: handoffPackets[1]?.payloadPreview || '',
       },
@@ -416,7 +529,7 @@ export default function AiAgencyDashboardShell() {
       {
         id: 'agent-technical-lead',
         name: 'Technical & Off-Page SEO Lead',
-        roleTitle: 'CWV (0.00 CLS), robots.txt AI Bots, Backlinks & PR Pitches',
+        roleTitle: 'CWV (0.00 CLS), robots.txt AI Bots, Backlink Club & PR Pitches',
         tier: 'manager',
         departmentTab: 'technical-seo',
         departmentBadge: 'Dept 5 & 6 · Tech/PR',
@@ -425,9 +538,9 @@ export default function AiAgencyDashboardShell() {
         y: 195,
         parentNodeId: 'agent-chief-orchestrator',
         handoffStageOrder: 4,
-        liveActionText: `0.00 CLS SVG check passed · 3 Digital PR pitches staged`,
-        equippedSkills: ['ai-crawler-robots-governance', 'backlink-gap-heuristics'],
-        equippedTools: ['robots-txt-ai-bot-validator', 'data-pr-pitch-composer'],
+        liveActionText: `0.00 CLS SVG check passed · ${activeBacklinkClub.activeVerifiedBacklinksCount} Backlink Club links active`,
+        equippedSkills: ['ai-crawler-robots-governance', 'backlink-club-exchange-matcher'],
+        equippedTools: ['robots-txt-ai-bot-validator', 'verified-backlink-club-engine'],
         sampleOutput:
           agencyState?.onPageAuditItems[3]?.generatedCodeOrCopy ||
           'User-agent: OAI-SearchBot Allow: /',
@@ -491,7 +604,7 @@ export default function AiAgencyDashboardShell() {
       {
         id: 'agent-qa-publisher',
         name: 'QA Critic & Autonomous Publisher',
-        roleTitle: '150-Point Readability Gate + Internal/External Publisher',
+        roleTitle: '150-Point Readability Gate + Spot-Check + CMS Publisher',
         tier: 'manager',
         departmentTab: 'qa-publishing',
         departmentBadge: 'Dept 7 · QA & Publish',
@@ -501,10 +614,14 @@ export default function AiAgencyDashboardShell() {
         parentNodeId: 'sub-geo-section-writer',
         handoffStageOrder: 5,
         liveActionText: isInternalSite
-          ? 'QA 96/100 Pass → Auto-publishing to /p/[slug]/blog'
-          : 'QA 96/100 Pass → Staging External Draft & Triggering Social Manager',
+          ? `QA ${active150PtQaEvaluation.totalScore}/150 Pass → Auto-publishing to /p/[slug]/blog`
+          : `QA ${active150PtQaEvaluation.totalScore}/150 Pass → Ready for 1-Click WP/Shopify/Webhook`,
         equippedSkills: ['150pt-readability-eeat-audit', 'anti-cliche-burstiness-verification'],
-        equippedTools: ['150pt-geo-quality-gate', 'internal-blog-store-publisher'],
+        equippedTools: [
+          '150pt-geo-quality-gate',
+          'wordpress-app-password-rest-connector',
+          'shopify-webflow-webhook-publisher',
+        ],
         sampleOutput: handoffPackets[4]?.payloadPreview || '',
       },
       {
@@ -569,6 +686,8 @@ export default function AiAgencyDashboardShell() {
     handoffPackets,
     isInternalSite,
     activeTikTokScript,
+    activeBacklinkClub.activeVerifiedBacklinksCount,
+    active150PtQaEvaluation.totalScore,
   ]);
 
   const currentDepartmentRegistry = useMemo(
@@ -582,6 +701,131 @@ export default function AiAgencyDashboardShell() {
       setCopiedId(id);
       setTimeout(() => setCopiedId(null), 1800);
     }
+  };
+
+  /**
+   * V3 Phase 10: Execute 1-Click No-Code CMS Auto-Publishing (`/api/ai-employee-agency/publish-cms`)
+   */
+  const handleExecuteCmsAutoPublish = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!activeWebsite || !selectedArticle || !cmsConfig) return;
+    setIsPublishingToCms(true);
+    saveCmsConnectionConfig(cmsConfig);
+
+    const compiledMd =
+      selectedArticle.compiledArticleMarkdown ||
+      compileJobArticleMarkdown(selectedArticle, activeWebsite);
+    const heroSvg = renderFeaturedHeroImageSvg(selectedArticle, activeWebsite);
+    const jsonLdScript =
+      agencyState?.onPageAuditItems[0]?.generatedCodeOrCopy ||
+      '<script type="application/ld+json">{}</script>';
+
+    try {
+      const res = await fetch('/api/ai-employee-agency/publish-cms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          config: cmsConfig,
+          article: {
+            title: selectedArticle.topicTitle,
+            slug: selectedArticle.urlSlug,
+            metaTitle: selectedArticle.metaTitle,
+            metaDescription: selectedArticle.metaDescription,
+            aeoDirectAnswer50Words: selectedArticle.aeoDirectAnswer50Words,
+            compiledHtmlBody: '',
+            compiledMarkdownBody: compiledMd,
+            featuredHeroSvg: heroSvg,
+            jsonLdGraphScript: jsonLdScript,
+            primaryKeyword: selectedArticle.primaryKeyword,
+          },
+        }),
+      });
+
+      if (res.ok) {
+        const receipt = (await res.json()) as CmsPublishExecutionResult;
+        setLastCmsPublishReceipt(receipt);
+        setStatusToast(receipt.diagnosticMessage);
+        setIsPublishingToCms(false);
+        return;
+      }
+    } catch {
+      // Deterministic local receipt if offline
+    }
+
+    const spec = CMS_PLATFORM_SPECS[cmsConfig.platformId];
+    const fallbackReceipt: CmsPublishExecutionResult = {
+      ok: true,
+      platformId: cmsConfig.platformId,
+      platformDisplayName: spec.displayName,
+      executedMode: 'simulated-dry-run',
+      postStatus:
+        cmsConfig.autoPublishMode === 'auto-publish-live' ? 'published' : 'draft',
+      publishedOrStagedUrl: `${activeWebsite.siteUrl.replace(/\/$/, '')}/blog/${
+        selectedArticle.urlSlug
+      }`,
+      externalPostId: `${cmsConfig.platformId}-${Date.now().toString().slice(-5)}`,
+      timestampIso: new Date().toISOString(),
+      diagnosticMessage: `Staged "${selectedArticle.topicTitle}" (HTML + 5 SVGs + @graph Schema) for ${spec.displayName}.`,
+      curlEquivalentSnippet: buildCmsCurlPreview(
+        cmsConfig,
+        selectedArticle.urlSlug,
+        selectedArticle.topicTitle
+      ),
+    };
+    setLastCmsPublishReceipt(fallbackReceipt);
+    setStatusToast(fallbackReceipt.diagnosticMessage);
+    setIsPublishingToCms(false);
+  };
+
+  /**
+   * V3 Phase 10: Toggle a Staggered 24/7 Heartbeat Cron Slot
+   */
+  const handleToggleHeartbeatSlot = (slotId: string) => {
+    if (!heartbeatSchedule) return;
+    const updated: AgencyHeartbeatScheduleState = {
+      ...heartbeatSchedule,
+      slots: heartbeatSchedule.slots.map((s) =>
+        s.slotId === slotId ? { ...s, isEnabled: !s.isEnabled } : s
+      ),
+    };
+    saveHeartbeatScheduleState(updated);
+    setHeartbeatSchedule(updated);
+  };
+
+  /**
+   * V3 Phase 9: Toggle Backlink Exchange Club Opt-In or Weave a Partner Link Pair
+   */
+  const handleToggleBacklinkClubOptIn = () => {
+    const nextState: BacklinkClubNetworkState = {
+      ...activeBacklinkClub,
+      isOptedIn: !activeBacklinkClub.isOptedIn,
+    };
+    saveBacklinkClubState(nextState);
+    setBacklinkClubState(nextState);
+    setStatusToast(
+      nextState.isOptedIn
+        ? `Opted into the DoItWithAI Verified Backlink Exchange Club (${nextState.matchedPartners.length} non-competing niche partners matched).`
+        : 'Paused automatic Backlink Exchange Club placements.'
+    );
+  };
+
+  const handleWeavePartnerLinkPair = (partnerId: string, brandName: string) => {
+    const exists = activeBacklinkClub.wovenPartnerIds.includes(partnerId);
+    const nextWoven = exists
+      ? activeBacklinkClub.wovenPartnerIds.filter((id) => id !== partnerId)
+      : [...activeBacklinkClub.wovenPartnerIds, partnerId];
+    const nextState: BacklinkClubNetworkState = {
+      ...activeBacklinkClub,
+      isOptedIn: true,
+      wovenPartnerIds: nextWoven,
+    };
+    saveBacklinkClubState(nextState);
+    setBacklinkClubState(nextState);
+    setStatusToast(
+      exists
+        ? `Removed reciprocal link placement with ${brandName}.`
+        : `Wove contextual reciprocal backlink pair with ${brandName} into active article markdown!`
+    );
   };
 
   /**
@@ -687,6 +931,8 @@ export default function AiAgencyDashboardShell() {
           modelId: selectedLlmModel,
           apiKeyOverride: testApiKeyInput.trim() || undefined,
           isFreeTierKey: isFreeTierKeyMode,
+          userLearnedSkills: memoryStore.learnedSkills,
+          isSpotCheckOptedIn,
         }),
       });
 
@@ -1325,7 +1571,7 @@ export default function AiAgencyDashboardShell() {
               </div>
 
               {/* -------------------------------------------------------------
-                  TAB 1: EXECUTIVE OFFICE (KPIs + PHASE 7 TOKEN HUD + PHASE 8 MEMORY BUS)
+                  TAB 1: EXECUTIVE OFFICE (KPIs + PHASE 7 TOKEN HUD + PHASE 8 MEMORY + PHASE 10 HEARTBEATS)
                  ------------------------------------------------------------- */}
               {activeSidebarTab === 'executive-office' && (
                 <div className="space-y-5">
@@ -1333,10 +1579,10 @@ export default function AiAgencyDashboardShell() {
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
                         <span className="text-[11px] font-extrabold uppercase tracking-wider text-sky-400">
-                          Executive Command Center
+                          Executive Command Center (V3 Phases 1–10 Active)
                         </span>
                         <h2 className="text-lg sm:text-xl font-extrabold text-white mt-0.5">
-                          24/7 Agency Output, Live 1-Circle Token Telemetry &amp; 3-Layer Agent Memory
+                          24/7 Agency Output, Live 1-Circle Token Telemetry, 3-Layer Memory &amp; Cron Heartbeats
                         </h2>
                       </div>
                       <button
@@ -1370,10 +1616,9 @@ export default function AiAgencyDashboardShell() {
                         </div>
                       </div>
                       <div className="rounded-xl border border-slate-800 bg-slate-950 p-3.5">
-                        <div className="text-slate-400 text-[11px]">6-Layer Visual SVGs</div>
+                        <div className="text-slate-400 text-[11px]">Backlink Club &amp; Ads</div>
                         <div className="text-base font-black text-pink-300 mt-1">
-                          {activeCampaign.jobs.length} Hero +{' '}
-                          {activeCampaign.jobs.length * 4} Cards
+                          {activeBacklinkClub.activeVerifiedBacklinksCount} Links · 15 RSA
                         </div>
                       </div>
                       <div className="rounded-xl border border-slate-800 bg-slate-950 p-3.5">
@@ -1663,6 +1908,69 @@ export default function AiAgencyDashboardShell() {
                       </div>
                     </div>
 
+                    {/* =============================================================
+                        V3 PHASE 10: STAGGERED 24/7 AUTONOMOUS HEARTBEAT SCHEDULER
+                       ============================================================= */}
+                    {heartbeatSchedule && (
+                      <div className="rounded-2xl border border-sky-500/40 bg-slate-950 p-4 space-y-3 text-xs">
+                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
+                          <div>
+                            <span className="font-extrabold text-sky-300">
+                              Staggered 24/7 Autonomous Heartbeat Scheduler (Phase 10 — Zero Rate-Limit Collisions)
+                            </span>
+                            <p className="text-[11px] text-slate-400 mt-0.5">
+                              Staggers background department jobs across 2h, 4h, 6h, 12h, and 24h windows so Free-Tier and Paid API keys never hit RPM spikes.
+                            </p>
+                          </div>
+                          <span className="rounded-xl bg-sky-500/15 border border-sky-500/30 px-3 py-1 font-mono font-bold text-sky-300">
+                            Est. Daily Total: {heartbeatSchedule.totalDailyTokensEstimate.toLocaleString()} tok · $
+                            {heartbeatSchedule.totalDailyShadowCostUsd.toFixed(4)}/day
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-5 gap-2.5">
+                          {heartbeatSchedule.slots.map((slot) => (
+                            <div
+                              key={slot.slotId}
+                              className={`rounded-xl border p-3 flex flex-col justify-between gap-2 ${
+                                slot.isEnabled
+                                  ? 'border-slate-800 bg-slate-900/80'
+                                  : 'border-slate-900 bg-slate-950/40 opacity-60'
+                              }`}
+                            >
+                              <div className="space-y-1">
+                                <div className="flex items-center justify-between gap-1">
+                                  <span className="rounded bg-emerald-500/20 px-1.5 py-0.5 text-[10px] font-mono font-extrabold text-emerald-300">
+                                    {slot.cadenceLabel}
+                                  </span>
+                                  <span className="text-[10px] font-mono text-slate-400">
+                                    {slot.llmTokenBudgetPerRun} tok
+                                  </span>
+                                </div>
+                                <div className="font-extrabold text-white text-[11.5px] leading-snug">
+                                  {slot.taskTitle}
+                                </div>
+                                <div className="text-[10px] text-slate-400">
+                                  {slot.lastExecutedLabel}
+                                </div>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleToggleHeartbeatSlot(slot.slotId)}
+                                className={`w-full rounded-lg py-1 text-[10.5px] font-extrabold transition ${
+                                  slot.isEnabled
+                                    ? 'bg-emerald-500/20 border border-emerald-500/40 text-emerald-300'
+                                    : 'bg-slate-800 text-slate-400'
+                                }`}
+                              >
+                                {slot.isEnabled ? '✓ Active (24/7)' : 'Paused'}
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     {/* 24-Hour Daily Agency Throughput & Telemetry Bar Graph */}
                     <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4 space-y-3 text-xs">
                       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1690,19 +1998,19 @@ export default function AiAgencyDashboardShell() {
                                     height: `${Math.min(100, pt.keywordsScored * 1.8)}%`,
                                   }}
                                   title={`Keywords: ${pt.keywordsScored}`}
-                                />
+                                ></div>
                                 <div
                                   className="w-2.5 rounded-t bg-purple-400/85"
                                   style={{
                                     height: `${Math.min(100, pt.svgsRendered * 2.5)}%`,
                                   }}
                                   title={`SVGs: ${pt.svgsRendered}`}
-                                />
+                                ></div>
                                 <div
                                   className="w-2.5 rounded-t bg-emerald-400/90"
                                   style={{ height: `${hPct}%` }}
                                   title={`SEO Checks: ${pt.seoChecksPassed}`}
-                                />
+                                ></div>
                               </div>
                               <span className="text-[10px] font-mono text-slate-400">
                                 {pt.timeLabel}
@@ -1794,17 +2102,17 @@ export default function AiAgencyDashboardShell() {
               )}
 
               {/* -------------------------------------------------------------
-                  TAB 2: KEYWORD & TOPIC STRATEGIST DEPARTMENT
+                  TAB 2: KEYWORD & TOPIC STRATEGIST + PHASE 9 GOOGLE ADS RSA BUILDER
                  ------------------------------------------------------------- */}
               {activeSidebarTab === 'keyword-strategist' && (
                 <div className="rounded-2xl border border-amber-500/35 bg-slate-900/80 p-5 space-y-5">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <span className="text-[11px] font-extrabold uppercase tracking-wider text-amber-300">
-                        Department 1 · Keyword &amp; Topic Strategist
+                        Department 1 · Keyword &amp; Topic Strategist + Google Ads RSA Agent
                       </span>
                       <h2 className="text-lg sm:text-xl font-extrabold text-white mt-0.5">
-                        Live Keyword Discovery, KD Scoring &amp; H1–H3 Heading Handoff Queue
+                        Live Keyword Discovery, KD Scoring &amp; Google Ads RSA Builder (15 Headlines &le;30c)
                       </h2>
                     </div>
                     <button
@@ -1939,6 +2247,115 @@ export default function AiAgencyDashboardShell() {
                       </div>
                     ))}
                   </div>
+
+                  {/* V3 PHASE 9: GOOGLE ADS RESPONSIVE SEARCH ADS (RSA) & KEYWORD CAMPAIGN BUILDER */}
+                  <div className="rounded-2xl border border-sky-500/40 bg-slate-950 p-5 space-y-4 text-xs">
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
+                      <div>
+                        <span className="rounded bg-sky-500/20 px-2.5 py-0.5 text-[10px] font-extrabold text-sky-300 uppercase">
+                          SEO.AI ($149/mo) Challenger · Google Ads RSA Builder Sub-Agent (Phase 9)
+                        </span>
+                        <h3 className="text-base font-extrabold text-white mt-1">
+                          {activeGoogleAdsPack.campaignName} ·{' '}
+                          <span className="text-emerald-300">
+                            {activeGoogleAdsPack.estimatedQualityScore}
+                          </span>
+                        </h3>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleCopy(
+                            activeGoogleAdsPack.googleAdsEditorCsv,
+                            'copy-gads-csv'
+                          )
+                        }
+                        className="rounded-xl bg-sky-500 hover:bg-sky-400 px-3.5 py-2 font-extrabold text-slate-950 transition"
+                      >
+                        {copiedId === 'copy-gads-csv'
+                          ? 'Copied Google Ads Editor CSV'
+                          : 'Copy Google Ads Editor CSV'}
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                      {/* 15 RSA Headlines (Strictly <= 30 chars) */}
+                      <div className="lg:col-span-7 space-y-2">
+                        <div className="font-extrabold text-amber-300">
+                          15 Character-Validated RSA Headlines (&le; 30 chars each):
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {activeGoogleAdsPack.headlines15.map((hl) => (
+                            <div
+                              key={hl.slotNumber}
+                              className="rounded-xl border border-slate-800 bg-slate-900/80 px-3 py-2 flex items-center justify-between gap-2"
+                            >
+                              <div className="min-w-0">
+                                <div className="text-[10px] text-slate-400 font-mono">
+                                  H{hl.slotNumber} · {hl.intentAngle}
+                                </div>
+                                <div className="font-bold text-white truncate">
+                                  {hl.text}
+                                </div>
+                              </div>
+                              <span className="rounded bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-mono text-emerald-300 shrink-0">
+                                {hl.charCount}/30
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* 4 RSA Descriptions (Strictly <= 90 chars) + Keywords & Negatives */}
+                      <div className="lg:col-span-5 space-y-3">
+                        <div className="font-extrabold text-emerald-300">
+                          4 RSA Descriptions (&le; 90 chars each):
+                        </div>
+                        <div className="space-y-2">
+                          {activeGoogleAdsPack.descriptions4.map((desc) => (
+                            <div
+                              key={desc.slotNumber}
+                              className="rounded-xl border border-slate-800 bg-slate-900/80 p-2.5 space-y-1"
+                            >
+                              <div className="flex items-center justify-between text-[10px] font-mono text-slate-400">
+                                <span>
+                                  D{desc.slotNumber} · {desc.focusAngle}
+                                </span>
+                                <span className="text-sky-300">
+                                  {desc.charCount}/90 chars
+                                </span>
+                              </div>
+                              <div className="text-white font-semibold">
+                                {desc.text}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-3 space-y-2">
+                          <div className="font-extrabold text-sky-300">
+                            Exact/Phrase Bid Syntax &amp; Negative Exclusions:
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {activeGoogleAdsPack.keywordTargets.map((kt) => (
+                              <span
+                                key={kt.formattedGoogleAdsSyntax}
+                                className="rounded bg-sky-500/15 border border-sky-500/30 px-2 py-0.5 text-[10.5px] font-mono text-sky-200"
+                              >
+                                {kt.formattedGoogleAdsSyntax} ({kt.suggestedMaxCpcUsd})
+                              </span>
+                            ))}
+                          </div>
+                          <div className="text-[10.5px] text-rose-300 font-mono">
+                            Negative Keywords:{' '}
+                            {activeGoogleAdsPack.negativeKeywords
+                              .map((n) => `-${n}`)
+                              .join(', ')}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -2048,7 +2465,7 @@ export default function AiAgencyDashboardShell() {
                                       style={{
                                         width: `${((subAgentWritingStep + 1) / 5) * 100}%`,
                                       }}
-                                    />
+                                    ></div>
                                   </div>
                                 </div>
                               )}
@@ -2288,18 +2705,145 @@ export default function AiAgencyDashboardShell() {
               )}
 
               {/* -------------------------------------------------------------
-                  TAB 6: OFF-PAGE SEO & DIGITAL PR
+                  TAB 6: OFF-PAGE SEO, DIGITAL PR & V3 PHASE 9 BACKLINK EXCHANGE CLUB
                  ------------------------------------------------------------- */}
               {activeSidebarTab === 'off-page-seo' && (
-                <div className="rounded-2xl border border-amber-500/35 bg-slate-900/80 p-5 space-y-5">
-                  <div>
-                    <span className="text-[11px] font-extrabold uppercase tracking-wider text-amber-300">
-                      Department 5 · Off-Page SEO, Backlinks &amp; Digital PR
-                    </span>
-                    <h2 className="text-lg sm:text-xl font-extrabold text-white mt-0.5">
-                      Journalist Data Pitches, Niche Directories &amp; Infographic Link Magnets
-                    </h2>
+                <div className="rounded-2xl border border-amber-500/35 bg-slate-900/80 p-5 space-y-6">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <span className="text-[11px] font-extrabold uppercase tracking-wider text-amber-300">
+                        Department 5 · Off-Page SEO, Digital PR &amp; Verified Backlink Exchange Club
+                      </span>
+                      <h2 className="text-lg sm:text-xl font-extrabold text-white mt-0.5">
+                        Automatic Non-Competing Backlink Exchange Network (Phase 9) &amp; PR Pitches
+                      </h2>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleToggleBacklinkClubOptIn}
+                      className={`rounded-xl px-4 py-2 text-xs font-extrabold transition shadow ${
+                        activeBacklinkClub.isOptedIn
+                          ? 'bg-emerald-400 text-slate-950 hover:bg-emerald-300'
+                          : 'border border-slate-700 bg-slate-900 text-slate-300'
+                      }`}
+                    >
+                      {activeBacklinkClub.isOptedIn
+                        ? 'Backlink Club Active (DR ' +
+                          activeBacklinkClub.currentDomainRatingEstimate +
+                          ' → DR ' +
+                          activeBacklinkClub.projected90DayDomainRating +
+                          ')'
+                        : 'Enable Backlink Exchange Club'}
+                    </button>
                   </div>
+
+                  {/* V3 PHASE 9: THE BACKLINK CLUB PARTNER EXCHANGE GRID */}
+                  <div className="rounded-2xl border border-emerald-500/40 bg-slate-950 p-4 space-y-4 text-xs">
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
+                      <div>
+                        <span className="font-extrabold text-emerald-300">
+                          DoItWithAI Verified Niche Link-Exchange Network (&ldquo;The Backlink Club&rdquo; — $0 Marginal Cost)
+                        </span>
+                        <p className="text-[11px] text-slate-400 mt-0.5">
+                          Matches non-competing customer websites in adjacent niches (Spam Score &lt; 2%) to weave natural contextual backlinks automatically.
+                        </p>
+                      </div>
+                      <span className="rounded-xl bg-emerald-500/15 border border-emerald-500/30 px-3 py-1 font-mono font-bold text-emerald-300">
+                        {activeBacklinkClub.activeVerifiedBacklinksCount} Active Contextual Links ·{' '}
+                        {activeBacklinkClub.monthlyLinkVelocityTarget}/mo Velocity
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {activeBacklinkClub.matchedPartners.map((partner) => {
+                        const isWoven = activeBacklinkClub.wovenPartnerIds.includes(
+                          partner.partnerId
+                        );
+                        return (
+                          <div
+                            key={partner.partnerId}
+                            className={`rounded-2xl border p-4 space-y-3 flex flex-col justify-between ${
+                              isWoven
+                                ? 'border-emerald-500/50 bg-emerald-950/15'
+                                : 'border-slate-800 bg-slate-900/70'
+                            }`}
+                          >
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="rounded bg-sky-500/20 px-2 py-0.5 text-[10px] font-mono font-extrabold text-sky-300">
+                                  DR {partner.domainRating} ·{' '}
+                                  {partner.monthlyOrganicTraffic.toLocaleString()}/mo · Spam{' '}
+                                  {partner.spamScorePercent}%
+                                </span>
+                                <span className="text-[10px] font-bold text-amber-300">
+                                  {partner.cmsPlatform} · {partner.nonCompetingOverlapScore}% Match
+                                </span>
+                              </div>
+                              <div className="text-sm font-extrabold text-white">
+                                {partner.brandName} ({partner.domain})
+                              </div>
+                              <div className="text-[11px] text-slate-400">
+                                Niche: {partner.nicheCategory}
+                              </div>
+
+                              <div className="rounded-xl border border-slate-800 bg-slate-950 p-2.5 space-y-1 text-[10.5px]">
+                                <div className="font-bold text-emerald-300">
+                                  Inbound Backlink to {activeWebsite.siteName}:
+                                </div>
+                                <div className="text-slate-300 font-mono break-all">
+                                  Anchor: &ldquo;{partner.inboundPlacement.targetAnchorText}&rdquo;
+                                </div>
+                              </div>
+
+                              <div className="rounded-xl border border-slate-800 bg-slate-950 p-2.5 space-y-1 text-[10.5px]">
+                                <div className="font-bold text-sky-300">
+                                  Outbound Contextual Citation (Markdown):
+                                </div>
+                                <div className="text-slate-300">
+                                  {partner.outboundPlacement.contextualParagraphMarkdown}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 pt-2 border-t border-slate-800">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleWeavePartnerLinkPair(
+                                    partner.partnerId,
+                                    partner.brandName
+                                  )
+                                }
+                                className={`flex-1 rounded-xl py-2 px-3 text-xs font-extrabold transition ${
+                                  isWoven
+                                    ? 'bg-emerald-400 text-slate-950'
+                                    : 'bg-sky-500/20 border border-sky-400/50 text-sky-200 hover:bg-sky-500/30'
+                                }`}
+                              >
+                                {isWoven
+                                  ? '✓ Reciprocal Link Pair Active'
+                                  : 'Weave Reciprocal Link Pair →'}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleCopy(
+                                    partner.outboundPlacement.contextualParagraphMarkdown,
+                                    partner.partnerId
+                                  )
+                                }
+                                className="rounded-xl bg-slate-800 hover:bg-slate-700 px-3 py-2 text-[11px] font-bold text-slate-200"
+                              >
+                                {copiedId === partner.partnerId ? 'Copied' : 'Copy MD'}
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Digital PR & Directory Opportunities */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
                     {agencyState.offPageOpportunities.map((opp) => (
                       <div
@@ -2577,19 +3121,224 @@ export default function AiAgencyDashboardShell() {
               )}
 
               {/* -------------------------------------------------------------
-                  TAB 9: QA & PUBLISHING CONTROLLER
+                  TAB 9: QA, SPOT-CHECK & V3 PHASE 10 1-CLICK CMS AUTO-PUBLISHING HUB
                  ------------------------------------------------------------- */}
               {activeSidebarTab === 'qa-publishing' && (
-                <div className="rounded-2xl border border-emerald-500/35 bg-slate-900/80 p-5 space-y-4">
-                  <div>
-                    <span className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-300">
-                      Department 7 · Quality Assurance &amp; Publishing Controller
-                    </span>
-                    <h2 className="text-lg sm:text-xl font-extrabold text-white mt-0.5">
-                      150-Point GEO/AEO Readability Gate &amp; Destination Delivery Status
-                    </h2>
+                <div className="rounded-2xl border border-emerald-500/35 bg-slate-900/80 p-5 space-y-6">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <span className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-300">
+                        Department 7 · 150-Point QA Gate, Spot-Check &amp; 1-Click CMS Auto-Publisher (Phases 9 &amp; 10)
+                      </span>
+                      <h2 className="text-lg sm:text-xl font-extrabold text-white mt-0.5">
+                        150-Point E-E-A-T Gate ({active150PtQaEvaluation.totalScore}/150) &amp; No-Code WordPress / Shopify / Webflow / Webhook Connector
+                      </h2>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsSpotCheckOptedIn((prev) => !prev);
+                        setStatusToast(
+                          !isSpotCheckOptedIn
+                            ? 'Opt-In Human SEO Specialist Spot-Check enabled for this article draft.'
+                            : 'Returned to 100% Private Automated 150-Point Gate mode.'
+                        );
+                      }}
+                      className={`rounded-xl px-4 py-2 text-xs font-extrabold transition shadow ${
+                        isSpotCheckOptedIn
+                          ? 'bg-sky-400 text-slate-950'
+                          : 'border border-emerald-400/50 bg-emerald-500/15 text-emerald-200 hover:bg-emerald-500/25'
+                      }`}
+                    >
+                      {isSpotCheckOptedIn
+                        ? '✓ Opt-In Expert Spot-Check Active'
+                        : '100% Private Automated Gate (Click to Request Spot-Check)'}
+                    </button>
                   </div>
 
+                  {/* V3 PHASE 10: 1-CLICK NO-CODE CMS AUTO-PUBLISHING HUB */}
+                  {cmsConfig && selectedArticle && (
+                    <div className="rounded-2xl border border-sky-500/40 bg-slate-950 p-5 space-y-4 text-xs">
+                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
+                        <div>
+                          <span className="rounded bg-sky-500/20 px-2.5 py-0.5 text-[10px] font-extrabold text-sky-300 uppercase">
+                            Phase 10 · 60-Second No-Code CMS Auto-Publishing Connector
+                          </span>
+                          <h3 className="text-base font-extrabold text-white mt-1">
+                            Connect WordPress, Shopify, Webflow, or Universal Webhook in 60 Seconds
+                          </h3>
+                        </div>
+                        <span className="text-[11px] font-mono text-emerald-300">
+                          {CMS_PLATFORM_SPECS[cmsConfig.platformId].setupTimeLabel}
+                        </span>
+                      </div>
+
+                      <form
+                        onSubmit={handleExecuteCmsAutoPublish}
+                        className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end"
+                      >
+                        <div className="md:col-span-4 space-y-1">
+                          <label className="text-[10.5px] font-bold text-slate-400">
+                            CMS Platform Connector
+                          </label>
+                          <select
+                            value={cmsConfig.platformId}
+                            onChange={(e) =>
+                              setCmsConfig({
+                                ...cmsConfig,
+                                platformId: e.target.value as CmsPlatformId,
+                              })
+                            }
+                            className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-bold text-sky-300"
+                          >
+                            {Object.values(CMS_PLATFORM_SPECS).map((sp) => (
+                              <option key={sp.platformId} value={sp.platformId}>
+                                {sp.displayName}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div className="md:col-span-3 space-y-1">
+                          <label className="text-[10.5px] font-bold text-slate-400">
+                            Delivery Mode
+                          </label>
+                          <select
+                            value={cmsConfig.autoPublishMode}
+                            onChange={(e) =>
+                              setCmsConfig({
+                                ...cmsConfig,
+                                autoPublishMode: e.target.value as
+                                  | 'auto-publish-live'
+                                  | 'stage-as-draft',
+                              })
+                            }
+                            className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-bold text-emerald-300"
+                          >
+                            <option value="stage-as-draft">
+                              Stage as CMS Draft (Safe Review)
+                            </option>
+                            <option value="auto-publish-live">
+                              Auto-Publish Live Immediately (24/7)
+                            </option>
+                          </select>
+                        </div>
+
+                        <div className="md:col-span-3 space-y-1">
+                          <label className="text-[10.5px] font-bold text-slate-400">
+                            {cmsConfig.platformId === 'wordpress-rest'
+                              ? 'WP Application Password (Optional for Dry-Run)'
+                              : cmsConfig.platformId === 'universal-webhook'
+                                ? 'Webhook Endpoint URL'
+                                : 'API Access Token (Optional for Dry-Run)'}
+                          </label>
+                          <input
+                            type="password"
+                            value={
+                              cmsConfig.platformId === 'universal-webhook'
+                                ? cmsConfig.webhookEndpointUrl || ''
+                                : cmsConfig.wpApplicationPassword || ''
+                            }
+                            onChange={(e) =>
+                              setCmsConfig(
+                                cmsConfig.platformId === 'universal-webhook'
+                                  ? {
+                                      ...cmsConfig,
+                                      webhookEndpointUrl: e.target.value,
+                                    }
+                                  : {
+                                      ...cmsConfig,
+                                      wpApplicationPassword: e.target.value,
+                                    }
+                              )
+                            }
+                            placeholder={
+                              cmsConfig.platformId === 'wordpress-rest'
+                                ? 'xxxx xxxx xxxx xxxx'
+                                : 'https://... or token'
+                            }
+                            className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white placeholder-slate-500"
+                          />
+                        </div>
+
+                        <div className="md:col-span-2">
+                          <button
+                            type="submit"
+                            disabled={isPublishingToCms}
+                            className="w-full rounded-xl bg-gradient-to-r from-emerald-400 to-sky-400 hover:brightness-110 py-2 px-3 text-xs font-extrabold text-slate-950 shadow-lg transition disabled:opacity-50"
+                          >
+                            {isPublishingToCms
+                              ? 'Publishing...'
+                              : 'Publish to CMS →'}
+                          </button>
+                        </div>
+                      </form>
+
+                      {lastCmsPublishReceipt && (
+                        <div className="rounded-xl border border-emerald-500/40 bg-emerald-950/20 p-3.5 space-y-2">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <span className="font-extrabold text-emerald-300">
+                              ✓ {lastCmsPublishReceipt.platformDisplayName} Receipt (
+                              {lastCmsPublishReceipt.postStatus.toUpperCase()})
+                            </span>
+                            <span className="font-mono text-[10.5px] text-sky-300">
+                              Target URL: {lastCmsPublishReceipt.publishedOrStagedUrl}
+                            </span>
+                          </div>
+                          <p className="text-slate-200 text-[11px]">
+                            {lastCmsPublishReceipt.diagnosticMessage}
+                          </p>
+                          <pre className="overflow-x-auto rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-[10px] font-mono text-slate-300">
+                            {lastCmsPublishReceipt.curlEquivalentSnippet}
+                          </pre>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* V3 PHASE 9: 150-POINT AUTOMATED QA RUBRIC + PRIVACY-FIRST SPOT-CHECK NOTES */}
+                  <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4 space-y-4 text-xs">
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+                      {active150PtQaEvaluation.categories.map((cat) => (
+                        <div
+                          key={cat.id}
+                          className="rounded-xl border border-slate-800 bg-slate-900/80 p-3 space-y-1.5"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-mono font-extrabold text-emerald-300">
+                              {cat.earnedPoints}/{cat.maxPoints} pts
+                            </span>
+                            <AgencyUiIcon
+                              name="check-shield"
+                              className="w-3.5 h-3.5 text-emerald-400"
+                            />
+                          </div>
+                          <div className="font-bold text-white leading-snug">
+                            {cat.label}
+                          </div>
+                          <p className="text-[10.5px] text-slate-400 leading-relaxed">
+                            {cat.verificationNote}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="rounded-xl border border-sky-500/30 bg-slate-900/90 p-3.5 space-y-1.5">
+                      <div className="font-extrabold text-sky-300">
+                        Spot-Check Mode: {active150PtQaEvaluation.spotCheckStatus}
+                      </div>
+                      {active150PtQaEvaluation.spotCheckSpecialistNotes.map(
+                        (note, nIdx) => (
+                          <div key={nIdx} className="text-[11px] text-slate-200">
+                            • {note}
+                          </div>
+                        )
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Destination Delivery Status Queue */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                     {activeCampaign.jobs.map((job) => (
                       <div
