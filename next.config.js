@@ -127,7 +127,7 @@ const nextConfig = {
 
   experimental: {
     webpackBuildWorker: true,
-    cpus: 2,
+    cpus: 1,
     workerThreads: false,
     serverActions: {
       allowedOrigins: [
