@@ -15,11 +15,18 @@ import {
   type SharedMemoryBusEvent,
   type UserLearnedSkillRule,
 } from '@/lib/ai-employee-agency/agent-memory-store';
+import {
+  computeTokenCostUsd,
+  resolveApiKeySlotId,
+  MODEL_PRICING_CATALOG,
+  type AgencyLlmModelId,
+  type ApiKeySlotId,
+} from '@/lib/ai-employee-agency/token-telemetry-store';
 import { AgencyUiIcon } from './AgencySvgIcons';
 
 /**
  * ============================================================================
- * DOITWITHAI.TOOLS — 24/7 AI EMPLOYEE AGENCY OS (V3 PHASE 8 REDESIGN)
+ * DOITWITHAI.TOOLS — 24/7 AI EMPLOYEE AGENCY OS (V3 PHASE 8 + V4 PHASE 12)
  * Component: `features/ai-employee-agency/FounderCommandChatDock.tsx`
  *
  * Persistent Unified Founder Command Chat, 3-Layer Skill Teaching & Voice Call Dock:
@@ -27,9 +34,10 @@ import { AgencyUiIcon } from './AgencySvgIcons';
  * - Includes right-side padding (`pr-16 sm:pr-20`) so the global floating
  *   chat button at the bottom-right of the site never overlaps `Send Command`.
  * - V3 Phase 8 Upgrade: Supports teaching permanent custom skills (`Remember: ...`)
- *   to any of the 36 AI Employees and triggers Selective Workflow Interruption
- *   so only the targeted specialist + department manager wake up while all other
- *   departments continue working uninterrupted.
+ *   to any of the 36 AI Employees and triggers Selective Workflow Interruption.
+ * - V4 Phase 12 Upgrade: Passes active LLM model/key settings and reports real-time
+ *   per-turn token usage (`KEY_SLOT_*`, prompt/output/thinking tokens, shadow cost)
+ *   to the Zero-Based Session Token Telemetry Ledger.
  * ============================================================================
  */
 
@@ -62,6 +70,23 @@ interface FounderCommandChatDockProps {
   learnedSkills?: UserLearnedSkillRule[];
   sharedMemoryEvents?: SharedMemoryBusEvent[];
   onRecordSelectiveInterrupt?: (plan: SelectiveInterruptRoutingPlan) => void;
+  selectedLlmModel?: AgencyLlmModelId;
+  isFreeTierKeyMode?: boolean;
+  testApiKeyInput?: string;
+  onRecordChatTokenUsage?: (usage: {
+    agentId: string;
+    agentName: string;
+    promptTokens: number;
+    completionTokens: number;
+    thinkingTokens: number;
+    totalTokens: number;
+    shadowPaidCostUsd: number;
+    actualCostUsd: number;
+    apiKeySlot: ApiKeySlotId;
+    modelId: AgencyLlmModelId;
+    usedLiveApiKey: boolean;
+    actionLabel: string;
+  }) => void;
 }
 
 const QUICK_SCENARIO_CHIPS = [
@@ -110,6 +135,10 @@ export default function FounderCommandChatDock({
   learnedSkills = [],
   sharedMemoryEvents = [],
   onRecordSelectiveInterrupt,
+  selectedLlmModel = 'gemini-2.5-flash',
+  isFreeTierKeyMode = true,
+  testApiKeyInput = '',
+  onRecordChatTokenUsage,
 }: FounderCommandChatDockProps) {
   const [chatInput, setChatInput] = useState<string>('');
   const [isSending, setIsSending] = useState<boolean>(false);
@@ -183,6 +212,9 @@ export default function FounderCommandChatDock({
           existingSlugs,
           learnedSkills,
           sharedEvents: sharedMemoryEvents,
+          modelId: selectedLlmModel,
+          apiKeyOverride: testApiKeyInput.trim() || undefined,
+          isFreeTierKey: isFreeTierKeyMode,
         }),
       });
 
@@ -195,6 +227,17 @@ export default function FounderCommandChatDock({
           spawnedKeywordBrief?: ScoredKeywordBrief;
           recommendedTabRedirect?: AgencySidebarTabId;
           selectiveInterruptPlan?: SelectiveInterruptRoutingPlan;
+          tokenUsage?: {
+            modelId?: AgencyLlmModelId;
+            apiKeySlot?: ApiKeySlotId;
+            usedLiveApiKey?: boolean;
+            promptTokens?: number;
+            completionTokens?: number;
+            thinkingTokens?: number;
+            totalTokens?: number;
+            shadowPaidCostUsd?: number;
+            actualCostUsd?: number;
+          };
           timestamp?: string;
         };
 
@@ -207,6 +250,35 @@ export default function FounderCommandChatDock({
           }
           if (data.recommendedTabRedirect) {
             onSelectDepartmentTab(data.recommendedTabRedirect);
+          }
+          if (data.tokenUsage && onRecordChatTokenUsage) {
+            const pTok = Number(data.tokenUsage.promptTokens) || 0;
+            const cTok = Number(data.tokenUsage.completionTokens) || 0;
+            const tTok = Number(data.tokenUsage.thinkingTokens) || 0;
+            const usedModel = data.tokenUsage.modelId || selectedLlmModel;
+            const spec =
+              MODEL_PRICING_CATALOG[usedModel] ||
+              MODEL_PRICING_CATALOG['gemini-2.5-flash'];
+            onRecordChatTokenUsage({
+              agentId: effectiveAgentId,
+              agentName: data.agentName || targetEmployee.name,
+              promptTokens: pTok,
+              completionTokens: cTok,
+              thinkingTokens: tTok,
+              totalTokens: Number(data.tokenUsage.totalTokens) || pTok + cTok + tTok,
+              shadowPaidCostUsd: Number(data.tokenUsage.shadowPaidCostUsd) || 0,
+              actualCostUsd: Number(data.tokenUsage.actualCostUsd) || 0,
+              apiKeySlot:
+                data.tokenUsage.apiKeySlot ||
+                resolveApiKeySlotId({
+                  provider: spec.provider,
+                  isFreeTierKey: isFreeTierKeyMode,
+                  usedLiveApiKey: Boolean(data.tokenUsage.usedLiveApiKey),
+                }),
+              modelId: usedModel,
+              usedLiveApiKey: Boolean(data.tokenUsage.usedLiveApiKey),
+              actionLabel: `Chat → ${data.agentName || targetEmployee.name}: "${trimmed.slice(0, 64)}"`,
+            });
           }
           onAppendMessage({
             id: `msg-agent-${Date.now()}`,
@@ -277,6 +349,30 @@ export default function FounderCommandChatDock({
       timestamp: nowTime,
       selectiveInterruptSummary: localInterrupt.memoryBusEvent.summary,
     });
+    if (onRecordChatTokenUsage) {
+      const estPrompt = Math.max(48, Math.ceil(trimmed.length / 3.85) + 120);
+      const estCompletion = Math.max(36, Math.ceil(fallbackReply.length / 3.85));
+      const estShadow = computeTokenCostUsd({
+        modelId: selectedLlmModel,
+        promptTokens: estPrompt,
+        completionTokens: estCompletion,
+        thinkingTokens: 0,
+      });
+      onRecordChatTokenUsage({
+        agentId: effectiveAgentId,
+        agentName: targetEmployee.name,
+        promptTokens: estPrompt,
+        completionTokens: estCompletion,
+        thinkingTokens: 0,
+        totalTokens: estPrompt + estCompletion,
+        shadowPaidCostUsd: estShadow,
+        actualCostUsd: 0,
+        apiKeySlot: 'KEY_SLOT_MECHANICAL_ZERO',
+        modelId: selectedLlmModel,
+        usedLiveApiKey: false,
+        actionLabel: `Chat (Local Meter) → ${targetEmployee.name}: "${trimmed.slice(0, 56)}"`,
+      });
+    }
     speakAgentReplyIfActive(fallbackReply);
     setIsSending(false);
   };
@@ -299,20 +395,12 @@ export default function FounderCommandChatDock({
         (window as unknown as Record<string, unknown>).webkitSpeechRecognition;
       if (typeof SpeechRec === 'function') {
         try {
-          type SpeechRecognitionResultEvent = {
-            results?: ArrayLike<ArrayLike<{ transcript?: string }>>;
-          };
-          type SpeechRecognitionInstance = {
-            lang: string;
-            interimResults: boolean;
-            onresult: ((event: SpeechRecognitionResultEvent) => void) | null;
-            start: () => void;
-          };
-          const SpeechRecCtor = SpeechRec as new () => SpeechRecognitionInstance;
-          const recognition = new SpeechRecCtor();
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const recognition: any = new (SpeechRec as any)();
           recognition.lang = 'en-US';
           recognition.interimResults = false;
-          recognition.onresult = (event) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          recognition.onresult = (event: any) => {
             const transcript = event?.results?.[0]?.[0]?.transcript;
             if (transcript) {
               setChatInput(transcript);
