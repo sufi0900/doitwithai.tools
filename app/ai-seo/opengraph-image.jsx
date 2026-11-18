@@ -2,8 +2,7 @@
 import { ImageResponse } from 'next/og';
 import OGImageTemplate from '@/app/generateMetadata'; // Adjust the import path
 
-// Set the runtime to edge for better performance
-export const runtime = 'edge';
+// Use default Node.js runtime so @opennextjs/cloudflare bundles ImageResponse cleanly.
 
 // Image metadata
 export const alt = 'AI in SEO & Digital Marketing';

@@ -4,24 +4,38 @@ import { Redis } from '@upstash/redis';
 
 let redisClient;
 
-if (process.env.NODE_ENV === 'production') {
- 
-  redisClient = Redis.fromEnv();
-} else {
- 
-  if (!global.redisClient) {
-    global.redisClient = new Redis({
-      url: process.env.UPSTASH_REDIS_REST_URL || 'http://localhost:8079', // Fallback for local testing if you run a local Redis REST proxy
-      token: process.env.UPSTASH_REDIS_REST_TOKEN || 'local-token', // Dummy token for local
-    });
+function getRedisClient() {
+  if (redisClient) {
+    return redisClient;
   }
-  redisClient = global.redisClient;
+
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+  if (!url || !token) {
+    return null;
+  }
+
+  if (process.env.NODE_ENV === 'production') {
+    redisClient = new Redis({ url, token });
+  } else {
+    if (!global.redisClient) {
+      global.redisClient = new Redis({ url, token });
+    }
+    redisClient = global.redisClient;
+  }
+
+  return redisClient;
 }
 
 export const redisHelpers = {
   async get(key) {
+    const client = getRedisClient();
+    if (!client) {
+      return null;
+    }
     try {
-      const data = await redisClient.get(key);
+      const data = await client.get(key);
       console.log(`[Redis Cache Hit] for ${key}`);
       return data; // This is already parsed by Upstash
     } catch (error) {
@@ -31,12 +45,16 @@ export const redisHelpers = {
   },
 
   async set(key, value, options = {}) {
+    const client = getRedisClient();
+    if (!client) {
+      return;
+    }
     try {
       // Upstash Redis automatically handles JSON stringification
       if (options.ex) {
-        await redisClient.set(key, value, { ex: options.ex });
+        await client.set(key, value, { ex: options.ex });
       } else {
-        await redisClient.set(key, value);
+        await client.set(key, value);
       }
       console.log(`[Redis Cache Set] for ${key}`);
     } catch (error) {
@@ -46,8 +64,12 @@ export const redisHelpers = {
   },
 
   async del(key) {
+    const client = getRedisClient();
+    if (!client) {
+      return;
+    }
     try {
-      await redisClient.del(key);
+      await client.del(key);
       console.log(`[Redis Cache Deleted] for ${key}`);
     } catch (error) {
       console.error(`Error deleting Redis key ${key}:`, error);

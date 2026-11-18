@@ -46,3 +46,8 @@ push-error.txt
 # Generated portable tool bundles
 /public/portable-tools
 /.portable-build
+
+# Cloudflare Workers / OpenNext
+/.open-next
+/.wrangler
+/.dev.vars

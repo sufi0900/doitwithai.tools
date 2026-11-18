@@ -1,7 +1,7 @@
 // app/api/og/route.js - Optimized for performance and visibility
 import { ImageResponse } from 'next/og';
 
-export const runtime = 'edge';
+// Use default Node.js runtime so @opennextjs/cloudflare bundles ImageResponse cleanly.
 
 export async function GET(request) {
   try {

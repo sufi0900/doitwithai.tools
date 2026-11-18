@@ -9,8 +9,6 @@ import { Providers } from "./providers";
 import { useOnlineStatus } from "./useOnlineStatus";
 import Header from "@/components/Header";
 import WorkspaceProvider from "@/features/tools-workspace/WorkspaceProvider";
-import { SpeedInsights } from "@vercel/speed-insights/next";
-import { Analytics } from "@vercel/analytics/next";
 import { CacheProvider } from "@/React_Query_Caching/CacheProvider";
 
 const ConditionalGlobalHeader = dynamic(
@@ -202,8 +200,6 @@ export default function ClientLayoutShell({ children }) {
           </CacheProvider>
 
           <Toaster position="bottom-center" />
-          <SpeedInsights />
-          <Analytics />
         </WorkspaceProvider>
       </Providers>
     </>

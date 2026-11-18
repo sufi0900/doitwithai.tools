@@ -9,7 +9,6 @@ import { NextSeo } from "next-seo";
 import Head from 'next/head';
 
 export const revalidate = 3600;
-export const dynamic = "force-dynamic";
 
 // Enhanced utility functions
 function getBaseUrl() {

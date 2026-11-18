@@ -10,7 +10,10 @@
     "dev": "next dev",
     "generate-sitemap": "next-sitemap",
     "prebuild": "node scripts/generate-pages-manifest.js && node scripts/build-portable-tools.mjs",
-    "build": " next build",
+    "build": "node scripts/with-heap.mjs next build",
+    "cf:build": "node scripts/with-heap.mjs opennextjs-cloudflare build",
+    "cf:preview": "opennextjs-cloudflare preview",
+    "cf:deploy": "opennextjs-cloudflare deploy",
     "generate-manifest": "node scripts/generate-pages-manifest.js",
     "start": "next start",
     "lint": "next lint",
@@ -90,6 +93,7 @@
   },
   "devDependencies": {
     "@next/bundle-analyzer": "^15.4.0",
+    "@opennextjs/cloudflare": "1.15.1",
     "@types/jszip": "^3.4.1",
     "@types/node": "^20.8.9",
     "@types/react": "^18.2.33",
@@ -107,7 +111,8 @@
     "tsx": "^4.23.15",
     "typescript": "^5.2.2",
     "web-vitals": "^5.0.3",
-    "webpack-bundle-analyzer": "^4.10.2"
+    "webpack-bundle-analyzer": "^4.10.2",
+    "wrangler": "^4.164.0"
   },
   "browserslist": [
     "chrome >= 105",
