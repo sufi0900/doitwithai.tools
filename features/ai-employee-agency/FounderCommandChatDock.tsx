@@ -576,7 +576,7 @@ export default function FounderCommandChatDock({
                   <AgencyUiIcon
                     name={
                       isFullScreenChat
-                        ? 'collapse-fullscreen'
+                        ? 'exit-fullscreen'
                         : 'expand-fullscreen'
                     }
                     className="w-3.5 h-3.5"

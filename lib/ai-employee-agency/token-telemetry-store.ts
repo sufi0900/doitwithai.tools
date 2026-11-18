@@ -302,7 +302,7 @@ export function createZeroBasedSessionTokenLedger(params: {
   const agentRows: AgentSessionTokenRow[] = getAllAgencyEmployeesFlat().map((emp) => ({
     rowId: emp.id,
     displayName: emp.name,
-    roleBadge: emp.isDepartmentManager ? 'Dept Manager' : 'Sub-Agent',
+    roleBadge: emp.tier === 'manager' || emp.tier === 'executive' ? 'Dept Manager' : 'Sub-Agent',
     departmentName: emp.departmentBadge,
     departmentTab: emp.departmentTab,
     isChatBox: false,

@@ -163,11 +163,18 @@ export async function GET(request) {
       { articleId, status, limit }
     );
 
-    return NextResponse.json({
-      success: true,
-      comments,
-      count: comments.length
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        comments,
+        count: comments.length
+      },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
+        },
+      }
+    );
 
   } catch (error) {
     console.error('Error fetching comments:', error);

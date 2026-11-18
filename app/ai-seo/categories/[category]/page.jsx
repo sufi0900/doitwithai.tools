@@ -6,8 +6,7 @@ import { urlForImage } from "@/sanity/lib/image";
 import { notFound } from 'next/navigation';
 import Script from "next/script";
 
-export const revalidate = 0;
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 function getBaseUrl() {
   if (process.env.NODE_ENV === 'production') {

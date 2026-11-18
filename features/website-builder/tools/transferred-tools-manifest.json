@@ -247,8 +247,8 @@
     "blog-section-infographic-generator": {
       "slug": "blog-section-infographic-generator",
       "sourcePage": "app/tools/blog-section-infographic-generator/page.tsx",
-      "versionHash": "af5f30a3",
-      "versionLabel": "v2026.11.af5f30a3",
+      "versionHash": "d8e4711a",
+      "versionLabel": "v2026.11.d8e4711a",
       "metaTitle": "SEO blog posts & pillar guides",
       "metaDescription": "Turn any H2 blog heading, paragraph, or URL into a branded, dimensioned section infographic.",
       "heroTitle": "Free AI Blog Section Infographic Generator: Turn Explanations Into Clear Visuals",
@@ -962,8 +962,8 @@
     "quote-stat-testimonial-card-studio": {
       "slug": "quote-stat-testimonial-card-studio",
       "sourcePage": "app/tools/quote-stat-testimonial-card-studio/page.tsx",
-      "versionHash": "a044d836",
-      "versionLabel": "v2026.11.a044d836",
+      "versionHash": "4168dde5",
+      "versionLabel": "v2026.11.4168dde5",
       "metaTitle": "SaaS & B2B landing pages",
       "metaDescription": "Turn any customer review, case study stat, or article URL into a high-resolution branded testimonial graphic.",
       "heroTitle": "Free AI Testimonial Card Generator: Customer Quote, Photo & Logo Studio",

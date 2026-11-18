@@ -110,6 +110,7 @@ const nextConfig = {
   optimizeFonts: true,
 
   images: {
+    unoptimized: true,
     domains: ['your-sanity-domain.com'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     imageSizes: [16, 32, 48, 64, 85, 96, 128, 256, 384],
@@ -129,7 +130,12 @@ const nextConfig = {
     cpus: 2,
     workerThreads: false,
     serverActions: {
-      allowedOrigins: ['localhost:3000', '*.vercel.app'],
+      allowedOrigins: [
+        'localhost:3000',
+        'doitwithai.tools',
+        'www.doitwithai.tools',
+        '*.workers.dev',
+      ],
     },
   },
 

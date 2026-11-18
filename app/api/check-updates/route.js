@@ -84,22 +84,29 @@ export async function GET() {
       ? Math.max(...allUpdates.map(u => u.timestamp))
       : 0;
     
-    return NextResponse.json({
-      status: 'Check updates endpoint is working',
-      lastWebhookUpdate: latestTimestamp,
-      lastWebhookUpdateFormatted: latestTimestamp 
-        ? new Date(latestTimestamp).toISOString() 
-        : 'None',
-      totalRecentUpdates: allUpdates.length,
-      recentUpdates: allUpdates.slice(-5),
-      usage: {
-        method: 'POST',
-        body: {
-          lastCheck: 'timestamp',
-          pageType: 'string (e.g., "seo", "ai-tools")'
+    return NextResponse.json(
+      {
+        status: 'Check updates endpoint is working',
+        lastWebhookUpdate: latestTimestamp,
+        lastWebhookUpdateFormatted: latestTimestamp 
+          ? new Date(latestTimestamp).toISOString() 
+          : 'None',
+        totalRecentUpdates: allUpdates.length,
+        recentUpdates: allUpdates.slice(-5),
+        usage: {
+          method: 'POST',
+          body: {
+            lastCheck: 'timestamp',
+            pageType: 'string (e.g., "seo", "ai-tools")'
+          }
         }
+      },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
+        },
       }
-    });
+    );
     
   } catch (error) {
     console.error('Check updates GET error:', error);
