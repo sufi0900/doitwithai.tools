@@ -1,3 +1,4 @@
+import { requireApprovedWebsite, agencyWorkspace, recordAgencyUsage } from '@/lib/ai-employee-agency/workspace.server';
 import { NextRequest, NextResponse } from 'next/server';
 import {
   AGENCY_DEPARTMENT_REGISTRY,
@@ -130,6 +131,10 @@ async function fetchLiveWebsiteQuickSignals(siteUrl: string): Promise<{
 }
 
 export async function POST(req: NextRequest) {
+  const workspace = await agencyWorkspace(req);
+  if (workspace instanceof NextResponse) return workspace;
+  const blocked = await requireApprovedWebsite(workspace);
+  if (blocked) return blocked;
   try {
     const body = (await req.json().catch(() => ({}))) as OrchestrateRequestBody;
     const siteUrl = (body.siteUrl || 'https://doitwithai.tools').trim();
@@ -209,6 +214,9 @@ export async function POST(req: NextRequest) {
       temperature: 0.3,
       maxOutputTokens: 280,
     });
+    if (!llmResult.ok) return NextResponse.json({ error: llmResult.apiErrorDetail }, { status: 503 });
+    await recordAgencyUsage(workspace.id, 'orchestrate', llmResult);
+
 
     const circleTokenTelemetry = buildAgencyCircleTelemetrySnapshot({
       siteName,

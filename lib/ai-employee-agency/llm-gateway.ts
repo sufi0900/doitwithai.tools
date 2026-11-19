@@ -36,6 +36,7 @@ export interface AgencyLlmRequest {
 
 export interface AgencyLlmResponse {
   ok: boolean;
+  usageReported: boolean;
   provider: AgencyLlmProviderId;
   modelId: AgencyLlmModelId;
   apiKeySlot: ApiKeySlotId;
@@ -60,24 +61,7 @@ async function readProviderErrorDetail(
   provider: AgencyLlmProviderId,
   res: Response
 ): Promise<string> {
-  try {
-    const raw = (await res.text()).replace(/\s+/g, ' ').trim();
-    return raw
-      ? `${provider.toUpperCase()} HTTP ${res.status}: ${raw.slice(0, 180)}`
-      : `${provider.toUpperCase()} HTTP ${res.status}`;
-  } catch {
-    return `${provider.toUpperCase()} HTTP ${res.status}`;
-  }
-}
-
-/**
- * Estimates token count deterministically (~4 chars per token) when running
- * in zero-key fallback mode so shadow telemetry remains 100% realistic.
- */
-export function estimateTokensFromText(text: string): number {
-  const cleaned = (text || '').trim();
-  if (!cleaned) return 0;
-  return Math.max(12, Math.ceil(cleaned.length / 3.85));
+  return `${provider.toUpperCase()} HTTP ${res.status}`;
 }
 
 function resolveServerApiKey(
@@ -115,6 +99,14 @@ function resolveServerApiKey(
  * Executes an AI Employee cognitive task via Google Gemini, Groq LPU, or OpenAI
  * and returns exact real-time token usage + shadow commercial cost + KEY_SLOT_*.
  */
+export function providerBindings() {
+  return {
+    gemini: Boolean(resolveServerApiKey('gemini').apiKey),
+    openai: Boolean(resolveServerApiKey('openai').apiKey),
+    groq: Boolean(resolveServerApiKey('groq').apiKey),
+  };
+}
+
 export async function executeAgencyLlmCall(
   req: AgencyLlmRequest
 ): Promise<AgencyLlmResponse> {
@@ -166,6 +158,7 @@ export async function executeAgencyLlmCall(
             promptTokenCount?: number;
             candidatesTokenCount?: number;
             thoughtsTokenCount?: number;
+            totalTokenCount?: number;
           };
         };
         const outputText: string =
@@ -176,12 +169,11 @@ export async function executeAgencyLlmCall(
 
         const usage = data?.usageMetadata || {};
         const promptTokens =
-          Number(usage.promptTokenCount) ||
-          estimateTokensFromText(req.systemPrompt + req.userPrompt);
+          Number(usage.promptTokenCount) || 0;
         const completionTokens =
-          Number(usage.candidatesTokenCount) || estimateTokensFromText(outputText);
+          Number(usage.candidatesTokenCount) || 0;
         const thinkingTokens = Number(usage.thoughtsTokenCount) || 0;
-        const totalTokens = promptTokens + completionTokens + thinkingTokens;
+        const totalTokens = usage.totalTokenCount ?? promptTokens + completionTokens + thinkingTokens;
         const shadowPaidCostUsd = computeTokenCostUsd({
           modelId,
           promptTokens,
@@ -196,7 +188,8 @@ export async function executeAgencyLlmCall(
         });
 
         return {
-          ok: true,
+          ok: Boolean(outputText),
+          usageReported: typeof usage.promptTokenCount === "number",
           provider,
           modelId,
           apiKeySlot,
@@ -252,17 +245,16 @@ export async function executeAgencyLlmCall(
       if (res.ok) {
         const data = (await res.json()) as {
           choices?: Array<{ message?: { content?: string } }>;
-          usage?: { prompt_tokens?: number; completion_tokens?: number };
+          usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number };
         };
         const outputText: string =
           data?.choices?.[0]?.message?.content?.trim() || '';
         const usage = data?.usage || {};
         const promptTokens =
-          Number(usage.prompt_tokens) ||
-          estimateTokensFromText(req.systemPrompt + req.userPrompt);
+          Number(usage.prompt_tokens) || 0;
         const completionTokens =
-          Number(usage.completion_tokens) || estimateTokensFromText(outputText);
-        const totalTokens = promptTokens + completionTokens;
+          Number(usage.completion_tokens) || 0;
+        const totalTokens = usage.total_tokens ?? promptTokens + completionTokens;
         const shadowPaidCostUsd = computeTokenCostUsd({
           modelId,
           promptTokens,
@@ -277,7 +269,8 @@ export async function executeAgencyLlmCall(
         });
 
         return {
-          ok: true,
+          ok: Boolean(outputText),
+          usageReported: typeof usage.prompt_tokens === "number",
           provider,
           modelId,
           apiKeySlot,
@@ -306,41 +299,11 @@ export async function executeAgencyLlmCall(
     }
   }
 
-  // 3. Zero-Key Deterministic Hybrid Mode with Exact Shadow Token Metering
-  const promptTokens = estimateTokensFromText(
-    `${req.systemPrompt}\n${req.userPrompt}`
-  );
-  const simulatedCompletionTokens = 280;
-  const totalTokens = promptTokens + simulatedCompletionTokens;
-  const shadowPaidCostUsd = computeTokenCostUsd({
-    modelId,
-    promptTokens,
-    completionTokens: simulatedCompletionTokens,
-    thinkingTokens: 0,
-  });
-  const apiKeySlot = resolveApiKeySlotId({
-    provider,
-    isFreeTierKey: true,
-    hasKeyOverride: false,
-    usedLiveApiKey: false,
-  });
-
   return {
-    ok: true,
-    provider,
-    modelId,
-    apiKeySlot,
-    outputText: '',
-    usedLiveApiKey: false,
-    isFreeTierKey: true,
-    promptTokens,
-    completionTokens: simulatedCompletionTokens,
-    thinkingTokens: 0,
-    totalTokens,
-    shadowPaidCostUsd,
-    actualCostUsd: 0,
-    latencyMs: Math.max(120, Date.now() - startTime),
-    telemetryNote: `Shadow Token Meter (${apiKeySlot}) active · ${totalTokens.toLocaleString()} tokens metered at ${spec.displayName} rates ($0.00 billed)`,
-    apiErrorDetail,
+    ok: false, usageReported: false, provider, modelId,
+    apiKeySlot: 'KEY_SLOT_MECHANICAL_ZERO', outputText: '', usedLiveApiKey: false,
+    isFreeTierKey, promptTokens: 0, completionTokens: 0, thinkingTokens: 0,
+    totalTokens: 0, shadowPaidCostUsd: 0, actualCostUsd: 0, latencyMs: Date.now() - startTime,
+    telemetryNote: 'Provider unavailable', apiErrorDetail: apiKey ? 'Provider request failed. Check provider configuration.' : apiErrorDetail,
   };
 }

@@ -1,5 +1,6 @@
 'use client';
 
+import { agencyRequest } from './agency-request';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -103,119 +104,7 @@ import {
 export type { AgencySidebarTabId, InteractiveOfficeNode };
 
 type AgencyThemeMode = 'dark' | 'light';
-type ExecutiveSubViewId = 'overview' | 'tokens' | 'memory' | 'heartbeat';
-
-interface V6SidebarItem {
-  id: string;
-  label: string;
-  uiIcon?: AgencyUiIconName;
-  deptIcon?: AgencySidebarTabId;
-  targetTab: AgencySidebarTabId;
-  execSubView?: ExecutiveSubViewId;
-  openGraph?: boolean;
-}
-
-const V6_SINGLE_SIDEBAR_GROUPS: Array<{
-  groupLabel: string;
-  items: V6SidebarItem[];
-}> = [
-  {
-    groupLabel: 'Workspace',
-    items: [
-      {
-        id: 'nav-overview',
-        label: 'Overview',
-        uiIcon: 'dashboard-grid',
-        targetTab: 'executive-office',
-        execSubView: 'overview',
-      },
-      {
-        id: 'nav-canvas',
-        label: 'Live Node Canvas',
-        uiIcon: 'node-graph',
-        targetTab: 'executive-office',
-        openGraph: true,
-      },
-    ],
-  },
-  {
-    groupLabel: 'Content & Creative',
-    items: [
-      {
-        id: 'nav-keywords',
-        label: 'Keyword & Topics',
-        deptIcon: 'keyword-strategist',
-        targetTab: 'keyword-strategist',
-      },
-      {
-        id: 'nav-articles',
-        label: 'Article Studio',
-        deptIcon: 'content-writing',
-        targetTab: 'content-writing',
-      },
-      {
-        id: 'nav-visuals',
-        label: 'Visual & Infographics',
-        deptIcon: 'graphic-design',
-        targetTab: 'graphic-design',
-      },
-      {
-        id: 'nav-social',
-        label: 'Social & Video',
-        deptIcon: 'social-video-fleet',
-        targetTab: 'social-video-fleet',
-      },
-    ],
-  },
-  {
-    groupLabel: 'SEO & Growth',
-    items: [
-      {
-        id: 'nav-audit',
-        label: 'Technical Site Audit',
-        uiIcon: 'technical',
-        targetTab: 'technical-seo',
-      },
-      {
-        id: 'nav-onpage',
-        label: 'On-Page & Competitors',
-        uiIcon: 'onpage',
-        targetTab: 'on-page-seo',
-      },
-      {
-        id: 'nav-visibility',
-        label: 'AI Visibility & Links',
-        deptIcon: 'off-page-seo',
-        targetTab: 'off-page-seo',
-      },
-    ],
-  },
-  {
-    groupLabel: 'Operations',
-    items: [
-      {
-        id: 'nav-publish',
-        label: 'QA & Auto-Publish',
-        uiIcon: 'check-shield',
-        targetTab: 'qa-publishing',
-      },
-      {
-        id: 'nav-tokens',
-        label: 'Token & API Usage',
-        uiIcon: 'activity',
-        targetTab: 'executive-office',
-        execSubView: 'tokens',
-      },
-      {
-        id: 'nav-skills',
-        label: 'Agent Skills & Cron',
-        uiIcon: 'settings',
-        targetTab: 'executive-office',
-        execSubView: 'memory',
-      },
-    ],
-  },
-];
+import { V6_SINGLE_SIDEBAR_GROUPS, type ExecutiveSubViewId } from './navigation';
 
 const AGENCY_THEME_STORAGE_KEY = 'doitwithai_agency_v4_theme_v1';
 
@@ -319,7 +208,13 @@ export default function AiAgencyDashboardShell() {
       }
     }
     const loaded = loadAutonomousStudioState();
-    setStudioState(loaded);
+    const savedCampaigns = loaded.campaigns.filter(c => c.id !== 'campaign-2027-flagship-pilot');
+    const campaigns = savedCampaigns.length ? savedCampaigns : loaded.campaigns.filter(c => c.jobs.some(j => Boolean(j.publishedUrl) || j.status === 'published'));
+    if (!campaigns.length) {
+      router.replace('/ai-employee-agency/dashboard');
+      return;
+    }
+    setStudioState({ ...loaded, campaigns });
     const firstCamp = loaded.campaigns[0];
     const firstSite = loaded.websites[0];
     const firstJob = firstCamp?.jobs[0];
@@ -833,7 +728,7 @@ export default function AiAgencyDashboardShell() {
       '<script type="application/ld+json">{}</script>';
 
     try {
-      const res = await fetch('/api/ai-employee-agency/publish-cms', {
+      const res = await agencyRequest('/api/ai-employee-agency/publish-cms', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -864,28 +759,8 @@ export default function AiAgencyDashboardShell() {
       // Deterministic local receipt if offline
     }
 
-    const spec = CMS_PLATFORM_SPECS[cmsConfig.platformId];
-    const fallbackReceipt: CmsPublishExecutionResult = {
-      ok: true,
-      platformId: cmsConfig.platformId,
-      platformDisplayName: spec.displayName,
-      executedMode: 'simulated-dry-run',
-      postStatus:
-        cmsConfig.autoPublishMode === 'auto-publish-live' ? 'published' : 'draft',
-      publishedOrStagedUrl: `${activeWebsite.siteUrl.replace(/\/$/, '')}/blog/${
-        selectedArticle.urlSlug
-      }`,
-      externalPostId: `${cmsConfig.platformId}-${Date.now().toString().slice(-5)}`,
-      timestampIso: new Date().toISOString(),
-      diagnosticMessage: `Staged "${selectedArticle.topicTitle}" (HTML + 5 SVGs + @graph Schema) for ${spec.displayName}.`,
-      curlEquivalentSnippet: buildCmsCurlPreview(
-        cmsConfig,
-        selectedArticle.urlSlug,
-        selectedArticle.topicTitle
-      ),
-    };
-    setLastCmsPublishReceipt(fallbackReceipt);
-    setStatusToast(fallbackReceipt.diagnosticMessage);
+    setLastCmsPublishReceipt(null);
+    setStatusToast('CMS delivery was not confirmed. Check the connection and workspace approval.');
     setIsPublishingToCms(false);
   };
 
@@ -1079,7 +954,7 @@ export default function AiAgencyDashboardShell() {
     setIsRunningTokenAudit(true);
 
     try {
-      const res = await fetch('/api/ai-employee-agency/orchestrate', {
+      const res = await agencyRequest('/api/ai-employee-agency/orchestrate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1140,22 +1015,7 @@ export default function AiAgencyDashboardShell() {
       // Deterministic local fallback if offline
     }
 
-    const fallbackSnap = buildAgencyCircleTelemetrySnapshot({
-      siteName: activeWebsite.siteName,
-      activeTopicTitle:
-        selectedArticle?.topicTitle || '2026 AI SEO Audit & Implementation Playbook',
-      modelId: selectedLlmModel,
-      isFreeTierKeyActive: isFreeTierKeyMode,
-    });
-    saveTokenTelemetrySnapshot(fallbackSnap);
-    setTokenTelemetrySnapshot(fallbackSnap);
-    setSessionTokenLedger((prev) => {
-      const nextLedger = recordCircleOrchestrationIntoLedger(prev, fallbackSnap, {
-        apiKeySlot: 'KEY_SLOT_MECHANICAL_ZERO',
-        usedLiveApiKey: false,
-      });
-      return saveZeroBasedSessionTokenLedger(nextLedger);
-    });
+    setStatusToast('Token audit unavailable. No usage recorded.');
     setIsRunningTokenAudit(false);
   };
 
@@ -1173,7 +1033,7 @@ export default function AiAgencyDashboardShell() {
       'ai seo automation';
 
     try {
-      const res = await fetch('/api/ai-employee-agency/orchestrate', {
+      const res = await agencyRequest('/api/ai-employee-agency/orchestrate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1227,25 +1087,7 @@ export default function AiAgencyDashboardShell() {
       // Fallback to local deterministic DoItWithAI KD scoring engine
     }
 
-    const fallbackPool = [
-      `${querySeed} step by step checklist 2026`,
-      `${querySeed} vs manual workflow comparison`,
-      `how to optimize ${querySeed} for ai overviews`,
-      `best ${querySeed} framework for small teams`,
-    ];
-    const scored = fallbackPool.map((kw, idx) =>
-      scoreKeywordWithDoItWithAiEngine({
-        rawKeyword: kw,
-        siteName: activeWebsite.siteName,
-        primaryNiche: activeWebsite.primaryNiche,
-        existingSlugs: activeCampaign.jobs.map((j) => j.urlSlug),
-        indexOffset: idx,
-      })
-    );
-    setLiveScoredBriefs(scored);
-    setStatusToast(
-      `Keyword Strategist scored ${scored.length} low-KD keyword briefs for "${querySeed}".`
-    );
+    setStatusToast('Keyword research unavailable.');
     setIsScoringKeywords(false);
   };
 
@@ -1386,7 +1228,7 @@ export default function AiAgencyDashboardShell() {
         setActiveLiveStepIndex(stepIdx);
         setLiveStepStatusLabel(`Step ${stepIdx + 1}/5 · Calling ${selectedLlmModel}...`);
 
-        const res = await fetch('/api/ai-employee-agency/run-agent-step', {
+        const res = await agencyRequest('/api/ai-employee-agency/run-agent-step', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

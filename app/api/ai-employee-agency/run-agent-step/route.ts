@@ -1,3 +1,4 @@
+import { requireApprovedWebsite, agencyWorkspace, recordAgencyUsage } from '@/lib/ai-employee-agency/workspace.server';
 import { NextRequest, NextResponse } from 'next/server';
 import { executeAgencyLlmCall } from '@/lib/ai-employee-agency/llm-gateway';
 import type { AgencyLlmModelId } from '@/lib/ai-employee-agency/token-telemetry-store';
@@ -239,6 +240,10 @@ const PIPELINE_STAGE_SPECS: readonly PipelineStageSpec[] = [
 ];
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
+  const workspace = await agencyWorkspace(req);
+  if (workspace instanceof NextResponse) return workspace;
+  const blocked = await requireApprovedWebsite(workspace);
+  if (blocked) return blocked;
   try {
     const body = (await req.json()) as RunAgentStepRequestBody;
     const rawStep = typeof body.stepIndex === 'number' ? body.stepIndex : 0;
@@ -268,11 +273,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       isFreeTierKey: body.isFreeTierKey ?? true,
       apiKeyOverride: body.apiKeyOverride,
     });
+    if (!llmCall.ok) return NextResponse.json({ error: llmCall.apiErrorDetail }, { status: 503 });
+    await recordAgencyUsage(workspace.id, 'run-agent-step', llmCall);
 
-    const resolvedContent =
-      llmCall.ok && llmCall.outputText.trim().length > 20
-        ? llmCall.outputText.trim()
-        : spec.buildFallbackOutput(ctx);
+
+    const resolvedContent = llmCall.outputText;
 
     return NextResponse.json({
       ok: true,

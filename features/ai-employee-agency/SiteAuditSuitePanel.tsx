@@ -1,5 +1,6 @@
 'use client';
 
+import { agencyRequest } from './agency-request';
 import React, { useMemo, useState } from 'react';
 import {
   runMechanicalSiteAudit,
@@ -138,7 +139,7 @@ export default function SiteAuditSuitePanel({
     const target = auditUrlInput.trim() || defaultSiteUrl;
     setIsAuditing(true);
     try {
-      const res = await fetch('/api/ai-employee-agency/site-audit', {
+      const res = await agencyRequest('/api/ai-employee-agency/site-audit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

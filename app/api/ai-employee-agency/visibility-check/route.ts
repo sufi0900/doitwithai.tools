@@ -1,3 +1,4 @@
+import { agencyWorkspace } from '@/lib/ai-employee-agency/workspace.server';
 import { NextRequest, NextResponse } from 'next/server';
 import {
   buildThreeModeArticleLaunchBrief,
@@ -40,6 +41,8 @@ async function fetchTextSafe(
 }
 
 export async function POST(req: NextRequest) {
+  const workspace = await agencyWorkspace(req);
+  if (workspace instanceof NextResponse) return workspace;
   try {
     const body = (await req.json().catch(() => ({}))) as VisibilityCheckRequestBody;
     const siteUrl = (body.siteUrl || 'https://doitwithai.tools').trim();

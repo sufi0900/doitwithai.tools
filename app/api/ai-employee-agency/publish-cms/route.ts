@@ -1,3 +1,4 @@
+import { requireApprovedWebsite, agencyWorkspace } from '@/lib/ai-employee-agency/workspace.server';
 import { NextRequest, NextResponse } from 'next/server';
 import {
   CMS_PLATFORM_SPECS,
@@ -29,6 +30,10 @@ interface PublishCmsRequestBody {
 }
 
 export async function POST(req: NextRequest) {
+  const workspace = await agencyWorkspace(req);
+  if (workspace instanceof NextResponse) return workspace;
+  const blocked = await requireApprovedWebsite(workspace);
+  if (blocked) return blocked;
   try {
     const body = (await req.json().catch(() => ({}))) as PublishCmsRequestBody;
     const config: CmsConnectionConfig = body.config || {

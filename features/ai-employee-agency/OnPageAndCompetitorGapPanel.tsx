@@ -1,5 +1,6 @@
 'use client';
 
+import { agencyRequest } from './agency-request';
 import React, { useMemo, useState } from 'react';
 import {
   buildCompetitorGapMatrix,
@@ -170,7 +171,7 @@ export default function OnPageAndCompetitorGapPanel({
 
     setIsAnalyzing(true);
     try {
-      const res = await fetch('/api/ai-employee-agency/competitor-gap', {
+      const res = await agencyRequest('/api/ai-employee-agency/competitor-gap', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -1,5 +1,6 @@
 'use client';
 
+import { agencyRequest } from './agency-request';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   getAllAgencyEmployeesFlat,
@@ -266,7 +267,7 @@ export default function FounderCommandChatDock({
     setIsSending(true);
 
     try {
-      const res = await fetch('/api/ai-employee-agency/agent-chat', {
+      const res = await agencyRequest('/api/ai-employee-agency/agent-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -288,6 +289,10 @@ export default function FounderCommandChatDock({
         }),
       });
 
+      if (!res.ok) {
+        const failure = await res.json();
+        throw new Error(failure.error || 'Copilot is unavailable.');
+      }
       if (res.ok) {
         const data = (await res.json()) as {
           ok: boolean;
@@ -393,100 +398,13 @@ export default function FounderCommandChatDock({
           return;
         }
       }
-    } catch {
-      // Deterministic local fallback if offline
-    }
-
-    const localInterrupt = routeSelectiveWorkflowInterrupt({
-      agentId: targetEmployee.id,
-      rawMessage: trimmed,
-    });
-    if (onRecordSelectiveInterrupt) {
-      onRecordSelectiveInterrupt(localInterrupt);
-    }
-
-    const lower = trimmed.toLowerCase();
-    const wantsNewArticle =
-      lower.includes('launch') ||
-      lower.includes('write a new') ||
-      lower.includes('new article') ||
-      lower.includes('create an article');
-
-    let fallbackReply = '';
-    if (localInterrupt.learnedSkillRule) {
-      fallbackReply = `Got it — I've saved your permanent rule for **${siteName}**:\n\n> "${localInterrupt.learnedSkillRule.skillRuleText}"\n\n${localInterrupt.wokenAgentNames.join(
-        ' and '
-      )} will apply it while the other ${
-        localInterrupt.uninterruptedAgentCount
-      } agents keep running uninterrupted.`;
-    } else if (wantsNewArticle) {
-      const cleanedTopic = trimmed
-        .replace(
-          /^(today\s+)?(let's|lets|please|can you)?\s*(write|launch|create|publish)\s*(a\s+new\s+article\s+on|an\s+article\s+about|about|on)?/i,
-          ''
-        )
-        .trim();
-      const scored = scoreKeywordWithDoItWithAiEngine({
-        rawKeyword: cleanedTopic || primaryNiche,
-        siteName,
-        primaryNiche,
-        existingSlugs,
-      });
-      onSpawnArticleFromBrief(scored);
-      fallbackReply = `I've initialized a full cross-department campaign for **"${scored.recommendedH1Title}"** (KD ${scored.kdScore}/100). Keyword Strategist, Content Manager, Visual Studio, and Social Fleet are now lined up in sequence.`;
-    } else if (workspaceKnowledge) {
-      fallbackReply =
-        answerFromWorkspaceKnowledge(trimmed, workspaceKnowledge) ||
-        `I'm connected to your live **${siteName}** workspace (${workspaceKnowledge.totalArticlesCount} articles, ${workspaceKnowledge.totalVisualAssetsCount} visual assets, and ${workspaceKnowledge.sessionTokensUsed.toLocaleString()} session tokens used). Ask about your blogs, designs, SEO health, schedule, or switch to any of the 36 specialists above.`;
-    } else {
-      fallbackReply = `Done — I've applied your request ("${trimmed}") to **${siteName}**.`;
-    }
-
-    const estPrompt = Math.max(48, Math.ceil(trimmed.length / 3.85) + 120);
-    const estCompletion = Math.max(36, Math.ceil(fallbackReply.length / 3.85));
-    const estTotal = estPrompt + estCompletion;
-
-    onAppendMessage({
-      id: `msg-agent-${Date.now()}`,
-      sender: 'agent',
-      agentName: effectiveIsGeneral ? 'Workspace Copilot' : targetEmployee.name,
-      departmentBadge: effectiveIsGeneral
-        ? 'General AI Assistant'
-        : targetEmployee.departmentBadge,
-      text: fallbackReply,
-      timestamp: nowTime,
-      selectiveInterruptSummary: localInterrupt.learnedSkillRule
-        ? `Saved rule: ${localInterrupt.learnedSkillRule.skillRuleText}`
-        : undefined,
-      tokenCountBadge: estTotal,
-    });
-
-    if (onRecordChatTokenUsage) {
-      const estShadow = computeTokenCostUsd({
-        modelId: selectedLlmModel,
-        promptTokens: estPrompt,
-        completionTokens: estCompletion,
-        thinkingTokens: 0,
-      });
-      onRecordChatTokenUsage({
-        agentId: effectiveAgentId,
-        agentName: effectiveIsGeneral ? 'Workspace Copilot' : targetEmployee.name,
-        promptTokens: estPrompt,
-        completionTokens: estCompletion,
-        thinkingTokens: 0,
-        totalTokens: estTotal,
-        shadowPaidCostUsd: estShadow,
-        actualCostUsd: 0,
-        apiKeySlot: 'KEY_SLOT_MECHANICAL_ZERO',
-        modelId: selectedLlmModel,
-        usedLiveApiKey: false,
-        actionLabel: `Copilot (Local Meter) → ${
-          effectiveIsGeneral ? 'Workspace Copilot' : targetEmployee.name
-        }: "${trimmed.slice(0, 56)}"`,
+    } catch (error) {
+      onAppendMessage({
+        id: `msg-agent-${Date.now()}`, sender: 'agent', agentName: 'Workspace Copilot',
+        departmentBadge: 'Workspace', timestamp: nowTime,
+        text: error instanceof Error ? error.message : 'Copilot is unavailable.',
       });
     }
-
-    speakAgentReplyIfActive(fallbackReply);
     setIsSending(false);
   };
 

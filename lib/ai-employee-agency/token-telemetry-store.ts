@@ -627,8 +627,8 @@ export function buildAgencyCircleTelemetrySnapshot(params: {
       ? params.isFreeTierKeyActive
       : spec.supportsFreeTierKey;
 
-  const s1Prompt = params.liveStage1Override?.promptTokens ?? 1450;
-  const s1Completion = params.liveStage1Override?.completionTokens ?? 650;
+  const s1Prompt = params.liveStage1Override?.promptTokens ?? 0;
+  const s1Completion = params.liveStage1Override?.completionTokens ?? 0;
   const s1Thinking = params.liveStage1Override?.thinkingTokens ?? 0;
 
   const rawStages: Array<{
@@ -656,7 +656,7 @@ export function buildAgencyCircleTelemetrySnapshot(params: {
       promptTokens: s1Prompt,
       completionTokens: s1Completion,
       thinkingTokens: s1Thinking,
-      latencyMs: params.liveStage1Override?.latencyMs ?? 640,
+      latencyMs: params.liveStage1Override?.latencyMs ?? 0,
       executionSource: params.liveStage1Override?.isLiveCall
         ? 'live-api-key'
         : 'free-tier-shadow-telemetry',
@@ -671,10 +671,10 @@ export function buildAgencyCircleTelemetrySnapshot(params: {
         'SERP <580px pixel-width title verification ($0.00)',
         'Connected @graph JSON-LD schema compilation ($0.00)',
       ],
-      promptTokens: 3200,
-      completionTokens: 4300,
+      promptTokens: 0,
+      completionTokens: 0,
       thinkingTokens: 0,
-      latencyMs: 1820,
+      latencyMs: 0,
       executionSource: params.liveStage1Override?.isLiveCall
         ? 'live-api-key'
         : 'free-tier-shadow-telemetry',
@@ -690,10 +690,10 @@ export function buildAgencyCircleTelemetrySnapshot(params: {
         '4× 1080×1350 6-Layer Section Infographic rendering ($0.00)',
         '0.00 CLS aspect-ratio verification ($0.00)',
       ],
-      promptTokens: 850,
-      completionTokens: 450,
+      promptTokens: 0,
+      completionTokens: 0,
       thinkingTokens: 0,
-      latencyMs: 490,
+      latencyMs: 0,
       executionSource: params.liveStage1Override?.isLiveCall
         ? 'live-api-key'
         : 'free-tier-shadow-telemetry',
@@ -708,10 +708,10 @@ export function buildAgencyCircleTelemetrySnapshot(params: {
         'Live DOM <title>, H1–H3 & canonical tag crawler ($0.00)',
         'robots.txt OAI-SearchBot & PerplexityBot rule check ($0.00)',
       ],
-      promptTokens: 2100,
-      completionTokens: 300,
+      promptTokens: 0,
+      completionTokens: 0,
       thinkingTokens: 0,
-      latencyMs: 580,
+      latencyMs: 0,
       executionSource: params.liveStage1Override?.isLiveCall
         ? 'live-api-key'
         : 'free-tier-shadow-telemetry',
@@ -727,10 +727,10 @@ export function buildAgencyCircleTelemetrySnapshot(params: {
         '8-Slide 1080×1350 LinkedIn SVG deck rendering ($0.00)',
         '150-point automated GEO/AEO readability gate ($0.00)',
       ],
-      promptTokens: 2200,
-      completionTokens: 800,
+      promptTokens: 0,
+      completionTokens: 0,
       thinkingTokens: 0,
-      latencyMs: 740,
+      latencyMs: 0,
       executionSource: params.liveStage1Override?.isLiveCall
         ? 'live-api-key'
         : 'free-tier-shadow-telemetry',

@@ -1,3 +1,4 @@
+import AgencyWorkspaceOverview from '@/features/ai-employee-agency/AgencyWorkspaceOverview';
 import type { Metadata } from 'next';
 import AiAgencyDashboardShell from '@/features/ai-employee-agency/AiAgencyDashboardShell';
 
@@ -11,6 +12,6 @@ export const metadata: Metadata = {
   },
 };
 
-export default function AiEmployeeAgencyDashboardPage() {
-  return <AiAgencyDashboardShell />;
+export default function AiEmployeeAgencyDashboardPage({ searchParams }: { searchParams: { view?: string } }) {
+  return searchParams.view === 'legacy' ? <AiAgencyDashboardShell /> : <AgencyWorkspaceOverview />;
 }

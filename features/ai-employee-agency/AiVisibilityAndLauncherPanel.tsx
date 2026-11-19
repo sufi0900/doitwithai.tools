@@ -1,5 +1,6 @@
 'use client';
 
+import { agencyRequest } from './agency-request';
 import React, { useMemo, useState } from 'react';
 import {
   buildThreeModeArticleLaunchBrief,
@@ -96,7 +97,7 @@ export default function AiVisibilityAndLauncherPanel({
     const cleaned = launchInput.trim() || primaryNiche;
     setIsGeneratingPlan(true);
     try {
-      const res = await fetch('/api/ai-employee-agency/visibility-check', {
+      const res = await agencyRequest('/api/ai-employee-agency/visibility-check', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -137,7 +138,7 @@ export default function AiVisibilityAndLauncherPanel({
     const promptList = extraPrompts ?? customPrompts;
     setIsScanningVisibility(true);
     try {
-      const res = await fetch('/api/ai-employee-agency/visibility-check', {
+      const res = await agencyRequest('/api/ai-employee-agency/visibility-check', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

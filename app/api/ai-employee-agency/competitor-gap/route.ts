@@ -1,3 +1,4 @@
+import { agencyWorkspace } from '@/lib/ai-employee-agency/workspace.server';
 import { NextRequest, NextResponse } from 'next/server';
 import {
   buildCompetitorGapMatrix,
@@ -92,6 +93,8 @@ async function fetchAutocompleteSeeds(seed: string): Promise<string[]> {
 }
 
 export async function POST(req: NextRequest) {
+  const workspace = await agencyWorkspace(req);
+  if (workspace instanceof NextResponse) return workspace;
   try {
     const body = (await req.json().catch(() => ({}))) as CompetitorGapRequestBody;
     const siteUrl = (body.siteUrl || 'https://doitwithai.tools').trim();
