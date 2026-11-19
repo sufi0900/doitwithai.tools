@@ -37,12 +37,21 @@ import {
   type ScoredKeywordBrief,
 } from '@/lib/ai-employee-agency/handoff-orchestrator';
 import {
+  CHAT_BOX_LEDGER_ROW_ID,
   MODEL_PRICING_CATALOG,
   buildAgencyCircleTelemetrySnapshot,
+  createZeroBasedSessionTokenLedger,
   loadTokenTelemetrySnapshot,
+  loadZeroBasedSessionTokenLedger,
+  recordCircleOrchestrationIntoLedger,
+  recordSessionTokenUsage,
+  resetZeroBasedSessionTokenLedger,
   saveTokenTelemetrySnapshot,
+  saveZeroBasedSessionTokenLedger,
   type AgencyCircleTelemetrySnapshot,
   type AgencyLlmModelId,
+  type ApiKeySlotId,
+  type ZeroBasedSessionTokenLedger,
 } from '@/lib/ai-employee-agency/token-telemetry-store';
 import {
   loadAgencyMemoryStore,
@@ -76,6 +85,10 @@ import {
   type AgencyHeartbeatScheduleState,
 } from '@/lib/ai-employee-agency/heartbeat-scheduler';
 import InteractiveAgencyNodeCanvas from './InteractiveAgencyNodeCanvas';
+import type { WorkspaceKnowledgeSnapshot } from '@/lib/ai-employee-agency/workspace-knowledge-snapshot';
+import SiteAuditSuitePanel from './SiteAuditSuitePanel';
+import OnPageAndCompetitorGapPanel from './OnPageAndCompetitorGapPanel';
+import AiVisibilityAndLauncherPanel from './AiVisibilityAndLauncherPanel';
 import FounderCommandChatDock, {
   type FounderChatMessage,
 } from './FounderCommandChatDock';
@@ -83,6 +96,9 @@ import { AgencyUiIcon, DepartmentSvgIcon } from './AgencySvgIcons';
 
 export type { AgencySidebarTabId, InteractiveOfficeNode };
 
+/**
+ * Clean, single-line sidebar navigation items with zero-truncation labels
+ */
 type AgencyThemeMode = 'dark' | 'light';
 type OuterRailDomainId =
   | 'agency'
@@ -377,6 +393,17 @@ export default function AiAgencyDashboardShell() {
   const [isRunningTokenAudit, setIsRunningTokenAudit] = useState<boolean>(false);
   const [tokenTelemetrySnapshot, setTokenTelemetrySnapshot] =
     useState<AgencyCircleTelemetrySnapshot | null>(null);
+  // V4 Phase 12: Zero-Based Real-Time Per-Agent & Chat Token Telemetry Ledger (Starts at 0 tokens / $0.0000)
+  const [sessionTokenLedger, setSessionTokenLedger] =
+    useState<ZeroBasedSessionTokenLedger>(() =>
+      createZeroBasedSessionTokenLedger({
+        siteName: 'DoItWithAI.tools',
+        modelId: 'gemini-2.5-flash',
+        isFreeTierKeyActive: true,
+      })
+    );
+  const [ledgerFilterMode, setLedgerFilterMode] = useState<'all' | 'active' | 'chat'>('all');
+  const [ledgerSearchQuery, setLedgerSearchQuery] = useState<string>('');
   const [llmGatewayNote, setLlmGatewayNote] = useState<string>(
     'Free-Tier Shadow Telemetry Active · 90% Mechanical ($0.00) + 10% LLM Reasoning'
   );
@@ -441,6 +468,12 @@ export default function AiAgencyDashboardShell() {
       modelId: 'gemini-2.5-flash',
     });
     setTokenTelemetrySnapshot(initialSnap);
+    const initialZeroLedger = loadZeroBasedSessionTokenLedger({
+      siteName: firstSite?.siteName || 'DoItWithAI.tools',
+      modelId: 'gemini-2.5-flash',
+      isFreeTierKeyActive: true,
+    });
+    setSessionTokenLedger(initialZeroLedger);
     setMemoryStore(loadAgencyMemoryStore());
 
     const loadedBacklinkClub = loadBacklinkClubState({
@@ -471,7 +504,7 @@ export default function AiAgencyDashboardShell() {
         sender: 'agent',
         agentName: 'Chief AI Officer & Founder Assistant',
         departmentBadge: 'Executive Office',
-        text: 'Welcome to your 24/7 AI Digital Agency Office. V4 Phase 11 Dual-Theme Light/Dark UI and Dual-Rail Navigation are now active alongside all V3 autonomous departments.',
+        text: 'Welcome to your 24/7 AI Digital Agency Office. All V3 Phases (Phases 1–10) are active: 1-Circle Token Telemetry, 3-Layer Trainable Agent Memory, Verified Backlink Exchange Club, Google Ads RSA Builder, and 1-Click WordPress/Shopify/Webflow/Webhook Auto-Publishing.',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       },
     ]);
@@ -522,6 +555,7 @@ export default function AiAgencyDashboardShell() {
 
   const isInternalSite = activeWebsite?.publishingMode === 'internal-doitwithai-site';
 
+  // V3 Phase 9: Active Backlink Exchange Club Network State
   const activeBacklinkClub: BacklinkClubNetworkState = useMemo(() => {
     return buildVerifiedBacklinkClubNetwork({
       siteName: activeWebsite?.siteName || 'DoItWithAI.tools',
@@ -545,6 +579,7 @@ export default function AiAgencyDashboardShell() {
     backlinkClubState?.wovenPartnerIds,
   ]);
 
+  // V3 Phase 9: Active Google Ads RSA Campaign Pack (15 Headlines <=30c + 4 Descriptions <=90c + CSV)
   const activeGoogleAdsPack = useMemo(() => {
     return generateGoogleAdsRsaCampaignPack({
       siteName: activeWebsite?.siteName || 'DoItWithAI.tools',
@@ -562,6 +597,7 @@ export default function AiAgencyDashboardShell() {
     selectedArticle?.urlSlug,
   ]);
 
+  // V3 Phase 9: Active 150-Point Automated QA + Opt-In Expert Spot-Check Evaluation
   const active150PtQaEvaluation = useMemo(() => {
     return evaluate150PointQaAndSpotCheck({
       articleTitle:
@@ -571,6 +607,7 @@ export default function AiAgencyDashboardShell() {
     });
   }, [selectedArticle?.topicTitle, selectedArticle?.primaryKeyword, isSpotCheckOptedIn]);
 
+  // Recompute telemetry snapshot whenever model or free-tier toggle changes
   const activeTelemetry: AgencyCircleTelemetrySnapshot = useMemo(() => {
     if (
       tokenTelemetrySnapshot &&
@@ -594,6 +631,7 @@ export default function AiAgencyDashboardShell() {
     selectedArticle?.topicTitle,
   ]);
 
+  // Build the 6-Stage Paced Handoff Packet Chain
   const handoffPackets = useMemo(() => {
     const activeJob = selectedArticle || activeCampaign?.jobs[0];
     return buildPacedHandoffChain({
@@ -608,6 +646,7 @@ export default function AiAgencyDashboardShell() {
 
   const activePacket = handoffPackets[activeHandoffStage - 1] || handoffPackets[0]!;
 
+  // Build the 60s TikTok / Reels Video Script for the selected article
   const activeTikTokScript = useMemo(() => {
     const activeJob = selectedArticle || activeCampaign?.jobs[0];
     return generateTikTokReels60sScript({
@@ -618,6 +657,7 @@ export default function AiAgencyDashboardShell() {
     });
   }, [selectedArticle, activeCampaign, activeWebsite]);
 
+  // Build the 8-Slide LinkedIn Carousel Deck (1080×1350) for the selected article
   const activeLinkedInSlides = useMemo(() => {
     const activeJob = selectedArticle || activeCampaign?.jobs[0];
     return generateLinkedIn8SlideCarouselDeck({
@@ -630,11 +670,13 @@ export default function AiAgencyDashboardShell() {
     });
   }, [selectedArticle, activeCampaign, activeWebsite]);
 
+  // Build the 24-Hour Daily Executive Telemetry Series
   const dailyTelemetrySeries = useMemo(
     () => generateDailyExecutiveTelemetrySeries(activeCampaign?.jobs.length || 6),
     [activeCampaign?.jobs.length]
   );
 
+  // Build the 12 Interconnected Core Digital Agency Office Nodes
   const officeNodes: InteractiveOfficeNode[] = useMemo(() => {
     const siteName = activeWebsite?.siteName || 'Your Website';
     const jobs = activeCampaign?.jobs || [];
@@ -915,6 +957,9 @@ export default function AiAgencyDashboardShell() {
     }
   };
 
+  /**
+   * V3 Phase 10: Execute 1-Click No-Code CMS Auto-Publishing (`/api/ai-employee-agency/publish-cms`)
+   */
   const handleExecuteCmsAutoPublish = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!activeWebsite || !selectedArticle || !cmsConfig) return;
@@ -986,6 +1031,9 @@ export default function AiAgencyDashboardShell() {
     setIsPublishingToCms(false);
   };
 
+  /**
+   * V3 Phase 10: Toggle a Staggered 24/7 Heartbeat Cron Slot
+   */
   const handleToggleHeartbeatSlot = (slotId: string) => {
     if (!heartbeatSchedule) return;
     const updated: AgencyHeartbeatScheduleState = {
@@ -998,6 +1046,9 @@ export default function AiAgencyDashboardShell() {
     setHeartbeatSchedule(updated);
   };
 
+  /**
+   * V3 Phase 9: Toggle Backlink Exchange Club Opt-In or Weave a Partner Link Pair
+   */
   const handleToggleBacklinkClubOptIn = () => {
     const nextState: BacklinkClubNetworkState = {
       ...activeBacklinkClub,
@@ -1031,6 +1082,9 @@ export default function AiAgencyDashboardShell() {
     );
   };
 
+  /**
+   * V3 Phase 8: Record a Selective Workflow Interrupt or User-Taught Skill in Shared Memory Bus
+   */
   const handleRecordSelectiveInterrupt = (plan: SelectiveInterruptRoutingPlan) => {
     setMemoryStore((prev) => {
       const nextSkills = plan.learnedSkillRule
@@ -1048,6 +1102,9 @@ export default function AiAgencyDashboardShell() {
     });
   };
 
+  /**
+   * V3 Phase 8: Teach a Permanent Custom Skill Rule directly from the Executive Office UI
+   */
   const handleTeachSkillFromForm = (e: React.FormEvent) => {
     e.preventDefault();
     const cleaned = newSkillRuleInput.trim();
@@ -1065,6 +1122,9 @@ export default function AiAgencyDashboardShell() {
     );
   };
 
+  /**
+   * V3 Phase 8: Trigger a Selective Custom Visual Asset Override without interrupting other departments
+   */
   const handleSelectiveCustomAssetUpload = (e: React.FormEvent) => {
     e.preventDefault();
     const assetTitle =
@@ -1102,6 +1162,59 @@ export default function AiAgencyDashboardShell() {
     );
   };
 
+  /**
+   * V4 Phase 12: Reset Zero-Based Session Token Ledger back to 0 tokens ($0.0000)
+   */
+  const handleResetSessionTokenLedger = () => {
+    const fresh = resetZeroBasedSessionTokenLedger({
+      siteName: activeWebsite?.siteName || 'DoItWithAI.tools',
+      modelId: selectedLlmModel,
+      isFreeTierKeyActive: isFreeTierKeyMode,
+    });
+    setSessionTokenLedger(fresh);
+    setStatusToast(
+      'Session Token Ledger reset to 0 tokens ($0.0000) across Chat Box & all 36 AI Employees.'
+    );
+  };
+
+  /**
+   * V4 Phase 12: Record real-time Chat Box + Target Agent token consumption
+   */
+  const handleRecordChatTokenUsage = (usage: {
+    agentId: string;
+    agentName: string;
+    promptTokens: number;
+    completionTokens: number;
+    thinkingTokens: number;
+    totalTokens: number;
+    shadowPaidCostUsd: number;
+    actualCostUsd: number;
+    apiKeySlot: ApiKeySlotId;
+    modelId: AgencyLlmModelId;
+    usedLiveApiKey: boolean;
+    actionLabel: string;
+  }) => {
+    setSessionTokenLedger((prev) => {
+      const updated = recordSessionTokenUsage(prev, {
+        rowId: CHAT_BOX_LEDGER_ROW_ID,
+        actionLabel: usage.actionLabel,
+        modelId: usage.modelId,
+        apiKeySlot: usage.apiKeySlot,
+        promptTokens: usage.promptTokens,
+        completionTokens: usage.completionTokens,
+        thinkingTokens: usage.thinkingTokens,
+        shadowCostUsd: usage.shadowPaidCostUsd,
+        actualCostUsd: usage.actualCostUsd,
+        usedLiveApiKey: usage.usedLiveApiKey,
+        isFreeTierKey: isFreeTierKeyMode,
+      });
+      return saveZeroBasedSessionTokenLedger(updated);
+    });
+  };
+
+  /**
+   * V3 Phase 7 + V4 Phase 12: Run Live 1-Circle Token & Cost Audit via `/api/ai-employee-agency/orchestrate`
+   */
   const handleRunLiveCircleTokenAudit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!activeWebsite || !activeCampaign) return;
@@ -1133,20 +1246,33 @@ export default function AiAgencyDashboardShell() {
           circleTokenTelemetry?: AgencyCircleTelemetrySnapshot;
           llmGatewayStatus?: {
             telemetryNote?: string;
+            usedLiveApiKey?: boolean;
+            apiKeySlot?: ApiKeySlotId;
           };
         };
         if (data.ok && data.circleTokenTelemetry) {
           saveTokenTelemetrySnapshot(data.circleTokenTelemetry);
           setTokenTelemetrySnapshot(data.circleTokenTelemetry);
+          setSessionTokenLedger((prev) => {
+            const nextLedger = recordCircleOrchestrationIntoLedger(
+              prev,
+              data.circleTokenTelemetry!,
+              {
+                apiKeySlot: data.llmGatewayStatus?.apiKeySlot,
+                usedLiveApiKey: data.llmGatewayStatus?.usedLiveApiKey,
+              }
+            );
+            return saveZeroBasedSessionTokenLedger(nextLedger);
+          });
           if (data.llmGatewayStatus?.telemetryNote) {
             setLlmGatewayNote(data.llmGatewayStatus.telemetryNote);
           }
           setStatusToast(
-            `1-Circle Token Telemetry Updated: ${data.circleTokenTelemetry.totalCircleTokens.toLocaleString()} tokens ($${data.circleTokenTelemetry.singleCircleShadowCostUsd.toFixed(
+            `Live Circle Metered: +${data.circleTokenTelemetry.totalCircleTokens.toLocaleString()} tokens ($${data.circleTokenTelemetry.singleCircleShadowCostUsd.toFixed(
               4
-            )} shadow cost · $${data.circleTokenTelemetry.singleCircleActualCostUsd.toFixed(
+            )} shadow · $${data.circleTokenTelemetry.singleCircleActualCostUsd.toFixed(
               4
-            )} billed).`
+            )} billed) added to Session Ledger.`
           );
           setIsRunningTokenAudit(false);
           return;
@@ -1165,9 +1291,19 @@ export default function AiAgencyDashboardShell() {
     });
     saveTokenTelemetrySnapshot(fallbackSnap);
     setTokenTelemetrySnapshot(fallbackSnap);
+    setSessionTokenLedger((prev) => {
+      const nextLedger = recordCircleOrchestrationIntoLedger(prev, fallbackSnap, {
+        apiKeySlot: 'KEY_SLOT_MECHANICAL_ZERO',
+        usedLiveApiKey: false,
+      });
+      return saveZeroBasedSessionTokenLedger(nextLedger);
+    });
     setIsRunningTokenAudit(false);
   };
 
+  /**
+   * Run Live Keyword Research & DoItWithAI KD Scorer
+   */
   const handleRunLiveKeywordScorer = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!activeWebsite || !activeCampaign) return;
@@ -1199,10 +1335,26 @@ export default function AiAgencyDashboardShell() {
           ok: boolean;
           scoredKeywordBriefs?: ScoredKeywordBrief[];
           circleTokenTelemetry?: AgencyCircleTelemetrySnapshot;
+          llmGatewayStatus?: {
+            apiKeySlot?: ApiKeySlotId;
+            usedLiveApiKey?: boolean;
+          };
         };
         if (data.circleTokenTelemetry) {
           saveTokenTelemetrySnapshot(data.circleTokenTelemetry);
           setTokenTelemetrySnapshot(data.circleTokenTelemetry);
+          setSessionTokenLedger((prev) => {
+            const nextLedger = recordCircleOrchestrationIntoLedger(
+              prev,
+              data.circleTokenTelemetry!,
+              {
+                apiKeySlot: data.llmGatewayStatus?.apiKeySlot,
+                usedLiveApiKey: data.llmGatewayStatus?.usedLiveApiKey,
+                stageOnly: 1,
+              }
+            );
+            return saveZeroBasedSessionTokenLedger(nextLedger);
+          });
         }
         if (data.ok && Array.isArray(data.scoredKeywordBriefs)) {
           setLiveScoredBriefs(data.scoredKeywordBriefs);
@@ -1239,6 +1391,9 @@ export default function AiAgencyDashboardShell() {
     setIsScoringKeywords(false);
   };
 
+  /**
+   * Hand off a newly scored Keyword Brief directly to the Content Production Manager
+   */
   const handleHandOffScoredBriefToContentManager = (brief: ScoredKeywordBrief) => {
     if (!studioState || !activeCampaign || !activeWebsite) return;
     const templateJob = activeCampaign.jobs[0];
@@ -1275,6 +1430,9 @@ export default function AiAgencyDashboardShell() {
     );
   };
 
+  /**
+   * Generates a deterministic Featured Hero Banner SVG (1200x675) for any article
+   */
   const renderFeaturedHeroImageSvg = (
     job: AutomatedArticleJob,
     site: ConnectedWebsiteProfile
@@ -1325,6 +1483,9 @@ export default function AiAgencyDashboardShell() {
     </svg>`;
   };
 
+  /**
+   * Trigger writing an article from "Not Yet Started" -> Active Writing -> Published/Draft Ready
+   */
   const handleStartQueuedArticleNow = async (jobToStart: AutomatedArticleJob) => {
     if (!studioState || !activeCampaign || !activeWebsite) return;
     setSelectedArticleId(jobToStart.id);
@@ -1392,6 +1553,9 @@ export default function AiAgencyDashboardShell() {
     );
   };
 
+  /**
+   * Transfer batch to `/ai-content-writer` when user wants the full single-article editor
+   */
   const handleOpenInContentWriterStudio = async (job?: AutomatedArticleJob) => {
     if (!activeCampaign || !activeWebsite) return;
     await syncAutomatedBatchToWriterStudio({
@@ -1445,73 +1609,73 @@ export default function AiAgencyDashboardShell() {
           : 'bg-[#060B16] text-slate-100'
       }`}
     >
-      <style jsx global>{`
-        .agency-v4-light .bg-slate-950,
-        .agency-v4-light .bg-slate-950\\/80,
-        .agency-v4-light .bg-slate-950\\/90,
-        .agency-v4-light .bg-slate-950\\/45,
-        .agency-v4-light .bg-slate-950\\/40 {
-          background-color: #ffffff !important;
-        }
-        .agency-v4-light .bg-slate-900,
-        .agency-v4-light .bg-slate-900\\/80,
-        .agency-v4-light .bg-slate-900\\/70,
-        .agency-v4-light .bg-slate-900\\/60,
-        .agency-v4-light .bg-slate-900\\/90,
-        .agency-v4-light .bg-\\[\\#0A1224\\],
-        .agency-v4-light .bg-\\[\\#0A1122\\]\\/95,
-        .agency-v4-light .bg-\\[\\#080F1E\\] {
-          background-color: #f8fafc !important;
-        }
-        .agency-v4-light .border-slate-800,
-        .agency-v4-light .border-slate-800\\/90,
-        .agency-v4-light .border-slate-800\\/80,
-        .agency-v4-light .border-slate-700,
-        .agency-v4-light .border-slate-700\\/80,
-        .agency-v4-light .divide-slate-900 > :not([hidden]) ~ :not([hidden]) {
-          border-color: #e2e8f0 !important;
-        }
-        .agency-v4-light .text-white {
-          color: #0f172a !important;
-        }
-        .agency-v4-light .text-slate-100,
-        .agency-v4-light .text-slate-200 {
-          color: #1e293b !important;
-        }
-        .agency-v4-light .text-slate-300,
-        .agency-v4-light .text-slate-400 {
-          color: #475569 !important;
-        }
-        .agency-v4-light .text-sky-300,
-        .agency-v4-light .text-sky-400,
-        .agency-v4-light .text-sky-200 {
-          color: #1d4ed8 !important;
-        }
-        .agency-v4-light .text-emerald-300,
-        .agency-v4-light .text-emerald-400,
-        .agency-v4-light .text-emerald-200 {
-          color: #047857 !important;
-        }
-        .agency-v4-light .text-amber-300 {
-          color: #b45309 !important;
-        }
-        .agency-v4-light .text-purple-300,
-        .agency-v4-light .text-purple-200 {
-          color: #6d28d9 !important;
-        }
-        .agency-v4-light .bg-sky-950\\/30,
-        .agency-v4-light .bg-emerald-950\\/20,
-        .agency-v4-light .bg-emerald-950\\/15,
-        .agency-v4-light .bg-amber-950\\/20 {
-          background-color: #eff6ff !important;
-        }
-      `}</style>
-
+      {isLightTheme && (
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `
+              .agency-v4-light [class*="bg-slate-950"],
+              .agency-v4-light [class*="bg-[#0A1"],
+              .agency-v4-light [class*="bg-[#080"] {
+                background-color: #ffffff !important;
+              }
+              .agency-v4-light [class*="bg-slate-900"],
+              .agency-v4-light [class*="bg-[#0"] {
+                background-color: #f8fafc !important;
+              }
+              .agency-v4-light [class*="bg-slate-800"] {
+                background-color: #f1f5f9 !important;
+              }
+              .agency-v4-light [class*="border-slate-8"],
+              .agency-v4-light [class*="border-slate-7"] {
+                border-color: #cbd5e1 !important;
+              }
+              .agency-v4-light .text-white {
+                color: #0f172a !important;
+              }
+              .agency-v4-light .text-slate-100,
+              .agency-v4-light .text-slate-200 {
+                color: #1e293b !important;
+              }
+              .agency-v4-light .text-slate-300,
+              .agency-v4-light .text-slate-400 {
+                color: #475569 !important;
+              }
+              .agency-v4-light .text-sky-200,
+              .agency-v4-light .text-sky-300,
+              .agency-v4-light .text-sky-400 {
+                color: #1d4ed8 !important;
+              }
+              .agency-v4-light .text-emerald-200,
+              .agency-v4-light .text-emerald-300,
+              .agency-v4-light .text-emerald-400 {
+                color: #047857 !important;
+              }
+              .agency-v4-light .text-amber-300 {
+                color: #b45309 !important;
+              }
+              .agency-v4-light .text-purple-200,
+              .agency-v4-light .text-purple-300 {
+                color: #6d28d9 !important;
+              }
+              .agency-v4-light .text-cyan-300,
+              .agency-v4-light .text-rose-300 {
+                color: #0e7490 !important;
+              }
+              .agency-v4-light [class*="bg-sky-950"],
+              .agency-v4-light [class*="bg-emerald-950"],
+              .agency-v4-light [class*="bg-amber-950"] {
+                background-color: #eff6ff !important;
+              }
+            `,
+          }}
+        />
+      )}
       {/* =====================================================================
-          SLEEK TOP AGENCY COMMAND HEADER BAR (Dual-Theme + Zero Noise)
+          SLEEK TOP AGENCY COMMAND HEADER BAR (SVG Icons · Zero Noise)
          ===================================================================== */}
       <header className="border-b border-slate-800/90 bg-[#0A1122]/95 backdrop-blur sticky top-0 z-30">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-3">
+          {/* Left: Change URL + Website Identity + Active Stage Pill */}
           <div className="flex items-center gap-3 min-w-0">
             <Link
               href="/ai-employee-agency"
@@ -1530,14 +1694,42 @@ export default function AiAgencyDashboardShell() {
                 <span className="hidden md:inline-block rounded-md bg-sky-500/15 border border-sky-500/30 px-2 py-0.5 text-[10px] font-bold text-sky-300">
                   {isInternalSite ? 'Internal Auto-Publish' : 'External Domain'}
                 </span>
-                <span className="hidden xl:inline-block rounded-md bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-mono font-bold text-emerald-300">
-                  1 Circle: {activeTelemetry.totalCircleTokens.toLocaleString()} tok · $
-                  {activeTelemetry.singleCircleShadowCostUsd.toFixed(4)}
-                </span>
+                <div className="hidden lg:inline-flex items-center gap-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-mono">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveOuterDomain('agency');
+                      setActiveSidebarTab('executive-office');
+                      setExecutiveSubView('tokens');
+                      setIsFullCanvasGraphOpen(false);
+                      setIsGraphFullScreenViewport(false);
+                    }}
+                    className="inline-flex items-center gap-1.5 font-bold text-emerald-300 hover:underline"
+                    title="Open Zero-Based Per-Agent & Chat Token Telemetry Ledger"
+                  >
+                    <AgencyUiIcon name="activity" className="w-3 h-3 text-emerald-400" />
+                    <span>
+                      Session: {sessionTokenLedger.totalSessionTokens.toLocaleString()} tok · $
+                      {sessionTokenLedger.totalShadowCostUsd.toFixed(4)}
+                    </span>
+                  </button>
+                  <span className="hidden xl:inline-block rounded bg-slate-900/80 border border-slate-700/80 px-1.5 py-0.2 text-[9px] text-sky-300">
+                    {sessionTokenLedger.activeKeySlot}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleResetSessionTokenLedger}
+                    className="rounded bg-slate-800 hover:bg-slate-700 px-1.5 py-0.5 text-[9px] font-bold text-slate-300 transition"
+                    title="Reset Session Token Counter to 0"
+                  >
+                    Reset 0
+                  </button>
+                </div>
               </div>
             </div>
           </div>
 
+          {/* Right: Theme Toggle + Workspace vs Node Graph Toggle + Direct Full-Screen Expand + Flow Pause */}
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
@@ -1557,7 +1749,6 @@ export default function AiAgencyDashboardShell() {
                 {isLightTheme ? 'Dark Mode' : 'Light Mode'}
               </span>
             </button>
-
             <button
               type="button"
               onClick={() => {
@@ -1625,10 +1816,10 @@ export default function AiAgencyDashboardShell() {
       )}
 
       {/* =====================================================================
-          MAIN BODY: V4 DUAL-RAIL LEFT NAVIGATION (68px ICON RAIL + 224px SUB-MENU) + LOCKED WORKSPACE
+          MAIN BODY: V4 DUAL-RAIL LEFT NAVIGATION (64px ICON RAIL + 216px SUB-MENU) + LOCKED WORKSPACE
          ===================================================================== */}
       <div className="flex-1 min-h-0 flex overflow-hidden">
-        {/* RAIL 1: 68px Outer Icon Rail */}
+        {/* RAIL 1: 64px Outer Icon Rail (Semrush/Ahrefs Ergonomics) */}
         <nav
           aria-label="Primary Agency Domains"
           className={`w-[68px] shrink-0 border-r flex flex-col items-center justify-between py-3 px-1.5 ${
@@ -1676,6 +1867,7 @@ export default function AiAgencyDashboardShell() {
             })}
           </div>
 
+          {/* Bottom-Pinned Settings & Collapse Controls */}
           <div className="w-full space-y-1.5 pt-2 border-t border-slate-800/50">
             <button
               type="button"
@@ -1717,7 +1909,7 @@ export default function AiAgencyDashboardShell() {
           </div>
         </nav>
 
-        {/* RAIL 2: 224px Contextual Tool Sub-Menu */}
+        {/* RAIL 2: 216px Contextual Tool Sub-Menu */}
         {!isInnerRailCollapsed && (
           <aside
             className={`hidden md:flex w-[224px] shrink-0 border-r flex-col justify-between p-3 overflow-y-auto ${
@@ -1832,6 +2024,7 @@ export default function AiAgencyDashboardShell() {
               </div>
             </div>
 
+            {/* Quick Theme & Node Graph Card */}
             <div className="pt-3 border-t border-slate-800/40 space-y-2">
               <button
                 type="button"
@@ -1851,7 +2044,9 @@ export default function AiAgencyDashboardShell() {
           </aside>
         )}
 
-        {/* RIGHT MAIN WORKSPACE AREA */}
+        {/* =====================================================================
+            RIGHT MAIN WORKSPACE AREA (SCROLLS CLEANLY INSIDE 100dvh SHELL)
+           ===================================================================== */}
         <main className="flex-1 min-w-0 overflow-y-auto flex flex-col">
           {isFullCanvasGraphOpen ? (
             <InteractiveAgencyNodeCanvas
@@ -1877,7 +2072,9 @@ export default function AiAgencyDashboardShell() {
             />
           ) : (
             <div className="p-4 sm:p-6 space-y-5 flex-1">
-              {/* Compact Department Header */}
+              {/* -------------------------------------------------------------
+                  COMPACT DEPARTMENT MANAGER & SUB-AGENTS HEADER BAR
+                 ------------------------------------------------------------- */}
               <div className="rounded-2xl border border-slate-800/90 bg-[#0A1224] p-4 space-y-3 text-xs">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-3">
@@ -1918,6 +2115,7 @@ export default function AiAgencyDashboardShell() {
                   </button>
                 </div>
 
+                {/* Compact Sub-Agents Row */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 pt-1">
                   {currentDepartmentRegistry.subAgents.map((sub) => (
                     <div
@@ -1968,17 +2166,19 @@ export default function AiAgencyDashboardShell() {
                 </div>
               </div>
 
-              {/* TAB 1: EXECUTIVE OFFICE */}
+              {/* -------------------------------------------------------------
+                  TAB 1: EXECUTIVE OFFICE (KPIs + PHASE 7 TOKEN HUD + PHASE 8 MEMORY + PHASE 10 HEARTBEATS)
+                 ------------------------------------------------------------- */}
               {activeSidebarTab === 'executive-office' && (
                 <div className="space-y-5">
                   <div className="rounded-2xl border border-sky-500/35 bg-slate-900/80 p-5 space-y-5">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
                         <span className="text-[11px] font-extrabold uppercase tracking-wider text-sky-400">
-                          Executive Command Center (V4 Phase 11 Dual-Theme &amp; Dual-Rail Active)
+                          Executive Command Center (V3 Phases 1–10 Active)
                         </span>
                         <h2 className="text-lg sm:text-xl font-extrabold text-white mt-0.5">
-                          24/7 Agency Output, Token Telemetry, 3-Layer Memory &amp; Cron Heartbeats
+                          24/7 Agency Output, Live 1-Circle Token Telemetry, 3-Layer Memory &amp; Cron Heartbeats
                         </h2>
                       </div>
                       <button
@@ -1994,7 +2194,7 @@ export default function AiAgencyDashboardShell() {
                       </button>
                     </div>
 
-                    {/* Horizontal Executive Sub-Navigation Tabs */}
+                    {/* Horizontal Executive Sub-Navigation Tabs (Semrush / Ahrefs Style) */}
                     <div className="flex flex-wrap items-center gap-1.5 border-b border-slate-800/70 pb-3">
                       {(
                         [
@@ -2048,290 +2248,559 @@ export default function AiAgencyDashboardShell() {
                           ${activeTelemetry.projected30DayMonthlyCostUsd.toFixed(2)}/mo
                         </div>
                       </div>
-                      <div className="rounded-xl border border-emerald-500/40 bg-emerald-950/20 p-3.5">
-                        <div className="text-emerald-300 text-[11px] font-bold">
-                          1-Circle Token Cost
+                      <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/15 p-3.5">
+                        <div className="flex items-center justify-between gap-1 text-[11px] text-emerald-300">
+                          <span>Live Session Tokens</span>
+                          <span className="text-[9.5px] font-mono text-sky-300">
+                            {sessionTokenLedger.activeAgentsCount}/36 active
+                          </span>
                         </div>
-                        <div className="text-base font-black text-white font-mono mt-1">
-                          {(activeTelemetry.totalCircleTokens / 1000).toFixed(1)}K tok · $
-                          {activeTelemetry.singleCircleShadowCostUsd.toFixed(4)}
+                        <div className="text-lg font-extrabold text-emerald-300 mt-1 font-mono">
+                          {sessionTokenLedger.totalSessionTokens.toLocaleString()} tok · $
+                          {sessionTokenLedger.totalShadowCostUsd.toFixed(4)}
                         </div>
                       </div>
                     </div>
 
-                    {/* SUB-VIEW: TOKENS */}
+                    {/* =============================================================
+                        V3 PHASE 7: REAL-TIME 1-CIRCLE TOKEN & SHADOW COST TELEMETRY HUD
+                       ============================================================= */}
                     {executiveSubView === 'tokens' && (
-                      <div className="rounded-2xl border border-emerald-500/40 bg-slate-950 p-4 space-y-4 text-xs">
+                    <div className="space-y-4">
+                      {/* =============================================================
+                          V4 PHASE 12: ZERO-BASED PER-AGENT & CHAT TOKEN TELEMETRY LEDGER
+                         ============================================================= */}
+                      <div className="rounded-2xl border border-sky-500/40 bg-slate-950 p-4 space-y-4 text-xs">
                         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
                           <div className="space-y-0.5">
-                            <div className="inline-flex items-center gap-2 font-extrabold text-emerald-300">
-                              <AgencyUiIcon name="cpu" className="w-4 h-4 text-emerald-400" />
+                            <div className="inline-flex items-center gap-2 font-extrabold text-sky-300">
+                              <AgencyUiIcon name="activity" className="w-4 h-4 text-sky-400" />
                               <span>
-                                Real-Time 1-Circle LLM Token &amp; Shadow Cost Telemetry Meter
+                                Zero-Based Live Session Token Ledger (Chat Box + All 36 AI Employees)
                               </span>
                             </div>
                             <p className="text-[11px] text-slate-400">
-                              {llmGatewayNote} · Gross Margin:{' '}
-                              <strong className="text-emerald-300">
-                                {activeTelemetry.grossMarginAt49UsdPlanPercent}%
-                              </strong>{' '}
-                              (on $49/mo plan) or{' '}
-                              <strong className="text-sky-300">
-                                {activeTelemetry.grossMarginAt149UsdSeoAiTierPercent}%
-                              </strong>{' '}
-                              (vs SEO.AI $149/mo tier)
+                              Starts strictly at <strong className="text-emerald-300">0 tokens ($0.0000)</strong> and increments in real time per API call · Active Slot:{' '}
+                              <span className="font-mono font-bold text-sky-300">
+                                {sessionTokenLedger.activeKeySlot}
+                              </span>
                             </p>
                           </div>
 
-                          <form
-                            onSubmit={handleRunLiveCircleTokenAudit}
-                            className="flex flex-wrap items-center gap-2"
-                          >
-                            <select
-                              value={selectedLlmModel}
-                              onChange={(e) =>
-                                setSelectedLlmModel(e.target.value as AgencyLlmModelId)
-                              }
-                              className="rounded-xl border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-[11px] font-bold text-sky-300 focus:border-sky-400 focus:outline-none"
-                              aria-label="Select LLM model for token telemetry"
-                            >
-                              {Object.values(MODEL_PRICING_CATALOG).map((m) => (
-                                <option key={m.modelId} value={m.modelId}>
-                                  {m.displayName} (${m.inputUsdPer1M}/1M in · ${m.outputUsdPer1M}
-                                  /1M out)
-                                </option>
-                              ))}
-                            </select>
-
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="rounded-lg border border-slate-800 bg-slate-900 px-2.5 py-1 text-[10.5px] font-mono text-slate-400">
+                              Calls: <strong className="text-white">{sessionTokenLedger.totalApiCalls}</strong>
+                            </span>
                             <button
                               type="button"
-                              onClick={() => setIsFreeTierKeyMode((prev) => !prev)}
-                              className={`rounded-xl border px-2.5 py-1.5 text-[11px] font-extrabold transition ${
-                                isFreeTierKeyMode
-                                  ? 'border-emerald-400/50 bg-emerald-500/15 text-emerald-300'
-                                  : 'border-amber-400/50 bg-amber-500/15 text-amber-300'
-                              }`}
+                              onClick={handleResetSessionTokenLedger}
+                              className="inline-flex items-center gap-1.5 rounded-xl border border-rose-500/40 bg-rose-500/15 hover:bg-rose-500/25 px-3 py-1.5 text-[11px] font-extrabold text-rose-300 transition"
                             >
-                              {isFreeTierKeyMode
-                                ? 'Free API Key ($0 Billed + Shadow Meter)'
-                                : 'Paid Commercial Key Mode'}
+                              <AgencyUiIcon name="refresh" className="w-3.5 h-3.5" />
+                              <span>Reset Session to 0</span>
                             </button>
-
-                            <input
-                              type="password"
-                              value={testApiKeyInput}
-                              onChange={(e) => setTestApiKeyInput(e.target.value)}
-                              placeholder="Optional test key (AIza... / gsk_... / sk-...)"
-                              className="rounded-xl border border-slate-800 bg-slate-900 px-2.5 py-1.5 text-[11px] text-slate-200 placeholder-slate-500 focus:border-sky-400 focus:outline-none w-52"
-                            />
-
-                            <button
-                              type="submit"
-                              disabled={isRunningTokenAudit}
-                              className="rounded-xl bg-emerald-400 hover:bg-emerald-300 px-3 py-1.5 text-[11px] font-extrabold text-slate-950 transition disabled:opacity-50"
-                            >
-                              {isRunningTokenAudit
-                                ? 'Metering Circle...'
-                                : 'Meter 1 Full Circle Now'}
-                            </button>
-                          </form>
+                          </div>
                         </div>
 
-                        <div className="overflow-x-auto">
+                        {/* 4 Zero-Based Live Session KPI Cards */}
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                          <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-3">
+                            <div className="text-[10.5px] text-slate-400">Session Total Tokens</div>
+                            <div className="text-lg font-extrabold font-mono text-white mt-0.5">
+                              {sessionTokenLedger.totalSessionTokens.toLocaleString()}
+                            </div>
+                            <div className="text-[10px] font-mono text-slate-500 mt-0.5">
+                              In: {sessionTokenLedger.totalPromptTokens.toLocaleString()} · Out:{' '}
+                              {sessionTokenLedger.totalCompletionTokens.toLocaleString()}
+                            </div>
+                          </div>
+                          <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-3">
+                            <div className="text-[10.5px] text-slate-400">Shadow Commercial Cost</div>
+                            <div className="text-lg font-extrabold font-mono text-emerald-300 mt-0.5">
+                              ${sessionTokenLedger.totalShadowCostUsd.toFixed(4)}
+                            </div>
+                            <div className="text-[10px] font-mono text-slate-500 mt-0.5">
+                              Model: {sessionTokenLedger.activeModelId}
+                            </div>
+                          </div>
+                          <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-3">
+                            <div className="text-[10.5px] text-slate-400">Actual Billed Cost</div>
+                            <div className="text-lg font-extrabold font-mono text-sky-300 mt-0.5">
+                              ${sessionTokenLedger.totalActualCostUsd.toFixed(4)}
+                            </div>
+                            <div className="text-[10px] font-mono text-slate-500 mt-0.5">
+                              {isFreeTierKeyMode ? 'Free API Key ($0 billed)' : 'Commercial Paid Key'}
+                            </div>
+                          </div>
+                          <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-3">
+                            <div className="text-[10.5px] text-slate-400">Chat Box &amp; Active Agents</div>
+                            <div className="text-lg font-extrabold font-mono text-amber-300 mt-0.5">
+                              {sessionTokenLedger.chatBoxTokens.toLocaleString()} tok
+                            </div>
+                            <div className="text-[10px] font-mono text-slate-500 mt-0.5">
+                              Active Agents: {sessionTokenLedger.activeAgentsCount} / 36
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Filter & Search Bar */}
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="inline-flex rounded-xl border border-slate-800 bg-slate-900/80 p-1 gap-1">
+                            {(
+                              [
+                                { id: 'all', label: `All (${sessionTokenLedger.rows.length})` },
+                                {
+                                  id: 'active',
+                                  label: `Active Only (${
+                                    sessionTokenLedger.rows.filter((r) => r.totalTokens > 0).length
+                                  })`,
+                                },
+                                { id: 'chat', label: 'Chat Box Only' },
+                              ] as const
+                            ).map((tab) => (
+                              <button
+                                key={tab.id}
+                                type="button"
+                                onClick={() => setLedgerFilterMode(tab.id)}
+                                className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition ${
+                                  ledgerFilterMode === tab.id
+                                    ? 'bg-sky-500/20 text-sky-300 border border-sky-400/40'
+                                    : 'text-slate-400 hover:text-white'
+                                }`}
+                              >
+                                {tab.label}
+                              </button>
+                            ))}
+                          </div>
+                          <input
+                            type="text"
+                            value={ledgerSearchQuery}
+                            onChange={(e) => setLedgerSearchQuery(e.target.value)}
+                            placeholder="Filter by agent, department, or KEY_SLOT..."
+                            className="rounded-xl border border-slate-800 bg-slate-900 px-3 py-1.5 text-[11px] text-slate-200 placeholder-slate-500 focus:border-sky-400 focus:outline-none w-64"
+                          />
+                        </div>
+
+                        {/* 37-Row Per-Agent & Chat Box Zero-Based Token Table */}
+                        <div className="overflow-x-auto max-h-[380px] overflow-y-auto rounded-xl border border-slate-800/80">
                           <table className="w-full text-left border-collapse text-[11px]">
-                            <thead>
+                            <thead className="sticky top-0 bg-slate-900 z-10">
                               <tr className="border-b border-slate-800 text-slate-400 font-mono">
-                                <th className="py-2 pr-3">Circle Stage &amp; Department</th>
-                                <th className="py-2 pr-3">
-                                  Zero-Cost Mechanical Work (90% · $0.00)
-                                </th>
-                                <th className="py-2 pr-3 text-right">Prompt Tok</th>
-                                <th className="py-2 pr-3 text-right">Output Tok</th>
-                                <th className="py-2 pr-3 text-right">Total Tok</th>
-                                <th className="py-2 text-right">Shadow Paid Cost</th>
+                                <th className="py-2 px-3">Agent / Channel</th>
+                                <th className="py-2 px-2">Department</th>
+                                <th className="py-2 px-2">API Key Slot</th>
+                                <th className="py-2 px-2 text-right">Calls</th>
+                                <th className="py-2 px-2 text-right">Prompt</th>
+                                <th className="py-2 px-2 text-right">Output</th>
+                                <th className="py-2 px-2 text-right">Total Tok</th>
+                                <th className="py-2 px-2 text-right">Shadow ($)</th>
+                                <th className="py-2 px-3 text-right">Status</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-900">
-                              {activeTelemetry.stages.map((st) => (
-                                <tr key={st.stageNumber} className="hover:bg-slate-900/50">
-                                  <td className="py-2.5 pr-3">
-                                    <div className="font-extrabold text-white">
-                                      Stage {st.stageNumber} · {st.departmentName}
-                                    </div>
-                                    <div className="text-[10.5px] text-slate-400">
-                                      {st.taskDescription}
-                                    </div>
-                                  </td>
-                                  <td className="py-2.5 pr-3">
-                                    <div className="flex flex-wrap gap-1">
-                                      {st.mechanicalZeroCostTasks.map((mTask) => (
+                              {sessionTokenLedger.rows
+                                .filter((row) => {
+                                  if (ledgerFilterMode === 'active' && row.totalTokens === 0)
+                                    return false;
+                                  if (ledgerFilterMode === 'chat' && !row.isChatBox) return false;
+                                  const q = ledgerSearchQuery.trim().toLowerCase();
+                                  if (!q) return true;
+                                  return (
+                                    row.displayName.toLowerCase().includes(q) ||
+                                    row.departmentName.toLowerCase().includes(q) ||
+                                    row.apiKeySlot.toLowerCase().includes(q)
+                                  );
+                                })
+                                .map((row) => (
+                                  <tr
+                                    key={row.rowId}
+                                    className={`hover:bg-slate-900/60 ${
+                                      row.isChatBox ? 'bg-sky-950/20' : ''
+                                    }`}
+                                  >
+                                    <td className="py-2 px-3">
+                                      <div className="font-bold text-white flex items-center gap-1.5">
+                                        {row.isChatBox && (
+                                          <span className="rounded bg-sky-500/20 border border-sky-400/40 px-1.5 py-0.2 text-[9px] font-mono text-sky-300">
+                                            CHAT
+                                          </span>
+                                        )}
+                                        <span>{row.displayName}</span>
+                                      </div>
+                                      <div className="text-[10px] text-slate-500 truncate max-w-[260px]">
+                                        {row.lastActionSummary}
+                                      </div>
+                                    </td>
+                                    <td className="py-2 px-2 text-slate-300">
+                                      {row.departmentName}
+                                    </td>
+                                    <td className="py-2 px-2">
+                                      <span className="rounded bg-slate-900 border border-slate-700/80 px-1.5 py-0.5 text-[9.5px] font-mono text-sky-300">
+                                        {row.apiKeySlot}
+                                      </span>
+                                    </td>
+                                    <td className="py-2 px-2 text-right font-mono text-slate-300">
+                                      {row.apiCallsCount}
+                                    </td>
+                                    <td className="py-2 px-2 text-right font-mono text-slate-300">
+                                      {row.promptTokens.toLocaleString()}
+                                    </td>
+                                    <td className="py-2 px-2 text-right font-mono text-slate-300">
+                                      {row.completionTokens.toLocaleString()}
+                                    </td>
+                                    <td className="py-2 px-2 text-right font-mono font-bold text-sky-300">
+                                      {row.totalTokens.toLocaleString()}
+                                    </td>
+                                    <td className="py-2 px-2 text-right font-mono font-bold text-emerald-300">
+                                      ${row.shadowCostUsd.toFixed(4)}
+                                    </td>
+                                    <td className="py-2 px-3 text-right">
+                                      <span
+                                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9.5px] font-bold ${
+                                          row.status === 'active'
+                                            ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
+                                            : 'bg-slate-800/80 text-slate-400 border border-slate-700/60'
+                                        }`}
+                                      >
                                         <span
-                                          key={mTask}
-                                          className="rounded bg-slate-900 border border-slate-800 px-1.5 py-0.5 text-[10px] text-emerald-300"
-                                        >
-                                          {mTask}
-                                        </span>
-                                      ))}
-                                    </div>
-                                  </td>
-                                  <td className="py-2.5 pr-3 text-right font-mono text-slate-300">
-                                    {st.promptTokens.toLocaleString()}
-                                  </td>
-                                  <td className="py-2.5 pr-3 text-right font-mono text-slate-300">
-                                    {st.completionTokens.toLocaleString()}
-                                  </td>
-                                  <td className="py-2.5 pr-3 text-right font-mono font-bold text-sky-300">
-                                    {st.totalTokens.toLocaleString()}
-                                  </td>
-                                  <td className="py-2.5 text-right font-mono font-bold text-emerald-300">
-                                    ${st.shadowPaidCostUsd.toFixed(4)}
-                                  </td>
-                                </tr>
-                              ))}
+                                          className={`h-1.5 w-1.5 rounded-full ${
+                                            row.status === 'active'
+                                              ? 'bg-emerald-400'
+                                              : 'bg-slate-500'
+                                          }`}
+                                        />
+                                        {row.status === 'active' ? 'Metered' : 'Idle'}
+                                      </span>
+                                    </td>
+                                  </tr>
+                                ))}
                             </tbody>
-                            <tfoot>
-                              <tr className="border-t border-slate-800 font-mono font-extrabold text-white">
-                                <td className="pt-2.5 pr-3" colSpan={2}>
-                                  Total for 1 Complete End-to-End Agency Circle (All 36 Agents)
-                                </td>
-                                <td className="pt-2.5 pr-3 text-right text-slate-300">
-                                  {activeTelemetry.totalPromptTokens.toLocaleString()}
-                                </td>
-                                <td className="pt-2.5 pr-3 text-right text-slate-300">
-                                  {activeTelemetry.totalCompletionTokens.toLocaleString()}
-                                </td>
-                                <td className="pt-2.5 pr-3 text-right text-sky-300">
-                                  {activeTelemetry.totalCircleTokens.toLocaleString()} tok
-                                </td>
-                                <td className="pt-2.5 text-right text-emerald-300">
-                                  ${activeTelemetry.singleCircleShadowCostUsd.toFixed(4)} (Billed: $
-                                  {activeTelemetry.singleCircleActualCostUsd.toFixed(4)})
-                                </td>
-                              </tr>
-                            </tfoot>
                           </table>
                         </div>
-                      </div>
-                    )}
 
-                    {/* SUB-VIEW: MEMORY */}
-                    {executiveSubView === 'memory' && (
-                      <div className="rounded-2xl border border-purple-500/40 bg-slate-950 p-4 space-y-4 text-xs">
-                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
-                          <div>
-                            <div className="inline-flex items-center gap-2 font-extrabold text-purple-300">
-                              <AgencyUiIcon name="sparkle" className="w-4 h-4 text-purple-400" />
-                              <span>
-                                3-Layer Trainable Agent Memory &amp; Selective Workflow Interruption
-                              </span>
-                            </div>
-                            <p className="text-[11px] text-slate-400 mt-0.5">
-                              Teach permanent custom skills to any specialist or override a single visual asset—only the targeted agents wake up while up to 34/36 other agents continue working uninterrupted.
-                            </p>
+                        {/* Recent Real-Time Metered Events */}
+                        <div className="rounded-xl border border-slate-800/80 bg-slate-900/40 p-3 space-y-2">
+                          <div className="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">
+                            Live Metered Event Feed ({sessionTokenLedger.recentEvents.length})
                           </div>
-                          <span className="rounded-xl border border-purple-500/40 bg-purple-500/15 px-3 py-1 text-[11px] font-mono font-bold text-purple-200">
-                            {memoryStore.learnedSkills.length} Learned Skills ·{' '}
-                            {memoryStore.sharedMemoryEvents.length} Memory Bus Events
-                          </span>
-                        </div>
-
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                          <form
-                            onSubmit={handleTeachSkillFromForm}
-                            className="rounded-xl border border-slate-800 bg-slate-900/70 p-3.5 space-y-2.5"
-                          >
-                            <div className="font-extrabold text-sky-300">
-                              1. Teach Permanent Custom Skill Rule (Layer 2 Memory):
-                            </div>
-                            <select
-                              value={newSkillAgentId}
-                              onChange={(e) => setNewSkillAgentId(e.target.value)}
-                              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-[11px] font-bold text-slate-200"
-                              aria-label="Select specialist agent to train"
-                            >
-                              {allFlatEmployees.map((emp) => (
-                                <option key={emp.id} value={emp.id}>
-                                  {emp.name} ({emp.departmentBadge})
-                                </option>
-                              ))}
-                            </select>
-                            <div className="flex gap-2">
-                              <input
-                                type="text"
-                                value={newSkillRuleInput}
-                                onChange={(e) => setNewSkillRuleInput(e.target.value)}
-                                placeholder='e.g. "Always include a 3-row pricing table in every H2 section"'
-                                className="flex-1 rounded-xl border border-slate-700 bg-slate-950 px-3 py-1.5 text-[11px] text-white placeholder-slate-500"
-                              />
-                              <button
-                                type="submit"
-                                className="rounded-xl bg-purple-500 hover:bg-purple-400 px-3.5 py-1.5 text-[11px] font-extrabold text-slate-950 shrink-0 transition"
-                              >
-                                Teach Skill
-                              </button>
-                            </div>
-
-                            <div className="space-y-1.5 pt-1 max-h-28 overflow-y-auto">
-                              {memoryStore.learnedSkills.slice(0, 4).map((sk) => (
+                          {sessionTokenLedger.recentEvents.length === 0 ? (
+                            <p className="text-[11px] text-slate-400">
+                              Session initialized at 0 tokens ($0.0000). Send a chat command, score live keywords, or click &ldquo;Meter 1 Full Circle Now&rdquo; below to watch real-time per-agent token increments.
+                            </p>
+                          ) : (
+                            <div className="space-y-1.5 max-h-36 overflow-y-auto">
+                              {sessionTokenLedger.recentEvents.slice(0, 8).map((ev) => (
                                 <div
-                                  key={sk.id}
-                                  className="rounded-lg border border-slate-800 bg-slate-950 px-2.5 py-1.5 text-[10.5px] text-slate-300"
+                                  key={ev.eventId}
+                                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-slate-950/70 border border-slate-800/80 px-2.5 py-1.5 text-[10.5px]"
                                 >
-                                  <strong className="text-purple-300">{sk.agentName}:</strong>{' '}
-                                  {sk.skillRuleText}
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <span className="font-mono text-sky-300 shrink-0">
+                                      {ev.apiKeySlot}
+                                    </span>
+                                    <span className="font-bold text-white shrink-0">
+                                      {ev.actorName}
+                                    </span>
+                                    <span className="text-slate-400 truncate max-w-[320px]">
+                                      {ev.actionLabel}
+                                    </span>
+                                  </div>
+                                  <span className="font-mono font-bold text-emerald-300 shrink-0">
+                                    +{ev.totalTokens.toLocaleString()} tok · $
+                                    {ev.shadowCostUsd.toFixed(4)}
+                                  </span>
                                 </div>
                               ))}
                             </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* =============================================================
+                          1-CIRCLE REFERENCE UNIT ECONOMICS & MODEL SWITCHER (PHASE 7)
+                         ============================================================= */}
+                      <div className="rounded-2xl border border-emerald-500/40 bg-slate-950 p-4 space-y-4 text-xs">
+                      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
+                        <div className="space-y-0.5">
+                          <div className="inline-flex items-center gap-2 font-extrabold text-emerald-300">
+                            <AgencyUiIcon name="cpu" className="w-4 h-4 text-emerald-400" />
+                            <span>
+                              Real-Time 1-Circle LLM Token &amp; Shadow Cost Telemetry Meter (Phase 7)
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-400">
+                            {llmGatewayNote} · Gross Margin:{' '}
+                            <strong className="text-emerald-300">
+                              {activeTelemetry.grossMarginAt49UsdPlanPercent}%
+                            </strong>{' '}
+                            (on $49/mo plan) or{' '}
+                            <strong className="text-sky-300">
+                              {activeTelemetry.grossMarginAt149UsdSeoAiTierPercent}%
+                            </strong>{' '}
+                            (vs SEO.AI $149/mo tier)
+                          </p>
+                        </div>
+
+                        {/* Model Switcher + Free/Paid Toggle + Run Live Circle Audit */}
+                        <form
+                          onSubmit={handleRunLiveCircleTokenAudit}
+                          className="flex flex-wrap items-center gap-2"
+                        >
+                          <select
+                            value={selectedLlmModel}
+                            onChange={(e) =>
+                              setSelectedLlmModel(e.target.value as AgencyLlmModelId)
+                            }
+                            className="rounded-xl border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-[11px] font-bold text-sky-300 focus:border-sky-400 focus:outline-none"
+                            aria-label="Select LLM model for token telemetry"
+                          >
+                            {Object.values(MODEL_PRICING_CATALOG).map((m) => (
+                              <option key={m.modelId} value={m.modelId}>
+                                {m.displayName} (${m.inputUsdPer1M}/1M in · ${m.outputUsdPer1M}
+                                /1M out)
+                              </option>
+                            ))}
+                          </select>
+
+                          <button
+                            type="button"
+                            onClick={() => setIsFreeTierKeyMode((prev) => !prev)}
+                            className={`rounded-xl border px-2.5 py-1.5 text-[11px] font-extrabold transition ${
+                              isFreeTierKeyMode
+                                ? 'border-emerald-400/50 bg-emerald-500/15 text-emerald-300'
+                                : 'border-amber-400/50 bg-amber-500/15 text-amber-300'
+                            }`}
+                          >
+                            {isFreeTierKeyMode
+                              ? 'Free API Key ($0 Billed + Shadow Meter)'
+                              : 'Paid Commercial Key Mode'}
+                          </button>
+
+                          <input
+                            type="password"
+                            value={testApiKeyInput}
+                            onChange={(e) => setTestApiKeyInput(e.target.value)}
+                            placeholder="Optional test key (AIza... / gsk_... / sk-...)"
+                            className="rounded-xl border border-slate-800 bg-slate-900 px-2.5 py-1.5 text-[11px] text-slate-200 placeholder-slate-500 focus:border-sky-400 focus:outline-none w-52"
+                          />
+
+                          <button
+                            type="submit"
+                            disabled={isRunningTokenAudit}
+                            className="rounded-xl bg-emerald-400 hover:bg-emerald-300 px-3 py-1.5 text-[11px] font-extrabold text-slate-950 transition disabled:opacity-50"
+                          >
+                            {isRunningTokenAudit
+                              ? 'Metering Circle...'
+                              : 'Meter 1 Full Circle Now'}
+                          </button>
+                        </form>
+                      </div>
+
+                      {/* 5-Stage Token & Mechanical Breakdown Table */}
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse text-[11px]">
+                          <thead>
+                            <tr className="border-b border-slate-800 text-slate-400 font-mono">
+                              <th className="py-2 pr-3">Circle Stage &amp; Department</th>
+                              <th className="py-2 pr-3">
+                                Zero-Cost Mechanical Work (90% · $0.00)
+                              </th>
+                              <th className="py-2 pr-3 text-right">Prompt Tok</th>
+                              <th className="py-2 pr-3 text-right">Output Tok</th>
+                              <th className="py-2 pr-3 text-right">Total Tok</th>
+                              <th className="py-2 text-right">Shadow Paid Cost</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-900">
+                            {activeTelemetry.stages.map((st) => (
+                              <tr key={st.stageNumber} className="hover:bg-slate-900/50">
+                                <td className="py-2.5 pr-3">
+                                  <div className="font-extrabold text-white">
+                                    Stage {st.stageNumber} · {st.departmentName}
+                                  </div>
+                                  <div className="text-[10.5px] text-slate-400">
+                                    {st.taskDescription}
+                                  </div>
+                                </td>
+                                <td className="py-2.5 pr-3">
+                                  <div className="flex flex-wrap gap-1">
+                                    {st.mechanicalZeroCostTasks.map((mTask) => (
+                                      <span
+                                        key={mTask}
+                                        className="rounded bg-slate-900 border border-slate-800 px-1.5 py-0.5 text-[10px] text-emerald-300"
+                                      >
+                                        {mTask}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </td>
+                                <td className="py-2.5 pr-3 text-right font-mono text-slate-300">
+                                  {st.promptTokens.toLocaleString()}
+                                </td>
+                                <td className="py-2.5 pr-3 text-right font-mono text-slate-300">
+                                  {st.completionTokens.toLocaleString()}
+                                </td>
+                                <td className="py-2.5 pr-3 text-right font-mono font-bold text-sky-300">
+                                  {st.totalTokens.toLocaleString()}
+                                </td>
+                                <td className="py-2.5 text-right font-mono font-bold text-emerald-300">
+                                  ${st.shadowPaidCostUsd.toFixed(4)}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                          <tfoot>
+                            <tr className="border-t border-slate-800 font-mono font-extrabold text-white">
+                              <td className="pt-2.5 pr-3" colSpan={2}>
+                                Total for 1 Complete End-to-End Agency Circle (All 36 Agents)
+                              </td>
+                              <td className="pt-2.5 pr-3 text-right text-slate-300">
+                                {activeTelemetry.totalPromptTokens.toLocaleString()}
+                              </td>
+                              <td className="pt-2.5 pr-3 text-right text-slate-300">
+                                {activeTelemetry.totalCompletionTokens.toLocaleString()}
+                              </td>
+                              <td className="pt-2.5 pr-3 text-right text-sky-300">
+                                {activeTelemetry.totalCircleTokens.toLocaleString()} tok
+                              </td>
+                              <td className="pt-2.5 text-right text-emerald-300">
+                                ${activeTelemetry.singleCircleShadowCostUsd.toFixed(4)} (Billed: $
+                                {activeTelemetry.singleCircleActualCostUsd.toFixed(4)})
+                              </td>
+                            </tr>
+                          </tfoot>
+                        </table>
+                      </div>
+                      </div>
+                    </div>
+
+                    )}
+
+                    {/* =============================================================
+                        V3 PHASE 8: 3-LAYER AGENT MEMORY BUS, USER-TAUGHT SKILLS & SELECTIVE INTERRUPTS
+                       ============================================================= */}
+                    {executiveSubView === 'memory' && (
+                    <div className="rounded-2xl border border-purple-500/40 bg-slate-950 p-4 space-y-4 text-xs">
+                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
+                        <div>
+                          <div className="inline-flex items-center gap-2 font-extrabold text-purple-300">
+                            <AgencyUiIcon name="sparkle" className="w-4 h-4 text-purple-400" />
+                            <span>
+                              3-Layer Trainable Agent Memory &amp; Selective Workflow Interruption (Phase 8)
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-400 mt-0.5">
+                            Teach permanent custom skills to any specialist or override a single visual asset—only the targeted agents wake up while up to 34/36 other agents continue working uninterrupted.
+                          </p>
+                        </div>
+                        <span className="rounded-xl border border-purple-500/40 bg-purple-500/15 px-3 py-1 text-[11px] font-mono font-bold text-purple-200">
+                          {memoryStore.learnedSkills.length} Learned Skills ·{' '}
+                          {memoryStore.sharedMemoryEvents.length} Memory Bus Events
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        {/* Left: Teach Permanent Custom Skill to Any Specialist */}
+                        <form
+                          onSubmit={handleTeachSkillFromForm}
+                          className="rounded-xl border border-slate-800 bg-slate-900/70 p-3.5 space-y-2.5"
+                        >
+                          <div className="font-extrabold text-sky-300">
+                            1. Teach Permanent Custom Skill Rule (Layer 2 Memory):
+                          </div>
+                          <select
+                            value={newSkillAgentId}
+                            onChange={(e) => setNewSkillAgentId(e.target.value)}
+                            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-[11px] font-bold text-slate-200"
+                            aria-label="Select specialist agent to train"
+                          >
+                            {allFlatEmployees.map((emp) => (
+                              <option key={emp.id} value={emp.id}>
+                                {emp.name} ({emp.departmentBadge})
+                              </option>
+                            ))}
+                          </select>
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              value={newSkillRuleInput}
+                              onChange={(e) => setNewSkillRuleInput(e.target.value)}
+                              placeholder='e.g. "Always include a 3-row pricing table in every H2 section"'
+                              className="flex-1 rounded-xl border border-slate-700 bg-slate-950 px-3 py-1.5 text-[11px] text-white placeholder-slate-500"
+                            />
+                            <button
+                              type="submit"
+                              className="rounded-xl bg-purple-500 hover:bg-purple-400 px-3.5 py-1.5 text-[11px] font-extrabold text-slate-950 shrink-0 transition"
+                            >
+                              Teach Skill
+                            </button>
+                          </div>
+
+                          <div className="space-y-1.5 pt-1 max-h-28 overflow-y-auto">
+                            {memoryStore.learnedSkills.slice(0, 4).map((sk) => (
+                              <div
+                                key={sk.id}
+                                className="rounded-lg border border-slate-800 bg-slate-950 px-2.5 py-1.5 text-[10.5px] text-slate-300"
+                              >
+                                <strong className="text-purple-300">{sk.agentName}:</strong>{' '}
+                                {sk.skillRuleText}
+                              </div>
+                            ))}
+                          </div>
+                        </form>
+
+                        {/* Right: Selective Visual Asset Override & Shared Memory Bus Log */}
+                        <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-3.5 space-y-2.5">
+                          <div className="font-extrabold text-emerald-300">
+                            2. Selective Custom Asset Override &amp; Shared Memory Bus:
+                          </div>
+                          <form
+                            onSubmit={handleSelectiveCustomAssetUpload}
+                            className="flex gap-2"
+                          >
+                            <input
+                              type="text"
+                              value={customAssetTitleInput}
+                              onChange={(e) => setCustomAssetTitleInput(e.target.value)}
+                              placeholder='Custom image label (e.g. "Founder Dashboard Screenshot 2:3")'
+                              className="flex-1 rounded-xl border border-slate-700 bg-slate-950 px-3 py-1.5 text-[11px] text-white placeholder-slate-500"
+                            />
+                            <button
+                              type="submit"
+                              className="rounded-xl bg-sky-500 hover:bg-sky-400 px-3 py-1.5 text-[11px] font-extrabold text-slate-950 shrink-0 transition"
+                            >
+                              Selective Override
+                            </button>
                           </form>
 
-                          <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-3.5 space-y-2.5">
-                            <div className="font-extrabold text-emerald-300">
-                              2. Selective Custom Asset Override &amp; Shared Memory Bus:
-                            </div>
-                            <form
-                              onSubmit={handleSelectiveCustomAssetUpload}
-                              className="flex gap-2"
-                            >
-                              <input
-                                type="text"
-                                value={customAssetTitleInput}
-                                onChange={(e) => setCustomAssetTitleInput(e.target.value)}
-                                placeholder='Custom image label (e.g. "Founder Dashboard Screenshot 2:3")'
-                                className="flex-1 rounded-xl border border-slate-700 bg-slate-950 px-3 py-1.5 text-[11px] text-white placeholder-slate-500"
-                              />
-                              <button
-                                type="submit"
-                                className="rounded-xl bg-sky-500 hover:bg-sky-400 px-3 py-1.5 text-[11px] font-extrabold text-slate-950 shrink-0 transition"
+                          <div className="space-y-1.5 pt-1 max-h-36 overflow-y-auto">
+                            {memoryStore.sharedMemoryEvents.slice(0, 4).map((ev) => (
+                              <div
+                                key={ev.id}
+                                className="rounded-lg border border-slate-800 bg-slate-950 px-2.5 py-1.5 text-[10.5px] text-slate-300"
                               >
-                                Selective Override
-                              </button>
-                            </form>
-
-                            <div className="space-y-1.5 pt-1 max-h-36 overflow-y-auto">
-                              {memoryStore.sharedMemoryEvents.slice(0, 4).map((ev) => (
-                                <div
-                                  key={ev.id}
-                                  className="rounded-lg border border-slate-800 bg-slate-950 px-2.5 py-1.5 text-[10.5px] text-slate-300"
-                                >
-                                  <span className="font-mono text-emerald-300 font-bold">
-                                    [{ev.eventType}]
-                                  </span>{' '}
-                                  {ev.summary}
-                                </div>
-                              ))}
-                            </div>
+                                <span className="font-mono text-emerald-300 font-bold">
+                                  [{ev.eventType}]
+                                </span>{' '}
+                                {ev.summary}
+                              </div>
+                            ))}
                           </div>
                         </div>
                       </div>
+                    </div>
+
                     )}
 
-                    {/* SUB-VIEW: HEARTBEAT */}
+                    {/* =============================================================
+                        V3 PHASE 10: STAGGERED 24/7 AUTONOMOUS HEARTBEAT SCHEDULER
+                       ============================================================= */}
                     {executiveSubView === 'heartbeat' && heartbeatSchedule && (
                       <div className="rounded-2xl border border-sky-500/40 bg-slate-950 p-4 space-y-3 text-xs">
                         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
                           <div>
                             <span className="font-extrabold text-sky-300">
-                              Staggered 24/7 Autonomous Heartbeat Scheduler (Zero Rate-Limit Collisions)
+                              Staggered 24/7 Autonomous Heartbeat Scheduler (Phase 10 — Zero Rate-Limit Collisions)
                             </span>
                             <p className="text-[11px] text-slate-400 mt-0.5">
                               Staggers background department jobs across 2h, 4h, 6h, 12h, and 24h windows so Free-Tier and Paid API keys never hit RPM spikes.
@@ -2386,139 +2855,143 @@ export default function AiAgencyDashboardShell() {
                       </div>
                     )}
 
-                    {/* SUB-VIEW: OVERVIEW */}
+                    {/* 24-Hour Daily Agency Throughput & Telemetry Bar Graph */}
                     {executiveSubView === 'overview' && (
-                      <>
-                        <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4 space-y-3 text-xs">
-                          <div className="flex flex-wrap items-center justify-between gap-2">
-                            <span className="font-extrabold text-sky-300">
-                              24-Hour Autonomous Department Throughput &amp; Verification Graph
-                            </span>
-                            <div className="flex items-center gap-3 text-[10px]">
-                              <span className="text-amber-300">■ Keywords Scored</span>
-                              <span className="text-purple-300">■ Sections &amp; SVGs</span>
-                              <span className="text-emerald-300">■ SEO &amp; QA Checks</span>
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-7 gap-2 pt-2 items-end h-28">
-                            {dailyTelemetrySeries.map((pt) => {
-                              const hPct = Math.min(100, Math.max(18, pt.seoChecksPassed + 20));
-                              return (
+                    <>
+                    <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4 space-y-3 text-xs">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="font-extrabold text-sky-300">
+                          24-Hour Autonomous Department Throughput &amp; Verification Graph
+                        </span>
+                        <div className="flex items-center gap-3 text-[10px]">
+                          <span className="text-amber-300">■ Keywords Scored</span>
+                          <span className="text-purple-300">■ Sections &amp; SVGs</span>
+                          <span className="text-emerald-300">■ SEO &amp; QA Checks</span>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-7 gap-2 pt-2 items-end h-28">
+                        {dailyTelemetrySeries.map((pt) => {
+                          const hPct = Math.min(100, Math.max(18, pt.seoChecksPassed + 20));
+                          return (
+                            <div
+                              key={pt.timeLabel}
+                              className="flex flex-col items-center justify-end h-full gap-1.5"
+                            >
+                              <div className="w-full flex items-end justify-center gap-1 h-20">
                                 <div
-                                  key={pt.timeLabel}
-                                  className="flex flex-col items-center justify-end h-full gap-1.5"
-                                >
-                                  <div className="w-full flex items-end justify-center gap-1 h-20">
-                                    <div
-                                      className="w-2.5 rounded-t bg-amber-400/85"
-                                      style={{
-                                        height: `${Math.min(100, pt.keywordsScored * 1.8)}%`,
-                                      }}
-                                      title={`Keywords: ${pt.keywordsScored}`}
-                                    ></div>
-                                    <div
-                                      className="w-2.5 rounded-t bg-purple-400/85"
-                                      style={{
-                                        height: `${Math.min(100, pt.svgsRendered * 2.5)}%`,
-                                      }}
-                                      title={`SVGs: ${pt.svgsRendered}`}
-                                    ></div>
-                                    <div
-                                      className="w-2.5 rounded-t bg-emerald-400/90"
-                                      style={{ height: `${hPct}%` }}
-                                      title={`SEO Checks: ${pt.seoChecksPassed}`}
-                                    ></div>
-                                  </div>
-                                  <span className="text-[10px] font-mono text-slate-400">
-                                    {pt.timeLabel}
-                                  </span>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-
-                        <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4 space-y-3 text-xs">
-                          <div className="flex flex-wrap items-center justify-between gap-2">
-                            <span className="font-extrabold text-emerald-300">
-                              Active Inter-Agent Handoff (Stage {activeHandoffStage}/6 ·{' '}
-                              {activePacket.packetCode})
-                            </span>
-                            <span className="text-[11px] text-slate-400">
-                              {activePacket.fromAgentName} → {activePacket.toAgentName}
-                            </span>
-                          </div>
-                          <div className="grid grid-cols-2 sm:grid-cols-6 gap-2">
-                            {handoffPackets.map((pkt) => {
-                              const isCurrent = pkt.stageNumber === activeHandoffStage;
-                              return (
-                                <button
-                                  key={pkt.packetCode}
-                                  type="button"
-                                  onClick={() => setActiveHandoffStage(pkt.stageNumber)}
-                                  className={`rounded-xl border p-2.5 text-left transition ${
-                                    isCurrent
-                                      ? 'border-sky-400 bg-sky-500/15 text-white'
-                                      : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:text-white'
-                                  }`}
-                                >
-                                  <div className="text-[10px] font-extrabold text-sky-300">
-                                    Stage {pkt.stageNumber}
-                                  </div>
-                                  <div className="text-[11px] font-bold truncate mt-0.5">
-                                    {pkt.toAgentName}
-                                  </div>
-                                </button>
-                              );
-                            })}
-                          </div>
-                          <div className="rounded-xl border border-slate-800 bg-slate-900/90 p-3 text-[11px] text-slate-200">
-                            {activePacket.packetSummary}
-                          </div>
-                        </div>
-
-                        <div className="rounded-2xl border border-amber-400/40 bg-amber-950/20 p-4 space-y-3 text-xs">
-                          <div className="flex items-center justify-between">
-                            <span className="inline-flex items-center gap-1.5 font-extrabold text-amber-300 uppercase tracking-wider">
-                              <AgencyUiIcon name="alert-triangle" className="w-4 h-4" />
-                              <span>
-                                Founder Manual Action Queue ({manualActionAlerts.length})
-                              </span>
-                            </span>
-                            <span className="text-[11px] text-slate-400">
-                              Escalated by Technical SEO &amp; Publishing Agents
-                            </span>
-                          </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            {manualActionAlerts.map((alert) => (
-                              <div
-                                key={alert.id}
-                                className="rounded-xl border border-slate-800 bg-slate-950/90 p-3.5 space-y-2 flex flex-col justify-between"
-                              >
-                                <div className="space-y-1.5">
-                                  <div className="font-bold text-white">{alert.title}</div>
-                                  <p className="text-slate-300 text-[11px] leading-relaxed">
-                                    {alert.whyManualActionNeeded}
-                                  </p>
-                                </div>
-                                <button
-                                  type="button"
-                                  onClick={() => setActiveSidebarTab(alert.targetDepartmentTab)}
-                                  className="text-left text-[11px] font-extrabold text-sky-300 hover:underline pt-1"
-                                >
-                                  {alert.ctaButtonLabel}
-                                </button>
+                                  className="w-2.5 rounded-t bg-amber-400/85"
+                                  style={{
+                                    height: `${Math.min(100, pt.keywordsScored * 1.8)}%`,
+                                  }}
+                                  title={`Keywords: ${pt.keywordsScored}`}
+                                />
+                                <div
+                                  className="w-2.5 rounded-t bg-purple-400/85"
+                                  style={{
+                                    height: `${Math.min(100, pt.svgsRendered * 2.5)}%`,
+                                  }}
+                                  title={`SVGs: ${pt.svgsRendered}`}
+                                />
+                                <div
+                                  className="w-2.5 rounded-t bg-emerald-400/90"
+                                  style={{ height: `${hPct}%` }}
+                                  title={`SEO Checks: ${pt.seoChecksPassed}`}
+                                />
                               </div>
-                            ))}
+                              <span className="text-[10px] font-mono text-slate-400">
+                                {pt.timeLabel}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Live 6-Stage Inter-Agent Handoff Packet Strip */}
+                    <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4 space-y-3 text-xs">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="font-extrabold text-emerald-300">
+                          Active Inter-Agent Handoff (Stage {activeHandoffStage}/6 ·{' '}
+                          {activePacket.packetCode})
+                        </span>
+                        <span className="text-[11px] text-slate-400">
+                          {activePacket.fromAgentName} → {activePacket.toAgentName}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-6 gap-2">
+                        {handoffPackets.map((pkt) => {
+                          const isCurrent = pkt.stageNumber === activeHandoffStage;
+                          return (
+                            <button
+                              key={pkt.packetCode}
+                              type="button"
+                              onClick={() => setActiveHandoffStage(pkt.stageNumber)}
+                              className={`rounded-xl border p-2.5 text-left transition ${
+                                isCurrent
+                                  ? 'border-sky-400 bg-sky-500/15 text-white'
+                                  : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:text-white'
+                              }`}
+                            >
+                              <div className="text-[10px] font-extrabold text-sky-300">
+                                Stage {pkt.stageNumber}
+                              </div>
+                              <div className="text-[11px] font-bold truncate mt-0.5">
+                                {pkt.toAgentName}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <div className="rounded-xl border border-slate-800 bg-slate-900/90 p-3 text-[11px] text-slate-200">
+                        {activePacket.packetSummary}
+                      </div>
+                    </div>
+
+                    {/* Manual Founder Action Required Alerts */}
+                    <div className="rounded-2xl border border-amber-400/40 bg-amber-950/20 p-4 space-y-3 text-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="inline-flex items-center gap-1.5 font-extrabold text-amber-300 uppercase tracking-wider">
+                          <AgencyUiIcon name="alert-triangle" className="w-4 h-4" />
+                          <span>
+                            Founder Manual Action Queue ({manualActionAlerts.length})
+                          </span>
+                        </span>
+                        <span className="text-[11px] text-slate-400">
+                          Escalated by Technical SEO &amp; Publishing Agents
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {manualActionAlerts.map((alert) => (
+                          <div
+                            key={alert.id}
+                            className="rounded-xl border border-slate-800 bg-slate-950/90 p-3.5 space-y-2 flex flex-col justify-between"
+                          >
+                            <div className="space-y-1.5">
+                              <div className="font-bold text-white">{alert.title}</div>
+                              <p className="text-slate-300 text-[11px] leading-relaxed">
+                                {alert.whyManualActionNeeded}
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setActiveSidebarTab(alert.targetDepartmentTab)}
+                              className="text-left text-[11px] font-extrabold text-sky-300 hover:underline pt-1"
+                            >
+                              {alert.ctaButtonLabel}
+                            </button>
                           </div>
-                        </div>
-                      </>
+                        ))}
+                      </div>
+                    </div>
+                    </>
                     )}
                   </div>
                 </div>
               )}
 
-              {/* TAB 2: KEYWORD & TOPIC STRATEGIST + GOOGLE ADS RSA BUILDER */}
+              {/* -------------------------------------------------------------
+                  TAB 2: KEYWORD & TOPIC STRATEGIST + PHASE 9 GOOGLE ADS RSA BUILDER
+                 ------------------------------------------------------------- */}
               {activeSidebarTab === 'keyword-strategist' && (
                 <div className="rounded-2xl border border-amber-500/35 bg-slate-900/80 p-5 space-y-5">
                   <div className="flex flex-wrap items-center justify-between gap-3">
@@ -2539,6 +3012,7 @@ export default function AiAgencyDashboardShell() {
                     </button>
                   </div>
 
+                  {/* Interactive Live Web Autocomplete + DoItWithAI KD Scorer Bar */}
                   <form
                     onSubmit={handleRunLiveKeywordScorer}
                     className="rounded-2xl border border-amber-400/40 bg-slate-950 p-4 flex flex-wrap items-center gap-3 text-xs"
@@ -2561,6 +3035,7 @@ export default function AiAgencyDashboardShell() {
                     </button>
                   </form>
 
+                  {/* Newly Scored Live Keyword Briefs */}
                   {liveScoredBriefs.length > 0 && (
                     <div className="space-y-3">
                       <div className="text-xs font-extrabold text-emerald-300">
@@ -2604,6 +3079,7 @@ export default function AiAgencyDashboardShell() {
                     </div>
                   )}
 
+                  {/* Active Campaign Keyword Clusters */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                     {activeCampaign.jobs.map((job, idx) => (
                       <div
@@ -2660,11 +3136,12 @@ export default function AiAgencyDashboardShell() {
                     ))}
                   </div>
 
+                  {/* V3 PHASE 9: GOOGLE ADS RESPONSIVE SEARCH ADS (RSA) & KEYWORD CAMPAIGN BUILDER */}
                   <div className="rounded-2xl border border-sky-500/40 bg-slate-950 p-5 space-y-4 text-xs">
                     <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
                       <div>
                         <span className="rounded bg-sky-500/20 px-2.5 py-0.5 text-[10px] font-extrabold text-sky-300 uppercase">
-                          SEO.AI ($149/mo) Challenger · Google Ads RSA Builder Sub-Agent
+                          SEO.AI ($149/mo) Challenger · Google Ads RSA Builder Sub-Agent (Phase 9)
                         </span>
                         <h3 className="text-base font-extrabold text-white mt-1">
                           {activeGoogleAdsPack.campaignName} ·{' '}
@@ -2690,6 +3167,7 @@ export default function AiAgencyDashboardShell() {
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                      {/* 15 RSA Headlines (Strictly <= 30 chars) */}
                       <div className="lg:col-span-7 space-y-2">
                         <div className="font-extrabold text-amber-300">
                           15 Character-Validated RSA Headlines (&le; 30 chars each):
@@ -2716,6 +3194,7 @@ export default function AiAgencyDashboardShell() {
                         </div>
                       </div>
 
+                      {/* 4 RSA Descriptions (Strictly <= 90 chars) + Keywords & Negatives */}
                       <div className="lg:col-span-5 space-y-3">
                         <div className="font-extrabold text-emerald-300">
                           4 RSA Descriptions (&le; 90 chars each):
@@ -2768,9 +3247,48 @@ export default function AiAgencyDashboardShell() {
                 </div>
               )}
 
-              {/* TAB 3: CONTENT WRITING STUDIO */}
+              {/* -------------------------------------------------------------
+                  TAB 3: CONTENT WRITING STUDIO (PUBLISHED / WRITING / NOT STARTED BOXES)
+                 ------------------------------------------------------------- */}
               {activeSidebarTab === 'content-writing' && (
                 <div className="space-y-5">
+                  <AiVisibilityAndLauncherPanel
+                    siteUrl={activeWebsite.siteUrl}
+                    siteName={activeWebsite.siteName}
+                    primaryNiche={activeWebsite.primaryNiche}
+                    isLightTheme={isLightTheme}
+                    initialSubTab="launcher"
+                    onQueueLaunchPlan={(plan) => {
+                      if (!studioState || !activeCampaign) return;
+                      const templateJob = activeCampaign.jobs[0];
+                      if (!templateJob) return;
+                      const nowIso = new Date().toISOString();
+                      const newJob: AutomatedArticleJob = {
+                        ...templateJob,
+                        id: `job-launch-${Date.now()}`,
+                        topicTitle: plan.recommendedH1,
+                        primaryKeyword: plan.primaryKeyword,
+                        secondaryKeywords: plan.paaQuestions.slice(0, 3),
+                        kdProxyScore: plan.estimatedKdScore,
+                        urlSlug: plan.urlSlug,
+                        status: 'drafting-article',
+                        updatedAtIso: nowIso,
+                      };
+                      const updated = saveAutonomousStudioState({
+                        ...studioState,
+                        campaigns: studioState.campaigns.map((c) =>
+                          c.id !== activeCampaign.id
+                            ? c
+                            : { ...c, jobs: [newJob, ...c.jobs], updatedAtIso: nowIso }
+                        ),
+                      });
+                      setStudioState(updated);
+                      setSelectedArticleId(newJob.id);
+                      setStatusToast(
+                        `Queued "${plan.recommendedH1}" (${plan.mode}) in Content Studio.`
+                      );
+                    }}
+                  />
                   <div className="rounded-2xl border border-purple-500/35 bg-slate-900/80 p-5 space-y-5">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
@@ -2796,6 +3314,7 @@ export default function AiAgencyDashboardShell() {
                       </button>
                     </div>
 
+                    {/* Unique Status Boxes Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 text-xs">
                       {activeCampaign.jobs.map((job, idx) => {
                         const isDone =
@@ -2871,7 +3390,7 @@ export default function AiAgencyDashboardShell() {
                                       style={{
                                         width: `${((subAgentWritingStep + 1) / 5) * 100}%`,
                                       }}
-                                    ></div>
+                                    />
                                   </div>
                                 </div>
                               )}
@@ -2932,6 +3451,7 @@ export default function AiAgencyDashboardShell() {
                       })}
                     </div>
 
+                    {/* Selected Article Reader Drawer */}
                     {selectedArticle && (
                       <div className="rounded-2xl border border-slate-800 bg-slate-950 p-5 space-y-3 text-xs">
                         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
@@ -2979,7 +3499,9 @@ export default function AiAgencyDashboardShell() {
                 </div>
               )}
 
-              {/* TAB 4: GRAPHIC & VISUAL DESIGNER DEPARTMENT */}
+              {/* -------------------------------------------------------------
+                  TAB 4: GRAPHIC & VISUAL DESIGNER DEPARTMENT (ALL 4 SECTION SVGS + HERO)
+                 ------------------------------------------------------------- */}
               {activeSidebarTab === 'graphic-design' && selectedArticle && (
                 <div className="rounded-2xl border border-pink-500/35 bg-slate-900/80 p-5 space-y-6">
                   <div>
@@ -2991,6 +3513,7 @@ export default function AiAgencyDashboardShell() {
                     </h2>
                   </div>
 
+                  {/* Featured Hero Image Preview */}
                   <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4 space-y-3">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="text-xs font-extrabold text-sky-300">
@@ -3022,6 +3545,7 @@ export default function AiAgencyDashboardShell() {
                     />
                   </div>
 
+                  {/* All 4 Section Infographics Grid */}
                   <div className="space-y-3">
                     <div className="text-xs font-extrabold text-emerald-300">
                       2. All 4× Standalone 6-Layer Section Infographics (1080×1350 Vector Cards · 0.00 CLS):
@@ -3065,9 +3589,38 @@ export default function AiAgencyDashboardShell() {
                 </div>
               )}
 
-              {/* TAB 5: ON-PAGE SEO & ARTICLE REFRESH ENGINEER */}
+              {/* -------------------------------------------------------------
+                  TAB 5: ON-PAGE SEO & ARTICLE REFRESH ENGINEER
+                 ------------------------------------------------------------- */}
               {activeSidebarTab === 'on-page-seo' && (
-                <div className="rounded-2xl border border-emerald-500/35 bg-slate-900/80 p-5 space-y-5">
+                <div className="space-y-5">
+                  <OnPageAndCompetitorGapPanel
+                    siteUrl={activeWebsite.siteUrl}
+                    siteName={activeWebsite.siteName}
+                    primaryNiche={activeWebsite.primaryNiche}
+                    isLightTheme={isLightTheme}
+                    workspacePages={activeCampaign.jobs.slice(0, 6).map((j) => ({
+                      urlPath: `/blog/${j.urlSlug}`,
+                      pageTitle: j.topicTitle,
+                      targetKeyword: j.primaryKeyword,
+                      kdScore: j.kdProxyScore,
+                    }))}
+                    onAssignIdeaToAgent={(idea, pageUrl) => {
+                      setChatTargetAgentId(idea.recommendedAgentId);
+                      setIsChatDrawerExpanded(true);
+                      setStatusToast(
+                        `Assigned "${idea.title}" (${pageUrl}) to ${idea.recommendedAgentName}.`
+                      );
+                    }}
+                    onLaunchKeywordArticle={(keyword, recommendedH1) => {
+                      setLiveSeedQuery(keyword);
+                      setActiveSidebarTab('content-writing');
+                      setStatusToast(
+                        `Prepared "${recommendedH1}" for Content Production Studio.`
+                      );
+                    }}
+                  />
+                  <div className="rounded-2xl border border-emerald-500/35 bg-slate-900/80 p-5 space-y-5">
                   <div>
                     <span className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-300">
                       Department 4 · On-Page SEO &amp; Content Decay Refresh
@@ -3100,19 +3653,30 @@ export default function AiAgencyDashboardShell() {
                       </div>
                     ))}
                   </div>
+                  </div>
                 </div>
               )}
 
-              {/* TAB 6: OFF-PAGE SEO, DIGITAL PR & BACKLINK EXCHANGE CLUB */}
+              {/* -------------------------------------------------------------
+                  TAB 6: OFF-PAGE SEO, DIGITAL PR & V3 PHASE 9 BACKLINK EXCHANGE CLUB
+                 ------------------------------------------------------------- */}
               {activeSidebarTab === 'off-page-seo' && (
-                <div className="rounded-2xl border border-amber-500/35 bg-slate-900/80 p-5 space-y-6">
+                <div className="space-y-5">
+                  <AiVisibilityAndLauncherPanel
+                    siteUrl={activeWebsite.siteUrl}
+                    siteName={activeWebsite.siteName}
+                    primaryNiche={activeWebsite.primaryNiche}
+                    isLightTheme={isLightTheme}
+                    initialSubTab="visibility"
+                  />
+                  <div className="rounded-2xl border border-amber-500/35 bg-slate-900/80 p-5 space-y-6">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <span className="text-[11px] font-extrabold uppercase tracking-wider text-amber-300">
                         Department 5 · Off-Page SEO, Digital PR &amp; Verified Backlink Exchange Club
                       </span>
                       <h2 className="text-lg sm:text-xl font-extrabold text-white mt-0.5">
-                        Automatic Non-Competing Backlink Exchange Network &amp; PR Pitches
+                        Automatic Non-Competing Backlink Exchange Network (Phase 9) &amp; PR Pitches
                       </h2>
                     </div>
                     <button
@@ -3134,6 +3698,7 @@ export default function AiAgencyDashboardShell() {
                     </button>
                   </div>
 
+                  {/* V3 PHASE 9: THE BACKLINK CLUB PARTNER EXCHANGE GRID */}
                   <div className="rounded-2xl border border-emerald-500/40 bg-slate-950 p-4 space-y-4 text-xs">
                     <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
                       <div>
@@ -3239,6 +3804,7 @@ export default function AiAgencyDashboardShell() {
                     </div>
                   </div>
 
+                  {/* Digital PR & Directory Opportunities */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
                     {agencyState.offPageOpportunities.map((opp) => (
                       <div
@@ -3268,12 +3834,29 @@ export default function AiAgencyDashboardShell() {
                       </div>
                     ))}
                   </div>
+                  </div>
                 </div>
               )}
 
-              {/* TAB 7: TECHNICAL & LOCAL ENTITY SEO */}
+              {/* -------------------------------------------------------------
+                  TAB 7: TECHNICAL & LOCAL ENTITY SEO
+                 ------------------------------------------------------------- */}
               {activeSidebarTab === 'technical-seo' && (
-                <div className="rounded-2xl border border-cyan-500/35 bg-slate-900/80 p-5 space-y-5">
+                <div className="space-y-5">
+                  <SiteAuditSuitePanel
+                    defaultSiteUrl={activeWebsite.siteUrl}
+                    siteName={activeWebsite.siteName}
+                    primaryNiche={activeWebsite.primaryNiche}
+                    isLightTheme={isLightTheme}
+                    onAssignOpportunityToAgent={(issue) => {
+                      setChatTargetAgentId(issue.recommendedAgentId);
+                      setIsChatDrawerExpanded(true);
+                      setStatusToast(
+                        `Assigned "${issue.title}" to ${issue.recommendedAgentName}.`
+                      );
+                    }}
+                  />
+                  <div className="rounded-2xl border border-cyan-500/35 bg-slate-900/80 p-5 space-y-5">
                   <div>
                     <span className="text-[11px] font-extrabold uppercase tracking-wider text-cyan-300">
                       Department 6 · Technical &amp; Local Entity SEO Architect
@@ -3310,10 +3893,13 @@ export default function AiAgencyDashboardShell() {
                       </div>
                     ))}
                   </div>
+                  </div>
                 </div>
               )}
 
-              {/* TAB 8: SOCIAL MEDIA & TIKTOK / REELS VIDEO SCRIPT FLEET */}
+              {/* -------------------------------------------------------------
+                  TAB 8: SOCIAL MEDIA & TIKTOK / REELS VIDEO SCRIPT FLEET
+                 ------------------------------------------------------------- */}
               {activeSidebarTab === 'social-video-fleet' && selectedArticle && (
                 <div className="space-y-6">
                   <div className="rounded-2xl border border-rose-500/35 bg-slate-900/80 p-5 space-y-6">
@@ -3326,6 +3912,7 @@ export default function AiAgencyDashboardShell() {
                       </h2>
                     </div>
 
+                    {/* PART 1: TikTok / Reels Short-Form Video Script */}
                     <div className="rounded-2xl border border-sky-500/40 bg-slate-950 p-5 space-y-3 text-xs">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div>
@@ -3357,6 +3944,7 @@ export default function AiAgencyDashboardShell() {
                       </pre>
                     </div>
 
+                    {/* PART 2: Interactive 8-Slide LinkedIn Carousel Previewer */}
                     <div className="rounded-2xl border border-indigo-500/40 bg-slate-950 p-5 space-y-4 text-xs">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div>
@@ -3427,6 +4015,7 @@ export default function AiAgencyDashboardShell() {
                       </div>
                     </div>
 
+                    {/* PART 3: All 3× Tall Pinterest 2:3 Vertical Pins */}
                     <div className="space-y-3">
                       <div className="text-xs font-extrabold text-amber-300">
                         All 3× Tall Pinterest 2:3 Vertical Pins (1000×1500 SVGs + SEO Pin Copy):
@@ -3473,6 +4062,7 @@ export default function AiAgencyDashboardShell() {
                       </div>
                     </div>
 
+                    {/* PART 4: X/Threads, Facebook & Instagram Hook Variations */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 text-xs">
                       {selectedArticle.arcadsVariations.slice(0, 3).map((v) => (
                         <div
@@ -3507,13 +4097,15 @@ export default function AiAgencyDashboardShell() {
                 </div>
               )}
 
-              {/* TAB 9: QA, SPOT-CHECK & 1-CLICK CMS AUTO-PUBLISHING HUB */}
+              {/* -------------------------------------------------------------
+                  TAB 9: QA, SPOT-CHECK & V3 PHASE 10 1-CLICK CMS AUTO-PUBLISHING HUB
+                 ------------------------------------------------------------- */}
               {activeSidebarTab === 'qa-publishing' && (
                 <div className="rounded-2xl border border-emerald-500/35 bg-slate-900/80 p-5 space-y-6">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <span className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-300">
-                        Department 7 · 150-Point QA Gate, Spot-Check &amp; 1-Click CMS Auto-Publisher
+                        Department 7 · 150-Point QA Gate, Spot-Check &amp; 1-Click CMS Auto-Publisher (Phases 9 &amp; 10)
                       </span>
                       <h2 className="text-lg sm:text-xl font-extrabold text-white mt-0.5">
                         150-Point E-E-A-T Gate ({active150PtQaEvaluation.totalScore}/150) &amp; No-Code WordPress / Shopify / Webflow / Webhook Connector
@@ -3542,12 +4134,13 @@ export default function AiAgencyDashboardShell() {
                     </button>
                   </div>
 
+                  {/* V3 PHASE 10: 1-CLICK NO-CODE CMS AUTO-PUBLISHING HUB */}
                   {cmsConfig && selectedArticle && (
                     <div className="rounded-2xl border border-sky-500/40 bg-slate-950 p-5 space-y-4 text-xs">
                       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
                         <div>
                           <span className="rounded bg-sky-500/20 px-2.5 py-0.5 text-[10px] font-extrabold text-sky-300 uppercase">
-                            60-Second No-Code CMS Auto-Publishing Connector
+                            Phase 10 · 60-Second No-Code CMS Auto-Publishing Connector
                           </span>
                           <h3 className="text-base font-extrabold text-white mt-1">
                             Connect WordPress, Shopify, Webflow, or Universal Webhook in 60 Seconds
@@ -3681,6 +4274,7 @@ export default function AiAgencyDashboardShell() {
                     </div>
                   )}
 
+                  {/* V3 PHASE 9: 150-POINT AUTOMATED QA RUBRIC + PRIVACY-FIRST SPOT-CHECK NOTES */}
                   <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4 space-y-4 text-xs">
                     <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
                       {active150PtQaEvaluation.categories.map((cat) => (
@@ -3721,6 +4315,7 @@ export default function AiAgencyDashboardShell() {
                     </div>
                   </div>
 
+                  {/* Destination Delivery Status Queue */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                     {activeCampaign.jobs.map((job) => (
                       <div
@@ -3755,7 +4350,9 @@ export default function AiAgencyDashboardShell() {
         </main>
       </div>
 
-      {/* PERSISTENT BOTTOM FOUNDER COMMAND CHAT & VOICE CALL DOCK */}
+      {/* =====================================================================
+          PERSISTENT BOTTOM FOUNDER COMMAND CHAT & VOICE CALL DOCK
+         ===================================================================== */}
       <FounderCommandChatDock
         siteName={activeWebsite.siteName}
         siteUrl={activeWebsite.siteUrl}
@@ -3783,6 +4380,55 @@ export default function AiAgencyDashboardShell() {
         learnedSkills={memoryStore.learnedSkills}
         sharedMemoryEvents={memoryStore.sharedMemoryEvents}
         onRecordSelectiveInterrupt={handleRecordSelectiveInterrupt}
+        selectedLlmModel={selectedLlmModel}
+        isFreeTierKeyMode={isFreeTierKeyMode}
+        testApiKeyInput={testApiKeyInput}
+        onRecordChatTokenUsage={handleRecordChatTokenUsage}
+        isLightTheme={isLightTheme}
+        workspaceKnowledge={{
+          capturedAtIso: new Date().toISOString(),
+          siteName: activeWebsite.siteName,
+          siteUrl: activeWebsite.siteUrl,
+          primaryNiche: activeWebsite.primaryNiche,
+          isInternalSite: Boolean(isInternalSite),
+          publishedArticlesCount: activeCampaign.jobs.filter(
+            (j) => j.status === 'published'
+          ).length,
+          draftArticlesCount: activeCampaign.jobs.filter(
+            (j) => j.status !== 'published' && j.status !== 'queued'
+          ).length,
+          queuedArticlesCount: activeCampaign.jobs.filter(
+            (j) => j.status === 'queued'
+          ).length,
+          totalArticlesCount: activeCampaign.jobs.length,
+          recentArticles: activeCampaign.jobs.slice(0, 6).map((j) => ({
+            title: j.topicTitle,
+            primaryKeyword: j.primaryKeyword,
+            status: j.status,
+            kdScore: j.kdProxyScore,
+          })),
+          activeArticleTitle:
+            selectedArticle?.topicTitle ||
+            '2026 AI SEO Audit & Implementation Playbook',
+          activeKeyword:
+            selectedArticle?.primaryKeyword || 'ai seo audit checklist',
+          heroBannersCount: activeCampaign.jobs.length,
+          sectionInfographicsCount: activeCampaign.jobs.length * 4,
+          socialVisualAssetsCount: activeCampaign.jobs.length * 11,
+          totalVisualAssetsCount: activeCampaign.jobs.length * 16,
+          seoHealthScore: 86,
+          aiDiscoverabilityScore: 94,
+          backlinkClubMatchesCount: backlinkClubState?.matchedPartners.length ?? 0,
+          heartbeatJobsCount: heartbeatSchedule?.slots.length ?? 0,
+          nextHeartbeatSummary:
+            heartbeatSchedule?.slots[0]?.taskTitle || '24/7 Staggered Heartbeat Active',
+          learnedSkillsCount: memoryStore.learnedSkills.length,
+          sessionTokensUsed: sessionTokenLedger.totalSessionTokens,
+          sessionShadowCostUsd: sessionTokenLedger.totalShadowCostUsd,
+          sessionActualCostUsd: sessionTokenLedger.totalActualCostUsd,
+          activeKeySlot: sessionTokenLedger.activeKeySlot,
+          activeAgentsCount: sessionTokenLedger.activeAgentsCount,
+        }}
       />
     </div>
   );

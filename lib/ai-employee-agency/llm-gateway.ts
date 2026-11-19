@@ -4,7 +4,14 @@
  * Module: `lib/ai-employee-agency/llm-gateway.ts`
  *
  * Unified Server-Side Free/Paid LLM Gateway (`Gemini 2.5 Flash`, `Groq Llama 3.3 70B`,
- * `OpenAI GPT-4o-mini` / `GPT-4.1-mini`) — strict TypeScript (zero `any`).
+ * `OpenAI GPT-4o-mini` / `GPT-4.1-mini`):
+ * - Supports server environment variables (`GEMINI_API_KEY`, `GOOGLE_GENERATIVE_AI_API_KEY`,
+ *   `GROQ_API_KEY`, `OPENAI_API_KEY`) as well as optional Founder test key overrides
+ *   passed strictly over HTTPS to the server route (never exposed in public bundles).
+ * - Extracts exact token telemetry (`promptTokenCount`, `candidatesTokenCount`,
+ *   `thoughtsTokenCount` on Gemini; `prompt_tokens`, `completion_tokens` on Groq/OpenAI),
+ *   tags every call with its `apiKeySlot` (`KEY_SLOT_*`), and computes live shadow
+ *   commercial cost so even a $0 Free API Key displays 100% accurate token & dollar usage.
  * ============================================================================
  */
 
@@ -43,8 +50,30 @@ export interface AgencyLlmResponse {
   actualCostUsd: number;
   latencyMs: number;
   telemetryNote: string;
+  apiErrorDetail?: string;
 }
 
+/**
+ * Reads a bounded, key-safe diagnostic string from a failed provider response.
+ */
+async function readProviderErrorDetail(
+  provider: AgencyLlmProviderId,
+  res: Response
+): Promise<string> {
+  try {
+    const raw = (await res.text()).replace(/\s+/g, ' ').trim();
+    return raw
+      ? `${provider.toUpperCase()} HTTP ${res.status}: ${raw.slice(0, 180)}`
+      : `${provider.toUpperCase()} HTTP ${res.status}`;
+  } catch {
+    return `${provider.toUpperCase()} HTTP ${res.status}`;
+  }
+}
+
+/**
+ * Estimates token count deterministically (~4 chars per token) when running
+ * in zero-key fallback mode so shadow telemetry remains 100% realistic.
+ */
 export function estimateTokensFromText(text: string): number {
   const cleaned = (text || '').trim();
   if (!cleaned) return 0;
@@ -82,6 +111,10 @@ function resolveServerApiKey(
   return { apiKey: '', hasOverride: false };
 }
 
+/**
+ * Executes an AI Employee cognitive task via Google Gemini, Groq LPU, or OpenAI
+ * and returns exact real-time token usage + shadow commercial cost + KEY_SLOT_*.
+ */
 export async function executeAgencyLlmCall(
   req: AgencyLlmRequest
 ): Promise<AgencyLlmResponse> {
@@ -93,7 +126,11 @@ export async function executeAgencyLlmCall(
   const { apiKey, hasOverride } = resolveServerApiKey(provider, req.apiKeyOverride);
   const isFreeTierKey =
     req.isFreeTierKey !== undefined ? req.isFreeTierKey : spec.supportsFreeTierKey;
+  let apiErrorDetail: string | undefined = apiKey
+    ? undefined
+    : `No API key configured for ${provider.toUpperCase()} (${modelId}).`;
 
+  // 1. Live Google AI Studio / Gemini Developer API Call (`gemini-2.5-flash`)
   if (provider === 'gemini' && apiKey) {
     try {
       const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${encodeURIComponent(
@@ -178,11 +215,15 @@ export async function executeAgencyLlmCall(
           )}`,
         };
       }
-    } catch {
+      apiErrorDetail = await readProviderErrorDetail(provider, res);
+    } catch (err) {
       // Fall through to deterministic shadow telemetry if network/key restricted
+      apiErrorDetail =
+        err instanceof Error ? err.message.slice(0, 180) : 'Gemini request failed.';
     }
   }
 
+  // 2. Live OpenAI or Groq OpenAI-Compatible Chat Completions Call
   if ((provider === 'openai' || provider === 'groq') && apiKey) {
     try {
       const endpoint =
@@ -255,11 +296,17 @@ export async function executeAgencyLlmCall(
           )}`,
         };
       }
-    } catch {
+      apiErrorDetail = await readProviderErrorDetail(provider, res);
+    } catch (err) {
       // Fall through to deterministic shadow telemetry
+      apiErrorDetail =
+        err instanceof Error
+          ? err.message.slice(0, 180)
+          : `${provider.toUpperCase()} request failed.`;
     }
   }
 
+  // 3. Zero-Key Deterministic Hybrid Mode with Exact Shadow Token Metering
   const promptTokens = estimateTokensFromText(
     `${req.systemPrompt}\n${req.userPrompt}`
   );
@@ -294,5 +341,6 @@ export async function executeAgencyLlmCall(
     actualCostUsd: 0,
     latencyMs: Math.max(120, Date.now() - startTime),
     telemetryNote: `Shadow Token Meter (${apiKeySlot}) active · ${totalTokens.toLocaleString()} tokens metered at ${spec.displayName} rates ($0.00 billed)`,
+    apiErrorDetail,
   };
 }

@@ -112,6 +112,7 @@ export async function POST(req: NextRequest) {
       ? 'General AI Assistant'
       : targetEmployee.departmentBadge;
 
+    // 1. Route Selective Workflow Interruption & Detect User-Taught Skills
     const interruptPlan = routeSelectiveWorkflowInterrupt({
       agentId: targetEmployee.id,
       rawMessage,
@@ -122,6 +123,7 @@ export async function POST(req: NextRequest) {
       ? [interruptPlan.learnedSkillRule, ...(body.learnedSkills || [])]
       : body.learnedSkills;
 
+    // 2. Build System Prompt (General Copilot vs Specialist 3-Layer Stack) + Live Workspace Knowledge
     const liveKnowledgeBlock = formatWorkspaceKnowledgeForPrompt(
       body.workspaceKnowledge
     );
@@ -162,6 +164,7 @@ export async function POST(req: NextRequest) {
           liveKnowledgeBlock,
         ].join('\n');
 
+    // 3. Execute Cognitive LLM Call (or Shadow Telemetry) via Unified Gateway
     const llmCall = await executeAgencyLlmCall({
       modelId: body.modelId || 'gemini-2.5-flash',
       apiKeyOverride: body.apiKeyOverride,
@@ -218,8 +221,10 @@ export async function POST(req: NextRequest) {
 
       replyText = `I've launched a new cross-department campaign for **"${spawnedKeywordBrief.recommendedH1Title}"** (target keyword: *${spawnedKeywordBrief.keyword}* · KD ${spawnedKeywordBrief.kdScore}/100 · est. ${spawnedKeywordBrief.estimatedMonthlyVolume}/mo).\n\n• **Keyword Strategist** locked the H1–H3 outline and 4 PAA FAQ items.\n• **Visual Studio** is preparing the 1200×675 Hero Banner and 4× 1080×1350 section infographics.\n• **Content & On-Page SEO** are drafting the 50-word AEO answer lead, H2 sections, and \`@graph\` JSON-LD.\n• **Social & Video** is staging 3 Pinterest pins, an 8-slide LinkedIn carousel, and a 60s TikTok script.`;
     } else if (llmCall.usedLiveApiKey && llmCall.outputText.length > 15) {
+      // Clean natural LLM response with zero robotic prefixes
       replyText = llmCall.outputText;
     } else if (body.workspaceKnowledge) {
+      // Check live workspace knowledge answers first
       const liveAnswer = answerFromWorkspaceKnowledge(
         rawMessage,
         body.workspaceKnowledge
@@ -301,6 +306,12 @@ export async function POST(req: NextRequest) {
       recommendedTabRedirect,
       selectiveInterruptPlan: interruptPlan,
       learnedSkillRule: interruptPlan.learnedSkillRule,
+      llmGatewayStatus: {
+        usedLiveApiKey: llmCall.usedLiveApiKey,
+        apiKeySlot: llmCall.apiKeySlot,
+        telemetryNote: llmCall.telemetryNote,
+        apiErrorDetail: llmCall.apiErrorDetail,
+      },
       tokenUsage: {
         modelId: llmCall.modelId,
         apiKeySlot: llmCall.apiKeySlot,

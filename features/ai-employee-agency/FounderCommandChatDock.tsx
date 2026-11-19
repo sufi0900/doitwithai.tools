@@ -29,6 +29,51 @@ import {
 } from '@/lib/ai-employee-agency/workspace-knowledge-snapshot';
 import { AgencyUiIcon } from './AgencySvgIcons';
 
+/**
+ * ============================================================================
+ * DOITWITHAI.TOOLS — 24/7 AI EMPLOYEE AGENCY OS (V4 PHASE 13 REDESIGN)
+ * Component: `features/ai-employee-agency/FounderCommandChatDock.tsx`
+ *
+ * Right-Side Slide-Over Copilot & 36-Agent Messenger Drawer:
+ * - Replaces the cramped bottom bar with a full-height 420px Right-Side
+ *   Slide-Over Drawer + 1-click Full-Screen Chat mode + sleek Floating Launcher.
+ * - Defaults to General ChatGPT-Style Workspace Assistant (no agent required)
+ *   with a 1-click switcher to any of the 36 AI Employees or Voice Call.
+ * - Injects live `WorkspaceKnowledgeSnapshot` (published/draft blogs, designs,
+ *   SEO/AI health scores, schedule, and zero-based session tokens) on every turn.
+ * - Zero robotic debug prefixes in replies; clean token & memory pills below.
+ * - Full Dual-Theme Light & Dark Mode support.
+ * ============================================================================
+ */
+
+function renderFormattedChatText(text: string): React.ReactNode {
+  const lines = (text || '').split('\n');
+  return lines.map((line, lineIdx) => {
+    const parts = line.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
+    return (
+      <React.Fragment key={lineIdx}>
+        {parts.map((part, pIdx) => {
+          if (part.startsWith('**') && part.endsWith('**') && part.length > 4) {
+            return <strong key={pIdx} className="font-extrabold">{part.slice(2, -2)}</strong>;
+          }
+          if (part.startsWith('`') && part.endsWith('`') && part.length > 2) {
+            return (
+              <code
+                key={pIdx}
+                className="rounded bg-slate-800/40 px-1 py-0.5 text-[10.5px] font-mono text-sky-400"
+              >
+                {part.slice(1, -1)}
+              </code>
+            );
+          }
+          return <React.Fragment key={pIdx}>{part}</React.Fragment>;
+        })}
+        {lineIdx < lines.length - 1 && <br />}
+      </React.Fragment>
+    );
+  });
+}
+
 export interface FounderChatMessage {
   id: string;
   sender: 'founder' | 'agent';
@@ -38,6 +83,7 @@ export interface FounderChatMessage {
   timestamp: string;
   selectiveInterruptSummary?: string;
   tokenCountBadge?: number;
+  apiStatusBadge?: string;
 }
 
 interface FounderCommandChatDockProps {
@@ -142,6 +188,7 @@ export default function FounderCommandChatDock({
 
   const allFlatEmployees = useMemo(() => getAllAgencyEmployeesFlat(), []);
 
+  // Sync external specialist selection if parent explicitly picks a non-default specialist
   useEffect(() => {
     if (chatTargetAgentId && chatTargetAgentId !== 'agent-chief-orchestrator') {
       setActiveModeAgentId(chatTargetAgentId);
@@ -250,6 +297,12 @@ export default function FounderCommandChatDock({
           spawnedKeywordBrief?: ScoredKeywordBrief;
           recommendedTabRedirect?: AgencySidebarTabId;
           selectiveInterruptPlan?: SelectiveInterruptRoutingPlan;
+          llmGatewayStatus?: {
+            usedLiveApiKey?: boolean;
+            apiKeySlot?: ApiKeySlotId;
+            telemetryNote?: string;
+            apiErrorDetail?: string;
+          };
           tokenUsage?: {
             modelId?: AgencyLlmModelId;
             apiKeySlot?: ApiKeySlotId;
@@ -331,6 +384,9 @@ export default function FounderCommandChatDock({
                 ? `Saved rule: ${data.selectiveInterruptPlan.learnedSkillRule.skillRuleText}`
                 : undefined,
             tokenCountBadge: meteredTotalTokens,
+            apiStatusBadge: data.llmGatewayStatus?.usedLiveApiKey
+              ? `Live ${data.llmGatewayStatus.apiKeySlot || 'API'}`
+              : data.llmGatewayStatus?.apiErrorDetail || 'Local Workspace Engine',
           });
           speakAgentReplyIfActive(data.replyText);
           setIsSending(false);
@@ -478,6 +534,7 @@ export default function FounderCommandChatDock({
     }
   };
 
+  // Theme-aware surface classes
   const drawerBg = isLightTheme
     ? 'bg-white border-slate-200 text-slate-900'
     : 'bg-[#080F1E] border-slate-800 text-slate-100';
@@ -491,6 +548,9 @@ export default function FounderCommandChatDock({
 
   return (
     <>
+      {/* =====================================================================
+          FLOATING RIGHT-BOTTOM COPILOT LAUNCHER PILL (WHEN DRAWER IS CLOSED)
+         ===================================================================== */}
       {!isChatDrawerExpanded && (
         <button
           type="button"
@@ -512,6 +572,9 @@ export default function FounderCommandChatDock({
         </button>
       )}
 
+      {/* =====================================================================
+          RIGHT-SIDE SLIDE-OVER COPILOT & 36-AGENT DRAWER (420px OR FULL-SCREEN)
+         ===================================================================== */}
       {isChatDrawerExpanded && (
         <aside
           className={`fixed z-50 flex flex-col border-l shadow-2xl transition-all duration-200 ${drawerBg} ${
@@ -521,6 +584,7 @@ export default function FounderCommandChatDock({
           }`}
           aria-label="Workspace Copilot and Agent Messenger Drawer"
         >
+          {/* Drawer Header */}
           <div className={`border-b px-4 py-3 space-y-2.5 shrink-0 ${headerBg}`}>
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 min-w-0">
@@ -600,6 +664,7 @@ export default function FounderCommandChatDock({
               </div>
             </div>
 
+            {/* Mode & Specialist Switcher (Default: General Workspace Copilot + All 36 Agents) */}
             <div className="flex items-center gap-2">
               <select
                 value={activeModeAgentId}
@@ -629,6 +694,7 @@ export default function FounderCommandChatDock({
             </div>
           </div>
 
+          {/* Live Context Ribbon */}
           {workspaceKnowledge && (
             <div
               className={`border-b px-4 py-1.5 flex flex-wrap items-center justify-between gap-2 text-[10px] font-mono shrink-0 ${
@@ -652,7 +718,9 @@ export default function FounderCommandChatDock({
             </div>
           )}
 
+          {/* Scrollable Conversation Thread */}
           <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 text-xs">
+            {/* Quick Starter Chips */}
             <div className="flex flex-wrap gap-1.5 pb-1">
               {QUICK_PROMPTS.map((chip) => (
                 <button
@@ -700,10 +768,10 @@ export default function FounderCommandChatDock({
                     </span>
                     <span>{m.timestamp}</span>
                   </div>
-                  <p className="whitespace-pre-line leading-relaxed text-[12px]">
-                    {m.text}
-                  </p>
-                  {(m.selectiveInterruptSummary || m.tokenCountBadge) && (
+                  <div className="leading-relaxed text-[12px]">
+                    {renderFormattedChatText(m.text)}
+                  </div>
+                  {(m.selectiveInterruptSummary || m.tokenCountBadge || m.apiStatusBadge) && (
                     <div className="flex flex-wrap items-center gap-1.5 pt-1">
                       {m.selectiveInterruptSummary && (
                         <span className="rounded-md bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 text-[9.5px] font-mono text-emerald-400">
@@ -715,6 +783,11 @@ export default function FounderCommandChatDock({
                           +{m.tokenCountBadge.toLocaleString()} tok
                         </span>
                       )}
+                      {m.apiStatusBadge && (
+                        <span className="rounded-md bg-slate-800/40 border border-slate-700/50 px-1.5 py-0.5 text-[9.5px] font-mono text-slate-400">
+                          {m.apiStatusBadge}
+                        </span>
+                      )}
                     </div>
                   )}
                 </div>
@@ -723,6 +796,7 @@ export default function FounderCommandChatDock({
             <div ref={messagesEndRef} />
           </div>
 
+          {/* Composer Footer */}
           <form
             onSubmit={(e) => {
               e.preventDefault();
