@@ -2,6 +2,7 @@
 
 import { V6_SINGLE_SIDEBAR_GROUPS } from './navigation';
 import { KnowledgeReview, type KnowledgeRow } from './KnowledgeReview';
+import { specialists } from '@/lib/ai-agency/specialists';
 import Link from 'next/link';
 import { useEffect, useState, type FormEvent } from 'react';
 import { agencyRequest } from './agency-request';
@@ -18,6 +19,7 @@ export default function AgencyWorkspaceOverview() {
   const [status, setStatus] = useState('Loading workspace…');
   const [bindings, setBindings] = useState<Record<string, boolean>>({});
   const [view, setView] = useState('Overview');
+  const [agentId,setAgentId] = useState('copilot');
   const [message, setMessage] = useState('');
   const [reply, setReply] = useState('');
   const [busy, setBusy] = useState(false);
@@ -39,7 +41,7 @@ export default function AgencyWorkspaceOverview() {
     setBusy(true);
     try {
       const res = await agencyRequest('/api/ai-employee-agency/agent-chat', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message }),
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message, agentId }),
       });
       const data = await res.json();
       setReply(data.replyText || data.error);
@@ -56,7 +58,7 @@ export default function AgencyWorkspaceOverview() {
         {group.items.map(item => <button key={item.id} aria-current={view === item.label ? 'page' : undefined}
           className={`block w-full rounded-lg px-3 py-1.5 text-left ${view === item.label ? 'bg-blue-900 text-blue-100' : 'hover:bg-slate-800'}`}
           onClick={() => setView(item.label)}>{item.label}</button>)}</div>)}
-      <a href="#copilot">Ask Copilot</a>
+      <a href="#copilot" onClick={() => {setAgentId('copilot'); setReply('');}}>Ask Copilot</a>
       <Link href="/ai-employee-agency">Website setup</Link>
       <Link href="/ai-employee-agency/dashboard?view=legacy">Previous local workspace</Link>
     </nav>
@@ -70,6 +72,9 @@ export default function AgencyWorkspaceOverview() {
         {summary?.website ? <KnowledgeReview key={summary.website.revision} row={summary.website} refresh={refresh} topics={view === 'Keyword & Topics'} /> :
           <p>{summary ? 'Register your website to begin setup.' : 'Workspace data unavailable.'}</p>}</section>
       <section id="copilot" className={panel}><h2 className="text-lg font-semibold">Workspace Copilot</h2>
+        <label className="mt-3 block">Talk to <select className="rounded bg-slate-800 p-2" value={agentId} disabled={busy} onChange={e => {setAgentId(e.target.value);setReply('');}}>
+          <option value="copilot">Workspace Copilot</option><option value="chief">Chief AI Officer</option>
+          {specialists.map(role => <option key={role.id} value={role.id}>{role.name}</option>)}</select></label>
         <form onSubmit={send} className="mt-3 flex gap-2"><input aria-label="Message Copilot" className="min-w-0 flex-1 rounded bg-slate-800 p-3" value={message} onChange={e => setMessage(e.target.value)} maxLength={8000} placeholder="Ask about your workspace" />
         <button disabled={busy || !message.trim()} className="rounded bg-blue-600 px-4">{busy ? 'Sending…' : 'Send'}</button></form>
         <p className="mt-2 whitespace-pre-wrap" role="status">{reply}</p></section>
