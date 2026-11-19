@@ -93,6 +93,8 @@ export async function fetchPublic(
     signal?: AbortSignal;
     html?: boolean;
     text?: boolean;
+    xml?: boolean;
+    maxDecodedBytes?: number;
     image?: boolean;
     bytes?: number;
     timeout?: number;
@@ -218,7 +220,9 @@ export async function fetchPublic(
             !(
               options.image
                 ? /^image\/(?:png|jpeg)(?:;|$)/i
-                : options.text
+                : options.xml
+                  ? /(?:application|text)\/xml|\+xml|text\/plain/i
+                  : options.text
                   ? /text\/plain/i
                   : /text\/html|application\/xhtml\+xml/i
             ).test(headers["content-type"] || "")
@@ -237,9 +241,9 @@ export async function fetchPublic(
 
           const chunks: Buffer[] = [];
           let total = 0;
-          const max = options.image
+          const max = options.maxDecodedBytes ?? (options.image
             ? options.bytes || 2_000_000
-            : Math.max(options.bytes || 2_000_000, 5_000_000);
+            : Math.max(options.bytes || 2_000_000, 5_000_000));
 
           const tryResolvePartialHtml = () => {
             if (options.image || chunks.length === 0) return false;

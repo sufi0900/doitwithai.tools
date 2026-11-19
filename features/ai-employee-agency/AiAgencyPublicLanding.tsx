@@ -194,6 +194,13 @@ export default function AiAgencyPublicLanding() {
         body: JSON.stringify({ siteUrl, goal: nicheHint }),
       });
       if (!res.ok) throw new Error((await res.json()).error);
+      const registration = await res.json();
+      if (registration.discover) {
+        await agencyRequest('/api/ai-employee-agency/knowledge', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'discover', revision: registration.revision }),
+        });
+      }
       router.push('/ai-employee-agency/dashboard');
     } catch (error) {
       setNotice(error instanceof Error ? error.message : 'Website registration failed.');

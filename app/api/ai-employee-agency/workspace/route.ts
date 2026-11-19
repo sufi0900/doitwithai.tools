@@ -6,7 +6,7 @@ export async function GET(request: Request) {
   if (workspace instanceof NextResponse) return workspace;
   const latest = await workspace.db.from('token_usage_ledger').select('created_at,model,total_tokens,calculated_usd').eq('workspace_id', workspace.id).order('created_at', { ascending: false }).limit(1).maybeSingle();
   if (latest.error) return NextResponse.json({ error: 'Usage history unavailable.' }, { status: 503 });
-  const website = await workspace.db.from('tenant_brand_dna').select('domain,approved_at').eq('workspace_id', workspace.id).maybeSingle();
+  const website = await workspace.db.from('tenant_brand_dna').select('domain,approved_at,revision,profile').eq('workspace_id', workspace.id).maybeSingle();
   if (website.error) return NextResponse.json({ error: 'Knowledge base unavailable.' }, { status: 503 });
   return NextResponse.json({ website: website.data, counts: await contentCounts(workspace), lastCall: latest.data });
 }
@@ -24,5 +24,6 @@ export async function POST(request: Request) {
   }
   const { error } = await workspace.db.rpc('agency_register_website', { site: url.href, goal: String(body?.goal || '').slice(0, 500) });
   if (error) return NextResponse.json({ error: 'Website registration failed. Check your current workspace.' }, { status: 409 });
-  return NextResponse.json({ ok: true });
+  const {data} = await workspace.db.from('tenant_brand_dna').select('revision,profile').eq('workspace_id',workspace.id).single();
+  return NextResponse.json({ ok: true, revision: data?.revision, discover: data && !data.profile?.checkedAt });
 }

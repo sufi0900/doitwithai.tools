@@ -1,6 +1,7 @@
 'use client';
 
 import { V6_SINGLE_SIDEBAR_GROUPS } from './navigation';
+import { KnowledgeReview, type KnowledgeRow } from './KnowledgeReview';
 import Link from 'next/link';
 import { useEffect, useState, type FormEvent } from 'react';
 import { agencyRequest } from './agency-request';
@@ -8,7 +9,7 @@ import { agencyRequest } from './agency-request';
 type Summary = {
   counts: { published: number; ready: number; queued: number };
   lastCall: { created_at: string; model: string; total_tokens: number | null; calculated_usd: number | null } | null;
-  website: { domain: string; approved_at: string | null } | null;
+  website: KnowledgeRow | null;
 };
 const panel = 'rounded-xl border border-slate-700 bg-slate-900 p-5';
 
@@ -66,7 +67,8 @@ export default function AgencyWorkspaceOverview() {
         <div className={panel} key={key}><p>{ {published:'Published articles',ready:'Ready for review',queued:'Queued'}[key]}</p>
         <strong className="text-3xl">{summary?.counts[key] ?? '—'}</strong></div>)}</section>}
       <section className={panel}><h2 className="text-lg font-semibold">{view === 'Overview' ? 'Website knowledge base' : 'Workspace setup'}</h2>
-        <p>{summary?.website ? summary.website.domain + (summary.website.approved_at ? ' · Approved' : ' · Awaiting knowledge base review') : summary ? 'Register your website to begin setup.' : 'Workspace data unavailable.'}</p></section>
+        {summary?.website ? <KnowledgeReview key={summary.website.revision} row={summary.website} refresh={refresh} topics={view === 'Keyword & Topics'} /> :
+          <p>{summary ? 'Register your website to begin setup.' : 'Workspace data unavailable.'}</p>}</section>
       <section id="copilot" className={panel}><h2 className="text-lg font-semibold">Workspace Copilot</h2>
         <form onSubmit={send} className="mt-3 flex gap-2"><input aria-label="Message Copilot" className="min-w-0 flex-1 rounded bg-slate-800 p-3" value={message} onChange={e => setMessage(e.target.value)} maxLength={8000} placeholder="Ask about your workspace" />
         <button disabled={busy || !message.trim()} className="rounded bg-blue-600 px-4">{busy ? 'Sending…' : 'Send'}</button></form>
