@@ -94,195 +94,124 @@ import AiVisibilityAndLauncherPanel from './AiVisibilityAndLauncherPanel';
 import FounderCommandChatDock, {
   type FounderChatMessage,
 } from './FounderCommandChatDock';
-import { AgencyUiIcon, DepartmentSvgIcon } from './AgencySvgIcons';
+import {
+  AgencyUiIcon,
+  DepartmentSvgIcon,
+  type AgencyUiIconName,
+} from './AgencySvgIcons';
 
 export type { AgencySidebarTabId, InteractiveOfficeNode };
 
-/**
- * Clean, single-line sidebar navigation items with zero-truncation labels
- */
 type AgencyThemeMode = 'dark' | 'light';
-type OuterRailDomainId =
-  | 'agency'
-  | 'audit'
-  | 'keywords'
-  | 'content'
-  | 'social'
-  | 'publish'
-  | 'settings';
 type ExecutiveSubViewId = 'overview' | 'tokens' | 'memory' | 'heartbeat';
 
-interface InnerRailLink {
+interface V6SidebarItem {
   id: string;
   label: string;
-  modeBadge: '24/7 Auto' | 'On-Demand' | 'Live Meter';
+  uiIcon?: AgencyUiIconName;
+  deptIcon?: AgencySidebarTabId;
   targetTab: AgencySidebarTabId;
   execSubView?: ExecutiveSubViewId;
   openGraph?: boolean;
 }
 
-const V4_OUTER_RAIL_DOMAINS: Array<{
-  id: OuterRailDomainId;
-  shortLabel: string;
-  panelTitle: string;
-  iconTab: AgencySidebarTabId;
-  items: InnerRailLink[];
+const V6_SINGLE_SIDEBAR_GROUPS: Array<{
+  groupLabel: string;
+  items: V6SidebarItem[];
 }> = [
   {
-    id: 'agency',
-    shortLabel: 'Agency',
-    panelTitle: 'Agency Command',
-    iconTab: 'executive-office',
+    groupLabel: 'Workspace',
     items: [
       {
-        id: 'ag-overview',
-        label: 'Executive Overview',
-        modeBadge: '24/7 Auto',
+        id: 'nav-overview',
+        label: 'Overview',
+        uiIcon: 'dashboard-grid',
         targetTab: 'executive-office',
         execSubView: 'overview',
       },
       {
-        id: 'ag-graph',
-        label: '36-Agent Live Graph',
-        modeBadge: '24/7 Auto',
+        id: 'nav-canvas',
+        label: 'Live Node Canvas',
+        uiIcon: 'node-graph',
         targetTab: 'executive-office',
         openGraph: true,
       },
-      {
-        id: 'ag-tokens',
-        label: 'Token & API Ledger',
-        modeBadge: 'Live Meter',
-        targetTab: 'executive-office',
-        execSubView: 'tokens',
-      },
-      {
-        id: 'ag-heartbeat',
-        label: '24/7 Heartbeat Cron',
-        modeBadge: '24/7 Auto',
-        targetTab: 'executive-office',
-        execSubView: 'heartbeat',
-      },
     ],
   },
   {
-    id: 'audit',
-    shortLabel: 'Audit',
-    panelTitle: 'Site Audit & Health',
-    iconTab: 'technical-seo',
+    groupLabel: 'Content & Creative',
     items: [
       {
-        id: 'au-tech',
-        label: 'Technical & AI Bots',
-        modeBadge: '24/7 Auto',
-        targetTab: 'technical-seo',
-      },
-      {
-        id: 'au-onpage',
-        label: 'On-Page & Decay',
-        modeBadge: 'On-Demand',
-        targetTab: 'on-page-seo',
-      },
-    ],
-  },
-  {
-    id: 'keywords',
-    shortLabel: 'Keywords',
-    panelTitle: 'Keywords & Gaps',
-    iconTab: 'keyword-strategist',
-    items: [
-      {
-        id: 'kw-strategist',
-        label: 'Autocomplete & KD',
-        modeBadge: '24/7 Auto',
+        id: 'nav-keywords',
+        label: 'Keyword & Topics',
+        deptIcon: 'keyword-strategist',
         targetTab: 'keyword-strategist',
       },
       {
-        id: 'kw-ads',
-        label: 'Google Ads RSA Pack',
-        modeBadge: 'On-Demand',
-        targetTab: 'keyword-strategist',
-      },
-    ],
-  },
-  {
-    id: 'content',
-    shortLabel: 'Content',
-    panelTitle: 'Content & Visuals',
-    iconTab: 'content-writing',
-    items: [
-      {
-        id: 'ct-pipeline',
-        label: 'Article Pipeline',
-        modeBadge: '24/7 Auto',
+        id: 'nav-articles',
+        label: 'Article Studio',
+        deptIcon: 'content-writing',
         targetTab: 'content-writing',
       },
       {
-        id: 'ct-svg',
-        label: 'Hero & 6-Layer SVGs',
-        modeBadge: '24/7 Auto',
+        id: 'nav-visuals',
+        label: 'Visual & Infographics',
+        deptIcon: 'graphic-design',
         targetTab: 'graphic-design',
       },
       {
-        id: 'ct-onpage',
-        label: 'On-Page & Schema',
-        modeBadge: '24/7 Auto',
-        targetTab: 'on-page-seo',
-      },
-    ],
-  },
-  {
-    id: 'social',
-    shortLabel: 'Social',
-    panelTitle: 'Social & Video Fleet',
-    iconTab: 'social-video-fleet',
-    items: [
-      {
-        id: 'sc-fleet',
-        label: 'TikTok, LinkedIn & Pins',
-        modeBadge: '24/7 Auto',
+        id: 'nav-social',
+        label: 'Social & Video',
+        deptIcon: 'social-video-fleet',
         targetTab: 'social-video-fleet',
       },
     ],
   },
   {
-    id: 'publish',
-    shortLabel: 'Publish',
-    panelTitle: 'Publish & Backlinks',
-    iconTab: 'qa-publishing',
+    groupLabel: 'SEO & Growth',
     items: [
       {
-        id: 'pb-cms',
-        label: '150-Pt QA & CMS Push',
-        modeBadge: 'On-Demand',
-        targetTab: 'qa-publishing',
+        id: 'nav-audit',
+        label: 'Technical Site Audit',
+        uiIcon: 'technical',
+        targetTab: 'technical-seo',
       },
       {
-        id: 'pb-club',
-        label: 'Backlink Club & PR',
-        modeBadge: '24/7 Auto',
+        id: 'nav-onpage',
+        label: 'On-Page & Competitors',
+        uiIcon: 'onpage',
+        targetTab: 'on-page-seo',
+      },
+      {
+        id: 'nav-visibility',
+        label: 'AI Visibility & Links',
+        deptIcon: 'off-page-seo',
         targetTab: 'off-page-seo',
       },
     ],
   },
   {
-    id: 'settings',
-    shortLabel: 'Settings',
-    panelTitle: 'Workspace Settings',
-    iconTab: 'executive-office',
+    groupLabel: 'Operations',
     items: [
       {
-        id: 'st-memory',
-        label: '3-Layer Agent Skills',
-        modeBadge: 'On-Demand',
-        targetTab: 'executive-office',
-        execSubView: 'memory',
+        id: 'nav-publish',
+        label: 'QA & Auto-Publish',
+        uiIcon: 'check-shield',
+        targetTab: 'qa-publishing',
       },
       {
-        id: 'st-tokens',
-        label: 'API Keys & Model',
-        modeBadge: 'Live Meter',
+        id: 'nav-tokens',
+        label: 'Token & API Usage',
+        uiIcon: 'activity',
         targetTab: 'executive-office',
         execSubView: 'tokens',
+      },
+      {
+        id: 'nav-skills',
+        label: 'Agent Skills & Cron',
+        uiIcon: 'settings',
+        targetTab: 'executive-office',
+        execSubView: 'memory',
       },
     ],
   },
@@ -294,9 +223,8 @@ export default function AiAgencyDashboardShell() {
   const router = useRouter();
   const [studioState, setStudioState] = useState<AutonomousStudioStoreState | null>(null);
   const [themeMode, setThemeMode] = useState<AgencyThemeMode>('dark');
-  const [activeOuterDomain, setActiveOuterDomain] =
-    useState<OuterRailDomainId>('agency');
   const [isInnerRailCollapsed, setIsInnerRailCollapsed] = useState<boolean>(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState<boolean>(false);
   const [executiveSubView, setExecutiveSubView] =
     useState<ExecutiveSubViewId>('overview');
   const [activeSidebarTab, setActiveSidebarTab] =
@@ -342,7 +270,7 @@ export default function AiAgencyDashboardShell() {
   const [selectedOverviewStageIdx, setSelectedOverviewStageIdx] = useState<number>(0);
   const hasCheckedAutorunRef = useRef<boolean>(false);
   const [llmGatewayNote, setLlmGatewayNote] = useState<string>(
-    'Free-Tier Shadow Telemetry Active · 90% Mechanical ($0.00) + 10% LLM Reasoning'
+    'Free-Tier Key Telemetry Active · Hybrid Execution'
   );
 
   // V3 Phase 8: 3-Layer Agent Memory Bus, User-Taught Skills & Selective Interrupts
@@ -441,7 +369,7 @@ export default function AiAgencyDashboardShell() {
         sender: 'agent',
         agentName: 'Chief AI Officer & Founder Assistant',
         departmentBadge: 'Executive Office',
-        text: 'Welcome to your 24/7 AI Digital Agency Office. All V3 Phases (Phases 1–10) are active: 1-Circle Token Telemetry, 3-Layer Trainable Agent Memory, Verified Backlink Exchange Club, Google Ads RSA Builder, and 1-Click WordPress/Shopify/Webflow/Webhook Auto-Publishing.',
+        text: 'Welcome to your AI Agency Workspace. Ask me about your article pipeline, keyword strategy, site audit, trainable skills, or CMS publishing setup.',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       },
     ]);
@@ -878,13 +806,6 @@ export default function AiAgencyDashboardShell() {
       return next;
     });
   };
-
-  const activeOuterDomainConfig = useMemo(
-    () =>
-      V4_OUTER_RAIL_DOMAINS.find((d) => d.id === activeOuterDomain) ??
-      V4_OUTER_RAIL_DOMAINS[0]!,
-    [activeOuterDomain]
-  );
 
   const handleCopy = (text: string, id: string) => {
     if (typeof navigator !== 'undefined' && navigator.clipboard) {
@@ -1691,8 +1612,8 @@ export default function AiAgencyDashboardShell() {
       data-agency-theme={themeMode}
       className={`h-[calc(100dvh-80px)] overflow-hidden flex flex-col transition-colors duration-200 agency-v5-shell ${
         isLightTheme
-          ? 'agency-v4-light bg-[#F6F8FC] text-[#0F172A]'
-          : 'bg-[#060B16] text-slate-100'
+          ? 'agency-v4-light bg-[#F4F7FE] text-[#0F172A]'
+          : 'bg-[#0B1120] text-slate-100'
       }`}
     >
       <style
@@ -1701,6 +1622,15 @@ export default function AiAgencyDashboardShell() {
             .agency-v5-shell .font-mono {
               font-family: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, monospace !important;
               font-variant-numeric: tabular-nums;
+            }
+            /* Enforce clean readable minimum font floor across legacy widgets */
+            .agency-v5-shell [class*="text-[9px]"],
+            .agency-v5-shell [class*="text-[9.5px]"],
+            .agency-v5-shell [class*="text-[10px]"],
+            .agency-v5-shell [class*="text-[10.5px]"],
+            .agency-v5-shell [class*="text-[11px]"] {
+              font-size: 0.75rem !important;
+              line-height: 1.15rem !important;
             }
           `,
         }}
@@ -1711,6 +1641,7 @@ export default function AiAgencyDashboardShell() {
             __html: `
               .agency-v4-light [class*="bg-slate-950"],
               .agency-v4-light [class*="bg-[#0A1"],
+              .agency-v4-light [class*="bg-[#0F172A"],
               .agency-v4-light [class*="bg-[#080"] {
                 background-color: #ffffff !important;
               }
@@ -1723,7 +1654,10 @@ export default function AiAgencyDashboardShell() {
               }
               .agency-v4-light [class*="border-slate-8"],
               .agency-v4-light [class*="border-slate-7"] {
-                border-color: #e2e8f0 !important;
+                border-color: #e9eef5 !important;
+              }
+              .agency-v4-light .rounded-2xl {
+                box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04);
               }
               .agency-v4-light .text-white:not([data-v5-solid="true"]) {
                 color: #0f172a !important;
@@ -1743,23 +1677,23 @@ export default function AiAgencyDashboardShell() {
               .agency-v4-light .text-sky-200:not([data-v5-solid="true"]),
               .agency-v4-light .text-sky-300:not([data-v5-solid="true"]),
               .agency-v4-light .text-sky-400:not([data-v5-solid="true"]) {
-                color: #1d4ed8 !important;
+                color: #2563eb !important;
               }
               .agency-v4-light .text-emerald-200:not([data-v5-solid="true"]),
               .agency-v4-light .text-emerald-300:not([data-v5-solid="true"]),
               .agency-v4-light .text-emerald-400:not([data-v5-solid="true"]) {
-                color: #047857 !important;
+                color: #059669 !important;
               }
               .agency-v4-light .text-amber-300:not([data-v5-solid="true"]) {
-                color: #b45309 !important;
+                color: #d97706 !important;
               }
               .agency-v4-light .text-purple-200:not([data-v5-solid="true"]),
               .agency-v4-light .text-purple-300:not([data-v5-solid="true"]) {
-                color: #6d28d9 !important;
+                color: #4f46e5 !important;
               }
               .agency-v4-light .text-cyan-300:not([data-v5-solid="true"]),
               .agency-v4-light .text-rose-300:not([data-v5-solid="true"]) {
-                color: #0e7490 !important;
+                color: #0284c7 !important;
               }
               .agency-v4-light [class*="bg-sky-950"],
               .agency-v4-light [class*="bg-emerald-950"],
@@ -1770,145 +1704,160 @@ export default function AiAgencyDashboardShell() {
           }}
         />
       )}
-      {/* =====================================================================
-          SLEEK TOP AGENCY COMMAND HEADER BAR (SVG Icons · Zero Noise)
-         ===================================================================== */}
-      <header className="border-b border-slate-800/90 bg-[#0A1122]/95 backdrop-blur sticky top-0 z-30">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-3">
-          {/* Left: Change URL + Website Identity + Active Stage Pill */}
-          <div className="flex items-center gap-3 min-w-0">
-            <Link
-              href="/ai-employee-agency"
-              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700/80 bg-slate-900 hover:bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-300 shrink-0 transition"
-            >
-              <AgencyUiIcon name="arrow-left" className="w-3.5 h-3.5" />
-              <span>Change Website</span>
-            </Link>
 
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping shrink-0" />
-                <span className="text-sm sm:text-base font-extrabold text-white truncate">
-                  {activeWebsite.siteName}
-                </span>
-                <span className="hidden md:inline-block rounded-md bg-sky-500/15 border border-sky-500/30 px-2 py-0.5 text-[10px] font-bold text-sky-300">
-                  {isInternalSite ? 'Internal Auto-Publish' : 'External Domain'}
-                </span>
-                <div className="hidden lg:inline-flex items-center gap-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-mono">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setActiveOuterDomain('agency');
-                      setActiveSidebarTab('executive-office');
-                      setExecutiveSubView('tokens');
-                      setIsFullCanvasGraphOpen(false);
-                      setIsGraphFullScreenViewport(false);
-                    }}
-                    className="inline-flex items-center gap-1.5 font-bold text-emerald-300 hover:underline"
-                    title="Open Zero-Based Per-Agent & Chat Token Telemetry Ledger"
-                  >
-                    <AgencyUiIcon name="activity" className="w-3 h-3 text-emerald-400" />
-                    <span>
-                      Session: {sessionTokenLedger.totalSessionTokens.toLocaleString()} tok · $
-                      {sessionTokenLedger.totalShadowCostUsd.toFixed(4)}
-                    </span>
-                  </button>
-                  <span className="hidden xl:inline-block rounded bg-slate-900/80 border border-slate-700/80 px-1.5 py-0.2 text-[9px] text-sky-300">
-                    {sessionTokenLedger.activeKeySlot}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={handleResetSessionTokenLedger}
-                    className="rounded bg-slate-800 hover:bg-slate-700 px-1.5 py-0.5 text-[9px] font-bold text-slate-300 transition"
-                    title="Reset Session Token Counter to 0"
-                  >
-                    Reset 0
-                  </button>
-                </div>
-              </div>
+      {/* =====================================================================
+          SLIM 60PX TOP APP BAR (BERRY / MATERIALLY STYLE)
+         ===================================================================== */}
+      <header
+        className={`h-[60px] shrink-0 border-b backdrop-blur px-4 sm:px-6 flex items-center justify-between gap-4 sticky top-0 z-30 ${
+          isLightTheme
+            ? 'border-[#E9EEF5] bg-white/95 text-[#0F172A]'
+            : 'border-slate-800/90 bg-[#111927]/95 text-slate-100'
+        }`}
+      >
+        <div className="flex items-center gap-3 min-w-0">
+          <button
+            type="button"
+            onClick={() => {
+              if (typeof window !== 'undefined' && window.innerWidth < 768) {
+                setIsMobileSidebarOpen((prev) => !prev);
+              } else {
+                setIsInnerRailCollapsed((prev) => !prev);
+              }
+            }}
+            className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border transition ${
+              isLightTheme
+                ? 'border-[#E2E8F0] bg-[#F8FAFC] text-slate-600 hover:bg-slate-100'
+                : 'border-slate-800 bg-slate-900 text-slate-300 hover:bg-slate-800'
+            }`}
+            title={isInnerRailCollapsed ? 'Expand Sidebar' : 'Toggle Sidebar'}
+          >
+            <AgencyUiIcon
+              name={isInnerRailCollapsed ? 'panel-left-open' : 'panel-left-close'}
+              className="w-4 h-4"
+            />
+          </button>
+
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span
+              data-v5-solid="true"
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#2563EB] text-white font-bold text-xs shadow-sm"
+            >
+              AI
+            </span>
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-base font-bold truncate">
+                {activeWebsite.siteName}
+              </span>
+              <span
+                className={`hidden md:inline-flex rounded-lg px-2.5 py-0.5 text-xs font-medium ${
+                  isLightTheme
+                    ? 'bg-[#F1F5F9] text-slate-600'
+                    : 'bg-slate-800 text-slate-300'
+                }`}
+              >
+                {activeWebsite.siteUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')}
+              </span>
             </div>
           </div>
+        </div>
 
-          {/* Right: Theme Toggle + Workspace vs Node Graph Toggle + Direct Full-Screen Expand + Flow Pause */}
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={handleToggleThemeMode}
-              className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold transition ${
-                isLightTheme
-                  ? 'border-slate-300 bg-white text-slate-800 hover:bg-slate-100'
-                  : 'border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800'
-              }`}
-              title={isLightTheme ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
-            >
-              <AgencyUiIcon
-                name={isLightTheme ? 'moon' : 'sun'}
-                className="w-3.5 h-3.5 text-amber-400"
-              />
-              <span className="hidden sm:inline">
-                {isLightTheme ? 'Dark Mode' : 'Light Mode'}
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setIsFullCanvasGraphOpen((prev) => !prev);
-                if (isFullCanvasGraphOpen) {
-                  setIsGraphFullScreenViewport(false);
-                }
-              }}
-              className={`inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition shadow ${
-                isFullCanvasGraphOpen
-                  ? 'bg-gradient-to-r from-amber-400 via-emerald-400 to-sky-400 text-slate-950'
-                  : 'border border-sky-400/60 bg-sky-500/20 text-sky-200 hover:bg-sky-500/30'
-              }`}
-            >
-              <AgencyUiIcon
-                name={isFullCanvasGraphOpen ? 'dashboard-grid' : 'node-graph'}
-                className="w-3.5 h-3.5"
-              />
-              <span>
-                {isFullCanvasGraphOpen
-                  ? 'Return to Department Tabs'
-                  : 'Live Agency Node Graph'}
-              </span>
-            </button>
+        <div className="flex items-center gap-2.5 shrink-0">
+          {/* Live Token Counter Shortcut Pill */}
+          <button
+            type="button"
+            onClick={() => {
+              setActiveSidebarTab('executive-office');
+              setExecutiveSubView('tokens');
+              setIsFullCanvasGraphOpen(false);
+              setIsGraphFullScreenViewport(false);
+            }}
+            className={`hidden lg:inline-flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-mono font-semibold transition ${
+              isLightTheme
+                ? 'border-[#E2E8F0] bg-[#F8FAFC] text-slate-700 hover:border-[#2563EB]/40'
+                : 'border-slate-800 bg-slate-900 text-slate-200 hover:border-blue-500/40'
+            }`}
+            title="Inspect live session token ledger"
+          >
+            <span className="h-2 w-2 rounded-full bg-emerald-500" />
+            <span>{sessionTokenLedger.totalSessionTokens.toLocaleString()} tok</span>
+            <span className={isLightTheme ? 'text-emerald-600' : 'text-emerald-400'}>
+              ${sessionTokenLedger.totalShadowCostUsd.toFixed(4)}
+            </span>
+          </button>
 
-            <button
-              type="button"
-              onClick={() => {
-                setIsFullCanvasGraphOpen(true);
-                setIsGraphFullScreenViewport(true);
-              }}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-400/50 bg-emerald-500/15 hover:bg-emerald-500/25 px-3 py-2 text-xs font-extrabold text-emerald-200 transition"
-              title="Open Node Graph in 100% Full Screen"
-            >
-              <AgencyUiIcon name="expand-fullscreen" className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Full Screen Graph</span>
-            </button>
+          <button
+            type="button"
+            onClick={() => {
+              setIsFullCanvasGraphOpen((prev) => !prev);
+              if (isFullCanvasGraphOpen) {
+                setIsGraphFullScreenViewport(false);
+              }
+            }}
+            className={`hidden sm:inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition ${
+              isFullCanvasGraphOpen
+                ? isLightTheme
+                  ? 'border-[#2563EB] bg-blue-50 text-[#2563EB]'
+                  : 'border-[#2563EB] bg-blue-500/20 text-sky-300'
+                : isLightTheme
+                  ? 'border-[#E2E8F0] bg-white text-slate-700 hover:bg-slate-50'
+                  : 'border-slate-800 bg-slate-900 text-slate-200 hover:bg-slate-800'
+            }`}
+          >
+            <AgencyUiIcon
+              name={isFullCanvasGraphOpen ? 'dashboard-grid' : 'node-graph'}
+              className="w-4 h-4"
+            />
+            <span>{isFullCanvasGraphOpen ? 'Dashboard View' : 'Node Canvas'}</span>
+          </button>
 
-            <button
-              type="button"
-              onClick={() => setIsPacedHandoffRunning((prev) => !prev)}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-900 hover:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-200 transition"
-            >
-              <AgencyUiIcon
-                name={isPacedHandoffRunning ? 'pause' : 'play'}
-                className="w-3.5 h-3.5 text-sky-400"
-              />
-              <span>{isPacedHandoffRunning ? 'Pause Flow' : 'Resume Flow'}</span>
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={handleToggleThemeMode}
+            className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition ${
+              isLightTheme
+                ? 'border-[#E2E8F0] bg-white text-slate-700 hover:bg-slate-50'
+                : 'border-slate-800 bg-slate-900 text-slate-200 hover:bg-slate-800'
+            }`}
+            title={isLightTheme ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+          >
+            <AgencyUiIcon
+              name={isLightTheme ? 'moon' : 'sun'}
+              className="w-4 h-4 text-amber-500"
+            />
+            <span className="hidden md:inline">
+              {isLightTheme ? 'Dark' : 'Light'}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            data-v5-solid="true"
+            onClick={() => {
+              setChatTargetAgentId('agent-chief-orchestrator');
+              setIsChatDrawerExpanded(true);
+            }}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] px-3.5 py-2 text-xs font-semibold text-white shadow-sm transition"
+          >
+            <AgencyUiIcon name="sparkle" className="w-3.5 h-3.5" />
+            <span>Ask Copilot</span>
+          </button>
         </div>
       </header>
 
       {statusToast && (
-        <div className="bg-emerald-950/90 border-b border-emerald-500/40 px-6 py-2 text-xs text-emerald-200 flex items-center justify-between">
+        <div
+          className={`border-b px-6 py-2 text-xs font-medium flex items-center justify-between ${
+            isLightTheme
+              ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+              : 'bg-emerald-950/80 border-emerald-500/30 text-emerald-200'
+          }`}
+        >
           <span>{statusToast}</span>
           <button
             type="button"
             onClick={() => setStatusToast('')}
-            className="font-bold text-slate-300 hover:text-white"
+            className="font-bold opacity-75 hover:opacity-100"
           >
             ✕
           </button>
@@ -1916,135 +1865,52 @@ export default function AiAgencyDashboardShell() {
       )}
 
       {/* =====================================================================
-          MAIN BODY: V4 DUAL-RAIL LEFT NAVIGATION (64px ICON RAIL + 216px SUB-MENU) + LOCKED WORKSPACE
+          MAIN BODY: ONE SINGLE CLEAN LEFT SIDEBAR (252px / 72px) + WORKSPACE
          ===================================================================== */}
-      <div className="flex-1 min-h-0 flex overflow-hidden">
-        {/* RAIL 1: 68px Royal-Blue Primary Domain Rail (V5) */}
-        <nav
-          aria-label="Primary Agency Domains"
-          data-v5-solid={isLightTheme ? 'true' : undefined}
-          className={`w-[68px] shrink-0 border-r flex flex-col items-center justify-between py-3 px-1.5 transition-colors ${
-            isLightTheme
-              ? 'bg-[#1D4ED8] border-[#1E40AF] text-white'
-              : 'bg-[#0B1324] border-slate-800/90 text-slate-200'
-          }`}
-          style={isLightTheme ? { backgroundColor: '#1D4ED8' } : undefined}
-        >
-          <div className="w-full space-y-1.5">
-            {V4_OUTER_RAIL_DOMAINS.filter((d) => d.id !== 'settings').map((domain) => {
-              const isActive = activeOuterDomain === domain.id;
-              return (
-                <button
-                  key={domain.id}
-                  type="button"
-                  data-v5-solid={isLightTheme ? 'true' : undefined}
-                  onClick={() => {
-                    setActiveOuterDomain(domain.id);
-                    setIsInnerRailCollapsed(false);
-                    const firstItem = domain.items[0];
-                    if (firstItem) {
-                      setActiveSidebarTab(firstItem.targetTab);
-                      if (firstItem.execSubView) {
-                        setExecutiveSubView(firstItem.execSubView);
-                      }
-                      setIsFullCanvasGraphOpen(Boolean(firstItem.openGraph));
-                      setIsGraphFullScreenViewport(false);
-                    }
-                  }}
-                  className={`w-full rounded-xl py-2 px-1 flex flex-col items-center gap-1 transition ${
-                    isActive
-                      ? isLightTheme
-                        ? 'bg-white/20 text-white shadow-sm ring-1 ring-white/30'
-                        : 'bg-[#1D4ED8]/30 text-white border border-blue-400/50'
-                      : isLightTheme
-                        ? 'text-blue-100 hover:bg-white/10 hover:text-white'
-                        : 'text-slate-400 hover:bg-slate-900 hover:text-slate-100'
-                  }`}
-                >
-                  <DepartmentSvgIcon tabId={domain.iconTab} className="w-4 h-4" />
-                  <span className="text-[10px] font-bold leading-none">
-                    {domain.shortLabel}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Bottom-Pinned Settings & Collapse Controls */}
+      <div className="flex-1 min-h-0 flex overflow-hidden relative">
+        {isMobileSidebarOpen && (
           <div
-            className={`w-full space-y-1.5 pt-2 border-t ${
-              isLightTheme ? 'border-white/15' : 'border-slate-800/70'
-            }`}
-          >
-            <button
-              type="button"
-              data-v5-solid={isLightTheme ? 'true' : undefined}
-              onClick={() => {
-                setActiveOuterDomain('settings');
-                setIsInnerRailCollapsed(false);
-                setActiveSidebarTab('executive-office');
-                setExecutiveSubView('memory');
-                setIsFullCanvasGraphOpen(false);
-              }}
-              className={`w-full rounded-xl py-2 px-1 flex flex-col items-center gap-1 transition ${
-                activeOuterDomain === 'settings'
-                  ? isLightTheme
-                    ? 'bg-white/20 text-white ring-1 ring-white/30'
-                    : 'bg-[#1D4ED8]/30 text-white border border-blue-400/50'
-                  : isLightTheme
-                    ? 'text-blue-100 hover:bg-white/10 hover:text-white'
-                    : 'text-slate-400 hover:bg-slate-900 hover:text-slate-100'
-              }`}
-            >
-              <AgencyUiIcon name="settings" className="w-4 h-4" />
-              <span className="text-[10px] font-bold leading-none">Settings</span>
-            </button>
-            <button
-              type="button"
-              data-v5-solid={isLightTheme ? 'true' : undefined}
-              onClick={() => setIsInnerRailCollapsed((prev) => !prev)}
-              className={`w-full rounded-xl py-1.5 flex items-center justify-center transition ${
-                isLightTheme
-                  ? 'text-blue-100 hover:bg-white/15'
-                  : 'text-slate-400 hover:bg-slate-900'
-              }`}
-              title={isInnerRailCollapsed ? 'Expand Tool Menu' : 'Collapse Tool Menu'}
-            >
-              <AgencyUiIcon
-                name={isInnerRailCollapsed ? 'panel-left-open' : 'panel-left-close'}
-                className="w-4 h-4"
-              />
-            </button>
-          </div>
-        </nav>
-
-        {/* RAIL 2: 224px Contextual Tool Sub-Menu (Zero Duplicated Department List) */}
-        {!isInnerRailCollapsed && (
-          <aside
-            className={`hidden md:flex w-[224px] shrink-0 border-r flex-col justify-between p-3 overflow-y-auto ${
-              isLightTheme
-                ? 'bg-white border-slate-200'
-                : 'bg-[#080F1E] border-slate-800/90'
-            }`}
-          >
-            <div className="space-y-4">
-              <div className="px-2 flex items-center justify-between">
-                <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">
-                  {activeOuterDomainConfig.panelTitle}
-                </span>
-                <span className="rounded bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-mono font-bold text-emerald-400">
-                  36 AI
-                </span>
-              </div>
-
-              <div className="space-y-1">
-                {activeOuterDomainConfig.items.map((item) => {
+            onClick={() => setIsMobileSidebarOpen(false)}
+            className="fixed inset-0 top-[60px] z-30 bg-slate-950/50 backdrop-blur-sm md:hidden"
+          />
+        )}
+        <aside
+          aria-label="Workspace Navigation"
+          className={`${
+            isMobileSidebarOpen
+              ? 'fixed inset-y-0 top-[60px] left-0 z-40 flex w-[252px] p-4 shadow-2xl md:static md:shadow-none'
+              : 'hidden md:flex'
+          } shrink-0 border-r flex-col justify-between transition-all duration-200 overflow-y-auto ${
+            isInnerRailCollapsed ? 'md:w-[72px] md:p-2.5' : 'md:w-[252px] md:p-4'
+          } ${
+            isLightTheme
+              ? 'bg-white border-[#E9EEF5]'
+              : 'bg-[#111927] border-slate-800/90'
+          }`}
+        >
+          <div className="space-y-5">
+            {V6_SINGLE_SIDEBAR_GROUPS.map((group) => (
+              <div key={group.groupLabel} className="space-y-1">
+                {(isMobileSidebarOpen || !isInnerRailCollapsed) && (
+                  <div
+                    className={`px-3 pb-1 text-xs font-semibold tracking-wide uppercase ${
+                      isLightTheme ? 'text-slate-400' : 'text-slate-500'
+                    }`}
+                  >
+                    {group.groupLabel}
+                  </div>
+                )}
+                {group.items.map((item) => {
+                  const showLabels = isMobileSidebarOpen || !isInnerRailCollapsed;
                   const isItemActive =
                     (item.openGraph && isFullCanvasGraphOpen) ||
                     (!isFullCanvasGraphOpen &&
                       !item.openGraph &&
                       activeSidebarTab === item.targetTab &&
-                      (!item.execSubView || executiveSubView === item.execSubView));
+                      (!item.execSubView ||
+                        executiveSubView === item.execSubView ||
+                        (item.execSubView === 'memory' && executiveSubView === 'heartbeat')));
+
                   return (
                     <button
                       key={item.id}
@@ -2056,75 +1922,88 @@ export default function AiAgencyDashboardShell() {
                         }
                         setIsFullCanvasGraphOpen(Boolean(item.openGraph));
                         setIsGraphFullScreenViewport(false);
+                        setIsMobileSidebarOpen(false);
                       }}
-                      className={`w-full text-left rounded-lg px-2.5 py-2 text-xs font-semibold transition flex items-center justify-between gap-2 ${
+                      title={!showLabels ? item.label : undefined}
+                      className={`w-full rounded-xl transition flex items-center ${
+                        !showLabels
+                          ? 'justify-center p-2.5'
+                          : 'justify-start gap-3 px-3 py-2 text-sm'
+                      } ${
                         isItemActive
                           ? isLightTheme
-                            ? 'bg-blue-50 text-[#1D4ED8] border-l-2 border-[#1D4ED8]'
-                            : 'bg-blue-500/15 text-white border-l-2 border-[#38BDF8]'
+                            ? 'bg-[#EFF6FF] text-[#2563EB] font-semibold'
+                            : 'bg-[#2563EB]/15 text-sky-300 font-semibold'
                           : isLightTheme
-                            ? 'text-slate-700 hover:bg-slate-100'
-                            : 'text-slate-300 hover:bg-slate-900'
+                            ? 'text-slate-600 font-medium hover:bg-slate-50 hover:text-slate-900'
+                            : 'text-slate-400 font-medium hover:bg-slate-800/60 hover:text-slate-100'
                       }`}
                     >
-                      <span className="truncate">{item.label}</span>
                       <span
-                        className={`shrink-0 inline-flex items-center gap-1 text-[9.5px] font-mono ${
-                          item.modeBadge === '24/7 Auto'
-                            ? 'text-emerald-400'
-                            : item.modeBadge === 'Live Meter'
-                              ? 'text-amber-400'
-                              : 'text-sky-400'
+                        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
+                          isItemActive
+                            ? isLightTheme
+                              ? 'bg-white text-[#2563EB] shadow-sm'
+                              : 'bg-[#2563EB]/25 text-sky-300'
+                            : isLightTheme
+                              ? 'text-slate-500'
+                              : 'text-slate-400'
                         }`}
                       >
-                        <span
-                          className={`h-1.5 w-1.5 rounded-full ${
-                            item.modeBadge === '24/7 Auto'
-                              ? 'bg-emerald-400'
-                              : item.modeBadge === 'Live Meter'
-                                ? 'bg-amber-400'
-                                : 'bg-sky-400'
-                          }`}
-                        />
-                        {item.modeBadge === '24/7 Auto'
-                          ? 'Auto'
-                          : item.modeBadge === 'Live Meter'
-                            ? 'Live'
-                            : 'Tool'}
+                        {item.deptIcon ? (
+                          <DepartmentSvgIcon tabId={item.deptIcon} className="w-4 h-4" />
+                        ) : (
+                          <AgencyUiIcon
+                            name={item.uiIcon || 'dashboard-grid'}
+                            className="w-4 h-4"
+                          />
+                        )}
                       </span>
+                      {showLabels && (
+                        <span className="truncate flex-1 text-left">{item.label}</span>
+                      )}
                     </button>
                   );
                 })}
               </div>
-            </div>
+            ))}
+          </div>
 
-            {/* Quick Theme & Node Graph Card */}
-            <div className="pt-3 border-t border-slate-800/40 space-y-2">
-              <button
-                type="button"
-                data-v5-solid={isLightTheme ? 'true' : undefined}
-                onClick={() => {
-                  setIsFullCanvasGraphOpen(true);
-                  setIsGraphFullScreenViewport(true);
-                }}
-                className={`w-full rounded-xl px-3 py-2 text-left transition flex items-center justify-between text-xs font-bold ${
-                  isLightTheme
-                    ? 'bg-[#1D4ED8] hover:bg-[#1E40AF] text-white shadow-sm'
-                    : 'border border-sky-500/35 bg-sky-500/10 hover:bg-sky-500/20 text-sky-300'
+          {/* Bottom Pinned Active Site Card */}
+          {(isMobileSidebarOpen || !isInnerRailCollapsed) && (
+            <div
+              className={`mt-4 rounded-xl border p-3.5 space-y-2.5 ${
+                isLightTheme
+                  ? 'border-[#E9EEF5] bg-[#F8FAFC]'
+                  : 'border-slate-800 bg-[#0F172A]'
+              }`}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-semibold truncate">
+                  {activeWebsite.siteName}
+                </span>
+                <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
+              </div>
+              <div
+                className={`text-xs font-mono truncate ${
+                  isLightTheme ? 'text-slate-500' : 'text-slate-400'
                 }`}
               >
-                <span className="inline-flex items-center gap-1.5">
-                  <AgencyUiIcon name="expand-fullscreen" className="w-3.5 h-3.5" />
-                  <span>Full-Screen Graph</span>
-                </span>
-                <span className="text-[10px] font-mono">100%</span>
-              </button>
+                {activeWebsite.siteUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')}
+              </div>
+              <Link
+                href="/ai-employee-agency"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#2563EB] hover:underline"
+              >
+                <span>Switch Website</span>
+                <AgencyUiIcon name="arrow-right" className="w-3.5 h-3.5" />
+              </Link>
             </div>
-          </aside>
-        )}
+          )}
+        </aside>
 
         {/* =====================================================================
-            RIGHT MAIN WORKSPACE AREA (SCROLLS CLEANLY INSIDE 100dvh SHELL)
+            RIGHT MAIN WORKSPACE AREA (OPEN, AIRY BERRY/MATERIALLY CANVAS)
            ===================================================================== */}
         <main className="flex-1 min-w-0 overflow-y-auto flex flex-col">
           {isFullCanvasGraphOpen ? (
@@ -2151,187 +2030,120 @@ export default function AiAgencyDashboardShell() {
               }}
             />
           ) : (
-            <div className="p-4 sm:p-6 space-y-5 flex-1">
-              {/* -------------------------------------------------------------
-                  SINGLE-ROW V5 COMPACT DEPARTMENT HEADER BAR
-                 ------------------------------------------------------------- */}
-              <div
-                className={`rounded-2xl border px-4 py-3 flex flex-wrap items-center justify-between gap-3 text-xs ${
-                  isLightTheme
-                    ? 'border-slate-200 bg-white shadow-sm'
-                    : 'border-slate-800/90 bg-[#0A1224]'
-                }`}
-              >
-                <div className="flex flex-wrap items-center gap-3 min-w-0">
-                  <span
-                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border"
-                    style={{
-                      backgroundColor: `${currentDepartmentRegistry.accentHex}18`,
-                      borderColor: `${currentDepartmentRegistry.accentHex}50`,
-                      color: currentDepartmentRegistry.accentHex,
-                    }}
-                  >
-                    <DepartmentSvgIcon tabId={activeSidebarTab} className="w-4 h-4" />
-                  </span>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-extrabold">
+            <div className="w-full max-w-[1440px] mx-auto p-5 sm:p-6 space-y-5 flex-1">
+              {/* Compact Department Bar ONLY on Specialist Department Tabs */}
+              {activeSidebarTab !== 'executive-office' && (
+                <div
+                  className={`rounded-2xl border px-5 py-3.5 flex flex-wrap items-center justify-between gap-3 ${
+                    isLightTheme
+                      ? 'border-[#E9EEF5] bg-white shadow-[0_4px_20px_-2px_rgba(15,23,42,0.04)]'
+                      : 'border-slate-800/90 bg-[#111927]'
+                  }`}
+                >
+                  <div className="flex flex-wrap items-center gap-3 min-w-0">
+                    <span
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border"
+                      style={{
+                        backgroundColor: `${currentDepartmentRegistry.accentHex}15`,
+                        borderColor: `${currentDepartmentRegistry.accentHex}40`,
+                        color: currentDepartmentRegistry.accentHex,
+                      }}
+                    >
+                      <DepartmentSvgIcon tabId={activeSidebarTab} className="w-4 h-4" />
+                    </span>
+                    <div className="min-w-0">
+                      <div className="text-sm font-bold truncate">
                         {currentDepartmentRegistry.name}
-                      </span>
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-sky-400">
-                        {currentDepartmentRegistry.departmentBadge} · 1 Lead +{' '}
-                        {currentDepartmentRegistry.subAgents.length} Sub-Agents
-                      </span>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                      {currentDepartmentRegistry.subAgents.map((sub) => (
-                        <button
-                          key={sub.id}
-                          type="button"
-                          onClick={() => {
-                            setChatTargetAgentId(sub.id);
-                            setIsChatDrawerExpanded(true);
-                          }}
-                          className={`rounded-md border px-2 py-0.5 text-[10px] font-semibold transition ${
-                            isLightTheme
-                              ? 'border-slate-200 bg-[#F8FAFC] text-slate-700 hover:border-[#2563EB]'
-                              : 'border-slate-800 bg-slate-900 text-slate-300 hover:border-sky-500/40'
-                          }`}
-                          title={`Chat 1-on-1 with ${sub.name}: ${sub.roleTitle}`}
-                        >
-                          {sub.name}
-                        </button>
-                      ))}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                        {currentDepartmentRegistry.subAgents.map((sub) => (
+                          <button
+                            key={sub.id}
+                            type="button"
+                            onClick={() => {
+                              setChatTargetAgentId(sub.id);
+                              setIsChatDrawerExpanded(true);
+                            }}
+                            className={`rounded-lg border px-2.5 py-0.5 text-xs font-medium transition ${
+                              isLightTheme
+                                ? 'border-[#E2E8F0] bg-[#F8FAFC] text-slate-600 hover:border-[#2563EB] hover:text-[#2563EB]'
+                                : 'border-slate-800 bg-slate-900 text-slate-300 hover:border-sky-500/40'
+                            }`}
+                          >
+                            {sub.name}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setChatTargetAgentId(currentDepartmentRegistry.id);
-                    setIsChatDrawerExpanded(true);
-                  }}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-purple-400/40 bg-purple-500/15 hover:bg-purple-500/25 px-3 py-1.5 text-[11px] font-extrabold text-purple-200 transition shrink-0"
-                >
-                  <AgencyUiIcon name="chat" className="w-3.5 h-3.5" />
-                  <span>Message {currentDepartmentRegistry.name}</span>
-                </button>
-              </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setChatTargetAgentId(currentDepartmentRegistry.id);
+                      setIsChatDrawerExpanded(true);
+                    }}
+                    className={`inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-semibold transition shrink-0 ${
+                      isLightTheme
+                        ? 'border-blue-200 bg-blue-50 text-[#2563EB] hover:bg-blue-100'
+                        : 'border-indigo-400/40 bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-200'
+                    }`}
+                  >
+                    <AgencyUiIcon name="chat" className="w-3.5 h-3.5" />
+                    <span>Message Lead</span>
+                  </button>
+                </div>
+              )}
 
               {/* -------------------------------------------------------------
-                  TAB 1: EXECUTIVE OFFICE (KPIs + PHASE 7 TOKEN HUD + PHASE 8 MEMORY + PHASE 10 HEARTBEATS)
+                  WORKSPACE VIEWS (OVERVIEW, TOKENS, SKILLS & SCHEDULE)
                  ------------------------------------------------------------- */}
               {activeSidebarTab === 'executive-office' && (
                 <div className="space-y-5">
-                  <div
-                    className={`rounded-2xl border p-5 space-y-5 ${
-                      isLightTheme
-                        ? 'border-slate-200 bg-white shadow-sm'
-                        : 'border-slate-800/90 bg-slate-900/80'
-                    }`}
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div>
-                        <span className="text-[11px] font-extrabold uppercase tracking-wider text-sky-400">
-                          Executive Command Center · V5 Real-Time OS
-                        </span>
-                        <h2 className="text-lg sm:text-xl font-extrabold text-white mt-0.5">
-                          24/7 Agency Execution, Live Token Telemetry, Skills &amp; Heartbeats
-                        </h2>
-                      </div>
-                      <button
-                        type="button"
-                        data-v5-solid="true"
-                        onClick={() => {
-                          setIsFullCanvasGraphOpen(true);
-                          setIsGraphFullScreenViewport(true);
-                        }}
-                        className="inline-flex items-center gap-1.5 rounded-xl bg-[#1D4ED8] hover:bg-[#1E40AF] px-3.5 py-2 text-xs font-extrabold text-white transition"
-                      >
-                        <AgencyUiIcon name="expand-fullscreen" className="w-3.5 h-3.5" />
-                        <span>Launch Full-Screen Node Graph</span>
-                      </button>
-                    </div>
-
-                    {/* Horizontal Executive Sub-Navigation Tabs */}
-                    <div className="flex flex-wrap items-center gap-1.5 border-b border-slate-800/70 pb-3">
-                      {(
-                        [
-                          { id: 'overview', label: 'Overview & Live Runner' },
-                          { id: 'tokens', label: 'Token & API Telemetry' },
-                          { id: 'memory', label: 'Trainable Skills & Memory' },
-                          { id: 'heartbeat', label: '24/7 Heartbeat Schedule' },
-                        ] as const
-                      ).map((tab) => (
+                  {(executiveSubView === 'memory' || executiveSubView === 'heartbeat') && (
+                    <div
+                      className={`rounded-2xl border p-4 flex flex-wrap items-center justify-between gap-3 ${
+                        isLightTheme
+                          ? 'border-[#E9EEF5] bg-white shadow-[0_4px_20px_-2px_rgba(15,23,42,0.04)]'
+                          : 'border-slate-800/90 bg-[#111927]'
+                      }`}
+                    >
+                      <div className="text-base font-bold">Agent Skills &amp; Schedule</div>
+                      <div className="flex items-center gap-2">
                         <button
-                          key={tab.id}
                           type="button"
-                          data-v5-solid={executiveSubView === tab.id ? 'true' : undefined}
-                          onClick={() => setExecutiveSubView(tab.id)}
-                          className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
-                            executiveSubView === tab.id
-                              ? 'bg-[#1D4ED8] text-white'
+                          data-v5-solid={executiveSubView === 'memory' ? 'true' : undefined}
+                          onClick={() => setExecutiveSubView('memory')}
+                          className={`rounded-xl px-3.5 py-2 text-xs font-semibold transition ${
+                            executiveSubView === 'memory'
+                              ? 'bg-[#2563EB] text-white'
                               : isLightTheme
-                                ? 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                                : 'bg-slate-950/60 text-slate-300 hover:bg-slate-800'
+                                ? 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                : 'bg-slate-900 text-slate-300 hover:bg-slate-800'
                           }`}
                         >
-                          {tab.label}
+                          Trainable Skills
                         </button>
-                      ))}
-                    </div>
-
-                    {/* Legacy 5-Card KPI Strip (shown only on non-Overview sub-views) */}
-                    {executiveSubView !== 'overview' && (
-                      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-xs">
-                        <div className="rounded-xl border border-slate-800 bg-slate-950 p-3.5">
-                          <div className="text-slate-400 text-[11px]">Low-KD Clusters</div>
-                          <div className="text-base font-black text-amber-300 mt-1">
-                            {activeCampaign.jobs.length} Topics Locked
-                          </div>
-                        </div>
-                        <div className="rounded-xl border border-slate-800 bg-slate-950 p-3.5">
-                          <div className="text-slate-400 text-[11px]">
-                            {isInternalSite ? 'Published Live' : 'Drafts Staged'}
-                          </div>
-                          <div className="text-base font-black text-emerald-300 mt-1">
-                            {publishedOrDraftJobs.length} Done · {activelyWritingJobs.length}{' '}
-                            Active
-                          </div>
-                        </div>
-                        <div className="rounded-xl border border-slate-800 bg-slate-950 p-3.5">
-                          <div className="text-slate-400 text-[11px]">Backlink Club &amp; Ads</div>
-                          <div className="text-base font-black text-pink-300 mt-1">
-                            {activeBacklinkClub.activeVerifiedBacklinksCount} Links · 15 RSA
-                          </div>
-                        </div>
-                        <div className="rounded-xl border border-slate-800 bg-slate-950 p-3.5">
-                          <div className="text-slate-400 text-[11px]">30-Day Monthly Cost</div>
-                          <div className="text-base font-black text-sky-300 font-mono mt-1">
-                            ${activeTelemetry.projected30DayMonthlyCostUsd.toFixed(2)}/mo
-                          </div>
-                        </div>
-                        <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/15 p-3.5">
-                          <div className="flex items-center justify-between gap-1 text-[11px] text-emerald-300">
-                            <span>Live Session Tokens</span>
-                            <span className="text-[9.5px] font-mono text-sky-300">
-                              {sessionTokenLedger.activeAgentsCount}/36 active
-                            </span>
-                          </div>
-                          <div className="text-lg font-extrabold text-emerald-300 mt-1 font-mono">
-                            {sessionTokenLedger.totalSessionTokens.toLocaleString()} tok · $
-                            {sessionTokenLedger.totalShadowCostUsd.toFixed(4)}
-                          </div>
-                        </div>
+                        <button
+                          type="button"
+                          data-v5-solid={executiveSubView === 'heartbeat' ? 'true' : undefined}
+                          onClick={() => setExecutiveSubView('heartbeat')}
+                          className={`rounded-xl px-3.5 py-2 text-xs font-semibold transition ${
+                            executiveSubView === 'heartbeat'
+                              ? 'bg-[#2563EB] text-white'
+                              : isLightTheme
+                                ? 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                : 'bg-slate-900 text-slate-300 hover:bg-slate-800'
+                          }`}
+                        >
+                          24/7 Schedule
+                        </button>
                       </div>
-                    )}
+                    </div>
+                  )}
 
-                    {/* =============================================================
-                        MODULAR ZERO-BASED TOKEN LEDGER + PHASE 7 UNIT ECONOMICS
-                       ============================================================= */}
-                    {executiveSubView === 'tokens' && (
-                    <div className="space-y-4">
+                  {executiveSubView === 'tokens' && (
+                    <div className="space-y-5">
                       <ZeroBasedTokenLedgerPanel
                         ledger={sessionTokenLedger}
                         isFreeTierKeyMode={isFreeTierKeyMode}
@@ -2357,7 +2169,7 @@ export default function AiAgencyDashboardShell() {
                           <div className="inline-flex items-center gap-2 font-extrabold text-emerald-300">
                             <AgencyUiIcon name="cpu" className="w-4 h-4 text-emerald-400" />
                             <span>
-                              Real-Time 1-Circle LLM Token &amp; Shadow Cost Telemetry Meter (Phase 7)
+                              1-Circle Unit Economics &amp; Cost Breakdown
                             </span>
                           </div>
                           <p className="text-[11px] text-slate-400">
@@ -2369,7 +2181,7 @@ export default function AiAgencyDashboardShell() {
                             <strong className="text-sky-300">
                               {activeTelemetry.grossMarginAt149UsdSeoAiTierPercent}%
                             </strong>{' '}
-                            (vs SEO.AI $149/mo tier)
+                            (on $149/mo Pro tier)
                           </p>
                         </div>
 
@@ -2435,7 +2247,7 @@ export default function AiAgencyDashboardShell() {
                             <tr className="border-b border-slate-800 text-slate-400 font-mono">
                               <th className="py-2 pr-3">Circle Stage &amp; Department</th>
                               <th className="py-2 pr-3">
-                                Zero-Cost Mechanical Work (90% · $0.00)
+                                Deterministic Work ($0.00)
                               </th>
                               <th className="py-2 pr-3 text-right">Prompt Tok</th>
                               <th className="py-2 pr-3 text-right">Output Tok</th>
@@ -2518,7 +2330,7 @@ export default function AiAgencyDashboardShell() {
                           <div className="inline-flex items-center gap-2 font-extrabold text-purple-300">
                             <AgencyUiIcon name="sparkle" className="w-4 h-4 text-purple-400" />
                             <span>
-                              3-Layer Trainable Agent Memory &amp; Selective Workflow Interruption (Phase 8)
+                              Trainable Agent Skills &amp; Selective Overrides
                             </span>
                           </div>
                           <p className="text-[11px] text-slate-400 mt-0.5">
@@ -2632,7 +2444,7 @@ export default function AiAgencyDashboardShell() {
                         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
                           <div>
                             <span className="font-extrabold text-sky-300">
-                              Staggered 24/7 Autonomous Heartbeat Scheduler (Phase 10 — Zero Rate-Limit Collisions)
+                              24/7 Autonomous Agent Schedule
                             </span>
                             <p className="text-[11px] text-slate-400 mt-0.5">
                               Staggers background department jobs across 2h, 4h, 6h, 12h, and 24h windows so Free-Tier and Paid API keys never hit RPM spikes.
@@ -2754,7 +2566,6 @@ export default function AiAgencyDashboardShell() {
                         }}
                       />
                     )}
-                  </div>
                 </div>
               )}
 
@@ -2910,7 +2721,7 @@ export default function AiAgencyDashboardShell() {
                     <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
                       <div>
                         <span className="rounded bg-sky-500/20 px-2.5 py-0.5 text-[10px] font-extrabold text-sky-300 uppercase">
-                          SEO.AI ($149/mo) Challenger · Google Ads RSA Builder Sub-Agent (Phase 9)
+                          Google Ads RSA Campaign Builder
                         </span>
                         <h3 className="text-base font-extrabold text-white mt-1">
                           {activeGoogleAdsPack.campaignName} ·{' '}
@@ -3445,7 +3256,7 @@ export default function AiAgencyDashboardShell() {
                         Department 5 · Off-Page SEO, Digital PR &amp; Verified Backlink Exchange Club
                       </span>
                       <h2 className="text-lg sm:text-xl font-extrabold text-white mt-0.5">
-                        Automatic Non-Competing Backlink Exchange Network (Phase 9) &amp; PR Pitches
+                        Verified Backlink Exchange Network &amp; PR Pitches
                       </h2>
                     </div>
                     <button
@@ -3909,7 +3720,7 @@ export default function AiAgencyDashboardShell() {
                       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
                         <div>
                           <span className="rounded bg-sky-500/20 px-2.5 py-0.5 text-[10px] font-extrabold text-sky-300 uppercase">
-                            Phase 10 · 60-Second No-Code CMS Auto-Publishing Connector
+                            CMS &amp; Webhook Auto-Publishing Connector
                           </span>
                           <h3 className="text-base font-extrabold text-white mt-1">
                             Connect WordPress, Shopify, Webflow, or Universal Webhook in 60 Seconds

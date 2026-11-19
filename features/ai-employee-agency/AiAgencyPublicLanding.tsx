@@ -154,21 +154,21 @@ const V3_ENTERPRISE_PILLARS: Array<{
 }> = [
   {
     icon: 'cpu',
-    badge: '90% Mechanical / 10% LLM',
+    badge: 'Hybrid Execution',
     title: 'Real-Time 1-Circle Token & Cost HUD',
     description:
       'Track exact input, output, and thinking tokens across all 5 cognitive handoffs (~$0.0192 per full article + visual + social circle on Gemini 2.5 Flash).',
   },
   {
     icon: 'sparkle',
-    badge: '3-Layer Context Stack',
+    badge: 'Trainable Context',
     title: 'Trainable AI Employees & Custom Skills',
     description:
-      'Teach any specialist permanent rules in natural chat ("Always include a TL;DR table under H1"). Selective routing wakes only the affected 1–2 agents.',
+      'Teach any specialist permanent rules in natural chat ("Always include a TL;DR table under H1"). Selective routing wakes only the affected specialists.',
   },
   {
     icon: 'external-link',
-    badge: 'SEO.AI $149/mo Challenger',
+    badge: 'Verified Network',
     title: 'Verified Niche Backlink Exchange Club',
     description:
       'Contextual in-article backlink swaps with niche-matched, non-spammy partner domains (DR 54–74) plus automated anchor-text verification.',
@@ -1083,7 +1083,7 @@ export default function AiAgencyPublicLanding() {
         <section className="space-y-5">
           <div className="text-center space-y-1.5 max-w-2xl mx-auto">
             <div className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-500">
-              V5 Autonomous Architecture
+              Autonomous Workspace Architecture
             </div>
             <h2
               className={`text-xl sm:text-2xl font-extrabold ${
@@ -1250,10 +1250,10 @@ export default function AiAgencyPublicLanding() {
                       : 'border-slate-800 text-slate-400'
                   }`}
                 >
-                  <th className="py-3 pr-4">Capability / Department Layer</th>
-                  <th className="py-3 px-4">Legacy $149/mo SEO Agent (e.g. SEO.AI)</th>
+                  <th className="py-3 pr-4">Capability / Workflow Layer</th>
+                  <th className="py-3 px-4">Traditional SEO Automation ($149/mo)</th>
                   <th className="py-3 pl-4 text-emerald-500">
-                    DoItWithAI.tools 24/7 AI Digital Agency OS (V5)
+                    DoItWithAI Agency Workspace
                   </th>
                 </tr>
               </thead>

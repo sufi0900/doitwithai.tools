@@ -175,22 +175,22 @@ export default function AiVisibilityAndLauncherPanel({
   };
 
   const cardClass = isLightTheme
-    ? 'rounded-2xl border border-slate-200 bg-white text-slate-900'
-    : 'rounded-2xl border border-slate-800 bg-slate-950 text-slate-100';
+    ? 'rounded-2xl border border-[#E9EEF5] bg-white shadow-[0_4px_20px_-2px_rgba(15,23,42,0.05)] text-[#0F172A]'
+    : 'rounded-2xl border border-slate-800/90 bg-[#111927] text-slate-100';
   const mutedText = isLightTheme ? 'text-slate-600' : 'text-slate-400';
   const inputClass = isLightTheme
-    ? 'border-slate-300 bg-slate-50 text-slate-900 placeholder-slate-400'
+    ? 'border-[#E2E8F0] bg-[#F8FAFC] text-[#0F172A] placeholder-slate-400'
     : 'border-slate-700 bg-slate-900 text-white placeholder-slate-400';
 
   return (
-    <div className="space-y-4 text-xs">
+    <div className="space-y-5 text-xs">
       <div
-        className={`${cardClass} p-4 flex flex-wrap items-center justify-between gap-3`}
+        className={`${cardClass} p-5 flex flex-wrap items-center justify-between gap-3`}
       >
-        <div className="space-y-0.5">
-          <div className="inline-flex items-center gap-2 font-extrabold text-sm">
-            <AgencyUiIcon name="sparkle" className="w-4 h-4 text-sky-400" />
-            <span>3-Mode Article Launcher &amp; AI Brand Visibility Tracker</span>
+        <div className="space-y-1">
+          <div className="inline-flex items-center gap-2 font-bold text-[15px]">
+            <AgencyUiIcon name="sparkle" className="w-4 h-4 text-[#2563EB]" />
+            <span>Article Launcher &amp; AI Brand Visibility</span>
           </div>
           <p className={`text-[11px] ${mutedText}`}>
             Launch Keyword, Competitor Outrank, or YouTube-to-Article briefs and

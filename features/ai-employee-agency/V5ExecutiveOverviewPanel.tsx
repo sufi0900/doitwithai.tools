@@ -11,14 +11,13 @@ import { AgencyUiIcon } from './AgencySvgIcons';
 
 /**
  * ============================================================================
- * DOITWITHAI.TOOLS — 24/7 AI EMPLOYEE AGENCY OS (V5 PHASE 19)
+ * DOITWITHAI.TOOLS — AI EMPLOYEE AGENCY DASHBOARD (V6 REDESIGN)
  * Component: `features/ai-employee-agency/V5ExecutiveOverviewPanel.tsx`
  *
- * Frontier SaaS Executive Overview Dashboard:
- * - Clean Light (#FFFFFF / #F6F8FC) & Dark (#0F172A / #060B16) surfaces
- * - Tabular monospace KPI metrics + 5-Step Live Execution Pipeline Card
- * - Original SVG Circular Progress Rings (Technical CWV + AI Visibility)
- * - Compact Campaign Approval Queue & Live Token Activity Feed
+ * Berry MUI & Materially Inspired Overview Grid:
+ * - Row 1: 4 Hero KPI Cards with inline SVG sparklines & tabular metrics
+ * - Row 2: 8-Col Live 5-Step Pipeline & Activity Bar Chart + 4-Col Concentric Circular Progress Card
+ * - Row 3: 8-Col Clean Editorial Campaign Table + 4-Col Live Agent Activity Stream
  * ============================================================================
  */
 
@@ -50,114 +49,182 @@ export interface V5ExecutiveOverviewPanelProps {
 }
 
 const LIVE_FIVE_STEP_LABELS = [
-  { idx: 0, label: 'Keyword Brief', role: 'Keyword Lead' },
-  { idx: 1, label: 'GEO Draft', role: 'Section Writer' },
-  { idx: 2, label: 'Visual Pack', role: 'Design Director' },
-  { idx: 3, label: '150-Pt QA', role: 'QA Publisher' },
-  { idx: 4, label: 'Social Dist.', role: 'Social Manager' },
+  { idx: 0, label: 'Keyword Brief' },
+  { idx: 1, label: 'Article Draft' },
+  { idx: 2, label: 'Visual Assets' },
+  { idx: 3, label: 'On-Page QA' },
+  { idx: 4, label: 'Social Pack' },
 ] as const;
 
-const AGENCY_SIX_STAGE_HANDOFFS: Array<{
+const DEPARTMENT_STAGE_BARS: Array<{
   title: string;
   owner: string;
   tabId: AgencySidebarTabId;
   handoffNote: string;
+  baseHeight: number;
+  colorHex: string;
 }> = [
   {
-    title: '01 · Discovery',
-    owner: 'Keyword & Trend Lead',
+    title: 'Discovery',
+    owner: 'Keyword Strategist',
     tabId: 'keyword-strategist',
-    handoffNote: 'Live DOM crawl + low-KD cluster brief delivered.',
+    handoffNote: 'Live keyword clustering & difficulty scoring.',
+    baseHeight: 74,
+    colorHex: '#2563EB',
   },
   {
-    title: '02 · Editorial',
-    owner: 'Long-Form GEO Writer',
+    title: 'Editorial',
+    owner: 'Long-Form Writer',
     tabId: 'content-writing',
-    handoffNote: 'Direct-answer + comparison Markdown synthesized.',
+    handoffNote: 'Structured direct-answer drafts & headings.',
+    baseHeight: 88,
+    colorHex: '#4F46E5',
   },
   {
-    title: '03 · Visuals',
-    owner: 'Design & Infographic Lead',
+    title: 'Visuals',
+    owner: 'Design Director',
     tabId: 'graphic-design',
-    handoffNote: 'Hero & 6-block infographic SVGs prepared.',
+    handoffNote: 'Featured heroes & 6-layer data infographics.',
+    baseHeight: 68,
+    colorHex: '#7C3AED',
   },
   {
-    title: '04 · Technical QA',
-    owner: '150-Pt QA & Schema Gate',
+    title: 'Tech QA',
+    owner: 'QA & Publisher',
     tabId: 'qa-publishing',
-    handoffNote: 'JSON-LD, slug, links & readability verified.',
+    handoffNote: '150-point quality check, schema & CMS staging.',
+    baseHeight: 92,
+    colorHex: '#10B981',
   },
   {
-    title: '05 · Social Matrix',
-    owner: 'Omnichannel Social Lead',
+    title: 'Social',
+    owner: 'Social Manager',
     tabId: 'social-video-fleet',
-    handoffNote: 'LinkedIn, X & Pinterest asset variants generated.',
+    handoffNote: 'LinkedIn slides, Pinterest pins & short scripts.',
+    baseHeight: 76,
+    colorHex: '#0EA5E9',
   },
   {
-    title: '06 · Authority',
-    owner: 'Off-Page & Backlink Lead',
+    title: 'Authority',
+    owner: 'Off-Page Lead',
     tabId: 'off-page-seo',
-    handoffNote: 'Niche partner placement & citation loop active.',
+    handoffNote: 'Niche link placements & citation monitoring.',
+    baseHeight: 62,
+    colorHex: '#F59E0B',
   },
 ];
 
-function CircularHealthRing({
-  score,
-  label,
-  sublabel,
-  strokeHex,
+function MiniSparkline({
+  colorHex,
+  points,
+}: {
+  colorHex: string;
+  points: string;
+}) {
+  return (
+    <svg
+      width="68"
+      height="28"
+      viewBox="0 0 68 28"
+      fill="none"
+      aria-hidden="true"
+      className="shrink-0 opacity-90"
+    >
+      <polyline
+        fill="none"
+        stroke={colorHex}
+        strokeWidth="2.25"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        points={points}
+      />
+    </svg>
+  );
+}
+
+function ConcentricHealthGauge({
+  technicalScore,
+  aiScore,
   isLightTheme,
 }: {
-  score: number;
-  label: string;
-  sublabel: string;
-  strokeHex: string;
+  technicalScore: number;
+  aiScore: number;
   isLightTheme: boolean;
 }) {
-  const clamped = Math.max(0, Math.min(100, Math.round(score)));
-  const radius = 38;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (clamped / 100) * circumference;
+  const techClamped = Math.max(0, Math.min(100, Math.round(technicalScore)));
+  const aiClamped = Math.max(0, Math.min(100, Math.round(aiScore)));
+  const combinedScore = Math.round((techClamped + aiClamped) / 2);
+
+  const outerRadius = 72;
+  const innerRadius = 54;
+  const outerCirc = 2 * Math.PI * outerRadius;
+  const innerCirc = 2 * Math.PI * innerRadius;
+  const outerOffset = outerCirc - (techClamped / 100) * outerCirc;
+  const innerOffset = innerCirc - (aiClamped / 100) * innerCirc;
 
   return (
-    <div
-      className={`rounded-2xl border p-4 flex items-center gap-4 ${
-        isLightTheme ? 'border-slate-200 bg-[#F8FAFC]' : 'border-slate-800 bg-[#0B1120]'
-      }`}
-    >
-      <div className="relative h-24 w-24 shrink-0 flex items-center justify-center">
-        <svg className="h-24 w-24 -rotate-90" viewBox="0 0 96 96" aria-hidden="true">
-          <circle
-            cx="48"
-            cy="48"
-            r={radius}
-            fill="none"
-            strokeWidth="8"
-            className={isLightTheme ? 'stroke-slate-200' : 'stroke-slate-800'}
-          />
-          <circle
-            cx="48"
-            cy="48"
-            r={radius}
-            fill="none"
-            strokeWidth="8"
-            stroke={strokeHex}
-            strokeLinecap="round"
-            strokeDasharray={circumference}
-            strokeDashoffset={offset}
-            style={{ transition: 'stroke-dashoffset 600ms ease' }}
-          />
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="font-mono text-lg font-black tabular-nums">{clamped}%</span>
-        </div>
-      </div>
+    <div className="relative h-[176px] w-[176px] mx-auto flex items-center justify-center">
+      <svg
+        className="h-[176px] w-[176px] -rotate-90"
+        viewBox="0 0 176 176"
+        aria-hidden="true"
+      >
+        {/* Outer Ring Track & Fill (#2563EB) */}
+        <circle
+          cx="88"
+          cy="88"
+          r={outerRadius}
+          fill="none"
+          strokeWidth="10"
+          className={isLightTheme ? 'stroke-slate-100' : 'stroke-slate-800'}
+        />
+        <circle
+          cx="88"
+          cy="88"
+          r={outerRadius}
+          fill="none"
+          strokeWidth="10"
+          stroke="#2563EB"
+          strokeLinecap="round"
+          strokeDasharray={outerCirc}
+          strokeDashoffset={outerOffset}
+          style={{ transition: 'stroke-dashoffset 600ms ease' }}
+        />
 
-      <div className="min-w-0 space-y-1">
-        <div className="text-sm font-extrabold truncate">{label}</div>
-        <div className={`text-xs ${isLightTheme ? 'text-slate-500' : 'text-slate-400'}`}>
-          {sublabel}
-        </div>
+        {/* Inner Ring Track & Fill (#10B981) */}
+        <circle
+          cx="88"
+          cy="88"
+          r={innerRadius}
+          fill="none"
+          strokeWidth="10"
+          className={isLightTheme ? 'stroke-slate-100' : 'stroke-slate-800'}
+        />
+        <circle
+          cx="88"
+          cy="88"
+          r={innerRadius}
+          fill="none"
+          strokeWidth="10"
+          stroke="#10B981"
+          strokeLinecap="round"
+          strokeDasharray={innerCirc}
+          strokeDashoffset={innerOffset}
+          style={{ transition: 'stroke-dashoffset 600ms ease' }}
+        />
+      </svg>
+
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+        <span className="font-mono text-[28px] leading-none font-bold tabular-nums">
+          {combinedScore}%
+        </span>
+        <span
+          className={`text-xs font-medium mt-1.5 ${
+            isLightTheme ? 'text-slate-500' : 'text-slate-400'
+          }`}
+        >
+          Overall Health
+        </span>
       </div>
     </div>
   );
@@ -166,7 +233,6 @@ function CircularHealthRing({
 export default function V5ExecutiveOverviewPanel({
   isLightTheme,
   siteName,
-  siteUrl,
   jobs,
   completedCount,
   queuedCount,
@@ -190,11 +256,8 @@ export default function V5ExecutiveOverviewPanel({
   onOpenChatWithPrompt,
 }: V5ExecutiveOverviewPanelProps) {
   const cardSurface = isLightTheme
-    ? 'border-slate-200 bg-white shadow-sm'
-    : 'border-slate-800/90 bg-[#0F172A]';
-  const subSurface = isLightTheme
-    ? 'border-slate-200 bg-[#F8FAFC]'
-    : 'border-slate-800 bg-[#0B1120]';
+    ? 'border-[#E9EEF5] bg-white shadow-[0_4px_20px_-2px_rgba(15,23,42,0.05)] text-[#0F172A]'
+    : 'border-slate-800/90 bg-[#111927] shadow-[0_4px_20px_-2px_rgba(0,0,0,0.35)] text-slate-100';
   const mutedText = isLightTheme ? 'text-slate-500' : 'text-slate-400';
 
   const activeTargetJob =
@@ -202,386 +265,533 @@ export default function V5ExecutiveOverviewPanel({
     jobs.find((j) => j.status === 'queued') ||
     jobs[0];
 
-  const activeHandoff =
-    AGENCY_SIX_STAGE_HANDOFFS[selectedOverviewStageIdx] || AGENCY_SIX_STAGE_HANDOFFS[0];
+  const activeStageBar =
+    DEPARTMENT_STAGE_BARS[selectedOverviewStageIdx] || DEPARTMENT_STAGE_BARS[0];
 
-  const getJobStatusBadge = (status: AutomatedArticleJob['status']) => {
+  const avgKd =
+    jobs.length > 0
+      ? Math.round(jobs.reduce((acc, j) => acc + (j.kdProxyScore || 18), 0) / jobs.length)
+      : 18;
+  const combinedHealth = Math.round((overallSiteHealthScore + aiSearchScore) / 2);
+
+  const getJobStatusPill = (status: AutomatedArticleJob['status']) => {
     if (status === 'published' || status === 'ready-for-review') {
-      return isLightTheme
-        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-        : 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30';
+      return {
+        label: status === 'published' ? 'Published' : 'Ready',
+        classes: isLightTheme
+          ? 'bg-emerald-50 text-emerald-700'
+          : 'bg-emerald-500/15 text-emerald-300',
+      };
     }
-    if (status === 'drafting-article' || status === 'generating-visuals' || status === 'qa-critic-review') {
-      return isLightTheme
-        ? 'bg-blue-50 text-[#1D4ED8] border-blue-200'
-        : 'bg-blue-500/15 text-sky-300 border-blue-500/30';
+    if (
+      status === 'drafting-article' ||
+      status === 'generating-visuals' ||
+      status === 'qa-critic-review'
+    ) {
+      return {
+        label: 'Drafting',
+        classes: isLightTheme
+          ? 'bg-blue-50 text-[#2563EB]'
+          : 'bg-blue-500/15 text-sky-300',
+      };
     }
-    return isLightTheme
-      ? 'bg-slate-100 text-slate-600 border-slate-200'
-      : 'bg-slate-800 text-slate-300 border-slate-700';
+    return {
+      label: 'Queued',
+      classes: isLightTheme
+        ? 'bg-slate-100 text-slate-600'
+        : 'bg-slate-800 text-slate-300',
+    };
   };
 
   return (
     <div className="space-y-5">
-      {/* Row 1: Top 4-Card KPI Strip */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        <div className={`rounded-2xl border p-5 ${cardSurface}`}>
-          <div className={`text-[11px] font-bold uppercase tracking-wider ${mutedText}`}>
-            Completed / Ready
-          </div>
-          <div className="mt-2 flex items-baseline justify-between gap-2">
-            <span className="font-mono text-2xl font-black tabular-nums">
-              {completedCount}
-              <span className={`text-sm font-semibold ${mutedText}`}> / {jobs.length}</span>
-            </span>
-            <span className="rounded-full bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 text-[11px] font-bold text-emerald-500">
-              Live Queue
-            </span>
-          </div>
-          <div className={`mt-1.5 text-xs ${mutedText}`}>
-            {queuedCount} topic(s) queued next
-          </div>
-        </div>
-
-        <div className={`rounded-2xl border p-5 ${cardSurface}`}>
-          <div className={`text-[11px] font-bold uppercase tracking-wider ${mutedText}`}>
-            Session Tokens Burned
-          </div>
-          <div className="mt-2 flex items-baseline justify-between gap-2">
-            <span className="font-mono text-2xl font-black tabular-nums">
-              {totalSessionTokens.toLocaleString()}
-            </span>
-            <span className="font-mono text-xs font-bold text-[#2563EB]">
-              ${totalShadowCostUsd.toFixed(4)} eq.
-            </span>
-          </div>
-          <div className={`mt-1.5 text-xs ${mutedText}`}>
-            {isFreeTierKeyActive ? 'Free API Slot · $0.00 billed' : 'Paid API Key Active'}
-          </div>
-        </div>
-
-        <div className={`rounded-2xl border p-5 ${cardSurface}`}>
-          <div className={`text-[11px] font-bold uppercase tracking-wider ${mutedText}`}>
-            Active Execution Engine
-          </div>
-          <div className="mt-2 flex items-center justify-between gap-2">
-            <span className="font-mono text-sm font-extrabold truncate">{activeModelId}</span>
-            <button
-              type="button"
-              onClick={onOpenTokensView}
-              className="text-xs font-bold text-[#2563EB] hover:underline shrink-0"
-            >
-              Configure →
-            </button>
-          </div>
-          <div className={`mt-1.5 text-xs ${mutedText}`}>36 specialists ready on call</div>
-        </div>
-
-        <div className={`rounded-2xl border p-5 ${cardSurface}`}>
-          <div className={`text-[11px] font-bold uppercase tracking-wider ${mutedText}`}>
-            Workspace Site
-          </div>
-          <div className="mt-2 text-base font-extrabold truncate">{siteName}</div>
-          <div className={`mt-1 text-xs font-mono truncate ${mutedText}`}>{siteUrl}</div>
-        </div>
-      </div>
-
-      {/* Row 2: Live 5-Step Autonomous Execution Card */}
-      <section className={`rounded-2xl border p-5 sm:p-6 space-y-4 ${cardSurface}`}>
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="min-w-0 space-y-1">
-            <div className="flex items-center gap-2">
-              <span
-                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-bold border ${
-                  isLivePipelineRunning
-                    ? 'bg-blue-500/15 text-[#2563EB] border-blue-500/30'
-                    : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30'
-                }`}
-              >
-                <span
-                  className={`h-2 w-2 rounded-full ${
-                    isLivePipelineRunning ? 'bg-[#2563EB] animate-ping' : 'bg-emerald-500'
-                  }`}
-                />
-                {isLivePipelineRunning ? 'Executing Live LLM Pipeline' : 'Real-Time Pipeline Ready'}
-              </span>
-              <span className={`text-xs font-mono ${mutedText}`}>{liveStepStatusLabel}</span>
-            </div>
-            <h3 className="text-base sm:text-lg font-extrabold truncate">
-              {activeTargetJob ? activeTargetJob.topicTitle : 'No queued topic selected'}
-            </h3>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2.5">
-            <button
-              type="button"
-              onClick={() =>
-                onOpenChatWithPrompt(
-                  `Inspect live status of "${activeTargetJob?.topicTitle || siteName}" and suggest improvements.`
-                )
-              }
-              className={`rounded-xl border px-3.5 py-2.5 text-xs font-bold transition ${
-                isLightTheme
-                  ? 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-                  : 'border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800'
+      {/* ====================================================================
+          ROW 1: 4 HERO KPI CARDS (BERRY & MATERIALLY ERGONOMICS)
+         ==================================================================== */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+        {/* Card 1: Content Pipeline */}
+        <div className={`rounded-2xl border p-5 flex flex-col justify-between gap-4 ${cardSurface}`}>
+          <div className="flex items-center justify-between gap-3">
+            <span className={`text-xs font-semibold ${mutedText}`}>Content Pipeline</span>
+            <span
+              className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${
+                isLightTheme ? 'bg-blue-50 text-[#2563EB]' : 'bg-blue-500/15 text-blue-400'
               }`}
             >
-              Ask Copilot
-            </button>
-            <button
-              type="button"
-              data-v5-solid="true"
-              disabled={isLivePipelineRunning || !activeTargetJob}
-              onClick={() => onStartLivePipeline(activeTargetJob)}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#1D4ED8] hover:bg-[#1E40AF] disabled:opacity-60 px-4 py-2.5 text-xs font-extrabold text-white shadow-sm transition"
+              <AgencyUiIcon name="dashboard-grid" className="w-[18px] h-[18px]" />
+            </span>
+          </div>
+          <div className="flex items-end justify-between gap-3">
+            <div className="font-mono text-[28px] leading-tight font-bold tabular-nums">
+              {jobs.length} Topics
+            </div>
+            <MiniSparkline colorHex="#2563EB" points="2,22 14,18 26,20 38,11 52,14 66,5" />
+          </div>
+          <div className={`text-xs font-medium ${mutedText}`}>
+            {queuedCount} queued · Avg. KD {avgKd}
+          </div>
+        </div>
+
+        {/* Card 2: Published & Ready */}
+        <div className={`rounded-2xl border p-5 flex flex-col justify-between gap-4 ${cardSurface}`}>
+          <div className="flex items-center justify-between gap-3">
+            <span className={`text-xs font-semibold ${mutedText}`}>Published &amp; Ready</span>
+            <span
+              className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${
+                isLightTheme
+                  ? 'bg-emerald-50 text-emerald-600'
+                  : 'bg-emerald-500/15 text-emerald-400'
+              }`}
             >
-              <AgencyUiIcon name="play" className="w-3.5 h-3.5" />
-              <span>
-                {isLivePipelineRunning && activeLiveStepIndex !== null
-                  ? `Running Step ${activeLiveStepIndex + 1}/5...`
-                  : 'Start Writing Live →'}
-              </span>
-            </button>
+              <AgencyUiIcon name="check-shield" className="w-[18px] h-[18px]" />
+            </span>
+          </div>
+          <div className="flex items-end justify-between gap-3">
+            <div className="font-mono text-[28px] leading-tight font-bold tabular-nums">
+              {completedCount}{' '}
+              <span className={`text-base font-semibold ${mutedText}`}>/ {jobs.length}</span>
+            </div>
+            <MiniSparkline colorHex="#10B981" points="2,24 16,20 30,17 42,15 54,9 66,4" />
+          </div>
+          <div className={`text-xs font-medium ${mutedText}`}>
+            {isLivePipelineRunning ? 'Live execution running' : '150-pt QA verified'}
           </div>
         </div>
 
-        {/* 5 Sequential Specialist Nodes */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
-          {LIVE_FIVE_STEP_LABELS.map((step) => {
-            const isCurrent = isLivePipelineRunning && activeLiveStepIndex === step.idx;
-            const isCompleted =
-              (activeLiveStepIndex !== null && step.idx < activeLiveStepIndex) ||
-              (!isLivePipelineRunning &&
-                (activeTargetJob?.status === 'ready-for-review' ||
-                  activeTargetJob?.status === 'published'));
-
-            return (
-              <div
-                key={step.idx}
-                className={`rounded-xl border p-3 transition ${
-                  isCurrent
-                    ? 'border-[#2563EB] bg-blue-500/10'
-                    : isCompleted
-                      ? 'border-emerald-500/40 bg-emerald-500/10'
-                      : subSurface
-                }`}
-              >
-                <div className="flex items-center justify-between text-[11px] font-mono font-bold">
-                  <span>Step 0{step.idx + 1}</span>
-                  {isCompleted ? (
-                    <span className="text-emerald-500">DONE</span>
-                  ) : isCurrent ? (
-                    <span className="text-[#2563EB] animate-pulse">LIVE</span>
-                  ) : (
-                    <span className={mutedText}>WAIT</span>
-                  )}
-                </div>
-                <div className="text-xs font-extrabold mt-1 truncate">{step.label}</div>
-                <div className={`text-[11px] truncate ${mutedText}`}>{step.role}</div>
-              </div>
-            );
-          })}
+        {/* Card 3: Site & AI Readiness */}
+        <div className={`rounded-2xl border p-5 flex flex-col justify-between gap-4 ${cardSurface}`}>
+          <div className="flex items-center justify-between gap-3">
+            <span className={`text-xs font-semibold ${mutedText}`}>Site &amp; AI Readiness</span>
+            <span
+              className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${
+                isLightTheme
+                  ? 'bg-indigo-50 text-indigo-600'
+                  : 'bg-indigo-500/15 text-indigo-400'
+              }`}
+            >
+              <AgencyUiIcon name="technical" className="w-[18px] h-[18px]" />
+            </span>
+          </div>
+          <div className="flex items-end justify-between gap-3">
+            <div className="font-mono text-[28px] leading-tight font-bold tabular-nums">
+              {combinedHealth}%
+            </div>
+            <MiniSparkline colorHex="#6366F1" points="2,20 15,16 28,18 40,12 53,10 66,7" />
+          </div>
+          <div className={`text-xs font-medium ${mutedText}`}>
+            CWV {overallSiteHealthScore}% · AI Citation {aiSearchScore}%
+          </div>
         </div>
 
-        {livePipelineError && (
-          <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-2.5 text-xs font-semibold text-amber-500">
-            API Diagnostic Notice: {livePipelineError}
+        {/* Card 4: Session API Usage */}
+        <div className={`rounded-2xl border p-5 flex flex-col justify-between gap-4 ${cardSurface}`}>
+          <div className="flex items-center justify-between gap-3">
+            <span className={`text-xs font-semibold ${mutedText}`}>Session API Usage</span>
+            <span
+              className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${
+                isLightTheme ? 'bg-amber-50 text-amber-600' : 'bg-amber-500/15 text-amber-400'
+              }`}
+            >
+              <AgencyUiIcon name="activity" className="w-[18px] h-[18px]" />
+            </span>
           </div>
-        )}
-
-        {lastStepOutputPreview && (
-          <div className={`rounded-xl border p-3.5 text-xs font-mono whitespace-pre-wrap max-h-36 overflow-y-auto ${subSurface}`}>
-            {lastStepOutputPreview}
+          <div className="flex items-end justify-between gap-3">
+            <div className="font-mono text-[28px] leading-tight font-bold tabular-nums">
+              {totalSessionTokens.toLocaleString()}
+            </div>
+            <MiniSparkline colorHex="#F59E0B" points="2,23 18,22 30,19 44,16 55,11 66,8" />
           </div>
-        )}
-      </section>
+          <div className={`text-xs font-medium truncate ${mutedText}`}>
+            ${totalShadowCostUsd.toFixed(4)} eq. · {isFreeTierKeyActive ? 'Free Key' : activeModelId}
+          </div>
+        </div>
+      </div>
 
-      {/* Row 3: Original Circular Health Rings (7 cols) + Interactive Stage Flow (5 cols) */}
+      {/* ====================================================================
+          ROW 2: 8-COL LIVE PIPELINE & ACTIVITY CHART + 4-COL CONCENTRIC RINGS
+         ==================================================================== */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-        <section className={`lg:col-span-7 rounded-2xl border p-5 space-y-4 ${cardSurface}`}>
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <h3 className="text-base font-extrabold">Site Health &amp; AI Visibility Rings</h3>
-              <p className={`text-xs mt-0.5 ${mutedText}`}>
-                Live technical readiness and generative citation telemetry for {siteName}
+        {/* Left 8 Cols: Live 5-Step Runner & Department Activity */}
+        <section className={`lg:col-span-8 rounded-2xl border p-6 space-y-5 ${cardSurface}`}>
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="min-w-0 space-y-1.5">
+              <div className="flex items-center gap-2.5">
+                <h3 className="text-[15px] font-semibold">Live Editorial Pipeline</h3>
+                {activeTargetJob && (
+                  <span
+                    className={`rounded-lg px-2.5 py-0.5 text-xs font-medium ${
+                      isLightTheme
+                        ? 'bg-blue-50 text-[#2563EB]'
+                        : 'bg-blue-500/15 text-sky-300'
+                    }`}
+                  >
+                    {activeTargetJob.primaryKeyword}
+                  </span>
+                )}
+              </div>
+              <p className={`text-sm font-medium truncate ${mutedText}`}>
+                {activeTargetJob ? activeTargetJob.topicTitle : `Workspace ready for ${siteName}`}
               </p>
             </div>
-            <div className="flex items-center gap-2">
+
+            <div className="flex items-center gap-2.5 shrink-0">
               <button
                 type="button"
-                onClick={() => onNavigateTab('technical-seo')}
-                className="text-xs font-bold text-[#2563EB] hover:underline"
+                onClick={() =>
+                  onOpenChatWithPrompt(
+                    `Review live progress for "${activeTargetJob?.topicTitle || siteName}".`
+                  )
+                }
+                className={`rounded-xl border px-3.5 py-2 text-xs font-semibold transition ${
+                  isLightTheme
+                    ? 'border-[#E2E8F0] bg-white text-slate-700 hover:bg-slate-50'
+                    : 'border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800'
+                }`}
               >
-                Full Audit →
+                Ask Copilot
               </button>
-              <span className={mutedText}>·</span>
               <button
                 type="button"
-                onClick={() => onNavigateTab('off-page-seo')}
-                className="text-xs font-bold text-[#2563EB] hover:underline"
+                data-v5-solid="true"
+                disabled={isLivePipelineRunning || !activeTargetJob}
+                onClick={() => onStartLivePipeline(activeTargetJob)}
+                className="inline-flex items-center gap-2 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-60 px-4 py-2 text-xs font-semibold text-white shadow-sm transition"
               >
-                AI Radar →
+                <AgencyUiIcon name="play" className="w-3.5 h-3.5" />
+                <span>
+                  {isLivePipelineRunning && activeLiveStepIndex !== null
+                    ? `Step ${activeLiveStepIndex + 1} of 5...`
+                    : 'Start Writing Live'}
+                </span>
               </button>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <CircularHealthRing
-              score={overallSiteHealthScore}
-              label="Technical & CWV Health"
-              sublabel="Meta tags, canonicals, LCP & Schema"
-              strokeHex="#2563EB"
-              isLightTheme={isLightTheme}
-            />
-            <CircularHealthRing
-              score={aiSearchScore}
-              label="AI Search Discoverability"
-              sublabel="Perplexity, ChatGPT & AI Overviews"
-              strokeHex="#10B981"
-              isLightTheme={isLightTheme}
-            />
+          {/* Connected 5-Step Horizontal Stepper */}
+          <div
+            className={`rounded-xl border p-4 ${
+              isLightTheme ? 'border-[#E9EEF5] bg-[#F8FAFC]' : 'border-slate-800 bg-[#0F172A]'
+            }`}
+          >
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+              {LIVE_FIVE_STEP_LABELS.map((step) => {
+                const isCurrent = isLivePipelineRunning && activeLiveStepIndex === step.idx;
+                const isDone =
+                  (activeLiveStepIndex !== null && step.idx < activeLiveStepIndex) ||
+                  (!isLivePipelineRunning &&
+                    (activeTargetJob?.status === 'ready-for-review' ||
+                      activeTargetJob?.status === 'published'));
+                return (
+                  <div key={step.idx} className="flex items-center gap-2.5 min-w-0">
+                    <span
+                      className={`h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 transition ${
+                        isDone
+                          ? 'bg-emerald-500 text-white'
+                          : isCurrent
+                            ? 'bg-[#2563EB] text-white ring-4 ring-blue-500/20'
+                            : isLightTheme
+                              ? 'bg-white border border-slate-200 text-slate-500'
+                              : 'bg-slate-800 text-slate-400'
+                      }`}
+                    >
+                      {isDone ? '✓' : step.idx + 1}
+                    </span>
+                    <div className="min-w-0">
+                      <div className="text-xs font-semibold truncate">{step.label}</div>
+                      <div className={`text-xs truncate ${mutedText}`}>
+                        {isDone ? 'Done' : isCurrent ? 'Running' : 'Pending'}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className={`mt-3 pt-2.5 border-t text-xs flex items-center justify-between gap-2 ${
+              isLightTheme ? 'border-slate-200/80 text-slate-500' : 'border-slate-800 text-slate-400'
+            }`}>
+              <span className="truncate">{liveStepStatusLabel}</span>
+              <span className="font-mono shrink-0">{activeModelId}</span>
+            </div>
           </div>
+
+          {livePipelineError && (
+            <div
+              className={`rounded-xl border px-4 py-2.5 text-xs font-medium ${
+                isLightTheme
+                  ? 'border-amber-300 bg-amber-50 text-amber-800'
+                  : 'border-amber-500/30 bg-amber-950/30 text-amber-300'
+              }`}
+            >
+              {livePipelineError}
+            </div>
+          )}
+
+          {/* Department Output Chart or Live Draft Preview */}
+          {lastStepOutputPreview ? (
+            <div
+              className={`rounded-xl border p-4 text-xs font-mono whitespace-pre-wrap max-h-44 overflow-y-auto ${
+                isLightTheme
+                  ? 'border-[#E9EEF5] bg-[#F8FAFC] text-slate-700'
+                  : 'border-slate-800 bg-[#0F172A] text-slate-300'
+              }`}
+            >
+              {lastStepOutputPreview}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <span className={`text-xs font-semibold ${mutedText}`}>
+                  Workflow Throughput by Department
+                </span>
+                <button
+                  type="button"
+                  onClick={() => onNavigateTab(activeStageBar.tabId)}
+                  className="text-xs font-semibold text-[#2563EB] hover:underline"
+                >
+                  Open {activeStageBar.title} →
+                </button>
+              </div>
+              <div className="grid grid-cols-6 gap-3 pt-2 items-end h-32">
+                {DEPARTMENT_STAGE_BARS.map((stage, idx) => {
+                  const selected = idx === selectedOverviewStageIdx;
+                  return (
+                    <button
+                      key={stage.title}
+                      type="button"
+                      onClick={() => onSelectOverviewStageIdx(idx)}
+                      className="flex flex-col items-center justify-end h-full gap-2 group"
+                    >
+                      <div
+                        className={`w-full max-w-[36px] rounded-t-lg transition-all ${
+                          selected ? 'opacity-100 ring-2 ring-offset-2 ring-blue-500/40' : 'opacity-75 group-hover:opacity-100'
+                        }`}
+                        style={{
+                          height: `${stage.baseHeight}%`,
+                          backgroundColor: stage.colorHex,
+                        }}
+                      />
+                      <span
+                        className={`text-xs font-medium truncate max-w-full ${
+                          selected ? 'text-[#2563EB] font-semibold' : mutedText
+                        }`}
+                      >
+                        {stage.title}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              <div className={`text-xs ${mutedText}`}>
+                <strong className={isLightTheme ? 'text-slate-700' : 'text-slate-200'}>
+                  {activeStageBar.owner}:
+                </strong>{' '}
+                {activeStageBar.handoffNote}
+              </div>
+            </div>
+          )}
         </section>
 
-        <section className={`lg:col-span-5 rounded-2xl border p-5 space-y-3.5 ${cardSurface}`}>
+        {/* Right 4 Cols: Materially-Style Concentric Circular Progress Card */}
+        <section className={`lg:col-span-4 rounded-2xl border p-6 flex flex-col justify-between gap-5 ${cardSurface}`}>
           <div className="flex items-center justify-between">
-            <h3 className="text-base font-extrabold">6-Department Handoff Chain</h3>
-            <span className={`text-[11px] font-mono ${mutedText}`}>Click stage</span>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {AGENCY_SIX_STAGE_HANDOFFS.map((stage, idx) => {
-              const selected = idx === selectedOverviewStageIdx;
-              return (
-                <button
-                  key={stage.title}
-                  type="button"
-                  onClick={() => onSelectOverviewStageIdx(idx)}
-                  className={`rounded-xl border px-2.5 py-2 text-left text-xs font-bold transition ${
-                    selected
-                      ? 'border-[#2563EB] bg-blue-500/10 text-[#2563EB]'
-                      : subSurface
-                  }`}
-                >
-                  <div className="truncate">{stage.title}</div>
-                </button>
-              );
-            })}
-          </div>
-
-          <div className={`rounded-xl border p-3.5 space-y-2 ${subSurface}`}>
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-xs font-extrabold">{activeHandoff.owner}</span>
-              <button
-                type="button"
-                onClick={() => onNavigateTab(activeHandoff.tabId)}
-                className="text-xs font-bold text-[#2563EB] hover:underline shrink-0"
-              >
-                Open Office →
-              </button>
+            <div>
+              <h3 className="text-[15px] font-semibold">Site &amp; AI Health</h3>
+              <p className={`text-xs mt-0.5 ${mutedText}`}>Live technical &amp; citation score</p>
             </div>
-            <p className={`text-xs leading-relaxed ${mutedText}`}>{activeHandoff.handoffNote}</p>
+            <button
+              type="button"
+              onClick={() => onNavigateTab('technical-seo')}
+              className="text-xs font-semibold text-[#2563EB] hover:underline"
+            >
+              Audit →
+            </button>
+          </div>
+
+          <ConcentricHealthGauge
+            technicalScore={overallSiteHealthScore}
+            aiScore={aiSearchScore}
+            isLightTheme={isLightTheme}
+          />
+
+          <div className="space-y-3 pt-1">
+            <button
+              type="button"
+              onClick={() => onNavigateTab('technical-seo')}
+              className={`w-full flex items-center justify-between rounded-xl px-3.5 py-2.5 text-xs transition ${
+                isLightTheme ? 'bg-[#F8FAFC] hover:bg-slate-100' : 'bg-[#0F172A] hover:bg-slate-800'
+              }`}
+            >
+              <span className="flex items-center gap-2.5 font-medium">
+                <span className="h-2.5 w-2.5 rounded-full bg-[#2563EB]" />
+                Technical &amp; CWV
+              </span>
+              <span className="font-mono font-bold tabular-nums">{overallSiteHealthScore}%</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onNavigateTab('off-page-seo')}
+              className={`w-full flex items-center justify-between rounded-xl px-3.5 py-2.5 text-xs transition ${
+                isLightTheme ? 'bg-[#F8FAFC] hover:bg-slate-100' : 'bg-[#0F172A] hover:bg-slate-800'
+              }`}
+            >
+              <span className="flex items-center gap-2.5 font-medium">
+                <span className="h-2.5 w-2.5 rounded-full bg-[#10B981]" />
+                AI Search Discoverability
+              </span>
+              <span className="font-mono font-bold tabular-nums">{aiSearchScore}%</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onNavigateTab('on-page-seo')}
+              className={`w-full flex items-center justify-between rounded-xl px-3.5 py-2.5 text-xs transition ${
+                isLightTheme ? 'bg-[#F8FAFC] hover:bg-slate-100' : 'bg-[#0F172A] hover:bg-slate-800'
+              }`}
+            >
+              <span className="flex items-center gap-2.5 font-medium">
+                <span className="h-2.5 w-2.5 rounded-full bg-[#6366F1]" />
+                On-Page Readiness
+              </span>
+              <span className="font-mono font-bold tabular-nums text-[#2563EB]">View Gaps →</span>
+            </button>
           </div>
         </section>
       </div>
 
-      {/* Row 4: Founder Approval Queue (7 cols) + Live Token Activity Feed (5 cols) */}
+      {/* ====================================================================
+          ROW 3: 8-COL CLEAN CAMPAIGN TABLE + 4-COL RECENT ACTIVITY TIMELINE
+         ==================================================================== */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-        <section className={`lg:col-span-7 rounded-2xl border p-5 space-y-3.5 ${cardSurface}`}>
-          <div className="flex items-center justify-between gap-2">
-            <h3 className="text-base font-extrabold">Active Editorial Pipeline ({jobs.length})</h3>
+        <section className={`lg:col-span-8 rounded-2xl border p-6 space-y-4 ${cardSurface}`}>
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="text-[15px] font-semibold">
+              Campaign Article Queue ({jobs.length})
+            </h3>
             <button
               type="button"
               onClick={() => onNavigateTab('qa-publishing')}
-              className="text-xs font-bold text-[#2563EB] hover:underline"
+              className="text-xs font-semibold text-[#2563EB] hover:underline"
             >
-              QA &amp; Publish Queue →
+              Open Publish Queue →
             </button>
           </div>
 
-          <div className="space-y-2.5">
-            {jobs.slice(0, 5).map((job) => {
-              const isDone = job.status === 'published' || job.status === 'ready-for-review';
-              return (
-                <div
-                  key={job.id}
-                  className={`rounded-xl border p-3.5 flex flex-wrap items-center justify-between gap-3 ${subSurface}`}
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr
+                  className={`border-b text-xs font-semibold ${
+                    isLightTheme
+                      ? 'border-[#E9EEF5] text-slate-500'
+                      : 'border-slate-800 text-slate-400'
+                  }`}
                 >
-                  <div className="min-w-0 flex-1 space-y-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span
-                        className={`rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase ${getJobStatusBadge(
-                          job.status
-                        )}`}
-                      >
-                        {job.status}
-                      </span>
-                      <span className={`font-mono text-[11px] ${mutedText}`}>
-                        KD {job.kdProxyScore} · {job.primaryKeyword}
-                      </span>
-                    </div>
-                    <div className="text-sm font-bold truncate">{job.topicTitle}</div>
-                  </div>
-
-                  <button
-                    type="button"
-                    data-v5-solid={!isDone ? 'true' : undefined}
-                    disabled={isLivePipelineRunning}
-                    onClick={() =>
-                      isDone ? onNavigateTab('qa-publishing') : onStartLivePipeline(job)
-                    }
-                    className={`rounded-lg px-3 py-1.5 text-xs font-bold transition shrink-0 ${
-                      isDone
-                        ? isLightTheme
-                          ? 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-                          : 'border border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800'
-                        : 'bg-[#1D4ED8] hover:bg-[#1E40AF] text-white'
-                    }`}
-                  >
-                    {isDone ? 'Inspect Draft →' : 'Run Live →'}
-                  </button>
-                </div>
-              );
-            })}
+                  <th className="pb-3 pr-4">Article Topic</th>
+                  <th className="pb-3 px-4">Target Keyword</th>
+                  <th className="pb-3 px-4">Status</th>
+                  <th className="pb-3 pl-4 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody
+                className={
+                  isLightTheme ? 'divide-y divide-[#E9EEF5]' : 'divide-y divide-slate-800/80'
+                }
+              >
+                {jobs.slice(0, 5).map((job) => {
+                  const isDone = job.status === 'published' || job.status === 'ready-for-review';
+                  const pill = getJobStatusPill(job.status);
+                  return (
+                    <tr
+                      key={job.id}
+                      className={isLightTheme ? 'hover:bg-slate-50/80' : 'hover:bg-slate-900/40'}
+                    >
+                      <td className="py-3.5 pr-4">
+                        <div className="text-sm font-medium leading-snug max-w-md truncate">
+                          {job.topicTitle}
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <div className={`text-xs font-mono ${mutedText}`}>
+                          {job.primaryKeyword} · KD {job.kdProxyScore}
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <span
+                          className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${pill.classes}`}
+                        >
+                          {pill.label}
+                        </span>
+                      </td>
+                      <td className="py-3.5 pl-4 text-right">
+                        <button
+                          type="button"
+                          disabled={isLivePipelineRunning}
+                          onClick={() =>
+                            isDone ? onNavigateTab('content-writing') : onStartLivePipeline(job)
+                          }
+                          className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                            isDone
+                              ? isLightTheme
+                                ? 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                                : 'bg-slate-800 text-slate-200 hover:bg-slate-700'
+                              : isLightTheme
+                                ? 'bg-blue-50 text-[#2563EB] hover:bg-blue-100'
+                                : 'bg-blue-500/15 text-sky-300 hover:bg-blue-500/25'
+                          }`}
+                        >
+                          {isDone ? 'Open Draft' : 'Run Live'}
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </section>
 
-        <section className={`lg:col-span-5 rounded-2xl border p-5 space-y-3.5 ${cardSurface}`}>
+        <section className={`lg:col-span-4 rounded-2xl border p-6 space-y-4 ${cardSurface}`}>
           <div className="flex items-center justify-between gap-2">
-            <h3 className="text-base font-extrabold">Live Token Feed</h3>
+            <h3 className="text-[15px] font-semibold">Recent Activity</h3>
             <button
               type="button"
               onClick={onOpenTokensView}
-              className="text-xs font-bold text-[#2563EB] hover:underline"
+              className="text-xs font-semibold text-[#2563EB] hover:underline"
             >
-              37-Row Ledger →
+              View Ledger →
             </button>
           </div>
 
           {recentEvents.length === 0 ? (
-            <div className={`rounded-xl border p-6 text-center text-xs space-y-2 ${subSurface}`}>
-              <div className="font-mono font-bold text-sm">0 Tokens · $0.0000</div>
-              <p className={mutedText}>
-                Session initialized cleanly at zero. Click &quot;Start Writing Live&quot; or send a copilot prompt to stream live API usage.
+            <div
+              className={`rounded-xl border border-dashed p-6 text-center space-y-2 ${
+                isLightTheme ? 'border-slate-200 bg-[#F8FAFC]' : 'border-slate-800 bg-[#0F172A]'
+              }`}
+            >
+              <div className="font-mono text-base font-bold">0 Tokens Used</div>
+              <p className={`text-xs ${mutedText}`}>
+                Start a live article pipeline or ask Copilot to view real-time API usage here.
               </p>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {recentEvents.slice(0, 5).map((ev) => (
                 <div
                   key={ev.eventId}
-                  className={`rounded-xl border px-3.5 py-2.5 flex items-center justify-between gap-2 text-xs ${subSurface}`}
+                  className={`flex items-start justify-between gap-3 rounded-xl px-3.5 py-2.5 ${
+                    isLightTheme ? 'bg-[#F8FAFC]' : 'bg-[#0F172A]'
+                  }`}
                 >
                   <div className="min-w-0">
-                    <div className="font-bold truncate">{ev.actorName}</div>
-                    <div className={`truncate ${mutedText}`}>{ev.actionLabel}</div>
-                  </div>
-                  <div className="text-right font-mono shrink-0">
-                    <div className="font-extrabold text-[#2563EB]">
-                      +{ev.totalTokens.toLocaleString()} tok
+                    <div className="text-xs font-semibold truncate">{ev.actorName}</div>
+                    <div className={`text-xs truncate mt-0.5 ${mutedText}`}>
+                      {ev.actionLabel}
                     </div>
-                    <div className={mutedText}>${ev.shadowCostUsd.toFixed(4)}</div>
                   </div>
+                  <span className="font-mono text-xs font-semibold text-[#2563EB] shrink-0 tabular-nums">
+                    +{ev.totalTokens.toLocaleString()}
+                  </span>
                 </div>
               ))}
             </div>

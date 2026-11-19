@@ -199,8 +199,8 @@ export default function OnPageAndCompetitorGapPanel({
   };
 
   const cardClass = isLightTheme
-    ? 'rounded-2xl border border-slate-200 bg-white text-slate-900'
-    : 'rounded-2xl border border-slate-800 bg-slate-950 text-slate-100';
+    ? 'rounded-2xl border border-[#E9EEF5] bg-white shadow-[0_4px_20px_-2px_rgba(15,23,42,0.05)] text-[#0F172A]'
+    : 'rounded-2xl border border-slate-800/90 bg-[#111927] text-slate-100';
   const mutedText = isLightTheme ? 'text-slate-500' : 'text-slate-400';
 
   const allDomains = [suite.userDomain, ...suite.competitors];
@@ -210,15 +210,15 @@ export default function OnPageAndCompetitorGapPanel({
       : suite.keywordGapRows.filter((r) => r.bucket === kwBucketFilter);
 
   return (
-    <div className="space-y-4 text-xs">
-      <div className={`${cardClass} p-4 space-y-3`}>
+    <div className="space-y-5 text-xs">
+      <div className={`${cardClass} p-5 space-y-3`}>
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="space-y-0.5">
-            <div className="inline-flex items-center gap-2 font-extrabold text-sm">
-              <AgencyUiIcon name="onpage" className="w-4 h-4 text-sky-400" />
-              <span>On-Page SEO Checker &amp; Competitor Gap Suite</span>
-              <span className="rounded-md bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-mono text-emerald-400">
-                $0.00 Live Diff
+          <div className="space-y-1">
+            <div className="inline-flex items-center gap-2 font-bold text-[15px]">
+              <AgencyUiIcon name="onpage" className="w-4 h-4 text-[#2563EB]" />
+              <span>On-Page SEO &amp; Competitor Gap</span>
+              <span className="rounded-lg bg-emerald-500/15 px-2.5 py-0.5 text-xs font-medium text-emerald-500">
+                Live Audit
               </span>
             </div>
             <p className={`text-[11px] ${mutedText}`}>

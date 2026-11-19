@@ -78,32 +78,29 @@ export default function ZeroBasedTokenLedgerPanel({
   );
 
   const outerCard = isLightTheme
-    ? 'border-slate-200 bg-white text-slate-900 shadow-sm'
-    : 'border-slate-800/90 bg-[#0F172A] text-slate-100';
+    ? 'border-[#E9EEF5] bg-white text-[#0F172A] shadow-[0_4px_20px_-2px_rgba(15,23,42,0.05)]'
+    : 'border-slate-800/90 bg-[#111927] text-slate-100';
   const subCard = isLightTheme
-    ? 'border-slate-200 bg-[#F8FAFC]'
-    : 'border-slate-800 bg-[#0B1120]';
+    ? 'border-[#E9EEF5] bg-[#F8FAFC]'
+    : 'border-slate-800 bg-[#0F172A]';
   const mutedText = isLightTheme ? 'text-slate-500' : 'text-slate-400';
 
   return (
-    <div className={`rounded-2xl border p-5 space-y-5 text-xs ${outerCard}`}>
+    <div className={`rounded-2xl border p-6 space-y-5 text-xs ${outerCard}`}>
       <div
         className={`flex flex-wrap items-center justify-between gap-3 border-b pb-4 ${
-          isLightTheme ? 'border-slate-200' : 'border-slate-800'
+          isLightTheme ? 'border-[#E9EEF5]' : 'border-slate-800'
         }`}
       >
         <div className="space-y-1">
-          <div className="inline-flex items-center gap-2 font-extrabold text-sm">
+          <div className="inline-flex items-center gap-2 font-bold text-[15px]">
             <AgencyUiIcon name="activity" className="w-4 h-4 text-[#2563EB]" />
-            <span>
-              Zero-Based Live Session Token Ledger (Chat Box + All 36 AI Employees)
-            </span>
+            <span>Live Session Token &amp; API Usage Ledger</span>
           </div>
-          <p className={`text-[11px] ${mutedText}`}>
-            Starts strictly at{' '}
-            <strong className="text-emerald-500">0 tokens ($0.0000)</strong> and
-            increments in real time per API call · Active Slot:{' '}
-            <span className="font-mono font-bold text-[#2563EB]">
+          <p className={`text-xs ${mutedText}`}>
+            Real-time token metering starting at{' '}
+            <strong className="text-emerald-500">0 tokens ($0.0000)</strong> · Active Slot:{' '}
+            <span className="font-mono font-semibold text-[#2563EB]">
               {ledger.activeKeySlot}
             </span>
           </p>

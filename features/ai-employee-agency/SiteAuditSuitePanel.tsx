@@ -186,22 +186,22 @@ export default function SiteAuditSuitePanel({
   };
 
   const cardClass = isLightTheme
-    ? 'rounded-2xl border border-slate-200 bg-white text-slate-900'
-    : 'rounded-2xl border border-slate-800 bg-slate-950 text-slate-100';
+    ? 'rounded-2xl border border-[#E9EEF5] bg-white shadow-[0_4px_20px_-2px_rgba(15,23,42,0.05)] text-[#0F172A]'
+    : 'rounded-2xl border border-slate-800/90 bg-[#111927] text-slate-100';
   const mutedText = isLightTheme ? 'text-slate-500' : 'text-slate-400';
 
   return (
-    <div className="space-y-4 text-xs">
+    <div className="space-y-5 text-xs">
       <form
         onSubmit={handleRunLiveAudit}
-        className={`${cardClass} p-4 flex flex-wrap items-center justify-between gap-3`}
+        className={`${cardClass} p-5 flex flex-wrap items-center justify-between gap-3`}
       >
-        <div className="space-y-0.5">
-          <div className="inline-flex items-center gap-2 font-extrabold text-sm">
-            <AgencyUiIcon name="technical" className="w-4 h-4 text-sky-400" />
-            <span>Site Audit &amp; AI Discoverability Suite</span>
-            <span className="rounded-md bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-mono text-emerald-400">
-              $0.00 Mechanical Crawl
+        <div className="space-y-1">
+          <div className="inline-flex items-center gap-2 font-bold text-[15px]">
+            <AgencyUiIcon name="technical" className="w-4 h-4 text-[#2563EB]" />
+            <span>Technical Site Audit</span>
+            <span className="rounded-lg bg-emerald-500/15 px-2.5 py-0.5 text-xs font-medium text-emerald-500">
+              Live Scan
             </span>
           </div>
           <p className={`text-[11px] ${mutedText}`}>
