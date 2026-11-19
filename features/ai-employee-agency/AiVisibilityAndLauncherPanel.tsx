@@ -269,8 +269,9 @@ export default function AiVisibilityAndLauncherPanel({
             />
             <button
               type="submit"
+              data-v5-solid="true"
               disabled={isGeneratingPlan}
-              className="rounded-xl bg-gradient-to-r from-sky-500 to-emerald-400 hover:brightness-110 px-4 py-2 text-xs font-extrabold text-slate-950 transition disabled:opacity-50"
+              className="rounded-xl bg-[#1D4ED8] hover:bg-[#1E40AF] px-4 py-2 text-xs font-extrabold text-white transition disabled:opacity-50"
             >
               {isGeneratingPlan
                 ? 'Building Launch Brief...'
@@ -299,8 +300,9 @@ export default function AiVisibilityAndLauncherPanel({
 
                 <button
                   type="button"
+                  data-v5-solid="true"
                   onClick={() => onQueueLaunchPlan?.(activePlan)}
-                  className="rounded-xl bg-emerald-500 hover:bg-emerald-400 px-4 py-2 text-xs font-extrabold text-slate-950 transition shrink-0"
+                  className="rounded-xl bg-emerald-600 hover:bg-emerald-500 px-4 py-2 text-xs font-extrabold text-white transition shrink-0"
                 >
                   Queue in Content Studio →
                 </button>
@@ -370,9 +372,10 @@ export default function AiVisibilityAndLauncherPanel({
 
             <button
               type="button"
+              data-v5-solid="true"
               onClick={() => void handleRunVisibilityScan()}
               disabled={isScanningVisibility}
-              className="rounded-xl bg-gradient-to-r from-sky-500 to-emerald-400 hover:brightness-110 px-4 py-1.5 text-xs font-extrabold text-slate-950 transition disabled:opacity-50"
+              className="rounded-xl bg-[#1D4ED8] hover:bg-[#1E40AF] px-4 py-2 text-xs font-extrabold text-white transition disabled:opacity-50"
             >
               {isScanningVisibility
                 ? 'Scanning Live Bots...'

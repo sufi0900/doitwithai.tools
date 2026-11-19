@@ -224,8 +224,9 @@ export default function SiteAuditSuitePanel({
           />
           <button
             type="submit"
+            data-v5-solid="true"
             disabled={isAuditing}
-            className="rounded-xl bg-gradient-to-r from-sky-500 to-emerald-400 hover:brightness-110 px-4 py-1.5 text-xs font-extrabold text-slate-950 transition disabled:opacity-50"
+            className="rounded-xl bg-[#1D4ED8] hover:bg-[#1E40AF] px-4 py-2 text-xs font-extrabold text-white transition disabled:opacity-50"
           >
             {isAuditing ? 'Crawling Live URL...' : 'Run Live Site Audit'}
           </button>
@@ -336,8 +337,9 @@ export default function SiteAuditSuitePanel({
             <div className="flex flex-wrap items-center gap-1.5">
               <button
                 type="button"
+                data-v5-solid="true"
                 onClick={() => setShowLlmsDraft((prev) => !prev)}
-                className="rounded-lg bg-indigo-500 hover:bg-indigo-400 px-2.5 py-1 text-[10.5px] font-bold text-white transition"
+                className="rounded-lg bg-indigo-600 hover:bg-indigo-500 px-2.5 py-1 text-[10.5px] font-bold text-white transition"
               >
                 {showLlmsDraft ? 'Hide llms.txt' : '1-Click Generate llms.txt'}
               </button>

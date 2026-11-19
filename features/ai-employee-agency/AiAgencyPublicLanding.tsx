@@ -18,7 +18,19 @@ import type {
   WebsitePublishingMode,
 } from '@/lib/autonomous-agents/types';
 import type { AgencySidebarTabId } from '@/lib/ai-employee-agency/agent-registry';
+import { resetZeroBasedSessionTokenLedger } from '@/lib/ai-employee-agency/token-telemetry-store';
 import type { ScoredKeywordBrief } from '@/lib/ai-employee-agency/handoff-orchestrator';
+
+interface VerifiedAgencyDossier {
+  websiteId: string;
+  siteName: string;
+  siteUrl: string;
+  primaryNiche: string;
+  primaryHex: string;
+  secondaryHex: string;
+  summary: string;
+  jobs: AutomatedArticleJob[];
+}
 import {
   AgencyUiIcon,
   DepartmentSvgIcon,
@@ -243,6 +255,8 @@ export default function AiAgencyPublicLanding() {
   const [liveDiscoveredSummary, setLiveDiscoveredSummary] = useState<string>(
     'Connecting to live website DOM & Google Autocomplete...'
   );
+  const [verifiedDossier, setVerifiedDossier] = useState<VerifiedAgencyDossier | null>(null);
+  const [isLightTheme, setIsLightTheme] = useState<boolean>(false);
 
   useEffect(() => {
     const loaded = loadAutonomousStudioState();
@@ -250,7 +264,23 @@ export default function AiAgencyPublicLanding() {
     if (activeSite?.siteUrl) {
       setWebsiteUrl(activeSite.siteUrl);
     }
+    if (typeof window !== 'undefined') {
+      const savedTheme = window.localStorage.getItem('doitwithai_agency_v4_theme_v1');
+      if (savedTheme === 'light') {
+        setIsLightTheme(true);
+      }
+    }
   }, []);
+
+  const handleToggleLandingTheme = () => {
+    setIsLightTheme((prev) => {
+      const next = !prev;
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem('doitwithai_agency_v4_theme_v1', next ? 'light' : 'dark');
+      }
+      return next;
+    });
+  };
 
   const handleLaunchAgencyOnboarding = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -350,14 +380,9 @@ export default function AiAgencyPublicLanding() {
               (j, idx): AutomatedArticleJob => ({
                 ...j,
                 id: `job-agency-${Date.now()}-${idx + 1}`,
-                status:
-                  idx === 0
-                    ? publishingMode === 'internal-doitwithai-site'
-                      ? 'published'
-                      : 'ready-for-review'
-                    : idx === 1
-                      ? 'drafting-article'
-                      : 'queued',
+                status: idx === 0 ? 'drafting-article' : 'queued',
+                completedAgents: [],
+                publishedUrl: undefined,
                 updatedAtIso: nowIso,
               })
             );
@@ -404,14 +429,9 @@ export default function AiAgencyPublicLanding() {
           (j, idx): AutomatedArticleJob => ({
             ...j,
             id: `job-agency-${Date.now()}-${idx + 1}`,
-            status:
-              idx === 0
-                ? publishingMode === 'internal-doitwithai-site'
-                  ? 'published'
-                  : 'ready-for-review'
-                : idx === 1
-                  ? 'drafting-article'
-                  : 'queued',
+            status: idx === 0 ? 'drafting-article' : 'queued',
+            completedAgents: [],
+            publishedUrl: undefined,
             updatedAtIso: nowIso,
           })
         );
@@ -440,16 +460,51 @@ export default function AiAgencyPublicLanding() {
         lastSavedAtIso: nowIso,
       });
 
-      await new Promise((r) => setTimeout(r, 4200));
+      resetZeroBasedSessionTokenLedger({
+        siteName: newWebsite.siteName,
+        modelId: 'gemini-2.5-flash',
+        isFreeTierKeyActive: true,
+      });
+
+      await new Promise((r) => setTimeout(r, 1700));
       setActiveStageIdx(ONBOARDING_TRANSITION_STAGES.length - 1);
       setProgressPercent(100);
-      await new Promise((r) => setTimeout(r, 450));
+      await new Promise((r) => setTimeout(r, 350));
 
-      router.push('/ai-employee-agency/dashboard');
+      setVerifiedDossier({
+        websiteId: newWebsite.id,
+        siteName: newWebsite.siteName,
+        siteUrl: newWebsite.siteUrl,
+        primaryNiche: newWebsite.primaryNiche || nicheHint.trim() || 'Digital SaaS & Editorial',
+        primaryHex: newWebsite.brandPrimaryHex || '#1D4ED8',
+        secondaryHex: newWebsite.brandSecondaryHex || '#10B981',
+        summary: `Verified ${newWebsite.siteName} (${newWebsite.primaryNiche}). Staged ${generatedJobs.length} keyword-backed article topics with 0 pre-completed drafts — Article #1 is queued for live 5-step execution upon launch.`,
+        jobs: generatedJobs,
+      });
+      setIsTransitioning(false);
     } finally {
       clearInterval(progressTimer);
       clearInterval(stageTimer);
     }
+  };
+
+  const handleConfirmStartDigitalAgency = () => {
+    if (!verifiedDossier) return;
+    resetZeroBasedSessionTokenLedger({
+      siteName: verifiedDossier.siteName,
+      modelId: 'gemini-2.5-flash',
+      isFreeTierKeyActive: true,
+    });
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('doitwithai_agency_v5_autorun_pending', 'true');
+      if (verifiedDossier.jobs[0]?.id) {
+        window.localStorage.setItem(
+          'doitwithai_agency_v5_autorun_job_id',
+          verifiedDossier.jobs[0].id
+        );
+      }
+    }
+    router.push('/ai-employee-agency/dashboard');
   };
 
   // =========================================================================
@@ -572,38 +627,281 @@ export default function AiAgencyPublicLanding() {
     );
   }
 
+  if (verifiedDossier && !isTransitioning) {
+    return (
+      <div
+        className={`min-h-screen transition-colors ${
+          isLightTheme
+            ? 'bg-[#F6F8FC] text-[#0F172A]'
+            : 'bg-[#060B16] text-slate-100'
+        }`}
+      >
+        <header
+          className={`border-b px-4 sm:px-6 py-3.5 sticky top-0 z-30 backdrop-blur ${
+            isLightTheme
+              ? 'border-slate-200 bg-white/95'
+              : 'border-slate-800 bg-[#091020]/90'
+          }`}
+        >
+          <div className="max-w-5xl mx-auto flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-[#1D4ED8] text-white font-black text-xs">
+                AI
+              </span>
+              <span className="text-sm font-extrabold">
+                Verified Agency Dossier · {verifiedDossier.siteName}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleToggleLandingTheme}
+                className={`rounded-xl border px-3 py-1.5 text-xs font-bold transition ${
+                  isLightTheme
+                    ? 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
+                    : 'border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800'
+                }`}
+              >
+                {isLightTheme ? 'Dark Mode' : 'Light Mode'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setVerifiedDossier(null)}
+                className={`rounded-xl border px-3 py-1.5 text-xs font-bold transition ${
+                  isLightTheme
+                    ? 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                    : 'border-slate-700 bg-slate-900 text-slate-300 hover:text-white'
+                }`}
+              >
+                Scan Different URL
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <main className="max-w-5xl mx-auto px-4 sm:px-6 py-10 space-y-6">
+          <section
+            className={`rounded-2xl border p-6 sm:p-7 shadow-sm space-y-5 ${
+              isLightTheme
+                ? 'border-slate-200 bg-white'
+                : 'border-slate-800 bg-[#0F172A]'
+            }`}
+          >
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="space-y-2 max-w-2xl">
+                <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 border border-emerald-500/30 px-3 py-1 text-[11px] font-bold text-emerald-500">
+                  <AgencyUiIcon name="check" className="w-3.5 h-3.5" />
+                  <span>Website Verified · 0 Articles Completed · Session Reset to 0 Tokens</span>
+                </div>
+                <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
+                  {verifiedDossier.siteName}
+                </h1>
+                <p
+                  className={`text-sm leading-relaxed ${
+                    isLightTheme ? 'text-slate-600' : 'text-slate-300'
+                  }`}
+                >
+                  {verifiedDossier.summary}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleConfirmStartDigitalAgency}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#1D4ED8] hover:bg-[#1E40AF] px-5 py-3.5 text-sm font-extrabold text-white shadow-lg transition active:scale-[0.99]"
+              >
+                <AgencyUiIcon name="play" className="w-4 h-4" />
+                <span>Start Digital Agency (Launch Live Workspace) →</span>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-2">
+              <div
+                className={`rounded-xl border p-4 ${
+                  isLightTheme ? 'border-slate-200 bg-[#F8FAFC]' : 'border-slate-800 bg-[#0B1120]'
+                }`}
+              >
+                <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  Target Domain
+                </div>
+                <div className="text-sm font-bold mt-1 truncate font-mono">
+                  {verifiedDossier.siteUrl}
+                </div>
+              </div>
+              <div
+                className={`rounded-xl border p-4 ${
+                  isLightTheme ? 'border-slate-200 bg-[#F8FAFC]' : 'border-slate-800 bg-[#0B1120]'
+                }`}
+              >
+                <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  Detected Niche
+                </div>
+                <div className="text-sm font-bold mt-1 truncate">
+                  {verifiedDossier.primaryNiche}
+                </div>
+              </div>
+              <div
+                className={`rounded-xl border p-4 ${
+                  isLightTheme ? 'border-slate-200 bg-[#F8FAFC]' : 'border-slate-800 bg-[#0B1120]'
+                }`}
+              >
+                <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  Brand Palette
+                </div>
+                <div className="flex items-center gap-2.5 mt-1.5 font-mono text-xs font-semibold">
+                  <span
+                    className="h-4 w-4 rounded border border-slate-400/30"
+                    style={{ backgroundColor: verifiedDossier.primaryHex }}
+                  />
+                  <span>{verifiedDossier.primaryHex}</span>
+                  <span
+                    className="h-4 w-4 rounded border border-slate-400/30 ml-1"
+                    style={{ backgroundColor: verifiedDossier.secondaryHex }}
+                  />
+                  <span>{verifiedDossier.secondaryHex}</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section
+            className={`rounded-2xl border p-6 space-y-4 ${
+              isLightTheme
+                ? 'border-slate-200 bg-white'
+                : 'border-slate-800 bg-[#0F172A]'
+            }`}
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h2 className="text-base font-extrabold">
+                  Proposed Campaign Queue ({verifiedDossier.jobs.length} Staged Topics)
+                </h2>
+                <p
+                  className={`text-xs mt-0.5 ${
+                    isLightTheme ? 'text-slate-500' : 'text-slate-400'
+                  }`}
+                >
+                  Article #1 auto-executes all 5 live specialist agents when your workspace opens.
+                </p>
+              </div>
+              <span className="rounded-lg bg-blue-500/10 border border-blue-500/30 px-2.5 py-1 text-xs font-bold text-[#2563EB] font-mono">
+                0 / {verifiedDossier.jobs.length} Completed
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {verifiedDossier.jobs.map((job, idx) => (
+                <div
+                  key={job.id}
+                  className={`rounded-xl border p-4 flex items-start justify-between gap-3 ${
+                    isLightTheme
+                      ? 'border-slate-200 bg-[#F8FAFC]'
+                      : 'border-slate-800 bg-[#0B1120]'
+                  }`}
+                >
+                  <div className="min-w-0 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-[11px] font-bold text-slate-400">
+                        #{idx + 1}
+                      </span>
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                          idx === 0
+                            ? 'bg-blue-500/15 text-[#2563EB] border border-blue-500/30'
+                            : isLightTheme
+                              ? 'bg-slate-200 text-slate-600'
+                              : 'bg-slate-800 text-slate-300'
+                        }`}
+                      >
+                        {idx === 0 ? 'Ready for Live Auto-Run' : 'Queued'}
+                      </span>
+                    </div>
+                    <div className="text-sm font-bold leading-snug line-clamp-2">
+                      {job.topicTitle}
+                    </div>
+                    <div
+                      className={`text-xs font-mono ${
+                        isLightTheme ? 'text-slate-500' : 'text-slate-400'
+                      }`}
+                    >
+                      KW: {job.primaryKeyword} · KD {job.kdProxyScore}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        </main>
+      </div>
+    );
+  }
+
   // =========================================================================
-  // PUBLIC ZERO-NOISE LANDING PAGE (/ai-employee-agency) — V3 EDITION
+  // PUBLIC ZERO-NOISE LANDING PAGE (/ai-employee-agency) — V5 EDITION
   // =========================================================================
   return (
-    <div className="min-h-screen bg-[#060B16] text-slate-100 overflow-x-hidden">
+    <div
+      className={`min-h-screen overflow-x-hidden transition-colors ${
+        isLightTheme
+          ? 'bg-[#F6F8FC] text-[#0F172A]'
+          : 'bg-[#060B16] text-slate-100'
+      }`}
+    >
       {/* Minimalist Top Bar */}
-      <header className="border-b border-slate-800/80 bg-[#091020]/90 backdrop-blur sticky top-0 z-30">
+      <header
+        className={`border-b backdrop-blur sticky top-0 z-30 ${
+          isLightTheme
+            ? 'border-slate-200 bg-white/95'
+            : 'border-slate-800/80 bg-[#091020]/90'
+        }`}
+      >
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-3 py-1 text-xs font-extrabold text-emerald-300">
-              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
-              24/7 AI Digital Agency OS · V3 Enterprise
+            <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-[#1D4ED8] text-white font-black text-xs">
+              AI
             </span>
-            <span className="text-xs sm:text-sm font-bold text-slate-300 hidden sm:inline">
-              9 Departments · 36 Trainable AI Employees · 1-Click CMS Auto-Publish
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-3 py-1 text-xs font-extrabold text-emerald-500">
+              <span className="h-2 w-2 rounded-full bg-emerald-500" />
+              24/7 AI Digital Agency OS
+            </span>
+            <span
+              className={`text-xs sm:text-sm font-semibold hidden sm:inline ${
+                isLightTheme ? 'text-slate-600' : 'text-slate-300'
+              }`}
+            >
+              9 Departments · 36 Specialists · Real-Time Execution
             </span>
           </div>
 
-          <div className="flex items-center gap-2.5 text-xs">
+          <div className="flex items-center gap-2 text-xs">
+            <button
+              type="button"
+              onClick={handleToggleLandingTheme}
+              className={`rounded-xl border px-3 py-2 font-bold transition ${
+                isLightTheme
+                  ? 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
+                  : 'border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800'
+              }`}
+            >
+              {isLightTheme ? 'Dark Mode' : 'Light Mode'}
+            </button>
             <Link
               href="/ai-content-writer"
-              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2 font-semibold text-slate-300 hover:text-white transition"
+              className={`inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2 font-semibold transition ${
+                isLightTheme
+                  ? 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                  : 'border-slate-700 bg-slate-900 text-slate-300 hover:text-white'
+              }`}
             >
               <AgencyUiIcon name="arrow-left" className="w-3.5 h-3.5" />
               <span>AI Content Writer Studio</span>
             </Link>
             <Link
               href="/ai-employee-agency/dashboard"
-              className="inline-flex items-center gap-1.5 rounded-xl bg-sky-500/20 border border-sky-400/50 hover:bg-sky-500/30 px-3.5 py-2 font-extrabold text-sky-200 transition"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-[#1D4ED8] hover:bg-[#1E40AF] px-3.5 py-2 font-extrabold text-white transition"
             >
               <DepartmentSvgIcon tabId="executive-office" className="w-3.5 h-3.5" />
-              <span>Open Live Agency Dashboard</span>
+              <span>Open Live Dashboard</span>
               <AgencyUiIcon name="arrow-right" className="w-3.5 h-3.5" />
             </Link>
           </div>
@@ -614,42 +912,58 @@ export default function AiAgencyPublicLanding() {
       <main className="max-w-6xl mx-auto px-4 sm:px-6 pt-12 pb-20 space-y-16">
         {/* Hero Header */}
         <section className="text-center space-y-5 max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-2 rounded-full border border-amber-400/40 bg-amber-400/10 px-4 py-1.5 text-xs font-extrabold text-amber-300">
+          <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-4 py-1.5 text-xs font-extrabold text-[#2563EB]">
             <AgencyUiIcon name="sparkle" className="w-3.5 h-3.5" />
-            <span>Zero Developer Setup · Connects to WordPress, Shopify &amp; Webflow in 60s</span>
+            <span>Zero Developer Setup · WordPress, Shopify &amp; Webflow Ready</span>
           </div>
 
-          <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-white leading-tight">
+          <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight">
             Hire a 24/7 Autonomous{' '}
-            <span className="bg-gradient-to-r from-sky-400 via-emerald-400 to-amber-300 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-[#1D4ED8] via-sky-500 to-emerald-500 bg-clip-text text-transparent">
               AI Digital Agency
             </span>{' '}
             for Your Website
           </h1>
 
-          <p className="text-sm sm:text-base text-slate-300 leading-relaxed max-w-2xl mx-auto">
-            Enter your website URL once. Your dedicated team of{' '}
-            <strong className="text-white">
-              9 AI Department Leads &amp; 27 Specialized Sub-Agents
+          <p
+            className={`text-sm sm:text-base leading-relaxed max-w-2xl mx-auto ${
+              isLightTheme ? 'text-slate-600' : 'text-slate-300'
+            }`}
+          >
+            Enter your website URL to scan your brand, inspect a verified topic queue, and launch{' '}
+            <strong className={isLightTheme ? 'text-slate-900' : 'text-white'}>
+              9 AI Departments &amp; 36 Specialists
             </strong>{' '}
-            researches low-KD keywords, writes E-E-A-T articles, renders 6-layer SVG infographics, swaps niche backlinks, builds Google Ads RSA packs, and auto-publishes to your CMS 24/7.
+            with real-time token telemetry and zero pre-faked articles.
           </p>
         </section>
 
         {/* Zero-Clutter URL Onboarding Card */}
-        <section className="max-w-3xl mx-auto rounded-3xl border border-sky-500/40 bg-gradient-to-b from-[#0E172C] to-[#090F1E] p-6 sm:p-8 shadow-2xl space-y-6">
+        <section
+          className={`max-w-3xl mx-auto rounded-3xl border p-6 sm:p-8 shadow-xl space-y-6 ${
+            isLightTheme
+              ? 'border-slate-200 bg-white'
+              : 'border-sky-500/40 bg-gradient-to-b from-[#0E172C] to-[#090F1E]'
+          }`}
+        >
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <span className="text-xs font-extrabold uppercase tracking-wider text-sky-400">
-              Step 1 · Connect Your Website to Initialize Your 36 AI Employees
+            <span className="text-xs font-extrabold uppercase tracking-wider text-[#2563EB]">
+              Step 1 · Scan Website &amp; Verify Agency Dossier
             </span>
-            <div className="inline-flex rounded-xl border border-slate-700 bg-slate-950 p-1 text-xs">
+            <div
+              className={`inline-flex rounded-xl border p-1 text-xs ${
+                isLightTheme ? 'border-slate-200 bg-slate-100' : 'border-slate-700 bg-slate-950'
+              }`}
+            >
               <button
                 type="button"
                 onClick={() => setSiteMode('external-url')}
                 className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-bold transition ${
                   siteMode === 'external-url'
-                    ? 'bg-sky-500 text-slate-950'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-[#1D4ED8] text-white'
+                    : isLightTheme
+                      ? 'text-slate-600 hover:text-slate-900'
+                      : 'text-slate-400 hover:text-white'
                 }`}
               >
                 <AgencyUiIcon name="external-link" className="w-3.5 h-3.5" />
@@ -660,8 +974,10 @@ export default function AiAgencyPublicLanding() {
                 onClick={() => setSiteMode('internal-builder')}
                 className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-bold transition ${
                   siteMode === 'internal-builder'
-                    ? 'bg-emerald-400 text-slate-950'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-emerald-600 text-white'
+                    : isLightTheme
+                      ? 'text-slate-600 hover:text-slate-900'
+                      : 'text-slate-400 hover:text-white'
                 }`}
               >
                 <AgencyUiIcon name="sparkle" className="w-3.5 h-3.5" />
@@ -673,7 +989,11 @@ export default function AiAgencyPublicLanding() {
           <form onSubmit={handleLaunchAgencyOnboarding} className="space-y-4">
             {siteMode === 'external-url' ? (
               <div>
-                <label className="block text-xs font-bold text-slate-200 mb-2">
+                <label
+                  className={`block text-xs font-bold mb-2 ${
+                    isLightTheme ? 'text-slate-700' : 'text-slate-200'
+                  }`}
+                >
                   Enter Your Website URL (WordPress, Shopify, Webflow, Custom, etc.)
                 </label>
                 <input
@@ -682,12 +1002,20 @@ export default function AiAgencyPublicLanding() {
                   value={websiteUrl}
                   onChange={(e) => setWebsiteUrl(e.target.value)}
                   placeholder="https://yourwebsite.com or https://cats.com"
-                  className="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-4 text-base text-white placeholder-slate-500 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-500/30"
+                  className={`w-full rounded-2xl border px-4 py-4 text-base focus:border-[#2563EB] focus:outline-none focus:ring-2 focus:ring-blue-500/20 ${
+                    isLightTheme
+                      ? 'border-slate-300 bg-[#F8FAFC] text-slate-900 placeholder-slate-400'
+                      : 'border-slate-700 bg-slate-950 text-white placeholder-slate-500'
+                  }`}
                 />
               </div>
             ) : (
               <div>
-                <label className="block text-xs font-bold text-slate-200 mb-2">
+                <label
+                  className={`block text-xs font-bold mb-2 ${
+                    isLightTheme ? 'text-slate-700' : 'text-slate-200'
+                  }`}
+                >
                   Enter Your DoItWithAI Website Builder Slug (`/p/[slug]/blog`)
                 </label>
                 <input
@@ -696,31 +1024,42 @@ export default function AiAgencyPublicLanding() {
                   value={internalSlug}
                   onChange={(e) => setInternalSlug(e.target.value)}
                   placeholder="doitwithai-multi-tool-directory-publication"
-                  className="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-4 text-base text-white placeholder-slate-500 focus:border-emerald-400 focus:outline-none"
+                  className={`w-full rounded-2xl border px-4 py-4 text-base focus:border-emerald-500 focus:outline-none ${
+                    isLightTheme
+                      ? 'border-slate-300 bg-[#F8FAFC] text-slate-900 placeholder-slate-400'
+                      : 'border-slate-700 bg-slate-950 text-white placeholder-slate-500'
+                  }`}
                 />
               </div>
             )}
 
             <div>
-              <label className="block text-xs font-semibold text-slate-400 mb-1.5">
+              <label
+                className={`block text-xs font-semibold mb-1.5 ${
+                  isLightTheme ? 'text-slate-500' : 'text-slate-400'
+                }`}
+              >
                 Optional Niche Override (Leave blank to auto-detect from your website HTML)
               </label>
               <input
                 type="text"
                 value={nicheHint}
                 onChange={(e) => setNicheHint(e.target.value)}
-                placeholder="Auto-detected from URL (or type e.g. AI SEO Tools, Feline Nutrition, B2B SaaS...)"
-                className="w-full rounded-xl border border-slate-800 bg-slate-950/80 px-4 py-2.5 text-xs text-slate-200 placeholder-slate-500 focus:border-sky-400 focus:outline-none"
+                placeholder="Auto-detected from URL (or type e.g. AI SEO Tools, B2B SaaS...)"
+                className={`w-full rounded-xl border px-4 py-2.5 text-xs focus:border-[#2563EB] focus:outline-none ${
+                  isLightTheme
+                    ? 'border-slate-200 bg-[#F8FAFC] text-slate-800 placeholder-slate-400'
+                    : 'border-slate-800 bg-slate-950/80 text-slate-200 placeholder-slate-500'
+                }`}
               />
             </div>
 
             <button
               type="submit"
-              className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-sky-500 via-emerald-400 to-amber-400 hover:brightness-110 py-4 px-6 text-base font-black text-slate-950 shadow-xl transition active:scale-[0.99]"
+              className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-[#1D4ED8] hover:bg-[#1E40AF] py-4 px-6 text-base font-extrabold text-white shadow-lg transition active:scale-[0.99]"
             >
               <AgencyUiIcon name="play" className="w-4 h-4" />
-              <span>Analyze My Website &amp; Launch 24/7 AI Digital Agency</span>
-              <AgencyUiIcon name="arrow-right" className="w-4 h-4" />
+              <span>Scan Website &amp; Prepare Agency Dossier →</span>
             </button>
           </form>
 
@@ -740,17 +1079,21 @@ export default function AiAgencyPublicLanding() {
           </div>
         </section>
 
-        {/* V3 Enterprise Pillars Grid */}
+        {/* V5 Enterprise Pillars Grid */}
         <section className="space-y-5">
           <div className="text-center space-y-1.5 max-w-2xl mx-auto">
-            <div className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-400">
-              V3 Autonomous Architecture
+            <div className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-500">
+              V5 Autonomous Architecture
             </div>
-            <h2 className="text-xl sm:text-2xl font-extrabold text-white">
+            <h2
+              className={`text-xl sm:text-2xl font-extrabold ${
+                isLightTheme ? 'text-slate-900' : 'text-white'
+              }`}
+            >
               6 Enterprise Capabilities Built Into Every AI Agency Workspace
             </h2>
-            <p className="text-xs text-slate-400">
-              Engineered to outperform legacy $149/mo–$299/mo single-agent SEO tools with 90% deterministic mechanical execution and 10% surgical LLM reasoning.
+            <p className={`text-xs ${isLightTheme ? 'text-slate-600' : 'text-slate-400'}`}>
+              90% deterministic mechanical execution + 10% surgical LLM synthesis with transparent real-time telemetry.
             </p>
           </div>
 
@@ -758,18 +1101,44 @@ export default function AiAgencyPublicLanding() {
             {V3_ENTERPRISE_PILLARS.map((pillar) => (
               <div
                 key={pillar.title}
-                className="rounded-2xl border border-slate-800/90 bg-[#0B1324]/90 p-5 space-y-2.5 hover:border-sky-500/40 transition"
+                className={`rounded-2xl border p-5 space-y-2.5 transition ${
+                  isLightTheme
+                    ? 'border-slate-200 bg-white hover:border-[#2563EB]/50 shadow-sm'
+                    : 'border-slate-800/90 bg-[#0B1324]/90 hover:border-sky-500/40'
+                }`}
               >
                 <div className="flex items-center justify-between gap-2">
-                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-sky-500/30 bg-sky-500/10 text-sky-300">
+                  <span
+                    className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border ${
+                      isLightTheme
+                        ? 'border-blue-200 bg-blue-50 text-[#1D4ED8]'
+                        : 'border-sky-500/30 bg-sky-500/10 text-sky-300'
+                    }`}
+                  >
                     <AgencyUiIcon name={pillar.icon} className="w-4 h-4" />
                   </span>
-                  <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-extrabold text-emerald-300">
+                  <span
+                    className={`rounded-full border px-2.5 py-0.5 text-[10px] font-extrabold ${
+                      isLightTheme
+                        ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                        : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
+                    }`}
+                  >
                     {pillar.badge}
                   </span>
                 </div>
-                <h3 className="text-sm font-extrabold text-white">{pillar.title}</h3>
-                <p className="text-xs text-slate-400 leading-relaxed">
+                <h3
+                  className={`text-sm font-extrabold ${
+                    isLightTheme ? 'text-slate-900' : 'text-white'
+                  }`}
+                >
+                  {pillar.title}
+                </h3>
+                <p
+                  className={`text-xs leading-relaxed ${
+                    isLightTheme ? 'text-slate-600' : 'text-slate-400'
+                  }`}
+                >
                   {pillar.description}
                 </p>
               </div>
@@ -780,11 +1149,15 @@ export default function AiAgencyPublicLanding() {
         {/* Clean 8-Department Overview Grid */}
         <section className="space-y-5">
           <div className="text-center space-y-1">
-            <h2 className="text-xl sm:text-2xl font-extrabold text-white">
+            <h2
+              className={`text-xl sm:text-2xl font-extrabold ${
+                isLightTheme ? 'text-slate-900' : 'text-white'
+              }`}
+            >
               Meet Your Autonomous AI Department Managers &amp; Sub-Agents
             </h2>
-            <p className="text-xs text-slate-400">
-              Every department communicates via typed handoff packets and reports directly to your `/ai-employee-agency/dashboard`.
+            <p className={`text-xs ${isLightTheme ? 'text-slate-600' : 'text-slate-400'}`}>
+              Every department communicates via typed handoff packets directly inside your workspace.
             </p>
           </div>
 
@@ -792,37 +1165,75 @@ export default function AiAgencyPublicLanding() {
             {AGENCY_DEPARTMENTS_PREVIEW.map((dept) => (
               <div
                 key={dept.tabId}
-                className="rounded-2xl border border-slate-800/90 bg-slate-900/60 p-4 space-y-2.5 hover:border-sky-500/40 transition"
+                className={`rounded-2xl border p-4 space-y-2.5 transition ${
+                  isLightTheme
+                    ? 'border-slate-200 bg-white hover:border-[#2563EB]/50 shadow-sm'
+                    : 'border-slate-800/90 bg-slate-900/60 hover:border-sky-500/40'
+                }`}
               >
                 <div className="flex items-center justify-between gap-2">
-                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-slate-700 bg-slate-950 text-sky-300">
+                  <span
+                    className={`inline-flex h-8 w-8 items-center justify-center rounded-xl border ${
+                      isLightTheme
+                        ? 'border-slate-200 bg-slate-50 text-[#1D4ED8]'
+                        : 'border-slate-700 bg-slate-950 text-sky-300'
+                    }`}
+                  >
                     <DepartmentSvgIcon tabId={dept.tabId} className="w-4 h-4" />
                   </span>
-                  <span className="rounded-md bg-slate-800/90 px-2 py-0.5 text-[10px] font-bold text-slate-300">
+                  <span
+                    className={`rounded-md px-2 py-0.5 text-[10px] font-bold ${
+                      isLightTheme
+                        ? 'bg-slate-100 text-slate-600'
+                        : 'bg-slate-800/90 text-slate-300'
+                    }`}
+                  >
                     {dept.badge}
                   </span>
                 </div>
-                <div className="text-sm font-extrabold text-white">{dept.title}</div>
-                <p className="text-xs text-slate-400 leading-relaxed">{dept.role}</p>
+                <div
+                  className={`text-sm font-extrabold ${
+                    isLightTheme ? 'text-slate-900' : 'text-white'
+                  }`}
+                >
+                  {dept.title}
+                </div>
+                <p
+                  className={`text-xs leading-relaxed ${
+                    isLightTheme ? 'text-slate-600' : 'text-slate-400'
+                  }`}
+                >
+                  {dept.role}
+                </p>
               </div>
             ))}
           </div>
         </section>
 
         {/* Competitive Architecture Comparison Table */}
-        <section className="rounded-3xl border border-slate-800/90 bg-[#0A1122]/90 p-5 sm:p-7 space-y-4">
+        <section
+          className={`rounded-3xl border p-5 sm:p-7 space-y-4 ${
+            isLightTheme
+              ? 'border-slate-200 bg-white shadow-sm'
+              : 'border-slate-800/90 bg-[#0A1122]/90'
+          }`}
+        >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <div className="text-[11px] font-extrabold uppercase tracking-wider text-amber-300">
+              <div className="text-[11px] font-extrabold uppercase tracking-wider text-amber-500">
                 Commercial Benchmark Comparison
               </div>
-              <h2 className="text-lg sm:text-xl font-extrabold text-white mt-0.5">
+              <h2
+                className={`text-lg sm:text-xl font-extrabold mt-0.5 ${
+                  isLightTheme ? 'text-slate-900' : 'text-white'
+                }`}
+              >
                 DoItWithAI 24/7 AI Agency OS vs. $149/mo Single-Agent SEO Platforms
               </h2>
             </div>
             <Link
               href="/ai-employee-agency/dashboard"
-              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-500/20 border border-emerald-400/40 px-3.5 py-2 text-xs font-extrabold text-emerald-200 hover:bg-emerald-500/30 transition"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-[#1D4ED8] hover:bg-[#1E40AF] px-3.5 py-2 text-xs font-extrabold text-white transition"
             >
               <span>Inspect All 36 Agents Live</span>
               <AgencyUiIcon name="arrow-right" className="w-3.5 h-3.5" />
@@ -832,22 +1243,43 @@ export default function AiAgencyPublicLanding() {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="border-b border-slate-800 text-[11px] uppercase tracking-wider text-slate-400">
+                <tr
+                  className={`border-b text-[11px] uppercase tracking-wider ${
+                    isLightTheme
+                      ? 'border-slate-200 text-slate-500'
+                      : 'border-slate-800 text-slate-400'
+                  }`}
+                >
                   <th className="py-3 pr-4">Capability / Department Layer</th>
                   <th className="py-3 px-4">Legacy $149/mo SEO Agent (e.g. SEO.AI)</th>
-                  <th className="py-3 pl-4 text-emerald-300">
-                    DoItWithAI.tools 24/7 AI Digital Agency OS (V3)
+                  <th className="py-3 pl-4 text-emerald-500">
+                    DoItWithAI.tools 24/7 AI Digital Agency OS (V5)
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60">
+              <tbody
+                className={isLightTheme ? 'divide-y divide-slate-200' : 'divide-y divide-slate-800/60'}
+              >
                 {CHALLENGER_COMPARISON_ROWS.map((row) => (
-                  <tr key={row.capability} className="hover:bg-slate-900/40">
-                    <td className="py-3 pr-4 font-bold text-white">
+                  <tr
+                    key={row.capability}
+                    className={isLightTheme ? 'hover:bg-slate-50' : 'hover:bg-slate-900/40'}
+                  >
+                    <td
+                      className={`py-3 pr-4 font-bold ${
+                        isLightTheme ? 'text-slate-900' : 'text-white'
+                      }`}
+                    >
                       {row.capability}
                     </td>
-                    <td className="py-3 px-4 text-slate-400">{row.seoAi}</td>
-                    <td className="py-3 pl-4 font-semibold text-emerald-200">
+                    <td className={`py-3 px-4 ${isLightTheme ? 'text-slate-600' : 'text-slate-400'}`}>
+                      {row.seoAi}
+                    </td>
+                    <td
+                      className={`py-3 pl-4 font-semibold ${
+                        isLightTheme ? 'text-emerald-700' : 'text-emerald-200'
+                      }`}
+                    >
                       {row.doItWithAi}
                     </td>
                   </tr>

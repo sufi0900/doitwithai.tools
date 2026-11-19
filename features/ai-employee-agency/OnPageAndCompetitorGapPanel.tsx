@@ -244,8 +244,9 @@ export default function OnPageAndCompetitorGapPanel({
             />
             <button
               type="submit"
+              data-v5-solid="true"
               disabled={isAnalyzing}
-              className="rounded-xl bg-gradient-to-r from-sky-500 to-emerald-400 hover:brightness-110 px-4 py-1.5 text-xs font-extrabold text-slate-950 transition disabled:opacity-50"
+              className="rounded-xl bg-[#1D4ED8] hover:bg-[#1E40AF] px-4 py-2 text-xs font-extrabold text-white transition disabled:opacity-50"
             >
               {isAnalyzing ? 'Analyzing Rivals...' : 'Re-Run Live Gap Audit'}
             </button>

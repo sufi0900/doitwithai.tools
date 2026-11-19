@@ -108,6 +108,7 @@ export default function ClientLayoutShell({ children }) {
     !isStandaloneWebsiteRoute;
   const isFounderHubPage =
     pathname === "/founder-hub" || pathname.startsWith("/founder-hub/");
+  const isAgencyOnboardingPage = pathname === "/ai-employee-agency";
   const isAgencyDashboardPage =
     pathname === "/ai-employee-agency/dashboard" ||
     pathname.startsWith("/ai-employee-agency/dashboard/");
@@ -206,8 +207,8 @@ export default function ClientLayoutShell({ children }) {
             </main>
 
             {!isLockedAppShell && !isEmbeddedView && !isFounderHubPage && !isStandaloneWebsiteRoute && <Footer />}
-            {!isLockedAppShell && !isEmbeddedView && !isFounderHubPage && !isStandaloneWebsiteRoute && <ScrollToTop />}
-            {!isLockedAppShell && !isEmbeddedView && !isFounderHubPage && !isStandaloneWebsiteRoute && <SiteAssistant />}
+            {!isLockedAppShell && !isEmbeddedView && !isFounderHubPage && !isStandaloneWebsiteRoute && !isAgencyOnboardingPage && <ScrollToTop />}
+            {!isLockedAppShell && !isEmbeddedView && !isFounderHubPage && !isStandaloneWebsiteRoute && !isAgencyOnboardingPage && <SiteAssistant />}
           </CacheProvider>
 
           <Toaster position="bottom-center" />

@@ -554,8 +554,9 @@ export default function FounderCommandChatDock({
       {!isChatDrawerExpanded && (
         <button
           type="button"
+          data-v5-solid="true"
           onClick={() => onToggleChatDrawer(true)}
-          className="fixed bottom-5 right-5 z-40 inline-flex items-center gap-2.5 rounded-full bg-gradient-to-r from-sky-500 via-blue-600 to-emerald-500 hover:brightness-110 px-4 py-2.5 text-xs font-extrabold text-white shadow-2xl shadow-sky-500/25 transition-all"
+          className="fixed bottom-5 right-5 z-40 inline-flex items-center gap-2.5 rounded-full bg-[#1D4ED8] hover:bg-[#1E40AF] px-4 py-2.5 text-xs font-extrabold text-white shadow-2xl shadow-blue-600/25 transition-all"
           title="Open Workspace Copilot & 36-Agent Messenger"
         >
           <span className="relative flex h-2.5 w-2.5">
@@ -749,9 +750,10 @@ export default function FounderCommandChatDock({
                 }`}
               >
                 <div
+                  data-v5-solid={m.sender === 'founder' ? 'true' : undefined}
                   className={`max-w-[88%] rounded-2xl px-3.5 py-2.5 space-y-1.5 ${
                     m.sender === 'founder'
-                      ? 'bg-sky-600 text-white rounded-br-sm'
+                      ? 'bg-[#1D4ED8] text-white rounded-br-sm'
                       : isLightTheme
                       ? 'bg-slate-100 border border-slate-200 text-slate-800 rounded-bl-sm'
                       : 'bg-slate-900 border border-slate-800 text-slate-200 rounded-bl-sm'
@@ -818,8 +820,9 @@ export default function FounderCommandChatDock({
               />
               <button
                 type="submit"
+                data-v5-solid="true"
                 disabled={isSending || !chatInput.trim()}
-                className="rounded-xl bg-gradient-to-r from-sky-500 to-emerald-400 hover:brightness-110 px-3.5 py-2 text-xs font-extrabold text-slate-950 shadow transition inline-flex items-center gap-1.5 disabled:opacity-50 shrink-0"
+                className="rounded-xl bg-[#1D4ED8] hover:bg-[#1E40AF] px-3.5 py-2 text-xs font-extrabold text-white shadow transition inline-flex items-center gap-1.5 disabled:opacity-50 shrink-0"
               >
                 <AgencyUiIcon name="send" className="w-3.5 h-3.5" />
                 <span>{isSending ? '...' : 'Send'}</span>

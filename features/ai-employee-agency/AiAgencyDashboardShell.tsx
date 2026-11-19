@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -85,6 +85,8 @@ import {
   type AgencyHeartbeatScheduleState,
 } from '@/lib/ai-employee-agency/heartbeat-scheduler';
 import InteractiveAgencyNodeCanvas from './InteractiveAgencyNodeCanvas';
+import V5ExecutiveOverviewPanel from './V5ExecutiveOverviewPanel';
+import ZeroBasedTokenLedgerPanel from './ZeroBasedTokenLedgerPanel';
 import type { WorkspaceKnowledgeSnapshot } from '@/lib/ai-employee-agency/workspace-knowledge-snapshot';
 import SiteAuditSuitePanel from './SiteAuditSuitePanel';
 import OnPageAndCompetitorGapPanel from './OnPageAndCompetitorGapPanel';
@@ -288,78 +290,6 @@ const V4_OUTER_RAIL_DOMAINS: Array<{
 
 const AGENCY_THEME_STORAGE_KEY = 'doitwithai_agency_v4_theme_v1';
 
-const CLEAN_SIDEBAR_NAV: Array<{
-  id: AgencySidebarTabId;
-  title: string;
-  subtitle: string;
-  accentHex: string;
-  teamCountLabel: string;
-}> = [
-  {
-    id: 'executive-office',
-    title: 'Executive Office',
-    subtitle: '24h graph, token cost & cron',
-    accentHex: '#38BDF8',
-    teamCountLabel: '4 Agents',
-  },
-  {
-    id: 'keyword-strategist',
-    title: 'Keyword Strategist',
-    subtitle: 'Autocomplete, KD & Google Ads',
-    accentHex: '#F59E0B',
-    teamCountLabel: '4 Agents',
-  },
-  {
-    id: 'content-writing',
-    title: 'Content Studio',
-    subtitle: 'Published, writing & queued',
-    accentHex: '#8B5CF6',
-    teamCountLabel: '5 Agents',
-  },
-  {
-    id: 'graphic-design',
-    title: 'Visual & SVG Studio',
-    subtitle: 'Hero banner & 4× 6-layer SVGs',
-    accentHex: '#EC4899',
-    teamCountLabel: '4 Agents',
-  },
-  {
-    id: 'on-page-seo',
-    title: 'On-Page SEO',
-    subtitle: 'DOM audit, links & 2026 refresh',
-    accentHex: '#10B981',
-    teamCountLabel: '4 Agents',
-  },
-  {
-    id: 'off-page-seo',
-    title: 'Off-Page & Backlink Club',
-    subtitle: 'Link exchange, PR & directories',
-    accentHex: '#F97316',
-    teamCountLabel: '4 Agents',
-  },
-  {
-    id: 'technical-seo',
-    title: 'Technical & Entity SEO',
-    subtitle: '0.00 CLS, robots.txt & schema',
-    accentHex: '#06B6D4',
-    teamCountLabel: '4 Agents',
-  },
-  {
-    id: 'social-video-fleet',
-    title: 'Social & TikTok Fleet',
-    subtitle: 'Pinterest, LinkedIn & 60s video',
-    accentHex: '#F43F5E',
-    teamCountLabel: '6 Agents',
-  },
-  {
-    id: 'qa-publishing',
-    title: 'QA & CMS Auto-Publish',
-    subtitle: '150-pt gate, WP/Shopify/Webhook',
-    accentHex: '#22C55E',
-    teamCountLabel: '4 Agents',
-  },
-];
-
 export default function AiAgencyDashboardShell() {
   const router = useRouter();
   const [studioState, setStudioState] = useState<AutonomousStudioStoreState | null>(null);
@@ -393,7 +323,7 @@ export default function AiAgencyDashboardShell() {
   const [isRunningTokenAudit, setIsRunningTokenAudit] = useState<boolean>(false);
   const [tokenTelemetrySnapshot, setTokenTelemetrySnapshot] =
     useState<AgencyCircleTelemetrySnapshot | null>(null);
-  // V4 Phase 12: Zero-Based Real-Time Per-Agent & Chat Token Telemetry Ledger (Starts at 0 tokens / $0.0000)
+  // V4 Phase 12 + V5 Phase 18: Zero-Based Real-Time Token Ledger & Live 5-Step Pipeline Runner
   const [sessionTokenLedger, setSessionTokenLedger] =
     useState<ZeroBasedSessionTokenLedger>(() =>
       createZeroBasedSessionTokenLedger({
@@ -402,8 +332,15 @@ export default function AiAgencyDashboardShell() {
         isFreeTierKeyActive: true,
       })
     );
-  const [ledgerFilterMode, setLedgerFilterMode] = useState<'all' | 'active' | 'chat'>('all');
-  const [ledgerSearchQuery, setLedgerSearchQuery] = useState<string>('');
+  const [isLivePipelineRunning, setIsLivePipelineRunning] = useState<boolean>(false);
+  const [activeLiveStepIndex, setActiveLiveStepIndex] = useState<number | null>(null);
+  const [liveStepStatusLabel, setLiveStepStatusLabel] = useState<string>(
+    'Standing by · Click Start Writing Live to execute'
+  );
+  const [livePipelineError, setLivePipelineError] = useState<string | null>(null);
+  const [lastStepOutputPreview, setLastStepOutputPreview] = useState<string>('');
+  const [selectedOverviewStageIdx, setSelectedOverviewStageIdx] = useState<number>(0);
+  const hasCheckedAutorunRef = useRef<boolean>(false);
   const [llmGatewayNote, setLlmGatewayNote] = useState<string>(
     'Free-Tier Shadow Telemetry Active · 90% Mechanical ($0.00) + 10% LLM Reasoning'
   );
@@ -1486,15 +1423,26 @@ export default function AiAgencyDashboardShell() {
   /**
    * Trigger writing an article from "Not Yet Started" -> Active Writing -> Published/Draft Ready
    */
-  const handleStartQueuedArticleNow = async (jobToStart: AutomatedArticleJob) => {
-    if (!studioState || !activeCampaign || !activeWebsite) return;
+  const handleRunArticleLivePipeline = async (jobOverride?: AutomatedArticleJob) => {
+    if (!studioState || !activeCampaign || !activeWebsite || isLivePipelineRunning) return;
+    const jobToStart =
+      jobOverride ||
+      activeCampaign.jobs.find(
+        (j) => j.status === 'drafting-article' || j.status === 'queued'
+      ) ||
+      activeCampaign.jobs[0];
+    if (!jobToStart) return;
+
     setSelectedArticleId(jobToStart.id);
+    setIsLivePipelineRunning(true);
+    setLivePipelineError(null);
+    setActiveLiveStepIndex(0);
+    setLiveStepStatusLabel('Step 1/5 · Keyword & Cluster Architect executing...');
     setStatusToast(
-      `Keyword Strategist handed off "${jobToStart.primaryKeyword}" to Content Production Manager — drafting & rendering visuals now...`
+      `Executing live 5-step autonomous agency pipeline for "${jobToStart.topicTitle}"...`
     );
 
-    const nowIso = new Date().toISOString();
-    const markWriting = saveAutonomousStudioState({
+    let workingStore = saveAutonomousStudioState({
       ...studioState,
       campaigns: studioState.campaigns.map((c) =>
         c.id !== activeCampaign.id
@@ -1507,50 +1455,188 @@ export default function AiAgencyDashboardShell() {
             }
       ),
     });
-    setStudioState(markWriting);
+    setStudioState(workingStore);
 
-    await new Promise((r) => setTimeout(r, 2500));
+    let previousOutput = '';
+    let compiledDraft = jobToStart.compiledArticleMarkdown || '';
 
-    const isInternal = activeWebsite.publishingMode === 'internal-doitwithai-site';
-    const nextStatus: AutomatedArticleJob['status'] = isInternal
-      ? 'published'
-      : 'ready-for-review';
+    try {
+      for (let stepIdx = 0; stepIdx <= 4; stepIdx += 1) {
+        setActiveLiveStepIndex(stepIdx);
+        setLiveStepStatusLabel(`Step ${stepIdx + 1}/5 · Calling ${selectedLlmModel}...`);
 
-    let publishedUrl = jobToStart.publishedUrl;
-    if (isInternal) {
-      const pubRes = publishJobToInternalWebsiteStore({
-        job: jobToStart,
-        website: activeWebsite,
-      });
-      publishedUrl = pubRes.targetUrl;
+        const res = await fetch('/api/ai-employee-agency/run-agent-step', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            stepIndex: stepIdx,
+            siteName: activeWebsite.siteName,
+            siteUrl: activeWebsite.siteUrl,
+            niche: activeWebsite.primaryNiche,
+            jobTitle: jobToStart.topicTitle,
+            targetKeyword: jobToStart.primaryKeyword,
+            secondaryKeywords: jobToStart.secondaryKeywords,
+            previousStepOutput: previousOutput,
+            modelId: selectedLlmModel,
+            isFreeTierKey: isFreeTierKeyMode,
+            apiKeyOverride: testApiKeyInput.trim() || undefined,
+          }),
+        });
+
+        const data = (await res.json()) as {
+          ok?: boolean;
+          error?: string;
+          rowId?: string;
+          stageLabel?: string;
+          targetJobStatus?: AutomatedArticleJob['status'];
+          generatedContent?: string;
+          llmGatewayStatus?: {
+            telemetryNote?: string;
+            apiErrorDetail?: string;
+          };
+          tokenUsage?: {
+            modelId: AgencyLlmModelId;
+            apiKeySlot: ApiKeySlotId;
+            usedLiveApiKey: boolean;
+            isFreeTierKey: boolean;
+            promptTokens: number;
+            completionTokens: number;
+            thinkingTokens: number;
+            shadowPaidCostUsd: number;
+            actualCostUsd: number;
+          };
+        };
+
+        if (!res.ok || !data.ok || !data.tokenUsage) {
+          setLivePipelineError(
+            data.error || `Step ${stepIdx + 1} failed with status ${res.status}.`
+          );
+          break;
+        }
+
+        if (data.llmGatewayStatus?.apiErrorDetail) {
+          setLivePipelineError(data.llmGatewayStatus.apiErrorDetail);
+        }
+        if (data.llmGatewayStatus?.telemetryNote) {
+          setLlmGatewayNote(data.llmGatewayStatus.telemetryNote);
+        }
+
+        if (data.generatedContent) {
+          previousOutput = data.generatedContent;
+          setLastStepOutputPreview(data.generatedContent.slice(0, 800));
+          if (stepIdx === 1) {
+            compiledDraft = data.generatedContent;
+          }
+        }
+
+        const usage = data.tokenUsage;
+        const targetRowId = data.rowId || 'agent-keyword-lead';
+        const stepLabel = data.stageLabel || `Step ${stepIdx + 1}`;
+        setSessionTokenLedger((prev) => {
+          const updated = recordSessionTokenUsage(prev, {
+            rowId: targetRowId,
+            actionLabel: `${stepLabel} · ${jobToStart.primaryKeyword}`,
+            modelId: usage.modelId,
+            apiKeySlot: usage.apiKeySlot,
+            promptTokens: usage.promptTokens,
+            completionTokens: usage.completionTokens,
+            thinkingTokens: usage.thinkingTokens,
+            shadowCostUsd: usage.shadowPaidCostUsd,
+            actualCostUsd: usage.actualCostUsd,
+            usedLiveApiKey: usage.usedLiveApiKey,
+            isFreeTierKey: usage.isFreeTierKey,
+          });
+          return saveZeroBasedSessionTokenLedger(updated);
+        });
+
+        const isInternal = activeWebsite.publishingMode === 'internal-doitwithai-site';
+        const nextStatus: AutomatedArticleJob['status'] =
+          stepIdx === 4 && isInternal
+            ? 'published'
+            : data.targetJobStatus || 'drafting-article';
+
+        let publishedUrl = jobToStart.publishedUrl;
+        if (stepIdx === 4 && isInternal) {
+          const pubRes = publishJobToInternalWebsiteStore({
+            job: { ...jobToStart, compiledArticleMarkdown: compiledDraft },
+            website: activeWebsite,
+          });
+          publishedUrl = pubRes.targetUrl;
+        }
+
+        const stepNowIso = new Date().toISOString();
+        workingStore = saveAutonomousStudioState({
+          ...workingStore,
+          campaigns: workingStore.campaigns.map((c) =>
+            c.id !== activeCampaign.id
+              ? c
+              : {
+                  ...c,
+                  jobs: c.jobs.map((j) =>
+                    j.id === jobToStart.id
+                      ? {
+                          ...j,
+                          status: nextStatus,
+                          compiledArticleMarkdown: compiledDraft || j.compiledArticleMarkdown,
+                          publishedUrl,
+                          updatedAtIso: stepNowIso,
+                        }
+                      : j
+                  ),
+                }
+          ),
+        });
+        setStudioState(workingStore);
+        setLiveStepStatusLabel(`Completed ${stepIdx + 1}/5 · ${stepLabel}`);
+      }
+
+      setStatusToast(
+        `Completed live 5-step execution for "${jobToStart.topicTitle}". Check updated Session Token Ledger.`
+      );
+    } catch (err) {
+      setLivePipelineError(
+        err instanceof Error ? err.message : 'Network error during 5-step execution.'
+      );
+    } finally {
+      setIsLivePipelineRunning(false);
+      setActiveLiveStepIndex(null);
+    }
+  };
+
+  const runLivePipelineRef = useRef<(jobOverride?: AutomatedArticleJob) => Promise<void>>(
+    handleRunArticleLivePipeline
+  );
+  runLivePipelineRef.current = handleRunArticleLivePipeline;
+
+  useEffect(() => {
+    if (hasCheckedAutorunRef.current) return;
+    if (!studioState || !activeCampaign || !activeWebsite) return;
+    if (typeof window === 'undefined') return;
+
+    const pending = window.localStorage.getItem('doitwithai_agency_v5_autorun_pending');
+    if (pending !== 'true') {
+      hasCheckedAutorunRef.current = true;
+      return;
     }
 
-    const markDone = saveAutonomousStudioState({
-      ...markWriting,
-      campaigns: markWriting.campaigns.map((c) =>
-        c.id !== activeCampaign.id
-          ? c
-          : {
-              ...c,
-              jobs: c.jobs.map((j) =>
-                j.id === jobToStart.id
-                  ? {
-                      ...j,
-                      status: nextStatus,
-                      publishedUrl,
-                      updatedAtIso: nowIso,
-                    }
-                  : j
-              ),
-            }
-      ),
-    });
-    setStudioState(markDone);
-    setStatusToast(
-      isInternal
-        ? `Completed & Auto-Published "${jobToStart.topicTitle}" to ${publishedUrl}.`
-        : `Completed Draft, Featured Image, 4 Section Infographics & Social Pack for "${jobToStart.topicTitle}".`
-    );
+    hasCheckedAutorunRef.current = true;
+    window.localStorage.removeItem('doitwithai_agency_v5_autorun_pending');
+    const targetJobId = window.localStorage.getItem('doitwithai_agency_v5_autorun_job_id');
+    window.localStorage.removeItem('doitwithai_agency_v5_autorun_job_id');
+
+    const targetJob =
+      (targetJobId && activeCampaign.jobs.find((j) => j.id === targetJobId)) ||
+      activeCampaign.jobs[0];
+
+    const timer = setTimeout(() => {
+      void runLivePipelineRef.current(targetJob);
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [studioState, activeCampaign, activeWebsite]);
+
+  const handleStartQueuedArticleNow = async (jobToStart: AutomatedArticleJob) => {
+    await handleRunArticleLivePipeline(jobToStart);
   };
 
   /**
@@ -1603,12 +1689,22 @@ export default function AiAgencyDashboardShell() {
   return (
     <div
       data-agency-theme={themeMode}
-      className={`h-[calc(100dvh-80px)] overflow-hidden flex flex-col transition-colors duration-200 ${
+      className={`h-[calc(100dvh-80px)] overflow-hidden flex flex-col transition-colors duration-200 agency-v5-shell ${
         isLightTheme
-          ? 'agency-v4-light bg-[#F8FAFC] text-slate-900'
+          ? 'agency-v4-light bg-[#F6F8FC] text-[#0F172A]'
           : 'bg-[#060B16] text-slate-100'
       }`}
     >
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+            .agency-v5-shell .font-mono {
+              font-family: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, monospace !important;
+              font-variant-numeric: tabular-nums;
+            }
+          `,
+        }}
+      />
       {isLightTheme && (
         <style
           dangerouslySetInnerHTML={{
@@ -1627,38 +1723,42 @@ export default function AiAgencyDashboardShell() {
               }
               .agency-v4-light [class*="border-slate-8"],
               .agency-v4-light [class*="border-slate-7"] {
-                border-color: #cbd5e1 !important;
+                border-color: #e2e8f0 !important;
               }
-              .agency-v4-light .text-white {
+              .agency-v4-light .text-white:not([data-v5-solid="true"]) {
                 color: #0f172a !important;
               }
-              .agency-v4-light .text-slate-100,
-              .agency-v4-light .text-slate-200 {
+              .agency-v4-light [data-v5-solid="true"],
+              .agency-v4-light [data-v5-solid="true"] * {
+                color: #ffffff !important;
+              }
+              .agency-v4-light .text-slate-100:not([data-v5-solid="true"]),
+              .agency-v4-light .text-slate-200:not([data-v5-solid="true"]) {
                 color: #1e293b !important;
               }
-              .agency-v4-light .text-slate-300,
-              .agency-v4-light .text-slate-400 {
+              .agency-v4-light .text-slate-300:not([data-v5-solid="true"]),
+              .agency-v4-light .text-slate-400:not([data-v5-solid="true"]) {
                 color: #475569 !important;
               }
-              .agency-v4-light .text-sky-200,
-              .agency-v4-light .text-sky-300,
-              .agency-v4-light .text-sky-400 {
+              .agency-v4-light .text-sky-200:not([data-v5-solid="true"]),
+              .agency-v4-light .text-sky-300:not([data-v5-solid="true"]),
+              .agency-v4-light .text-sky-400:not([data-v5-solid="true"]) {
                 color: #1d4ed8 !important;
               }
-              .agency-v4-light .text-emerald-200,
-              .agency-v4-light .text-emerald-300,
-              .agency-v4-light .text-emerald-400 {
+              .agency-v4-light .text-emerald-200:not([data-v5-solid="true"]),
+              .agency-v4-light .text-emerald-300:not([data-v5-solid="true"]),
+              .agency-v4-light .text-emerald-400:not([data-v5-solid="true"]) {
                 color: #047857 !important;
               }
-              .agency-v4-light .text-amber-300 {
+              .agency-v4-light .text-amber-300:not([data-v5-solid="true"]) {
                 color: #b45309 !important;
               }
-              .agency-v4-light .text-purple-200,
-              .agency-v4-light .text-purple-300 {
+              .agency-v4-light .text-purple-200:not([data-v5-solid="true"]),
+              .agency-v4-light .text-purple-300:not([data-v5-solid="true"]) {
                 color: #6d28d9 !important;
               }
-              .agency-v4-light .text-cyan-300,
-              .agency-v4-light .text-rose-300 {
+              .agency-v4-light .text-cyan-300:not([data-v5-solid="true"]),
+              .agency-v4-light .text-rose-300:not([data-v5-solid="true"]) {
                 color: #0e7490 !important;
               }
               .agency-v4-light [class*="bg-sky-950"],
@@ -1819,14 +1919,16 @@ export default function AiAgencyDashboardShell() {
           MAIN BODY: V4 DUAL-RAIL LEFT NAVIGATION (64px ICON RAIL + 216px SUB-MENU) + LOCKED WORKSPACE
          ===================================================================== */}
       <div className="flex-1 min-h-0 flex overflow-hidden">
-        {/* RAIL 1: 64px Outer Icon Rail (Semrush/Ahrefs Ergonomics) */}
+        {/* RAIL 1: 68px Royal-Blue Primary Domain Rail (V5) */}
         <nav
           aria-label="Primary Agency Domains"
-          className={`w-[68px] shrink-0 border-r flex flex-col items-center justify-between py-3 px-1.5 ${
+          data-v5-solid={isLightTheme ? 'true' : undefined}
+          className={`w-[68px] shrink-0 border-r flex flex-col items-center justify-between py-3 px-1.5 transition-colors ${
             isLightTheme
-              ? 'bg-slate-100 border-slate-200'
-              : 'bg-[#050A14] border-slate-800/90'
+              ? 'bg-[#1D4ED8] border-[#1E40AF] text-white'
+              : 'bg-[#0B1324] border-slate-800/90 text-slate-200'
           }`}
+          style={isLightTheme ? { backgroundColor: '#1D4ED8' } : undefined}
         >
           <div className="w-full space-y-1.5">
             {V4_OUTER_RAIL_DOMAINS.filter((d) => d.id !== 'settings').map((domain) => {
@@ -1835,6 +1937,7 @@ export default function AiAgencyDashboardShell() {
                 <button
                   key={domain.id}
                   type="button"
+                  data-v5-solid={isLightTheme ? 'true' : undefined}
                   onClick={() => {
                     setActiveOuterDomain(domain.id);
                     setIsInnerRailCollapsed(false);
@@ -1851,11 +1954,11 @@ export default function AiAgencyDashboardShell() {
                   className={`w-full rounded-xl py-2 px-1 flex flex-col items-center gap-1 transition ${
                     isActive
                       ? isLightTheme
-                        ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                        : 'bg-sky-500/15 text-sky-300 border border-sky-500/40'
+                        ? 'bg-white/20 text-white shadow-sm ring-1 ring-white/30'
+                        : 'bg-[#1D4ED8]/30 text-white border border-blue-400/50'
                       : isLightTheme
-                        ? 'text-slate-600 hover:bg-slate-200/70'
-                        : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'
+                        ? 'text-blue-100 hover:bg-white/10 hover:text-white'
+                        : 'text-slate-400 hover:bg-slate-900 hover:text-slate-100'
                   }`}
                 >
                   <DepartmentSvgIcon tabId={domain.iconTab} className="w-4 h-4" />
@@ -1868,9 +1971,14 @@ export default function AiAgencyDashboardShell() {
           </div>
 
           {/* Bottom-Pinned Settings & Collapse Controls */}
-          <div className="w-full space-y-1.5 pt-2 border-t border-slate-800/50">
+          <div
+            className={`w-full space-y-1.5 pt-2 border-t ${
+              isLightTheme ? 'border-white/15' : 'border-slate-800/70'
+            }`}
+          >
             <button
               type="button"
+              data-v5-solid={isLightTheme ? 'true' : undefined}
               onClick={() => {
                 setActiveOuterDomain('settings');
                 setIsInnerRailCollapsed(false);
@@ -1881,11 +1989,11 @@ export default function AiAgencyDashboardShell() {
               className={`w-full rounded-xl py-2 px-1 flex flex-col items-center gap-1 transition ${
                 activeOuterDomain === 'settings'
                   ? isLightTheme
-                    ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                    : 'bg-sky-500/15 text-sky-300 border border-sky-500/40'
+                    ? 'bg-white/20 text-white ring-1 ring-white/30'
+                    : 'bg-[#1D4ED8]/30 text-white border border-blue-400/50'
                   : isLightTheme
-                    ? 'text-slate-600 hover:bg-slate-200/70'
-                    : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'
+                    ? 'text-blue-100 hover:bg-white/10 hover:text-white'
+                    : 'text-slate-400 hover:bg-slate-900 hover:text-slate-100'
               }`}
             >
               <AgencyUiIcon name="settings" className="w-4 h-4" />
@@ -1893,10 +2001,11 @@ export default function AiAgencyDashboardShell() {
             </button>
             <button
               type="button"
+              data-v5-solid={isLightTheme ? 'true' : undefined}
               onClick={() => setIsInnerRailCollapsed((prev) => !prev)}
               className={`w-full rounded-xl py-1.5 flex items-center justify-center transition ${
                 isLightTheme
-                  ? 'text-slate-500 hover:bg-slate-200'
+                  ? 'text-blue-100 hover:bg-white/15'
                   : 'text-slate-400 hover:bg-slate-900'
               }`}
               title={isInnerRailCollapsed ? 'Expand Tool Menu' : 'Collapse Tool Menu'}
@@ -1909,7 +2018,7 @@ export default function AiAgencyDashboardShell() {
           </div>
         </nav>
 
-        {/* RAIL 2: 216px Contextual Tool Sub-Menu */}
+        {/* RAIL 2: 224px Contextual Tool Sub-Menu (Zero Duplicated Department List) */}
         {!isInnerRailCollapsed && (
           <aside
             className={`hidden md:flex w-[224px] shrink-0 border-r flex-col justify-between p-3 overflow-y-auto ${
@@ -1951,8 +2060,8 @@ export default function AiAgencyDashboardShell() {
                       className={`w-full text-left rounded-lg px-2.5 py-2 text-xs font-semibold transition flex items-center justify-between gap-2 ${
                         isItemActive
                           ? isLightTheme
-                            ? 'bg-blue-50 text-blue-700 border-l-2 border-blue-600'
-                            : 'bg-sky-500/15 text-white border-l-2 border-sky-400'
+                            ? 'bg-blue-50 text-[#1D4ED8] border-l-2 border-[#1D4ED8]'
+                            : 'bg-blue-500/15 text-white border-l-2 border-[#38BDF8]'
                           : isLightTheme
                             ? 'text-slate-700 hover:bg-slate-100'
                             : 'text-slate-300 hover:bg-slate-900'
@@ -1987,52 +2096,22 @@ export default function AiAgencyDashboardShell() {
                   );
                 })}
               </div>
-
-              <div className="pt-3 border-t border-slate-800/40 space-y-1">
-                <div className="px-2 pb-1 text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
-                  All 9 Departments
-                </div>
-                {CLEAN_SIDEBAR_NAV.map((dept) => {
-                  const isSelected =
-                    !isFullCanvasGraphOpen && activeSidebarTab === dept.id;
-                  return (
-                    <button
-                      key={dept.id}
-                      type="button"
-                      onClick={() => {
-                        setActiveSidebarTab(dept.id);
-                        setIsFullCanvasGraphOpen(false);
-                        setIsGraphFullScreenViewport(false);
-                      }}
-                      className={`w-full text-left rounded-lg px-2.5 py-1.5 text-[11.5px] transition flex items-center justify-between gap-2 ${
-                        isSelected
-                          ? isLightTheme
-                            ? 'bg-slate-100 font-bold text-slate-900'
-                            : 'bg-slate-900 font-bold text-white'
-                          : isLightTheme
-                            ? 'text-slate-600 hover:bg-slate-50'
-                            : 'text-slate-400 hover:bg-slate-900/60 hover:text-slate-200'
-                      }`}
-                    >
-                      <span className="truncate">{dept.title}</span>
-                      <span className="text-[10px] font-mono text-slate-400 shrink-0">
-                        {dept.teamCountLabel.replace(' Agents', '')}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
             </div>
 
             {/* Quick Theme & Node Graph Card */}
             <div className="pt-3 border-t border-slate-800/40 space-y-2">
               <button
                 type="button"
+                data-v5-solid={isLightTheme ? 'true' : undefined}
                 onClick={() => {
                   setIsFullCanvasGraphOpen(true);
                   setIsGraphFullScreenViewport(true);
                 }}
-                className="w-full rounded-xl border border-sky-500/35 bg-sky-500/10 hover:bg-sky-500/20 px-3 py-2 text-left transition flex items-center justify-between text-xs font-bold text-sky-300"
+                className={`w-full rounded-xl px-3 py-2 text-left transition flex items-center justify-between text-xs font-bold ${
+                  isLightTheme
+                    ? 'bg-[#1D4ED8] hover:bg-[#1E40AF] text-white shadow-sm'
+                    : 'border border-sky-500/35 bg-sky-500/10 hover:bg-sky-500/20 text-sky-300'
+                }`}
               >
                 <span className="inline-flex items-center gap-1.5">
                   <AgencyUiIcon name="expand-fullscreen" className="w-3.5 h-3.5" />
@@ -2054,6 +2133,7 @@ export default function AiAgencyDashboardShell() {
               activeHandoffStage={activeHandoffStage}
               activePacket={activePacket}
               isFullScreenViewport={isGraphFullScreenViewport}
+              isLightTheme={isLightTheme}
               onToggleFullScreenViewport={() =>
                 setIsGraphFullScreenViewport((prev) => !prev)
               }
@@ -2073,97 +2153,70 @@ export default function AiAgencyDashboardShell() {
           ) : (
             <div className="p-4 sm:p-6 space-y-5 flex-1">
               {/* -------------------------------------------------------------
-                  COMPACT DEPARTMENT MANAGER & SUB-AGENTS HEADER BAR
+                  SINGLE-ROW V5 COMPACT DEPARTMENT HEADER BAR
                  ------------------------------------------------------------- */}
-              <div className="rounded-2xl border border-slate-800/90 bg-[#0A1224] p-4 space-y-3 text-xs">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-3">
-                    <span
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border"
-                      style={{
-                        backgroundColor: `${currentDepartmentRegistry.accentHex}18`,
-                        borderColor: `${currentDepartmentRegistry.accentHex}50`,
-                        color: currentDepartmentRegistry.accentHex,
-                      }}
-                    >
-                      <DepartmentSvgIcon
-                        tabId={activeSidebarTab}
-                        className="w-4 h-4"
-                      />
-                    </span>
-                    <div>
-                      <div className="text-[10px] font-extrabold uppercase tracking-wider text-sky-400">
-                        {currentDepartmentRegistry.departmentBadge} · 1 Lead Manager +{' '}
-                        {currentDepartmentRegistry.subAgents.length} Sub-Agents
-                      </div>
-                      <div className="text-sm font-extrabold text-white">
+              <div
+                className={`rounded-2xl border px-4 py-3 flex flex-wrap items-center justify-between gap-3 text-xs ${
+                  isLightTheme
+                    ? 'border-slate-200 bg-white shadow-sm'
+                    : 'border-slate-800/90 bg-[#0A1224]'
+                }`}
+              >
+                <div className="flex flex-wrap items-center gap-3 min-w-0">
+                  <span
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border"
+                    style={{
+                      backgroundColor: `${currentDepartmentRegistry.accentHex}18`,
+                      borderColor: `${currentDepartmentRegistry.accentHex}50`,
+                      color: currentDepartmentRegistry.accentHex,
+                    }}
+                  >
+                    <DepartmentSvgIcon tabId={activeSidebarTab} className="w-4 h-4" />
+                  </span>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-extrabold">
                         {currentDepartmentRegistry.name}
-                      </div>
+                      </span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-sky-400">
+                        {currentDepartmentRegistry.departmentBadge} · 1 Lead +{' '}
+                        {currentDepartmentRegistry.subAgents.length} Sub-Agents
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                      {currentDepartmentRegistry.subAgents.map((sub) => (
+                        <button
+                          key={sub.id}
+                          type="button"
+                          onClick={() => {
+                            setChatTargetAgentId(sub.id);
+                            setIsChatDrawerExpanded(true);
+                          }}
+                          className={`rounded-md border px-2 py-0.5 text-[10px] font-semibold transition ${
+                            isLightTheme
+                              ? 'border-slate-200 bg-[#F8FAFC] text-slate-700 hover:border-[#2563EB]'
+                              : 'border-slate-800 bg-slate-900 text-slate-300 hover:border-sky-500/40'
+                          }`}
+                          title={`Chat 1-on-1 with ${sub.name}: ${sub.roleTitle}`}
+                        >
+                          {sub.name}
+                        </button>
+                      ))}
                     </div>
                   </div>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setChatTargetAgentId(currentDepartmentRegistry.id);
-                      setIsChatDrawerExpanded(true);
-                    }}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-purple-400/40 bg-purple-500/15 hover:bg-purple-500/25 px-3 py-1.5 text-[11px] font-extrabold text-purple-200 transition"
-                  >
-                    <AgencyUiIcon name="chat" className="w-3.5 h-3.5" />
-                    <span>Message {currentDepartmentRegistry.name}</span>
-                  </button>
                 </div>
 
-                {/* Compact Sub-Agents Row */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 pt-1">
-                  {currentDepartmentRegistry.subAgents.map((sub) => (
-                    <div
-                      key={sub.id}
-                      className="rounded-xl border border-slate-800/90 bg-slate-950/80 p-3 flex flex-col justify-between gap-2"
-                    >
-                      <div>
-                        <div className="flex items-center justify-between gap-1.5">
-                          <span
-                            className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded"
-                            style={{
-                              backgroundColor: `${sub.accentHex}20`,
-                              color: sub.accentHex,
-                            }}
-                          >
-                            {sub.departmentBadge}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setChatTargetAgentId(sub.id);
-                              setIsChatDrawerExpanded(true);
-                            }}
-                            className="text-[10px] font-bold text-sky-300 hover:underline"
-                          >
-                            Chat 1-on-1 →
-                          </button>
-                        </div>
-                        <div className="font-extrabold text-white text-xs mt-1.5">
-                          {sub.name}
-                        </div>
-                        <p className="text-[11px] text-slate-400 mt-0.5 leading-snug">
-                          {sub.roleTitle}
-                        </p>
-                      </div>
-                      <div className="flex flex-wrap gap-1 pt-1 border-t border-slate-900">
-                        {sub.equippedTools.map((tool) => (
-                          <span
-                            key={tool}
-                            className="rounded bg-slate-900 px-1.5 py-0.5 text-[9.5px] font-mono text-emerald-300"
-                          >
-                            {tool}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setChatTargetAgentId(currentDepartmentRegistry.id);
+                    setIsChatDrawerExpanded(true);
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-purple-400/40 bg-purple-500/15 hover:bg-purple-500/25 px-3 py-1.5 text-[11px] font-extrabold text-purple-200 transition shrink-0"
+                >
+                  <AgencyUiIcon name="chat" className="w-3.5 h-3.5" />
+                  <span>Message {currentDepartmentRegistry.name}</span>
+                </button>
               </div>
 
               {/* -------------------------------------------------------------
@@ -2171,34 +2224,41 @@ export default function AiAgencyDashboardShell() {
                  ------------------------------------------------------------- */}
               {activeSidebarTab === 'executive-office' && (
                 <div className="space-y-5">
-                  <div className="rounded-2xl border border-sky-500/35 bg-slate-900/80 p-5 space-y-5">
+                  <div
+                    className={`rounded-2xl border p-5 space-y-5 ${
+                      isLightTheme
+                        ? 'border-slate-200 bg-white shadow-sm'
+                        : 'border-slate-800/90 bg-slate-900/80'
+                    }`}
+                  >
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
                         <span className="text-[11px] font-extrabold uppercase tracking-wider text-sky-400">
-                          Executive Command Center (V3 Phases 1–10 Active)
+                          Executive Command Center · V5 Real-Time OS
                         </span>
                         <h2 className="text-lg sm:text-xl font-extrabold text-white mt-0.5">
-                          24/7 Agency Output, Live 1-Circle Token Telemetry, 3-Layer Memory &amp; Cron Heartbeats
+                          24/7 Agency Execution, Live Token Telemetry, Skills &amp; Heartbeats
                         </h2>
                       </div>
                       <button
                         type="button"
+                        data-v5-solid="true"
                         onClick={() => {
                           setIsFullCanvasGraphOpen(true);
                           setIsGraphFullScreenViewport(true);
                         }}
-                        className="inline-flex items-center gap-1.5 rounded-xl bg-sky-500 hover:bg-sky-400 px-3.5 py-2 text-xs font-extrabold text-slate-950 transition"
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-[#1D4ED8] hover:bg-[#1E40AF] px-3.5 py-2 text-xs font-extrabold text-white transition"
                       >
                         <AgencyUiIcon name="expand-fullscreen" className="w-3.5 h-3.5" />
                         <span>Launch Full-Screen Node Graph</span>
                       </button>
                     </div>
 
-                    {/* Horizontal Executive Sub-Navigation Tabs (Semrush / Ahrefs Style) */}
+                    {/* Horizontal Executive Sub-Navigation Tabs */}
                     <div className="flex flex-wrap items-center gap-1.5 border-b border-slate-800/70 pb-3">
                       {(
                         [
-                          { id: 'overview', label: 'Overview & 24h Flow' },
+                          { id: 'overview', label: 'Overview & Live Runner' },
                           { id: 'tokens', label: 'Token & API Telemetry' },
                           { id: 'memory', label: 'Trainable Skills & Memory' },
                           { id: 'heartbeat', label: '24/7 Heartbeat Schedule' },
@@ -2207,11 +2267,14 @@ export default function AiAgencyDashboardShell() {
                         <button
                           key={tab.id}
                           type="button"
+                          data-v5-solid={executiveSubView === tab.id ? 'true' : undefined}
                           onClick={() => setExecutiveSubView(tab.id)}
                           className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
                             executiveSubView === tab.id
-                              ? 'bg-sky-500 text-slate-950'
-                              : 'bg-slate-950/60 text-slate-300 hover:bg-slate-800'
+                              ? 'bg-[#1D4ED8] text-white'
+                              : isLightTheme
+                                ? 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                                : 'bg-slate-950/60 text-slate-300 hover:bg-slate-800'
                           }`}
                         >
                           {tab.label}
@@ -2219,302 +2282,71 @@ export default function AiAgencyDashboardShell() {
                       ))}
                     </div>
 
-                    {/* Top 5 Executive KPI & Token Cost Cards */}
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-xs">
-                      <div className="rounded-xl border border-slate-800 bg-slate-950 p-3.5">
-                        <div className="text-slate-400 text-[11px]">Low-KD Clusters</div>
-                        <div className="text-base font-black text-amber-300 mt-1">
-                          {activeCampaign.jobs.length} Topics Locked
+                    {/* Legacy 5-Card KPI Strip (shown only on non-Overview sub-views) */}
+                    {executiveSubView !== 'overview' && (
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-xs">
+                        <div className="rounded-xl border border-slate-800 bg-slate-950 p-3.5">
+                          <div className="text-slate-400 text-[11px]">Low-KD Clusters</div>
+                          <div className="text-base font-black text-amber-300 mt-1">
+                            {activeCampaign.jobs.length} Topics Locked
+                          </div>
+                        </div>
+                        <div className="rounded-xl border border-slate-800 bg-slate-950 p-3.5">
+                          <div className="text-slate-400 text-[11px]">
+                            {isInternalSite ? 'Published Live' : 'Drafts Staged'}
+                          </div>
+                          <div className="text-base font-black text-emerald-300 mt-1">
+                            {publishedOrDraftJobs.length} Done · {activelyWritingJobs.length}{' '}
+                            Active
+                          </div>
+                        </div>
+                        <div className="rounded-xl border border-slate-800 bg-slate-950 p-3.5">
+                          <div className="text-slate-400 text-[11px]">Backlink Club &amp; Ads</div>
+                          <div className="text-base font-black text-pink-300 mt-1">
+                            {activeBacklinkClub.activeVerifiedBacklinksCount} Links · 15 RSA
+                          </div>
+                        </div>
+                        <div className="rounded-xl border border-slate-800 bg-slate-950 p-3.5">
+                          <div className="text-slate-400 text-[11px]">30-Day Monthly Cost</div>
+                          <div className="text-base font-black text-sky-300 font-mono mt-1">
+                            ${activeTelemetry.projected30DayMonthlyCostUsd.toFixed(2)}/mo
+                          </div>
+                        </div>
+                        <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/15 p-3.5">
+                          <div className="flex items-center justify-between gap-1 text-[11px] text-emerald-300">
+                            <span>Live Session Tokens</span>
+                            <span className="text-[9.5px] font-mono text-sky-300">
+                              {sessionTokenLedger.activeAgentsCount}/36 active
+                            </span>
+                          </div>
+                          <div className="text-lg font-extrabold text-emerald-300 mt-1 font-mono">
+                            {sessionTokenLedger.totalSessionTokens.toLocaleString()} tok · $
+                            {sessionTokenLedger.totalShadowCostUsd.toFixed(4)}
+                          </div>
                         </div>
                       </div>
-                      <div className="rounded-xl border border-slate-800 bg-slate-950 p-3.5">
-                        <div className="text-slate-400 text-[11px]">
-                          {isInternalSite ? 'Published Live' : 'Drafts Staged'}
-                        </div>
-                        <div className="text-base font-black text-emerald-300 mt-1">
-                          {publishedOrDraftJobs.length} Done · {activelyWritingJobs.length}{' '}
-                          Active
-                        </div>
-                      </div>
-                      <div className="rounded-xl border border-slate-800 bg-slate-950 p-3.5">
-                        <div className="text-slate-400 text-[11px]">Backlink Club &amp; Ads</div>
-                        <div className="text-base font-black text-pink-300 mt-1">
-                          {activeBacklinkClub.activeVerifiedBacklinksCount} Links · 15 RSA
-                        </div>
-                      </div>
-                      <div className="rounded-xl border border-slate-800 bg-slate-950 p-3.5">
-                        <div className="text-slate-400 text-[11px]">30-Day Monthly Cost</div>
-                        <div className="text-base font-black text-sky-300 font-mono mt-1">
-                          ${activeTelemetry.projected30DayMonthlyCostUsd.toFixed(2)}/mo
-                        </div>
-                      </div>
-                      <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/15 p-3.5">
-                        <div className="flex items-center justify-between gap-1 text-[11px] text-emerald-300">
-                          <span>Live Session Tokens</span>
-                          <span className="text-[9.5px] font-mono text-sky-300">
-                            {sessionTokenLedger.activeAgentsCount}/36 active
-                          </span>
-                        </div>
-                        <div className="text-lg font-extrabold text-emerald-300 mt-1 font-mono">
-                          {sessionTokenLedger.totalSessionTokens.toLocaleString()} tok · $
-                          {sessionTokenLedger.totalShadowCostUsd.toFixed(4)}
-                        </div>
-                      </div>
-                    </div>
+                    )}
 
                     {/* =============================================================
-                        V3 PHASE 7: REAL-TIME 1-CIRCLE TOKEN & SHADOW COST TELEMETRY HUD
+                        MODULAR ZERO-BASED TOKEN LEDGER + PHASE 7 UNIT ECONOMICS
                        ============================================================= */}
                     {executiveSubView === 'tokens' && (
                     <div className="space-y-4">
-                      {/* =============================================================
-                          V4 PHASE 12: ZERO-BASED PER-AGENT & CHAT TOKEN TELEMETRY LEDGER
-                         ============================================================= */}
-                      <div className="rounded-2xl border border-sky-500/40 bg-slate-950 p-4 space-y-4 text-xs">
-                        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
-                          <div className="space-y-0.5">
-                            <div className="inline-flex items-center gap-2 font-extrabold text-sky-300">
-                              <AgencyUiIcon name="activity" className="w-4 h-4 text-sky-400" />
-                              <span>
-                                Zero-Based Live Session Token Ledger (Chat Box + All 36 AI Employees)
-                              </span>
-                            </div>
-                            <p className="text-[11px] text-slate-400">
-                              Starts strictly at <strong className="text-emerald-300">0 tokens ($0.0000)</strong> and increments in real time per API call · Active Slot:{' '}
-                              <span className="font-mono font-bold text-sky-300">
-                                {sessionTokenLedger.activeKeySlot}
-                              </span>
-                            </p>
-                          </div>
-
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="rounded-lg border border-slate-800 bg-slate-900 px-2.5 py-1 text-[10.5px] font-mono text-slate-400">
-                              Calls: <strong className="text-white">{sessionTokenLedger.totalApiCalls}</strong>
-                            </span>
-                            <button
-                              type="button"
-                              onClick={handleResetSessionTokenLedger}
-                              className="inline-flex items-center gap-1.5 rounded-xl border border-rose-500/40 bg-rose-500/15 hover:bg-rose-500/25 px-3 py-1.5 text-[11px] font-extrabold text-rose-300 transition"
-                            >
-                              <AgencyUiIcon name="refresh" className="w-3.5 h-3.5" />
-                              <span>Reset Session to 0</span>
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* 4 Zero-Based Live Session KPI Cards */}
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                          <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-3">
-                            <div className="text-[10.5px] text-slate-400">Session Total Tokens</div>
-                            <div className="text-lg font-extrabold font-mono text-white mt-0.5">
-                              {sessionTokenLedger.totalSessionTokens.toLocaleString()}
-                            </div>
-                            <div className="text-[10px] font-mono text-slate-500 mt-0.5">
-                              In: {sessionTokenLedger.totalPromptTokens.toLocaleString()} · Out:{' '}
-                              {sessionTokenLedger.totalCompletionTokens.toLocaleString()}
-                            </div>
-                          </div>
-                          <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-3">
-                            <div className="text-[10.5px] text-slate-400">Shadow Commercial Cost</div>
-                            <div className="text-lg font-extrabold font-mono text-emerald-300 mt-0.5">
-                              ${sessionTokenLedger.totalShadowCostUsd.toFixed(4)}
-                            </div>
-                            <div className="text-[10px] font-mono text-slate-500 mt-0.5">
-                              Model: {sessionTokenLedger.activeModelId}
-                            </div>
-                          </div>
-                          <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-3">
-                            <div className="text-[10.5px] text-slate-400">Actual Billed Cost</div>
-                            <div className="text-lg font-extrabold font-mono text-sky-300 mt-0.5">
-                              ${sessionTokenLedger.totalActualCostUsd.toFixed(4)}
-                            </div>
-                            <div className="text-[10px] font-mono text-slate-500 mt-0.5">
-                              {isFreeTierKeyMode ? 'Free API Key ($0 billed)' : 'Commercial Paid Key'}
-                            </div>
-                          </div>
-                          <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-3">
-                            <div className="text-[10.5px] text-slate-400">Chat Box &amp; Active Agents</div>
-                            <div className="text-lg font-extrabold font-mono text-amber-300 mt-0.5">
-                              {sessionTokenLedger.chatBoxTokens.toLocaleString()} tok
-                            </div>
-                            <div className="text-[10px] font-mono text-slate-500 mt-0.5">
-                              Active Agents: {sessionTokenLedger.activeAgentsCount} / 36
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Filter & Search Bar */}
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <div className="inline-flex rounded-xl border border-slate-800 bg-slate-900/80 p-1 gap-1">
-                            {(
-                              [
-                                { id: 'all', label: `All (${sessionTokenLedger.rows.length})` },
-                                {
-                                  id: 'active',
-                                  label: `Active Only (${
-                                    sessionTokenLedger.rows.filter((r) => r.totalTokens > 0).length
-                                  })`,
-                                },
-                                { id: 'chat', label: 'Chat Box Only' },
-                              ] as const
-                            ).map((tab) => (
-                              <button
-                                key={tab.id}
-                                type="button"
-                                onClick={() => setLedgerFilterMode(tab.id)}
-                                className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition ${
-                                  ledgerFilterMode === tab.id
-                                    ? 'bg-sky-500/20 text-sky-300 border border-sky-400/40'
-                                    : 'text-slate-400 hover:text-white'
-                                }`}
-                              >
-                                {tab.label}
-                              </button>
-                            ))}
-                          </div>
-                          <input
-                            type="text"
-                            value={ledgerSearchQuery}
-                            onChange={(e) => setLedgerSearchQuery(e.target.value)}
-                            placeholder="Filter by agent, department, or KEY_SLOT..."
-                            className="rounded-xl border border-slate-800 bg-slate-900 px-3 py-1.5 text-[11px] text-slate-200 placeholder-slate-500 focus:border-sky-400 focus:outline-none w-64"
-                          />
-                        </div>
-
-                        {/* 37-Row Per-Agent & Chat Box Zero-Based Token Table */}
-                        <div className="overflow-x-auto max-h-[380px] overflow-y-auto rounded-xl border border-slate-800/80">
-                          <table className="w-full text-left border-collapse text-[11px]">
-                            <thead className="sticky top-0 bg-slate-900 z-10">
-                              <tr className="border-b border-slate-800 text-slate-400 font-mono">
-                                <th className="py-2 px-3">Agent / Channel</th>
-                                <th className="py-2 px-2">Department</th>
-                                <th className="py-2 px-2">API Key Slot</th>
-                                <th className="py-2 px-2 text-right">Calls</th>
-                                <th className="py-2 px-2 text-right">Prompt</th>
-                                <th className="py-2 px-2 text-right">Output</th>
-                                <th className="py-2 px-2 text-right">Total Tok</th>
-                                <th className="py-2 px-2 text-right">Shadow ($)</th>
-                                <th className="py-2 px-3 text-right">Status</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-900">
-                              {sessionTokenLedger.rows
-                                .filter((row) => {
-                                  if (ledgerFilterMode === 'active' && row.totalTokens === 0)
-                                    return false;
-                                  if (ledgerFilterMode === 'chat' && !row.isChatBox) return false;
-                                  const q = ledgerSearchQuery.trim().toLowerCase();
-                                  if (!q) return true;
-                                  return (
-                                    row.displayName.toLowerCase().includes(q) ||
-                                    row.departmentName.toLowerCase().includes(q) ||
-                                    row.apiKeySlot.toLowerCase().includes(q)
-                                  );
-                                })
-                                .map((row) => (
-                                  <tr
-                                    key={row.rowId}
-                                    className={`hover:bg-slate-900/60 ${
-                                      row.isChatBox ? 'bg-sky-950/20' : ''
-                                    }`}
-                                  >
-                                    <td className="py-2 px-3">
-                                      <div className="font-bold text-white flex items-center gap-1.5">
-                                        {row.isChatBox && (
-                                          <span className="rounded bg-sky-500/20 border border-sky-400/40 px-1.5 py-0.2 text-[9px] font-mono text-sky-300">
-                                            CHAT
-                                          </span>
-                                        )}
-                                        <span>{row.displayName}</span>
-                                      </div>
-                                      <div className="text-[10px] text-slate-500 truncate max-w-[260px]">
-                                        {row.lastActionSummary}
-                                      </div>
-                                    </td>
-                                    <td className="py-2 px-2 text-slate-300">
-                                      {row.departmentName}
-                                    </td>
-                                    <td className="py-2 px-2">
-                                      <span className="rounded bg-slate-900 border border-slate-700/80 px-1.5 py-0.5 text-[9.5px] font-mono text-sky-300">
-                                        {row.apiKeySlot}
-                                      </span>
-                                    </td>
-                                    <td className="py-2 px-2 text-right font-mono text-slate-300">
-                                      {row.apiCallsCount}
-                                    </td>
-                                    <td className="py-2 px-2 text-right font-mono text-slate-300">
-                                      {row.promptTokens.toLocaleString()}
-                                    </td>
-                                    <td className="py-2 px-2 text-right font-mono text-slate-300">
-                                      {row.completionTokens.toLocaleString()}
-                                    </td>
-                                    <td className="py-2 px-2 text-right font-mono font-bold text-sky-300">
-                                      {row.totalTokens.toLocaleString()}
-                                    </td>
-                                    <td className="py-2 px-2 text-right font-mono font-bold text-emerald-300">
-                                      ${row.shadowCostUsd.toFixed(4)}
-                                    </td>
-                                    <td className="py-2 px-3 text-right">
-                                      <span
-                                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9.5px] font-bold ${
-                                          row.status === 'active'
-                                            ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
-                                            : 'bg-slate-800/80 text-slate-400 border border-slate-700/60'
-                                        }`}
-                                      >
-                                        <span
-                                          className={`h-1.5 w-1.5 rounded-full ${
-                                            row.status === 'active'
-                                              ? 'bg-emerald-400'
-                                              : 'bg-slate-500'
-                                          }`}
-                                        />
-                                        {row.status === 'active' ? 'Metered' : 'Idle'}
-                                      </span>
-                                    </td>
-                                  </tr>
-                                ))}
-                            </tbody>
-                          </table>
-                        </div>
-
-                        {/* Recent Real-Time Metered Events */}
-                        <div className="rounded-xl border border-slate-800/80 bg-slate-900/40 p-3 space-y-2">
-                          <div className="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">
-                            Live Metered Event Feed ({sessionTokenLedger.recentEvents.length})
-                          </div>
-                          {sessionTokenLedger.recentEvents.length === 0 ? (
-                            <p className="text-[11px] text-slate-400">
-                              Session initialized at 0 tokens ($0.0000). Send a chat command, score live keywords, or click &ldquo;Meter 1 Full Circle Now&rdquo; below to watch real-time per-agent token increments.
-                            </p>
-                          ) : (
-                            <div className="space-y-1.5 max-h-36 overflow-y-auto">
-                              {sessionTokenLedger.recentEvents.slice(0, 8).map((ev) => (
-                                <div
-                                  key={ev.eventId}
-                                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-slate-950/70 border border-slate-800/80 px-2.5 py-1.5 text-[10.5px]"
-                                >
-                                  <div className="flex items-center gap-2 min-w-0">
-                                    <span className="font-mono text-sky-300 shrink-0">
-                                      {ev.apiKeySlot}
-                                    </span>
-                                    <span className="font-bold text-white shrink-0">
-                                      {ev.actorName}
-                                    </span>
-                                    <span className="text-slate-400 truncate max-w-[320px]">
-                                      {ev.actionLabel}
-                                    </span>
-                                  </div>
-                                  <span className="font-mono font-bold text-emerald-300 shrink-0">
-                                    +{ev.totalTokens.toLocaleString()} tok · $
-                                    {ev.shadowCostUsd.toFixed(4)}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </div>
+                      <ZeroBasedTokenLedgerPanel
+                        ledger={sessionTokenLedger}
+                        isFreeTierKeyMode={isFreeTierKeyMode}
+                        isLightTheme={isLightTheme}
+                        activeModelId={selectedLlmModel}
+                        customApiKey={testApiKeyInput}
+                        lastApiErrorDetail={livePipelineError}
+                        isLivePipelineRunning={isLivePipelineRunning}
+                        onResetSession={handleResetSessionTokenLedger}
+                        onChangeModel={setSelectedLlmModel}
+                        onToggleFreeTierKey={setIsFreeTierKeyMode}
+                        onChangeCustomApiKey={setTestApiKeyInput}
+                        onRunLiveArticlePipeline={() => void handleRunArticleLivePipeline()}
+                        onMeterFullCircle={() => void handleRunLiveCircleTokenAudit()}
+                      />
 
                       {/* =============================================================
                           1-CIRCLE REFERENCE UNIT ECONOMICS & MODEL SWITCHER (PHASE 7)
@@ -2855,135 +2687,72 @@ export default function AiAgencyDashboardShell() {
                       </div>
                     )}
 
-                    {/* 24-Hour Daily Agency Throughput & Telemetry Bar Graph */}
+                    {/* =============================================================
+                        V5 EXECUTIVE OVERVIEW + CIRCULAR HEALTH RINGS + LIVE RUNNER
+                       ============================================================= */}
                     {executiveSubView === 'overview' && (
-                    <>
-                    <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4 space-y-3 text-xs">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <span className="font-extrabold text-sky-300">
-                          24-Hour Autonomous Department Throughput &amp; Verification Graph
-                        </span>
-                        <div className="flex items-center gap-3 text-[10px]">
-                          <span className="text-amber-300">■ Keywords Scored</span>
-                          <span className="text-purple-300">■ Sections &amp; SVGs</span>
-                          <span className="text-emerald-300">■ SEO &amp; QA Checks</span>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-7 gap-2 pt-2 items-end h-28">
-                        {dailyTelemetrySeries.map((pt) => {
-                          const hPct = Math.min(100, Math.max(18, pt.seoChecksPassed + 20));
-                          return (
-                            <div
-                              key={pt.timeLabel}
-                              className="flex flex-col items-center justify-end h-full gap-1.5"
-                            >
-                              <div className="w-full flex items-end justify-center gap-1 h-20">
-                                <div
-                                  className="w-2.5 rounded-t bg-amber-400/85"
-                                  style={{
-                                    height: `${Math.min(100, pt.keywordsScored * 1.8)}%`,
-                                  }}
-                                  title={`Keywords: ${pt.keywordsScored}`}
-                                />
-                                <div
-                                  className="w-2.5 rounded-t bg-purple-400/85"
-                                  style={{
-                                    height: `${Math.min(100, pt.svgsRendered * 2.5)}%`,
-                                  }}
-                                  title={`SVGs: ${pt.svgsRendered}`}
-                                />
-                                <div
-                                  className="w-2.5 rounded-t bg-emerald-400/90"
-                                  style={{ height: `${hPct}%` }}
-                                  title={`SEO Checks: ${pt.seoChecksPassed}`}
-                                />
-                              </div>
-                              <span className="text-[10px] font-mono text-slate-400">
-                                {pt.timeLabel}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Live 6-Stage Inter-Agent Handoff Packet Strip */}
-                    <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4 space-y-3 text-xs">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <span className="font-extrabold text-emerald-300">
-                          Active Inter-Agent Handoff (Stage {activeHandoffStage}/6 ·{' '}
-                          {activePacket.packetCode})
-                        </span>
-                        <span className="text-[11px] text-slate-400">
-                          {activePacket.fromAgentName} → {activePacket.toAgentName}
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-6 gap-2">
-                        {handoffPackets.map((pkt) => {
-                          const isCurrent = pkt.stageNumber === activeHandoffStage;
-                          return (
-                            <button
-                              key={pkt.packetCode}
-                              type="button"
-                              onClick={() => setActiveHandoffStage(pkt.stageNumber)}
-                              className={`rounded-xl border p-2.5 text-left transition ${
-                                isCurrent
-                                  ? 'border-sky-400 bg-sky-500/15 text-white'
-                                  : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:text-white'
-                              }`}
-                            >
-                              <div className="text-[10px] font-extrabold text-sky-300">
-                                Stage {pkt.stageNumber}
-                              </div>
-                              <div className="text-[11px] font-bold truncate mt-0.5">
-                                {pkt.toAgentName}
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
-                      <div className="rounded-xl border border-slate-800 bg-slate-900/90 p-3 text-[11px] text-slate-200">
-                        {activePacket.packetSummary}
-                      </div>
-                    </div>
-
-                    {/* Manual Founder Action Required Alerts */}
-                    <div className="rounded-2xl border border-amber-400/40 bg-amber-950/20 p-4 space-y-3 text-xs">
-                      <div className="flex items-center justify-between">
-                        <span className="inline-flex items-center gap-1.5 font-extrabold text-amber-300 uppercase tracking-wider">
-                          <AgencyUiIcon name="alert-triangle" className="w-4 h-4" />
-                          <span>
-                            Founder Manual Action Queue ({manualActionAlerts.length})
-                          </span>
-                        </span>
-                        <span className="text-[11px] text-slate-400">
-                          Escalated by Technical SEO &amp; Publishing Agents
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {manualActionAlerts.map((alert) => (
-                          <div
-                            key={alert.id}
-                            className="rounded-xl border border-slate-800 bg-slate-950/90 p-3.5 space-y-2 flex flex-col justify-between"
-                          >
-                            <div className="space-y-1.5">
-                              <div className="font-bold text-white">{alert.title}</div>
-                              <p className="text-slate-300 text-[11px] leading-relaxed">
-                                {alert.whyManualActionNeeded}
-                              </p>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => setActiveSidebarTab(alert.targetDepartmentTab)}
-                              className="text-left text-[11px] font-extrabold text-sky-300 hover:underline pt-1"
-                            >
-                              {alert.ctaButtonLabel}
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    </>
+                      <V5ExecutiveOverviewPanel
+                        isLightTheme={isLightTheme}
+                        siteName={activeWebsite.siteName}
+                        siteUrl={activeWebsite.siteUrl}
+                        jobs={activeCampaign.jobs}
+                        completedCount={publishedOrDraftJobs.length}
+                        queuedCount={notYetStartedJobs.length}
+                        totalSessionTokens={sessionTokenLedger.totalSessionTokens}
+                        totalShadowCostUsd={sessionTokenLedger.totalShadowCostUsd}
+                        activeModelId={selectedLlmModel}
+                        isFreeTierKeyActive={isFreeTierKeyMode}
+                        overallSiteHealthScore={Math.min(
+                          98,
+                          Math.max(
+                            68,
+                            Math.round(
+                              (activeCampaign.jobs.reduce(
+                                (acc, j) => acc + (j.geoReadiness?.overallScore || 80),
+                                0
+                              ) /
+                                Math.max(1, activeCampaign.jobs.length)) *
+                                0.65 +
+                                (isInternalSite ? 30 : 24)
+                            )
+                          )
+                        )}
+                        aiSearchScore={Math.min(
+                          98,
+                          Math.max(
+                            64,
+                            Math.round(
+                              activeCampaign.jobs.reduce(
+                                (acc, j) => acc + (j.geoReadiness?.overallScore || 78),
+                                0
+                              ) / Math.max(1, activeCampaign.jobs.length)
+                            )
+                          )
+                        )}
+                        isLivePipelineRunning={isLivePipelineRunning}
+                        activeLiveStepIndex={activeLiveStepIndex}
+                        liveStepStatusLabel={liveStepStatusLabel}
+                        livePipelineError={livePipelineError}
+                        lastStepOutputPreview={lastStepOutputPreview}
+                        recentEvents={sessionTokenLedger.recentEvents}
+                        selectedOverviewStageIdx={selectedOverviewStageIdx}
+                        onSelectOverviewStageIdx={setSelectedOverviewStageIdx}
+                        onStartLivePipeline={(job) => void handleRunArticleLivePipeline(job)}
+                        onNavigateTab={(tabId) => {
+                          setActiveSidebarTab(tabId);
+                          setIsFullCanvasGraphOpen(false);
+                        }}
+                        onOpenTokensView={() => {
+                          setActiveSidebarTab('executive-office');
+                          setExecutiveSubView('tokens');
+                          setIsFullCanvasGraphOpen(false);
+                        }}
+                        onOpenChatWithPrompt={(prompt) => {
+                          setChatTargetAgentId('agent-chief-orchestrator');
+                          setIsChatDrawerExpanded(true);
+                          setStatusToast(`Copilot ready: ${prompt}`);
+                        }}
+                      />
                     )}
                   </div>
                 </div>
