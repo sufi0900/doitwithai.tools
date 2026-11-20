@@ -215,16 +215,26 @@ export function PublicProjectsIndex({
                 .map((id) => document.media.assets.find((asset) => asset.id === id))
                 .find(Boolean);
               const toolSlug = project.caseStudySlug || project.id;
-              const palette = resolveToolVisualPalette(project, document.design.accent, document.design.background);
+              const isSiteLight = isLightTemplate(document.design.template) || document.design.background === "ivory" || document.design.background === "cloud";
+              const cardSurface = isSiteLight ? "#ffffff" : "rgba(15, 23, 42, 0.9)";
+              const cardBorder = isSiteLight ? "#e2e8f0" : "rgba(148, 163, 184, 0.22)";
+              const cardTextPrimary = isSiteLight ? "#0f172a" : "#f8fafc";
+              const cardTextSecondary = isSiteLight ? "#334155" : "#cbd5e1";
+              const badgeBg = isSiteLight ? "#f1f5f9" : "rgba(30, 41, 59, 0.78)";
+              const badgeBorder = isSiteLight ? "#cbd5e1" : "rgba(148, 163, 184, 0.24)";
+              const cleanRole = (project.role || "AI UTILITY")
+                .replace(/^TOOL\s*\d+\s*[·•-]\s*/i, "")
+                .trim()
+                .toUpperCase();
 
               return (
                 <article
                   key={project.id}
                   className="wb-tool-directory-card"
                   style={{
-                    background: palette.surfaceColor,
-                    border: `1px solid ${palette.accentHex}44`,
-                    borderRadius: "16px",
+                    background: cardSurface,
+                    border: `1px solid ${cardBorder}`,
+                    borderRadius: "14px",
                     padding: "22px",
                     display: "flex",
                     flexDirection: "column",
@@ -253,11 +263,11 @@ export function PublicProjectsIndex({
                         fontSize: "11px",
                         fontWeight: 800,
                         letterSpacing: "0.08em",
-                        color: palette.accentHex,
+                        color: isSiteLight ? "#1d4ed8" : "#60a5fa",
                       }}
                     >
                       {isToolDirectory
-                        ? `TOOL 0${index + 1} · ${(project.role || "AI UTILITY").toUpperCase()}`
+                        ? `TOOL ${String(index + 1).padStart(2, "0")} · ${cleanRole}`
                         : project.period || "Project"}
                     </span>
                     <span
@@ -265,8 +275,8 @@ export function PublicProjectsIndex({
                         fontSize: "10.5px",
                         padding: "2px 9px",
                         borderRadius: "999px",
-                        background: `${palette.accentHex}22`,
-                        color: palette.accentHex,
+                        background: isSiteLight ? "#eff6ff" : "rgba(37, 99, 235, 0.2)",
+                        color: isSiteLight ? "#1d4ed8" : "#93c5fd",
                         fontWeight: 700,
                         whiteSpace: "nowrap",
                       }}
@@ -274,10 +284,10 @@ export function PublicProjectsIndex({
                       Live in Site
                     </span>
                   </div>
-                  <h2 style={{ margin: 0, fontSize: "19px", lineHeight: 1.3, color: palette.textPrimary }}>
+                  <h2 style={{ margin: 0, fontSize: "19px", fontWeight: 700, lineHeight: 1.32, color: cardTextPrimary }}>
                     {project.title}
                   </h2>
-                  <p style={{ margin: 0, fontSize: "13px", color: palette.textSecondary, lineHeight: 1.6 }}>
+                  <p style={{ margin: 0, fontSize: "13.5px", color: cardTextSecondary, lineHeight: 1.6 }}>
                     {project.summary}
                   </p>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
@@ -289,9 +299,10 @@ export function PublicProjectsIndex({
                           fontSize: "11px",
                           padding: "3px 8px",
                           borderRadius: "6px",
-                          background: "rgba(15, 23, 42, 0.5)",
-                          border: "1px solid rgba(148, 163, 184, 0.2)",
-                          color: palette.textSecondary,
+                          background: badgeBg,
+                          border: `1px solid ${badgeBorder}`,
+                          color: cardTextSecondary,
+                          fontWeight: 600,
                         }}
                       >
                         {technology}
@@ -308,15 +319,15 @@ export function PublicProjectsIndex({
                         gap: "8px",
                         width: "100%",
                         padding: "10px 14px",
-                        borderRadius: "10px",
-                        background: `linear-gradient(135deg, ${palette.accentHex}, ${palette.secondaryAccentHex})`,
-                        color: "#04101c",
+                        borderRadius: "9px",
+                        background: "#2563eb",
+                        color: "#ffffff",
                         fontSize: "13px",
-                        fontWeight: 800,
+                        fontWeight: 700,
                         textDecoration: "none",
                       }}
                     >
-                      <span>{project.title}</span>
+                      <span>Open {project.title}</span>
                       <ArrowUpRight size={15} />
                     </a>
                   </div>
