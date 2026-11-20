@@ -17,6 +17,7 @@ import { CommercialUsage } from './CommercialUsage';
 import { RefreshWorkbench } from './RefreshWorkbench';
 import { AgencyOverviewMetrics } from './AgencyOverviewMetrics';
 import { CalmAgencyNodeCanvas } from './CalmAgencyNodeCanvas';
+import { SidebarNavIcon } from './SidebarNavIcons';
 import Link from 'next/link';
 import { useEffect, useState, useRef, Fragment } from 'react';
 import { agencyRequest } from './agency-request';
@@ -43,6 +44,7 @@ export default function AgencyWorkspaceOverview() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [launchNotice, setLaunchNotice] = useState('');
   const [autoRunTopic, setAutoRunTopic] = useState<string | undefined>();
+  const [activePipelineAgent, setActivePipelineAgent] = useState<string | null>(null);
   const contentScrollRef = useRef<HTMLDivElement>(null);
 
   const agent = panelAgents[view];
@@ -77,31 +79,77 @@ export default function AgencyWorkspaceOverview() {
     if (channels.some((c) => c.label === next)) setExpanded(true);
   }
 
+  function badgeForNav(label: string): number | null {
+    if (!summary) return null;
+    if (label === 'Keyword & Topics' || label === 'Article Studio') {
+      return summary.counts.queued > 0 ? summary.counts.queued : null;
+    }
+    if (label === 'QA & Auto-Publish') {
+      return summary.counts.ready > 0 ? summary.counts.ready : null;
+    }
+    return null;
+  }
+
   function navButton(label: string) {
+    const isActive = view === label;
+    const badgeCount = badgeForNav(label);
+    const showLiveDot = label === 'Live Node Canvas' && Boolean(activePipelineAgent);
+
     return (
       <button
         type="button"
-        aria-current={view === label ? 'page' : undefined}
-        className={`flex w-full items-center justify-between truncate rounded-lg px-3 py-1.5 text-left text-sm transition ${
-          view === label
-            ? 'bg-[#2563EB] font-medium text-white'
+        aria-current={isActive ? 'page' : undefined}
+        className={`group flex w-full items-center justify-between gap-2 rounded-lg px-3 py-1.5 text-left text-sm transition ${
+          isActive
+            ? 'bg-[#2563EB] font-medium text-white shadow-sm'
             : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
         }`}
         onClick={() => navigate(label)}
       >
-        <span className="truncate">{label}</span>
+        <span className="flex min-w-0 items-center gap-2.5">
+          <SidebarNavIcon label={label} active={isActive} />
+          <span className="truncate">{label}</span>
+        </span>
+        {showLiveDot ? (
+          <span
+            aria-label="Live pipeline active"
+            className="inline-flex h-2 w-2 shrink-0 rounded-full bg-blue-300 animate-ping"
+          />
+        ) : badgeCount !== null ? (
+          <span
+            className={`shrink-0 rounded-full px-1.5 py-0.5 font-mono text-[10px] font-semibold leading-none ${
+              isActive
+                ? 'bg-white/20 text-white'
+                : 'border border-slate-700/80 bg-[#0B0F17] text-slate-300'
+            }`}
+          >
+            {badgeCount}
+          </span>
+        ) : null}
       </button>
     );
   }
 
   function renderSidebarContent(isMobileDrawer: boolean) {
+    const isWorking = Boolean(activePipelineAgent) || crawling;
     return (
       <>
         <div className="flex shrink-0 items-center justify-between gap-2 border-b border-slate-800/80 px-4 py-3.5">
           <div className="min-w-0 space-y-0.5">
-            <p className="truncate text-[11px] font-semibold uppercase tracking-widest text-blue-400">
-              DoItWithAI Agency OS
-            </p>
+            <div className="flex items-center gap-1.5">
+              <span
+                className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+                  isWorking
+                    ? 'bg-blue-400 animate-ping'
+                    : activeProviders.length > 0
+                      ? 'bg-emerald-400'
+                      : 'bg-slate-600'
+                }`}
+              />
+              <p className="truncate text-[11px] font-semibold uppercase tracking-widest text-blue-400">
+                DoItWithAI Agency OS
+              </p>
+            </div>
             <strong className="block truncate text-base font-semibold text-white">
               Agency workspace
             </strong>
@@ -325,6 +373,7 @@ export default function AgencyWorkspaceOverview() {
               strokeLinecap="round"
             />
           </svg>
+          <SidebarNavIcon label={view} active={false} />
           <span className="truncate font-semibold text-white">{view}</span>
         </button>
         <button
@@ -449,6 +498,7 @@ export default function AgencyWorkspaceOverview() {
               counts={summary.counts}
               autoRunTopic={autoRunTopic}
               onClearAutoRun={() => setAutoRunTopic(undefined)}
+              onStageChange={setActivePipelineAgent}
               onCompleted={async () => {
                 setVersion((v) => v + 1);
                 await refresh();
@@ -545,6 +595,7 @@ export default function AgencyWorkspaceOverview() {
               indexedPages={indexedPagesCount}
               counts={summary.counts}
               activeProviders={activeProviders}
+              activeAgentId={activePipelineAgent}
               onOpenPanel={navigate}
               onOpenChat={(id) => openChatWith(id)}
             />

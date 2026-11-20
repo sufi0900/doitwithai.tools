@@ -43,12 +43,22 @@ const CLUSTER_LABELS: Record<AgencyNodeDef['cluster'], string> = {
   distribution: 'Social Distribution',
 };
 
+const SOCIAL_NODE_IDS = new Set(['pinterest', 'linkedin', 'facebook', 'video']);
+
+function isNodeExecuting(nodeId: string, activeAgentId?: string | null): boolean {
+  if (!activeAgentId) return false;
+  if (activeAgentId === nodeId) return true;
+  if (activeAgentId === 'social' && SOCIAL_NODE_IDS.has(nodeId)) return true;
+  return false;
+}
+
 export function CalmAgencyNodeCanvas({
   domain,
   approved,
   indexedPages,
   counts,
   activeProviders,
+  activeAgentId,
   onOpenPanel,
   onOpenChat,
 }: {
@@ -57,6 +67,7 @@ export function CalmAgencyNodeCanvas({
   indexedPages: number;
   counts?: { published: number; ready: number; queued: number };
   activeProviders: string[];
+  activeAgentId?: string | null;
   onOpenPanel: (viewName: string) => void;
   onOpenChat: (agentId: string) => void;
 }) {
@@ -64,6 +75,15 @@ export function CalmAgencyNodeCanvas({
   const [zoom, setZoom] = useState<number>(1);
   const [fullScreen, setFullScreen] = useState<boolean>(false);
   const [clusterFilter, setClusterFilter] = useState<'all' | AgencyNodeDef['cluster']>('all');
+
+  useEffect(() => {
+    if (!fullScreen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setFullScreen(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [fullScreen]);
 
   const selectedNode = useMemo(
     () => AGENCY_NODES.find((n) => n.id === selectedId) ?? AGENCY_NODES[0],
@@ -79,15 +99,7 @@ export function CalmAgencyNodeCanvas({
   );
 
   const chiefNode = AGENCY_NODES[0];
-
-  useEffect(() => {
-    if (!fullScreen) return;
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setFullScreen(false);
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [fullScreen]);
+  const selectedIsLive = isNodeExecuting(selectedNode.id, activeAgentId);
 
   const shellClass = fullScreen
     ? 'fixed inset-0 z-[10000] !mt-0 flex flex-col overflow-hidden bg-[#0B0F17] p-4 sm:p-5 space-y-4'
@@ -100,19 +112,34 @@ export function CalmAgencyNodeCanvas({
           from { stroke-dashoffset: 28; }
           to { stroke-dashoffset: 0; }
         }
+        @keyframes agencyLivePulse {
+          0%, 100% { stroke-opacity: 0.95; }
+          50% { stroke-opacity: 0.35; }
+        }
         .agency-beam-animated {
           stroke-dasharray: 6 8;
-          animation: agencyBeamFlow 1.8s linear infinite;
+          animation: agencyBeamFlow 1.6s linear infinite;
+        }
+        .agency-node-live-ring {
+          animation: agencyLivePulse 1.5s ease-in-out infinite;
         }
       `}</style>
 
       {/* Top Calm Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/80 pb-3.5">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-blue-400">
-            Live Agency Architecture · 11 Specialists + Command Hub
-          </p>
-          <h2 className="text-base font-semibold text-white">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-slate-800/80 pb-3.5">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-blue-400">
+              Live Agency Architecture · 11 Specialists + Command Hub
+            </p>
+            {activeAgentId && (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-500/40 bg-blue-500/15 px-2 py-0.5 font-mono text-[10px] font-semibold text-blue-200">
+                <span className="h-1.5 w-1.5 rounded-full bg-blue-400 animate-ping" />
+                LIVE · {activeAgentId === 'social' ? 'Social Distribution' : agentName(activeAgentId)}
+              </span>
+            )}
+          </div>
+          <h2 className="truncate text-base font-semibold text-white">
             {domain ? `${domain} · Interactive Specialist Graph` : 'Interactive Specialist Graph'}
           </h2>
         </div>
@@ -180,12 +207,12 @@ export function CalmAgencyNodeCanvas({
             : 'xl:grid-cols-[minmax(0,1fr)_300px]'
         }`}
       >
-        <div className="relative min-w-0 overflow-hidden rounded-xl border border-slate-800 bg-[#0B0F17]">
+        <div className="relative min-h-0 min-w-0 overflow-hidden rounded-xl border border-slate-800 bg-[#0B0F17]">
           <div
             className={
               fullScreen
-                ? 'h-[360px] w-full overflow-auto xl:h-full'
-                : 'h-[360px] w-full overflow-auto sm:h-[440px] lg:h-[480px]'
+                ? 'h-[360px] w-full overflow-auto sm:h-[440px] xl:h-full'
+                : 'h-[360px] w-full overflow-auto sm:h-[460px]'
             }
           >
             <svg
@@ -210,11 +237,13 @@ export function CalmAgencyNodeCanvas({
               <circle cx={chiefNode.x} cy={chiefNode.y} r="135" fill="none" stroke="#1E293B" strokeDasharray="4 6" />
               <circle cx={chiefNode.x} cy={chiefNode.y} r="255" fill="none" stroke="#1E293B" strokeOpacity="0.65" />
 
-              {/* Animated connection beams from Chief AI Officer to every visible node */}
+              {/* Connection beams from Chief AI Officer — animate strictly on live execution or explicit selection */}
               {visibleNodes
                 .filter((n) => n.id !== 'chief')
                 .map((node) => {
-                  const isSelected = selectedId === node.id || selectedId === 'chief';
+                  const isLive = isNodeExecuting(node.id, activeAgentId);
+                  const isSelected = selectedId === node.id;
+                  const showBeam = isLive || isSelected;
                   return (
                     <g key={`edge-${node.id}`}>
                       <line
@@ -222,19 +251,21 @@ export function CalmAgencyNodeCanvas({
                         y1={chiefNode.y}
                         x2={node.x}
                         y2={node.y}
-                        stroke={isSelected ? '#2563EB' : '#1E293B'}
-                        strokeWidth={isSelected ? 1.8 : 1.1}
-                        strokeOpacity={isSelected ? 0.55 : 0.8}
+                        stroke={isLive ? '#2563EB' : isSelected ? '#3B82F6' : '#1E293B'}
+                        strokeWidth={isLive ? 2.2 : isSelected ? 1.6 : 1.1}
+                        strokeOpacity={isLive ? 0.85 : isSelected ? 0.55 : 0.75}
                       />
-                      <line
-                        x1={chiefNode.x}
-                        y1={chiefNode.y}
-                        x2={node.x}
-                        y2={node.y}
-                        stroke={isSelected ? '#60A5FA' : '#334155'}
-                        strokeWidth={isSelected ? 2 : 1.2}
-                        className="agency-beam-animated"
-                      />
+                      {showBeam && (
+                        <line
+                          x1={chiefNode.x}
+                          y1={chiefNode.y}
+                          x2={node.x}
+                          y2={node.y}
+                          stroke={isLive ? '#93C5FD' : '#60A5FA'}
+                          strokeWidth={isLive ? 2.4 : 1.6}
+                          className="agency-beam-animated"
+                        />
+                      )}
                     </g>
                   );
                 })}
@@ -243,6 +274,7 @@ export function CalmAgencyNodeCanvas({
               {visibleNodes.map((node) => {
                 const isCenter = node.id === 'chief';
                 const isSelected = selectedId === node.id;
+                const isLive = isNodeExecuting(node.id, activeAgentId);
                 const width = isCenter ? 156 : 144;
                 const height = isCenter ? 56 : 48;
 
@@ -253,19 +285,54 @@ export function CalmAgencyNodeCanvas({
                     onClick={() => setSelectedId(node.id)}
                     style={{ cursor: 'pointer' }}
                   >
+                    {isLive && (
+                      <rect
+                        x={-4}
+                        y={-4}
+                        width={width + 8}
+                        height={height + 8}
+                        rx={13}
+                        fill="none"
+                        stroke="#3B82F6"
+                        strokeWidth={2}
+                        className="agency-node-live-ring"
+                      />
+                    )}
                     <rect
                       width={width}
                       height={height}
                       rx={10}
-                      fill={isCenter ? '#172554' : isSelected ? '#1E293B' : '#111827'}
-                      stroke={isSelected ? '#2563EB' : isCenter ? '#3B82F6' : '#334155'}
-                      strokeWidth={isSelected || isCenter ? 1.8 : 1}
+                      fill={
+                        isLive
+                          ? '#1E3A8A'
+                          : isCenter
+                            ? '#172554'
+                            : isSelected
+                              ? '#1E293B'
+                              : '#111827'
+                      }
+                      stroke={
+                        isLive
+                          ? '#60A5FA'
+                          : isSelected
+                            ? '#2563EB'
+                            : isCenter
+                              ? '#3B82F6'
+                              : '#334155'
+                      }
+                      strokeWidth={isLive || isSelected || isCenter ? 1.8 : 1}
                     />
                     <circle
                       cx={14}
                       cy={height / 2}
                       r={4}
-                      fill={approved && activeProviders.length > 0 ? '#10B981' : '#64748B'}
+                      fill={
+                        isLive
+                          ? '#60A5FA'
+                          : approved && activeProviders.length > 0
+                            ? '#10B981'
+                            : '#64748B'
+                      }
                     />
                     <text
                       x={26}
@@ -280,11 +347,11 @@ export function CalmAgencyNodeCanvas({
                     <text
                       x={26}
                       y={height / 2 + 12}
-                      fill="#94A3B8"
+                      fill={isLive ? '#BFDBFE' : '#94A3B8'}
                       fontSize={9.5}
                       fontFamily="ui-monospace, SFMono-Regular, monospace"
                     >
-                      {node.roleTag}
+                      {isLive ? 'LIVE · RUNNING' : node.roleTag}
                     </text>
                   </g>
                 );
@@ -300,9 +367,16 @@ export function CalmAgencyNodeCanvas({
               <span className="rounded-md border border-slate-800 bg-[#111827] px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-blue-400">
                 {CLUSTER_LABELS[selectedNode.cluster]}
               </span>
-              <span className="text-[11px] text-slate-400">
-                {approved ? 'Workspace Ready' : 'Awaiting Approval'}
-              </span>
+              {selectedIsLive ? (
+                <span className="inline-flex items-center gap-1 rounded-full border border-blue-500/40 bg-blue-500/15 px-2 py-0.5 font-mono text-[10px] font-semibold text-blue-200">
+                  <span className="h-1.5 w-1.5 rounded-full bg-blue-400 animate-ping" />
+                  LIVE
+                </span>
+              ) : (
+                <span className="text-[11px] text-slate-400">
+                  {approved ? 'Workspace Ready' : 'Awaiting Approval'}
+                </span>
+              )}
             </div>
 
             <div>
@@ -327,9 +401,11 @@ export function CalmAgencyNodeCanvas({
             </div>
 
             <p className="text-xs leading-relaxed text-slate-400">
-              {activeProviders.length > 0
-                ? `Connected to ${activeProviders.join(', ')}. All specialist actions run through your metered workspace ledger.`
-                : 'Configure at least one LLM provider key to execute live specialist tasks.'}
+              {selectedIsLive
+                ? 'Currently executing a live metered stage in the 5-stage production pipeline.'
+                : activeProviders.length > 0
+                  ? `Connected to ${activeProviders.join(', ')}. All specialist actions run through your metered workspace ledger.`
+                  : 'Configure at least one LLM provider key to execute live specialist tasks.'}
             </p>
           </div>
 
@@ -355,23 +431,29 @@ export function CalmAgencyNodeCanvas({
       </div>
 
       {/* Compact Quick-Jump Specialist Strip */}
-      <div className="flex flex-wrap gap-1.5 pt-1">
+      <div className="flex shrink-0 flex-wrap gap-1.5 pt-1">
         {Object.entries(panelAgents)
           .filter(([, id]) => id !== 'chief')
-          .map(([name, id]) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setSelectedId(id)}
-              className={`rounded-md px-2.5 py-1 text-[11px] font-medium transition ${
-                selectedId === id
-                  ? 'border border-blue-500/60 bg-blue-500/15 text-blue-200'
-                  : 'border border-slate-800 bg-[#0B0F17] text-slate-400 hover:text-white'
-              }`}
-            >
-              {name}
-            </button>
-          ))}
+          .map(([name, id]) => {
+            const isLive = isNodeExecuting(id, activeAgentId);
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setSelectedId(id)}
+                className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-medium transition ${
+                  isLive
+                    ? 'border border-blue-400 bg-blue-500/20 text-white'
+                    : selectedId === id
+                      ? 'border border-blue-500/60 bg-blue-500/15 text-blue-200'
+                      : 'border border-slate-800 bg-[#0B0F17] text-slate-400 hover:text-white'
+                }`}
+              >
+                {isLive && <span className="h-1.5 w-1.5 rounded-full bg-blue-400 animate-ping" />}
+                <span>{name}</span>
+              </button>
+            );
+          })}
       </div>
     </section>
   );

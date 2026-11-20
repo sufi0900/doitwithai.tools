@@ -41,11 +41,11 @@ interface StepResponse {
 }
 
 const PIPELINE_STAGES = [
-  { idx: 0, label: 'Keyword & Web Research', specialist: 'Keyword Strategist' },
-  { idx: 1, label: 'Article Writing', specialist: 'SEO & GEO Writer' },
-  { idx: 2, label: 'Brand Visuals', specialist: 'Visual Designer' },
-  { idx: 3, label: '100-Pt QA Gate', specialist: 'QA & Fact-Check' },
-  { idx: 4, label: 'Social & Delivery Queue', specialist: 'Social Distributor' },
+  { idx: 0, agentId: 'keywords', label: 'Keyword & Web Research', specialist: 'Keyword Strategist' },
+  { idx: 1, agentId: 'writer', label: 'Article Writing', specialist: 'SEO & GEO Writer' },
+  { idx: 2, agentId: 'visual', label: 'Brand Visuals', specialist: 'Visual Designer' },
+  { idx: 3, agentId: 'qa', label: '100-Pt QA Gate', specialist: 'QA & Fact-Check' },
+  { idx: 4, agentId: 'social', label: 'Social & Delivery Queue', specialist: 'Social Distributor' },
 ] as const;
 
 export function LivePipelineTracker({
@@ -53,6 +53,7 @@ export function LivePipelineTracker({
   counts,
   autoRunTopic,
   onClearAutoRun,
+  onStageChange,
   onCompleted,
   onOpenQa,
 }: {
@@ -60,6 +61,7 @@ export function LivePipelineTracker({
   counts: { published: number; ready: number; queued: number };
   autoRunTopic?: string;
   onClearAutoRun?: () => void;
+  onStageChange?: (agentId: string | null) => void;
   onCompleted: () => Promise<void>;
   onOpenQa: () => void;
 }) {
@@ -98,6 +100,12 @@ export function LivePipelineTracker({
     void loadQueue();
   }, [counts.queued, counts.ready, counts.published]);
 
+  useEffect(() => {
+    return () => {
+      onStageChange?.(null);
+    };
+  }, [onStageChange]);
+
   async function executeLiveRun(overrideItem?: QueuedTopicItem, fallbackTopic?: string) {
     if (running) return;
     const chosen =
@@ -118,6 +126,7 @@ export function LivePipelineTracker({
     setErrorMessage('');
     setCompletedStages([]);
     setActiveStage(0);
+    onStageChange?.(PIPELINE_STAGES[0].agentId);
     setActiveTopicLabel(topicText);
     setPreviewOutput('');
     setPreviewHeroSvg('');
@@ -139,6 +148,7 @@ export function LivePipelineTracker({
     try {
       for (let stepIdx = 0; stepIdx <= 4; stepIdx += 1) {
         setActiveStage(stepIdx);
+        onStageChange?.(PIPELINE_STAGES[stepIdx].agentId);
         setStatusMessage(
           `Stage ${stepIdx + 1}/5 · ${PIPELINE_STAGES[stepIdx].label} (${PIPELINE_STAGES[stepIdx].specialist})…`,
         );
@@ -221,6 +231,7 @@ export function LivePipelineTracker({
     } finally {
       setRunning(false);
       setActiveStage(null);
+      onStageChange?.(null);
     }
   }
 
