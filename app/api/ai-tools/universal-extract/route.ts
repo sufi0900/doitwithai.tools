@@ -4,6 +4,11 @@ import { Readability } from "@mozilla/readability";
 import { z } from "zod";
 import { BodyError, readBoundedJson } from "@/lib/ai-tools/request-body";
 import {
+  GEMINI_MODEL_CASCADE,
+  getGeminiApiKeys,
+  getGeminiModel,
+} from "@/lib/ai-tools/gemini";
+import {
   fetchPublic,
   publicUrl,
 } from "@/features/backlink-verifier/fetch.server";
@@ -762,8 +767,8 @@ function parsePlainTimestampedLines(
  * with `thinkingBudget: 0` and plain-text line output so ZERO tokens are wasted and ZERO sections are skipped!
  */
 async function transcribeYoutubeChunkWithGemini(params: {
-  apiKey: string;
-  model: string;
+  apiKeys: string[];
+  models: string[];
   canonicalWatchUrl: string;
   title: string;
   author: string;
@@ -772,8 +777,8 @@ async function transcribeYoutubeChunkWithGemini(params: {
   totalDurationSec: number;
 }): Promise<Array<{ timestamp: string; seconds: number; text: string }>> {
   const {
-    apiKey,
-    model,
+    apiKeys,
+    models,
     canonicalWatchUrl,
     title,
     author,
@@ -784,65 +789,74 @@ async function transcribeYoutubeChunkWithGemini(params: {
   const startLabel = formatSec(startSec);
   const endLabel = formatSec(endSec);
 
-  try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": apiKey,
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              role: "user",
-              parts: [
+  for (const apiKey of apiKeys) {
+    for (const model of models) {
+      try {
+        const res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-goog-api-key": apiKey,
+            },
+            body: JSON.stringify({
+              contents: [
                 {
-                  fileData: {
-                    mimeType: "video/mp4",
-                    fileUri: canonicalWatchUrl,
-                  },
-                  videoMetadata: {
-                    startOffset: `${startSec}s`,
-                    endOffset: `${endSec}s`,
-                  },
-                },
-                {
-                  text: [
-                    `Transcribe the COMPLETE, word-for-word spoken audio of this YouTube video ("${title}" by ${author}) strictly from ${startLabel} (${startSec}s) to ${endLabel} (${endSec}s) out of ${formatSec(totalDurationSec)}.`,
-                    `CRITICAL RULES:`,
-                    `1. Output ONLY plain-text timestamped lines in the exact format: M:SS spoken words (one short line every 2 to 4 seconds, e.g., "${startLabel} ...").`,
-                    `2. Use absolute video timestamps starting at ${startLabel} and ending at ${endLabel}.`,
-                    `3. Do NOT summarize, do NOT skip any examples, statistics, or tips, and do NOT stop early — transcribe every single spoken sentence verbatim until ${endLabel}.`,
-                  ].join("\n"),
+                  role: "user",
+                  parts: [
+                    {
+                      fileData: {
+                        mimeType: "video/mp4",
+                        fileUri: canonicalWatchUrl,
+                      },
+                      videoMetadata: {
+                        startOffset: `${startSec}s`,
+                        endOffset: `${endSec}s`,
+                      },
+                    },
+                    {
+                      text: [
+                        `Transcribe the COMPLETE, word-for-word spoken audio of this YouTube video ("${title}" by ${author}) strictly from ${startLabel} (${startSec}s) to ${endLabel} (${endSec}s) out of ${formatSec(totalDurationSec)}.`,
+                        `CRITICAL RULES:`,
+                        `1. Output ONLY plain-text timestamped lines in the exact format: M:SS spoken words (one short line every 2 to 4 seconds, e.g., "${startLabel} ...").`,
+                        `2. Use absolute video timestamps starting at ${startLabel} and ending at ${endLabel}.`,
+                        `3. Do NOT summarize, do NOT skip any examples, statistics, or tips, and do NOT stop early — transcribe every single spoken sentence verbatim until ${endLabel}.`,
+                      ].join("\n"),
+                    },
+                  ],
                 },
               ],
-            },
-          ],
-          generationConfig: {
-            temperature: 0.1,
-            maxOutputTokens: 8192,
-            thinkingConfig: {
-              thinkingBudget: 0,
-            },
+              generationConfig: {
+                temperature: 0.1,
+                maxOutputTokens: 8192,
+                thinkingConfig: {
+                  thinkingBudget: 0,
+                },
+              },
+            }),
+            signal: AbortSignal.timeout(34000),
           },
-        }),
-        signal: AbortSignal.timeout(34000),
-      },
-    );
+        );
 
-    if (!res.ok) return [];
-    const data = await res.json();
-    const rawText =
-      data?.candidates?.[0]?.content?.parts
-        ?.map((p: { text?: string }) => p.text || "")
-        .join("\n") || "";
-    if (!rawText) return [];
-    return parsePlainTimestampedLines(rawText, startSec);
-  } catch {
-    return [];
+        if (!res.ok) {
+          if (res.status === 404) continue;
+          if ([401, 403, 429, 503].includes(res.status)) break;
+          continue;
+        }
+        const data = await res.json();
+        const rawText =
+          data?.candidates?.[0]?.content?.parts
+            ?.map((p: { text?: string }) => p.text || "")
+            .join("\n") || "";
+        if (!rawText) continue;
+        return parsePlainTimestampedLines(rawText, startSec);
+      } catch {
+        break;
+      }
+    }
   }
+  return [];
 }
 
 /**
@@ -856,12 +870,11 @@ async function fetchGeminiDirectYoutubeTranscript(
   author: string,
   durationSeconds = 600,
 ): Promise<Array<{ timestamp: string; seconds: number; text: string }>> {
-  const apiKey = process.env.GEMINI_API_KEY?.trim();
-  const model =
-    process.env.GEMINI_YOUTUBE_TRANSCRIPT_MODEL?.trim() ||
-    process.env.GEMINI_MODEL?.trim() ||
-    "gemini-2.5-flash";
-  if (!apiKey) return [];
+  const apiKeys = getGeminiApiKeys();
+  if (!apiKeys.length) return [];
+  const models = Array.from(
+    new Set([getGeminiModel("YOUTUBE_TRANSCRIPT"), ...GEMINI_MODEL_CASCADE]),
+  );
 
   const safeDuration = Math.max(120, Math.min(3600, durationSeconds || 600));
   // Split into parallel 220-second (~3.6 min) windows so each window transcribes rapidly at 100% verbatim fidelity
@@ -879,8 +892,8 @@ async function fetchGeminiDirectYoutubeTranscript(
   const chunkResults = await Promise.all(
     windows.map((w) =>
       transcribeYoutubeChunkWithGemini({
-        apiKey,
-        model,
+        apiKeys,
+        models,
         canonicalWatchUrl,
         title,
         author,
