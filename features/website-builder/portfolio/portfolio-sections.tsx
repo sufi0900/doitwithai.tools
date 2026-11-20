@@ -1,7 +1,6 @@
 import { HomepageJournal } from "./homepage-journal";
 import { isBlogFirstTemplate, isCollectionTemplate } from "@/features/website-builder/domain/template-contracts";
 import { CollectionSections } from "./collection-templates";
-import { EditorialFlagshipSections, isEditorialFlagshipTemplate } from "./editorial-flagship-templates";
 import { ArrowUpRight, Globe2, Mail, MapPin } from "lucide-react";
 import Image from "next/image";
 import type { PortfolioSection, SiteDocument } from "@/features/website-builder/domain/site-document";
@@ -14,308 +13,42 @@ import { isCinematicTemplate } from "./section-cinema-math";
 const sectionLabels: Record<PortfolioSection, string> = {
   about: "About",
   experience: "Experience",
-  skills: "Skills",
+  skills: "Capabilities",
   projects: "Projects",
   contact: "Contact",
 };
 
-const PERSONAL_PORTFOLIO_TEMPLATES = new Set([
-  "cinematic-orbit",
-  "architectural-grid",
-  "editorial-depth",
-  "kinetic-gallery",
-  "velocity-atelier",
-  "professional-2d",
-  "rose-studio",
-]);
-
-function getArchetypeProjectsNavLabel(template: string, count: number): string {
-  switch (template) {
-    case "doitwithai-flagship":
-      return `Tools (${count})`;
-    case "authority-niche-blog":
-      return "Reviews & Benchmarks";
-    case "creator-newsletter-hub":
-      return "Issue Vault";
-    case "olive-journal":
-      return "Monographs";
-    case "founder-authority-brand":
-      return "Free Tools & Shop";
-    case "consultant-lead-engine":
-      return "Case Studies";
-    case "startup-service-agency":
-      return "Service Packages";
-    case "midnight-bento":
-      return "Product Suite";
-    default:
-      return "Projects";
-  }
-}
-
-export function PortfolioNavigation({
-  document,
-  publicBasePath,
-  onNavigateSection,
-  onNavigatePage,
-  onNavigateBlog,
-  onNavigateTools,
-}: {
-  document: SiteDocument;
-  publicBasePath?: string;
-  onNavigateSection?: (section: PortfolioSection) => void;
-  onNavigatePage?: (pageId: string) => void;
-  onNavigateBlog?: () => void;
-  onNavigateTools?: () => void;
-}) {
-  const template = document.design.template;
-  const publishedPages = document.publishing.pages.filter(
-    (page) => !publicBasePath || page.status === "published",
-  );
-  const hasBlog = publicBasePath
-    ? document.publishing.posts.some((post) => post.status === "published")
-    : document.publishing.posts.length > 0;
-
-  if (template === "micro-saas-launchpad") {
-    return (
-      <nav className="portfolio-site-nav" aria-label="Single-tool website navigation">
-        {publicBasePath ? (
-          <a href={publicBasePath}>Home</a>
-        ) : (
-          <button type="button" onClick={() => onNavigateSection?.("about")}>
-            Home
-          </button>
-        )}
-        <a
-          className="nav-pill-primary"
-          href={publicBasePath ? `${publicBasePath}#tool-workspace` : "#tool-workspace"}
-          onClick={
-            onNavigateSection
-              ? (event) => {
-                  event.preventDefault();
-                  onNavigateSection("about");
-                  const el = window.document.getElementById("tool-workspace");
-                  el?.scrollIntoView({ behavior: "smooth" });
-                }
-              : undefined
-          }
-        >
-          Live AI Tool
-        </a>
-        {publicBasePath
-          ? publishedPages.map((page) => (
-              <a key={page.id} href={`${publicBasePath}/pages/${page.slug}`}>
-                {page.navigationLabel}
-              </a>
-            ))
-          : onNavigatePage &&
-            publishedPages.map((page) => (
-              <button type="button" key={page.id} onClick={() => onNavigatePage(page.id)}>
-                {page.navigationLabel}
-              </button>
-            ))}
-        {publicBasePath && hasBlog && <a href={`${publicBasePath}/blog`}>SEO Guides &amp; Blog</a>}
-        {!publicBasePath && onNavigateBlog && hasBlog && (
-          <button type="button" onClick={onNavigateBlog}>
-            SEO Guides &amp; Blog
-          </button>
-        )}
-        <a
-          href="#contact"
-          onClick={
-            onNavigateSection
-              ? (event) => {
-                  event.preventDefault();
-                  onNavigateSection("contact");
-                }
-              : undefined
-          }
-        >
-          Contact
-        </a>
-      </nav>
-    );
-  }
-
-  if (template === "doitwithai-flagship") {
-    const toolCount = document.content.projects.length;
-    return (
-      <nav className="portfolio-site-nav" aria-label="Multi-tool directory navigation">
-        {publicBasePath ? (
-          <a href={publicBasePath}>Home</a>
-        ) : (
-          <button type="button" onClick={() => onNavigateSection?.("about")}>
-            Home
-          </button>
-        )}
-        {publicBasePath ? (
-          <a className="nav-pill-primary" href={`${publicBasePath}/projects`}>
-            Tools ({toolCount})
-          </a>
-        ) : (
-          <button
-            type="button"
-            className="nav-pill-primary"
-            onClick={() => {
-              if (onNavigateTools) onNavigateTools();
-              else onNavigateSection?.("projects");
-            }}
-          >
-            Tools ({toolCount})
-          </button>
-        )}
-        {publicBasePath && hasBlog && <a href={`${publicBasePath}/blog`}>Blog &amp; Guides</a>}
-        {!publicBasePath && onNavigateBlog && hasBlog && (
-          <button type="button" onClick={onNavigateBlog}>
-            Blog &amp; Guides
-          </button>
-        )}
-        {publicBasePath
-          ? publishedPages.map((page) => (
-              <a key={page.id} href={`${publicBasePath}/pages/${page.slug}`}>
-                {page.navigationLabel}
-              </a>
-            ))
-          : onNavigatePage &&
-            publishedPages.map((page) => (
-              <button type="button" key={page.id} onClick={() => onNavigatePage(page.id)}>
-                {page.navigationLabel}
-              </button>
-            ))}
-        <a
-          href="#contact"
-          onClick={
-            onNavigateSection
-              ? (event) => {
-                  event.preventDefault();
-                  onNavigateSection("contact");
-                }
-              : undefined
-          }
-        >
-          Contact
-        </a>
-      </nav>
-    );
-  }
-
-  if (!PERSONAL_PORTFOLIO_TEMPLATES.has(template)) {
-    const allowedSections = document.content.order.filter(
-      (section) =>
-        document.content.visibility[section] &&
-        section !== "experience" &&
-        section !== "skills",
-    );
-    return (
-      <nav className="portfolio-site-nav" aria-label="Website navigation">
-        {publicBasePath && hasBlog && (
-          <a className="nav-pill-primary" href={`${publicBasePath}/blog`}>
-            Articles &amp; Blog
-          </a>
-        )}
-        {!publicBasePath && onNavigateBlog && hasBlog && (
-          <button type="button" className="nav-pill-primary" onClick={onNavigateBlog}>
-            Articles &amp; Blog
-          </button>
-        )}
-        {allowedSections.map((section) => (
-          <a
-            key={section}
-            href={publicBasePath && section === "projects" ? `${publicBasePath}/projects` : `#${section}`}
-            onClick={
-              onNavigateSection
-                ? (event) => {
-                    event.preventDefault();
-                    onNavigateSection(section);
-                  }
-                : undefined
-            }
-          >
-            {section === "projects"
-              ? getArchetypeProjectsNavLabel(template, document.content.projects.length)
-              : sectionLabels[section]}
-          </a>
-        ))}
-        {publicBasePath
-          ? publishedPages.map((page) => (
-              <a key={page.id} href={`${publicBasePath}/pages/${page.slug}`}>
-                {page.navigationLabel}
-              </a>
-            ))
-          : onNavigatePage &&
-            publishedPages.map((page) => (
-              <button type="button" key={page.id} onClick={() => onNavigatePage(page.id)}>
-                {page.navigationLabel}
-              </button>
-            ))}
-      </nav>
-    );
-  }
-
+function isNonCvTemplate(template: string): boolean {
   return (
-    <nav className="portfolio-site-nav" aria-label="Portfolio sections">
-      {document.content.order
-        .filter((section) => document.content.visibility[section])
-        .map((section) => (
-          <a
-            key={section}
-            href={publicBasePath && section === "projects" ? `${publicBasePath}/projects` : `#${section}`}
-            onClick={
-              onNavigateSection
-                ? (event) => {
-                    event.preventDefault();
-                    onNavigateSection(section);
-                  }
-                : undefined
-            }
-          >
-            {sectionLabels[section]}
-          </a>
-        ))}
-      {publicBasePath &&
-        publishedPages.map((page) => (
-          <a key={page.id} href={`${publicBasePath}/pages/${page.slug}`}>
-            {page.navigationLabel}
-          </a>
-        ))}
-      {publicBasePath && hasBlog && <a href={`${publicBasePath}/blog`}>Blog</a>}
-      {!publicBasePath &&
-        onNavigatePage &&
-        publishedPages.map((page) => (
-          <button type="button" key={page.id} onClick={() => onNavigatePage(page.id)}>
-            {page.navigationLabel}
-          </button>
-        ))}
-      {!publicBasePath && onNavigateBlog && hasBlog && (
-        <button type="button" onClick={onNavigateBlog}>
-          Blog
-        </button>
-      )}
-    </nav>
+    template === "doitwithai-flagship" ||
+    template === "micro-saas-launchpad" ||
+    template === "authority-niche-blog" ||
+    template === "creator-newsletter-hub" ||
+    template === "startup-service-agency"
   );
 }
 
-export function PortfolioSections(props: { document: SiteDocument; editing?: boolean; publicBasePath?: string; onOpenPage?: (id: string) => void; onOpenPost?: (id: string) => void; onOpenTool?: (id: string) => void; execute?: (command: any) => void }) {
-  if (isEditorialFlagshipTemplate(props.document.design.template)) {
-    return (
-      <EditorialFlagshipSections
-        document={props.document}
-        editing={props.editing}
-        publicBasePath={props.publicBasePath}
-        onOpenPage={props.onOpenPage}
-        onOpenPost={props.onOpenPost}
-        onOpenTool={props.onOpenTool}
-        execute={props.execute}
-      />
-    );
-  }
-  const blogFirst = isBlogFirstTemplate(props.document.design.template);
-  return blogFirst
-    ? <><HomepageJournal document={props.document} publicBasePath={props.publicBasePath} onOpenPost={props.onOpenPost} /><PortfolioSectionBody {...props} /></>
-    : <><PortfolioSectionBody {...props} /><HomepageJournal document={props.document} publicBasePath={props.publicBasePath} onOpenPost={props.onOpenPost} /></>;
+export function PortfolioNavigation({ document, publicBasePath, onNavigateSection, onNavigatePage, onNavigateBlog }: { document: SiteDocument; publicBasePath?: string; onNavigateSection?: (section: PortfolioSection) => void; onNavigatePage?: (pageId: string) => void; onNavigateBlog?: () => void }) {
+  const hideCvSections = isNonCvTemplate(document.design.template);
+  const isToolSite = document.design.template === "doitwithai-flagship" || document.design.template === "micro-saas-launchpad";
+  return <nav className="portfolio-site-nav" aria-label="Site navigation">
+    {document.content.order.filter((section) => document.content.visibility[section] && (!hideCvSections || (section !== "experience" && section !== "skills"))).map((section) => <a key={section} href={publicBasePath && section === "projects" ? `${publicBasePath}/projects` : `#${section}`} onClick={onNavigateSection ? (event) => { event.preventDefault(); onNavigateSection(section); } : undefined}>{section === "projects" && isToolSite ? `Tools (${document.content.projects.length})` : sectionLabels[section]}</a>)}
+    {publicBasePath && document.publishing.pages.filter((page) => page.status === "published").map((page) => <a key={page.id} href={`${publicBasePath}/pages/${page.slug}`}>{page.navigationLabel}</a>)}
+    {publicBasePath && document.publishing.posts.some((post) => post.status === "published") && <a href={`${publicBasePath}/blog`}>Blog</a>}
+    {!publicBasePath && onNavigatePage && document.publishing.pages.map((page) => <button type="button" key={page.id} onClick={() => onNavigatePage(page.id)}>{page.navigationLabel}</button>)}
+    {!publicBasePath && onNavigateBlog && document.publishing.posts.length > 0 && <button type="button" onClick={onNavigateBlog}>Blog</button>}
+  </nav>;
 }
 
-function PortfolioSectionBody({ document, editing = false, publicBasePath, onOpenPage, onOpenPost }: { document: SiteDocument; editing?: boolean; publicBasePath?: string; onOpenPage?: (pageId: string) => void; onOpenPost?: (id: string) => void }) {
-  if (isCollectionTemplate(document.design.template)) return <CollectionSections document={document} editing={editing} publicBasePath={publicBasePath} onOpenPage={onOpenPage} onOpenPost={onOpenPost} />;
+export function PortfolioSections(props:{document:SiteDocument;editing?:boolean;publicBasePath?:string;onOpenPage?:(id:string)=>void;onOpenPost?:(id:string)=>void}) {
+ const blogFirst = isBlogFirstTemplate(props.document.design.template);
+ return blogFirst
+   ? <><HomepageJournal document={props.document} publicBasePath={props.publicBasePath} onOpenPost={props.onOpenPost}/><PortfolioSectionBody {...props}/></>
+   : <><PortfolioSectionBody {...props}/><HomepageJournal document={props.document} publicBasePath={props.publicBasePath} onOpenPost={props.onOpenPost}/></>;
+}
+
+function PortfolioSectionBody({ document, editing = false, publicBasePath, onOpenPage }: { document: SiteDocument; editing?: boolean; publicBasePath?: string; onOpenPage?: (pageId: string) => void }) {
+  if (isCollectionTemplate(document.design.template)) return <CollectionSections document={document} editing={editing} publicBasePath={publicBasePath} onOpenPage={onOpenPage} />;
   if (document.design.template === "professional-2d") return <ProfessionalPortfolioSections document={document} editing={editing} publicBasePath={publicBasePath} onOpenPage={onOpenPage} />;
   const cinematic = isCinematicTemplate(document.design.template);
   return <CinemaRoot enabled={cinematic} template={document.design.template} motion={document.scene.motion} intensity={document.scene.intensity}>
@@ -330,16 +63,20 @@ function Section({ section, document, editing, cinematic, publicBasePath, onOpen
     return <section id="about" className={`portfolio-section about-section ${document.media.headshotUrl ? "has-headshot" : ""}`}><SectionHeading eyebrow="PROFILE" title={document.content.about.heading} kind="about" cinematic={cinematic} template={document.design.template} /><div className="about-layout">{document.media.headshotUrl && <div className="about-headshot"><Image src={document.media.headshotUrl} alt={document.media.headshotAlt || `${document.identity.name} headshot`} fill sizes="(max-width: 780px) 78vw, 340px" unoptimized /></div>}<div><p className="about-copy">{body}</p>{aboutPage && (publicBasePath ? <a className="section-detail-link" href={`${publicBasePath}/pages/about`}>Read full profile <ArrowUpRight size={15} /></a> : onOpenPage ? <button type="button" className="section-detail-link preview-detail-button" onClick={() => onOpenPage(aboutPage.id)}>Preview detailed About <ArrowUpRight size={15} /></button> : null)}</div></div></section>;
   }
   if (section === "experience") {
+    if (isNonCvTemplate(document.design.template)) return null;
     const hasJourney = document.content.experience.length || document.content.education.length;
     if (!hasJourney && !editing) return null;
     return <section id="experience" className="portfolio-section"><SectionHeading eyebrow="JOURNEY" title="Experience & education" kind="experience" cinematic={cinematic} template={document.design.template} />{hasJourney ? <div className="experience-list">{document.content.experience.map((item) => <article key={item.id}><div><span>{item.period || "Present"}</span><i /></div><div><h3>{item.role}</h3>{item.organization && <strong>{item.organization}</strong>}<p>{item.summary}</p></div></article>)}{document.content.education.map((item) => <article key={item.id} className="education-entry"><div><span>{item.period || "Education"}</span><i /></div><div><h3>{item.credential}</h3>{item.institution && <strong>{item.institution}</strong>}<p>{item.summary}</p></div></article>)}</div> : <EmptyState label="Add experience or education entries from the Content editor." />}</section>;
   }
-  if (section === "skills") return <section id="skills" className="portfolio-section"><SectionHeading eyebrow="CAPABILITIES" title="Core skills" kind="skills" cinematic={cinematic} template={document.design.template} /><div className="capability-grid">{document.skills.map((skill) => <article key={skill.id}><span>{String(skill.level).padStart(2, "0")}/05</span><h3>{skill.label}</h3><div><i style={{ width: `${skill.level * 20}%` }} /></div></article>)}</div></section>;
+  if (section === "skills") {
+    if (isNonCvTemplate(document.design.template)) return null;
+    return <section id="skills" className="portfolio-section"><SectionHeading eyebrow="CAPABILITIES" title="Core skills" kind="skills" cinematic={cinematic} template={document.design.template} /><div className="capability-grid">{document.skills.map((skill) => <article key={skill.id}><span>{String(skill.level).padStart(2, "0")}/05</span><h3>{skill.label}</h3><div><i style={{ width: `${skill.level * 20}%` }} /></div></article>)}</div></section>;
+  }
   if (section === "projects") {
     const selectedProjects = projectsForPresentation(document);
     if (!selectedProjects.length && !editing) return null;
     const projects = publicBasePath ? selectedProjects.slice(0, 4) : selectedProjects;
-    return <section id="projects" className="portfolio-section"><SectionHeading eyebrow="SELECTED WORK" title="Projects" kind="projects" cinematic={cinematic} template={document.design.template} />{projects.length ? <><div className="work-grid">{projects.map((project, index) => { const cover = document.media.assets.find((asset) => project.mediaIds.includes(asset.id)); const caseStudyHref = publicBasePath && project.caseStudySlug ? `${publicBasePath}/projects/${project.caseStudySlug}` : ""; return <article key={project.id} className={cover ? "has-project-cover" : ""}>{cover && <div className="project-card-cover"><Image src={cover.url} alt={cover.alt} fill sizes="(max-width: 780px) 90vw, 420px" unoptimized /></div>}<span>0{index + 1}</span><h3>{project.title}</h3><p>{project.summary}</p><div className="technology-list">{project.technologies.map((technology) => <em key={technology}>{technology}</em>)}</div><div className="project-links">{caseStudyHref && <a href={caseStudyHref}>Read case study <ArrowUpRight size={15} /></a>}{project.link && <a href={project.link} target="_blank" rel="noreferrer">Visit project <ArrowUpRight size={15} /></a>}</div></article>; })}</div>{publicBasePath && selectedProjects.length > 0 && <a className="section-detail-link" href={`${publicBasePath}/projects`}>View all projects <ArrowUpRight size={15} /></a>}</> : <EmptyState label="Add selected work in Content → Projects." />}</section>;
+      return <section id="projects" className="portfolio-section"><SectionHeading eyebrow="SELECTED WORK" title="Projects" kind="projects" cinematic={cinematic} template={document.design.template} />{projects.length ? <><div className="work-grid">{projects.map((project, index) => { const cover = document.media.assets.find((asset) => project.mediaIds.includes(asset.id)); const caseStudyHref = publicBasePath && project.caseStudySlug ? `${publicBasePath}/projects/${project.caseStudySlug}` : ""; return <article key={project.id} className={cover ? "has-project-cover" : ""}>{cover && <div className="project-card-cover"><Image src={cover.url} alt={cover.alt} fill sizes="(max-width: 780px) 90vw, 420px" unoptimized /></div>}<span>0{index + 1}</span><h3>{project.title}</h3><p>{project.summary}</p><div className="technology-list">{project.technologies.map((technology) => <em key={technology}>{technology}</em>)}</div><div className="project-links">{caseStudyHref && <a href={caseStudyHref}>Read case study <ArrowUpRight size={15} /></a>}{project.link && <a href={project.link} target="_blank" rel="noreferrer">Visit project <ArrowUpRight size={15} /></a>}</div></article>; })}</div>{publicBasePath && selectedProjects.length > 0 && <a className="section-detail-link" href={`${publicBasePath}/projects`}>View all projects <ArrowUpRight size={15} /></a>}</> : <EmptyState label="Add selected work in Content → Projects." />}</section>;
   }
   const contact = document.content.contact;
   if (!contact.email && !contact.location && !contact.socials.length && !editing) return null;
