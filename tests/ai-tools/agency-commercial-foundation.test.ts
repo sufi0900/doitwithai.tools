@@ -1,15 +1,44 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
 import { classifyCopilotIntent } from '../../lib/ai-employee-agency/copilot-intent';
 import { executeAgencyLlmCall, providerBindings } from '../../lib/ai-employee-agency/llm-gateway';
 import { buildAgencyCircleTelemetrySnapshot } from '../../lib/ai-employee-agency/token-telemetry-store';
 import { verifiedReply } from '../../lib/ai-agency/prompt-compiler';
+import { resolveMeteredAssetKind } from '../../lib/ai-agency/billing.server';
 import {
+  classifyPageMetaHealth,
+  fieldFindings,
+  repairFields,
+} from '../../lib/ai-agency/refresh.server';
+import {
+  classifyPageKind,
   classifySiteMaturity,
   topicDecision,
   type SiteKnowledge,
 } from '../../lib/ai-employee-agency/site-knowledge';
 import { buildDeterministicBrandAndKeywords } from '../../lib/ai-employee-agency/onboarding.server';
+
+function collectTsFiles(dirPath: string): string[] {
+  if (!fs.existsSync(dirPath)) return [];
+  const results: string[] = [];
+  for (const entry of fs.readdirSync(dirPath, { withFileTypes: true })) {
+    const full = path.join(dirPath, entry.name);
+    if (entry.isDirectory()) {
+      results.push(...collectTsFiles(full));
+    } else if (entry.isFile() && /\.(ts|tsx)$/.test(entry.name)) {
+      results.push(full);
+    }
+  }
+  return results;
+}
+
+function stripComments(source: string): string {
+  return source
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/^\s*\/\/.*$/gm, '');
+}
 
 test('intent routing separates greetings, reads and proposed actions', () => {
   for (const [message, expected] of Object.entries({
@@ -18,6 +47,7 @@ test('intent routing separates greetings, reads and proposed actions', () => {
     'focus on repairs': 'strategy_pivot', 'Explain internal links': 'casual_chat',
   })) assert.equal(classifyCopilotIntent(message), expected);
 });
+
 test('missing provider produces neither output nor metered usage', async () => {
   const names = [
     'AUTONOMOUS_AUTOMATION_GEMINI_KEY',
@@ -40,6 +70,7 @@ test('missing provider produces neither output nor metered usage', async () => {
     names.forEach((name, i) => { if (old[i] !== undefined) process.env[name] = old[i]; });
   }
 });
+
 test('agency gateway strictly ignores reserved public-tool keys (GEMINI_API_KEY, GROQ_API_KEY)', async () => {
   const savedEnv = { ...process.env };
   const savedFetch = globalThis.fetch;
@@ -73,6 +104,7 @@ test('agency gateway strictly ignores reserved public-tool keys (GEMINI_API_KEY,
     globalThis.fetch = savedFetch;
   }
 });
+
 test('agency gateway uses AUTONOMOUS_AUTOMATION_GEMINI_KEY and cascades evergreen models without gemini-2.0-flash', async () => {
   const savedEnv = { ...process.env };
   const savedFetch = globalThis.fetch;
@@ -109,11 +141,13 @@ test('agency gateway uses AUTONOMOUS_AUTOMATION_GEMINI_KEY and cascades evergree
     globalThis.fetch = savedFetch;
   }
 });
+
 test('meter sums only the stage that actually ran', () => {
   const snapshot = buildAgencyCircleTelemetrySnapshot({ siteName: 'test', activeTopicTitle: '',
     liveStage1Override: { isLiveCall: true, promptTokens: 2, completionTokens: 3, thinkingTokens: 0, latencyMs: 1 } });
   assert.equal(snapshot.totalCircleTokens, 5);
 });
+
 test('verifiedReply allows numbered lists, headings, years, durations and dimensions while rejecting fabricated URLs', () => {
   const structured = JSON.stringify({
     blocks: [
@@ -145,6 +179,7 @@ test('verifiedReply allows numbered lists, headings, years, durations and dimens
     /Unsupported citation/,
   );
 });
+
 test('topicDecision allows create on partial or manual sitemap coverage when overlap is below 50%', () => {
   const baseProfile: SiteKnowledge = {
     source: 'external_export',
@@ -173,7 +208,14 @@ test('topicDecision allows create on partial or manual sitemap coverage when ove
   const refresh = topicDecision('Technical SEO Checklist', baseProfile);
   assert.equal(refresh.action, 'refresh');
 });
-test('classifySiteMaturity and deterministic Brand DNA synthesis detect new vs established sites and return 6 keyword cards', () => {
+
+test('classifyPageKind, classifySiteMaturity and deterministic Brand DNA synthesis detect new vs established sites and return 6 keyword cards', () => {
+  assert.equal(classifyPageKind('https://brand.example/blog/seo-guide'), 'blog');
+  assert.equal(classifyPageKind('https://brand.example/services/technical-seo'), 'service');
+  assert.equal(classifyPageKind('https://brand.example/tools/headline-analyzer'), 'product');
+  assert.equal(classifyPageKind('https://brand.example/pricing'), 'landing');
+  assert.equal(classifyPageKind('https://brand.example/legal/privacy'), 'other');
+
   const newSite = classifySiteMaturity([
     { url: 'https://newbrand.example/', title: 'Home' },
     { url: 'https://newbrand.example/pricing', title: 'Pricing' },
@@ -225,4 +267,86 @@ test('classifySiteMaturity and deterministic Brand DNA synthesis detect new vs e
   assert.ok(synth.brandPatch.audience && synth.brandPatch.audience.length > 0);
   assert.ok(synth.brandPatch.offer && synth.brandPatch.offer.length > 0);
   assert.equal(synth.suggestedKeywords.length, 6);
+});
+
+test('resolveMeteredAssetKind maps writer, refresh, and social specialists cleanly without double-charging production articles', () => {
+  assert.equal(resolveMeteredAssetKind('writer'), 'article');
+  assert.equal(resolveMeteredAssetKind('writer', true), null);
+  assert.equal(resolveMeteredAssetKind('refresh'), 'existing_page_optimization');
+  assert.equal(resolveMeteredAssetKind('refresh', true), null);
+
+  for (const socialSpecialist of ['facebook', 'linkedin', 'video', 'pinterest', 'social']) {
+    assert.equal(resolveMeteredAssetKind(socialSpecialist), 'social');
+  }
+
+  for (const supportSpecialist of ['keywords', 'qa', 'technical', 'copilot', 'chief', 'pr', 'visual']) {
+    assert.equal(resolveMeteredAssetKind(supportSpecialist), null);
+  }
+});
+
+test('classifyPageMetaHealth, fieldFindings and repairFields enforce No-Churn Triage boundaries', () => {
+  const healthy = {
+    heading: 'Technical SEO Audit Checklist for SaaS',
+    title: 'Technical SEO Audit Checklist for SaaS Teams | Acme',
+    description:
+      'Run a fast zero-LLM technical SEO audit covering robots.txt, canonicals, meta tags, and oversized images for SaaS sites.',
+  };
+  assert.equal(classifyPageMetaHealth(healthy), 'ok');
+  assert.deepEqual(fieldFindings(healthy), []);
+
+  const missingH1 = { ...healthy, heading: '' };
+  assert.equal(classifyPageMetaHealth(missingH1), 'needs_fix');
+  assert.ok(fieldFindings(missingH1).includes('Missing H1'));
+
+  const shortDesc = { ...healthy, description: 'Too short.' };
+  assert.equal(classifyPageMetaHealth(shortDesc), 'needs_fix');
+
+  const repaired = repairFields(
+    { heading: '', title: '   Longer   Title   ', description: '' },
+    'Fallback excerpt text for meta description repair.',
+  );
+  assert.equal(repaired.heading, 'Longer Title');
+  assert.equal(repaired.title, 'Longer Title');
+  assert.equal(repaired.description, 'Fallback excerpt text for meta description repair.');
+});
+
+test('static source audit: zero forbidden public-tool keys, zero retired gemini-2.0-flash in active routes, and edge-safe fetchPublic', () => {
+  const repoRoot = path.resolve(process.cwd());
+  const agencyDirs = [
+    path.join(repoRoot, 'lib', 'ai-agency'),
+    path.join(repoRoot, 'lib', 'ai-employee-agency'),
+    path.join(repoRoot, 'app', 'api', 'ai-employee-agency'),
+    path.join(repoRoot, 'features', 'ai-employee-agency'),
+  ];
+
+  const forbiddenEnvRead = /process\.env\.(GEMINI_API_KEY\b|GEMINI_API_KEY_2\b|GROQ_API_KEY\b|OPENROUTER_API_KEY\b)/;
+  const retiredModel = /gemini-2\.0-flash/;
+
+  for (const dir of agencyDirs) {
+    for (const filePath of collectTsFiles(dir)) {
+      const codeOnly = stripComments(fs.readFileSync(filePath, 'utf8'));
+      assert.equal(
+        forbiddenEnvRead.test(codeOnly),
+        false,
+        `Forbidden public-tool API key read found in ${path.relative(repoRoot, filePath)}`,
+      );
+      if (path.basename(filePath) !== 'token-telemetry-store.ts') {
+        assert.equal(
+          retiredModel.test(codeOnly),
+          false,
+          `Retired gemini-2.0-flash reference found in ${path.relative(repoRoot, filePath)}`,
+        );
+      }
+    }
+  }
+
+  const fetchServerPath = path.join(repoRoot, 'features', 'backlink-verifier', 'fetch.server.ts');
+  if (fs.existsSync(fetchServerPath)) {
+    const fetchSource = stripComments(fs.readFileSync(fetchServerPath, 'utf8'));
+    assert.equal(
+      /from\s+['"](?:node:)?dns(?:\/promises)?['"]|from\s+['"]node:net['"]/.test(fetchSource),
+      false,
+      'fetch.server.ts must remain Cloudflare Workers edge-safe without node:dns or node:net imports',
+    );
+  }
 });
