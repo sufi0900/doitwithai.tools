@@ -24,6 +24,10 @@ import {
 } from "@/features/website-builder/tools/InteractiveWebsiteToolRunner";
 import { ToolPageCanvasEditor } from "@/features/website-builder/studio/tool-page-canvas-editor";
 import type { ToolPageField } from "@/features/website-builder/domain/tool-page-properties";
+import { getMultiWebsiteSignatureContract } from "@/features/website-builder/domain/multi-website-signature-templates";
+import { MultiWebsiteSignatureHero } from "./MultiWebsiteSignatureHero";
+import { getSingleWebsiteSignatureContract } from "@/features/website-builder/domain/single-website-signature-templates";
+import { SingleWebsiteSignatureHero } from "./SingleWebsiteSignatureHero";
 
 const FLAGSHIP_TEMPLATE_IDS = new Set([
   "doitwithai-flagship",
@@ -33,6 +37,16 @@ const FLAGSHIP_TEMPLATE_IDS = new Set([
   "consultant-lead-engine",
   "micro-saas-launchpad",
   "startup-service-agency",
+  "swiss-editorial-directory",
+  "warm-architectural-studio",
+  "crisp-saas-utility-hub",
+  "modern-boutique-commerce",
+  "trusted-local-service-pro",
+  "editorial-magazine-journal",
+  "minimalist-founder-monograph",
+  "technical-newsletter-docs",
+  "creator-lead-magnet-hub",
+  "agency-flagship-showcase",
 ]);
 
 export function isEditorialFlagshipTemplate(id: string): boolean {
@@ -58,10 +72,10 @@ export const TEMPLATE_META: Record<
     primaryLabel: "Explore 6 Live AI Tools & Guides",
     secondaryLabel: "Connect with Founder",
     badge: "Multi-Tool Directory & Publication",
-    accentColor: "#6366f1",
+    accentColor: "#2563eb",
     surfaceBg: "linear-gradient(145deg, #060a16 0%, #0b1329 55%, #080d1d 100%)",
-    cardBg: "rgba(15, 23, 42, 0.78)",
-    borderColor: "rgba(99, 102, 241, 0.28)",
+    cardBg: "rgba(15, 23, 42, 0.9)",
+    borderColor: "rgba(148, 163, 184, 0.22)",
   },
   "authority-niche-blog": {
     kicker: "CLASSIC BLOGGER & AUTHORITY MAGAZINE · 2-COLUMN EDITION",
@@ -79,51 +93,50 @@ export const TEMPLATE_META: Record<
     primaryLabel: "Browse Issue Archive",
     secondaryLabel: "Sponsor an Issue",
     badge: "Reader-First Newsletter Hub",
-    accentColor: "#fb7185",
+    accentColor: "#be123c",
     surfaceBg: "linear-gradient(160deg, #12081c 0%, #1b0d29 100%)",
-    cardBg: "rgba(30, 16, 46, 0.82)",
+    cardBg: "rgba(30, 16, 46, 0.86)",
     borderColor: "rgba(251, 113, 133, 0.26)",
   },
   "founder-authority-brand": {
-    kicker: "CREATOR & FOUNDER HUB · KO-FI SUPPORT, SHOP & BLOG",
+    kicker: "CREATOR & FOUNDER HUB · SUPPORT, SHOP & BLOG",
     primaryLabel: "Support & Explore Creations",
     secondaryLabel: "Book a 1:1 Session",
-    badge: "Ko-fi Creator & Brand Studio",
-    accentColor: "#a78bfa",
+    badge: "Creator & Brand Studio",
+    accentColor: "#6d28d9",
     surfaceBg: "linear-gradient(155deg, #090d1f 0%, #141936 100%)",
-    cardBg: "rgba(22, 28, 58, 0.8)",
+    cardBg: "rgba(22, 28, 58, 0.86)",
     borderColor: "rgba(167, 139, 250, 0.3)",
   },
   "consultant-lead-engine": {
-    kicker: "FROSTED GLASSMORPHISM · STRATEGIC ADVISORY & ROI ENGINE",
+    kicker: "STRATEGIC ADVISORY & ROI ENGINE",
     primaryLabel: "Review Client Case Studies",
     secondaryLabel: "Request Strategy Audit",
-    badge: "Glassmorphism 2.0 Advisory",
-    accentColor: "#38bdf8",
-    surfaceBg:
-      "radial-gradient(circle at 20% 20%, rgba(56,189,248,0.16), transparent 45%), radial-gradient(circle at 80% 70%, rgba(99,102,241,0.16), transparent 50%), #050914",
-    cardBg: "rgba(15, 23, 42, 0.56)",
-    borderColor: "rgba(56, 189, 248, 0.32)",
+    badge: "B2B Advisory Funnel",
+    accentColor: "#0284c7",
+    surfaceBg: "linear-gradient(155deg, #050914 0%, #0d162a 100%)",
+    cardBg: "rgba(15, 23, 42, 0.88)",
+    borderColor: "rgba(56, 189, 248, 0.28)",
   },
   "micro-saas-launchpad": {
-    kicker: "SINGLE-TOOL AI WEBSITE · META TITLE & DESCRIPTION STUDIO + 5 BLOG GUIDES",
-    primaryLabel: "Try Live Meta Title & Description Tool",
+    kicker: "SINGLE-TOOL AI WEBSITE · INTERACTIVE STUDIO + 5 BLOG GUIDES",
+    primaryLabel: "Try Live Tool",
     secondaryLabel: "Read 5 SEO Guides",
     badge: "Single-Tool Flagship Website",
-    accentColor: "#22d3ee",
+    accentColor: "#2563eb",
     surfaceBg: "linear-gradient(150deg, #040914 0%, #0a192f 100%)",
-    cardBg: "rgba(12, 26, 48, 0.82)",
-    borderColor: "rgba(34, 211, 238, 0.28)",
+    cardBg: "rgba(12, 26, 48, 0.88)",
+    borderColor: "rgba(56, 189, 248, 0.24)",
   },
   "startup-service-agency": {
     kicker: "DIGITAL SERVICE STUDIO · PACKAGES, PROOF & SEO HUB",
     primaryLabel: "View Service Packages",
     secondaryLabel: "Scope Your Project",
     badge: "Agency & Small Business Funnel",
-    accentColor: "#a3e635",
+    accentColor: "#047857",
     surfaceBg: "linear-gradient(155deg, #060c09 0%, #0f1c14 100%)",
-    cardBg: "rgba(16, 30, 22, 0.84)",
-    borderColor: "rgba(163, 230, 53, 0.28)",
+    cardBg: "rgba(16, 30, 22, 0.88)",
+    borderColor: "rgba(52, 211, 153, 0.26)",
   },
 };
 
@@ -140,15 +153,15 @@ export function estimateReadingMinutes(post: {
   return Math.max(2, Math.round(words / 180));
 }
 
-const ACCENT_PALETTE: Record<string, { primary: string; secondary: string; softBg: string; border: string }> = {
-  cyan: { primary: "#22d3ee", secondary: "#6366f1", softBg: "rgba(34, 211, 238, 0.14)", border: "rgba(34, 211, 238, 0.38)" },
-  indigo: { primary: "#6366f1", secondary: "#22d3ee", softBg: "rgba(99, 102, 241, 0.16)", border: "rgba(99, 102, 241, 0.4)" },
-  violet: { primary: "#a855f7", secondary: "#ec4899", softBg: "rgba(168, 85, 247, 0.16)", border: "rgba(168, 85, 247, 0.4)" },
-  coral: { primary: "#fb7185", secondary: "#f59e0b", softBg: "rgba(251, 113, 133, 0.15)", border: "rgba(251, 113, 133, 0.38)" },
-  lime: { primary: "#84cc16", secondary: "#10b981", softBg: "rgba(132, 204, 22, 0.15)", border: "rgba(132, 204, 22, 0.38)" },
-  rose: { primary: "#f43f5e", secondary: "#a855f7", softBg: "rgba(244, 63, 94, 0.15)", border: "rgba(244, 63, 94, 0.38)" },
-  blue: { primary: "#3b82f6", secondary: "#06b6d4", softBg: "rgba(59, 130, 246, 0.15)", border: "rgba(59, 130, 246, 0.38)" },
-  olive: { primary: "#10b981", secondary: "#06b6d4", softBg: "rgba(16, 185, 129, 0.15)", border: "rgba(16, 185, 129, 0.38)" },
+const ACCENT_PALETTE: Record<string, { primary: string; secondary: string; softBg: string; border: string; buttonBg: string; buttonFg: string }> = {
+  cyan: { primary: "#0284c7", secondary: "#0369a1", softBg: "rgba(2, 132, 199, 0.14)", border: "rgba(56, 189, 248, 0.32)", buttonBg: "#0284c7", buttonFg: "#ffffff" },
+  indigo: { primary: "#2563eb", secondary: "#1d4ed8", softBg: "rgba(37, 99, 235, 0.15)", border: "rgba(96, 165, 250, 0.32)", buttonBg: "#2563eb", buttonFg: "#ffffff" },
+  violet: { primary: "#6d28d9", secondary: "#5b21b6", softBg: "rgba(109, 40, 217, 0.15)", border: "rgba(167, 139, 250, 0.32)", buttonBg: "#6d28d9", buttonFg: "#ffffff" },
+  coral: { primary: "#c2410c", secondary: "#9a3412", softBg: "rgba(194, 65, 12, 0.15)", border: "rgba(251, 146, 60, 0.32)", buttonBg: "#c2410c", buttonFg: "#ffffff" },
+  lime: { primary: "#047857", secondary: "#065f46", softBg: "rgba(4, 120, 87, 0.15)", border: "rgba(52, 211, 153, 0.32)", buttonBg: "#047857", buttonFg: "#ffffff" },
+  rose: { primary: "#be123c", secondary: "#9f1239", softBg: "rgba(190, 18, 60, 0.15)", border: "rgba(251, 113, 133, 0.32)", buttonBg: "#be123c", buttonFg: "#ffffff" },
+  blue: { primary: "#1d4ed8", secondary: "#1e40af", softBg: "rgba(29, 78, 216, 0.15)", border: "rgba(96, 165, 250, 0.32)", buttonBg: "#1d4ed8", buttonFg: "#ffffff" },
+  olive: { primary: "#047857", secondary: "#065f46", softBg: "rgba(4, 120, 87, 0.15)", border: "rgba(52, 211, 153, 0.32)", buttonBg: "#047857", buttonFg: "#ffffff" },
 };
 
 const BG_SURFACE: Record<string, { heroBg: string; cardBg: string; textMain: string; textSub: string; isLight: boolean }> = {
@@ -166,29 +179,43 @@ const BG_SURFACE: Record<string, { heroBg: string; cardBg: string; textMain: str
     textSub: "#cbd5e1",
     isLight: false,
   },
-  ink: {
-    heroBg: "radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.2), transparent 48%), linear-gradient(180deg, #090d16 0%, #141d30 100%)",
-    cardBg: "rgba(15, 23, 42, 0.84)",
+  slate: {
+    heroBg: "radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.2), transparent 48%), linear-gradient(180deg, #0f172a 0%, #1e293b 100%)",
+    cardBg: "rgba(15, 23, 42, 0.82)",
     textMain: "#f8fafc",
     textSub: "#cbd5e1",
     isLight: false,
   },
-  plum: {
-    heroBg: "radial-gradient(circle at 20% 20%, rgba(168, 85, 247, 0.22), transparent 48%), linear-gradient(180deg, #13091f 0%, #1e1030 100%)",
-    cardBg: "rgba(24, 12, 39, 0.86)",
+  forest: {
+    heroBg: "radial-gradient(circle at 20% 20%, rgba(16, 185, 129, 0.2), transparent 48%), linear-gradient(180deg, #04130e 0%, #092219 100%)",
+    cardBg: "rgba(8, 28, 21, 0.86)",
     textMain: "#f8fafc",
-    textSub: "#e9d5ff",
+    textSub: "#d1fae5",
     isLight: false,
   },
-  cloud: {
+  ember: {
+    heroBg: "radial-gradient(circle at 20% 20%, rgba(244, 63, 94, 0.18), transparent 48%), linear-gradient(180deg, #16070b 0%, #240c14 100%)",
+    cardBg: "rgba(31, 11, 18, 0.86)",
+    textMain: "#f8fafc",
+    textSub: "#ffe4e6",
+    isLight: false,
+  },
+  linen: {
+    heroBg: "radial-gradient(circle at 18% 18%, rgba(99, 102, 241, 0.1), transparent 45%), linear-gradient(180deg, #faf8f5 0%, #f1ede4 100%)",
+    cardBg: "rgba(255, 255, 255, 0.94)",
+    textMain: "#0f172a",
+    textSub: "#334155",
+    isLight: true,
+  },
+  alabaster: {
     heroBg: "radial-gradient(circle at 18% 18%, rgba(56, 189, 248, 0.12), transparent 45%), linear-gradient(180deg, #f8fafc 0%, #eef2f6 100%)",
     cardBg: "rgba(255, 255, 255, 0.95)",
     textMain: "#0f172a",
     textSub: "#334155",
     isLight: true,
   },
-  ivory: {
-    heroBg: "radial-gradient(circle at 18% 18%, rgba(99, 102, 241, 0.1), transparent 45%), linear-gradient(180deg, #faf8f5 0%, #f1ede4 100%)",
+  sage: {
+    heroBg: "radial-gradient(circle at 18% 18%, rgba(16, 185, 129, 0.12), transparent 45%), linear-gradient(180deg, #f4f7f4 0%, #e7efe8 100%)",
     cardBg: "rgba(255, 255, 255, 0.94)",
     textMain: "#0f172a",
     textSub: "#334155",
@@ -257,6 +284,36 @@ export function EditorialFlagshipHero({
       return matchesQ && matchesCat;
     });
   }, [tools, dirSearch, dirCategory]);
+
+  // 0. PHASE 4 SIGNATURE MULTI-WEBSITE TEMPLATES (5 DISTINCT ARCHITECTURAL SYSTEMS)
+  const signatureContract = getMultiWebsiteSignatureContract(template);
+  if (signatureContract) {
+    return (
+      <MultiWebsiteSignatureHero
+        document={document}
+        contract={signatureContract}
+        publicBasePath={publicBasePath}
+        navigate={navigate}
+        onOpenTool={onOpenTool}
+        onOpenPost={onOpenPost}
+      />
+    );
+  }
+
+  // 0b. PHASE 5 SIGNATURE SINGLE-WEBSITE TEMPLATES (BLOGGING, BRANDING & SOLO-TOOL FUNNELS)
+  const singleSignatureContract = getSingleWebsiteSignatureContract(template);
+  if (singleSignatureContract) {
+    return (
+      <SingleWebsiteSignatureHero
+        document={document}
+        contract={singleSignatureContract}
+        publicBasePath={publicBasePath}
+        navigate={navigate}
+        onOpenTool={onOpenTool}
+        onOpenPost={onOpenPost}
+      />
+    );
+  }
 
   // 1. SINGLE-TOOL FLAGSHIP WEBSITE (micro-saas-launchpad)
   if (template === "micro-saas-launchpad") {
@@ -750,41 +807,48 @@ export function EditorialFlagshipHero({
               >
                 {filteredTools.map((tool, index) => {
                   const toolSlug = tool.caseStudySlug || tool.id;
-                  const palette = resolveToolVisualPalette(tool, document.design.accent, document.design.background);
+                  const cleanRole = (tool.role || "INTERACTIVE UTILITY")
+                    .replace(/^TOOL\s*\d+\s*[·•-]\s*/i, "")
+                    .trim()
+                    .toUpperCase();
+                  const cardSurface = bgTheme.isLight ? "#ffffff" : "rgba(15, 23, 42, 0.9)";
+                  const cardBorder = bgTheme.isLight ? "#e2e8f0" : "rgba(148, 163, 184, 0.22)";
+                  const badgeBg = bgTheme.isLight ? "#f1f5f9" : "rgba(30, 41, 59, 0.78)";
+                  const badgeBorder = bgTheme.isLight ? "#cbd5e1" : "rgba(148, 163, 184, 0.24)";
                   return (
                     <div
                       key={tool.id}
                       style={{
-                        background: palette.surfaceColor,
-                        border: `1px solid ${palette.accentHex}44`,
-                        borderRadius: "14px",
-                        padding: "16px",
+                        background: cardSurface,
+                        border: `1px solid ${cardBorder}`,
+                        borderRadius: "12px",
+                        padding: "18px",
                         display: "flex",
                         flexDirection: "column",
-                        gap: "9px",
+                        gap: "10px",
                       }}
                     >
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "6px" }}>
-                        <span style={{ fontSize: "10.5px", fontWeight: 800, color: palette.accentHex, letterSpacing: "0.08em" }}>
-                          TOOL 0{index + 1} · {(tool.role || "FREE UTILITY").toUpperCase()}
+                        <span style={{ fontSize: "10.5px", fontWeight: 800, color: bgTheme.isLight ? accentTheme.primary : "#60a5fa", letterSpacing: "0.08em" }}>
+                          TOOL {String(index + 1).padStart(2, "0")} · {cleanRole}
                         </span>
                         <span
                           style={{
-                            width: "10px",
-                            height: "10px",
+                            width: "8px",
+                            height: "8px",
                             borderRadius: "999px",
-                            background: `linear-gradient(135deg, ${palette.accentHex}, ${palette.secondaryAccentHex})`,
+                            background: accentTheme.primary,
                             flexShrink: 0,
                           }}
-                          title="Custom tool theme active"
+                          title="Live interactive tool"
                         />
                       </div>
-                      <h3 style={{ margin: 0, fontSize: "16px", lineHeight: 1.3, color: palette.textPrimary }}>
+                      <h3 style={{ margin: 0, fontSize: "16.5px", fontWeight: 700, lineHeight: 1.32, color: bgTheme.textMain }}>
                         {tool.title}
                       </h3>
-                      <p style={{ margin: 0, fontSize: "12.5px", lineHeight: 1.55, color: palette.textSecondary }}>
-                        {tool.summary.slice(0, 125)}
-                        {tool.summary.length > 125 ? "…" : ""}
+                      <p style={{ margin: 0, fontSize: "13px", lineHeight: 1.58, color: bgTheme.textSub }}>
+                        {tool.summary.slice(0, 130)}
+                        {tool.summary.length > 130 ? "…" : ""}
                       </p>
                       {tool.technologies.length > 0 && (
                         <div style={{ display: "flex", flexWrap: "wrap", gap: "5px" }}>
@@ -792,12 +856,13 @@ export function EditorialFlagshipHero({
                             <span
                               key={tag}
                               style={{
-                                fontSize: "10.5px",
-                                padding: "2px 7px",
+                                fontSize: "11px",
+                                padding: "2px 8px",
                                 borderRadius: "6px",
-                                background: "rgba(15, 23, 42, 0.45)",
-                                border: "1px solid rgba(148, 163, 184, 0.2)",
-                                color: palette.textSecondary,
+                                background: badgeBg,
+                                border: `1px solid ${badgeBorder}`,
+                                color: bgTheme.textSub,
+                                fontWeight: 600,
                               }}
                             >
                               {tag}
@@ -805,7 +870,7 @@ export function EditorialFlagshipHero({
                           ))}
                         </div>
                       )}
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", marginTop: "auto", paddingTop: "6px" }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", marginTop: "auto", paddingTop: "8px" }}>
                         {publicBasePath ? (
                           <a
                             href={`${publicBasePath}/projects/${toolSlug}`}
@@ -815,16 +880,16 @@ export function EditorialFlagshipHero({
                               justifyContent: "space-between",
                               width: "100%",
                               gap: "6px",
-                              padding: "8px 12px",
-                              borderRadius: "9px",
-                              background: `linear-gradient(135deg, ${palette.accentHex}, ${palette.secondaryAccentHex})`,
-                              fontSize: "12px",
-                              fontWeight: 800,
-                              color: "#04101c",
+                              padding: "9px 13px",
+                              borderRadius: "8px",
+                              background: accentTheme.buttonBg,
+                              fontSize: "12.5px",
+                              fontWeight: 700,
+                              color: accentTheme.buttonFg,
                               textDecoration: "none",
                             }}
                           >
-                            <span>{tool.title}</span>
+                            <span>Open {tool.title}</span>
                             <ArrowUpRight size={14} />
                           </a>
                         ) : (
@@ -840,17 +905,17 @@ export function EditorialFlagshipHero({
                               justifyContent: "space-between",
                               width: "100%",
                               gap: "6px",
-                              background: `linear-gradient(135deg, ${palette.accentHex}, ${palette.secondaryAccentHex})`,
+                              background: accentTheme.buttonBg,
                               border: 0,
-                              borderRadius: "9px",
-                              padding: "8px 12px",
-                              fontSize: "12px",
-                              fontWeight: 800,
-                              color: "#04101c",
+                              borderRadius: "8px",
+                              padding: "9px 13px",
+                              fontSize: "12.5px",
+                              fontWeight: 700,
+                              color: accentTheme.buttonFg,
                               cursor: "pointer",
                             }}
                           >
-                            <span>{tool.title} →</span>
+                            <span>Customize {tool.title}</span>
                             <Wrench size={13} />
                           </button>
                         )}
@@ -891,7 +956,7 @@ export function EditorialFlagshipHero({
           </p>
           <span className="flagship-badge" style={{ borderColor: accentTheme.border, color: accentTheme.primary }}>
             {template === "authority-niche-blog" ? <BookOpen size={15} /> : template === "creator-newsletter-hub" ? <Newspaper size={15} /> : template === "founder-authority-brand" ? <UserCheck size={15} /> : template === "consultant-lead-engine" ? <Compass size={15} /> : <Layers3 size={15} />}
-            {document.content.contact.location || "Editorial & Brand Hub"}
+            {document.identity.location || "Editorial & Brand Hub"}
           </span>
         </div>
         <Title style={{ color: bgTheme.textMain }}>{document.identity.name}</Title>
