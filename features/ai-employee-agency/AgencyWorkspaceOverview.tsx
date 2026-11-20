@@ -4,6 +4,8 @@ import { V6_SINGLE_SIDEBAR_GROUPS } from './navigation';
 import { KnowledgeReview, type KnowledgeRow } from './KnowledgeReview';
 import { GuidedOnboardingStudio } from './GuidedOnboardingStudio';
 import { LivePipelineTracker } from './LivePipelineTracker';
+import { KeywordTopicsWorkbench } from './KeywordTopicsWorkbench';
+import { AiVisibilityWorkbench } from './AiVisibilityWorkbench';
 import { PanelChat, PanelLedger } from './PanelWorkspace';
 import { agentName, channels, commercialLabel, panelAgents, socialHub, visualStudio } from '@/lib/ai-agency/panels';
 import { VisualBrandStudio } from './VisualBrandStudio';
@@ -454,6 +456,27 @@ export default function AgencyWorkspaceOverview() {
             />
           )}
 
+          {view === 'Keyword & Topics' && (
+            <KeywordTopicsWorkbench
+              website={summary.website}
+              refresh={refresh}
+              onQueueAndWrite={(topic) => {
+                setAutoRunTopic(topic);
+                navigate('Article Studio');
+              }}
+            />
+          )}
+
+          {view === 'AI Visibility & Links' && (
+            <AiVisibilityWorkbench
+              website={summary.website}
+              onTopicQueued={async () => {
+                setVersion((v) => v + 1);
+                await refresh();
+              }}
+            />
+          )}
+
           {isSetupView && (
             <section className={panel}>
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -500,6 +523,7 @@ export default function AgencyWorkspaceOverview() {
             <PanelLedger
               key={view}
               agent="hub"
+              website={summary.website}
               openChannel={navigate}
               onStartAction={openChatWith}
             />
@@ -520,8 +544,10 @@ export default function AgencyWorkspaceOverview() {
             <PanelLedger
               key={agent}
               agent={agent}
+              website={summary.website}
               version={version}
               onStartAction={openChatWith}
+              onOpenQa={() => navigate('QA & Auto-Publish')}
             />
           )}
           {view === 'Token & API Usage' && <CommercialUsage />}
@@ -564,6 +590,8 @@ export default function AgencyWorkspaceOverview() {
           key={chat + chatSeedPrompt}
           agent={chat}
           initialPrompt={chatSeedPrompt}
+          website={summary.website}
+          counts={summary.counts}
           close={() => {
             setChat(undefined);
             setChatSeedPrompt('');

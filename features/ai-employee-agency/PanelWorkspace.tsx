@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { agencyRequest } from "./agency-request";
 import { agentName, channels } from "@/lib/ai-agency/panels";
 import { specialists } from "@/lib/ai-agency/specialists";
+import type { KnowledgeRow } from "./KnowledgeReview";
 
 type Work = { id: string; task: string; result: string; created_at: string };
 type Social = {
@@ -32,83 +33,115 @@ const SPECIALIST_QUICK_ACTIONS: Record<
   { label: string; prompt: string; subtitle: string }
 > = {
   writer: {
-    label: "Start Writing Live",
-    prompt: "Draft a fact-checked, SEO-optimized article outline and opening section for our highest-priority queued topic.",
-    subtitle: "Generates a live long-form draft grounded in your approved website knowledge base.",
+    label: "Draft Section via Specialist",
+    prompt:
+      "Draft a fact-checked, SEO-optimized article outline and opening section for our highest-priority queued topic.",
+    subtitle:
+      "Generates a live draft grounded in your approved website knowledge base.",
   },
   keywords: {
-    label: "Research Low-KD Topics",
-    prompt: "Propose 5 low-competition keyword cluster topics that do not overlap with our existing sitemap URLs.",
+    label: "Ask Keyword Strategist",
+    prompt:
+      "Propose 5 low-competition keyword cluster topics that do not overlap with our existing sitemap URLs.",
     subtitle: "Finds non-overlapping topic clusters aligned to your domain niche.",
   },
   visual: {
     label: "Draft Visual Brief",
-    prompt: "Create a hero graphic and 4-step process infographic brief matching our approved brand palette.",
+    prompt:
+      "Create a hero graphic and 4-step process infographic brief matching our approved brand palette.",
     subtitle: "Prepares structured visual specs for your Brand Studio.",
   },
   qa: {
     label: "Run Pre-Publish QA Check",
-    prompt: "Review our latest specialist draft for factual accuracy, citations, and on-page SEO readiness.",
+    prompt:
+      "Review our latest specialist draft for factual accuracy, citations, and on-page SEO readiness.",
     subtitle: "Audits drafts before CMS delivery.",
   },
   technical: {
     label: "Run Technical Checklist",
-    prompt: "Audit our indexed sitemap coverage, crawl files, and top priority technical SEO fixes.",
+    prompt:
+      "Audit our indexed sitemap coverage, crawl files, and top priority technical SEO fixes.",
     subtitle: "Reviews crawlability, metadata, and site structure.",
   },
   refresh: {
     label: "Find Refresh Wins",
-    prompt: "Identify which existing indexed pages would benefit most from a title, H1, and meta description refresh.",
+    prompt:
+      "Identify which existing indexed pages would benefit most from a title, H1, and meta description refresh.",
     subtitle: "Targets striking-distance CTR and on-page improvements.",
   },
   pr: {
     label: "Plan AI Visibility Pitch",
-    prompt: "Suggest 3 authority link-building and AI-citation angles tailored to our domain.",
+    prompt:
+      "Suggest 3 authority link-building and AI-citation angles tailored to our domain.",
     subtitle: "Strengthens brand mentions across search and AI answer engines.",
   },
   pinterest: {
     label: "Generate Pin Pack",
-    prompt: "Create 3 high-CTR Pinterest pin titles and descriptions for our latest published article.",
-    subtitle: "Stages ready-to-save Pinterest channel drafts.",
+    prompt:
+      "Create 3 high-CTR Pinterest pin titles and descriptions for our latest published article.",
+    subtitle: "Stages ready-to-save Pinterest channel drafts directly into Social Ledger.",
   },
   linkedin: {
     label: "Generate LinkedIn Carousel",
-    prompt: "Write an 8-slide LinkedIn carousel breakdown based on our core offering and latest article.",
-    subtitle: "Stages structured B2B LinkedIn drafts.",
+    prompt:
+      "Write an 8-slide LinkedIn carousel breakdown based on our core offering and latest article.",
+    subtitle: "Stages structured B2B LinkedIn drafts directly into Social Ledger.",
   },
   facebook: {
     label: "Generate Community Post",
-    prompt: "Write a concise, discussion-starting Facebook post highlighting a practical tip from our site.",
-    subtitle: "Stages community-focused Facebook drafts.",
+    prompt:
+      "Write a concise, discussion-starting Facebook post highlighting a practical tip from our site.",
+    subtitle: "Stages community-focused Facebook drafts directly into Social Ledger.",
   },
   video: {
     label: "Generate 60s Video Script",
-    prompt: "Write a tight 60-second TikTok/Reels script (hook, problem, 3 steps, CTA) for our primary topic.",
-    subtitle: "Stages short-form vertical video storyboards.",
+    prompt:
+      "Write a tight 60-second TikTok/Reels script (hook, problem, 3 steps, CTA) for our primary topic.",
+    subtitle: "Stages short-form vertical video storyboards directly into Social Ledger.",
   },
   hub: {
-    label: "Generate Social Pack",
-    prompt: "Create a coordinated multi-channel social distribution plan across Pinterest, LinkedIn, Facebook, and TikTok/Reels.",
-    subtitle: "Coordinates distribution across all 4 social channels.",
+    label: "Generate 4-Channel Social Pack",
+    prompt:
+      "Create a coordinated multi-channel social distribution plan across Pinterest, LinkedIn, Facebook, and TikTok/Reels.",
+    subtitle:
+      "Generates and saves live drafts across Pinterest, LinkedIn, Facebook, and Video.",
   },
 };
+
+function countWords(text: string): number {
+  return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
+function countLinks(text: string): number {
+  const matches = text.match(/https?:\/\/[^\s)]+/gi);
+  return matches ? matches.length : 0;
+}
 
 export function PanelLedger({
   agent,
   openChannel,
   onStartAction,
+  onOpenQa,
+  website,
   version = 0,
 }: {
   agent: string;
   openChannel?: (view: string) => void;
   onStartAction?: (agentId: string, prompt: string) => void;
+  onOpenQa?: () => void;
+  website?: KnowledgeRow | null;
   version?: number;
 }) {
   const [data, setData] = useState<History>(),
     [notice, setNotice] = useState("");
   const [revision, setRevision] = useState(0);
+  const [socialTopic, setSocialTopic] = useState("");
+  const [generatingSocial, setGeneratingSocial] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const quickAction = SPECIALIST_QUICK_ACTIONS[agent];
+  const isSocialChannel = channels.some((c) => c.id === agent);
+  const isSocialOrHub = isSocialChannel || agent === "hub";
 
   async function publish(id: string) {
     try {
@@ -135,11 +168,93 @@ export function PanelLedger({
       const result = await res.json();
       if (!res.ok) throw Error(result.error);
       setRevision((v) => v + 1);
+      setNotice("Saved draft to your channel ledger.");
     } catch (err) {
       setNotice(
         err instanceof Error ? err.message : "Could not save channel draft.",
       );
     }
+  }
+
+  async function handleGenerateSocialInPanel(e: FormEvent) {
+    e.preventDefault();
+    if (generatingSocial) return;
+    setGeneratingSocial(true);
+    setNotice(
+      agent === "hub"
+        ? "Generating 4-channel social distribution pack in real time…"
+        : `Generating live ${agentName(agent)} draft and saving to Social Ledger…`,
+    );
+    try {
+      const topicClean =
+        socialTopic.trim() ||
+        website?.profile?.name ||
+        website?.domain ||
+        "latest article";
+
+      if (agent === "hub") {
+        const res = await agencyRequest("/api/ai-employee-agency/run-agent-step", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            stepIndex: 4,
+            siteName: website?.profile?.name || website?.domain,
+            siteUrl: website?.domain,
+            articleTitle: topicClean,
+            targetKeyword: topicClean,
+          }),
+        });
+        const result = (await res.json().catch(() => ({}))) as {
+          ok?: boolean;
+          error?: string;
+          socialDraftsSaved?: number;
+        };
+        if (!res.ok || !result.ok) {
+          throw new Error(result.error || "Could not generate 4-channel social pack.");
+        }
+        setSocialTopic("");
+        setRevision((v) => v + 1);
+        setNotice(
+          `Saved ${result.socialDraftsSaved ?? 4} channel drafts across Pinterest, LinkedIn, Facebook, and Video.`,
+        );
+      } else {
+        const prompt = `${quickAction?.prompt || "Generate a channel draft."} Focus specifically on: "${topicClean}".`;
+        const chatRes = await agencyRequest("/api/ai-employee-agency/agent-chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: prompt, agentId: agent }),
+        });
+        const chatData = (await chatRes.json().catch(() => ({}))) as {
+          workId?: string;
+          error?: string;
+        };
+        if (!chatRes.ok) {
+          throw new Error(chatData.error || "Specialist generation failed.");
+        }
+        if (chatData.workId) {
+          await agencyRequest("/api/ai-employee-agency/panel", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ workId: chatData.workId }),
+          }).catch(() => undefined);
+        }
+        setSocialTopic("");
+        setRevision((v) => v + 1);
+        setNotice(`Generated and staged live ${agentName(agent)} draft.`);
+      }
+    } catch (err) {
+      setNotice(
+        err instanceof Error ? err.message : "Social generation failed.",
+      );
+    } finally {
+      setGeneratingSocial(false);
+    }
+  }
+
+  function handleCopyText(id: string, text: string) {
+    void navigator.clipboard?.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId((prev) => (prev === id ? null : prev)), 1800);
   }
 
   useEffect(() => {
@@ -169,28 +284,70 @@ export function PanelLedger({
       className="space-y-4 rounded-xl border border-slate-800 bg-[#111827] p-5"
       aria-label="Panel history"
     >
-      {/* Specialist Action Header */}
-      {quickAction && onStartAction && (
+      {/* Direct In-Panel Generator for Social Hub & 4 Social Channels */}
+      {isSocialOrHub ? (
+        <form
+          onSubmit={handleGenerateSocialInPanel}
+          className="space-y-3 rounded-xl border border-slate-800 bg-[#0B0F17] p-4"
+        >
+          <div className="min-w-0">
+            <p className="text-xs font-semibold text-white">
+              {agent === "hub"
+                ? "Social & Video Distribution Workbench"
+                : `${agentName(agent)} Direct Generator`}
+            </p>
+            <p className="mt-0.5 break-words text-xs text-slate-400">
+              {quickAction?.subtitle}
+            </p>
+          </div>
+          <div className="flex flex-col gap-2.5 sm:flex-row">
+            <input
+              type="text"
+              value={socialTopic}
+              onChange={(e) => setSocialTopic(e.target.value)}
+              disabled={generatingSocial}
+              placeholder="Enter article title, keyword, or offer to promote (or leave blank for brand default)…"
+              className="min-w-0 flex-1 rounded-lg border border-slate-700 bg-[#111827] px-3 py-2 text-xs text-slate-100 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none"
+            />
+            <button
+              type="submit"
+              disabled={generatingSocial}
+              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-[#2563EB] px-4 py-2 text-xs font-semibold text-white transition hover:bg-blue-500 disabled:opacity-50"
+            >
+              {generatingSocial && (
+                <span className="h-2 w-2 rounded-full bg-white animate-ping" />
+              )}
+              <span>
+                {generatingSocial
+                  ? "Generating Live…"
+                  : `${quickAction?.label || "Generate Draft"} →`}
+              </span>
+            </button>
+          </div>
+        </form>
+      ) : quickAction && onStartAction ? (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-800 bg-[#0B0F17] p-4">
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold text-white">
-              {agent === "hub" ? "Social & Video Distribution" : agentName(agent)}
+            <p className="text-xs font-semibold text-white">{agentName(agent)}</p>
+            <p className="mt-0.5 break-words text-xs text-slate-400">
+              {quickAction.subtitle}
             </p>
-            <p className="mt-0.5 break-words text-xs text-slate-400">{quickAction.subtitle}</p>
           </div>
           <button
             type="button"
-            onClick={() =>
-              onStartAction(agent === "hub" ? "chief" : agent, quickAction.prompt)
-            }
+            onClick={() => onStartAction(agent, quickAction.prompt)}
             className="shrink-0 rounded-lg bg-[#2563EB] px-4 py-2 text-xs font-semibold text-white transition hover:bg-blue-500"
           >
             {quickAction.label} →
           </button>
         </div>
-      )}
+      ) : null}
 
-      {notice && <p className="text-sm text-slate-400" role="status">{notice}</p>}
+      {notice && (
+        <p className="text-sm text-slate-300" role="status">
+          {notice}
+        </p>
+      )}
 
       {data?.counts && (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -204,7 +361,9 @@ export function PanelLedger({
               <p className="text-[11px] font-semibold uppercase tracking-wider text-blue-400">
                 Channel
               </p>
-              <strong className="mt-1 block truncate text-sm font-semibold text-slate-100">{c.label}</strong>
+              <strong className="mt-1 block truncate text-sm font-semibold text-slate-100">
+                {c.label}
+              </strong>
               <p className="mt-1 font-mono text-xs text-slate-400">
                 {data.counts?.[c.id] ?? 0} ledger entries
               </p>
@@ -215,16 +374,26 @@ export function PanelLedger({
 
       {data?.upcoming && (
         <div className="space-y-2 rounded-xl border border-slate-800 bg-[#0B0F17] p-4">
-          <h2 className="text-sm font-semibold text-slate-100">Upcoming channel queue</h2>
+          <h2 className="text-sm font-semibold text-slate-100">
+            Upcoming channel queue
+          </h2>
           {data.upcoming.length === 0 ? (
-            <p className="text-xs text-slate-400">No dated social entries scheduled ahead.</p>
+            <p className="text-xs text-slate-400">
+              No dated social entries scheduled ahead.
+            </p>
           ) : (
             <div className="divide-y divide-slate-800/80">
               {data.upcoming.map((item) => (
-                <div key={item.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-xs">
-                  <span className="shrink-0 font-mono text-slate-400">{item.payload.day}</span>
+                <div
+                  key={item.id}
+                  className="flex flex-wrap items-center justify-between gap-2 py-2 text-xs"
+                >
+                  <span className="shrink-0 font-mono text-slate-400">
+                    {item.payload.day}
+                  </span>
                   <span className="min-w-0 flex-1 break-words font-medium text-slate-200">
-                    {channels.find((c) => c.id === item.payload.channel)?.label} · {item.payload.title}
+                    {channels.find((c) => c.id === item.payload.channel)?.label} ·{" "}
+                    {item.payload.title}
                   </span>
                   <span className="shrink-0 rounded-full border border-slate-700 px-2 py-0.5 text-[11px] text-slate-300">
                     {item.payload.status || "scheduled"}
@@ -236,10 +405,12 @@ export function PanelLedger({
         </div>
       )}
 
-      {data?.social && channels.some((c) => c.id === agent) && (
+      {data?.social && isSocialChannel && (
         <>
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-base font-semibold text-slate-100">Channel activity</h2>
+            <h2 className="text-base font-semibold text-slate-100">
+              Channel activity
+            </h2>
             <span className="rounded-full border border-slate-700 bg-[#0B0F17] px-2.5 py-0.5 text-xs text-slate-300">
               {!data.connected
                 ? "Publishing connector unconfigured"
@@ -248,7 +419,11 @@ export function PanelLedger({
                   : "Approval required for publishing"}
             </span>
           </div>
-          {data.social.length === 0 && <p className="text-sm text-slate-400">No channel activity recorded yet.</p>}
+          {data.social.length === 0 && (
+            <p className="text-sm text-slate-400">
+              No channel activity recorded yet. Use the generator above to stage your first draft.
+            </p>
+          )}
           <div
             className={
               agent === "pinterest" || agent === "video"
@@ -261,15 +436,34 @@ export function PanelLedger({
                 key={id}
                 className="min-w-0 rounded-xl border border-slate-800 bg-[#0B0F17] p-4"
               >
-                <p className="text-xs font-medium text-blue-400">
-                  {agentName(agent)} · {payload.status || "Recorded"}{" "}
-                  {payload.day && "· " + payload.day}
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-medium text-blue-400">
+                    {agentName(agent)} · {payload.status || "Recorded"}{" "}
+                    {payload.day && "· " + payload.day}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleCopyText(
+                        id,
+                        `${payload.title || ""}\n\n${payload.description || ""}`.trim(),
+                      )
+                    }
+                    className="rounded border border-slate-700 bg-[#111827] px-2 py-0.5 text-[10px] font-medium text-slate-300 hover:text-white"
+                  >
+                    {copiedId === id ? "Copied" : "Copy"}
+                  </button>
+                </div>
+                <h3 className="mt-2 break-words font-semibold text-slate-100">
+                  {payload.title}
+                </h3>
+                <p className="mt-1 break-words whitespace-pre-wrap text-sm text-slate-300">
+                  {payload.description}
                 </p>
-                <h3 className="mt-2 break-words font-semibold text-slate-100">{payload.title}</h3>
-                <p className="mt-1 break-words whitespace-pre-wrap text-sm text-slate-300">{payload.description}</p>
                 <div className="mt-3 flex flex-wrap items-center gap-3">
                   {data.connected &&
-                    (payload.status === "draft" || payload.status === "needs_review") && (
+                    (payload.status === "draft" ||
+                      payload.status === "needs_review") && (
                       <button
                         className="rounded-lg bg-[#2563EB] px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-500"
                         onClick={() => publish(id)}
@@ -297,30 +491,66 @@ export function PanelLedger({
 
       {data?.work && (
         <>
-          <h2 className="text-base font-semibold text-slate-100">Specialist work ledger</h2>
+          <h2 className="text-base font-semibold text-slate-100">
+            {agent === "writer" ? "Completed Article Drafts" : "Specialist work ledger"}
+          </h2>
           {data.work.length === 0 && (
             <p className="text-sm text-slate-400">
-              No saved work from this specialist yet. Use the action button above to run a live task.
+              No saved work from this specialist yet. Use the live workbench above to run a task.
             </p>
           )}
-          <div className="space-y-2">
-            {data.work.map((w) => (
-              <details
-                key={w.id}
-                className="min-w-0 rounded-lg border border-slate-800 bg-[#0B0F17] p-3"
-              >
-                <summary className="cursor-pointer break-words text-sm font-medium text-slate-200">{w.task}</summary>
-                <p className="mt-2 overflow-x-auto break-words whitespace-pre-wrap text-sm text-slate-300">{w.result}</p>
-                {channels.some((c) => c.id === agent) && (
-                  <button
-                    className="mt-3 rounded-lg bg-[#2563EB] px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-500"
-                    onClick={() => saveDraft(w.id)}
-                  >
-                    Save to channel drafts
-                  </button>
-                )}
-              </details>
-            ))}
+          <div className="space-y-2.5">
+            {data.work.map((w) => {
+              const words = countWords(w.result);
+              const links = countLinks(w.result);
+              return (
+                <details
+                  key={w.id}
+                  className="min-w-0 rounded-lg border border-slate-800 bg-[#0B0F17] p-3.5"
+                >
+                  <summary className="flex cursor-pointer flex-wrap items-center justify-between gap-2 text-sm font-medium text-slate-200">
+                    <span className="min-w-0 flex-1 break-words">{w.task}</span>
+                    {agent === "writer" && (
+                      <span className="shrink-0 font-mono text-[11px] text-slate-400">
+                        {words.toLocaleString()} words · {links} links
+                      </span>
+                    )}
+                  </summary>
+                  <div className="mt-3 space-y-3 border-t border-slate-800 pt-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleCopyText(w.id, w.result)}
+                        className="rounded-md border border-slate-700 bg-[#111827] px-2.5 py-1 text-[11px] font-medium text-slate-200 hover:border-blue-500/60 hover:text-white"
+                      >
+                        {copiedId === w.id ? "Copied Markdown" : "Copy Markdown"}
+                      </button>
+                      {agent === "writer" && onOpenQa && (
+                        <button
+                          type="button"
+                          onClick={onOpenQa}
+                          className="rounded-md bg-[#2563EB] px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-blue-500"
+                        >
+                          Open in QA &amp; Auto-Publish →
+                        </button>
+                      )}
+                      {isSocialChannel && (
+                        <button
+                          type="button"
+                          className="rounded-md bg-[#2563EB] px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-blue-500"
+                          onClick={() => saveDraft(w.id)}
+                        >
+                          Save to channel drafts
+                        </button>
+                      )}
+                    </div>
+                    <p className="max-h-96 overflow-y-auto break-words whitespace-pre-wrap text-sm leading-relaxed text-slate-300">
+                      {w.result}
+                    </p>
+                  </div>
+                </details>
+              );
+            })}
           </div>
         </>
       )}
@@ -328,20 +558,18 @@ export function PanelLedger({
   );
 }
 
-const QUICK_PROMPTS = [
-  "How many articles are published right now?",
-  "Summarize our workspace status and next priority.",
-  "Draft a concise 5-point SEO checklist for our domain.",
-];
-
 export function PanelChat({
   agent,
   initialPrompt = "",
+  website,
+  counts,
   close,
   onSaved,
 }: {
   agent: string;
   initialPrompt?: string;
+  website?: KnowledgeRow | null;
+  counts?: { published: number; ready: number; queued: number };
   close: () => void;
   onSaved: () => void;
 }) {
@@ -349,7 +577,9 @@ export function PanelChat({
   const [text, setText] = useState(initialPrompt);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [turns, setTurns] = useState<{ prompt: string; reply: string; responder: string }[]>([]);
+  const [turns, setTurns] = useState<
+    { prompt: string; reply: string; responder: string }[]
+  >([]);
 
   useEffect(() => {
     setActiveAgent(agent);
@@ -366,6 +596,17 @@ export function PanelChat({
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [close]);
+
+  const maturityLabel =
+    website?.profile?.domain_maturity === "established_site"
+      ? "Established Site Mode"
+      : "New Site Mode";
+
+  const quickPrompts = [
+    `Summarize our current status (${counts ? `${counts.published + counts.ready} written, ${counts.queued} queued` : "live queue"}) and recommend the highest-impact next step.`,
+    `Based on ${maturityLabel}, what should we prioritize first for ${website?.domain || "our site"}?`,
+    "Draft a concise 5-point SEO & AI visibility checklist tailored to our domain.",
+  ];
 
   async function sendPrompt(promptText: string) {
     const clean = promptText.trim();
@@ -416,7 +657,7 @@ export function PanelChat({
         <header className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-800 px-5 py-4">
           <div className="min-w-0">
             <p className="text-[11px] font-semibold uppercase tracking-wider text-blue-400">
-              AI Agency Copilot
+              AI Agency Copilot · {maturityLabel}
             </p>
             <h2 className="truncate text-base font-semibold text-slate-100">
               {agentName(activeAgent)}
@@ -452,15 +693,18 @@ export function PanelChat({
           </label>
         </div>
 
-        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-5 py-4" aria-live="polite">
+        <div
+          className="min-h-0 flex-1 space-y-3 overflow-y-auto px-5 py-4"
+          aria-live="polite"
+        >
           {turns.length === 0 ? (
             <div className="space-y-3 pt-2">
               <p className="text-sm leading-relaxed text-slate-400">
-                Ask about your published articles, sitemap inventory, or assign a draft to{" "}
+                Ask about your articles, sitemap inventory, or assign a task to{" "}
                 <strong className="text-slate-200">{agentName(activeAgent)}</strong>.
               </p>
               <div className="space-y-2">
-                {QUICK_PROMPTS.map((q) => (
+                {quickPrompts.map((q) => (
                   <button
                     key={q}
                     type="button"
@@ -499,7 +743,10 @@ export function PanelChat({
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="shrink-0 border-t border-slate-800 bg-[#111827]/80 p-4">
+        <form
+          onSubmit={handleSubmit}
+          className="shrink-0 border-t border-slate-800 bg-[#111827]/80 p-4"
+        >
           <div className="flex gap-2">
             <input
               autoFocus
