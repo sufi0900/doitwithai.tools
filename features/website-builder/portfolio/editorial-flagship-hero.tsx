@@ -956,7 +956,7 @@ export function EditorialFlagshipHero({
           </p>
           <span className="flagship-badge" style={{ borderColor: accentTheme.border, color: accentTheme.primary }}>
             {template === "authority-niche-blog" ? <BookOpen size={15} /> : template === "creator-newsletter-hub" ? <Newspaper size={15} /> : template === "founder-authority-brand" ? <UserCheck size={15} /> : template === "consultant-lead-engine" ? <Compass size={15} /> : <Layers3 size={15} />}
-            {document.identity.location || "Editorial & Brand Hub"}
+            {document.content.contact.location || "Editorial & Brand Hub"}
           </span>
         </div>
         <Title style={{ color: bgTheme.textMain }}>{document.identity.name}</Title>
