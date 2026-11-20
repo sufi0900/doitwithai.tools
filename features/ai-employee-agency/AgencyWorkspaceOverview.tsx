@@ -10,6 +10,8 @@ import { AgencyCalendar } from './AgencyCalendar';
 import { QualityReview } from './QualityReview';
 import { CommercialUsage } from './CommercialUsage';
 import { RefreshWorkbench } from './RefreshWorkbench';
+import { AgencyOverviewMetrics } from './AgencyOverviewMetrics';
+import { CalmAgencyNodeCanvas } from './CalmAgencyNodeCanvas';
 import Link from 'next/link';
 import { useEffect, useState, Fragment } from 'react';
 import { agencyRequest } from './agency-request';
@@ -28,6 +30,7 @@ export default function AgencyWorkspaceOverview() {
   const [bindings, setBindings] = useState<Record<string, boolean>>({});
   const [view, setView] = useState('Overview');
   const [chat, setChat] = useState<string>();
+  const [chatSeedPrompt, setChatSeedPrompt] = useState<string>('');
   const [expanded, setExpanded] = useState(false);
   const [version, setVersion] = useState(0);
   const [crawling, setCrawling] = useState(false);
@@ -36,10 +39,19 @@ export default function AgencyWorkspaceOverview() {
   const agent = panelAgents[view];
   const channel = channels.find((c) => c.label === view);
   const indexedPagesCount = summary?.website?.profile?.pages?.length ?? 0;
+  const activeProviders = Object.entries(bindings)
+    .filter(([, configured]) => configured)
+    .map(([provider]) => provider);
+
+  function openChatWith(agentId: string, prompt = '') {
+    setChatSeedPrompt(prompt);
+    setChat(agentId);
+  }
 
   function navigate(next: string) {
     setView(next);
     setChat(undefined);
+    setChatSeedPrompt('');
     if (next === socialHub) setExpanded(true);
     if (channels.some((c) => c.label === next)) setExpanded(true);
   }
@@ -160,7 +172,7 @@ export default function AgencyWorkspaceOverview() {
         <div className="mt-auto space-y-2 border-t border-slate-800 pt-4 text-sm">
           <button
             className="w-full rounded-lg bg-[#2563EB] px-3 py-2 font-medium text-white transition hover:bg-blue-500"
-            onClick={() => setChat(agent || 'copilot')}
+            onClick={() => openChatWith(agent || 'copilot')}
           >
             Ask Copilot
           </button>
@@ -204,7 +216,7 @@ export default function AgencyWorkspaceOverview() {
             )}
             <button
               type="button"
-              onClick={() => setChat(agent || 'copilot')}
+              onClick={() => openChatWith(agent || 'copilot')}
               className="rounded-lg bg-[#2563EB] px-4 py-2 text-xs font-semibold text-white transition hover:bg-blue-500"
             >
               {agent && agent !== 'chief' ? `Chat with ${agentName(agent)}` : 'Open Copilot Drawer'}
@@ -233,18 +245,14 @@ export default function AgencyWorkspaceOverview() {
         )}
 
         {view === 'Overview' && (
-          <section className="grid gap-4 sm:grid-cols-3">
-            {(['published', 'ready', 'queued'] as const).map((key) => (
-              <div className={panel} key={key}>
-                <p className="text-xs font-medium uppercase tracking-wider text-slate-400">
-                  {{ published: 'Published articles', ready: 'Ready for review', queued: 'Queued' }[key]}
-                </p>
-                <strong className="mt-2 block text-3xl font-semibold text-white">
-                  {summary?.counts[key] ?? '—'}
-                </strong>
-              </div>
-            ))}
-          </section>
+          <AgencyOverviewMetrics
+            approved={Boolean(summary?.website?.approved_at)}
+            indexedPages={indexedPagesCount}
+            coverage={summary?.website?.profile?.coverage}
+            activeProvidersCount={activeProviders.length}
+            counts={summary?.counts}
+            onNavigate={navigate}
+          />
         )}
 
         {(['Overview', 'Keyword & Topics', 'Agent Skills & Cron'].includes(view) ||
@@ -297,28 +305,35 @@ export default function AgencyWorkspaceOverview() {
               audit={view === 'Technical Site Audit'}
             />
           )}
-        {view === socialHub && <PanelLedger key={view} agent="hub" openChannel={navigate} />}
+        {view === socialHub && (
+          <PanelLedger
+            key={view}
+            agent="hub"
+            openChannel={navigate}
+            onStartAction={openChatWith}
+          />
+        )}
         {view === visualStudio && summary?.website?.approved_at && (
           <VisualBrandStudio website={summary.website} />
         )}
         {view === 'Live Node Canvas' && (
-          <div className="grid gap-3 sm:grid-cols-3">
-            {Object.entries(panelAgents)
-              .filter(([, id]) => id !== 'chief')
-              .map(([name, id]) => (
-                <button
-                  key={id}
-                  onClick={() => navigate(name)}
-                  className={`${panel} text-left transition hover:border-blue-600/60 hover:bg-slate-900`}
-                >
-                  <span className="block text-xs uppercase tracking-wider text-blue-400">{name}</span>
-                  <strong className="mt-1 block text-sm font-semibold text-white">{agentName(id)}</strong>
-                </button>
-              ))}
-          </div>
+          <CalmAgencyNodeCanvas
+            domain={summary?.website?.domain}
+            approved={Boolean(summary?.website?.approved_at)}
+            indexedPages={indexedPagesCount}
+            counts={summary?.counts}
+            activeProviders={activeProviders}
+            onOpenPanel={navigate}
+            onOpenChat={(id) => openChatWith(id)}
+          />
         )}
         {agent && (channel || agent !== 'chief') && (
-          <PanelLedger key={agent} agent={agent} version={version} />
+          <PanelLedger
+            key={agent}
+            agent={agent}
+            version={version}
+            onStartAction={openChatWith}
+          />
         )}
         {view === 'Token & API Usage' && <CommercialUsage />}
 
@@ -357,9 +372,13 @@ export default function AgencyWorkspaceOverview() {
 
         {chat && (
           <PanelChat
-            key={chat}
+            key={chat + chatSeedPrompt}
             agent={chat}
-            close={() => setChat(undefined)}
+            initialPrompt={chatSeedPrompt}
+            close={() => {
+              setChat(undefined);
+              setChatSeedPrompt('');
+            }}
             onSaved={() => {
               setVersion((v) => v + 1);
               void refresh();
