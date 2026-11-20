@@ -2,7 +2,6 @@ import { deliveryConnection } from "@/lib/ai-agency/mcp-delivery.server";
 import { NextResponse } from "next/server";
 import {
   agencyWorkspace,
-  recordAgencyUsage,
 } from "@/lib/ai-employee-agency/workspace.server";
 import { createSupabaseServiceClient } from "@/features/website-builder/lib/supabase/server";
 import { compilePrompt } from "@/lib/ai-agency/prompt-compiler";
@@ -13,10 +12,7 @@ import {
   type ReviewDraft,
 } from "@/lib/ai-agency/qa-validators";
 import { readScore, rubric } from "@/lib/ai-agency/quality-score";
-import {
-  executeAgencyLlmCall,
-  providerBindings,
-} from "@/lib/ai-employee-agency/llm-gateway";
+import { meteredAgencyCall, agencyProviderBindings } from '@/lib/ai-agency/billing.server';
 import {
   MODEL_PRICING_CATALOG,
   type AgencyLlmModelId,
@@ -150,7 +146,7 @@ export async function POST(request: Request) {
       feedback: checked.issues.join("\n"),
     };
   } else {
-    const configured = providerBindings();
+    const configured = agencyProviderBindings(ws.id);
     const modelId = (
       Object.keys(MODEL_PRICING_CATALOG) as AgencyLlmModelId[]
     ).find((id) => configured[MODEL_PRICING_CATALOG[id].provider]);
@@ -164,7 +160,7 @@ export async function POST(request: Request) {
       checked.evidence,
       JSON.stringify({ article: draft, previousFeedback: last?.feedback }),
     );
-    const call = await executeAgencyLlmCall({
+    const call = await meteredAgencyCall(ws.id, "fact-check-qa", {
       ...prompt,
       modelId,
       maxOutputTokens: 900,
@@ -176,8 +172,7 @@ export async function POST(request: Request) {
       ),
     });
     if (!call.ok)
-      return fail("The QA provider could not complete the review.", 503);
-    await recordAgencyUsage(ws.id, "fact-check-qa", call);
+      return fail(call.apiErrorDetail, call.status);
     try {
       result = readScore(call.outputText, profile.is_ymyl !== false, attempt);
     } catch {

@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createSupabaseServerClient, createSupabaseServiceClient } from '@/features/website-builder/lib/supabase/server';
-import type { AgencyLlmResponse } from './llm-gateway';
+import { createSupabaseServerClient } from '@/features/website-builder/lib/supabase/server';
 
 export async function agencyWorkspace(request: Request) {
   try {
@@ -26,20 +25,6 @@ export async function contentCounts(workspace: Exclude<Awaited<ReturnType<typeof
     return count;
   }));
   return { published: counts[0], ready: counts[1], queued: counts[2] };
-}
-
-export async function recordAgencyUsage(workspaceId: string, operation: string, call: AgencyLlmResponse) {
-  const db = createSupabaseServiceClient();
-  if (!db) throw new Error('Usage ledger unavailable.');
-  const { error } = await db.from('token_usage_ledger').insert({
-    workspace_id: workspaceId, operation, model: call.modelId, provider: call.provider,
-    prompt_tokens: call.usageReported ? call.promptTokens : null,
-    completion_tokens: call.usageReported ? call.completionTokens : null,
-    thinking_tokens: call.usageReported ? call.thinkingTokens : null,
-    total_tokens: call.usageReported ? call.totalTokens : null,
-    calculated_usd: call.usageReported ? call.shadowPaidCostUsd : null,
-  });
-  if (error) throw new Error('Unable to record provider usage.');
 }
 
 export async function requireApprovedWebsite(workspace: Exclude<Awaited<ReturnType<typeof agencyWorkspace>>, NextResponse>) {

@@ -14,15 +14,11 @@ import {
   type ReviewDraft,
 } from "@/lib/ai-agency/qa-validators";
 import { readScore, rubric } from "@/lib/ai-agency/quality-score";
-import {
-  executeAgencyLlmCall,
-  providerBindings,
-} from "@/lib/ai-employee-agency/llm-gateway";
+import { meteredAgencyCall, agencyProviderBindings } from '@/lib/ai-agency/billing.server';
 import {
   MODEL_PRICING_CATALOG,
   type AgencyLlmModelId,
 } from "@/lib/ai-employee-agency/token-telemetry-store";
-import { recordAgencyUsage } from "@/lib/ai-employee-agency/workspace.server";
 
 import { deliverApprovedArticle } from "@/lib/ai-agency/delivery.server";
 import type { CmsConnectionConfig } from "@/lib/ai-employee-agency/cms-connectors";
@@ -100,6 +96,10 @@ export const produceAgencyArticle = agencyJobs.createFunction(
         .eq("workspace_id", event.data.workspace)
         .single();
       if (error) throw error;
+      const pause = await db.from("agency_quota_pauses").select("until_at")
+        .eq("workspace_id", plan.workspace_id).gt("until_at", new Date().toISOString()).maybeSingle();
+      if (pause.error) throw pause.error;
+      if (pause.data) return null;
       const today = new Date().toISOString().slice(0, 10);
       const target = calendarDays(plan).find((d) => d.date === today);
       if (target?.pins) {
@@ -107,11 +107,11 @@ export const produceAgencyArticle = agencyJobs.createFunction(
           plan: plan.id,
           daily_limit: target.pins,
         });
-        if (pins.error) throw pins.error;
+        if (pins.error && pins.error.message !== "Workspace asset allowance reached") throw pins.error;
       }
       const limit = target?.articles ?? 0;
       if (!limit) return null;
-      if (!Object.values(providerBindings()).some(Boolean)) {
+      if (!Object.values(agencyProviderBindings(plan.workspace_id)).some(Boolean)) {
         throw new NonRetriableError(
           "Configure a model provider before claiming queued work.",
         );
@@ -121,6 +121,7 @@ export const produceAgencyArticle = agencyJobs.createFunction(
         daily_limit: limit,
         run_key: runId,
       });
+      if (claim.error?.message === "Workspace asset allowance reached") return null;
       if (claim.error) throw claim.error;
       if (!claim.data) return null;
       const row = await db
@@ -162,7 +163,7 @@ export const produceAgencyArticle = agencyJobs.createFunction(
       format?: string,
     ) {
       if (!run) throw Error("Missing production run");
-      const configured = providerBindings();
+      const configured = agencyProviderBindings(run.workspace);
       const modelId = (
         Object.keys(MODEL_PRICING_CATALOG) as AgencyLlmModelId[]
       ).find((id) => configured[MODEL_PRICING_CATALOG[id].provider]);
@@ -189,13 +190,15 @@ export const produceAgencyArticle = agencyJobs.createFunction(
           /Return JSON only:[^\n]*$/,
           format,
         );
-      const call = await executeAgencyLlmCall({
+      const call = await meteredAgencyCall(run.workspace, role, {
         ...prompt,
         modelId,
         maxOutputTokens: role === "writer" ? 3200 : 900,
-      });
-      if (!call.ok) throw Error("Agency provider unavailable.");
-      await recordAgencyUsage(run.workspace, role, call);
+      }, true);
+      if (!call.ok) {
+        if (call.status === 429) throw new NonRetriableError(call.apiErrorDetail);
+        throw Error(call.apiErrorDetail);
+      }
       return call.outputText;
     }
     const sources = (await step.run("research", () =>

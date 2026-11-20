@@ -122,6 +122,9 @@ export async function POST(request: Request) {
     "\nBrand palette: " +
     JSON.stringify(brand.data.profile.brand_colors || {})
   ).slice(0, 2048);
+  const allowance = await ws.db.rpc("agency_reserve_image");
+  if (allowance.error) return NextResponse.json({ error: "Image allowance unavailable." }, { status: 503 });
+  if (!allowance.data) return NextResponse.json({ error: "This workspace has no remaining AI image allowance." }, { status: 429 });
   const response = await fetch(
     "https://api.cloudflare.com/client/v4/accounts/" +
       encodeURIComponent(account) +

@@ -1,6 +1,6 @@
-import { requireApprovedWebsite, agencyWorkspace, recordAgencyUsage } from '@/lib/ai-employee-agency/workspace.server';
+import { requireApprovedWebsite, agencyWorkspace } from '@/lib/ai-employee-agency/workspace.server';
 import { NextRequest, NextResponse } from 'next/server';
-import { executeAgencyLlmCall } from '@/lib/ai-employee-agency/llm-gateway';
+import { meteredAgencyCall } from '@/lib/ai-agency/billing.server';
 import type { AgencyLlmModelId } from '@/lib/ai-employee-agency/token-telemetry-store';
 
 /**
@@ -264,7 +264,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       previousStepOutput: (body.previousStepOutput || '').trim(),
     };
 
-    const llmCall = await executeAgencyLlmCall({
+    const llmCall = await meteredAgencyCall(workspace.id, ["keywords", "writer", "visual", "qa", "social"][spec.stepIndex], {
       modelId: body.modelId || 'gemini-2.5-flash',
       systemPrompt: spec.systemPrompt,
       userPrompt: spec.buildUserPrompt(ctx),
@@ -273,8 +273,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       isFreeTierKey: body.isFreeTierKey ?? true,
       apiKeyOverride: body.apiKeyOverride,
     });
-    if (!llmCall.ok) return NextResponse.json({ error: llmCall.apiErrorDetail }, { status: 503 });
-    await recordAgencyUsage(workspace.id, 'run-agent-step', llmCall);
+    if (!llmCall.ok) return NextResponse.json({ error: llmCall.apiErrorDetail }, { status: llmCall.status });
 
 
     const resolvedContent = llmCall.outputText;

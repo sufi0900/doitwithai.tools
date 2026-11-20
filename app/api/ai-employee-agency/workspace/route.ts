@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: Request) {
   const workspace = await agencyWorkspace(request);
   if (workspace instanceof NextResponse) return workspace;
-  const latest = await workspace.db.from('token_usage_ledger').select('created_at,model,total_tokens,calculated_usd').eq('workspace_id', workspace.id).order('created_at', { ascending: false }).limit(1).maybeSingle();
+  const latest = await workspace.db.from('token_usage_ledger').select('created_at,model,total_tokens,calculated_usd').eq('workspace_id', workspace.id).eq('held_tokens', 0).order('created_at', { ascending: false }).limit(1).maybeSingle();
   if (latest.error) return NextResponse.json({ error: 'Usage history unavailable.' }, { status: 503 });
   const website = await workspace.db.from('tenant_brand_dna').select('domain,approved_at,revision,profile').eq('workspace_id', workspace.id).maybeSingle();
   if (website.error) return NextResponse.json({ error: 'Knowledge base unavailable.' }, { status: 503 });

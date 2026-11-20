@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { agencyWorkspace, contentCounts, recordAgencyUsage } from '@/lib/ai-employee-agency/workspace.server';
+import { agencyWorkspace, contentCounts } from '@/lib/ai-employee-agency/workspace.server';
 import { classifyCopilotIntent } from '@/lib/ai-employee-agency/copilot-intent';
-import { executeAgencyLlmCall, providerBindings } from '@/lib/ai-employee-agency/llm-gateway';
+import { meteredAgencyCall, agencyProviderBindings } from '@/lib/ai-agency/billing.server';
 import { MODEL_PRICING_CATALOG } from '@/lib/ai-employee-agency/token-telemetry-store';
 import type { AgencyLlmModelId } from '@/lib/ai-employee-agency/token-telemetry-store';
 import { specialists } from '@/lib/ai-agency/specialists';
@@ -62,12 +62,11 @@ export async function POST(request: Request) {
       ...refs.data.filter(f=>f.id).map(f=>({filename:f.name.slice(37),context:'Reference filename only'}))];
   }
   const context = compilePrompt(specialist,chief,{...profile,visual_references:visualReferences,counts},ledger,evidence,message);
-  const configured = providerBindings();
+  const configured = agencyProviderBindings(workspace.id);
   const models = Object.keys(MODEL_PRICING_CATALOG) as AgencyLlmModelId[];
   const modelId = models.includes(body.modelId) ? body.modelId as AgencyLlmModelId : models.find(id => configured[MODEL_PRICING_CATALOG[id].provider]);
-  const call = await executeAgencyLlmCall({modelId, ...context, maxOutputTokens: specialist?.id === 'writer' ? 3200 : 1000});
-  if (!call.ok) return NextResponse.json({ error: call.apiErrorDetail || 'The provider returned no answer.' }, { status: 503 });
-  await recordAgencyUsage(workspace.id, roleId, call);
+  const call = await meteredAgencyCall(workspace.id, roleId, {modelId, ...context, maxOutputTokens: specialist?.id === 'writer' ? 3200 : 1000});
+  if (!call.ok) return NextResponse.json({ error: call.apiErrorDetail || 'The provider returned no answer.' }, { status: call.status });
   let reply: string;
   try { reply = verifiedReply(call.outputText,evidence); }
   catch { return NextResponse.json({error:'The response did not meet the citation or output format requirements. No draft was saved.'},{status:422}); }

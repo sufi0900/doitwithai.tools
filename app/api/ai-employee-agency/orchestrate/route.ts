@@ -1,4 +1,4 @@
-import { requireApprovedWebsite, agencyWorkspace, recordAgencyUsage } from '@/lib/ai-employee-agency/workspace.server';
+import { requireApprovedWebsite, agencyWorkspace } from '@/lib/ai-employee-agency/workspace.server';
 import { NextRequest, NextResponse } from 'next/server';
 import {
   AGENCY_DEPARTMENT_REGISTRY,
@@ -11,7 +11,7 @@ import {
   scoreKeywordWithDoItWithAiEngine,
   type ScoredKeywordBrief,
 } from '@/lib/ai-employee-agency/handoff-orchestrator';
-import { executeAgencyLlmCall } from '@/lib/ai-employee-agency/llm-gateway';
+import { meteredAgencyCall } from '@/lib/ai-agency/billing.server';
 import {
   buildAgencyCircleTelemetrySnapshot,
   type AgencyLlmModelId,
@@ -205,7 +205,7 @@ export async function POST(req: NextRequest) {
       sharedEvents: [],
     });
 
-    const llmResult = await executeAgencyLlmCall({
+    const llmResult = await meteredAgencyCall(workspace.id, "chief", {
       modelId: selectedModelId,
       apiKeyOverride: body.apiKeyOverride,
       isFreeTierKey: body.isFreeTierKey,
@@ -214,8 +214,7 @@ export async function POST(req: NextRequest) {
       temperature: 0.3,
       maxOutputTokens: 280,
     });
-    if (!llmResult.ok) return NextResponse.json({ error: llmResult.apiErrorDetail }, { status: 503 });
-    await recordAgencyUsage(workspace.id, 'orchestrate', llmResult);
+    if (!llmResult.ok) return NextResponse.json({ error: llmResult.apiErrorDetail }, { status: llmResult.status });
 
 
     const circleTokenTelemetry = buildAgencyCircleTelemetrySnapshot({

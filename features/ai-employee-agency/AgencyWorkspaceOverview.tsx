@@ -8,6 +8,7 @@ import { VisualBrandStudio } from './VisualBrandStudio';
 import { ProductionProgress } from './ProductionProgress';
 import { AgencyCalendar } from './AgencyCalendar';
 import { QualityReview } from './QualityReview';
+import { CommercialUsage } from './CommercialUsage';
 import { RefreshWorkbench } from './RefreshWorkbench';
 import Link from 'next/link';
 import { useEffect, useState, Fragment } from 'react';
@@ -83,6 +84,7 @@ export default function AgencyWorkspaceOverview() {
       {view===visualStudio && summary?.website?.approved_at && <VisualBrandStudio website={summary.website}/>}
       {view==='Live Node Canvas' && <div className="grid gap-3 sm:grid-cols-3">{Object.entries(panelAgents).filter(([,id])=>id!=='chief').map(([name,id])=><button key={id} onClick={()=>navigate(name)} className={panel}>{agentName(id)}</button>)}</div>}
       {agent && (channel || agent!=='chief') && <PanelLedger key={agent} agent={agent} version={version}/>}
+      {view === 'Token & API Usage' && <CommercialUsage/>}
       {['Overview','Token & API Usage'].includes(view) && <section id="usage"  className={panel}><h2 className="text-lg font-semibold">Provider connections</h2>
         {Object.keys(bindings).length === 0 && <p>Diagnostics unavailable</p>}
         {Object.entries(bindings).map(([provider, present]) => <p key={provider}>{provider} · {present ? 'Binding configured' : 'Missing binding'}</p>)}
