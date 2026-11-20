@@ -1,3 +1,6 @@
+import { GEMINI_MODEL_CASCADE, getGeminiApiKeys } from "@/lib/ai-tools/gemini";
+import { extractJsonText } from "@/lib/ai-tools/request-body";
+
 type GeminiOptions = {
   system: string;
   prompt: string;
@@ -19,27 +22,40 @@ export class GeminiApiError extends Error {
 }
 
 export async function generateWithGemini({ system, prompt, maxOutputTokens = 1800, timeoutMs = 30_000 }: GeminiOptions) {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new GeminiConfigurationError("GEMINI_API_KEY is not configured.");
-  const primary = process.env.GEMINI_CONTENT_MODEL || "gemini-3.8-flash";
-  const fallback = process.env.GEMINI_FALLBACK_MODEL || "gemini-3.5-flash-lite";
-  const attempts = [primary, primary, ...(fallback !== primary ? [fallback] : [])];
+  const apiKeys = getGeminiApiKeys();
+  if (!apiKeys.length) throw new GeminiConfigurationError("GEMINI_API_KEY is not configured.");
+  const primary = process.env.GEMINI_CONTENT_MODEL?.trim() || process.env.GEMINI_MODEL?.trim() || GEMINI_MODEL_CASCADE[0];
+  const fallback = process.env.GEMINI_FALLBACK_MODEL?.trim();
+  const models = Array.from(new Set([primary, ...(fallback ? [fallback] : []), ...GEMINI_MODEL_CASCADE]));
   const deadline = Date.now() + timeoutMs;
   let lastError: unknown;
+  let attempt = 0;
 
-  for (let index = 0; index < attempts.length; index += 1) {
-    const model = attempts[index];
-    if (index > 0) await delay(index === 1 ? 350 : 650);
-    const remaining = deadline - Date.now();
-    if (remaining < 400) break;
-    try {
-      return await generateOnce({ apiKey, model, system, prompt, maxOutputTokens, timeoutMs: Math.min(remaining, Math.max(1300, Math.round(timeoutMs / attempts.length))) });
-    } catch (error) {
-      lastError = error;
-      const retryable = error instanceof GeminiApiError ? error.retryable : error instanceof Error && error.name === "AbortError";
-      console.warn("Gemini generation attempt failed", { model, attempt: index + 1, status: error instanceof GeminiApiError ? error.status : undefined, retryable });
-      if (!retryable) break;
+  for (const apiKey of apiKeys) {
+    for (const model of models) {
+      if (attempt > 0) await delay(attempt === 1 ? 250 : 450);
+      attempt += 1;
+      const remaining = deadline - Date.now();
+      if (remaining < 400) break;
+      try {
+        return await generateOnce({
+          apiKey,
+          model,
+          system,
+          prompt,
+          maxOutputTokens,
+          timeoutMs: Math.min(remaining, Math.max(1300, Math.round(timeoutMs / Math.max(2, apiKeys.length)))),
+        });
+      } catch (error) {
+        lastError = error;
+        const status = error instanceof GeminiApiError ? error.status : undefined;
+        const retryable = error instanceof GeminiApiError ? error.retryable : error instanceof Error && error.name === "AbortError";
+        console.warn("Gemini generation attempt failed", { model, attempt, status, retryable });
+        if (status === 401 || status === 403 || status === 429) break; // Rotate to next API key
+        if (!retryable) break;
+      }
     }
+    if (Date.now() >= deadline) break;
   }
 
   if (lastError instanceof Error && lastError.name === "AbortError") throw new GeminiApiError(504, "TIMEOUT", "Gemini request timed out.", true);
@@ -63,7 +79,7 @@ async function generateOnce({ apiKey, model, system, prompt, maxOutputTokens, ti
     if (!response.ok) {
       const payload = await safeJson(response) as GeminiErrorPayload | null;
       const providerCode = payload?.error?.status || statusCode(response.status);
-      const retryable = response.status === 429 || response.status === 408 || response.status >= 500;
+      const retryable = response.status === 404 || response.status === 429 || response.status === 408 || response.status >= 500;
       const message = response.status === 429
         ? "Gemini has reached a temporary project rate or usage limit."
         : response.status === 503
@@ -74,7 +90,7 @@ async function generateOnce({ apiKey, model, system, prompt, maxOutputTokens, ti
     const payload = await response.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
     const text = payload.candidates?.flatMap((candidate) => candidate.content?.parts ?? []).map((part) => part.text ?? "").join("").trim();
     if (!text) throw new GeminiApiError(502, "EMPTY_RESPONSE", "Gemini returned no usable content.", false);
-    return text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+    return extractJsonText(text);
   } finally {
     clearTimeout(timeout);
   }

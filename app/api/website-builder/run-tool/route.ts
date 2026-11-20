@@ -40,39 +40,52 @@ type RunToolResponse = {
 };
 
 async function generateWithCustomKey(apiKey: string, system: string, prompt: string): Promise<string> {
-  const model = process.env.GEMINI_CONTENT_MODEL || "gemini-2.5-flash";
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
-    {
-      method: "POST",
-      headers: {
-        "x-goog-api-key": apiKey.trim(),
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: system }] },
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: {
-          responseMimeType: "application/json",
-          maxOutputTokens: 1600,
-          temperature: 0.25,
-        },
-      }),
-    },
+  const models = Array.from(
+    new Set([
+      process.env.GEMINI_CONTENT_MODEL?.trim() || process.env.GEMINI_MODEL?.trim() || "gemini-flash-lite-latest",
+      "gemini-flash-lite-latest",
+      "gemini-3.5-flash-lite",
+      "gemini-flash-latest",
+      "gemini-3.8-flash",
+    ]),
   );
-  if (!response.ok) {
-    throw new Error(`Custom Gemini key request failed with status ${response.status}`);
+  let lastStatus = 502;
+  for (const model of models) {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
+      {
+        method: "POST",
+        headers: {
+          "x-goog-api-key": apiKey.trim(),
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: system }] },
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          generationConfig: {
+            responseMimeType: "application/json",
+            maxOutputTokens: 1600,
+            temperature: 0.25,
+          },
+        }),
+      },
+    );
+    if (response.ok) {
+      const payload = (await response.json()) as {
+        candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+      };
+      const text = payload.candidates
+        ?.flatMap((c) => c.content?.parts ?? [])
+        .map((p) => p.text ?? "")
+        .join("")
+        .trim();
+      if (!text) throw new Error("Empty Gemini response");
+      return text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+    }
+    lastStatus = response.status;
+    if (response.status !== 404) break;
   }
-  const payload = (await response.json()) as {
-    candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
-  };
-  const text = payload.candidates
-    ?.flatMap((c) => c.content?.parts ?? [])
-    .map((p) => p.text ?? "")
-    .join("")
-    .trim();
-  if (!text) throw new Error("Empty Gemini response");
-  return text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+  throw new Error(`Custom Gemini key request failed with status ${lastStatus}`);
 }
 
 function buildDeterministicFallback(input: Required<Omit<RunToolRequest, "customApiKey">>): RunToolResponse {

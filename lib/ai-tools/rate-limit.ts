@@ -1,6 +1,7 @@
 import { randomUUID, createHash } from "node:crypto";
 import { Redis } from "@upstash/redis";
 import type { NextRequest } from "next/server";
+import { safeStderrLog } from "./request-body";
 
 type LimitResult = {
   allowed: boolean;
@@ -250,16 +251,14 @@ export function rateLimitFailure(cause: unknown) {
         ? "REDIS_AUTH_FAILED"
         : "REDIS_UNAVAILABLE";
   const requestId = randomUUID();
-  process.stderr.write(
-    JSON.stringify({
-      event: "ai_preflight_failure",
-      stage: "rate_limit",
-      reason,
-      requestId,
-      gemini: "not_attempted",
-      groq: "not_attempted",
-    }) + "\n",
-  );
+  safeStderrLog({
+    event: "ai_preflight_failure",
+    stage: "rate_limit",
+    reason,
+    requestId,
+    gemini: "not_attempted",
+    groq: "not_attempted",
+  });
   return {
     code: "RATE_LIMIT_UNAVAILABLE",
     message: `Generation stopped before AI requests: ${reason}. Gemini: not attempted. Groq: not attempted. Reference: ${requestId}`,

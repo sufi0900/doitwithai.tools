@@ -23,3 +23,37 @@ export async function readBoundedJson(request: Pick<Request, "headers" | "body">
   try { return JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes)); }
   catch { throw new BodyError(400, "Send a valid JSON request body."); }
 }
+
+/** Strips markdown code fences and extracts the outermost JSON object/array when present. */
+export function extractJsonText(raw: string): string {
+  const stripped = String(raw || "")
+    .trim()
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
+  const firstBrace = stripped.indexOf("{");
+  const lastBrace = stripped.lastIndexOf("}");
+  if (firstBrace !== -1 && lastBrace > firstBrace) {
+    return stripped.slice(firstBrace, lastBrace + 1);
+  }
+  const firstBracket = stripped.indexOf("[");
+  const lastBracket = stripped.lastIndexOf("]");
+  if (firstBracket !== -1 && lastBracket > firstBracket) {
+    return stripped.slice(firstBracket, lastBracket + 1);
+  }
+  return stripped;
+}
+
+/** Emits structured JSON diagnostics to stderr while safely falling back to console.error on Workers runtimes. */
+export function safeStderrLog(payload: Record<string, unknown>): void {
+  const line = JSON.stringify(payload) + "\n";
+  try {
+    if (typeof process !== "undefined" && typeof process.stderr?.write === "function") {
+      process.stderr.write(line);
+      return;
+    }
+  } catch {
+    // Fall through to console.error when Workers stderr proxy rejects writes
+  }
+  console.error(line.trimEnd());
+}

@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { readBoundedJson, BodyError } from "@/lib/ai-tools/request-body";
+import { readBoundedJson, BodyError, safeStderrLog } from "@/lib/ai-tools/request-body";
 import {
   checkAiToolRateLimit,
   rateLimitFailure,
@@ -115,18 +115,16 @@ export async function POST(request: NextRequest) {
   } catch (cause) {
     const failure = geminiFailure(cause);
     if (!failure)
-      process.stderr.write(
-        JSON.stringify({
-          event: "audience_output_validation_failed",
-          reason: cause instanceof Error ? cause.name : "Unknown",
-          fields:
-            typeof cause === "object" && cause && "issues" in cause
-              ? (cause as { issues: { path: unknown[] }[] }).issues
-                  .slice(0, 8)
-                  .map((i) => i.path.join("."))
-              : [],
-        }) + "\n",
-      );
+      safeStderrLog({
+        event: "audience_output_validation_failed",
+        reason: cause instanceof Error ? cause.name : "Unknown",
+        fields:
+          typeof cause === "object" && cause && "issues" in cause
+            ? (cause as { issues: { path: unknown[] }[] }).issues
+                .slice(0, 8)
+                .map((i) => i.path.join("."))
+            : [],
+      });
     return error(
       failure?.message ||
         "The audience plan was incomplete. Your website context and previous results are preserved. Try again or use a more specific public page.",
@@ -138,9 +136,7 @@ export async function POST(request: NextRequest) {
       try {
         await limit.release();
       } catch {
-        process.stderr.write(
-          JSON.stringify({ event: "audience_research_refund_failed" }) + "\n",
-        );
+        safeStderrLog({ event: "audience_research_refund_failed" });
       }
   }
 }

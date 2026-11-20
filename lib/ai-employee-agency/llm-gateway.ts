@@ -3,11 +3,11 @@
  * DOITWITHAI.TOOLS — 24/7 AI EMPLOYEE AGENCY OS (V3 PHASE 7 + V4 PHASE 12)
  * Module: `lib/ai-employee-agency/llm-gateway.ts`
  *
- * Unified Server-Side Free/Paid LLM Gateway (`Gemini 2.5 Flash`, `Groq Llama 3.3 70B`,
+ * Unified Server-Side Free/Paid LLM Gateway (`Gemini Flash-Lite / Flash`, `Groq Llama 3.3 70B`,
  * `OpenAI GPT-4o-mini` / `GPT-4.1-mini`):
- * - Supports server environment keys (`GEMINI_API_KEY` / `GOOGLE_GENERATIVE_AI_API_KEY`,
- *   `GROQ_API_KEY`, `OPENAI_API_KEY`) as well as optional workspace key overrides
- *   passed strictly over HTTPS to the server route (never exposed in public bundles).
+ * - Strictly isolates Digital Agency requests onto dedicated agency/automation keys
+ *   (`AUTONOMOUS_AUTOMATION_GEMINI_KEY`, `AGENCY_GEMINI_API_KEY`, `AUTONOMOUS_AUTOMATION_GROQ_KEY`,
+ *   `AGENCY_OPENAI_API_KEY`) so public-tool keys are never drained.
  * - Extracts exact token telemetry (`promptTokenCount`, `candidatesTokenCount`,
  *   `thoughtsTokenCount` on Gemini; `prompt_tokens`, `completion_tokens` on Groq/OpenAI),
  *   tags every call with its `apiKeySlot` (`KEY_SLOT_*`), and surfaces sanitized
@@ -99,19 +99,36 @@ function resolveServerApiKey(
   if (provider === 'gemini') {
     return {
       apiKey: (
-        process.env.GEMINI_API_KEY ||
-        process.env.GOOGLE_GENERATIVE_AI_API_KEY ||
-        process.env.GOOGLE_API_KEY ||
+        process.env.AUTONOMOUS_AUTOMATION_GEMINI_KEY ||
+        process.env.AGENCY_GEMINI_API_KEY ||
+        process.env.GEMINI_AUTOMATION_API_KEY ||
+        process.env.AUTONOMOUS_AUTOMATION_API_KEY ||
         ''
       ).trim(),
       hasOverride: false,
     };
   }
   if (provider === 'groq') {
-    return { apiKey: (process.env.GROQ_API_KEY || '').trim(), hasOverride: false };
+    return {
+      apiKey: (
+        process.env.AUTONOMOUS_AUTOMATION_GROQ_KEY ||
+        process.env.AGENCY_GROQ_API_KEY ||
+        process.env.GROQ_AUTOMATION_API_KEY ||
+        ''
+      ).trim(),
+      hasOverride: false,
+    };
   }
   if (provider === 'openai') {
-    return { apiKey: (process.env.OPENAI_API_KEY || '').trim(), hasOverride: false };
+    return {
+      apiKey: (
+        process.env.AUTONOMOUS_AUTOMATION_OPENAI_KEY ||
+        process.env.AGENCY_OPENAI_API_KEY ||
+        process.env.OPENAI_AGENCY_API_KEY ||
+        ''
+      ).trim(),
+      hasOverride: false,
+    };
   }
   return { apiKey: '', hasOverride: false };
 }
@@ -141,14 +158,30 @@ export async function executeAgencyLlmCall(
     req.isFreeTierKey !== undefined ? req.isFreeTierKey : spec.supportsFreeTierKey;
 
   let apiErrorDetail: string | undefined = !apiKey
-    ? `No ${provider.toUpperCase()} API key configured on server.`
+    ? provider === 'gemini'
+      ? 'No dedicated Agency Gemini API key configured on server (set AUTONOMOUS_AUTOMATION_GEMINI_KEY).'
+      : `No dedicated Agency ${provider.toUpperCase()} API key configured on server.`
     : undefined;
 
-  // 1. Live Google Gemini REST API (with automatic gemini-2.0-flash fallback if 2.5 returns 404/400)
+  // 1. Live Google Gemini REST API (lowest-cost/highest-quota evergreen cascade)
   if (apiKey && provider === 'gemini') {
+    const envAgencyModel = (
+      process.env.AGENCY_GEMINI_MODEL ||
+      process.env.AUTONOMOUS_AUTOMATION_GEMINI_MODEL ||
+      ''
+    ).trim();
     const candidateModels =
       modelId === 'gemini-2.5-flash'
-        ? ['gemini-2.5-flash', 'gemini-2.0-flash']
+        ? Array.from(
+            new Set([
+              ...(envAgencyModel ? [envAgencyModel] : []),
+              'gemini-flash-lite-latest',
+              'gemini-3.5-flash-lite',
+              'gemini-flash-latest',
+              'gemini-3.8-flash',
+              'gemini-2.5-flash',
+            ])
+          )
         : [modelId];
 
     for (const targetGeminiModel of candidateModels) {
@@ -231,7 +264,7 @@ export async function executeAgencyLlmCall(
             shadowPaidCostUsd,
             actualCostUsd: isFreeTierKey ? 0 : shadowPaidCostUsd,
             latencyMs: Date.now() - startTime,
-            telemetryNote: `Live Gemini API (${apiKeySlot}) captured ${totalTokens.toLocaleString()} tokens · Shadow Cost $${shadowPaidCostUsd.toFixed(
+            telemetryNote: `Live Gemini API (${targetGeminiModel} · ${apiKeySlot}) captured ${totalTokens.toLocaleString()} tokens · Shadow Cost $${shadowPaidCostUsd.toFixed(
               5
             )}`,
             apiErrorDetail: outputText ? undefined : 'Gemini returned an empty response.',
@@ -239,8 +272,8 @@ export async function executeAgencyLlmCall(
         }
 
         apiErrorDetail = await readProviderErrorDetail('gemini', res);
-        // Only try the fallback model if the primary model ID was not found / unsupported
-        if (res.status !== 404 && res.status !== 400) {
+        // Cascade to the next candidate model on 404/400/429/503
+        if (![400, 404, 429, 503].includes(res.status)) {
           break;
         }
       } catch (err) {

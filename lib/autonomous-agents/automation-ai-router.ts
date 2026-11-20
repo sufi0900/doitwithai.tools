@@ -128,8 +128,8 @@ function splitKeyList(raw: string | undefined): string[] {
 /**
  * Resolves the prioritized list of Gemini API keys for the Automation pipeline:
  * 1. Explicit user BYOK override (from request / browser localStorage)
- * 2. Dedicated Automation Env Vars (`AUTONOMOUS_AUTOMATION_GEMINI_KEY`, `GEMINI_AUTOMATION_API_KEY`, `AUTONOMOUS_AUTOMATION_API_KEY`)
- * 3. Platform Gemini key pool fallback
+ * 2. Dedicated Automation Env Vars (`AUTONOMOUS_AUTOMATION_GEMINI_KEY`, `AGENCY_GEMINI_API_KEY`, `GEMINI_AUTOMATION_API_KEY`, `AUTONOMOUS_AUTOMATION_API_KEY`)
+ * Never falls back to reserved public-tool keys (`GEMINI_API_KEY*`).
  */
 export function getAutomationGeminiKeys(overrides?: AutomationKeyOverrides): string[] {
   const keys: string[] = [];
@@ -141,25 +141,18 @@ export function getAutomationGeminiKeys(overrides?: AutomationKeyOverrides): str
   add(overrides?.geminiKey);
   if (typeof process !== "undefined" && process.env) {
     add(process.env.AUTONOMOUS_AUTOMATION_GEMINI_KEY);
+    add(process.env.AGENCY_GEMINI_API_KEY);
     add(process.env.GEMINI_AUTOMATION_API_KEY);
     add(process.env.AUTONOMOUS_AUTOMATION_API_KEY);
     for (const k of splitKeyList(process.env.AUTONOMOUS_AUTOMATION_GEMINI_KEYS)) {
       add(k);
     }
-    add(process.env.GEMINI_API_KEY);
-    for (const k of splitKeyList(process.env.GEMINI_API_KEYS)) {
-      add(k);
-    }
-    for (let i = 2; i <= 10; i++) {
-      add(process.env[`GEMINI_API_KEY_${i}`]);
-    }
-    add(process.env.GEMINI_API_KEY_BACKUP);
   }
   return keys;
 }
 
 /**
- * Resolves the prioritized list of Groq API keys for the Automation pipeline.
+ * Resolves the prioritized list of dedicated Groq API keys for the Automation pipeline.
  */
 export function getAutomationGroqKeys(overrides?: AutomationKeyOverrides): string[] {
   const keys: string[] = [];
@@ -171,16 +164,10 @@ export function getAutomationGroqKeys(overrides?: AutomationKeyOverrides): strin
   add(overrides?.groqKey);
   if (typeof process !== "undefined" && process.env) {
     add(process.env.AUTONOMOUS_AUTOMATION_GROQ_KEY);
+    add(process.env.AGENCY_GROQ_API_KEY);
     add(process.env.GROQ_AUTOMATION_API_KEY);
     for (const k of splitKeyList(process.env.AUTONOMOUS_AUTOMATION_GROQ_KEYS)) {
       add(k);
-    }
-    add(process.env.GROQ_API_KEY);
-    for (const k of splitKeyList(process.env.GROQ_API_KEYS)) {
-      add(k);
-    }
-    for (let i = 2; i <= 5; i++) {
-      add(process.env[`GROQ_API_KEY_${i}`]);
     }
   }
   return keys;
@@ -207,8 +194,8 @@ export function getAutomationOpenRouterKeys(overrides?: AutomationKeyOverrides):
   };
   add(overrides?.openRouterKey);
   add(process.env.AUTONOMOUS_AUTOMATION_OPENROUTER_KEY);
+  add(process.env.AGENCY_OPENROUTER_API_KEY);
   add(process.env.OPENROUTER_AUTOMATION_API_KEY);
-  add(process.env.OPENROUTER_API_KEY);
   return keys;
 }
 
@@ -280,76 +267,92 @@ export async function runAutomationJsonPrompt<T>(
   const parseFn = options.parseJson ?? extractJsonFromLlmText<T>;
 
   if (fetcher) {
-    // 1. Google Gemini (Dedicated Automation Key -> Platform Key Pool)
+    // 1. Google Gemini (Dedicated Automation Key Pool + evergreen model cascade)
     const geminiKeys = getAutomationGeminiKeys(options.keyOverrides);
-    const geminiModel =
-      process.env.AUTONOMOUS_AUTOMATION_GEMINI_MODEL?.trim() ||
-      process.env.GEMINI_MODEL?.trim() ||
-      "gemini-2.5-flash";
+    const configuredAgencyModel = (
+      process.env.AUTONOMOUS_AUTOMATION_GEMINI_MODEL ||
+      process.env.AGENCY_GEMINI_MODEL ||
+      ""
+    ).trim();
+    const geminiModels = Array.from(
+      new Set([
+        ...(configuredAgencyModel ? [configuredAgencyModel] : []),
+        "gemini-flash-lite-latest",
+        "gemini-3.5-flash-lite",
+        "gemini-flash-latest",
+        "gemini-3.8-flash",
+      ]),
+    );
 
     for (let i = 0; i < geminiKeys.length; i++) {
       const apiKey = geminiKeys[i]!;
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), timeoutMs);
-      try {
-        const res = await fetcher(
-          `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "x-goog-api-key": apiKey,
-            },
-            cache: "no-store",
-            signal: controller.signal,
-            body: JSON.stringify({
-              systemInstruction: {
-                parts: [
+      for (const geminiModel of geminiModels) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), timeoutMs);
+        try {
+          const res = await fetcher(
+            `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(geminiModel)}:generateContent`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "x-goog-api-key": apiKey,
+              },
+              cache: "no-store",
+              signal: controller.signal,
+              body: JSON.stringify({
+                systemInstruction: {
+                  parts: [
+                    {
+                      text: `${options.systemPrompt}\n\nIMPORTANT: Return ONLY valid JSON without markdown code fences.`,
+                    },
+                  ],
+                },
+                contents: [
                   {
-                    text: `${options.systemPrompt}\n\nIMPORTANT: Return ONLY valid JSON without markdown code fences.`,
+                    role: "user",
+                    parts: [{ text: options.userPrompt }],
                   },
                 ],
-              },
-              contents: [
-                {
-                  role: "user",
-                  parts: [{ text: options.userPrompt }],
+                generationConfig: {
+                  responseMimeType: "application/json",
+                  candidateCount: 1,
+                  maxOutputTokens: maxTokens,
+                  temperature,
                 },
-              ],
-              generationConfig: {
-                responseMimeType: "application/json",
-                candidateCount: 1,
-                maxOutputTokens: maxTokens,
-                temperature,
-              },
-            }),
-          },
-        );
-        if (res.ok) {
-          const payload = (await res.json()) as {
-            candidates?: Array<{
-              content?: { parts?: Array<{ text?: string; thought?: boolean }> };
-            }>;
-          };
-          const rawText = payload.candidates?.[0]?.content?.parts
-            ?.filter((p) => !p.thought)
-            .map((p) => p.text || "")
-            .join("")
-            .trim();
-          if (rawText) {
-            const parsed = parseFn(rawText);
-            return {
-              data: parsed,
-              providerUsed: `Google Gemini (${geminiModel})`,
-              isLiveAi: true,
-              latencyMs: Date.now() - startedAt,
+              }),
+            },
+          );
+          if (res.ok) {
+            const payload = (await res.json()) as {
+              candidates?: Array<{
+                content?: { parts?: Array<{ text?: string; thought?: boolean }> };
+              }>;
             };
+            const rawText = payload.candidates?.[0]?.content?.parts
+              ?.filter((p) => !p.thought)
+              .map((p) => p.text || "")
+              .join("")
+              .trim();
+            if (rawText) {
+              const parsed = parseFn(rawText);
+              return {
+                data: parsed,
+                providerUsed: `Google Gemini (${geminiModel})`,
+                isLiveAi: true,
+                latencyMs: Date.now() - startedAt,
+              };
+            }
           }
+          if (![400, 404, 429, 503].includes(res.status)) {
+            break;
+          }
+        } catch {
+          // Rotate to next model / key / provider
+          break;
+        } finally {
+          clearTimeout(timer);
         }
-      } catch {
-        // Rotate to next key / provider
-      } finally {
-        clearTimeout(timer);
       }
     }
 
