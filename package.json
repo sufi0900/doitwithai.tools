@@ -64,6 +64,7 @@
     "framer-motion": "^12.18.1",
     "htmlparser2": "^10.1.0",
     "idb-keyval": "^6.2.2",
+    "inngest": "^3.54.2",
     "ioredis": "^5.6.1",
     "jspdf": "4.2.1",
     "jspdf-autotable": "5.0.9",

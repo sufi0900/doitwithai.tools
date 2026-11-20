@@ -56,12 +56,12 @@ revoke all on function public.agency_plan_calendar(date,date,integer,integer,int
 grant execute on function public.agency_plan_calendar(date,date,integer,integer,integer) to authenticated;
 
 create function public.agency_prioritize_topic(item_id uuid) returns void
-language plpgsql security definer set search_path='' as $
+language plpgsql security definer set search_path='' as $$
 begin
   update public.content_items set content=content || jsonb_build_object('priority_at',now())
     where id=item_id and workspace_id=auth.uid() and status='queued';
   if not found then raise exception 'Queued topic unavailable'; end if;
-end $;
+end $$;
 revoke all on function public.agency_prioritize_topic(uuid) from public,anon;
 grant execute on function public.agency_prioritize_topic(uuid) to authenticated;
 
