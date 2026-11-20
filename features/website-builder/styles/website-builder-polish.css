@@ -102,8 +102,8 @@
 }
 
 .website-builder-scope .tool-canvas-controls__primary button[aria-pressed="true"] {
-  background: linear-gradient(135deg, #22d3ee, #6366f1);
-  color: #04101c;
+  background: #2563eb;
+  color: #ffffff;
   border-color: transparent;
 }
 
@@ -167,10 +167,23 @@
 }
 
 .website-builder-scope .tool-property-control__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+}
+
+.website-builder-scope .tool-property-control__header label {
+  display: grid;
+  gap: 6px;
+  width: 100%;
+  font-size: 12px;
+  font-weight: 700;
+  color: #cbd5e1;
+}
+
+.website-builder-scope .tool-property-control__header select {
+  width: 100%;
+  max-width: 100%;
 }
 
 .website-builder-scope .tool-property-control__header h3 {
@@ -277,4 +290,26 @@
     padding: 12px 16px;
     gap: 10px;
   }
+}
+
+/* Phase 3: Anti-AI-Slop Directory Card Cohesion & AAA Typography Rules */
+.website-builder-scope .wb-tool-directory-card h2,
+.website-builder-scope .wb-tool-directory-card h3 {
+  letter-spacing: -0.015em;
+  font-weight: 700;
+}
+
+.website-builder-scope:not(.light-theme) .flagship-multi-tool-hero .wb-tool-directory-card,
+.website-builder-scope:not(.light-theme) .projects-index .wb-tool-directory-card {
+  background: rgba(15, 23, 42, 0.92) !important;
+  color: #f8fafc !important;
+  border-color: rgba(148, 163, 184, 0.22) !important;
+}
+
+.website-builder-scope.light-theme .flagship-multi-tool-hero .wb-tool-directory-card,
+.website-builder-scope.light-theme .projects-index .wb-tool-directory-card {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05);
 }

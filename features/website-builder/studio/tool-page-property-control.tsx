@@ -6,7 +6,6 @@ import type { SiteCommand } from "../domain/commands";
 import {
   toolGradientPresets,
   toolPageFieldCategories,
-  toolPageFields,
   toolPageLabels,
   type ToolPageField,
 } from "../domain/tool-page-properties";
@@ -31,6 +30,10 @@ export function ToolPagePropertyControl({
       : String(v ?? "");
   const [draft, setDraft] = useState(serialize(value));
   const [error, setError] = useState("");
+
+  const activeCategory =
+    toolPageFieldCategories.find((cat) => cat.fields.includes(field)) ??
+    toolPageFieldCategories[0];
 
   useEffect(() => {
     setDraft(serialize(value));
@@ -69,12 +72,83 @@ export function ToolPagePropertyControl({
       className="tool-property-control"
       aria-label="Selected tool property"
     >
-      <div className="tool-property-control__header">
-        <label>
-          Page property
+      <div className="tool-property-control__header" style={{ display: "grid", gap: "10px" }}>
+        <div
+          className="tool-inspector-category-tabs"
+          role="tablist"
+          aria-label="Inspector property categories"
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
+            gap: "4px",
+            background: "rgba(9, 14, 28, 0.78)",
+            padding: "4px",
+            borderRadius: "10px",
+            border: "1px solid rgba(148, 163, 184, 0.2)",
+          }}
+        >
+          {toolPageFieldCategories.map((category) => {
+            const isCatActive = category.id === activeCategory.id;
+            const shortLabel =
+              category.id === "hero"
+                ? "Hero"
+                : category.id === "inputs"
+                  ? "Inputs"
+                  : category.id === "theme"
+                    ? "Theme"
+                    : category.id === "story"
+                      ? "Story"
+                      : "SEO";
+            return (
+              <button
+                key={category.id}
+                type="button"
+                role="tab"
+                aria-selected={isCatActive}
+                onClick={() => {
+                  if (category.fields[0]) onSelect(category.fields[0]);
+                }}
+                style={{
+                  padding: "6px 4px",
+                  borderRadius: "7px",
+                  border: isCatActive
+                    ? "1px solid rgba(56, 189, 248, 0.45)"
+                    : "1px solid transparent",
+                  background: isCatActive
+                    ? "rgba(37, 99, 235, 0.28)"
+                    : "transparent",
+                  color: isCatActive ? "#f8fafc" : "#94a3b8",
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  textAlign: "center",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                {shortLabel}
+              </button>
+            );
+          })}
+        </div>
+
+        <label style={{ display: "grid", gap: "5px", width: "100%", fontSize: "11.5px", fontWeight: 700, color: "#cbd5e1" }}>
+          <span>Inspector Property ({activeCategory.label})</span>
           <select
+            aria-label="Page property"
             value={field}
             onChange={(e) => onSelect(e.target.value as ToolPageField)}
+            style={{
+              width: "100%",
+              padding: "8px 10px",
+              borderRadius: "8px",
+              border: "1px solid rgba(148, 163, 184, 0.28)",
+              background: "rgba(9, 14, 28, 0.9)",
+              color: "#f8fafc",
+              fontSize: "12.5px",
+              fontWeight: 600,
+            }}
           >
             {toolPageFieldCategories.map((category) => (
               <optgroup key={category.id} label={category.label}>
@@ -87,8 +161,9 @@ export function ToolPagePropertyControl({
             ))}
           </select>
         </label>
-        <div className="tool-property-QuickPills">
-          {toolPageFields.slice(0, 8).map((quickKey) => (
+
+        <div className="tool-property-control__pills" style={{ display: "flex", flexWrap: "wrap", gap: "5px" }}>
+          {activeCategory.fields.map((quickKey) => (
             <button
               key={quickKey}
               type="button"
@@ -100,7 +175,7 @@ export function ToolPagePropertyControl({
           ))}
         </div>
       </div>
-      <small>
+      <small style={{ color: "#94a3b8", fontSize: "11px", lineHeight: 1.45 }}>
         Applying page settings refreshes the live tool preview immediately. Reset restores the baseline value captured before your first edit.
       </small>
       <form
@@ -185,9 +260,9 @@ export function ToolPagePropertyControl({
                   /^#[0-9a-fA-F]{6}$/.test(draft.trim())
                     ? draft.trim()
                     : field === "toolAccentHex"
-                      ? "#4f46e5"
+                      ? "#2563eb"
                       : field === "toolSecondaryAccentHex"
-                        ? "#06b6d4"
+                        ? "#0ea5e9"
                         : field === "toolSurfaceHex"
                           ? "#111827"
                           : "#090d16"
@@ -211,9 +286,9 @@ export function ToolPagePropertyControl({
               )}
             </div>
           ) : field === "customFaqs" ? (
-            <div className="tool-faq-editor">
+            <div>
               {faqs.map((faq, index) => (
-                <fieldset key={index} className="tool-faq-item">
+                <fieldset key={index}>
                   <legend>FAQ {index + 1}</legend>
                   <label>
                     Question
