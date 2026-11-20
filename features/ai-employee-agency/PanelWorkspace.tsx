@@ -27,18 +27,88 @@ type History = {
   counts?: Record<string, number>;
 };
 
+const SPECIALIST_QUICK_ACTIONS: Record<
+  string,
+  { label: string; prompt: string; subtitle: string }
+> = {
+  writer: {
+    label: "Start Writing Live",
+    prompt: "Draft a fact-checked, SEO-optimized article outline and opening section for our highest-priority queued topic.",
+    subtitle: "Generates a live long-form draft grounded in your approved website knowledge base.",
+  },
+  keywords: {
+    label: "Research Low-KD Topics",
+    prompt: "Propose 5 low-competition keyword cluster topics that do not overlap with our existing sitemap URLs.",
+    subtitle: "Finds non-overlapping topic clusters aligned to your domain niche.",
+  },
+  visual: {
+    label: "Draft Visual Brief",
+    prompt: "Create a hero graphic and 4-step process infographic brief matching our approved brand palette.",
+    subtitle: "Prepares structured visual specs for your Brand Studio.",
+  },
+  qa: {
+    label: "Run Pre-Publish QA Check",
+    prompt: "Review our latest specialist draft for factual accuracy, citations, and on-page SEO readiness.",
+    subtitle: "Audits drafts before CMS delivery.",
+  },
+  technical: {
+    label: "Run Technical Checklist",
+    prompt: "Audit our indexed sitemap coverage, crawl files, and top priority technical SEO fixes.",
+    subtitle: "Reviews crawlability, metadata, and site structure.",
+  },
+  refresh: {
+    label: "Find Refresh Wins",
+    prompt: "Identify which existing indexed pages would benefit most from a title, H1, and meta description refresh.",
+    subtitle: "Targets striking-distance CTR and on-page improvements.",
+  },
+  pr: {
+    label: "Plan AI Visibility Pitch",
+    prompt: "Suggest 3 authority link-building and AI-citation angles tailored to our domain.",
+    subtitle: "Strengthens brand mentions across search and AI answer engines.",
+  },
+  pinterest: {
+    label: "Generate Pin Pack",
+    prompt: "Create 3 high-CTR Pinterest pin titles and descriptions for our latest published article.",
+    subtitle: "Stages ready-to-save Pinterest channel drafts.",
+  },
+  linkedin: {
+    label: "Generate LinkedIn Carousel",
+    prompt: "Write an 8-slide LinkedIn carousel breakdown based on our core offering and latest article.",
+    subtitle: "Stages structured B2B LinkedIn drafts.",
+  },
+  facebook: {
+    label: "Generate Community Post",
+    prompt: "Write a concise, discussion-starting Facebook post highlighting a practical tip from our site.",
+    subtitle: "Stages community-focused Facebook drafts.",
+  },
+  video: {
+    label: "Generate 60s Video Script",
+    prompt: "Write a tight 60-second TikTok/Reels script (hook, problem, 3 steps, CTA) for our primary topic.",
+    subtitle: "Stages short-form vertical video storyboards.",
+  },
+  hub: {
+    label: "Generate Social Pack",
+    prompt: "Create a coordinated multi-channel social distribution plan across Pinterest, LinkedIn, Facebook, and TikTok/Reels.",
+    subtitle: "Coordinates distribution across all 4 social channels.",
+  },
+};
+
 export function PanelLedger({
   agent,
   openChannel,
+  onStartAction,
   version = 0,
 }: {
   agent: string;
   openChannel?: (view: string) => void;
+  onStartAction?: (agentId: string, prompt: string) => void;
   version?: number;
 }) {
   const [data, setData] = useState<History>(),
     [notice, setNotice] = useState("");
   const [revision, setRevision] = useState(0);
+
+  const quickAction = SPECIALIST_QUICK_ACTIONS[agent];
 
   async function publish(id: string) {
     try {
@@ -99,34 +169,73 @@ export function PanelLedger({
       className="space-y-4 rounded-xl border border-slate-800 bg-[#111827] p-5"
       aria-label="Panel history"
     >
+      {/* Specialist Action Header */}
+      {quickAction && onStartAction && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-800 bg-[#0B0F17] p-4">
+          <div>
+            <p className="text-xs font-semibold text-white">
+              {agent === "hub" ? "Social & Video Distribution" : agentName(agent)}
+            </p>
+            <p className="mt-0.5 text-xs text-slate-400">{quickAction.subtitle}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() =>
+              onStartAction(agent === "hub" ? "chief" : agent, quickAction.prompt)
+            }
+            className="rounded-lg bg-[#2563EB] px-4 py-2 text-xs font-semibold text-white transition hover:bg-blue-500"
+          >
+            {quickAction.label} →
+          </button>
+        </div>
+      )}
+
       {notice && <p className="text-sm text-slate-400" role="status">{notice}</p>}
+
       {data?.counts && (
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {channels.map((c) => (
             <button
               key={c.id}
+              type="button"
               className="rounded-xl border border-slate-800 bg-[#0B0F17] p-4 text-left transition hover:border-blue-600/60 hover:bg-slate-900"
               onClick={() => openChannel?.(c.label)}
             >
-              <strong className="text-slate-100">{c.label}</strong>
-              <p className="mt-1 text-sm text-slate-400">{data.counts?.[c.id]} ledger entries</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-blue-400">
+                Channel
+              </p>
+              <strong className="mt-1 block text-sm font-semibold text-slate-100">{c.label}</strong>
+              <p className="mt-1 font-mono text-xs text-slate-400">
+                {data.counts?.[c.id] ?? 0} ledger entries
+              </p>
             </button>
           ))}
         </div>
       )}
+
       {data?.upcoming && (
-        <>
-          <h2 className="text-base font-semibold text-slate-100">Upcoming channel work</h2>
-          {data.upcoming.length === 0 && <p className="text-sm text-slate-400">No dated entries ahead.</p>}
-          {data.upcoming.map((item) => (
-            <p key={item.id} className="text-sm text-slate-300">
-              {item.payload.day} ·{" "}
-              {channels.find((c) => c.id === item.payload.channel)?.label} ·{" "}
-              {item.payload.title} · {item.payload.status}
-            </p>
-          ))}
-        </>
+        <div className="space-y-2 rounded-xl border border-slate-800 bg-[#0B0F17] p-4">
+          <h2 className="text-sm font-semibold text-slate-100">Upcoming channel queue</h2>
+          {data.upcoming.length === 0 ? (
+            <p className="text-xs text-slate-400">No dated social entries scheduled ahead.</p>
+          ) : (
+            <div className="divide-y divide-slate-800/80">
+              {data.upcoming.map((item) => (
+                <div key={item.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-xs">
+                  <span className="font-mono text-slate-400">{item.payload.day}</span>
+                  <span className="font-medium text-slate-200">
+                    {channels.find((c) => c.id === item.payload.channel)?.label} · {item.payload.title}
+                  </span>
+                  <span className="rounded-full border border-slate-700 px-2 py-0.5 text-[11px] text-slate-300">
+                    {item.payload.status || "scheduled"}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       )}
+
       {data?.social && channels.some((c) => c.id === agent) && (
         <>
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -139,7 +248,7 @@ export function PanelLedger({
                   : "Approval required for publishing"}
             </span>
           </div>
-          {data.social.length === 0 && <p className="text-sm text-slate-400">No channel activity recorded.</p>}
+          {data.social.length === 0 && <p className="text-sm text-slate-400">No channel activity recorded yet.</p>}
           <div
             className={
               agent === "pinterest" || agent === "video"
@@ -185,11 +294,14 @@ export function PanelLedger({
           </div>
         </>
       )}
+
       {data?.work && (
         <>
-          <h2 className="text-base font-semibold text-slate-100">Specialist work</h2>
+          <h2 className="text-base font-semibold text-slate-100">Specialist work ledger</h2>
           {data.work.length === 0 && (
-            <p className="text-sm text-slate-400">No saved work from this specialist yet.</p>
+            <p className="text-sm text-slate-400">
+              No saved work from this specialist yet. Use the action button above to run a live task.
+            </p>
           )}
           <div className="space-y-2">
             {data.work.map((w) => (
@@ -224,15 +336,17 @@ const QUICK_PROMPTS = [
 
 export function PanelChat({
   agent,
+  initialPrompt = "",
   close,
   onSaved,
 }: {
   agent: string;
+  initialPrompt?: string;
   close: () => void;
   onSaved: () => void;
 }) {
   const [activeAgent, setActiveAgent] = useState(agent);
-  const [text, setText] = useState("");
+  const [text, setText] = useState(initialPrompt);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [turns, setTurns] = useState<{ prompt: string; reply: string; responder: string }[]>([]);
@@ -240,6 +354,10 @@ export function PanelChat({
   useEffect(() => {
     setActiveAgent(agent);
   }, [agent]);
+
+  useEffect(() => {
+    if (initialPrompt) setText(initialPrompt);
+  }, [initialPrompt]);
 
   async function sendPrompt(promptText: string) {
     const clean = promptText.trim();

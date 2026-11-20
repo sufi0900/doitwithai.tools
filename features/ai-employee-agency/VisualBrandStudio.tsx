@@ -5,6 +5,7 @@ import { agencyRequest } from "./agency-request";
 import type { KnowledgeRow } from "./KnowledgeReview";
 
 const endpoint = "/api/ai-employee-agency/visual-studio";
+
 export function VisualBrandStudio({ website }: { website: KnowledgeRow }) {
   const [brief, setBrief] = useState(""),
     [kind, setKind] = useState("Blog hero"),
@@ -15,9 +16,11 @@ export function VisualBrandStudio({ website }: { website: KnowledgeRow }) {
   const [available, setAvailable] = useState(false),
     [status, setStatus] = useState(""),
     [busy, setBusy] = useState(false);
+
   const colors = (website.profile.colors || []).filter((c) =>
     /^#[0-9a-f]{3,8}$/i.test(c),
   );
+
   async function load() {
     const res = await agencyRequest(endpoint),
       data = await res.json();
@@ -25,9 +28,11 @@ export function VisualBrandStudio({ website }: { website: KnowledgeRow }) {
     setReferences(data.references);
     setAvailable(data.aiAvailable);
   }
+
   useEffect(() => {
     load().catch((err) => setStatus(err.message));
   }, []);
+
   async function act(body: FormData | { optIn: true; prompt: string }) {
     setBusy(true);
     setStatus("");
@@ -48,6 +53,7 @@ export function VisualBrandStudio({ website }: { website: KnowledgeRow }) {
       setBusy(false);
     }
   }
+
   const width = kind === "Pin template" ? 1000 : 1200,
     height =
       kind === "Pin template"
@@ -55,6 +61,7 @@ export function VisualBrandStudio({ website }: { website: KnowledgeRow }) {
         : kind === "Process infographic"
           ? 1200
           : 675;
+
   const escape = (s: string) =>
     s.replace(
       /[<>&"']/g,
@@ -67,13 +74,15 @@ export function VisualBrandStudio({ website }: { website: KnowledgeRow }) {
           "'": "&#39;",
         })[c]!,
     );
+
   const lines = brief.trim().match(/.{1,30}(?:\s+|$)|.{1,30}/gu) || [];
-  const foreground = colors[1] || "#599dff";
+  const foreground = colors[1] || "#2563EB";
   const items = steps
     .split("\n")
     .map((s) => s.trim())
     .filter(Boolean)
     .slice(0, 5);
+
   const textLines = (rows: string[], x: number, y: number, size: number) =>
     rows
       .map(
@@ -89,6 +98,7 @@ export function VisualBrandStudio({ website }: { website: KnowledgeRow }) {
           "</text>",
       )
       .join("");
+
   const diagram =
     kind === "Process infographic"
       ? items
@@ -108,161 +118,227 @@ export function VisualBrandStudio({ website }: { website: KnowledgeRow }) {
           })
           .join("")
       : "";
+
   const svg =
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' +
     width +
     " " +
     height +
     '"><rect width="100%" height="100%" fill="' +
-    (colors[0] || "#152238") +
-    '"/><rect x="5%" y="8%" width="90%" height="84%" rx="24" fill="#101828"/><rect x="9%" y="13%" width="14%" height="12" fill="' +
+    (colors[0] || "#0B0F17") +
+    '"/><rect x="5%" y="8%" width="90%" height="84%" rx="24" fill="#111827"/><rect x="9%" y="13%" width="14%" height="12" fill="' +
     foreground +
     '"/>' +
     textLines(lines, width * 0.09, height * 0.2, 38) +
     diagram +
     "</svg>";
+
   const asset = optIn
     ? image
     : brief.trim()
       ? "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg)
       : "";
+
   return (
-    <section className="space-y-4 rounded-xl border border-slate-700 p-5">
-      <label>
-        Asset format{" "}
-        <select
-          className="rounded bg-slate-800 p-2"
-          disabled={busy}
-          value={kind}
-          onChange={(e) => {
-            setKind(e.target.value);
-            setImage("");
-          }}
-        >
-          <option>Blog hero</option>
-          <option>Pin template</option>
-          <option>Process infographic</option>
-        </select>
-      </label>
-      {!!colors.length && (
-        <div className="flex flex-wrap gap-3" aria-label="Approved palette">
-          {colors.map((c, i) => (
-            <span key={i}>
-              <i
-                className="mr-1 inline-block h-3 w-3 rounded"
-                style={{ background: c }}
-              />
-              {c}
-            </span>
-          ))}
-        </div>
-      )}
-      <label className="block">
-        Headline or image brief
-        <input
-          maxLength={180}
-          className="block w-full rounded bg-slate-800 p-3"
-          value={brief}
-          disabled={busy}
-          onChange={(e) => {
-            setBrief(e.target.value);
-            setImage("");
-          }}
-        />
-      </label>
-      {kind === "Process infographic" && (
-        <label className="block">
-          Steps (one per line, up to five)
-          <textarea
-            className="block w-full rounded bg-slate-800 p-3"
-            value={steps}
-            disabled={busy}
-            onChange={(e) => {
-              setSteps(
-                e.target.value
-                  .split("\n")
-                  .slice(0, 5)
-                  .map((s) => s.slice(0, 85))
-                  .join("\n"),
-              );
-              setImage("");
-            }}
-          />
-        </label>
-      )}
-      <label className="block">
-        <input
-          type="checkbox"
-          checked={optIn}
-          disabled={!available || busy}
-          onChange={(e) => setOptIn(e.target.checked)}
-        />{" "}
-        Use AI image generation{" "}
-        {available ? "(provider usage applies)" : "(provider unavailable)"}
-      </label>
-      {optIn && (
-        <button
-          disabled={!brief.trim() || busy}
-          onClick={() =>
-            act({
-              optIn: true,
-              prompt: (
-                kind +
-                ": " +
-                brief +
-                (kind === "Process infographic" ? " " + items.join(". ") : "")
-              ).slice(0, 500),
-            })
-          }
-        >
-          Generate image
-        </button>
-      )}
-      {asset && (
+    <section className="space-y-5 rounded-xl border border-slate-800 bg-[#111827] p-5">
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4">
         <div>
-          <img src={asset} className="mb-2 max-h-64 rounded" alt={brief} />
-          <a
-            className="underline"
-            download={kind + (optIn ? ".jpg" : ".svg")}
-            href={asset}
-          >
-            Download {optIn ? "image" : "SVG"}
-          </a>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-blue-400">
+            Visual &amp; Brand Studio · {width}×{height}px
+          </p>
+          <h2 className="text-base font-semibold text-white">
+            Brand-Locked Graphic &amp; Infographic Generator
+          </h2>
         </div>
-      )}
-      <label className="block">
-        Reference screenshots
-        <input
-          type="file"
-          accept="image/png,image/jpeg,image/webp"
-          disabled={busy}
-          className="block"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (!file) return;
-            if (file.size > 2097152) {
-              setStatus("Choose a reference up to 2 MiB.");
-              return;
-            }
-            const form = new FormData();
-            form.set("reference", file);
-            void act(form);
-            e.target.value = "";
-          }}
-        />
-      </label>
-      <div className="flex flex-wrap gap-3">
-        {references.map((r) => (
-          <a key={r.url} href={r.url} target="_blank" rel="noreferrer">
-            <img
-              className="h-20 max-w-40 object-contain"
-              alt={r.name}
-              src={r.url}
+        {!!colors.length && (
+          <div className="flex flex-wrap items-center gap-2" aria-label="Approved palette">
+            {colors.map((c, i) => (
+              <span
+                key={i}
+                className="inline-flex items-center gap-1.5 rounded-md border border-slate-800 bg-[#0B0F17] px-2 py-1 font-mono text-[11px] text-slate-300"
+              >
+                <i className="inline-block h-3 w-3 rounded-sm" style={{ background: c }} />
+                {c}
+              </span>
+            ))}
+          </div>
+        )}
+      </header>
+
+      <div className="grid gap-5 lg:grid-cols-2">
+        {/* Left Controls */}
+        <div className="space-y-4">
+          <label className="block space-y-1.5 text-xs font-medium text-slate-300">
+            <span>Asset format</span>
+            <select
+              className="block w-full rounded-lg border border-slate-700 bg-[#0B0F17] px-3 py-2 text-sm text-slate-100"
+              disabled={busy}
+              value={kind}
+              onChange={(e) => {
+                setKind(e.target.value);
+                setImage("");
+              }}
+            >
+              <option value="Blog hero">Blog hero (1200×675)</option>
+              <option value="Pin template">Pin template (1000×1500)</option>
+              <option value="Process infographic">Process infographic (1200×1200)</option>
+            </select>
+          </label>
+
+          <label className="block space-y-1.5 text-xs font-medium text-slate-300">
+            <span>Headline or image brief</span>
+            <input
+              maxLength={180}
+              placeholder="e.g., 2026 Technical SEO Audit Framework"
+              className="block w-full rounded-lg border border-slate-700 bg-[#0B0F17] px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500"
+              value={brief}
+              disabled={busy}
+              onChange={(e) => {
+                setBrief(e.target.value);
+                setImage("");
+              }}
             />
-          </a>
-        ))}
+          </label>
+
+          {kind === "Process infographic" && (
+            <label className="block space-y-1.5 text-xs font-medium text-slate-300">
+              <span>Steps (one per line, up to five)</span>
+              <textarea
+                rows={4}
+                placeholder="1. Crawl live sitemap&#10;2. Map topic clusters&#10;3. Verify citations"
+                className="block w-full rounded-lg border border-slate-700 bg-[#0B0F17] px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500"
+                value={steps}
+                disabled={busy}
+                onChange={(e) => {
+                  setSteps(
+                    e.target.value
+                      .split("\n")
+                      .slice(0, 5)
+                      .map((s) => s.slice(0, 85))
+                      .join("\n"),
+                  );
+                  setImage("");
+                }}
+              />
+            </label>
+          )}
+
+          <label className="flex items-center gap-2 rounded-lg border border-slate-800 bg-[#0B0F17] px-3 py-2.5 text-xs text-slate-300">
+            <input
+              type="checkbox"
+              checked={optIn}
+              disabled={!available || busy}
+              onChange={(e) => setOptIn(e.target.checked)}
+            />
+            <span>
+              Use AI image generation{" "}
+              <span className="text-slate-500">
+                {available ? "(metered image allowance applies)" : "(provider not configured)"}
+              </span>
+            </span>
+          </label>
+
+          {optIn && (
+            <button
+              type="button"
+              disabled={!brief.trim() || busy}
+              onClick={() =>
+                act({
+                  optIn: true,
+                  prompt: (
+                    kind +
+                    ": " +
+                    brief +
+                    (kind === "Process infographic" ? " " + items.join(". ") : "")
+                  ).slice(0, 500),
+                })
+              }
+              className="rounded-lg bg-[#2563EB] px-4 py-2 text-xs font-semibold text-white transition hover:bg-blue-500 disabled:opacity-50"
+            >
+              {busy ? "Generating…" : "Generate AI Image"}
+            </button>
+          )}
+
+          <label className="block space-y-1.5 pt-2 text-xs font-medium text-slate-300">
+            <span>Upload brand reference screenshot (PNG/JPEG/WebP, max 2 MiB)</span>
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              disabled={busy}
+              className="block w-full rounded-lg border border-slate-800 bg-[#0B0F17] p-2 text-xs text-slate-400 file:mr-3 file:rounded-md file:border-0 file:bg-slate-800 file:px-3 file:py-1 file:text-xs file:font-semibold file:text-slate-200 hover:file:bg-slate-700"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                if (file.size > 2097152) {
+                  setStatus("Choose a reference up to 2 MiB.");
+                  return;
+                }
+                const form = new FormData();
+                form.set("reference", file);
+                void act(form);
+                e.target.value = "";
+              }}
+            />
+          </label>
+        </div>
+
+        {/* Right Live Preview & Reference Gallery */}
+        <div className="space-y-4">
+          <div className="flex min-h-[240px] flex-col items-center justify-center rounded-xl border border-slate-800 bg-[#0B0F17] p-4">
+            {asset ? (
+              <div className="w-full space-y-3 text-center">
+                <img
+                  src={asset}
+                  className="mx-auto max-h-64 rounded-lg border border-slate-800 object-contain"
+                  alt={brief}
+                />
+                <a
+                  className="inline-flex items-center rounded-lg bg-[#2563EB] px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-blue-500"
+                  download={kind.toLowerCase().replace(/\s+/g, "-") + (optIn ? ".jpg" : ".svg")}
+                  href={asset}
+                >
+                  Download {optIn ? "JPG Image" : "Vector SVG"}
+                </a>
+              </div>
+            ) : (
+              <p className="text-center text-xs text-slate-500">
+                Enter a headline or brief on the left to preview your brand-locked {kind.toLowerCase()}.
+              </p>
+            )}
+          </div>
+
+          {references.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-slate-300">
+                Uploaded Brand References ({references.length})
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                {references.map((r) => (
+                  <a
+                    key={r.url}
+                    href={r.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="overflow-hidden rounded-lg border border-slate-800 bg-[#0B0F17] p-1 hover:border-blue-500/60"
+                  >
+                    <img
+                      className="h-20 w-full object-contain"
+                      alt={r.name}
+                      src={r.url}
+                    />
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
-      <p role="status">{busy ? "Working…" : status}</p>
+
+      {(busy || status) && (
+        <p className="text-xs text-slate-400" role="status">
+          {busy ? "Working…" : status}
+        </p>
+      )}
     </section>
   );
 }
