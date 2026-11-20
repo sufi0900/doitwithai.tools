@@ -22,7 +22,7 @@ import { scrollPreviewContainer } from "./preview-navigation";
 import { SceneRenderer } from "@/features/website-builder/scene/scene-renderer";
 import { isFlatTemplate, isCollectionTemplate, isLightTemplate } from "@/features/website-builder/domain/template-contracts";
 import { CollectionHero } from "@/features/website-builder/portfolio/collection-templates";
-import { EditorialFlagshipHero, isEditorialFlagshipTemplate } from "@/features/website-builder/portfolio/editorial-flagship-templates";
+import { EditorialFlagshipHero, isEditorialFlagshipTemplate } from "@/features/website-builder/portfolio/editorial-flagship-hero";
 import { ProfessionalHeroAside } from "@/features/website-builder/portfolio/professional-hero-aside";
 import {
   DEMO_STUDIO_STORAGE_KEY,
@@ -380,9 +380,13 @@ export function PortfolioStudio({ initialDocument, projectName = "Demo portfolio
           <div className="panel-intro"><div className="panel-title-row"><div><p className="eyebrow">WEBSITE STUDIO · LIVE CUSTOMIZER</p><h1>Shape the experience</h1></div><button type="button" title={editorExpanded ? "Restore workspace" : "Expand editor"} aria-label={editorExpanded ? "Restore workspace" : "Expand editor"} onClick={() => { if (!editorExpanded && window.innerWidth <= 900 && !voice.active) setVoiceHidden(true); if (window.innerWidth <= 900) setMobileView("editor"); setEditorExpanded(value => !value); }}>{editorExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}</button></div><p>Use direct controls or click any element on a tool landing page to customize copy, inputs, gradients, and theme colors.</p></div>
           <nav className="editor-tabs" aria-label="Editor sections">
             <Tab active={state.selectedPanel === "content"} label="Content" icon={<Type size={16} />} onClick={() => dispatch({ type: "selectPanel", panel: "content" })} />
-            <Tab active={state.selectedPanel === "design"} label="Design" icon={<Palette size={16} />} onClick={() => dispatch({ type: "selectPanel", panel: "design" })} />
-            <Tab active={state.selectedPanel === "scene"} label="3D Scene" icon={<Layers3 size={16} />} onClick={() => dispatch({ type: "selectPanel", panel: "scene" })} />
-            <Tab active={state.selectedPanel === "opportunity"} label="Opportunities" icon={<Share2 size={16} />} onClick={() => dispatch({ type: "selectPanel", panel: "opportunity" })} />
+            <Tab active={state.selectedPanel === "design"} label="Design & Theme" icon={<Palette size={16} />} onClick={() => dispatch({ type: "selectPanel", panel: "design" })} />
+            {!isFlatTemplate(state.present.design.template) && (
+              <Tab active={state.selectedPanel === "scene"} label="3D Scene" icon={<Layers3 size={16} />} onClick={() => dispatch({ type: "selectPanel", panel: "scene" })} />
+            )}
+            {(state.present.opportunity.status !== "canonical" || (!isFlatTemplate(state.present.design.template) && state.present.design.template !== "doitwithai-flagship" && state.present.design.template !== "micro-saas-launchpad")) && (
+              <Tab active={state.selectedPanel === "opportunity"} label="Opportunities" icon={<Share2 size={16} />} onClick={() => dispatch({ type: "selectPanel", panel: "opportunity" })} />
+            )}
           </nav>
           {state.lastCommandError && <p className="form-message" role="alert">{state.lastCommandError}</p>}
           <div className="expanded-editor-surface"><ManualControls ensureSaved={flush} document={state.present} publishedDocument={publishedDocument} execute={executeManual} panel={state.selectedPanel} canUploadMedia={persistence === "server" && authenticated} previewTarget={previewTarget} onPreviewTarget={selectPreviewTarget} onPublishItem={publishItem} publishingItemId={publishingItemId || (publishing ? "__snapshot__" : "")} itemPublishError={itemPublishError} canDirectPublish={canPublishInStudio && slug.length >= 3} blogNotesSeed={blogNotesSeed} publicSiteSlug={publication?.slug || slug} /></div>
@@ -392,7 +396,7 @@ export function PortfolioStudio({ initialDocument, projectName = "Demo portfolio
         {!previewOnly && !editorExpanded && <button type="button" className="panel-resizer editor-resizer" style={{ left: `min(30vw, ${editorWidth}px)` }} aria-label="Resize content editor" onPointerDown={(event) => beginResize(event, editorWidth, setEditorWidth, 260, Math.min(540, Math.round(window.innerWidth * 0.3)), 1)} />}
 
         {!editorExpanded && <section className="preview-shell" aria-label="Live portfolio preview">
-          <div className="preview-chrome"><span /><span /><span /><p>portfolio.preview</p><em>LIVE CANVAS</em></div>
+          <div className="preview-chrome"><span /><span /><span /><p>{publication?.slug ? `${publication.slug}.doitwithai.tools` : `${(state.present.identity.name || "website").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "studio"}.preview`}</p><em>LIVE CANVAS</em></div>
           <StudioPreview document={state.present} target={previewTarget} focusedSkill={focusedSkill} execute={executeManual} reducedMotion={reducedMotion} onNavigate={selectPreviewTarget} />
         </section>}
 
@@ -762,15 +766,24 @@ function StudioToolsIndex({ document, onNavigate }: { document: SiteDocument; on
         ) : (
           <div className="wb-tools-directory-grid">
             {filtered.map((project, index) => {
-              const palette = resolveToolVisualPalette(project, document.design.accent, document.design.background);
+              const isSiteLight = isLightTemplate(document.design.template) || document.design.background === "ivory" || document.design.background === "cloud";
+              const palette = resolveToolVisualPalette({
+                tool: { ...project, toolThemeMode: isSiteLight ? "light" : "dark" },
+                siteAccent: document.design.accent,
+                siteBackground: document.design.background,
+              });
+              const cleanRole = (project.role || "AI UTILITY")
+                .replace(/^TOOL\s*\d+\s*[·•-]\s*/i, "")
+                .trim()
+                .toUpperCase();
               return (
                 <article
                   key={project.id}
                   className="wb-tool-directory-card"
                   style={{
                     background: palette.surfaceColor,
-                    border: `1px solid ${palette.accentHex}44`,
-                    borderRadius: "16px",
+                    border: `1px solid ${isSiteLight ? "#e2e8f0" : "rgba(148, 163, 184, 0.22)"}`,
+                    borderRadius: "14px",
                     padding: "20px",
                     display: "flex",
                     flexDirection: "column",
@@ -779,7 +792,7 @@ function StudioToolsIndex({ document, onNavigate }: { document: SiteDocument; on
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "8px" }}>
                     <span style={{ fontSize: "11px", fontWeight: 800, color: palette.accentHex, letterSpacing: "0.08em" }}>
-                      TOOL 0{index + 1} · {(project.role || "AI UTILITY").toUpperCase()}
+                      TOOL {String(index + 1).padStart(2, "0")} · {cleanRole}
                     </span>
                     <span
                       style={{
@@ -838,8 +851,8 @@ function StudioToolsIndex({ document, onNavigate }: { document: SiteDocument; on
                         padding: "9px 14px",
                         borderRadius: "10px",
                         border: 0,
-                        background: `linear-gradient(135deg, ${palette.accentHex}, ${palette.secondaryAccentHex})`,
-                        color: "#04101c",
+                        background: "#2563eb",
+                        color: "#ffffff",
                         fontSize: "12.5px",
                         fontWeight: 800,
                         cursor: "pointer",

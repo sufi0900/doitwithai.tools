@@ -24,15 +24,25 @@ function isNonCvTemplate(template: string): boolean {
     template === "micro-saas-launchpad" ||
     template === "authority-niche-blog" ||
     template === "creator-newsletter-hub" ||
-    template === "startup-service-agency"
+    template === "startup-service-agency" ||
+    template === "swiss-editorial-directory" ||
+    template === "warm-architectural-studio" ||
+    template === "crisp-saas-utility-hub" ||
+    template === "modern-boutique-commerce" ||
+    template === "trusted-local-service-pro" ||
+    template === "editorial-magazine-journal" ||
+    template === "minimalist-founder-monograph" ||
+    template === "technical-newsletter-docs" ||
+    template === "creator-lead-magnet-hub" ||
+    template === "agency-flagship-showcase"
   );
 }
 
-export function PortfolioNavigation({ document, publicBasePath, onNavigateSection, onNavigatePage, onNavigateBlog }: { document: SiteDocument; publicBasePath?: string; onNavigateSection?: (section: PortfolioSection) => void; onNavigatePage?: (pageId: string) => void; onNavigateBlog?: () => void }) {
+export function PortfolioNavigation({ document, publicBasePath, onNavigateSection, onNavigatePage, onNavigateBlog, onNavigateTools }: { document: SiteDocument; publicBasePath?: string; onNavigateSection?: (section: PortfolioSection) => void; onNavigatePage?: (pageId: string) => void; onNavigateBlog?: () => void; onNavigateTools?: () => void }) {
   const hideCvSections = isNonCvTemplate(document.design.template);
-  const isToolSite = document.design.template === "doitwithai-flagship" || document.design.template === "micro-saas-launchpad";
+  const isToolSite = document.design.template === "doitwithai-flagship" || document.design.template === "micro-saas-launchpad" || document.design.template === "swiss-editorial-directory" || document.design.template === "crisp-saas-utility-hub" || document.design.template === "trusted-local-service-pro";
   return <nav className="portfolio-site-nav" aria-label="Site navigation">
-    {document.content.order.filter((section) => document.content.visibility[section] && (!hideCvSections || (section !== "experience" && section !== "skills"))).map((section) => <a key={section} href={publicBasePath && section === "projects" ? `${publicBasePath}/projects` : `#${section}`} onClick={onNavigateSection ? (event) => { event.preventDefault(); onNavigateSection(section); } : undefined}>{section === "projects" && isToolSite ? `Tools (${document.content.projects.length})` : sectionLabels[section]}</a>)}
+    {document.content.order.filter((section) => document.content.visibility[section] && (!hideCvSections || (section !== "experience" && section !== "skills"))).map((section) => <a key={section} href={publicBasePath && section === "projects" ? `${publicBasePath}/projects` : `#${section}`} onClick={section === "projects" && isToolSite && onNavigateTools ? (event) => { event.preventDefault(); onNavigateTools(); } : onNavigateSection ? (event) => { event.preventDefault(); onNavigateSection(section); } : undefined}>{section === "projects" && isToolSite ? `Tools (${document.content.projects.length})` : sectionLabels[section]}</a>)}
     {publicBasePath && document.publishing.pages.filter((page) => page.status === "published").map((page) => <a key={page.id} href={`${publicBasePath}/pages/${page.slug}`}>{page.navigationLabel}</a>)}
     {publicBasePath && document.publishing.posts.some((post) => post.status === "published") && <a href={`${publicBasePath}/blog`}>Blog</a>}
     {!publicBasePath && onNavigatePage && document.publishing.pages.map((page) => <button type="button" key={page.id} onClick={() => onNavigatePage(page.id)}>{page.navigationLabel}</button>)}
@@ -40,7 +50,7 @@ export function PortfolioNavigation({ document, publicBasePath, onNavigateSectio
   </nav>;
 }
 
-export function PortfolioSections(props:{document:SiteDocument;editing?:boolean;publicBasePath?:string;onOpenPage?:(id:string)=>void;onOpenPost?:(id:string)=>void}) {
+export function PortfolioSections(props:{document:SiteDocument;editing?:boolean;publicBasePath?:string;onOpenPage?:(id:string)=>void;onOpenPost?:(id:string)=>void;onOpenTool?:(id:string)=>void}) {
  const blogFirst = isBlogFirstTemplate(props.document.design.template);
  return blogFirst
    ? <><HomepageJournal document={props.document} publicBasePath={props.publicBasePath} onOpenPost={props.onOpenPost}/><PortfolioSectionBody {...props}/></>
