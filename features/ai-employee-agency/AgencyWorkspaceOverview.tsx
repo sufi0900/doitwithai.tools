@@ -2,8 +2,9 @@
 
 import { V6_SINGLE_SIDEBAR_GROUPS } from './navigation';
 import { KnowledgeReview, type KnowledgeRow } from './KnowledgeReview';
-import { agentName, channels, commercialLabel, panelAgents, socialHub, visualStudio } from '@/lib/ai-agency/panels';
+import { GuidedOnboardingStudio } from './GuidedOnboardingStudio';
 import { PanelChat, PanelLedger } from './PanelWorkspace';
+import { agentName, channels, commercialLabel, panelAgents, socialHub, visualStudio } from '@/lib/ai-agency/panels';
 import { VisualBrandStudio } from './VisualBrandStudio';
 import { ProductionProgress } from './ProductionProgress';
 import { AgencyCalendar } from './AgencyCalendar';
@@ -36,6 +37,7 @@ export default function AgencyWorkspaceOverview() {
   const [crawling, setCrawling] = useState(false);
   const [crawlNotice, setCrawlNotice] = useState('');
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [launchNotice, setLaunchNotice] = useState('');
   const contentScrollRef = useRef<HTMLDivElement>(null);
 
   const agent = panelAgents[view];
@@ -45,12 +47,6 @@ export default function AgencyWorkspaceOverview() {
     .filter(([, configured]) => configured)
     .map(([provider]) => provider);
   const isSetupView = ['Overview', 'Keyword & Topics', 'Agent Skills & Cron'].includes(view);
-  const isApprovalGatedView = [
-    'QA & Auto-Publish',
-    'Technical Site Audit',
-    'On-Page & Refresh',
-    visualStudio,
-  ].includes(view);
 
   useEffect(() => {
     if (!mobileNavOpen) return;
@@ -242,6 +238,63 @@ export default function AgencyWorkspaceOverview() {
       .catch(() => setBindings({}));
   }, []);
 
+  // STRICT DASHBOARD LOCK GATE:
+  // Lock the 13-panel dashboard behind the focused 4-Step Guided Onboarding Studio until approved_at is set.
+  if (summary?.website && !summary.website.approved_at) {
+    return (
+      <GuidedOnboardingStudio
+        row={summary.website}
+        refresh={refresh}
+        onApproved={({ autoRun, firstTopic }) => {
+          setView('Overview');
+          if (autoRun) {
+            setLaunchNotice(
+              firstTopic
+                ? `Digital Agency activated · Queued "${firstTopic}" and starter topics for live execution.`
+                : 'Digital Agency activated · Your starter topics are queued and ready for live execution.',
+            );
+          }
+        }}
+      />
+    );
+  }
+
+  // Clean unauthenticated or no-website-yet state (prevents broken 0% dashboard shell)
+  if (!summary?.website) {
+    return (
+      <div className="flex h-full min-h-0 w-full items-center justify-center overflow-y-auto bg-[#0B0F17] p-6 text-slate-100">
+        <div className="w-full max-w-md space-y-4 rounded-2xl border border-slate-800 bg-[#111827] p-6 text-center">
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-blue-400">
+            DoItWithAI Agency OS
+          </p>
+          <h1 className="text-xl font-semibold text-white">
+            {status ? 'Workspace Access' : 'Connect your website to begin'}
+          </h1>
+          <p className="text-sm text-slate-400">
+            {status || 'Register your external website or DoItWithAI Builder slug to run automatic Brand DNA & keyword discovery.'}
+          </p>
+          <div className="flex flex-wrap justify-center gap-3 pt-2">
+            {status.includes('Sign in') ? (
+              <Link
+                href="/do-it-ai?signin=1"
+                className="rounded-lg bg-[#2563EB] px-4 py-2 text-xs font-semibold text-white hover:bg-blue-500"
+              >
+                Sign in to Workspace →
+              </Link>
+            ) : !status ? (
+              <Link
+                href="/ai-employee-agency"
+                className="rounded-lg bg-[#2563EB] px-4 py-2 text-xs font-semibold text-white hover:bg-blue-500"
+              >
+                Register Website →
+              </Link>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-[#0B0F17] text-slate-100 lg:flex-row">
       {/* Mobile & Tablet compact bar */}
@@ -316,27 +369,33 @@ export default function AgencyWorkspaceOverview() {
               >
                 {view}
               </h1>
-              {summary?.website && (
-                <p className="mt-1 break-words text-xs text-slate-400">
-                  <span className="font-mono text-slate-200">{summary.website.domain}</span> ·{' '}
-                  {summary.website.approved_at ? 'Approved' : 'Awaiting approval'} ·{' '}
-                  {indexedPagesCount} indexed {indexedPagesCount === 1 ? 'page' : 'pages'} (
-                  {summary.website.profile.coverage || 'manual'})
-                </p>
-              )}
+              <p className="mt-1 break-words text-xs text-slate-400">
+                <span className="font-mono text-slate-200">{summary.website.domain}</span> · Approved ·{' '}
+                {indexedPagesCount} indexed {indexedPagesCount === 1 ? 'page' : 'pages'} (
+                {summary.website.profile.coverage || 'partial'})
+                {summary.website.profile.domain_maturity && (
+                  <>
+                    {' '}
+                    ·{' '}
+                    <span className="text-blue-300">
+                      {summary.website.profile.domain_maturity === 'established_site'
+                        ? 'Established Site Mode'
+                        : 'New Site Mode'}
+                    </span>
+                  </>
+                )}
+              </p>
             </div>
 
             <div className="flex shrink-0 flex-wrap items-center gap-2">
-              {summary?.website && (
-                <button
-                  type="button"
-                  disabled={crawling}
-                  onClick={() => void crawlLiveSitemap()}
-                  className="rounded-lg border border-slate-700 bg-[#111827] px-3.5 py-2 text-xs font-semibold text-slate-200 transition hover:border-blue-500/70 hover:text-white disabled:opacity-50"
-                >
-                  {crawling ? 'Crawling Sitemap…' : 'Crawl Live Sitemap'}
-                </button>
-              )}
+              <button
+                type="button"
+                disabled={crawling}
+                onClick={() => void crawlLiveSitemap()}
+                className="rounded-lg border border-slate-700 bg-[#111827] px-3.5 py-2 text-xs font-semibold text-slate-200 transition hover:border-blue-500/70 hover:text-white disabled:opacity-50"
+              >
+                {crawling ? 'Crawling Sitemap…' : 'Crawl Live Sitemap'}
+              </button>
               <button
                 type="button"
                 onClick={() => openChatWith(agent || 'copilot')}
@@ -349,6 +408,15 @@ export default function AgencyWorkspaceOverview() {
             </div>
           </header>
 
+          {launchNotice && (
+            <p
+              role="status"
+              className="break-words rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-2.5 text-sm text-emerald-200"
+            >
+              {launchNotice}
+            </p>
+          )}
+
           {crawlNotice && (
             <p
               role="status"
@@ -358,47 +426,13 @@ export default function AgencyWorkspaceOverview() {
             </p>
           )}
 
-          {status && (
-            <p
-              role="status"
-              className="break-words rounded-lg border border-slate-800 bg-[#111827] px-4 py-3 text-sm text-slate-300"
-            >
-              {status}{' '}
-              {status.includes('Sign in') && (
-                <Link className="text-blue-400 underline" href="/do-it-ai?signin=1">
-                  Sign in
-                </Link>
-              )}
-            </p>
-          )}
-
-          {!isSetupView && summary?.website && !summary.website.approved_at && (
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-100">
-              <p className="min-w-0 flex-1 break-words">
-                <strong className="font-semibold text-amber-200">
-                  Website setup awaiting approval:
-                </strong>{' '}
-                Approve your knowledge base for{' '}
-                <span className="font-mono text-white">{summary.website.domain}</span> to unlock
-                autonomous publishing and site audits.
-              </p>
-              <button
-                type="button"
-                onClick={() => navigate('Overview')}
-                className="shrink-0 rounded-lg border border-amber-400/40 bg-amber-500/20 px-3 py-1.5 text-xs font-semibold text-amber-100 transition hover:bg-amber-500/30"
-              >
-                Complete setup in Overview →
-              </button>
-            </div>
-          )}
-
           {view === 'Overview' && (
             <AgencyOverviewMetrics
-              approved={Boolean(summary?.website?.approved_at)}
+              approved={Boolean(summary.website.approved_at)}
               indexedPages={indexedPagesCount}
-              coverage={summary?.website?.profile?.coverage}
+              coverage={summary.website.profile?.coverage}
               activeProvidersCount={activeProviders.length}
-              counts={summary?.counts}
+              counts={summary.counts}
               onNavigate={navigate}
             />
           )}
@@ -409,7 +443,7 @@ export default function AgencyWorkspaceOverview() {
                 <h2 className="text-base font-semibold text-white">
                   {view === 'Overview' ? 'Website knowledge base' : 'Workspace setup'}
                 </h2>
-                {summary?.website && indexedPagesCount === 0 && (
+                {indexedPagesCount === 0 && (
                   <button
                     type="button"
                     disabled={crawling}
@@ -420,58 +454,31 @@ export default function AgencyWorkspaceOverview() {
                   </button>
                 )}
               </div>
-              {summary?.website ? (
-                <KnowledgeReview
-                  key={summary.website.revision}
-                  row={summary.website}
-                  refresh={refresh}
-                  topics={view === 'Keyword & Topics'}
-                />
-              ) : (
-                <p className="mt-2 text-sm text-slate-400">
-                  {summary ? 'Register your website to begin setup.' : 'Workspace data unavailable.'}
-                </p>
-              )}
+              <KnowledgeReview
+                key={summary.website.revision}
+                row={summary.website}
+                refresh={refresh}
+                topics={view === 'Keyword & Topics'}
+              />
             </section>
           )}
 
-          {isApprovalGatedView && summary?.website && !summary.website.approved_at && (
-            <section className={panel}>
-              <h2 className="text-base font-semibold text-white">
-                Knowledge base approval required
-              </h2>
-              <p className="mt-1.5 text-sm text-slate-400">
-                Complete and approve the website knowledge base for{' '}
-                <span className="font-mono text-slate-200">{summary.website.domain}</span> in
-                Overview to unlock the {view} workbench.
-              </p>
-              <button
-                type="button"
-                onClick={() => navigate('Overview')}
-                className="mt-3 rounded-lg bg-[#2563EB] px-4 py-2 text-xs font-semibold text-white transition hover:bg-blue-500"
-              >
-                Go to Website Setup →
-              </button>
-            </section>
-          )}
-
-          {view === 'Overview' && summary && <ProductionProgress />}
+          {view === 'Overview' && <ProductionProgress />}
           {view === 'Agency Calendar' && <AgencyCalendar />}
-          {view === 'QA & Auto-Publish' && summary?.website?.approved_at && (
+          {view === 'QA & Auto-Publish' && (
             <QualityReview
               internal={summary.website.profile.source === 'internal_direct'}
               domain={summary.website.domain}
               revision={summary.website.revision}
             />
           )}
-          {['Technical Site Audit', 'On-Page & Refresh'].includes(view) &&
-            summary?.website?.approved_at && (
-              <RefreshWorkbench
-                key={view + summary.website.revision}
-                website={summary.website}
-                audit={view === 'Technical Site Audit'}
-              />
-            )}
+          {['Technical Site Audit', 'On-Page & Refresh'].includes(view) && (
+            <RefreshWorkbench
+              key={view + summary.website.revision}
+              website={summary.website}
+              audit={view === 'Technical Site Audit'}
+            />
+          )}
           {view === socialHub && (
             <PanelLedger
               key={view}
@@ -480,15 +487,13 @@ export default function AgencyWorkspaceOverview() {
               onStartAction={openChatWith}
             />
           )}
-          {view === visualStudio && summary?.website?.approved_at && (
-            <VisualBrandStudio website={summary.website} />
-          )}
+          {view === visualStudio && <VisualBrandStudio website={summary.website} />}
           {view === 'Live Node Canvas' && (
             <CalmAgencyNodeCanvas
-              domain={summary?.website?.domain}
-              approved={Boolean(summary?.website?.approved_at)}
+              domain={summary.website.domain}
+              approved={Boolean(summary.website.approved_at)}
               indexedPages={indexedPagesCount}
-              counts={summary?.counts}
+              counts={summary.counts}
               activeProviders={activeProviders}
               onOpenPanel={navigate}
               onOpenChat={(id) => openChatWith(id)}
@@ -527,13 +532,11 @@ export default function AgencyWorkspaceOverview() {
                   </span>
                 ))}
               </div>
-              {summary && (
-                <p className="mt-3 break-words text-xs text-slate-400">
-                  {summary.lastCall
-                    ? `Last successful call · ${summary.lastCall.model} · ${summary.lastCall.created_at} · ${summary.lastCall.total_tokens ?? 'unavailable'} tokens · calculated USD ${summary.lastCall.calculated_usd ?? 'unavailable'}`
-                    : 'No successful provider calls recorded yet.'}
-                </p>
-              )}
+              <p className="mt-3 break-words text-xs text-slate-400">
+                {summary.lastCall
+                  ? `Last successful call · ${summary.lastCall.model} · ${summary.lastCall.created_at} · ${summary.lastCall.total_tokens ?? 'unavailable'} tokens · calculated USD ${summary.lastCall.calculated_usd ?? 'unavailable'}`
+                  : 'No successful provider calls recorded yet.'}
+              </p>
             </section>
           )}
         </div>
