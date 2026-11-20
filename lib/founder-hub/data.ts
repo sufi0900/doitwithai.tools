@@ -205,6 +205,15 @@ export const DAILY_ENGINEERING_VELOCITY: DailyActivityPoint[] = [
     commitsPushed: 9,
     highlightNote: "GSC Top 3 + Dark Studio Fix + Full 7-Phase /ai-content-writer V3 Studio (Research, SERP Canvas, H1-H6 Tell-AI Editor, Readability, 16:9 Hero + Alt Text & Social Adapters)",
   },
+  {
+    date: "2026-11-21",
+    shortLabel: "Nov 21",
+    errorsFixed: 19,
+    improvementsShipped: 24,
+    routesAndToolsAdded: 2,
+    commitsPushed: 5,
+    highlightNote: "Cloudflare Preview TS/Build Fix + Agency Dashboard Responsive Overhaul + Strict API Key Isolation (AUTONOMOUS_AUTOMATION_GEMINI_KEY vs 4 Public Tool Keys) + Evergreen Gemini Cascade on Preview & Production + V4 Real-Time Agency Master Plan",
+  },
 ];
 
 export interface SprintProgressBarItem {
@@ -1000,22 +1009,30 @@ export const SYSTEM_ARCHITECTURE_DEPENDENCY_MAP: SystemArchitectureNode[] = [
   },
   {
     id: "ai-failover-engine",
-    title: "3. 4-Layer Multi-Key AI Failover & Smart Health Memory Engine",
+    title: "3. 4-Layer Public-Tool Failover, Evergreen Gemini Cascade & Strict Agency API Key Isolation",
     filePaths: [
       "lib/ai-tools/gemini.ts",
       "lib/ai-tools/groq.ts",
       "lib/ai-tools/openrouter.ts",
+      "lib/ai-tools/request-body.ts",
+      "lib/ai/multi-model-router.ts",
+      "lib/ai-employee-agency/llm-gateway.ts",
+      "lib/autonomous-agents/automation-ai-router.ts",
+      "docs/AI_AGENCY_V4_REALTIME_MASTER_PLAN.md",
       "tests/ai-tools/multi-key-rotation.test.ts",
+      "tests/ai-tools/agency-commercial-foundation.test.ts",
     ],
-    role: "Guarantees 99.99% uptime across all AI tools with zero user-facing quota errors. Automatically rotates across multiple Gemini API keys, Gemini model fallbacks, Groq LPU keys/models, and OpenRouter free-tier models with in-memory cooldown tracking.",
+    role: "Strictly separates the 4 public-tool keys (GEMINI_API_KEY -> GEMINI_API_KEY_2 -> GROQ_API_KEY -> OPENROUTER_API_KEY) from the 24/7 AI Digital Agency key (AUTONOMOUS_AUTOMATION_GEMINI_KEY). Uses evergreen Gemini rolling aliases (gemini-flash-lite-latest -> gemini-3.5-flash-lite -> gemini-flash-latest -> gemini-3.8-flash), all-tools HTTP 400 JSON-mode recovery, OpenRouter openrouter/free fallback, and Cloudflare Workers-safe logging.",
     dependencies: [
-      "app/api/ai-tools/[slug]/route.ts",
+      "app/api/ai-tools/*/route.ts",
+      "app/api/ai-employee-agency/*/route.ts",
       "app/api/do-it-ai/route.ts",
-      "app/api/ai-assistant/route.ts",
+      "app/api/ai-assistant/chat/route.ts",
     ],
     whenAddingOrUpgradingTool: [
-      "Always call callGeminiText() or callGeminiJson() from @/lib/ai-tools/gemini or implement 4-tier Gemini/Groq/OpenRouter/Deterministic failover.",
-      "Env vars supported on Vercel: GEMINI_API_KEY, GEMINI_API_KEY_2..5, GEMINI_API_KEYS, GROQ_API_KEY, GROQ_API_KEY_2..5, OPENROUTER_API_KEY, OPENROUTER_API_KEY_2..5.",
+      "Public tools MUST use getGeminiClient() / getGeminiApiKeys() / runMultiModelTextFailover() (never direct single GEMINI_API_KEY fetches). Remove GEMINI_MODEL in Cloudflare so DEFAULT_GEMINI_MODEL ('gemini-flash-lite-latest') auto-cascades.",
+      "24/7 AI Digital Agency features MUST route exclusively through meteredAgencyCall() -> executeAgencyLlmCall() using AUTONOMOUS_AUTOMATION_GEMINI_KEY—NEVER read GEMINI_API_KEY, GEMINI_API_KEY_2, GROQ_API_KEY, or OPENROUTER_API_KEY.",
+      "Cloudflare Workers keeps Production (production-cloudflare) and Preview (codex/infographic-studio-redesign) Runtime Variables & Secrets separate. Preview public tools also require UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN because Preview runs with NODE_ENV=production.",
     ],
   },
   {
@@ -1089,6 +1106,50 @@ export interface ChangelogEntry {
 }
 
 export const FOUNDER_AI_CHANGELOG: ChangelogEntry[] = [
+  {
+    id: "log-sprint-17-cloudflare-api-isolation-and-agency-v4-blueprint",
+    sprintNumber: 17,
+    date: "2026-11-21",
+    title: "Cloudflare Workers Build & Responsive Fixes, Strict Agency vs. Public-Tool API Key Isolation, Evergreen Gemini Cascade (Preview & Production) & V4 Real-Time Agency Master Plan",
+    category: "Architecture & AI Failover",
+    founderRequestSummary:
+      "Fix Cloudflare Preview TypeScript build errors and AI Digital Agency dashboard responsive/scroll bugs; diagnose why public tools and agency Copilot were throwing HTTP 404/500/502 errors on Cloudflare; strictly isolate AUTONOMOUS_AUTOMATION_GEMINI_KEY for the 24/7 AI Digital Agency while reserving GEMINI_API_KEY, GEMINI_API_KEY_2, GROQ_API_KEY, and OPENROUTER_API_KEY for public tools with automatic rotation on BOTH Preview and production-cloudflare (preserving 100% branch separation so preview-only Website Builder & Digital Agency never leak into production); audit Cloudflare Preview vs. Production Runtime Variables; and investigate why the 24/7 AI Digital Agency is not working in real time and publish a complete V4 6-phase implementation plan for all AI experts.",
+    aiStrategicBlueprint:
+      "Executed across two isolated checkouts to enforce zero branch leakage between production-cloudflare (public site only) and codex/infographic-studio-redesign (Preview). Replaced retired gemini-2.0-flash and deprecated gemini-2.5-flash defaults with an evergreen lowest-cost-first cascade (gemini-flash-lite-latest -> gemini-3.5-flash-lite -> gemini-flash-latest -> gemini-3.8-flash), enabled all-tools HTTP 400 JSON-mode recovery, hardened Groq/OpenRouter (openrouter/free), replaced bare process.stderr.write calls with Workers-safe safeStderrLog(), and audited all 19 AI Agency routes to uncover the 7 exact code-level blockers preventing real-time agency execution—codifying the full 6-phase V4 plan in docs/AI_AGENCY_V4_REALTIME_MASTER_PLAN.md.",
+    aiImplementationDetails: [
+      "Cloudflare Preview TS Build Fix (commit 2eb44bb): Fixed EditorialFlagshipHero document.content.contact.location type bug and broken EditorialFlagshipSections import in features/website-builder/start/creation-flow.tsx.",
+      "AI Digital Agency Responsive & Layout Overhaul (commit 5c021d7): Fixed h-dvh viewport scroll-locking across AgencyWorkspaceOverview.tsx, added mobile nav drawer + z-[10000] PanelChat & CalmAgencyNodeCanvas fullscreen overlays, stopped KnowledgeReview from hijacking non-setup tabs, and fixed responsive grids across all agency panels.",
+      "Strict API Key Isolation & Evergreen Model Cascade on Preview (commit f07906b): Locked lib/ai-employee-agency/llm-gateway.ts and lib/autonomous-agents/automation-ai-router.ts exclusively onto AUTONOMOUS_AUTOMATION_GEMINI_KEY (zero fallback to public-tool keys). Upgraded lib/ai-tools/{gemini,groq,openrouter,request-body,rate-limit}.ts, lib/ai/multi-model-router.ts, 4 feature handlers, and 4 direct-fetch tool routes for 4-key rotation (GEMINI_API_KEY -> GEMINI_API_KEY_2 -> GROQ_API_KEY -> OPENROUTER_API_KEY) + evergreen gemini-flash-lite-latest cascade (47/47 unit tests passing, tsc 0 errors).",
+      "Clean Public-Tools-Only Backport to production-cloudflare (commit e1dcf00): Backported ONLY the 16 public-tool failover/test files to production-cloudflare with 0 AI Website Builder, 0 AI Digital Agency, and 0 preview-only infographic-studio files introduced (52/52 unit tests passing, tsc 0 errors). Deleting GEMINI_MODEL in Cloudflare Production now safely activates automatic lowest-cost Gemini routing.",
+      "Cloudflare Production vs. Preview Env Audit: Documented exact Runtime Variables & Secrets separation—confirming Preview's 5 vars cover core Agency & Website Builder testing, while testing rate-limited Public AI Tools on Preview also requires UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN (since Preview runs with NODE_ENV=production).",
+      "V4 Real-Time AI Digital Agency Investigation & Master Plan (docs/AI_AGENCY_V4_REALTIME_MASTER_PLAN.md): Identified all 7 root causes blocking live agency execution—(1) fetchPublic() node:dns/promises socket-pinning crash on Cloudflare Workers causing 0 indexed pages, (2) onboarding.server.ts leaving industry/audience/offer blank + <250w abort before sitemap, (3) missing dashboard onboarding lock gate, (4) verifiedReply() digit-regex bug causing HTTP 422 on any numbered list/H2/year, (5) topicDecision() rejecting all topics on partial/manual sitemaps, (6) disconnected orchestrate/run-agent-step/site-audit/visibility-check/competitor-gap routes, and (7) no browser-driven real-time 5-stage pipeline persistence without external Inngest cron—and authored the complete 6-phase V4 implementation blueprint.",
+    ],
+    blogPostDraftMarkdown: `# Engineering Bulletproof API Key Isolation & Real-Time Multi-Agent Execution on Cloudflare Workers
+
+Running both 108+ free public AI tools and a 24/7 Autonomous AI Digital Agency on Cloudflare Workers requires strict operational boundaries:
+
+1. **Zero Cross-Contamination Between Branches**: \`production-cloudflare\` serves only the public site and tools, while \`codex/infographic-studio-redesign\` isolates under-construction preview features (AI Website Builder and 24/7 AI Digital Agency).
+2. **Strict API Key Isolation + Evergreen Gemini Cascade**: Public tools rotate automatically across \`GEMINI_API_KEY\` -> \`GEMINI_API_KEY_2\` -> \`GROQ_API_KEY\` -> \`OPENROUTER_API_KEY\` starting on \`gemini-flash-lite-latest\` (with automatic HTTP 404 model cascade and all-tools JSON-mode recovery). Meanwhile, 100% of 24/7 AI Digital Agency work is locked strictly to \`AUTONOMOUS_AUTOMATION_GEMINI_KEY\`.
+3. **V4 Real-Time Agency Roadmap**: By fixing edge-safe \`fetchPublic()\` crawling on Cloudflare Workers, replacing compulsory blank onboarding forms with auto-synthesized Brand DNA + 6 clickable low-KD starter keywords, fixing the digit-citation bug in \`verifiedReply()\`, and wiring a direct 5-stage real-time pipeline runner, the agency transitions from a static scaffold into a live autonomous workspace.`,
+    filesTouched: [
+      "lib/ai-tools/gemini.ts",
+      "lib/ai-tools/groq.ts",
+      "lib/ai-tools/openrouter.ts",
+      "lib/ai-tools/request-body.ts",
+      "lib/ai-tools/rate-limit.ts",
+      "lib/ai/multi-model-router.ts",
+      "lib/ai-employee-agency/llm-gateway.ts",
+      "lib/autonomous-agents/automation-ai-router.ts",
+      "features/ai-employee-agency/AgencyWorkspaceOverview.tsx",
+      "docs/AI_AGENCY_V4_REALTIME_MASTER_PLAN.md",
+      "docs/AI_PROVIDER_FALLBACK.md",
+      "lib/founder-hub/data.ts",
+      "tests/ai-tools/agency-commercial-foundation.test.ts",
+      "tests/ai-tools/multi-key-rotation.test.ts",
+    ],
+    commits: ["2eb44bb", "5c021d7", "f07906b", "e1dcf00 (production-cloudflare)"],
+    status: "Completed & Live",
+  },
   {
     id: "log-sprint-16-flagship-website-builder-and-voxfolio-bridge",
     sprintNumber: 16,

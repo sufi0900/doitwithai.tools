@@ -62,3 +62,22 @@ Gemini generateContent does not accept the Responses API `store` field. The nati
 Every tool now identifies a failed rate-limit preflight with a reference ID and a safe category: REDIS_PLAN_LIMIT, REDIS_NOT_CONFIGURED, REDIS_AUTH_FAILED, or REDIS_UNAVAILABLE. It explicitly reports Gemini and Groq as not attempted. This does not bypass Redis or change allowances. No Redis commands, IPs, keys or raw errors are exposed.
 
 Provider-attempt logs share a traceId and record provider, model, started/succeeded/failed/skipped, elapsed time and safe code. A final failure maps the public reference to that trace. Single-provider errors also identify an unconfigured Groq backup. A started entry means the adapter began its request; it does not prove the provider received it. A succeeded entry means local structured-output validation passed; handler editorial checks still run afterward.
+
+---
+
+## Cloudflare Workers Update (Nov 2026) — 4-Key Rotation, Evergreen Gemini Cascade & Strict Agency Key Isolation
+
+### 1. Public Tools 4-Key Pool & Evergreen Model Cascade (`production-cloudflare` & Preview)
+- **Retired Models Removed:** `gemini-2.0-flash` was shut down on June 1, 2026 (HTTP 404), and `gemini-2.5-flash` returns HTTP 404 on newly created keys. Never hardcode either as the sole default.
+- **Evergreen Default & Cascade (`lib/ai-tools/gemini.ts`):** `DEFAULT_GEMINI_MODEL = "gemini-flash-lite-latest"` with automatic HTTP 404 cascade across `gemini-flash-lite-latest` → `gemini-3.5-flash-lite` → `gemini-flash-latest` → `gemini-3.8-flash`.
+- **Failover Order (Public Tools Only):**
+  1. `GEMINI_API_KEY` → `GEMINI_API_KEY_2` *(plus `GEMINI_API_KEYS`, `GEMINI_API_KEY_3..10`, `GEMINI_API_KEY_BACKUP`)*
+  2. `GROQ_API_KEY` (`openai/gpt-oss-120b` for text, `qwen/qwen3.8-27b` for vision)
+  3. `OPENROUTER_API_KEY` (`openrouter/free` → `meta-llama/llama-3.3-70b-instruct:free` → `qwen/qwen-2.5-72b-instruct:free`)
+- **Cloudflare Production Tip:** Remove `GEMINI_MODEL` from Cloudflare Production Runtime Variables so Gemini automatically uses `gemini-flash-lite-latest` and auto-cascades on deprecation.
+- **Workers-Safe Logging:** All adapters and tool handlers use `safeStderrLog()` (`lib/ai-tools/request-body.ts`) instead of raw `process.stderr.write(...)`.
+
+### 2. Strict Isolation of 24/7 AI Digital Agency Keys (`codex/infographic-studio-redesign`)
+- All 24/7 AI Digital Agency routes (`app/api/ai-employee-agency/*`, `lib/ai-employee-agency/llm-gateway.ts`, `lib/autonomous-agents/automation-ai-router.ts`) use **exclusively** `AUTONOMOUS_AUTOMATION_GEMINI_KEY` (and optional agency-only aliases such as `AUTONOMOUS_AUTOMATION_GROQ_KEY`).
+- Agency code **never** falls back to `GEMINI_API_KEY`, `GEMINI_API_KEY_2`, `GROQ_API_KEY`, or `OPENROUTER_API_KEY`.
+- Cloudflare Workers separates **Production** and **Preview** Runtime Variables & Secrets. Testing rate-limited public AI tools on Preview also requires `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` because Preview runs with `NODE_ENV=production`.
