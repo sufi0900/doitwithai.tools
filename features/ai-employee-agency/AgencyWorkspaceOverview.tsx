@@ -3,6 +3,7 @@
 import { V6_SINGLE_SIDEBAR_GROUPS } from './navigation';
 import { KnowledgeReview, type KnowledgeRow } from './KnowledgeReview';
 import { specialists } from '@/lib/ai-agency/specialists';
+import { AgencyCalendar } from './AgencyCalendar';
 import { QualityReview } from './QualityReview';
 import Link from 'next/link';
 import { useEffect, useState, type FormEvent } from 'react';
@@ -56,6 +57,7 @@ export default function AgencyWorkspaceOverview() {
       <strong>Agency workspace</strong>
       {V6_SINGLE_SIDEBAR_GROUPS.map(group => <div key={group.groupLabel} className="space-y-1">
         <p className="text-xs uppercase tracking-wide text-slate-400">{group.groupLabel}</p>
+        {group.groupLabel === 'Workspace' && <button className="block w-full rounded-lg px-3 py-1.5 text-left hover:bg-slate-800" aria-current={view === 'Agency Calendar' ? 'page' : undefined} onClick={() => setView('Agency Calendar')}>Agency Calendar</button>}
         {group.items.map(item => <button key={item.id} aria-current={view === item.label ? 'page' : undefined}
           className={`block w-full rounded-lg px-3 py-1.5 text-left ${view === item.label ? 'bg-blue-900 text-blue-100' : 'hover:bg-slate-800'}`}
           onClick={() => setView(item.label)}>{item.label}</button>)}</div>)}
@@ -72,6 +74,7 @@ export default function AgencyWorkspaceOverview() {
       <section className={panel}><h2 className="text-lg font-semibold">{view === 'Overview' ? 'Website knowledge base' : 'Workspace setup'}</h2>
         {summary?.website ? <KnowledgeReview key={summary.website.revision} row={summary.website} refresh={refresh} topics={view === 'Keyword & Topics'} /> :
           <p>{summary ? 'Register your website to begin setup.' : 'Workspace data unavailable.'}</p>}</section>
+      {view === 'Agency Calendar' && <AgencyCalendar/>}
       {view === 'QA & Auto-Publish' && summary?.website?.approved_at && <QualityReview domain={summary.website.domain} revision={summary.website.revision}/>}
       <section id="copilot" className={panel}><h2 className="text-lg font-semibold">Workspace Copilot</h2>
         <label className="mt-3 block">Talk to <select className="rounded bg-slate-800 p-2" value={agentId} disabled={busy} onChange={e => {setAgentId(e.target.value);setReply('');}}>
