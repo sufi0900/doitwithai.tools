@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { classifyCopilotIntent } from '../../lib/ai-employee-agency/copilot-intent';
 import { executeAgencyLlmCall, providerBindings } from '../../lib/ai-employee-agency/llm-gateway';
 import { buildAgencyCircleTelemetrySnapshot } from '../../lib/ai-employee-agency/token-telemetry-store';
+import { verifiedReply } from '../../lib/ai-agency/prompt-compiler';
+import { topicDecision, type SiteKnowledge } from '../../lib/ai-employee-agency/site-knowledge';
 
 test('intent routing separates greetings, reads and proposed actions', () => {
   for (const [message, expected] of Object.entries({
@@ -106,4 +108,63 @@ test('meter sums only the stage that actually ran', () => {
   const snapshot = buildAgencyCircleTelemetrySnapshot({ siteName: 'test', activeTopicTitle: '',
     liveStage1Override: { isLiveCall: true, promptTokens: 2, completionTokens: 3, thinkingTokens: 0, latencyMs: 1 } });
   assert.equal(snapshot.totalCircleTokens, 5);
+});
+test('verifiedReply allows numbered lists, headings, years, durations and dimensions while rejecting fabricated URLs', () => {
+  const structured = JSON.stringify({
+    blocks: [
+      { text: '1. Audit H1 and H2 hierarchy for your 2026 roadmap.' },
+      { text: '2. Export a 1200x675 hero banner and a 60s vertical video script.' },
+    ],
+  });
+  const rendered = verifiedReply(structured, []);
+  assert.match(rendered, /1\. Audit H1 and H2/);
+  assert.match(rendered, /1200x675/);
+
+  const markdownFallback = '## 2026 Action Plan\n1. Fix H1 tags\n2. Add 3 internal links';
+  assert.equal(verifiedReply(markdownFallback, []), markdownFallback);
+
+  assert.throws(
+    () =>
+      verifiedReply(
+        JSON.stringify({
+          blocks: [
+            {
+              text: 'Traffic jumped 45% in Q1.',
+              url: 'https://fabricated.example.com/study',
+              quote: 'Traffic jumped 45% in Q1.',
+            },
+          ],
+        }),
+        [],
+      ),
+    /Unsupported citation/,
+  );
+});
+test('topicDecision allows create on partial or manual sitemap coverage when overlap is below 50%', () => {
+  const baseProfile: SiteKnowledge = {
+    source: 'external_export',
+    coverage: 'partial',
+    name: 'Test Tools',
+    industry: 'AI SEO',
+    audience: 'Founders',
+    offer: 'SEO Tools',
+    goal: 'Organic traffic',
+    locale: 'en-US',
+    currency: 'USD',
+    colors: [],
+    fonts: [],
+    headings: [],
+    logo: '',
+    socials: [],
+    pages: [{ url: 'https://example.com/blog/technical-seo-checklist', title: 'Technical SEO Checklist' }],
+    checkedAt: '2026-11-20T00:00:00Z',
+    note: '',
+    humanReview: false,
+  };
+  const fresh = topicDecision('YouTube Transcript Keyword Strategy', baseProfile);
+  assert.equal(fresh.action, 'create');
+  assert.equal(fresh.inventoryCoverage, 'partial');
+
+  const refresh = topicDecision('Technical SEO Checklist', baseProfile);
+  assert.equal(refresh.action, 'refresh');
 });
