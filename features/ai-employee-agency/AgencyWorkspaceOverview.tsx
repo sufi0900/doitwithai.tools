@@ -3,6 +3,7 @@
 import { V6_SINGLE_SIDEBAR_GROUPS } from './navigation';
 import { KnowledgeReview, type KnowledgeRow } from './KnowledgeReview';
 import { specialists } from '@/lib/ai-agency/specialists';
+import { QualityReview } from './QualityReview';
 import Link from 'next/link';
 import { useEffect, useState, type FormEvent } from 'react';
 import { agencyRequest } from './agency-request';
@@ -71,6 +72,7 @@ export default function AgencyWorkspaceOverview() {
       <section className={panel}><h2 className="text-lg font-semibold">{view === 'Overview' ? 'Website knowledge base' : 'Workspace setup'}</h2>
         {summary?.website ? <KnowledgeReview key={summary.website.revision} row={summary.website} refresh={refresh} topics={view === 'Keyword & Topics'} /> :
           <p>{summary ? 'Register your website to begin setup.' : 'Workspace data unavailable.'}</p>}</section>
+      {view === 'QA & Auto-Publish' && summary?.website?.approved_at && <QualityReview domain={summary.website.domain} revision={summary.website.revision}/>}
       <section id="copilot" className={panel}><h2 className="text-lg font-semibold">Workspace Copilot</h2>
         <label className="mt-3 block">Talk to <select className="rounded bg-slate-800 p-2" value={agentId} disabled={busy} onChange={e => {setAgentId(e.target.value);setReply('');}}>
           <option value="copilot">Workspace Copilot</option><option value="chief">Chief AI Officer</option>

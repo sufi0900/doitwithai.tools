@@ -9,24 +9,9 @@ import {
   type CmsPublishExecutionResult,
 } from '@/lib/ai-employee-agency/cms-connectors';
 
-/**
- * ============================================================================
- * DOITWITHAI.TOOLS — 24/7 AI EMPLOYEE AGENCY OS (V3 PHASE 10)
- * API Route: `app/api/ai-employee-agency/publish-cms/route.ts`
- *
- * 1-Click No-Code CMS Auto-Publishing Endpoint:
- * - Connects to WordPress (Application Passwords REST API `/wp-json/wp/v2/posts`),
- *   Shopify Admin Blog API, Webflow CMS v2 API, Universal Webhook URL, or the
- *   Internal DoItWithAI.tools Hosted Blog Store.
- * - Executes live HTTP POST delivery when credentials are provided, or returns
- *   a verified dry-run staging receipt + ready-to-run cURL snippet when testing
- *   without live CMS credentials.
- * ============================================================================
- */
-
 interface PublishCmsRequestBody {
   config?: CmsConnectionConfig;
-  article?: CmsArticlePayload;
+  reviewId?: string;
 }
 
 export async function POST(req: NextRequest) {
@@ -42,21 +27,16 @@ export async function POST(req: NextRequest) {
       autoPublishMode: 'stage-as-draft',
     };
 
-    const article: CmsArticlePayload = body.article || {
-      title: '2026 AI SEO Audit & Implementation Playbook',
-      slug: '2026-ai-seo-audit-playbook',
-      metaTitle: '2026 AI SEO Audit Playbook | DoItWithAI.tools',
-      metaDescription:
-        'Complete 2026 AI SEO audit checklist with 50-word AEO answer leads, 0.00 CLS 6-layer SVGs, and @graph JSON-LD schema.',
-      aeoDirectAnswer50Words:
-        'An automated AI SEO audit combines deterministic HTML crawling, <580px SERP title verification, 0.00 CLS vector infographics, and connected @graph JSON-LD schema to rank across Google Search and ChatGPT.',
-      compiledHtmlBody: '',
-      compiledMarkdownBody:
-        '## 1. Executive Summary\n\nModern SEO requires both technical precision and structured entity markup.',
-      featuredHeroSvg: '<svg viewBox="0 0 1200 675"></svg>',
-      jsonLdGraphScript: '<script type="application/ld+json">{}</script>',
-      primaryKeyword: 'ai seo audit checklist',
-    };
+    if (!body.reviewId) return NextResponse.json({error:'Select a signed-off QA review before CMS delivery.'},{status:409});
+    const [review,brand] = await Promise.all([
+      workspace.db.from('qa_audit_logs').select('payload').eq('workspace_id',workspace.id).eq('id',body.reviewId).maybeSingle(),
+      workspace.db.from('tenant_brand_dna').select('revision,approved_at,profile').eq('workspace_id',workspace.id).maybeSingle(),
+    ]);
+    const receipt = review.data?.payload;
+    if (!brand.data?.approved_at || receipt?.disposition !== 'approved' || receipt.revision !== brand.data.revision || !receipt.article ||
+      (brand.data.profile.is_ymyl !== false && receipt.signedBy !== workspace.id))
+      return NextResponse.json({error:'A current approved scorecard is required.'},{status:409});
+    const article: CmsArticlePayload = receipt.article;
 
     const spec =
       CMS_PLATFORM_SPECS[config.platformId] ||
@@ -119,7 +99,7 @@ export async function POST(req: NextRequest) {
           return NextResponse.json(result);
         }
       } catch {
-        // Fall through to verified dry-run staging receipt if target WP site is unreachable
+        // Return the delivery failure below.
       }
     }
 
@@ -164,36 +144,11 @@ export async function POST(req: NextRequest) {
           return NextResponse.json(result);
         }
       } catch {
-        // Fall through to verified staging receipt
+        // Return the delivery failure below.
       }
     }
 
-    // 3. Verified Instant Staging / Internal Store Receipt
-    const targetUrl =
-      config.platformId === 'internal-doitwithai'
-        ? `/p/doitwithai-site/blog/${article.slug}`
-        : `${cleanSiteUrl}/blog/${article.slug}`;
-
-    const result: CmsPublishExecutionResult = {
-      ok: true,
-      platformId: config.platformId,
-      platformDisplayName: spec.displayName,
-      executedMode:
-        config.platformId === 'internal-doitwithai'
-          ? 'live-cms-api'
-          : 'simulated-dry-run',
-      postStatus,
-      publishedOrStagedUrl: targetUrl,
-      externalPostId: `${config.platformId}-${Date.now().toString().slice(-6)}`,
-      timestampIso: new Date().toISOString(),
-      diagnosticMessage:
-        config.platformId === 'internal-doitwithai'
-          ? `Auto-published live to Internal DoItWithAI.tools Blog Store (${targetUrl}).`
-          : `Staged complete HTML + 1200×675 Hero SVG + 4× 6-Layer Section SVGs + @graph JSON-LD for ${spec.displayName} (${postStatus.toUpperCase()}). Enter your live ${spec.displayName} token/password anytime to push directly to production.`,
-      curlEquivalentSnippet: curlSnippet,
-    };
-
-    return NextResponse.json(result);
+    return NextResponse.json({ok:false,error:'CMS delivery was not confirmed. Check the connector and credentials.'},{status:502});
   } catch (error) {
     return NextResponse.json(
       {
