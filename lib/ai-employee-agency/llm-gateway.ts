@@ -5,13 +5,13 @@
  *
  * Unified Server-Side Free/Paid LLM Gateway (`Gemini 2.5 Flash`, `Groq Llama 3.3 70B`,
  * `OpenAI GPT-4o-mini` / `GPT-4.1-mini`):
- * - Supports server environment variables (`GEMINI_API_KEY`, `GOOGLE_GENERATIVE_AI_API_KEY`,
- *   `GROQ_API_KEY`, `OPENAI_API_KEY`) as well as optional Founder test key overrides
+ * - Supports server environment keys (`GEMINI_API_KEY` / `GOOGLE_GENERATIVE_AI_API_KEY`,
+ *   `GROQ_API_KEY`, `OPENAI_API_KEY`) as well as optional workspace key overrides
  *   passed strictly over HTTPS to the server route (never exposed in public bundles).
  * - Extracts exact token telemetry (`promptTokenCount`, `candidatesTokenCount`,
  *   `thoughtsTokenCount` on Gemini; `prompt_tokens`, `completion_tokens` on Groq/OpenAI),
- *   tags every call with its `apiKeySlot` (`KEY_SLOT_*`), and computes live shadow
- *   commercial cost so even a $0 Free API Key displays 100% accurate token & dollar usage.
+ *   tags every call with its `apiKeySlot` (`KEY_SLOT_*`), and surfaces sanitized
+ *   provider HTTP diagnostics whenever an upstream call fails.
  * ============================================================================
  */
 
@@ -54,14 +54,35 @@ export interface AgencyLlmResponse {
   apiErrorDetail?: string;
 }
 
-/**
- * Reads a bounded, key-safe diagnostic string from a failed provider response.
- */
 async function readProviderErrorDetail(
   provider: AgencyLlmProviderId,
   res: Response
 ): Promise<string> {
-  return `${provider.toUpperCase()} HTTP ${res.status}`;
+  try {
+    const raw = await res.text();
+    let extracted = '';
+    try {
+      const parsed = JSON.parse(raw) as {
+        error?: { message?: string; status?: string };
+        message?: string;
+      };
+      extracted = parsed?.error?.message || parsed?.message || '';
+    } catch {
+      extracted = raw;
+    }
+    const sanitized = extracted
+      .replace(/AIza[0-9A-Za-z\-_]{20,}/g, '[redacted-key]')
+      .replace(/sk-[0-9A-Za-z\-_]{16,}/g, '[redacted-key]')
+      .replace(/gsk_[0-9A-Za-z\-_]{16,}/g, '[redacted-key]')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 180);
+    return sanitized
+      ? `${provider.toUpperCase()} HTTP ${res.status}: ${sanitized}`
+      : `${provider.toUpperCase()} HTTP ${res.status}`;
+  } catch {
+    return `${provider.toUpperCase()} HTTP ${res.status}`;
+  }
 }
 
 function resolveServerApiKey(
@@ -95,10 +116,6 @@ function resolveServerApiKey(
   return { apiKey: '', hasOverride: false };
 }
 
-/**
- * Executes an AI Employee cognitive task via Google Gemini, Groq LPU, or OpenAI
- * and returns exact real-time token usage + shadow commercial cost + KEY_SLOT_*.
- */
 export function providerBindings() {
   return {
     gemini: Boolean(resolveServerApiKey('gemini').apiKey),
@@ -107,6 +124,10 @@ export function providerBindings() {
   };
 }
 
+/**
+ * Executes an AI Employee cognitive task via Google Gemini, Groq LPU, or OpenAI
+ * and returns exact real-time token usage + shadow commercial cost + KEY_SLOT_*.
+ */
 export async function executeAgencyLlmCall(
   req: AgencyLlmRequest
 ): Promise<AgencyLlmResponse> {
@@ -118,106 +139,122 @@ export async function executeAgencyLlmCall(
   const { apiKey, hasOverride } = resolveServerApiKey(provider, req.apiKeyOverride);
   const isFreeTierKey =
     req.isFreeTierKey !== undefined ? req.isFreeTierKey : spec.supportsFreeTierKey;
-  let apiErrorDetail: string | undefined = apiKey
-    ? undefined
-    : `No API key configured for ${provider.toUpperCase()} (${modelId}).`;
 
-  // 1. Live Google AI Studio / Gemini Developer API Call (`gemini-2.5-flash`)
-  if (provider === 'gemini' && apiKey) {
-    try {
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${encodeURIComponent(
-        apiKey
-      )}`;
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          systemInstruction: {
-            parts: [{ text: req.systemPrompt }],
-          },
-          contents: [
-            {
-              role: 'user',
-              parts: [{ text: req.userPrompt }],
+  let apiErrorDetail: string | undefined = !apiKey
+    ? `No ${provider.toUpperCase()} API key configured on server.`
+    : undefined;
+
+  // 1. Live Google Gemini REST API (with automatic gemini-2.0-flash fallback if 2.5 returns 404/400)
+  if (apiKey && provider === 'gemini') {
+    const candidateModels =
+      modelId === 'gemini-2.5-flash'
+        ? ['gemini-2.5-flash', 'gemini-2.0-flash']
+        : [modelId];
+
+    for (const targetGeminiModel of candidateModels) {
+      try {
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
+          targetGeminiModel
+        )}:generateContent?key=${encodeURIComponent(apiKey)}`;
+
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            systemInstruction: {
+              parts: [{ text: req.systemPrompt }],
             },
-          ],
-          generationConfig: {
-            temperature: req.temperature ?? 0.35,
-            maxOutputTokens: req.maxOutputTokens ?? 1200,
-          },
-        }),
-        signal: AbortSignal.timeout(12000),
-      });
+            contents: [
+              {
+                role: 'user',
+                parts: [{ text: req.userPrompt }],
+              },
+            ],
+            generationConfig: {
+              temperature: req.temperature ?? 0.35,
+              maxOutputTokens: req.maxOutputTokens ?? 1200,
+            },
+          }),
+          signal: AbortSignal.timeout(22000),
+        });
 
-      if (res.ok) {
-        const data = (await res.json()) as {
-          candidates?: Array<{
-            content?: { parts?: Array<{ text?: string }> };
-          }>;
-          usageMetadata?: {
-            promptTokenCount?: number;
-            candidatesTokenCount?: number;
-            thoughtsTokenCount?: number;
-            totalTokenCount?: number;
+        if (res.ok) {
+          const data = (await res.json()) as {
+            candidates?: Array<{
+              content?: { parts?: Array<{ text?: string }> };
+            }>;
+            usageMetadata?: {
+              promptTokenCount?: number;
+              candidatesTokenCount?: number;
+              thoughtsTokenCount?: number;
+              totalTokenCount?: number;
+            };
           };
-        };
-        const outputText: string =
-          data?.candidates?.[0]?.content?.parts
-            ?.map((p) => p?.text || '')
-            .join('\n')
-            .trim() || '';
+          const outputText: string =
+            data?.candidates?.[0]?.content?.parts
+              ?.map((p) => p?.text || '')
+              .join('\n')
+              .trim() || '';
 
-        const usage = data?.usageMetadata || {};
-        const promptTokens =
-          Number(usage.promptTokenCount) || 0;
-        const completionTokens =
-          Number(usage.candidatesTokenCount) || 0;
-        const thinkingTokens = Number(usage.thoughtsTokenCount) || 0;
-        const totalTokens = usage.totalTokenCount ?? promptTokens + completionTokens + thinkingTokens;
-        const shadowPaidCostUsd = computeTokenCostUsd({
-          modelId,
-          promptTokens,
-          completionTokens,
-          thinkingTokens,
-        });
-        const apiKeySlot = resolveApiKeySlotId({
-          provider,
-          isFreeTierKey,
-          hasKeyOverride: hasOverride,
-          usedLiveApiKey: true,
-        });
+          const usage = data?.usageMetadata || {};
+          const promptTokens = Number(usage.promptTokenCount) || 0;
+          const completionTokens = Number(usage.candidatesTokenCount) || 0;
+          const thinkingTokens = Number(usage.thoughtsTokenCount) || 0;
+          const totalTokens =
+            usage.totalTokenCount ?? promptTokens + completionTokens + thinkingTokens;
+          const shadowPaidCostUsd = computeTokenCostUsd({
+            modelId,
+            promptTokens,
+            completionTokens,
+            thinkingTokens,
+          });
+          const apiKeySlot = resolveApiKeySlotId({
+            provider,
+            isFreeTierKey,
+            hasKeyOverride: hasOverride,
+            usedLiveApiKey: true,
+          });
 
-        return {
-          ok: Boolean(outputText),
-          usageReported: typeof usage.promptTokenCount === "number",
-          provider,
-          modelId,
-          apiKeySlot,
-          outputText,
-          usedLiveApiKey: true,
-          isFreeTierKey,
-          promptTokens,
-          completionTokens,
-          thinkingTokens,
-          totalTokens,
-          shadowPaidCostUsd,
-          actualCostUsd: isFreeTierKey ? 0 : shadowPaidCostUsd,
-          latencyMs: Date.now() - startTime,
-          telemetryNote: `Live Gemini API (${apiKeySlot}) captured ${totalTokens.toLocaleString()} tokens · Shadow Cost $${shadowPaidCostUsd.toFixed(
-            5
-          )}`,
-        };
+          return {
+            ok: Boolean(outputText),
+            usageReported: typeof usage.promptTokenCount === 'number',
+            provider,
+            modelId,
+            apiKeySlot,
+            outputText,
+            usedLiveApiKey: true,
+            isFreeTierKey,
+            promptTokens,
+            completionTokens,
+            thinkingTokens,
+            totalTokens,
+            shadowPaidCostUsd,
+            actualCostUsd: isFreeTierKey ? 0 : shadowPaidCostUsd,
+            latencyMs: Date.now() - startTime,
+            telemetryNote: `Live Gemini API (${apiKeySlot}) captured ${totalTokens.toLocaleString()} tokens · Shadow Cost $${shadowPaidCostUsd.toFixed(
+              5
+            )}`,
+            apiErrorDetail: outputText ? undefined : 'Gemini returned an empty response.',
+          };
+        }
+
+        apiErrorDetail = await readProviderErrorDetail('gemini', res);
+        // Only try the fallback model if the primary model ID was not found / unsupported
+        if (res.status !== 404 && res.status !== 400) {
+          break;
+        }
+      } catch (err) {
+        apiErrorDetail =
+          err instanceof Error
+            ? `GEMINI network/timeout error: ${err.message.slice(0, 140)}`
+            : 'GEMINI network/timeout error.';
+        break;
       }
-      apiErrorDetail = await readProviderErrorDetail(provider, res);
-    } catch (err) {
-      // Fall through to deterministic shadow telemetry if network/key restricted
-      apiErrorDetail =
-        err instanceof Error ? err.message.slice(0, 180) : 'Gemini request failed.';
     }
   }
 
-  // 2. Live OpenAI or Groq OpenAI-Compatible Chat Completions Call
-  if ((provider === 'openai' || provider === 'groq') && apiKey) {
+  // 2. Live OpenAI or Groq OpenAI-Compatible Chat Completions API
+  if (apiKey && (provider === 'openai' || provider === 'groq')) {
     try {
       const endpoint =
         provider === 'groq'
@@ -239,7 +276,7 @@ export async function executeAgencyLlmCall(
             { role: 'user', content: req.userPrompt },
           ],
         }),
-        signal: AbortSignal.timeout(12000),
+        signal: AbortSignal.timeout(22000),
       });
 
       if (res.ok) {
@@ -250,10 +287,8 @@ export async function executeAgencyLlmCall(
         const outputText: string =
           data?.choices?.[0]?.message?.content?.trim() || '';
         const usage = data?.usage || {};
-        const promptTokens =
-          Number(usage.prompt_tokens) || 0;
-        const completionTokens =
-          Number(usage.completion_tokens) || 0;
+        const promptTokens = Number(usage.prompt_tokens) || 0;
+        const completionTokens = Number(usage.completion_tokens) || 0;
         const totalTokens = usage.total_tokens ?? promptTokens + completionTokens;
         const shadowPaidCostUsd = computeTokenCostUsd({
           modelId,
@@ -270,7 +305,7 @@ export async function executeAgencyLlmCall(
 
         return {
           ok: Boolean(outputText),
-          usageReported: typeof usage.prompt_tokens === "number",
+          usageReported: typeof usage.prompt_tokens === 'number',
           provider,
           modelId,
           apiKeySlot,
@@ -287,23 +322,36 @@ export async function executeAgencyLlmCall(
           telemetryNote: `Live ${provider.toUpperCase()} (${apiKeySlot}) captured ${totalTokens.toLocaleString()} tokens · Shadow Cost $${shadowPaidCostUsd.toFixed(
             5
           )}`,
+          apiErrorDetail: outputText ? undefined : `${provider.toUpperCase()} returned an empty response.`,
         };
       }
       apiErrorDetail = await readProviderErrorDetail(provider, res);
     } catch (err) {
-      // Fall through to deterministic shadow telemetry
       apiErrorDetail =
         err instanceof Error
-          ? err.message.slice(0, 180)
-          : `${provider.toUpperCase()} request failed.`;
+          ? `${provider.toUpperCase()} network/timeout error: ${err.message.slice(0, 140)}`
+          : `${provider.toUpperCase()} network/timeout error.`;
     }
   }
 
   return {
-    ok: false, usageReported: false, provider, modelId,
-    apiKeySlot: 'KEY_SLOT_MECHANICAL_ZERO', outputText: '', usedLiveApiKey: false,
-    isFreeTierKey, promptTokens: 0, completionTokens: 0, thinkingTokens: 0,
-    totalTokens: 0, shadowPaidCostUsd: 0, actualCostUsd: 0, latencyMs: Date.now() - startTime,
-    telemetryNote: 'Provider unavailable', apiErrorDetail: apiKey ? 'Provider request failed. Check provider configuration.' : apiErrorDetail,
+    ok: false,
+    usageReported: false,
+    provider,
+    modelId,
+    apiKeySlot: 'KEY_SLOT_MECHANICAL_ZERO',
+    outputText: '',
+    usedLiveApiKey: false,
+    isFreeTierKey,
+    promptTokens: 0,
+    completionTokens: 0,
+    thinkingTokens: 0,
+    totalTokens: 0,
+    shadowPaidCostUsd: 0,
+    actualCostUsd: 0,
+    latencyMs: Date.now() - startTime,
+    telemetryNote: 'Provider unavailable',
+    apiErrorDetail:
+      apiErrorDetail || 'Provider request failed. Check provider configuration.',
   };
 }
