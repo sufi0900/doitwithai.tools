@@ -11,6 +11,19 @@ export function agencyProviderBindings(owner: string) {
   return keys ? { gemini: Boolean(keys.gemini), openai: Boolean(keys.openai), groq: Boolean(keys.groq) } : providerBindings();
 }
 
+export function resolveMeteredAssetKind(
+  specialist: string,
+  productionArticle = false,
+): 'article' | 'existing_page_optimization' | 'social' | null {
+  if (productionArticle) return null;
+  if (specialist === 'writer') return 'article';
+  if (specialist === 'refresh') return 'existing_page_optimization';
+  if (['facebook', 'linkedin', 'video', 'pinterest', 'social'].includes(specialist)) {
+    return 'social';
+  }
+  return null;
+}
+
 export async function meteredAgencyCall(owner: string, specialist: string, request: AgencyLlmRequest, productionArticle = false) {
   const modelId = request.modelId || 'gemini-2.5-flash';
   if (!Object.hasOwn(MODEL_PRICING_CATALOG, modelId)) throw Error('Unknown model');
@@ -30,11 +43,14 @@ export async function meteredAgencyCall(owner: string, specialist: string, reque
   const input = new TextEncoder().encode(request.systemPrompt + request.userPrompt).length + 128;
   const output = request.maxOutputTokens ?? 1200;
   const reservation = await db.rpc('agency_reserve_usage', {
-    owner, specialist,
-    asset: productionArticle ? null : specialist === 'writer' ? 'article' :
-      ['facebook', 'linkedin', 'video', 'pinterest', 'social'].includes(specialist) ? 'social' : null,
-    model_id: modelId, provider_id: provider, tokens: input + output,
-    usd: computeTokenCostUsd({ modelId, promptTokens: input, completionTokens: output }), use_byok: Boolean(key),
+    owner,
+    specialist,
+    asset: resolveMeteredAssetKind(specialist, productionArticle),
+    model_id: modelId,
+    provider_id: provider,
+    tokens: input + output,
+    usd: computeTokenCostUsd({ modelId, promptTokens: input, completionTokens: output }),
+    use_byok: Boolean(key),
   });
   if (reservation.error) return failure('Check the workspace billing entitlement and migrations.', 503);
   if (!reservation.data) return failure('Workspace quota reached. This request exceeds the remaining allowance.', 429);

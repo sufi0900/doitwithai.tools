@@ -6,6 +6,7 @@ import { GuidedOnboardingStudio } from './GuidedOnboardingStudio';
 import { LivePipelineTracker } from './LivePipelineTracker';
 import { KeywordTopicsWorkbench } from './KeywordTopicsWorkbench';
 import { AiVisibilityWorkbench } from './AiVisibilityWorkbench';
+import { PriorityActionQueue } from './PriorityActionQueue';
 import { PanelChat, PanelLedger } from './PanelWorkspace';
 import { agentName, channels, commercialLabel, panelAgents, socialHub, visualStudio } from '@/lib/ai-agency/panels';
 import { VisualBrandStudio } from './VisualBrandStudio';
@@ -453,6 +454,14 @@ export default function AgencyWorkspaceOverview() {
                 await refresh();
               }}
               onOpenQa={() => navigate('QA & Auto-Publish')}
+            />
+          )}
+
+          {view === 'Overview' && (
+            <PriorityActionQueue
+              website={summary.website}
+              counts={summary.counts}
+              onNavigate={navigate}
             />
           )}
 

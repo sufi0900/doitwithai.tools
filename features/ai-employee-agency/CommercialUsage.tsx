@@ -10,6 +10,14 @@ type Budget = {
   specialists: { operation: string; tokens: number; usd: number; pending: number }[];
 } & Record<`${'day' | 'month'}_${'tokens' | 'usd' | 'token_limit' | 'usd_limit'}`, number>;
 
+const ASSET_LABELS: Record<string, string> = {
+  article: 'New Articles',
+  existing_page_optimization: 'Page Optimizations',
+  social: 'Social Drafts',
+  image: 'AI Images',
+  audit: 'Site Audits',
+};
+
 export function CommercialUsage() {
   const [budget, setBudget] = useState<Budget>();
   const [error, setError] = useState('');
@@ -44,7 +52,7 @@ export function CommercialUsage() {
       <header className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3.5">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-wider text-blue-400">
-            Metered Token &amp; Quota Ledger
+            Metered Token &amp; Dual-Quota Ledger
           </p>
           <h2 className="text-base font-semibold text-white">Workspace allowance</h2>
         </div>
@@ -120,7 +128,7 @@ export function CommercialUsage() {
             })}
           </div>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
             {budget.assets.map((a) => {
               const dailyMax = Math.ceil(a.month_limit / 10);
               const alert =
@@ -131,10 +139,12 @@ export function CommercialUsage() {
                   key={a.kind}
                   className="min-w-0 rounded-lg border border-slate-800 bg-[#0B0F17] p-3"
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold capitalize text-slate-200">{a.kind}</span>
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="truncate text-xs font-semibold text-slate-200">
+                      {ASSET_LABELS[a.kind] || a.kind}
+                    </span>
                     {alert && (
-                      <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-amber-300">
+                      <span className="shrink-0 rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-amber-300">
                         Alert
                       </span>
                     )}
