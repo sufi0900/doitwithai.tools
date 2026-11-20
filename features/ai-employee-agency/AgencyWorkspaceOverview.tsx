@@ -8,6 +8,7 @@ import { VisualBrandStudio } from './VisualBrandStudio';
 import { ProductionProgress } from './ProductionProgress';
 import { AgencyCalendar } from './AgencyCalendar';
 import { QualityReview } from './QualityReview';
+import { RefreshWorkbench } from './RefreshWorkbench';
 import Link from 'next/link';
 import { useEffect, useState, Fragment } from 'react';
 import { agencyRequest } from './agency-request';
@@ -76,7 +77,8 @@ export default function AgencyWorkspaceOverview() {
           <p>{summary ? 'Register your website to begin setup.' : 'Workspace data unavailable.'}</p>}</section>}
       {view === 'Overview' && summary && <ProductionProgress/>}
       {view === 'Agency Calendar' && <AgencyCalendar/>}
-      {view === 'QA & Auto-Publish' && summary?.website?.approved_at && <QualityReview domain={summary.website.domain} revision={summary.website.revision}/>}
+      {view === 'QA & Auto-Publish' && summary?.website?.approved_at && <QualityReview internal={summary.website.profile.source==='internal_direct'} domain={summary.website.domain} revision={summary.website.revision}/>}
+      {['Technical Site Audit','On-Page & Refresh'].includes(view) && summary?.website?.approved_at && <RefreshWorkbench key={view+summary.website.revision} website={summary.website} audit={view==='Technical Site Audit'}/>}
       {view===socialHub && <PanelLedger key={view} agent="hub" openChannel={navigate}/>}
       {view===visualStudio && summary?.website?.approved_at && <VisualBrandStudio website={summary.website}/>}
       {view==='Live Node Canvas' && <div className="grid gap-3 sm:grid-cols-3">{Object.entries(panelAgents).filter(([,id])=>id!=='chief').map(([name,id])=><button key={id} onClick={()=>navigate(name)} className={panel}>{agentName(id)}</button>)}</div>}

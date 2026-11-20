@@ -7,6 +7,8 @@ import {
   type CmsPublishExecutionResult,
 } from "@/lib/ai-employee-agency/cms-connectors";
 
+import { publishInternalPost } from "./internal-post.server";
+import { callDeliveryTool, deliveryConnection } from "./mcp-delivery.server";
 import { NextResponse } from "next/server";
 import { createSupabaseServiceClient } from "@/features/website-builder/lib/supabase/server";
 
@@ -14,6 +16,7 @@ export async function deliverApprovedArticle(
   workspaceId: string,
   reviewId: string,
   config: CmsConnectionConfig,
+  automatic = false,
 ) {
   const db = createSupabaseServiceClient();
   if (!db) throw Error("Delivery ledger unavailable.");
@@ -51,9 +54,11 @@ export async function deliverApprovedArticle(
   const webhook =
     config.platformId === "universal-webhook" &&
     config.webhookEndpointUrl?.startsWith("https://");
-  if (!wordpress && !webhook)
+  const mcp=deliveryConnection(workspaceId,config.platformId);
+  const internal=config.platformId==="internal-doitwithai" && brand.data.profile.source==="internal_direct";
+  if (!internal && !mcp && !wordpress && !webhook)
     return NextResponse.json(
-      { error: "Configure a WordPress or HTTPS webhook destination." },
+      { error: "Configure a workspace CMS destination." },
       { status: 400 },
     );
   const prior = await db
@@ -64,6 +69,10 @@ export async function deliverApprovedArticle(
     .maybeSingle();
   if (prior.error) throw Error("Delivery history unavailable.");
   const cycle = prior.data?.cycle_date || review.data!.created_at.slice(0, 10);
+  if (internal) {
+    const status = config.autoPublishMode === 'auto-publish-live' ? 'published' : 'draft';
+    return NextResponse.json(await publishInternalPost(workspaceId,reviewId,article,status,cycle));
+  }
   const reservation = await db
     .from("agency_deliveries")
     .insert({
@@ -111,6 +120,15 @@ export async function deliverApprovedArticle(
     config.siteUrl.replace(/\/$/, "") || "https://doitwithai.tools";
   const curlSnippet = buildCmsCurlPreview(config, article.slug, article.title);
 
+  if(mcp) {
+    const status=postStatus==='published' && (!automatic || mcp.autoPublish) ? 'published' : 'draft';
+    try {
+      const receipt=await callDeliveryTool(mcp,{article,status,idempotencyKey:workspaceId+'/'+article.slug+'/'+cycle},status);
+      return await confirm({ok:true,platformId:config.platformId,platformDisplayName:spec.displayName,executedMode:'live-cms-api',
+        postStatus:status,publishedOrStagedUrl:receipt.url,externalPostId:receipt.id,timestampIso:new Date().toISOString(),
+        diagnosticMessage:'CMS confirmed the reviewed article as '+status+'.',curlEquivalentSnippet:''});
+    } catch {return NextResponse.json({error:'CMS receipt unavailable. Check the destination before retrying.'},{status:502});}
+  }
   // 1. Live WordPress Application Passwords REST API (`POST /wp-json/wp/v2/posts`)
   if (
     config.platformId === "wordpress-rest" &&

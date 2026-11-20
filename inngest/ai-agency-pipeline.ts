@@ -308,6 +308,7 @@ export const produceAgencyArticle = agencyJobs.createFunction(
           run.workspace,
           review.data.id,
           config,
+          true,
         );
         if (!response.ok)
           throw new NonRetriableError("CMS delivery requires operator review.");

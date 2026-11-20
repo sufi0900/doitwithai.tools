@@ -51,7 +51,7 @@ const customPageSchema = publishableBaseSchema.extend({
   navigationLabel: z.string().trim().min(1).max(40).default("Page"),
 });
 
-const blogPostSchema = publishableBaseSchema.extend({
+export const blogPostSchema = publishableBaseSchema.extend({
   excerpt: z.string().trim().max(320).default(""),
   tags: z.array(z.string().trim().min(1).max(32)).max(8).default([]),
   sourceArticleProjectId: z.string().trim().max(120).optional(),

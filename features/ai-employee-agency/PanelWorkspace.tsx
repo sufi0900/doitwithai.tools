@@ -18,6 +18,7 @@ type Social = {
   };
 };
 type History = {
+  connected?:boolean; autoPublish?:boolean;
   work: Work[];
   social: Social[];
   upcoming?: Social[];
@@ -36,6 +37,12 @@ export function PanelLedger({
   const [data, setData] = useState<History>(),
     [notice, setNotice] = useState("");
   const [revision, setRevision] = useState(0);
+  async function publish(id:string) {
+    try {
+      const res=await agencyRequest('/api/ai-employee-agency/social-delivery',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,approve:true})});
+      const result=await res.json();if(!res.ok) throw Error(result.error);setRevision(v=>v+1);
+    } catch(err){setNotice(err instanceof Error?err.message:'Delivery unavailable.');}
+  }
   async function saveDraft(workId: string) {
     try {
       const res = await agencyRequest("/api/ai-employee-agency/panel", {
@@ -108,7 +115,7 @@ export function PanelLedger({
       )}
       {data?.social && channels.some((c) => c.id === agent) && (
         <>
-          <h2 className="text-lg font-semibold">Channel activity</h2>
+          <h2 className="text-lg font-semibold">Channel activity</h2><p>{!data.connected?'Publishing connector unconfigured':data.autoPublish?'Automatic publishing enabled':'Approval required for publishing'}</p>
           {data.social.length === 0 && <p>No channel activity recorded.</p>}
           <div
             className={
@@ -134,6 +141,7 @@ export function PanelLedger({
                 </p>
                 <h3 className="mt-2 font-semibold">{payload.title}</h3>
                 <p className="whitespace-pre-wrap">{payload.description}</p>
+                {data.connected && (payload.status==='draft' || payload.status==='needs_review') && <button className="rounded bg-blue-700 p-2" onClick={()=>publish(id)}>Approve and publish</button>}
                 {payload.target_url &&
                   /^https?:\/\//i.test(payload.target_url) && (
                     <a

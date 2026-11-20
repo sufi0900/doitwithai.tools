@@ -1,3 +1,4 @@
+import { deliveryConnection } from "@/lib/ai-agency/mcp-delivery.server";
 import { NextResponse } from "next/server";
 import {
   agencyWorkspace,
@@ -44,7 +45,8 @@ export async function GET(request: Request) {
       .limit(100),
   ]);
   if (works.error || logs.error) return fail("Review queue unavailable.", 503);
-  return NextResponse.json({ works: works.data, reviews: logs.data });
+  const destinations=['wordpress-rest','shopify-blog','webflow-cms','universal-webhook'].filter(id=>deliveryConnection(ws.id,id));
+  return NextResponse.json({ works: works.data, reviews: logs.data,destinations });
 }
 
 export async function POST(request: Request) {

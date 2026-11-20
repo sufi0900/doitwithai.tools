@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { agencyWorkspace } from "@/lib/ai-employee-agency/workspace.server";
+import { deliveryConnection } from "@/lib/ai-agency/mcp-delivery.server";
 import { channels } from "@/lib/ai-agency/panels";
 import { specialists } from "@/lib/ai-agency/specialists";
 import { panelHistory } from "@/lib/ai-agency/panel-history.server";
@@ -43,7 +44,8 @@ export async function GET(request: Request) {
       (!specialists.some((s) => s.id === agent) && agent !== "chief")
     )
       return NextResponse.json({ error: "Unknown panel." }, { status: 400 });
-    return NextResponse.json(await panelHistory(ws.db, ws.id, agent, 20));
+    const connection=deliveryConnection(ws.id,agent);
+    return NextResponse.json({...await panelHistory(ws.db,ws.id,agent,20),connected:Boolean(connection),autoPublish:connection?.autoPublish || false});
   } catch {
     return NextResponse.json(
       { error: "Workspace history unavailable." },

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { agencyRequest } from "./agency-request";
-import { loadCmsConnectionConfig } from "@/lib/ai-employee-agency/cms-connectors";
+import { loadCmsConnectionConfig,type CmsConnectionConfig,type CmsPlatformId } from "@/lib/ai-employee-agency/cms-connectors";
 
 type Work = { id: string; task: string; result: string };
 type Review = {
@@ -27,11 +27,13 @@ const inputStyle = "block w-full rounded bg-slate-800 p-2";
 
 export function QualityReview({
   domain,
-  revision,
+  revision,internal=false,
 }: {
+  internal?: boolean;
   domain: string;
   revision: number;
 }) {
+  const [destinations,setDestinations]=useState<CmsPlatformId[]>([]),[destination,setDestination]=useState<CmsPlatformId>(),[live,setLive]=useState(false);
   const [works, setWorks] = useState<Work[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [selected, setSelected] = useState("");
@@ -41,6 +43,7 @@ export function QualityReview({
     const response = await agencyRequest(endpoint);
     const data = await response.json();
     if (!response.ok) throw Error(data.error);
+    setDestinations(data.destinations || []);
     setWorks(data.works);
     setReviews(data.reviews);
   }
@@ -71,7 +74,11 @@ export function QualityReview({
     (r) => r.payload.workId === selected && r.payload.revision === revision,
   );
   const snapshot = review?.payload.article;
-  const config = loadCmsConnectionConfig(domain, false);
+  const stored = loadCmsConnectionConfig(domain,false);
+  const local=stored.siteUrl.replace(/\/$/,'')===domain.replace(/\/$/,'') ? stored:undefined;
+  const choices=Array.from(new Set<CmsPlatformId>([...(internal?['internal-doitwithai' as const]:[]),...destinations,...(local?[local.platformId]:[])]));
+  const selectedId=destination || choices[0];
+  const config:CmsConnectionConfig={...(local?.platformId===selectedId?local:{}),platformId:selectedId,siteUrl:domain,autoPublishMode:live?'auto-publish-live':'stage-as-draft'};
   return (
     <section className="space-y-3 rounded-xl border border-slate-700 p-5">
       <h2 className="text-lg font-semibold">Editorial review queue</h2>
@@ -122,7 +129,9 @@ export function QualityReview({
               Sign off on this article for release
             </button>
           )}
-          {review.payload.disposition === "approved" && (
+          {review.payload.disposition === "approved" && choices.length>0 && (<div className="space-y-2">
+            <label>Delivery destination <select className={inputStyle} value={selectedId} onChange={e=>{setDestination(e.target.value as CmsPlatformId);setLive(false);}}>{choices.map(c=><option key={c}>{c}</option>)}</select></label>
+            <label className="block"><input type="checkbox" checked={live} onChange={e=>setLive(e.target.checked)}/> Request live publication</label>
             <button
               disabled={busy}
               onClick={() =>
@@ -134,7 +143,7 @@ export function QualityReview({
             >
               Send to {config.platformId} · {config.siteUrl} ·{" "}
               {config.autoPublishMode}
-            </button>
+            </button></div>
           )}
         </div>
       )}
