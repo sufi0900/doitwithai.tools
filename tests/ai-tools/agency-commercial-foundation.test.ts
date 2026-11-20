@@ -4,7 +4,12 @@ import { classifyCopilotIntent } from '../../lib/ai-employee-agency/copilot-inte
 import { executeAgencyLlmCall, providerBindings } from '../../lib/ai-employee-agency/llm-gateway';
 import { buildAgencyCircleTelemetrySnapshot } from '../../lib/ai-employee-agency/token-telemetry-store';
 import { verifiedReply } from '../../lib/ai-agency/prompt-compiler';
-import { topicDecision, type SiteKnowledge } from '../../lib/ai-employee-agency/site-knowledge';
+import {
+  classifySiteMaturity,
+  topicDecision,
+  type SiteKnowledge,
+} from '../../lib/ai-employee-agency/site-knowledge';
+import { buildDeterministicBrandAndKeywords } from '../../lib/ai-employee-agency/onboarding.server';
 
 test('intent routing separates greetings, reads and proposed actions', () => {
   for (const [message, expected] of Object.entries({
@@ -167,4 +172,57 @@ test('topicDecision allows create on partial or manual sitemap coverage when ove
 
   const refresh = topicDecision('Technical SEO Checklist', baseProfile);
   assert.equal(refresh.action, 'refresh');
+});
+test('classifySiteMaturity and deterministic Brand DNA synthesis detect new vs established sites and return 6 keyword cards', () => {
+  const newSite = classifySiteMaturity([
+    { url: 'https://newbrand.example/', title: 'Home' },
+    { url: 'https://newbrand.example/pricing', title: 'Pricing' },
+  ]);
+  assert.equal(newSite.domain_maturity, 'new_site');
+  assert.equal(newSite.priority_preset, 'growth_launch');
+
+  const established = classifySiteMaturity([
+    { url: 'https://oldbrand.example/', title: 'Home' },
+    { url: 'https://oldbrand.example/services/seo', title: 'SEO Service' },
+    { url: 'https://oldbrand.example/blog/post-1', title: 'Post 1' },
+    { url: 'https://oldbrand.example/blog/post-2', title: 'Post 2' },
+    { url: 'https://oldbrand.example/blog/post-3', title: 'Post 3' },
+    { url: 'https://oldbrand.example/blog/post-4', title: 'Post 4' },
+    { url: 'https://oldbrand.example/blog/post-5', title: 'Post 5' },
+  ]);
+  assert.equal(established.domain_maturity, 'established_site');
+  assert.equal(established.priority_preset, 'balanced_scale');
+  assert.equal(established.asset_inventory.blogs, 5);
+  assert.equal(established.asset_inventory.services, 1);
+
+  const synth = buildDeterministicBrandAndKeywords({
+    domain: 'https://acme-seo.example',
+    knowledge: {
+      source: 'external_export',
+      coverage: 'partial',
+      name: '',
+      industry: '',
+      audience: '',
+      offer: '',
+      goal: '',
+      locale: '',
+      currency: '',
+      colors: [],
+      fonts: [],
+      headings: ['AI SEO Tools for Agencies'],
+      logo: '',
+      socials: [],
+      pages: [{ url: 'https://acme-seo.example/', title: 'Acme SEO' }],
+      checkedAt: '2026-11-20T00:00:00Z',
+      note: '',
+      humanReview: false,
+    },
+    metaDescription: 'Practical AI SEO tools and workflow automation for digital agencies.',
+    autocompleteSeeds: ['ai seo workflow checklist', 'agency seo automation tools'],
+  });
+  assert.ok(synth.brandPatch.name && synth.brandPatch.name.length > 0);
+  assert.ok(synth.brandPatch.industry && synth.brandPatch.industry.length > 0);
+  assert.ok(synth.brandPatch.audience && synth.brandPatch.audience.length > 0);
+  assert.ok(synth.brandPatch.offer && synth.brandPatch.offer.length > 0);
+  assert.equal(synth.suggestedKeywords.length, 6);
 });
