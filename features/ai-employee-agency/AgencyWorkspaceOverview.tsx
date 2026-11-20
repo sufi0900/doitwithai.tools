@@ -3,6 +3,7 @@
 import { V6_SINGLE_SIDEBAR_GROUPS } from './navigation';
 import { KnowledgeReview, type KnowledgeRow } from './KnowledgeReview';
 import { GuidedOnboardingStudio } from './GuidedOnboardingStudio';
+import { LivePipelineTracker } from './LivePipelineTracker';
 import { PanelChat, PanelLedger } from './PanelWorkspace';
 import { agentName, channels, commercialLabel, panelAgents, socialHub, visualStudio } from '@/lib/ai-agency/panels';
 import { VisualBrandStudio } from './VisualBrandStudio';
@@ -38,6 +39,7 @@ export default function AgencyWorkspaceOverview() {
   const [crawlNotice, setCrawlNotice] = useState('');
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [launchNotice, setLaunchNotice] = useState('');
+  const [autoRunTopic, setAutoRunTopic] = useState<string | undefined>();
   const contentScrollRef = useRef<HTMLDivElement>(null);
 
   const agent = panelAgents[view];
@@ -248,9 +250,10 @@ export default function AgencyWorkspaceOverview() {
         onApproved={({ autoRun, firstTopic }) => {
           setView('Overview');
           if (autoRun) {
+            if (firstTopic) setAutoRunTopic(firstTopic);
             setLaunchNotice(
               firstTopic
-                ? `Digital Agency activated · Queued "${firstTopic}" and starter topics for live execution.`
+                ? `Digital Agency activated · Starting Live Production Run #1 for "${firstTopic}".`
                 : 'Digital Agency activated · Your starter topics are queued and ready for live execution.',
             );
           }
@@ -434,6 +437,20 @@ export default function AgencyWorkspaceOverview() {
               activeProvidersCount={activeProviders.length}
               counts={summary.counts}
               onNavigate={navigate}
+            />
+          )}
+
+          {(view === 'Overview' || view === 'Article Studio') && (
+            <LivePipelineTracker
+              website={summary.website}
+              counts={summary.counts}
+              autoRunTopic={autoRunTopic}
+              onClearAutoRun={() => setAutoRunTopic(undefined)}
+              onCompleted={async () => {
+                setVersion((v) => v + 1);
+                await refresh();
+              }}
+              onOpenQa={() => navigate('QA & Auto-Publish')}
             />
           )}
 
