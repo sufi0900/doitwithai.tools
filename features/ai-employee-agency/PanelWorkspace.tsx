@@ -172,18 +172,18 @@ export function PanelLedger({
       {/* Specialist Action Header */}
       {quickAction && onStartAction && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-800 bg-[#0B0F17] p-4">
-          <div>
+          <div className="min-w-0 flex-1">
             <p className="text-xs font-semibold text-white">
               {agent === "hub" ? "Social & Video Distribution" : agentName(agent)}
             </p>
-            <p className="mt-0.5 text-xs text-slate-400">{quickAction.subtitle}</p>
+            <p className="mt-0.5 break-words text-xs text-slate-400">{quickAction.subtitle}</p>
           </div>
           <button
             type="button"
             onClick={() =>
               onStartAction(agent === "hub" ? "chief" : agent, quickAction.prompt)
             }
-            className="rounded-lg bg-[#2563EB] px-4 py-2 text-xs font-semibold text-white transition hover:bg-blue-500"
+            className="shrink-0 rounded-lg bg-[#2563EB] px-4 py-2 text-xs font-semibold text-white transition hover:bg-blue-500"
           >
             {quickAction.label} →
           </button>
@@ -193,18 +193,18 @@ export function PanelLedger({
       {notice && <p className="text-sm text-slate-400" role="status">{notice}</p>}
 
       {data?.counts && (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {channels.map((c) => (
             <button
               key={c.id}
               type="button"
-              className="rounded-xl border border-slate-800 bg-[#0B0F17] p-4 text-left transition hover:border-blue-600/60 hover:bg-slate-900"
+              className="min-w-0 rounded-xl border border-slate-800 bg-[#0B0F17] p-4 text-left transition hover:border-blue-600/60 hover:bg-slate-900"
               onClick={() => openChannel?.(c.label)}
             >
               <p className="text-[11px] font-semibold uppercase tracking-wider text-blue-400">
                 Channel
               </p>
-              <strong className="mt-1 block text-sm font-semibold text-slate-100">{c.label}</strong>
+              <strong className="mt-1 block truncate text-sm font-semibold text-slate-100">{c.label}</strong>
               <p className="mt-1 font-mono text-xs text-slate-400">
                 {data.counts?.[c.id] ?? 0} ledger entries
               </p>
@@ -222,11 +222,11 @@ export function PanelLedger({
             <div className="divide-y divide-slate-800/80">
               {data.upcoming.map((item) => (
                 <div key={item.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-xs">
-                  <span className="font-mono text-slate-400">{item.payload.day}</span>
-                  <span className="font-medium text-slate-200">
+                  <span className="shrink-0 font-mono text-slate-400">{item.payload.day}</span>
+                  <span className="min-w-0 flex-1 break-words font-medium text-slate-200">
                     {channels.find((c) => c.id === item.payload.channel)?.label} · {item.payload.title}
                   </span>
-                  <span className="rounded-full border border-slate-700 px-2 py-0.5 text-[11px] text-slate-300">
+                  <span className="shrink-0 rounded-full border border-slate-700 px-2 py-0.5 text-[11px] text-slate-300">
                     {item.payload.status || "scheduled"}
                   </span>
                 </div>
@@ -259,14 +259,14 @@ export function PanelLedger({
             {data.social.map(({ id, payload }) => (
               <article
                 key={id}
-                className="rounded-xl border border-slate-800 bg-[#0B0F17] p-4"
+                className="min-w-0 rounded-xl border border-slate-800 bg-[#0B0F17] p-4"
               >
                 <p className="text-xs font-medium text-blue-400">
                   {agentName(agent)} · {payload.status || "Recorded"}{" "}
                   {payload.day && "· " + payload.day}
                 </p>
-                <h3 className="mt-2 font-semibold text-slate-100">{payload.title}</h3>
-                <p className="mt-1 whitespace-pre-wrap text-sm text-slate-300">{payload.description}</p>
+                <h3 className="mt-2 break-words font-semibold text-slate-100">{payload.title}</h3>
+                <p className="mt-1 break-words whitespace-pre-wrap text-sm text-slate-300">{payload.description}</p>
                 <div className="mt-3 flex flex-wrap items-center gap-3">
                   {data.connected &&
                     (payload.status === "draft" || payload.status === "needs_review") && (
@@ -307,10 +307,10 @@ export function PanelLedger({
             {data.work.map((w) => (
               <details
                 key={w.id}
-                className="rounded-lg border border-slate-800 bg-[#0B0F17] p-3"
+                className="min-w-0 rounded-lg border border-slate-800 bg-[#0B0F17] p-3"
               >
-                <summary className="cursor-pointer text-sm font-medium text-slate-200">{w.task}</summary>
-                <p className="mt-2 whitespace-pre-wrap text-sm text-slate-300">{w.result}</p>
+                <summary className="cursor-pointer break-words text-sm font-medium text-slate-200">{w.task}</summary>
+                <p className="mt-2 overflow-x-auto break-words whitespace-pre-wrap text-sm text-slate-300">{w.result}</p>
                 {channels.some((c) => c.id === agent) && (
                   <button
                     className="mt-3 rounded-lg bg-[#2563EB] px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-500"
@@ -359,6 +359,14 @@ export function PanelChat({
     if (initialPrompt) setText(initialPrompt);
   }, [initialPrompt]);
 
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") close();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [close]);
+
   async function sendPrompt(promptText: string) {
     const clean = promptText.trim();
     if (busy || !clean) return;
@@ -395,12 +403,17 @@ export function PanelChat({
   }
 
   return (
-    <div className="fixed inset-0 z-40 flex justify-end bg-black/50 backdrop-blur-[2px]">
+    <div
+      className="fixed inset-0 z-[10000] flex justify-end bg-black/60 backdrop-blur-[2px]"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) close();
+      }}
+    >
       <aside
         aria-label={agentName(activeAgent) + " chat drawer"}
-        className="flex h-full w-full max-w-md flex-col border-l border-slate-800 bg-[#0B0F17] text-slate-100 shadow-2xl"
+        className="flex h-dvh w-full max-w-md flex-col border-l border-slate-800 bg-[#0B0F17] text-slate-100 shadow-2xl"
       >
-        <header className="flex items-center justify-between gap-3 border-b border-slate-800 px-5 py-4">
+        <header className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-800 px-5 py-4">
           <div className="min-w-0">
             <p className="text-[11px] font-semibold uppercase tracking-wider text-blue-400">
               AI Agency Copilot
@@ -413,20 +426,20 @@ export function PanelChat({
             type="button"
             onClick={close}
             aria-label="Close Copilot drawer"
-            className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white"
+            className="shrink-0 rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white"
           >
             Close
           </button>
         </header>
 
-        <div className="border-b border-slate-800/80 bg-[#111827]/70 px-5 py-3">
-          <label className="flex items-center justify-between gap-2 text-xs text-slate-400">
+        <div className="shrink-0 border-b border-slate-800/80 bg-[#111827]/70 px-5 py-3">
+          <label className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
             <span>Active responder</span>
             <select
               value={activeAgent}
               disabled={busy}
               onChange={(e) => setActiveAgent(e.target.value)}
-              className="rounded-lg border border-slate-700 bg-[#0B0F17] px-2.5 py-1.5 text-xs font-medium text-slate-100"
+              className="min-w-0 max-w-full rounded-lg border border-slate-700 bg-[#0B0F17] px-2.5 py-1.5 text-xs font-medium text-slate-100"
             >
               <option value="copilot">Workspace Copilot</option>
               <option value="chief">Chief AI Officer</option>
@@ -439,7 +452,7 @@ export function PanelChat({
           </label>
         </div>
 
-        <div className="flex-1 space-y-3 overflow-y-auto px-5 py-4" aria-live="polite">
+        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-5 py-4" aria-live="polite">
           {turns.length === 0 ? (
             <div className="space-y-3 pt-2">
               <p className="text-sm leading-relaxed text-slate-400">
@@ -463,10 +476,10 @@ export function PanelChat({
           ) : (
             turns.map((t, i) => (
               <div className="space-y-2" key={i}>
-                <div className="ml-8 rounded-xl border border-blue-500/30 bg-blue-600/15 px-3.5 py-2.5 text-sm text-blue-100">
+                <div className="ml-4 break-words rounded-xl border border-blue-500/30 bg-blue-600/15 px-3.5 py-2.5 text-sm text-blue-100 sm:ml-8">
                   {t.prompt}
                 </div>
-                <div className="mr-4 rounded-xl border border-slate-800 bg-[#111827] px-3.5 py-3 text-sm text-slate-200">
+                <div className="mr-2 break-words rounded-xl border border-slate-800 bg-[#111827] px-3.5 py-3 text-sm text-slate-200 sm:mr-4">
                   <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
                     {t.responder}
                   </p>
@@ -480,13 +493,13 @@ export function PanelChat({
         {error && (
           <div
             role="alert"
-            className="mx-5 mb-2 rounded-lg border border-rose-500/40 bg-rose-950/50 px-3.5 py-2.5 text-xs text-rose-200"
+            className="mx-5 mb-2 break-words rounded-lg border border-rose-500/40 bg-rose-950/50 px-3.5 py-2.5 text-xs text-rose-200"
           >
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="border-t border-slate-800 bg-[#111827]/80 p-4">
+        <form onSubmit={handleSubmit} className="shrink-0 border-t border-slate-800 bg-[#111827]/80 p-4">
           <div className="flex gap-2">
             <input
               autoFocus
@@ -500,7 +513,7 @@ export function PanelChat({
             />
             <button
               type="submit"
-              className="rounded-lg bg-[#2563EB] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:opacity-50"
+              className="shrink-0 rounded-lg bg-[#2563EB] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:opacity-50"
               disabled={busy || !text.trim()}
             >
               {busy ? "Sending…" : "Send"}

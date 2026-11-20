@@ -24,7 +24,7 @@ export default function AiAgencyV5Layout({
 }) {
   return (
     <div
-      className={`${plusJakartaSans.variable} ${jetbrainsMono.variable} agency-v5-font-root`}
+      className={`${plusJakartaSans.variable} ${jetbrainsMono.variable} agency-v5-font-root h-full`}
       style={{
         fontFamily:
           'var(--font-jakarta), var(--font-inter), system-ui, -apple-system, sans-serif',

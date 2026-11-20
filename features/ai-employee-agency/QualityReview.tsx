@@ -23,7 +23,8 @@ type Review = {
   };
 };
 const endpoint = "/api/ai-employee-agency/quality";
-const inputStyle = "block w-full rounded bg-slate-800 p-2";
+const inputStyle =
+  "block w-full rounded-lg border border-slate-700 bg-[#0B0F17] px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none";
 
 export function QualityReview({
   domain,
@@ -80,8 +81,13 @@ export function QualityReview({
   const selectedId=destination || choices[0];
   const config:CmsConnectionConfig={...(local?.platformId===selectedId?local:{}),platformId:selectedId,siteUrl:domain,autoPublishMode:live?'auto-publish-live':'stage-as-draft'};
   return (
-    <section className="space-y-3 rounded-xl border border-slate-700 p-5">
-      <h2 className="text-lg font-semibold">Editorial review queue</h2>
+    <section className="space-y-4 rounded-xl border border-slate-800 bg-[#111827] p-5">
+      <div className="border-b border-slate-800 pb-3.5">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-blue-400">
+          Editorial QA &amp; Delivery
+        </p>
+        <h2 className="text-base font-semibold text-white">Editorial review queue</h2>
+      </div>
       <select
         aria-label="Writer draft"
         className={inputStyle}
@@ -101,38 +107,52 @@ export function QualityReview({
         ))}
       </select>
       {review && (
-        <div>
-          <strong>
-            {review.payload.disposition.replace("_", " ")}{" "}
-            {review.payload.total !== undefined &&
-              "· " + review.payload.total + "/100"}
-          </strong>
-          <p>
+        <div className="space-y-3 rounded-xl border border-slate-800 bg-[#0B0F17] p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <strong className="text-sm font-semibold capitalize text-white">
+              {review.payload.disposition.replace("_", " ")}{" "}
+              {review.payload.total !== undefined &&
+                "· " + review.payload.total + "/100"}
+            </strong>
+          </div>
+          <p className="break-words font-mono text-xs text-slate-400">
             {Object.entries(review.payload.scores || {})
               .map(([key, n]) => key + " " + n)
               .join(" · ")}
           </p>
-          <p className="whitespace-pre-wrap">{review.payload.feedback}</p>
-          <details>
-            <summary>Reviewed article</summary>
-            <h3>{snapshot?.title}</h3>
-            <p>{snapshot?.metaDescription}</p>
-            <p className="whitespace-pre-wrap">
-              {snapshot?.compiledMarkdownBody}
-            </p>
+          <p className="break-words whitespace-pre-wrap text-sm text-slate-300">{review.payload.feedback}</p>
+          <details className="rounded-lg border border-slate-800 bg-[#111827] p-3 text-xs">
+            <summary className="cursor-pointer font-medium text-slate-200">Reviewed article</summary>
+            <div className="mt-2.5 max-h-96 space-y-2 overflow-y-auto break-words border-t border-slate-800 pt-2.5">
+              <h3 className="text-sm font-semibold text-white">{snapshot?.title}</h3>
+              <p className="text-slate-400">{snapshot?.metaDescription}</p>
+              <p className="whitespace-pre-wrap text-slate-300">
+                {snapshot?.compiledMarkdownBody}
+              </p>
+            </div>
           </details>
           {review.payload.disposition === "human_review" && (
             <button
+              type="button"
+              className="rounded-lg bg-[#2563EB] px-4 py-2 text-xs font-semibold text-white transition hover:bg-blue-500 disabled:opacity-50"
               disabled={busy}
               onClick={() => submit({ action: "approve", reviewId: review.id })}
             >
               Sign off on this article for release
             </button>
           )}
-          {review.payload.disposition === "approved" && choices.length>0 && (<div className="space-y-2">
-            <label>Delivery destination <select className={inputStyle} value={selectedId} onChange={e=>{setDestination(e.target.value as CmsPlatformId);setLive(false);}}>{choices.map(c=><option key={c}>{c}</option>)}</select></label>
-            <label className="block"><input type="checkbox" checked={live} onChange={e=>setLive(e.target.checked)}/> Request live publication</label>
+          {review.payload.disposition === "approved" && choices.length>0 && (<div className="space-y-3 border-t border-slate-800 pt-3">
+            <label className="block space-y-1.5 text-xs font-medium text-slate-300">
+              <span>Delivery destination</span>
+              <select className={inputStyle} value={selectedId} onChange={e=>{setDestination(e.target.value as CmsPlatformId);setLive(false);}}>{choices.map(c=><option key={c}>{c}</option>)}</select>
+            </label>
+            <label className="flex items-center gap-2 text-xs text-slate-300">
+              <input type="checkbox" checked={live} onChange={e=>setLive(e.target.checked)}/>
+              <span>Request live publication</span>
+            </label>
             <button
+              type="button"
+              className="w-full break-words rounded-lg bg-[#2563EB] px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-blue-500 disabled:opacity-50 sm:w-auto"
               disabled={busy}
               onClick={() =>
                 submit(
@@ -150,7 +170,7 @@ export function QualityReview({
       {work && (!review || review.payload.disposition === "revision") && (
         <form
           key={work.id + (review?.id || "")}
-          className="space-y-2"
+          className="space-y-3 rounded-xl border border-slate-800 bg-[#0B0F17] p-4"
           onSubmit={(event) => {
             event.preventDefault();
             submit({
@@ -159,8 +179,8 @@ export function QualityReview({
             });
           }}
         >
-          <label>
-            Page title
+          <label className="block space-y-1.5 text-xs font-medium text-slate-300">
+            <span>Page title</span>
             <input
               className={inputStyle}
               name="title"
@@ -169,8 +189,8 @@ export function QualityReview({
               maxLength={60}
             />
           </label>
-          <label>
-            Slug
+          <label className="block space-y-1.5 text-xs font-medium text-slate-300">
+            <span>Slug</span>
             <input
               className={inputStyle}
               name="slug"
@@ -178,8 +198,8 @@ export function QualityReview({
               defaultValue={snapshot?.slug}
             />
           </label>
-          <label>
-            Meta description
+          <label className="block space-y-1.5 text-xs font-medium text-slate-300">
+            <span>Meta description</span>
             <textarea
               className={inputStyle}
               name="description"
@@ -188,8 +208,8 @@ export function QualityReview({
               maxLength={160}
             />
           </label>
-          <label>
-            Article text
+          <label className="block space-y-1.5 text-xs font-medium text-slate-300">
+            <span>Article text</span>
             <textarea
               className={inputStyle}
               name="body"
@@ -198,14 +218,19 @@ export function QualityReview({
               defaultValue={snapshot?.compiledMarkdownBody || work.result}
             />
           </label>
-          <button className="rounded bg-blue-700 px-4 py-2" disabled={busy}>
+          <button
+            className="rounded-lg bg-[#2563EB] px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-blue-500 disabled:opacity-50"
+            disabled={busy}
+          >
             {busy ? "Reviewing…" : "Run quality checks"}
           </button>
         </form>
       )}
-      <p role="status" className="whitespace-pre-wrap">
-        {notice}
-      </p>
+      {notice && (
+        <p role="status" className="break-words whitespace-pre-wrap text-xs text-slate-300">
+          {notice}
+        </p>
+      )}
     </section>
   );
 }

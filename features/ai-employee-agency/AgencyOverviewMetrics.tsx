@@ -16,8 +16,8 @@ function ConcentricReadinessRing({ label, sublabel, score, detail }: ReadinessRi
   const offset = circumference - (clamped / 100) * circumference;
 
   return (
-    <div className="flex items-center gap-4 rounded-xl border border-slate-800 bg-[#111827] p-4">
-      <div className="relative h-24 w-24 shrink-0">
+    <div className="flex flex-col items-start gap-3.5 rounded-xl border border-slate-800 bg-[#111827] p-4 sm:flex-row sm:items-center sm:gap-4">
+      <div className="relative h-20 w-20 shrink-0 sm:h-24 sm:w-24">
         <svg viewBox="0 0 100 100" className="h-full w-full -rotate-90">
           <circle cx="50" cy="50" r={radius} fill="none" stroke="#1E293B" strokeWidth="7" />
           <circle cx="50" cy="50" r={31} fill="none" stroke="#1E293B" strokeWidth="3" strokeOpacity="0.6" />
@@ -39,7 +39,7 @@ function ConcentricReadinessRing({ label, sublabel, score, detail }: ReadinessRi
         </div>
       </div>
 
-      <div className="min-w-0 space-y-1">
+      <div className="min-w-0 space-y-1 break-words">
         <p className="text-[11px] font-semibold uppercase tracking-wider text-blue-400">{sublabel}</p>
         <h3 className="text-sm font-semibold text-white">{label}</h3>
         <p className="text-xs leading-relaxed text-slate-400">{detail}</p>
@@ -113,13 +113,13 @@ export function AgencyOverviewMetrics({
   return (
     <div className="space-y-4">
       {/* 4 Calm Monochrome KPI Cards */}
-      <section className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
         {kpis.map((item) => (
           <button
             key={item.key}
             type="button"
             onClick={() => onNavigate(item.targetView)}
-            className="group rounded-xl border border-slate-800 bg-[#111827] p-4 text-left transition hover:border-blue-600/60"
+            className="group min-w-0 rounded-xl border border-slate-800 bg-[#111827] p-4 text-left transition hover:border-blue-600/60"
           >
             <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
               {item.label}

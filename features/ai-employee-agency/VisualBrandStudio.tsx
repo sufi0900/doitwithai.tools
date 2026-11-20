@@ -167,7 +167,7 @@ export function VisualBrandStudio({ website }: { website: KnowledgeRow }) {
 
       <div className="grid gap-5 lg:grid-cols-2">
         {/* Left Controls */}
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           <label className="block space-y-1.5 text-xs font-medium text-slate-300">
             <span>Asset format</span>
             <select
@@ -283,7 +283,7 @@ export function VisualBrandStudio({ website }: { website: KnowledgeRow }) {
         </div>
 
         {/* Right Live Preview & Reference Gallery */}
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           <div className="flex min-h-[240px] flex-col items-center justify-center rounded-xl border border-slate-800 bg-[#0B0F17] p-4">
             {asset ? (
               <div className="w-full space-y-3 text-center">
@@ -312,7 +312,7 @@ export function VisualBrandStudio({ website }: { website: KnowledgeRow }) {
               <p className="text-xs font-semibold text-slate-300">
                 Uploaded Brand References ({references.length})
               </p>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                 {references.map((r) => (
                   <a
                     key={r.url}

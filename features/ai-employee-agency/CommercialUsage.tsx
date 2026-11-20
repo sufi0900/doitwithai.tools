@@ -87,7 +87,7 @@ export function CommercialUsage() {
                       {Math.min(100, Math.round(percent))}%
                     </span>
                   </div>
-                  <p className="font-mono text-xs text-slate-300">
+                  <p className="break-words font-mono text-xs text-slate-300">
                     {tokens.toLocaleString()} / {tokenLimit.toLocaleString()} tokens · $
                     {Number(usd).toFixed(4)} / ${Number(usdLimit).toFixed(2)}
                   </p>
@@ -120,7 +120,7 @@ export function CommercialUsage() {
             })}
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {budget.assets.map((a) => {
               const dailyMax = Math.ceil(a.month_limit / 10);
               const alert =
@@ -129,7 +129,7 @@ export function CommercialUsage() {
               return (
                 <div
                   key={a.kind}
-                  className="rounded-lg border border-slate-800 bg-[#0B0F17] p-3"
+                  className="min-w-0 rounded-lg border border-slate-800 bg-[#0B0F17] p-3"
                 >
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-semibold capitalize text-slate-200">{a.kind}</span>

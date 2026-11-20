@@ -137,7 +137,7 @@ export function RefreshWorkbench({
           {scan ? (
             <div className="space-y-4">
               {scan.report.files && scan.report.files.length > 0 && (
-                <div className="grid gap-2.5 sm:grid-cols-3">
+                <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
                   {scan.report.files.map((f) => {
                     const ok = f.status === 200;
                     return (
@@ -251,19 +251,19 @@ export function RefreshWorkbench({
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-3 rounded-xl border border-slate-800 bg-[#0B0F17] p-4">
+            <div className="min-w-0 space-y-3 rounded-xl border border-slate-800 bg-[#0B0F17] p-4">
               <h3 className="text-sm font-semibold text-slate-200">Current live page</h3>
               {keys.map((k) => (
                 <div key={k} className="space-y-1">
                   <strong className="text-xs text-slate-400">{labels[k]}</strong>
-                  <p className="rounded-lg border border-slate-800/80 bg-[#111827] p-2.5 text-xs text-slate-200">
+                  <p className="break-words rounded-lg border border-slate-800/80 bg-[#111827] p-2.5 text-xs text-slate-200">
                     {snapshot.fields[k] || "Empty"}
                   </p>
                 </div>
               ))}
             </div>
 
-            <div className="space-y-3 rounded-xl border border-slate-800 bg-[#0B0F17] p-4">
+            <div className="min-w-0 space-y-3 rounded-xl border border-slate-800 bg-[#0B0F17] p-4">
               <h3 className="text-sm font-semibold text-white">Proposed SEO update</h3>
               {keys.map((k) => (
                 <label className="block space-y-1" key={k}>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { agentName, panelAgents } from '@/lib/ai-agency/panels';
 
 interface AgencyNodeDef {
@@ -80,9 +80,18 @@ export function CalmAgencyNodeCanvas({
 
   const chiefNode = AGENCY_NODES[0];
 
+  useEffect(() => {
+    if (!fullScreen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setFullScreen(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [fullScreen]);
+
   const shellClass = fullScreen
-    ? 'fixed inset-0 z-50 flex flex-col bg-[#0B0F17] p-5'
-    : 'space-y-4 rounded-xl border border-slate-800 bg-[#111827] p-5';
+    ? 'fixed inset-0 z-[10000] !mt-0 flex flex-col overflow-hidden bg-[#0B0F17] p-4 sm:p-5 space-y-4'
+    : 'space-y-4 rounded-xl border border-slate-800 bg-[#111827] p-4 sm:p-5';
 
   return (
     <section aria-label="Interactive AI Agency Node Canvas" className={shellClass}>
@@ -164,13 +173,28 @@ export function CalmAgencyNodeCanvas({
       </div>
 
       {/* Main Split: Animated SVG Node Graph + Right Inspector */}
-      <div className={`grid gap-4 ${fullScreen ? 'min-h-0 flex-1 lg:grid-cols-[1fr_320px]' : 'lg:grid-cols-[1fr_300px]'}`}>
-        <div className="relative overflow-hidden rounded-xl border border-slate-800 bg-[#0B0F17]">
-          <div className="h-[460px] w-full overflow-auto">
+      <div
+        className={`grid gap-4 ${
+          fullScreen
+            ? 'min-h-0 flex-1 overflow-y-auto xl:grid-cols-[minmax(0,1fr)_320px] xl:overflow-hidden'
+            : 'xl:grid-cols-[minmax(0,1fr)_300px]'
+        }`}
+      >
+        <div className="relative min-w-0 overflow-hidden rounded-xl border border-slate-800 bg-[#0B0F17]">
+          <div
+            className={
+              fullScreen
+                ? 'h-[360px] w-full overflow-auto xl:h-full'
+                : 'h-[360px] w-full overflow-auto sm:h-[440px] lg:h-[480px]'
+            }
+          >
             <svg
               viewBox="0 0 920 500"
-              className="h-full w-full min-w-[700px] select-none transition-transform duration-200"
-              style={{ transform: `scale(${zoom})`, transformOrigin: 'center center' }}
+              className="h-auto min-h-full select-none transition-[width] duration-200"
+              style={{
+                width: `${Math.round(zoom * 100)}%`,
+                minWidth: `${Math.round(700 * zoom)}px`,
+              }}
               role="img"
               aria-label="11-Specialist AI Agency orchestration graph"
             >
@@ -270,7 +294,7 @@ export function CalmAgencyNodeCanvas({
         </div>
 
         {/* Selected Node Inspector */}
-        <aside className="flex flex-col justify-between rounded-xl border border-slate-800 bg-[#0B0F17] p-4">
+        <aside className="flex min-h-0 min-w-0 flex-col justify-between overflow-y-auto rounded-xl border border-slate-800 bg-[#0B0F17] p-4">
           <div className="space-y-3">
             <div className="flex items-center justify-between gap-2">
               <span className="rounded-md border border-slate-800 bg-[#111827] px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-blue-400">
