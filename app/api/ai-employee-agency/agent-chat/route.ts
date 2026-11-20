@@ -6,6 +6,8 @@ import { MODEL_PRICING_CATALOG } from '@/lib/ai-employee-agency/token-telemetry-
 import type { AgencyLlmModelId } from '@/lib/ai-employee-agency/token-telemetry-store';
 import { specialists } from '@/lib/ai-agency/specialists';
 import { compilePrompt, promptVersion, verifiedReply } from '@/lib/ai-agency/prompt-compiler';
+import { channels } from '@/lib/ai-agency/panels';
+import { panelHistory } from '@/lib/ai-agency/panel-history.server';
 import { research } from '@/lib/ai-agency/web-research';
 import { createSupabaseServiceClient } from '@/features/website-builder/lib/supabase/server';
 
@@ -23,7 +25,14 @@ export async function POST(request: Request) {
   const workspace = await agencyWorkspace(request);
   if (workspace instanceof NextResponse) return workspace;
   const counts = await contentCounts(workspace);
-  if (intent === 'workspace_read') return NextResponse.json(response(`You have ${counts.published} published, ${counts.ready} ready for review, and ${counts.queued} queued.`));
+  if (intent === 'workspace_read' && channels.some(c=>c.id===specialist?.id)) {
+    const entries=await workspace.db.from('social_ledger').select('id',{head:true,count:'exact'})
+      .eq('workspace_id',workspace.id).eq('payload->>channel',specialist!.id);
+    if(entries.error || entries.count===null) return NextResponse.json({error:'Channel count unavailable.'},{status:503});
+    const channel=channels.find(c=>c.id===specialist?.id)!;
+    return NextResponse.json(response(`${channel.label} has ${entries.count} recorded channel entries.`));
+  }
+  if (intent === 'workspace_read' && !specialist) return NextResponse.json(response(`You have ${counts.published} published, ${counts.ready} ready for review, and ${counts.queued} queued.`));
   const {data: brand, error} = await workspace.db.from('tenant_brand_dna').select('profile,revision,approved_at').eq('workspace_id',workspace.id).maybeSingle();
   if (error) return NextResponse.json({error:'Could not read brand knowledge.'},{status:503});
   if (!brand?.approved_at && (specialist || chief || intent !== 'casual_chat')) return NextResponse.json({error:'Approve the website knowledge base first.'},{status:409});
@@ -40,10 +49,19 @@ export async function POST(request: Request) {
   const evidence = needsResearch ? await research(message,profile.competitor_blocklist || []) : [];
   if (intent === 'web_research' && !evidence.length) return NextResponse.json({error:'No readable source was retrieved. Include a public source URL to research.'},{status:422});
   const roleId = specialist?.id || (chief ? 'chief' : 'copilot');
-  const recent = await workspace.db.from('agency_specialist_work').select('task,result').eq('workspace_id',workspace.id)
-    .eq('specialist',roleId).order('created_at',{ascending:false}).limit(3);
-  if (recent.error) return NextResponse.json({error:'Specialist history unavailable. Check the Phase 3 migration.'},{status:503});
-  const context = compilePrompt(specialist,chief,{...profile, counts},(recent.data || []).map(r => ({task:r.task.slice(0,300),result:r.result.slice(0,1000)})),evidence,message);
+  const history = await panelHistory(workspace.db,workspace.id,roleId,5).catch(() => null);
+  if (!history) return NextResponse.json({error:'Specialist history unavailable.'},{status:503});
+  const ledger = [
+    ...history.work.map(r => ({task:r.task.slice(0,300),result:r.result.slice(0,1000)})),
+    ...history.social.map(r => ({channel:roleId,entry:JSON.stringify(r.payload).slice(0,1200)})),
+  ];
+  let visualReferences = profile.visual_references;
+  if (roleId === 'visual') {
+    const refs = await workspace.db.storage.from('agency-visual-references').list(workspace.id,{limit:12,sortBy:{column:'created_at',order:'desc'}});
+    if (!refs.error) visualReferences = [...(Array.isArray(visualReferences)?visualReferences:[]),
+      ...refs.data.filter(f=>f.id).map(f=>({filename:f.name.slice(37),context:'Reference filename only'}))];
+  }
+  const context = compilePrompt(specialist,chief,{...profile,visual_references:visualReferences,counts},ledger,evidence,message);
   const configured = providerBindings();
   const models = Object.keys(MODEL_PRICING_CATALOG) as AgencyLlmModelId[];
   const modelId = models.includes(body.modelId) ? body.modelId as AgencyLlmModelId : models.find(id => configured[MODEL_PRICING_CATALOG[id].provider]);
