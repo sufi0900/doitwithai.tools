@@ -1,16 +1,15 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { Check, Plus, Search, Wrench } from "lucide-react";
-import {
-  categories as CATALOG_CATEGORIES,
-  tools as CATALOG_TOOLS,
-  toolPath,
-  siteOrigin,
-} from "@/features/tool-catalog/catalog";
+import { CheckCircle2, Layers, Plus, Sparkles } from "lucide-react";
 import type { SiteCommand } from "@/features/website-builder/domain/commands";
 import type { SiteDocument } from "@/features/website-builder/domain/site-document";
-import { getTransferredToolManifestEntry } from "@/features/website-builder/tools/transferred-tool-manifest";
+import {
+  BUILDER_48_MICROTOOLS_CATALOG,
+  MICROTOOL_VERTICALS,
+  type MicroToolVerticalId,
+} from "@/features/website-builder/tools/microtool-catalog-48";
+import { CustomToolSubmissionPanel } from "./CustomToolSubmissionModal";
 
 export function CatalogToolInstaller({
   document,
@@ -19,411 +18,258 @@ export function CatalogToolInstaller({
   document: SiteDocument;
   execute: (command: SiteCommand) => void;
 }) {
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [selectedVertical, setSelectedVertical] = useState<MicroToolVerticalId | "all">("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedSlug, setSelectedSlug] = useState<string>(
-    CATALOG_TOOLS[0]?.slug ?? "meta-title-generator",
+    BUILDER_48_MICROTOOLS_CATALOG[0]?.slug ?? "",
   );
-  const [includeCompanionPost, setIncludeCompanionPost] = useState<boolean>(true);
-  const [justInstalledTitle, setJustInstalledTitle] = useState<string>("");
-
-  const installedSlugs = useMemo(
-    () =>
-      new Set(
-        document.content.projects.flatMap((p) => {
-          const items = [p.caseStudySlug];
-          if (p.link) {
-            const parts = p.link.split("/tools/");
-            if (parts[1]) items.push(parts[1].replace(/\/+$/, ""));
-          }
-          return items;
-        }),
-      ),
-    [document.content.projects],
-  );
+  const [includeCompanionPost, setIncludeCompanionPost] = useState(true);
+  const [justInstalledTitle, setJustInstalledTitle] = useState("");
 
   const filteredTools = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    return CATALOG_TOOLS.filter((tool) => {
-      const catMatch =
-        selectedCategory === "all" || tool.categories.includes(selectedCategory);
-      if (!catMatch) return false;
-      if (!q) return true;
-      return (
-        tool.name.toLowerCase().includes(q) ||
-        tool.slug.toLowerCase().includes(q) ||
-        tool.description.toLowerCase().includes(q) ||
-        tool.tags.some((tag) => tag.toLowerCase().includes(q))
-      );
+    return BUILDER_48_MICROTOOLS_CATALOG.filter((tool) => {
+      const matchesVertical =
+        selectedVertical === "all" || tool.vertical === selectedVertical;
+      const matchesQuery =
+        !q ||
+        tool.title.toLowerCase().includes(q) ||
+        tool.summary.toLowerCase().includes(q) ||
+        tool.verticalLabel.toLowerCase().includes(q) ||
+        tool.badges.some((b) => b.toLowerCase().includes(q));
+      return matchesVertical && matchesQuery;
     });
-  }, [selectedCategory, searchQuery]);
+  }, [selectedVertical, searchQuery]);
 
   const activeTool = useMemo(
     () =>
       filteredTools.find((t) => t.slug === selectedSlug) ??
       filteredTools[0] ??
-      CATALOG_TOOLS[0],
+      BUILDER_48_MICROTOOLS_CATALOG[0],
     [filteredTools, selectedSlug],
   );
-
-  const activeManifest = activeTool
-    ? getTransferredToolManifestEntry(activeTool.slug)
-    : null;
 
   const isSingleToolMode =
     document.design.template === "micro-saas-launchpad" &&
     document.content.projects.length > 0;
-  const replaceFlagshipId = isSingleToolMode ? document.content.projects[0]?.id : undefined;
+  const maxToolsReached =
+    !isSingleToolMode && document.content.projects.length >= 8;
 
-  const isLimitReached = !replaceFlagshipId && document.content.projects.length >= 8;
-  const isAlreadyInstalled = activeTool
-    ? installedSlugs.has(activeTool.slug)
-    : false;
-
-  function handleInstallTool() {
-    if (!activeTool || isLimitReached) return;
-    const fullUrl = `${siteOrigin}${toolPath(activeTool.slug)}`;
-    const techBadges = Array.from(
-      new Set([
-        ...(activeTool.categories || []),
-        ...(activeTool.topics || []),
-        ...(activeTool.tags || []).slice(0, 4),
-      ]),
-    )
-      .map((item) => item.trim().slice(0, 32))
-      .filter(Boolean)
-      .slice(0, 6);
+  function installSelectedTool() {
+    if (!activeTool || maxToolsReached) return;
+    const replaceFlagshipId = isSingleToolMode
+      ? document.content.projects[0]?.id
+      : undefined;
 
     execute({
       type: "project.installCatalogTool",
-      slug: activeTool.slug,
-      title: activeTool.name.slice(0, 100),
-      summary: activeTool.description.slice(0, 500),
-      technologies: techBadges.length ? techBadges : ["AI SEO Utility", "Browser Tool"],
-      link: "",
-      role: (activeTool.kind || "Interactive AI Web Utility").slice(0, 100),
-      period: "Live on Your Website · Free Utility",
-      challenge:
-        `Eliminate manual ${activeTool.tags?.[0] || activeTool.name} bottlenecks with deterministic browser execution and structured SEO outputs.`.slice(
-          0,
-          1200,
-        ),
-      approach:
-        `Engineered as an interactive web utility (${toolPath(activeTool.slug)}) with instant copy/export and connected Schema.org markup.`.slice(
-          0,
-          1800,
-        ),
-      outcome:
-        `Runs directly inside your published website (/p/[slug]/projects/${activeTool.slug}) with companion workflow documentation and internal cluster linking (${fullUrl}).`.slice(
-          0,
-          1200,
-        ),
+      title: activeTool.title,
+      summary: activeTool.summary,
+      caseStudySlug: activeTool.slug,
+      role: activeTool.verticalLabel,
+      period: activeTool.eyebrow,
+      technologies: activeTool.badges.slice(0, 6),
+      link: `/tools/${activeTool.slug}`,
       includeCompanionPost,
       ...(replaceFlagshipId ? { replaceItemId: replaceFlagshipId } : {}),
-      ...(activeManifest?.versionLabel
-        ? { installedToolVersion: activeManifest.versionLabel }
-        : {}),
-      ...(activeManifest?.metaTitle ? { metaTitle: activeManifest.metaTitle } : {}),
-      ...(activeManifest?.metaDescription
-        ? { metaDescription: activeManifest.metaDescription }
-        : {}),
-    });
+    } as unknown as SiteCommand);
 
-    setJustInstalledTitle(activeTool.name);
-    window.setTimeout(() => setJustInstalledTitle(""), 3500);
+    setJustInstalledTitle(activeTool.title);
   }
 
   return (
-    <section
-      aria-label="Add existing tool from DoItWithAI catalog"
-      style={{
-        border: "1px solid rgba(56, 189, 248, 0.38)",
-        borderRadius: "14px",
-        padding: "12px",
-        background:
-          "linear-gradient(145deg, rgba(8, 19, 38, 0.94), rgba(15, 23, 42, 0.92))",
-        display: "grid",
-        gap: "10px",
-        marginBottom: "14px",
-        minWidth: 0,
-        maxWidth: "100%",
-        boxSizing: "border-box",
-        overflow: "hidden",
-      }}
-    >
-      <header
+    <div style={{ display: "grid", gap: "12px" }}>
+      <section
+        aria-label="48-Tool Builder Library Installer"
         style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          flexWrap: "wrap",
-          gap: "6px",
-          minWidth: 0,
+          borderRadius: "12px",
+          border: "1px solid rgba(56, 189, 248, 0.3)",
+          background: "rgba(15, 23, 42, 0.86)",
+          padding: "14px",
+          display: "grid",
+          gap: "10px",
         }}
       >
-        <div style={{ minWidth: 0, flex: "1 1 180px" }}>
-          <span
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "5px",
-              fontSize: "10px",
-              fontWeight: 800,
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-              color: "#38bdf8",
-            }}
-          >
-            <Wrench size={12} /> {CATALOG_TOOLS.length} MAIN-SITE LANDING PAGES
+        <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+          <div style={{ display: "grid", gap: "2px" }}>
+            <span style={{ fontSize: "10px", fontWeight: 800, color: "#34d399", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+              PATH A · 48 PRE-BUILT NICHE &amp; WHITE-LABEL TOOLS ($0 RUNTIME)
+            </span>
+            <strong style={{ fontSize: "13px", color: "#f8fafc" }}>
+              1-Click Builder Tool Library (8 Verticals)
+            </strong>
+          </div>
+          <span style={{ fontSize: "11px", color: "#94a3b8", fontWeight: 600 }}>
+            {document.content.projects.length}/8 Installed
           </span>
-          <strong
-            style={{
-              display: "block",
-              marginTop: "3px",
-              fontSize: "13px",
-              color: "#f8fafc",
-            }}
-          >
-            {isSingleToolMode
-              ? "⚡ Swap Flagship Tool (Any of 126+ Tools)"
-              : "+ Add Tool from DoItWithAI Catalog"}
-          </strong>
-        </div>
-        <span
-          style={{
-            fontSize: "10px",
-            fontWeight: 700,
-            padding: "3px 8px",
-            borderRadius: "999px",
-            background: "rgba(16, 185, 129, 0.16)",
-            color: "#6ee7b7",
-            border: "1px solid rgba(16, 185, 129, 0.35)",
-            whiteSpace: "nowrap",
-          }}
-        >
-          0 AI Tokens
-        </span>
-      </header>
+        </header>
 
-      <p style={{ margin: 0, fontSize: "11px", lineHeight: 1.45, color: "#94a3b8" }}>
-        {isSingleToolMode
-          ? `Pick any of our ${CATALOG_TOOLS.length} tools below to transfer its full live landing page onto your homepage.`
-          : `Select any of our ${CATALOG_TOOLS.length} main-website tools to transfer its complete landing page & live tool UI in 1 click.`}
-      </p>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+          <label style={{ display: "grid", gap: "4px", fontSize: "11px", fontWeight: 700, color: "#cbd5e1" }}>
+            <span>Filter by Industry Vertical</span>
+            <select
+              value={selectedVertical}
+              onChange={(e) => {
+                const next = e.target.value as MicroToolVerticalId | "all";
+                setSelectedVertical(next);
+              }}
+              style={{
+                padding: "7px 9px",
+                borderRadius: "7px",
+                border: "1px solid rgba(148, 163, 184, 0.28)",
+                background: "rgba(9, 14, 28, 0.9)",
+                color: "#f8fafc",
+                fontSize: "11.5px",
+              }}
+            >
+              <option value="all">All 8 Industries (48 Tools)</option>
+              {MICROTOOL_VERTICALS.map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.label} ({v.badge})
+                </option>
+              ))}
+            </select>
+          </label>
 
-      <div style={{ display: "grid", gap: "8px", minWidth: 0 }}>
-        <label style={{ display: "grid", gap: "4px", fontSize: "11px", color: "#cbd5e1", minWidth: 0 }}>
-          <span>Filter by Category</span>
-          <select
-            value={selectedCategory}
-            onChange={(e) => {
-              setSelectedCategory(e.target.value);
-              setSelectedSlug("");
-            }}
-            style={{
-              width: "100%",
-              minWidth: 0,
-              maxWidth: "100%",
-              boxSizing: "border-box",
-              padding: "7px 9px",
-              borderRadius: "8px",
-              border: "1px solid rgba(148, 163, 184, 0.28)",
-              background: "#060b16",
-              color: "#f8fafc",
-              fontSize: "12px",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-            }}
-          >
-            <option value="all">All Categories ({CATALOG_TOOLS.length} tools)</option>
-            {CATALOG_CATEGORIES.map((cat) => (
-              <option key={cat.slug} value={cat.slug}>
-                {cat.name}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label style={{ display: "grid", gap: "4px", fontSize: "11px", color: "#cbd5e1", minWidth: 0 }}>
-          <span>Search Tool by Name or Keyword</span>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              padding: "0 9px",
-              borderRadius: "8px",
-              border: "1px solid rgba(148, 163, 184, 0.28)",
-              background: "#060b16",
-              minWidth: 0,
-              maxWidth: "100%",
-              boxSizing: "border-box",
-            }}
-          >
-            <Search size={13} color="#38bdf8" style={{ flexShrink: 0 }} />
+          <label style={{ display: "grid", gap: "4px", fontSize: "11px", fontWeight: 700, color: "#cbd5e1" }}>
+            <span>Search Tools</span>
             <input
               type="search"
               value={searchQuery}
+              placeholder="Solar, mortgage, macro, ROAS..."
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="e.g. meta title, schema, keyword..."
               style={{
-                width: "100%",
-                minWidth: 0,
-                padding: "7px 0",
-                border: 0,
-                background: "transparent",
+                padding: "7px 9px",
+                borderRadius: "7px",
+                border: "1px solid rgba(148, 163, 184, 0.28)",
+                background: "rgba(9, 14, 28, 0.9)",
                 color: "#f8fafc",
-                fontSize: "12px",
-                outline: "none",
+                fontSize: "11.5px",
               }}
             />
-          </div>
-        </label>
+          </label>
+        </div>
 
-        <label style={{ display: "grid", gap: "4px", fontSize: "11px", color: "#cbd5e1", minWidth: 0 }}>
-          <span>Choose Tool ({filteredTools.length} matching)</span>
+        <label style={{ display: "grid", gap: "4px", fontSize: "11px", fontWeight: 700, color: "#cbd5e1" }}>
+          <span>Select Pre-Built Tool ({filteredTools.length} matching)</span>
           <select
             value={activeTool?.slug ?? ""}
             onChange={(e) => setSelectedSlug(e.target.value)}
             style={{
-              width: "100%",
-              minWidth: 0,
-              maxWidth: "100%",
-              boxSizing: "border-box",
-              padding: "8px 9px",
-              borderRadius: "8px",
-              border: "1px solid rgba(56, 189, 248, 0.4)",
-              background: "#060b16",
+              padding: "8px 10px",
+              borderRadius: "7px",
+              border: "1px solid rgba(56, 189, 248, 0.35)",
+              background: "rgba(9, 14, 28, 0.92)",
               color: "#f8fafc",
               fontSize: "12px",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
+              fontWeight: 600,
             }}
           >
-            {filteredTools.map((tool) => (
-              <option key={tool.slug} value={tool.slug}>
-                {installedSlugs.has(tool.slug) ? "✓ " : ""}
-                {tool.name}
+            {filteredTools.map((t) => (
+              <option key={t.slug} value={t.slug}>
+                [{t.exclusiveToBuilder ? "Exclusive" : "White-Label"}] {t.title} — ({t.verticalLabel})
               </option>
             ))}
           </select>
         </label>
-      </div>
 
-      {activeTool && (
-        <div
-          style={{
-            padding: "9px 10px",
-            borderRadius: "10px",
-            background: "rgba(15, 23, 42, 0.78)",
-            border: "1px solid rgba(148, 163, 184, 0.18)",
-            fontSize: "11px",
-            color: "#cbd5e1",
-            display: "grid",
-            gap: "4px",
-            minWidth: 0,
-          }}
-        >
-          <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: "4px", minWidth: 0 }}>
-            <strong style={{ color: "#ffffff", overflowWrap: "anywhere" }}>{activeTool.name}</strong>
-            <div style={{ display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap" }}>
-              {activeManifest?.versionLabel && (
-                <span style={{ fontSize: "9.5px", padding: "2px 6px", borderRadius: "999px", background: "rgba(56, 189, 248, 0.14)", color: "#7dd3fc", fontWeight: 700 }}>
-                  {activeManifest.versionLabel}
+        {activeTool && (
+          <div
+            style={{
+              padding: "10px 12px",
+              borderRadius: "9px",
+              background: "rgba(9, 14, 28, 0.72)",
+              border: "1px solid rgba(148, 163, 184, 0.18)",
+              display: "grid",
+              gap: "6px",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+              <strong style={{ fontSize: "12.5px", color: "#ffffff" }}>{activeTool.title}</strong>
+              <span
+                style={{
+                  fontSize: "10px",
+                  padding: "2px 8px",
+                  borderRadius: "999px",
+                  background: activeTool.exclusiveToBuilder
+                    ? "rgba(16, 185, 129, 0.16)"
+                    : "rgba(56, 189, 248, 0.16)",
+                  color: activeTool.exclusiveToBuilder ? "#34d399" : "#7dd3fc",
+                  fontWeight: 700,
+                }}
+              >
+                {activeTool.exclusiveToBuilder ? "Builder-Exclusive Niche Tool" : "100% White-Label Agency Tool"}
+              </span>
+            </div>
+            <p style={{ margin: 0, fontSize: "11.5px", color: "#94a3b8", lineHeight: 1.45 }}>
+              {activeTool.summary}
+            </p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "5px" }}>
+              {activeTool.badges.map((b) => (
+                <span
+                  key={b}
+                  style={{
+                    fontSize: "10px",
+                    padding: "2px 7px",
+                    borderRadius: "5px",
+                    background: "rgba(30, 41, 59, 0.9)",
+                    color: "#cbd5e1",
+                  }}
+                >
+                  {b}
                 </span>
-              )}
-              <code style={{ color: "#38bdf8", fontSize: "10px", overflowWrap: "anywhere" }}>
-                {toolPath(activeTool.slug)}
-              </code>
+              ))}
             </div>
           </div>
-          <p style={{ margin: 0, color: "#94a3b8", fontSize: "11px", lineHeight: 1.45, overflowWrap: "anywhere" }}>
-            {activeTool.description}
-          </p>
-        </div>
-      )}
+        )}
 
-      <label
-        style={{
-          display: "flex",
-          alignItems: "flex-start",
-          gap: "8px",
-          fontSize: "11px",
-          color: "#e2e8f0",
-          cursor: "pointer",
-          minWidth: 0,
-        }}
-      >
-        <input
-          type="checkbox"
-          checked={includeCompanionPost}
-          onChange={(e) => setIncludeCompanionPost(e.target.checked)}
-          style={{ marginTop: "2px", flexShrink: 0 }}
-        />
-        <span style={{ lineHeight: 1.4 }}>
-          Also generate a ready-to-publish <strong>SEO blog guide</strong>
-        </span>
-      </label>
+        <label style={{ display: "flex", alignItems: "center", gap: "7px", fontSize: "11.5px", color: "#cbd5e1", cursor: "pointer" }}>
+          <input
+            type="checkbox"
+            checked={includeCompanionPost}
+            onChange={(e) => setIncludeCompanionPost(e.target.checked)}
+          />
+          <span>Auto-create a companion SEO blog post linking internally to this tool</span>
+        </label>
 
-      <button
-        type="button"
-        disabled={!activeTool || isLimitReached}
-        onClick={handleInstallTool}
-        style={{
-          width: "100%",
-          minWidth: 0,
-          maxWidth: "100%",
-          boxSizing: "border-box",
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: "6px",
-          padding: "9px 12px",
-          borderRadius: "9px",
-          border: 0,
-          background: isLimitReached
-            ? "rgba(148, 163, 184, 0.2)"
-            : "linear-gradient(135deg, #22d3ee, #6366f1)",
-          color: isLimitReached ? "#94a3b8" : "#04101c",
-          fontWeight: 800,
-          fontSize: "12px",
-          cursor: isLimitReached ? "not-allowed" : "pointer",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
-        }}
-      >
-        <Plus size={14} style={{ flexShrink: 0 }} />
-        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {isLimitReached
-            ? "Max 8 Tools Reached"
-            : isSingleToolMode
-              ? `Set "${activeTool?.name}" as Flagship Tool`
-              : isAlreadyInstalled
-                ? `Add Another Copy`
-                : `Add Tool (${includeCompanionPost ? "+ SEO Guide" : "Tool Only"})`}
-        </span>
-      </button>
-
-      {justInstalledTitle && (
-        <div
-          role="status"
+        <button
+          type="button"
+          disabled={!activeTool || maxToolsReached}
+          onClick={installSelectedTool}
           style={{
-            display: "flex",
+            display: "inline-flex",
             alignItems: "center",
+            justifyContent: "center",
             gap: "6px",
-            fontSize: "11px",
-            color: "#6ee7b7",
-            fontWeight: 600,
-            overflowWrap: "anywhere",
+            padding: "9px 14px",
+            borderRadius: "8px",
+            border: "none",
+            background: maxToolsReached ? "rgba(148, 163, 184, 0.2)" : "#2563eb",
+            color: "#ffffff",
+            fontSize: "12px",
+            fontWeight: 700,
+            cursor: maxToolsReached ? "not-allowed" : "pointer",
           }}
         >
-          <Check size={14} style={{ flexShrink: 0 }} />{" "}
+          {isSingleToolMode ? <Layers size={14} /> : <Plus size={14} />}
           {isSingleToolMode
-            ? `Swapped flagship landing page to "${justInstalledTitle}"!`
-            : `Transferred "${justInstalledTitle}" landing page (0 AI tokens)!`}
-        </div>
-      )}
-    </section>
+            ? `Replace Flagship Tool With "${activeTool?.title}"`
+            : maxToolsReached
+              ? "Maximum 8 Tools Installed"
+              : `Install "${activeTool?.title}" Into Website`}
+        </button>
+
+        {justInstalledTitle && (
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11.5px", color: "#34d399", fontWeight: 600 }}>
+            <CheckCircle2 size={14} /> Installed <strong>{justInstalledTitle}</strong> — click it below to customize.
+          </div>
+        )}
+      </section>
+
+      <CustomToolSubmissionPanel
+        workspaceId={document.projectId}
+        projectId={document.projectId}
+      />
+    </div>
   );
 }
