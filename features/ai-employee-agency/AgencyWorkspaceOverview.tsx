@@ -18,6 +18,7 @@ import { RefreshWorkbench } from './RefreshWorkbench';
 import { AgencyOverviewMetrics } from './AgencyOverviewMetrics';
 import { CalmAgencyNodeCanvas } from './CalmAgencyNodeCanvas';
 import { SidebarNavIcon } from './SidebarNavIcons';
+import { PractitionerBrainPanel } from './PractitionerBrainPanel';
 import Link from 'next/link';
 import { useEffect, useState, useRef, Fragment } from 'react';
 import { agencyRequest } from './agency-request';
@@ -610,6 +611,7 @@ export default function AgencyWorkspaceOverview() {
               onOpenQa={() => navigate('QA & Auto-Publish')}
             />
           )}
+          {view === 'Agent Skills & Cron' && <PractitionerBrainPanel />}
           {view === 'Token & API Usage' && <CommercialUsage />}
 
           {['Overview', 'Token & API Usage'].includes(view) && (

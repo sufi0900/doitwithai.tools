@@ -13,6 +13,10 @@ import {
   repairFields,
 } from '../../lib/ai-agency/refresh.server';
 import {
+  chunkPlaybookIntoTacticCards,
+  formatPractitionerRagBlock,
+} from '../../lib/ai-agency/practitioner-rag.server';
+import {
   classifyPageKind,
   classifySiteMaturity,
   topicDecision,
@@ -308,6 +312,32 @@ test('classifyPageMetaHealth, fieldFindings and repairFields enforce No-Churn Tr
   assert.equal(repaired.heading, 'Longer Title');
   assert.equal(repaired.title, 'Longer Title');
   assert.equal(repaired.description, 'Fallback excerpt text for meta description repair.');
+});
+
+test('chunkPlaybookIntoTacticCards and formatPractitionerRagBlock produce structured Pro Strategist RAG prompt blocks', () => {
+  const playbook = `## Internal Linking Hubs\nAlways link new pillar guides back to 3 existing service pages.\n\n## Title Tag CTR Formula\nFront-load the primary keyword and include the current year when refreshing declining posts.`;
+  const cards = chunkPlaybookIntoTacticCards(playbook, 'SEO Playbook');
+  assert.equal(cards.length, 2);
+  assert.equal(cards[0].tacticTitle, 'Internal Linking Hubs');
+  assert.equal(cards[1].tacticTitle, 'Title Tag CTR Formula');
+
+  const block = formatPractitionerRagBlock([
+    {
+      chunkId: 'c1',
+      sourceId: 's1',
+      sourceTitle: 'Agency SEO Playbook',
+      sourceType: 'seo_playbook',
+      parentSummary: 'Field-tested SEO tactics',
+      storageObjectPath: 'agency-practitioner-refs/hero-grid.webp',
+      tacticTitle: cards[0].tacticTitle,
+      tacticBody: cards[0].tacticBody,
+      specialistRole: 'refresh',
+      similarity: 0.88,
+    },
+  ]);
+  assert.match(block, /DoItWithAI Strategist Pro/);
+  assert.match(block, /Internal Linking Hubs/);
+  assert.match(block, /agency-practitioner-refs\/hero-grid\.webp/);
 });
 
 test('static source audit: zero forbidden public-tool keys, zero retired gemini-2.0-flash in active routes, and edge-safe fetchPublic', () => {
