@@ -181,11 +181,11 @@ export function PriorityActionQueue({
           return (
             <div
               key={meter.label}
-              className="space-y-2 rounded-xl border border-slate-800 bg-[#0B0F17] p-3.5 text-xs"
+              className="min-w-0 space-y-2 rounded-xl border border-slate-800 bg-[#0B0F17] p-3.5 text-xs"
             >
-              <div className="flex items-center justify-between gap-2">
-                <span className="font-medium text-slate-200">{meter.label}</span>
-                <span className="font-mono text-blue-300">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="min-w-0 font-medium text-slate-200">{meter.label}</span>
+                <span className="shrink-0 font-mono text-blue-300">
                   {meter.used} / {meter.limit}
                 </span>
               </div>
@@ -218,14 +218,14 @@ export function PriorityActionQueue({
                 >
                   {item.priority}
                 </span>
-                <strong className="text-slate-100">{item.title}</strong>
+                <strong className="break-words text-slate-100">{item.title}</strong>
               </div>
-              <p className="text-slate-400">{item.detail}</p>
+              <p className="break-words text-slate-400">{item.detail}</p>
             </div>
             <button
               type="button"
               onClick={() => onNavigate(item.targetView)}
-              className="shrink-0 rounded-lg border border-slate-700 bg-[#111827] px-3 py-1.5 text-xs font-semibold text-slate-200 transition hover:border-blue-500/60 hover:text-white"
+              className="w-full shrink-0 rounded-lg border border-slate-700 bg-[#111827] px-3 py-1.5 text-center text-xs font-semibold text-slate-200 transition hover:border-blue-500/60 hover:text-white sm:w-auto"
             >
               {item.ctaLabel}
             </button>

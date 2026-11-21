@@ -336,7 +336,7 @@ export function PanelLedger({
           <button
             type="button"
             onClick={() => onStartAction(agent, quickAction.prompt)}
-            className="shrink-0 rounded-lg bg-[#2563EB] px-4 py-2 text-xs font-semibold text-white transition hover:bg-blue-500"
+            className="w-full shrink-0 rounded-lg bg-[#2563EB] px-4 py-2 text-center text-xs font-semibold text-white transition hover:bg-blue-500 sm:w-auto"
           >
             {quickAction.label} →
           </button>
@@ -436,7 +436,7 @@ export function PanelLedger({
                 key={id}
                 className="min-w-0 rounded-xl border border-slate-800 bg-[#0B0F17] p-4"
               >
-                <div className="flex items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="text-xs font-medium text-blue-400">
                     {agentName(agent)} · {payload.status || "Recorded"}{" "}
                     {payload.day && "· " + payload.day}

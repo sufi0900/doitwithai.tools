@@ -269,7 +269,7 @@ export function LivePipelineTracker({
               </span>
             )}
           </div>
-          <h2 className="truncate text-base font-semibold text-white">
+          <h2 className="break-words text-base font-semibold text-white">
             {activeTopicLabel
               ? `Active Run: ${activeTopicLabel}`
               : 'Execute your queued articles live across all 5 specialists'}
@@ -294,7 +294,7 @@ export function LivePipelineTracker({
             type="button"
             disabled={running || (queue.length === 0 && !autoRunTopic)}
             onClick={() => void executeLiveRun()}
-            className="rounded-lg bg-[#2563EB] px-4 py-2 text-xs font-semibold text-white transition hover:bg-blue-500 disabled:opacity-50"
+            className="w-full rounded-lg bg-[#2563EB] px-4 py-2 text-center text-xs font-semibold text-white transition hover:bg-blue-500 disabled:opacity-50 sm:w-auto"
           >
             {running && activeStage !== null
               ? `Running Stage ${activeStage + 1}/5…`
@@ -314,7 +314,7 @@ export function LivePipelineTracker({
             disabled={running || queue.length === 0}
             value={selectedItemId}
             onChange={(e) => setSelectedItemId(e.target.value)}
-            className="min-w-0 flex-1 rounded-lg border border-slate-700 bg-[#0B0F17] px-3 py-1.5 text-xs text-slate-200 focus:border-blue-500 focus:outline-none disabled:opacity-60"
+            className="w-full min-w-0 max-w-full flex-1 truncate rounded-lg border border-slate-700 bg-[#0B0F17] px-3 py-1.5 text-xs text-slate-200 focus:border-blue-500 focus:outline-none disabled:opacity-60"
           >
             {queue.length === 0 ? (
               <option value="">No queued topics — add one in Keyword &amp; Topics</option>
@@ -341,14 +341,14 @@ export function LivePipelineTracker({
       </div>
 
       {/* Horizontal Animated 5-Stage Stepper */}
-      <ol className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-5">
+      <ol className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5">
         {PIPELINE_STAGES.map((stage) => {
           const isCurrent = running && activeStage === stage.idx;
           const isDone = completedStages.includes(stage.idx);
           return (
             <li
               key={stage.idx}
-              className={`rounded-xl border p-3 transition-all duration-300 ${
+              className={`min-w-0 rounded-xl border p-3 transition-all duration-300 ${
                 isCurrent
                   ? 'border-[#2563EB] bg-blue-500/15 text-white shadow-sm'
                   : isDone
@@ -417,7 +417,7 @@ export function LivePipelineTracker({
           <div className="mt-3 space-y-3 border-t border-slate-800 pt-3">
             {previewHeroSvg && (
               <div
-                className="mx-auto max-w-lg overflow-hidden rounded-lg border border-slate-800"
+                className="mx-auto max-w-lg overflow-hidden rounded-lg border border-slate-800 [&>svg]:h-auto [&>svg]:w-full [&>svg]:max-w-full"
                 dangerouslySetInnerHTML={{ __html: previewHeroSvg }}
               />
             )}

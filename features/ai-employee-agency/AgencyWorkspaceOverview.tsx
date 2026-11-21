@@ -317,8 +317,8 @@ export default function AgencyWorkspaceOverview() {
   // Clean unauthenticated or no-website-yet state (prevents broken 0% dashboard shell)
   if (!summary?.website) {
     return (
-      <div className="flex h-full min-h-0 w-full items-center justify-center overflow-y-auto bg-[#0B0F17] p-6 text-slate-100">
-        <div className="w-full max-w-md space-y-4 rounded-2xl border border-slate-800 bg-[#111827] p-6 text-center">
+      <div className="flex h-full min-h-0 w-full flex-col overflow-y-auto overflow-x-hidden bg-[#0B0F17] p-4 sm:p-6 text-slate-100">
+        <div className="mx-auto my-auto w-full max-w-md space-y-4 rounded-2xl border border-slate-800 bg-[#111827] p-6 text-center">
           <p className="text-[11px] font-semibold uppercase tracking-widest text-blue-400">
             DoItWithAI Agency OS
           </p>
@@ -416,7 +416,7 @@ export default function AgencyWorkspaceOverview() {
         ref={contentScrollRef}
         className="min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden"
       >
-        <div className="mx-auto w-full max-w-[1400px] space-y-5 px-4 py-5 sm:px-6 lg:px-8 lg:py-6">
+        <div className="mx-auto w-full max-w-[1400px] space-y-5 px-4 py-5 pb-10 sm:px-6 lg:px-8 lg:py-6 lg:pb-10">
           <header className="flex flex-col gap-3 border-b border-slate-800/80 pb-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
             <div className="min-w-0 flex-1">
               <h1
@@ -426,7 +426,7 @@ export default function AgencyWorkspaceOverview() {
                 {view}
               </h1>
               <p className="mt-1 break-words text-xs text-slate-400">
-                <span className="font-mono text-slate-200">{summary.website.domain}</span> · Approved ·{' '}
+                <span className="break-all font-mono text-slate-200">{summary.website.domain}</span> · Approved ·{' '}
                 {indexedPagesCount} indexed {indexedPagesCount === 1 ? 'page' : 'pages'} (
                 {summary.website.profile.coverage || 'partial'})
                 {summary.website.profile.domain_maturity && (

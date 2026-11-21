@@ -181,17 +181,17 @@ export function PractitionerBrainPanel() {
   return (
     <section className="space-y-5 rounded-xl border border-slate-800 bg-[#111827] p-5 text-slate-100">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4">
-        <div>
+        <div className="min-w-0 flex-1">
           <p className="text-[11px] font-semibold uppercase tracking-widest text-blue-400">
             Phase 10 Commercial Moat · Supabase pgvector RAG
           </p>
-          <h2 className="text-lg font-semibold text-white">
+          <h2 className="break-words text-lg font-semibold text-white">
             {access?.brandName || 'DoItWithAI Strategist Pro'} — Practitioner Brain
           </h2>
         </div>
         {access && (
           <span
-            className={`rounded-full border px-3 py-1 font-mono text-[11px] font-semibold uppercase ${
+            className={`max-w-full break-words rounded-full border px-3 py-1 font-mono text-[11px] font-semibold uppercase ${
               access.enabled
                 ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
                 : 'border-amber-500/30 bg-amber-500/10 text-amber-300'
@@ -223,12 +223,12 @@ export function PractitionerBrainPanel() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Playbook Title (e.g. SaaS BoFu Comparison SEO)"
-            className="rounded-lg border border-slate-700 bg-[#111827] px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+            className="min-w-0 w-full rounded-lg border border-slate-700 bg-[#111827] px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
           />
           <select
             value={sourceType}
             onChange={(e) => setSourceType(e.target.value)}
-            className="rounded-lg border border-slate-700 bg-[#111827] px-3 py-2 text-xs text-slate-200 focus:border-blue-500 focus:outline-none"
+            className="min-w-0 w-full rounded-lg border border-slate-700 bg-[#111827] px-3 py-2 text-xs text-slate-200 focus:border-blue-500 focus:outline-none"
           >
             <option value="seo_playbook">SEO Playbook</option>
             <option value="case_study">Case Study</option>
@@ -239,7 +239,7 @@ export function PractitionerBrainPanel() {
           <select
             value={specialistRole}
             onChange={(e) => setSpecialistRole(e.target.value)}
-            className="rounded-lg border border-slate-700 bg-[#111827] px-3 py-2 text-xs text-slate-200 focus:border-blue-500 focus:outline-none"
+            className="min-w-0 w-full rounded-lg border border-slate-700 bg-[#111827] px-3 py-2 text-xs text-slate-200 focus:border-blue-500 focus:outline-none sm:col-span-2 lg:col-span-1"
           >
             <option value="unified">All Specialists (Unified)</option>
             <option value="keywords">Keyword &amp; Topics</option>
@@ -259,14 +259,14 @@ export function PractitionerBrainPanel() {
             value={industryTags}
             onChange={(e) => setIndustryTags(e.target.value)}
             placeholder="Industry tags (comma-separated)"
-            className="rounded-lg border border-slate-700 bg-[#111827] px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+            className="min-w-0 w-full rounded-lg border border-slate-700 bg-[#111827] px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
           />
           <input
             type="text"
             value={storagePath}
             onChange={(e) => setStoragePath(e.target.value)}
             placeholder="Optional Supabase Storage ref (agency-practitioner-refs/...)"
-            className="rounded-lg border border-slate-700 bg-[#111827] px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+            className="min-w-0 w-full rounded-lg border border-slate-700 bg-[#111827] px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
           />
         </div>
 
@@ -310,7 +310,7 @@ export function PractitionerBrainPanel() {
           <select
             value={ragRole}
             onChange={(e) => setRagRole(e.target.value)}
-            className="rounded-lg border border-slate-700 bg-[#111827] px-3 py-2 text-xs text-slate-200 focus:border-blue-500 focus:outline-none"
+            className="w-full min-w-0 rounded-lg border border-slate-700 bg-[#111827] px-3 py-2 text-xs text-slate-200 focus:border-blue-500 focus:outline-none sm:w-auto"
           >
             <option value="unified">Unified</option>
             <option value="keywords">Keywords</option>
@@ -322,7 +322,7 @@ export function PractitionerBrainPanel() {
           <button
             type="submit"
             disabled={ragTesting}
-            className="shrink-0 rounded-lg border border-blue-500/40 bg-blue-500/15 px-3.5 py-2 text-xs font-semibold text-blue-200 hover:bg-blue-500/25 disabled:opacity-50"
+            className="w-full shrink-0 rounded-lg border border-blue-500/40 bg-blue-500/15 px-3.5 py-2 text-center text-xs font-semibold text-blue-200 hover:bg-blue-500/25 disabled:opacity-50 sm:w-auto"
           >
             {ragTesting ? 'Retrieving…' : 'Retrieve Top Tactics'}
           </button>
@@ -332,13 +332,13 @@ export function PractitionerBrainPanel() {
           <ul className="space-y-2 pt-1">
             {ragMatches.map((m) => (
               <li key={m.chunkId} className="rounded-lg border border-slate-800 bg-[#111827] p-3 text-xs">
-                <div className="flex items-center justify-between gap-2">
-                  <strong className="text-white">{m.tacticTitle}</strong>
-                  <span className="font-mono text-[10px] text-blue-300">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <strong className="min-w-0 break-words text-white">{m.tacticTitle}</strong>
+                  <span className="shrink-0 font-mono text-[10px] text-blue-300">
                     sim {m.similarity.toFixed(2)} · {m.sourceTitle}
                   </span>
                 </div>
-                <p className="mt-1 text-slate-300">{m.tacticBody}</p>
+                <p className="mt-1 break-words text-slate-300">{m.tacticBody}</p>
               </li>
             ))}
           </ul>
@@ -361,8 +361,8 @@ export function PractitionerBrainPanel() {
             {sources.map((src) => (
               <div key={src.id} className="flex flex-wrap items-center justify-between gap-3 p-3 text-xs">
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-semibold text-white">{src.title}</p>
-                  <p className="mt-0.5 text-[11px] text-slate-400">
+                  <p className="break-words font-semibold text-white">{src.title}</p>
+                  <p className="mt-0.5 break-all text-[11px] text-slate-400">
                     {src.source_type} · role: <span className="text-slate-200">{src.specialist_role}</span>
                     {src.storage_object_path ? ` · ref: ${src.storage_object_path}` : ''}
                   </p>

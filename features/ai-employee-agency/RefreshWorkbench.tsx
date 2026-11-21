@@ -285,7 +285,7 @@ export function RefreshWorkbench({
                 type="button"
                 disabled={scanning}
                 onClick={() => void runLiveTechnicalScan()}
-                className="inline-flex items-center gap-2 rounded-lg bg-[#2563EB] px-4 py-2 text-xs font-semibold text-white transition hover:bg-blue-500 disabled:opacity-50"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#2563EB] px-4 py-2 text-xs font-semibold text-white transition hover:bg-blue-500 disabled:opacity-50 sm:w-auto"
               >
                 {scanning && (
                   <span className="h-2 w-2 rounded-full bg-white animate-ping" />
@@ -301,7 +301,7 @@ export function RefreshWorkbench({
             <div className="space-y-4">
               {/* Summary Strip + Sub-View Tabs */}
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="inline-flex rounded-lg border border-slate-800 bg-[#0B0F17] p-1 text-xs">
+                <div className="flex w-full flex-wrap gap-1 rounded-lg border border-slate-800 bg-[#0B0F17] p-1 text-xs sm:inline-flex sm:w-auto">
                   {(
                     [
                       { id: "crawl", label: "Crawl & Index" },
@@ -319,7 +319,7 @@ export function RefreshWorkbench({
                       key={t.id}
                       type="button"
                       onClick={() => setAuditTab(t.id)}
-                      className={`rounded-md px-3 py-1.5 font-semibold transition ${
+                      className={`flex-1 rounded-md px-3 py-1.5 text-center font-semibold transition sm:flex-none ${
                         auditTab === t.id
                           ? "bg-[#2563EB] text-white"
                           : "text-slate-400 hover:text-white"
@@ -356,14 +356,14 @@ export function RefreshWorkbench({
                         return (
                           <div
                             key={f.url}
-                            className="rounded-lg border border-slate-800 bg-[#0B0F17] p-3"
+                            className="min-w-0 rounded-lg border border-slate-800 bg-[#0B0F17] p-3"
                           >
                             <div className="flex items-center justify-between gap-2">
                               <span className="truncate font-mono text-xs text-slate-300">
                                 {f.url.replace(/^https?:\/\/[^/]+/, "") || "/"}
                               </span>
                               <span
-                                className={`rounded-full px-2 py-0.5 font-mono text-[10px] font-semibold ${
+                                className={`shrink-0 rounded-full px-2 py-0.5 font-mono text-[10px] font-semibold ${
                                   ok
                                     ? "bg-emerald-500/15 text-emerald-300"
                                     : "bg-slate-800 text-slate-400"
@@ -382,7 +382,7 @@ export function RefreshWorkbench({
                     {(["added", "removed"] as const).map((key) => (
                       <details
                         key={key}
-                        className="rounded-lg border border-slate-800 bg-[#0B0F17] p-3"
+                        className="min-w-0 rounded-lg border border-slate-800 bg-[#0B0F17] p-3"
                       >
                         <summary className="cursor-pointer text-xs font-semibold text-slate-200">
                           {scan.report[key].length} URLs {key}
@@ -428,11 +428,11 @@ export function RefreshWorkbench({
                             >
                               {isOk ? "OK — Keep As Is" : "Needs Fix"}
                             </span>
-                            <strong className="truncate font-mono text-slate-200">
+                            <strong className="min-w-0 max-w-full break-all font-mono text-slate-200">
                               {c.url}
                             </strong>
                           </div>
-                          <p className="text-slate-400">
+                          <p className="break-words text-slate-400">
                             {c.findings.join(" · ") || "All checked on-page fields healthy."}
                           </p>
                         </div>
@@ -471,10 +471,10 @@ export function RefreshWorkbench({
                           className="rounded-lg border border-slate-800 bg-[#0B0F17] p-3 text-xs"
                         >
                           <div className="flex flex-wrap items-center justify-between gap-2">
-                            <span className="truncate font-mono text-slate-200">
+                            <span className="min-w-0 max-w-full break-all font-mono text-slate-200">
                               {m.imageUrl}
                             </span>
-                            <div className="flex shrink-0 items-center gap-1.5 font-mono text-[10px]">
+                            <div className="flex shrink-0 flex-wrap items-center gap-1.5 font-mono text-[10px]">
                               {m.sizeKb !== null && (
                                 <span
                                   className={`rounded px-2 py-0.5 ${
@@ -498,7 +498,7 @@ export function RefreshWorkbench({
                               )}
                             </div>
                           </div>
-                          <p className="mt-1 text-[11px] text-slate-400">
+                          <p className="mt-1 break-all text-[11px] text-slate-400">
                             Page: {m.pageUrl} · {m.targetGuidance}
                           </p>
                         </div>
@@ -523,7 +523,7 @@ export function RefreshWorkbench({
          ==================================================================== */}
       <div className="grid gap-5 border-t border-slate-800 pt-5 lg:grid-cols-12">
         {/* Left Pane: Categorized Existing URL Inventory */}
-        <aside className="space-y-3 lg:col-span-4">
+        <aside className="min-w-0 space-y-3 lg:col-span-4">
           <div className="space-y-1">
             <h3 className="text-sm font-semibold text-white">
               Discovered Pages ({pages.length})
@@ -571,7 +571,7 @@ export function RefreshWorkbench({
                     key={p.url}
                     type="button"
                     onClick={() => setUrl(p.url)}
-                    className={`block w-full rounded-lg border p-2.5 text-left text-xs transition ${
+                    className={`block w-full min-w-0 rounded-lg border p-2.5 text-left text-xs transition ${
                       active
                         ? "border-[#2563EB] bg-blue-500/15 text-white"
                         : "border-slate-800 bg-[#0B0F17] text-slate-300 hover:border-slate-700"
@@ -623,7 +623,7 @@ export function RefreshWorkbench({
                     >
                       {snapshot.metaHealth === "ok" ? "OK — Keep As Is" : "Needs Fix"}
                     </span>
-                    <span className="truncate font-mono text-xs text-slate-200">{url}</span>
+                    <span className="min-w-0 max-w-full break-all font-mono text-xs text-slate-200">{url}</span>
                   </div>
                   <p className="text-xs text-slate-400">
                     {snapshot.findings.join(" · ") || "No issues in checked fields."}
@@ -634,7 +634,7 @@ export function RefreshWorkbench({
                   type="button"
                   disabled={optimizing || busy}
                   onClick={() => void runAiOptimizePage()}
-                  className="shrink-0 rounded-lg bg-[#2563EB] px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-blue-500 disabled:opacity-50"
+                  className="w-full shrink-0 rounded-lg bg-[#2563EB] px-3.5 py-2 text-center text-xs font-semibold text-white transition hover:bg-blue-500 disabled:opacity-50 sm:w-auto"
                 >
                   {optimizing
                     ? "Optimizing Page…"
@@ -686,7 +686,7 @@ export function RefreshWorkbench({
                   <div className="divide-y divide-slate-800/80">
                     {altSuggestions.map((a, idx) => (
                       <div key={idx} className="py-2">
-                        <p className="truncate font-mono text-[11px] text-slate-400">{a.src}</p>
+                        <p className="break-all font-mono text-[11px] text-slate-400">{a.src}</p>
                         <p className="mt-0.5 text-emerald-300">alt=&quot;{a.suggestedAlt}&quot;</p>
                       </div>
                     ))}

@@ -244,17 +244,17 @@ export function GuidedOnboardingStudio({
     'block w-full rounded-lg border border-slate-700 bg-[#0B0F17] px-3 py-2 text-xs text-slate-100 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none';
 
   return (
-    <div className="min-h-full w-full overflow-y-auto bg-[#0B0F17] text-slate-100">
-      <div className="mx-auto w-full max-w-6xl space-y-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+    <div className="h-full min-h-0 w-full overflow-y-auto overflow-x-hidden bg-[#0B0F17] text-slate-100">
+      <div className="mx-auto w-full max-w-6xl space-y-6 px-4 py-6 pb-14 sm:px-6 lg:px-8 lg:py-8 lg:pb-14">
         {/* Top Guided Header */}
         <header className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800/90 pb-5">
-          <div className="min-w-0 space-y-1">
+          <div className="min-w-0 flex-1 space-y-1">
             <div className="flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-500/30 bg-blue-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-blue-300">
                 <span className="h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse" />
                 Guided Onboarding Studio
               </span>
-              <span className="font-mono text-xs text-slate-400">{row.domain}</span>
+              <span className="break-all font-mono text-xs text-slate-400">{row.domain}</span>
             </div>
             <h1 className="text-xl font-semibold tracking-tight text-white sm:text-2xl">
               Review your verified Brand Dossier &amp; launch your 24/7 AI Agency
@@ -320,15 +320,15 @@ export function GuidedOnboardingStudio({
         {discovering || !profile.checkedAt ? (
           <section className="rounded-2xl border border-slate-800 bg-[#111827] p-6 sm:p-8">
             <div className="mx-auto max-w-2xl space-y-6">
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <span className="relative flex h-3.5 w-3.5">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="flex min-w-0 flex-1 items-center gap-3">
+                  <span className="relative flex h-3.5 w-3.5 shrink-0">
                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-400 opacity-75" />
                     <span className="relative inline-flex h-3.5 w-3.5 rounded-full bg-[#2563EB]" />
                   </span>
-                  <div>
-                    <h2 className="text-base font-semibold text-white">
-                      AI Specialists are analyzing {row.domain} in real time…
+                  <div className="min-w-0 flex-1">
+                    <h2 className="break-words text-base font-semibold text-white">
+                      AI Specialists are analyzing <span className="break-all">{row.domain}</span> in real time…
                     </h2>
                     <p className="text-xs text-slate-400">
                       Reading sitemap, HTML metadata, industry signals, and low-KD keyword gaps.
@@ -370,7 +370,7 @@ export function GuidedOnboardingStudio({
             {/* Two-Column Dossier + 6 Clickable Keyword Cards */}
             <div className="grid gap-6 lg:grid-cols-12">
               {/* Left Column: Verified Brand Dossier & Maturity Split */}
-              <section className="space-y-5 rounded-2xl border border-slate-800 bg-[#111827] p-5 lg:col-span-5">
+              <section className="min-w-0 space-y-5 rounded-2xl border border-slate-800 bg-[#111827] p-5 lg:col-span-5">
                 <div className="flex items-start justify-between gap-3 border-b border-slate-800 pb-4">
                   <div className="min-w-0">
                     <p className="text-[11px] font-semibold uppercase tracking-wider text-blue-400">
@@ -416,14 +416,14 @@ export function GuidedOnboardingStudio({
                     </span>
                   </div>
                   {inventory && (
-                    <div className="mt-2.5 grid grid-cols-4 gap-2 text-center">
+                    <div className="mt-2.5 grid grid-cols-2 gap-2 text-center sm:grid-cols-4">
                       {[
                         { label: 'Blogs', val: inventory.blogs },
                         { label: 'Services', val: inventory.services },
                         { label: 'Tools/Prod', val: inventory.products },
                         { label: 'Landing', val: inventory.landingPages },
                       ].map((m) => (
-                        <div key={m.label} className="rounded-lg border border-slate-800 bg-[#111827] py-2">
+                        <div key={m.label} className="min-w-0 rounded-lg border border-slate-800 bg-[#111827] py-2">
                           <div className="font-mono text-sm font-semibold text-white">{m.val}</div>
                           <div className="text-[10px] text-slate-400">{m.label}</div>
                         </div>
@@ -459,17 +459,17 @@ export function GuidedOnboardingStudio({
                           key={preset.id}
                           type="button"
                           onClick={() => setPriorityPreset(preset.id)}
-                          className={`block w-full rounded-xl border p-3 text-left transition ${
+                          className={`block w-full min-w-0 rounded-xl border p-3 text-left transition ${
                             active
                               ? 'border-[#2563EB] bg-blue-500/10'
                               : 'border-slate-800 bg-[#0B0F17] hover:border-slate-700'
                           }`}
                         >
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-xs font-semibold text-white">{preset.title}</span>
-                            <span className="font-mono text-[10px] text-blue-300">{preset.split}</span>
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <span className="break-words text-xs font-semibold text-white">{preset.title}</span>
+                            <span className="break-words font-mono text-[10px] text-blue-300">{preset.split}</span>
                           </div>
-                          <p className="mt-1 text-[11px] text-slate-400">{preset.detail}</p>
+                          <p className="mt-1 break-words text-[11px] text-slate-400">{preset.detail}</p>
                         </button>
                       );
                     })}
@@ -482,23 +482,23 @@ export function GuidedOnboardingStudio({
                     Customize Brand Details (Optional)
                   </summary>
                   <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                    <label className="space-y-1 text-[11px] text-slate-400">
+                    <label className="min-w-0 space-y-1 text-[11px] text-slate-400">
                       <span>Business name</span>
                       <input className={inputClass} value={name} onChange={(e) => setName(e.target.value)} maxLength={500} />
                     </label>
-                    <label className="space-y-1 text-[11px] text-slate-400">
+                    <label className="min-w-0 space-y-1 text-[11px] text-slate-400">
                       <span>Industry / Niche</span>
                       <input className={inputClass} value={industry} onChange={(e) => setIndustry(e.target.value)} maxLength={500} />
                     </label>
-                    <label className="space-y-1 text-[11px] text-slate-400 sm:col-span-2">
+                    <label className="min-w-0 space-y-1 text-[11px] text-slate-400 sm:col-span-2">
                       <span>Target audience</span>
                       <input className={inputClass} value={audience} onChange={(e) => setAudience(e.target.value)} maxLength={500} />
                     </label>
-                    <label className="space-y-1 text-[11px] text-slate-400 sm:col-span-2">
+                    <label className="min-w-0 space-y-1 text-[11px] text-slate-400 sm:col-span-2">
                       <span>Core product or service</span>
                       <input className={inputClass} value={offer} onChange={(e) => setOffer(e.target.value)} maxLength={500} />
                     </label>
-                    <label className="space-y-1 text-[11px] text-slate-400">
+                    <label className="min-w-0 space-y-1 text-[11px] text-slate-400">
                       <span>Business model</span>
                       <select className={inputClass} value={businessModel} onChange={(e) => setBusinessModel(e.target.value)}>
                         {['b2b_saas', 'ecommerce', 'local_service', 'publisher', 'agency'].map((m) => (
@@ -506,11 +506,11 @@ export function GuidedOnboardingStudio({
                         ))}
                       </select>
                     </label>
-                    <label className="space-y-1 text-[11px] text-slate-400">
+                    <label className="min-w-0 space-y-1 text-[11px] text-slate-400">
                       <span>Locale / Currency</span>
-                      <div className="flex gap-2">
-                        <input className={inputClass} value={locale} onChange={(e) => setLocale(e.target.value)} maxLength={20} />
-                        <input className={inputClass} value={currency} onChange={(e) => setCurrency(e.target.value)} maxLength={10} />
+                      <div className="grid grid-cols-2 gap-2">
+                        <input className={`${inputClass} min-w-0`} value={locale} onChange={(e) => setLocale(e.target.value)} maxLength={20} />
+                        <input className={`${inputClass} min-w-0`} value={currency} onChange={(e) => setCurrency(e.target.value)} maxLength={10} />
                       </div>
                     </label>
                     <label className="space-y-1 text-[11px] text-slate-400 sm:col-span-2">
@@ -530,10 +530,10 @@ export function GuidedOnboardingStudio({
               </section>
 
               {/* Right Column: 6 Clickable Low-KD Keyword Cards */}
-              <section className="flex flex-col justify-between space-y-5 rounded-2xl border border-slate-800 bg-[#111827] p-5 lg:col-span-7">
+              <section className="flex min-w-0 flex-col justify-between space-y-5 rounded-2xl border border-slate-800 bg-[#111827] p-5 lg:col-span-7">
                 <div className="space-y-4">
                   <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-4">
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <p className="text-[11px] font-semibold uppercase tracking-wider text-blue-400">
                         Keyword Strategist · Overlap-Gate Checked
                       </p>
@@ -541,7 +541,7 @@ export function GuidedOnboardingStudio({
                         Select starter keywords for your first live run
                       </h2>
                     </div>
-                    <span className="rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 font-mono text-xs text-blue-200">
+                    <span className="shrink-0 rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 font-mono text-xs text-blue-200">
                       {selectedKeywords.length} selected
                     </span>
                   </div>
@@ -554,14 +554,14 @@ export function GuidedOnboardingStudio({
                           key={card.keyword}
                           type="button"
                           onClick={() => toggleKeyword(card.keyword)}
-                          className={`flex flex-col justify-between rounded-xl border p-3.5 text-left transition ${
+                          className={`flex min-w-0 flex-col justify-between rounded-xl border p-3.5 text-left transition ${
                             checked
                               ? 'border-[#2563EB] bg-blue-500/10'
                               : 'border-slate-800 bg-[#0B0F17] hover:border-slate-700'
                           }`}
                         >
-                          <div className="space-y-1.5">
-                            <div className="flex items-center justify-between gap-2">
+                          <div className="min-w-0 space-y-1.5">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
                               <span className="inline-flex items-center gap-1.5 font-mono text-[10px] font-semibold text-blue-300">
                                 <span
                                   className={`inline-block h-3.5 w-3.5 rounded border text-center leading-3 ${
@@ -584,8 +584,8 @@ export function GuidedOnboardingStudio({
                                 {card.overlapAction === 'refresh' ? 'Refresh Existing' : 'Verified Gap'}
                               </span>
                             </div>
-                            <p className="text-xs font-semibold text-white">{card.keyword}</p>
-                            <p className="text-[11px] leading-relaxed text-slate-400">
+                            <p className="break-words text-xs font-semibold text-white">{card.keyword}</p>
+                            <p className="break-words text-[11px] leading-relaxed text-slate-400">
                               {card.recommendedTitle}
                             </p>
                           </div>
@@ -625,7 +625,7 @@ export function GuidedOnboardingStudio({
                       type="button"
                       disabled={Boolean(submittingMode) || selectedKeywords.length === 0}
                       onClick={() => void approveAndLaunch('auto')}
-                      className="flex-1 rounded-xl bg-[#2563EB] px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-blue-500 disabled:opacity-50"
+                      className="inline-flex w-full items-center justify-center rounded-xl bg-[#2563EB] px-5 py-3 text-center text-sm font-semibold text-white shadow-lg transition hover:bg-blue-500 disabled:opacity-50 sm:w-auto sm:flex-1"
                     >
                       {submittingMode === 'auto'
                         ? 'Starting Digital Agency…'
@@ -635,7 +635,7 @@ export function GuidedOnboardingStudio({
                       type="button"
                       disabled={Boolean(submittingMode)}
                       onClick={() => void approveAndLaunch('manual')}
-                      className="rounded-xl border border-slate-700 bg-[#0B0F17] px-4 py-3 text-xs font-semibold text-slate-200 transition hover:border-blue-500/60 hover:text-white disabled:opacity-50"
+                      className="inline-flex w-full items-center justify-center rounded-xl border border-slate-700 bg-[#0B0F17] px-4 py-3 text-center text-xs font-semibold text-slate-200 transition hover:border-blue-500/60 hover:text-white disabled:opacity-50 sm:w-auto"
                     >
                       {submittingMode === 'manual'
                         ? 'Unlocking…'

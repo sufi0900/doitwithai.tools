@@ -85,7 +85,7 @@ export function CommercialUsage() {
               return (
                 <div
                   key={period}
-                  className="space-y-2.5 rounded-xl border border-slate-800 bg-[#0B0F17] p-4"
+                  className="min-w-0 space-y-2.5 rounded-xl border border-slate-800 bg-[#0B0F17] p-4"
                 >
                   <div className="flex items-center justify-between">
                     <strong className="text-sm font-semibold text-white">
@@ -166,7 +166,7 @@ export function CommercialUsage() {
 
           {budget.specialists.length ? (
             <div className="overflow-x-auto rounded-xl border border-slate-800 bg-[#0B0F17]">
-              <table className="w-full text-left text-xs">
+              <table className="w-full min-w-[420px] text-left text-xs">
                 <thead className="border-b border-slate-800 text-[11px] uppercase tracking-wider text-slate-400">
                   <tr>
                     {['Specialist', 'Tokens', 'USD', 'Pending'].map((h) => (

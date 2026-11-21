@@ -137,7 +137,7 @@ export function KeywordTopicsWorkbench({
           type="button"
           disabled={discovering}
           onClick={() => void handleDiscoverKeywords()}
-          className="inline-flex items-center gap-2 rounded-lg bg-[#2563EB] px-4 py-2 text-xs font-semibold text-white transition hover:bg-blue-500 disabled:opacity-50"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#2563EB] px-4 py-2 text-center text-xs font-semibold text-white transition hover:bg-blue-500 disabled:opacity-50 sm:w-auto"
         >
           {discovering && (
             <span className="h-2 w-2 rounded-full bg-white animate-ping" />
@@ -188,10 +188,10 @@ export function KeywordTopicsWorkbench({
             return (
               <article
                 key={card.keyword}
-                className="flex flex-col justify-between space-y-3 rounded-xl border border-slate-800 bg-[#0B0F17] p-4"
+                className="flex min-w-0 flex-col justify-between space-y-3 rounded-xl border border-slate-800 bg-[#0B0F17] p-4"
               >
                 <div className="space-y-1.5">
-                  <div className="flex items-center justify-between gap-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="rounded border border-blue-500/30 bg-blue-500/10 px-2 py-0.5 font-mono text-[10px] font-semibold text-blue-300">
                       KD {card.estimatedKd} · {card.intent}
                     </span>
@@ -207,8 +207,8 @@ export function KeywordTopicsWorkbench({
                         : `Verified Gap (${card.overlapScore}%)`}
                     </span>
                   </div>
-                  <h3 className="text-sm font-semibold text-white">{card.keyword}</h3>
-                  <p className="text-xs leading-relaxed text-slate-400">
+                  <h3 className="break-words text-sm font-semibold text-white">{card.keyword}</h3>
+                  <p className="break-words text-xs leading-relaxed text-slate-400">
                     {card.recommendedTitle}
                   </p>
                 </div>
@@ -258,13 +258,13 @@ export function KeywordTopicsWorkbench({
               return (
                 <div
                   key={item.id}
-                  className="flex flex-wrap items-center justify-between gap-2.5 py-2.5 text-xs"
+                  className="flex min-w-0 flex-wrap items-center justify-between gap-2.5 py-2.5 text-xs"
                 >
                   <div className="flex min-w-0 flex-1 items-center gap-2">
-                    <span className="font-mono text-[11px] text-slate-500">
+                    <span className="shrink-0 font-mono text-[11px] text-slate-500">
                       #{idx + 1}
                     </span>
-                    <span className="truncate font-medium text-slate-200">
+                    <span className="min-w-0 break-words font-medium text-slate-200">
                       {topicName}
                     </span>
                   </div>

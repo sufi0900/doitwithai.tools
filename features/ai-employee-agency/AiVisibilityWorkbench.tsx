@@ -195,7 +195,7 @@ export function AiVisibilityWorkbench({
   return (
     <section className="space-y-5 rounded-xl border border-slate-800 bg-[#111827] p-5">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4">
-        <div className="space-y-1">
+        <div className="min-w-0 space-y-1">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-blue-400">
             AI Visibility, Competitor Gap &amp; Digital PR
           </p>
@@ -204,7 +204,7 @@ export function AiVisibilityWorkbench({
           </h2>
         </div>
 
-        <div className="inline-flex rounded-lg border border-slate-800 bg-[#0B0F17] p-1 text-xs">
+        <div className="flex w-full flex-wrap gap-1 rounded-lg border border-slate-800 bg-[#0B0F17] p-1 text-xs sm:inline-flex sm:w-auto">
           {(
             [
               { id: 'visibility', label: 'AI Visibility Radar' },
@@ -216,7 +216,7 @@ export function AiVisibilityWorkbench({
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`rounded-md px-3 py-1.5 font-semibold transition ${
+              className={`flex-1 rounded-md px-3 py-1.5 text-center font-semibold transition sm:flex-none ${
                 activeTab === tab.id
                   ? 'bg-[#2563EB] text-white'
                   : 'text-slate-400 hover:text-white'
@@ -250,9 +250,9 @@ export function AiVisibilityWorkbench({
         <div className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-800 bg-[#0B0F17] p-4">
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-semibold text-white">
+              <p className="break-words text-xs font-semibold text-white">
                 Check ChatGPT, Perplexity, Gemini &amp; Claude crawlability for{' '}
-                <span className="font-mono text-blue-300">{website.domain}</span>
+                <span className="break-all font-mono text-blue-300">{website.domain}</span>
               </p>
               <p className="mt-0.5 text-xs text-slate-400">
                 Inspects live HTML schema, /robots.txt AI bot directives, and /llms.txt at $0.00 LLM cost.
@@ -262,7 +262,7 @@ export function AiVisibilityWorkbench({
               type="button"
               disabled={runningAudit}
               onClick={() => void runVisibilityAudit()}
-              className="rounded-lg bg-[#2563EB] px-4 py-2 text-xs font-semibold text-white transition hover:bg-blue-500 disabled:opacity-50"
+              className="w-full rounded-lg bg-[#2563EB] px-4 py-2 text-center text-xs font-semibold text-white transition hover:bg-blue-500 disabled:opacity-50 sm:w-auto"
             >
               {runningAudit ? 'Scanning AI Bots…' : 'Run Live AI Visibility Audit →'}
             </button>
@@ -304,11 +304,11 @@ export function AiVisibilityWorkbench({
               </div>
 
               {platforms.length > 0 && (
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                   {platforms.map((p, idx) => (
                     <div
                       key={p.platformName || p.engine || idx}
-                      className="rounded-xl border border-slate-800 bg-[#0B0F17] p-3.5 text-xs"
+                      className="min-w-0 rounded-xl border border-slate-800 bg-[#0B0F17] p-3.5 text-xs"
                     >
                       <div className="flex items-center justify-between gap-2">
                         <strong className="text-slate-100">
@@ -377,7 +377,7 @@ export function AiVisibilityWorkbench({
                         className="flex flex-wrap items-center justify-between gap-2 py-2 text-xs"
                       >
                         <div className="min-w-0 flex-1">
-                          <span className="font-medium text-slate-200">{row.keyword}</span>
+                          <span className="break-words font-medium text-slate-200">{row.keyword}</span>
                           {row.kdScore !== undefined && (
                             <span className="ml-2 font-mono text-[11px] text-slate-400">
                               KD {row.kdScore}

@@ -160,7 +160,7 @@ export function CalmAgencyNodeCanvas({
             </button>
           ))}
 
-          <div className="ml-1 flex items-center gap-1 rounded-lg border border-slate-800 bg-[#0B0F17] p-1">
+          <div className="flex items-center gap-1 rounded-lg border border-slate-800 bg-[#0B0F17] p-1">
             <button
               type="button"
               onClick={() => setZoom((z) => Math.max(0.75, Number((z - 0.1).toFixed(2))))}
@@ -379,9 +379,9 @@ export function CalmAgencyNodeCanvas({
               )}
             </div>
 
-            <div>
-              <h3 className="text-base font-semibold text-white">{agentName(selectedNode.id)}</h3>
-              <p className="mt-1 text-xs text-slate-400">
+            <div className="min-w-0 break-words">
+              <h3 className="break-words text-base font-semibold text-white">{agentName(selectedNode.id)}</h3>
+              <p className="mt-1 break-words text-xs text-slate-400">
                 Role: <span className="text-slate-200">{selectedNode.roleTag}</span> · Panel:{' '}
                 <span className="text-slate-200">{selectedNode.viewName}</span>
               </p>
@@ -400,7 +400,7 @@ export function CalmAgencyNodeCanvas({
               </div>
             </div>
 
-            <p className="text-xs leading-relaxed text-slate-400">
+            <p className="break-words text-xs leading-relaxed text-slate-400">
               {selectedIsLive
                 ? 'Currently executing a live metered stage in the 5-stage production pipeline.'
                 : activeProviders.length > 0

@@ -243,7 +243,7 @@ export default function AiAgencyPublicLanding() {
             </span>
           </div>
 
-          <div className="flex items-center gap-2 text-xs">
+          <div className="flex flex-wrap items-center gap-2 text-xs">
             <button
               type="button"
               onClick={handleToggleLandingTheme}
@@ -321,14 +321,14 @@ export default function AiAgencyPublicLanding() {
               Register your website
             </span>
             <div
-              className={`inline-flex rounded-xl border p-1 text-xs ${
+              className={`flex w-full flex-wrap gap-1 rounded-xl border p-1 text-xs sm:inline-flex sm:w-auto ${
                 isLightTheme ? 'border-slate-200 bg-slate-100' : 'border-slate-700 bg-slate-950'
               }`}
             >
               <button
                 type="button"
                 onClick={() => setSiteMode('external-url')}
-                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-bold transition ${
+                className={`inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 font-bold transition sm:flex-none ${
                   siteMode === 'external-url'
                     ? 'bg-[#1D4ED8] text-white'
                     : isLightTheme
@@ -342,7 +342,7 @@ export default function AiAgencyPublicLanding() {
               <button
                 type="button"
                 onClick={() => setSiteMode('internal-builder')}
-                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-bold transition ${
+                className={`inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 font-bold transition sm:flex-none ${
                   siteMode === 'internal-builder'
                     ? 'bg-emerald-600 text-white'
                     : isLightTheme
@@ -356,7 +356,19 @@ export default function AiAgencyPublicLanding() {
             </div>
           </div>
 
-          <p role="status">{notice} {notice.includes('Sign in') && <a href="/do-it-ai?signin=1">Sign in</a>}</p>
+          {notice && (
+            <p
+              role="status"
+              className="break-words rounded-xl border border-rose-500/30 bg-rose-950/30 px-3.5 py-2 text-xs text-rose-300"
+            >
+              {notice}{' '}
+              {notice.includes('Sign in') && (
+                <a className="underline hover:text-white" href="/do-it-ai?signin=1">
+                  Sign in
+                </a>
+              )}
+            </p>
+          )}
           <form onSubmit={handleLaunchAgencyOnboarding} className="space-y-4">
             {siteMode === 'external-url' ? (
               <div>
@@ -612,7 +624,7 @@ export default function AiAgencyPublicLanding() {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
+            <table className="w-full min-w-[600px] text-left border-collapse text-xs">
               <thead>
                 <tr
                   className={`border-b text-[11px] uppercase tracking-wider ${
