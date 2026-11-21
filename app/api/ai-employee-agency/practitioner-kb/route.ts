@@ -9,6 +9,7 @@ import {
   type KnowledgeSourceType,
   type KnowledgeSpecialistRole,
 } from '@/lib/ai-agency/practitioner-rag.server';
+import type { KnowledgeCategory } from '@/lib/ai-agency/default-specialist-prompts';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,6 +19,15 @@ const VALID_SOURCE_TYPES = new Set<KnowledgeSourceType>([
   'video_distillation',
   'design_reference',
   'conversion_framework',
+]);
+
+const VALID_CATEGORIES = new Set<KnowledgeCategory>([
+  'on_page_seo',
+  'off_page_seo',
+  'technical_seo',
+  'content_writing',
+  'keyword_research',
+  'visual_design',
 ]);
 
 const VALID_ROLES = new Set<KnowledgeSpecialistRole>([
@@ -58,7 +68,7 @@ export async function GET(request: Request) {
   const { data: sources, error } = await db
     .from('agency_knowledge_sources')
     .select(
-      'id, title, source_type, specialist_role, industry_tags, maturity_tags, parent_summary, storage_object_path, active, created_at',
+      'id, title, source_type, knowledge_category, specialist_role, industry_tags, maturity_tags, parent_summary, storage_object_path, active, created_at',
     )
     .order('created_at', { ascending: false })
     .limit(50);
@@ -69,7 +79,8 @@ export async function GET(request: Request) {
         access,
         sources: [],
         migrationPending: true,
-        error: 'Apply migration 20261130_agency_practitioner_pgvector_kb.sql to enable the Practitioner Brain.',
+        error:
+          'Apply migrations 20261130_agency_practitioner_pgvector_kb.sql and 20261201_agency_kb_categories.sql to enable the category-indexed Practitioner Brain.',
       },
       { status: 200 },
     );
@@ -95,11 +106,15 @@ export async function POST(request: Request) {
   if (action === 'preview_rag') {
     const queryText = typeof body.queryText === 'string' ? body.queryText.trim() : '';
     const roleRaw = typeof body.specialistRole === 'string' ? body.specialistRole : 'unified';
+    const catRaw = typeof body.knowledgeCategory === 'string' ? body.knowledgeCategory : '';
     const specialistRole: KnowledgeSpecialistRole = VALID_ROLES.has(
       roleRaw as KnowledgeSpecialistRole,
     )
       ? (roleRaw as KnowledgeSpecialistRole)
       : 'unified';
+    const knowledgeCategory = VALID_CATEGORIES.has(catRaw as KnowledgeCategory)
+      ? (catRaw as KnowledgeCategory)
+      : null;
 
     if (!queryText) {
       return NextResponse.json({ error: 'Enter a query to preview RAG retrieval.' }, { status: 400 });
@@ -109,6 +124,7 @@ export async function POST(request: Request) {
       workspaceId: workspace.id,
       specialistRole,
       queryText,
+      knowledgeCategory,
       limit: 4,
       bypassTierGate: isAdminWorkspace(workspace.id),
     });
@@ -116,6 +132,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       ok: true,
       access: result.access,
+      resolvedCategory: result.resolvedCategory,
       tactics: result.tactics,
       promptPreview: formatPractitionerRagBlock(result.tactics),
     });
@@ -134,6 +151,7 @@ export async function POST(request: Request) {
     const rawPlaybook = typeof body.rawPlaybook === 'string' ? body.rawPlaybook.trim() : '';
     const sourceTypeRaw = typeof body.sourceType === 'string' ? body.sourceType : 'seo_playbook';
     const roleRaw = typeof body.specialistRole === 'string' ? body.specialistRole : 'unified';
+    const catRaw = typeof body.knowledgeCategory === 'string' ? body.knowledgeCategory : 'on_page_seo';
 
     if (!title || !rawPlaybook) {
       return NextResponse.json(
@@ -152,6 +170,9 @@ export async function POST(request: Request) {
     )
       ? (roleRaw as KnowledgeSpecialistRole)
       : 'unified';
+    const knowledgeCategory: KnowledgeCategory = VALID_CATEGORIES.has(catRaw as KnowledgeCategory)
+      ? (catRaw as KnowledgeCategory)
+      : 'on_page_seo';
 
     const industryTags = Array.isArray(body.industryTags)
       ? body.industryTags.map((v) => String(v).trim()).filter(Boolean)
@@ -165,6 +186,7 @@ export async function POST(request: Request) {
     const ingested = await ingestPractitionerPlaybook({
       title,
       sourceType,
+      knowledgeCategory,
       specialistRole,
       industryTags,
       maturityTags,

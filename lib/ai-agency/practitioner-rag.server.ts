@@ -1,4 +1,8 @@
 import { createSupabaseServiceClient } from '@/features/website-builder/lib/supabase/server';
+import {
+  inferKnowledgeCategoryFromQuery,
+  type KnowledgeCategory,
+} from './default-specialist-prompts';
 
 export type KnowledgeSourceType =
   | 'seo_playbook'
@@ -30,6 +34,7 @@ export interface RetrievedPractitionerTactic {
   sourceId: string;
   sourceTitle: string;
   sourceType: string;
+  knowledgeCategory?: KnowledgeCategory;
   parentSummary: string;
   storageObjectPath: string | null;
   tacticTitle: string;
@@ -62,10 +67,6 @@ function getIsolatedAgencyGeminiKey(): string | null {
   return null;
 }
 
-/**
- * Deterministically splits a curated playbook into focused Tactic Cards (max ~900 chars each)
- * without incurring extra LLM chunking tokens.
- */
 export function chunkPlaybookIntoTacticCards(
   rawPlaybook: string,
   fallbackTitle: string,
@@ -127,10 +128,6 @@ export function chunkPlaybookIntoTacticCards(
   return cards.slice(0, 40);
 }
 
-/**
- * Generates a 768-dimensional embedding strictly via the isolated Agency Gemini key.
- * Returns null gracefully if key is missing or embedding endpoint is unavailable.
- */
 export async function embedAgencyText(text: string): Promise<number[] | null> {
   const apiKey = getIsolatedAgencyGeminiKey();
   if (!apiKey) return null;
@@ -168,6 +165,16 @@ export async function embedAgencyText(text: string): Promise<number[] | null> {
 export async function hasPractitionerBrainAccess(
   workspaceId: string,
 ): Promise<PractitionerBrainAccess> {
+  const globalTesting = (process.env.AGENCY_UNLIMITED_TESTING || '').trim().toLowerCase();
+  if (globalTesting === 'true' || globalTesting === '1') {
+    return {
+      enabled: true,
+      tier: 'founder-testing',
+      brandName: PRO_STRATEGIST_BRAND_NAME,
+      upgradeRequired: false,
+    };
+  }
+
   const db = createSupabaseServiceClient();
   if (!db) {
     return {
@@ -196,6 +203,7 @@ export async function hasPractitionerBrainAccess(
 export async function ingestPractitionerPlaybook(input: {
   title: string;
   sourceType: KnowledgeSourceType;
+  knowledgeCategory: KnowledgeCategory;
   specialistRole: KnowledgeSpecialistRole;
   industryTags: string[];
   maturityTags: string[];
@@ -223,6 +231,7 @@ export async function ingestPractitionerPlaybook(input: {
     .insert({
       title: input.title.trim().slice(0, 180),
       source_type: input.sourceType,
+      knowledge_category: input.knowledgeCategory,
       specialist_role: input.specialistRole,
       industry_tags: input.industryTags.slice(0, 12),
       maturity_tags: input.maturityTags.slice(0, 4),
@@ -236,7 +245,9 @@ export async function ingestPractitionerPlaybook(input: {
   if (sourceErr || !source?.id) {
     return {
       ok: false,
-      error: sourceErr?.message || 'Unable to store playbook source. Ensure the pgvector migration is applied.',
+      error:
+        sourceErr?.message ||
+        'Unable to store playbook source. Ensure migrations 20261130 & 20261201 are applied.',
     };
   }
 
@@ -244,7 +255,7 @@ export async function ingestPractitionerPlaybook(input: {
   const rows = [];
   for (const card of cards) {
     const embedding = await embedAgencyText(
-      `${input.title}\n${input.parentSummary}\n${card.tacticTitle}\n${card.tacticBody}`,
+      `[${input.knowledgeCategory}] ${input.title}\n${input.parentSummary}\n${card.tacticTitle}\n${card.tacticBody}`,
     );
     if (embedding) embeddedChunks += 1;
     rows.push({
@@ -253,6 +264,7 @@ export async function ingestPractitionerPlaybook(input: {
       tactic_title: card.tacticTitle,
       tactic_body: card.tacticBody,
       specialist_role: input.specialistRole,
+      knowledge_category: input.knowledgeCategory,
       embedding: embedding ? `[${embedding.join(',')}]` : null,
     });
   }
@@ -274,12 +286,18 @@ export async function retrievePractitionerTactics(input: {
   workspaceId: string;
   specialistRole: KnowledgeSpecialistRole;
   queryText: string;
+  knowledgeCategory?: KnowledgeCategory | null;
   limit?: number;
   bypassTierGate?: boolean;
 }): Promise<{
   access: PractitionerBrainAccess;
+  resolvedCategory: KnowledgeCategory;
   tactics: RetrievedPractitionerTactic[];
 }> {
+  const resolvedCategory =
+    input.knowledgeCategory ||
+    inferKnowledgeCategoryFromQuery(input.queryText, input.specialistRole);
+
   const access = input.bypassTierGate
     ? {
         enabled: true,
@@ -290,11 +308,11 @@ export async function retrievePractitionerTactics(input: {
     : await hasPractitionerBrainAccess(input.workspaceId);
 
   if (!access.enabled) {
-    return { access, tactics: [] };
+    return { access, resolvedCategory, tactics: [] };
   }
 
   const db = createSupabaseServiceClient();
-  if (!db) return { access, tactics: [] };
+  if (!db) return { access, resolvedCategory, tactics: [] };
 
   const matchCount = Math.max(1, Math.min(input.limit ?? 4, 6));
   const queryEmbedding = await embedAgencyText(input.queryText);
@@ -305,6 +323,7 @@ export async function retrievePractitionerTactics(input: {
       target_specialist: input.specialistRole,
       match_count: matchCount,
       min_similarity: 0.35,
+      target_category: input.knowledgeCategory || null,
     });
     if (!error && Array.isArray(data) && data.length > 0) {
       const tactics: RetrievedPractitionerTactic[] = data.map((row) => ({
@@ -312,6 +331,7 @@ export async function retrievePractitionerTactics(input: {
         sourceId: String(row.source_id),
         sourceTitle: String(row.source_title),
         sourceType: String(row.source_type),
+        knowledgeCategory: (row.knowledge_category || resolvedCategory) as KnowledgeCategory,
         parentSummary: String(row.parent_summary || ''),
         storageObjectPath: row.storage_object_path ? String(row.storage_object_path) : null,
         tacticTitle: String(row.tactic_title),
@@ -319,11 +339,11 @@ export async function retrievePractitionerTactics(input: {
         specialistRole: String(row.specialist_role),
         similarity: Number(row.similarity || 0),
       }));
-      return { access, tactics };
+      return { access, resolvedCategory, tactics };
     }
   }
 
-  // Deterministic lexical fallback when embeddings are unavailable or not yet populated
+  // Deterministic lexical fallback scoped by category & specialist
   const terms = input.queryText
     .toLowerCase()
     .split(/[^a-z0-9]+/)
@@ -333,13 +353,13 @@ export async function retrievePractitionerTactics(input: {
   const { data: fallbackRows } = await db
     .from('agency_knowledge_chunks')
     .select(
-      'id, source_id, tactic_title, tactic_body, specialist_role, agency_knowledge_sources!inner(title, source_type, parent_summary, storage_object_path, active)',
+      'id, source_id, tactic_title, tactic_body, specialist_role, knowledge_category, agency_knowledge_sources!inner(title, source_type, knowledge_category, parent_summary, storage_object_path, active)',
     )
     .in('specialist_role', ['unified', input.specialistRole])
-    .limit(24);
+    .limit(30);
 
   if (!Array.isArray(fallbackRows)) {
-    return { access, tactics: [] };
+    return { access, resolvedCategory, tactics: [] };
   }
 
   const scored: RetrievedPractitionerTactic[] = [];
@@ -347,30 +367,38 @@ export async function retrievePractitionerTactics(input: {
     const src = row.agency_knowledge_sources as unknown as {
       title?: string;
       source_type?: string;
+      knowledge_category?: KnowledgeCategory;
       parent_summary?: string;
       storage_object_path?: string | null;
       active?: boolean;
     };
     if (!src?.active) continue;
+    const rowCat = (src.knowledge_category || row.knowledge_category || 'on_page_seo') as KnowledgeCategory;
+    if (input.knowledgeCategory && rowCat !== input.knowledgeCategory) continue;
+
     const hay = `${row.tactic_title} ${row.tactic_body} ${src.title || ''}`.toLowerCase();
     const hits = terms.reduce((acc, t) => acc + (hay.includes(t) ? 1 : 0), 0);
     if (terms.length > 0 && hits === 0) continue;
+    const categoryBoost = rowCat === resolvedCategory ? 0.15 : 0;
     scored.push({
       chunkId: String(row.id),
       sourceId: String(row.source_id),
       sourceTitle: String(src.title || 'Practitioner Playbook'),
       sourceType: String(src.source_type || 'seo_playbook'),
+      knowledgeCategory: rowCat,
       parentSummary: String(src.parent_summary || ''),
       storageObjectPath: src.storage_object_path ? String(src.storage_object_path) : null,
       tacticTitle: String(row.tactic_title),
       tacticBody: String(row.tactic_body),
       specialistRole: String(row.specialist_role),
-      similarity: terms.length > 0 ? Number((hits / terms.length).toFixed(2)) : 0.5,
+      similarity: Number(
+        Math.min(1, (terms.length > 0 ? hits / terms.length : 0.5) + categoryBoost).toFixed(2),
+      ),
     });
   }
 
   scored.sort((a, b) => b.similarity - a.similarity);
-  return { access, tactics: scored.slice(0, matchCount) };
+  return { access, resolvedCategory, tactics: scored.slice(0, matchCount) };
 }
 
 export function formatPractitionerRagBlock(
@@ -382,7 +410,9 @@ export function formatPractitionerRagBlock(
     'Apply these field-tested tactics alongside the tenant live site audit where directly relevant:',
   ];
   for (const t of tactics) {
-    lines.push(`- ${t.tacticTitle} (${t.sourceTitle}): ${t.tacticBody.slice(0, 420)}`);
+    lines.push(
+      `- [${t.knowledgeCategory || 'on_page_seo'}] ${t.tacticTitle} (${t.sourceTitle}): ${t.tacticBody.slice(0, 420)}`,
+    );
     if (t.storageObjectPath) {
       lines.push(`  Reference asset: ${t.storageObjectPath}`);
     }

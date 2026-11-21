@@ -2,11 +2,17 @@
 
 import { useEffect, useState } from 'react';
 import { agencyRequest } from './agency-request';
+import {
+  DEFAULT_SPECIALIST_PROMPTS,
+  KNOWLEDGE_CATEGORIES,
+  type KnowledgeCategory,
+} from '@/lib/ai-agency/default-specialist-prompts';
 
 interface KnowledgeSourceRow {
   id: string;
   title: string;
   source_type: string;
+  knowledge_category?: KnowledgeCategory;
   specialist_role: string;
   industry_tags: string[];
   maturity_tags: string[];
@@ -26,10 +32,15 @@ interface BrainAccess {
 interface PreviewTactic {
   chunkId: string;
   sourceTitle: string;
+  knowledgeCategory?: string;
   tacticTitle: string;
   tacticBody: string;
   similarity: number;
 }
+
+const CATEGORY_LABEL_MAP = Object.fromEntries(
+  KNOWLEDGE_CATEGORIES.map((c) => [c.id, c.label]),
+) as Record<string, string>;
 
 export function PractitionerBrainPanel() {
   const [access, setAccess] = useState<BrainAccess | null>(null);
@@ -40,6 +51,7 @@ export function PractitionerBrainPanel() {
 
   // Playbook Intake Form State
   const [title, setTitle] = useState('');
+  const [knowledgeCategory, setKnowledgeCategory] = useState<KnowledgeCategory>('on_page_seo');
   const [sourceType, setSourceType] = useState('seo_playbook');
   const [specialistRole, setSpecialistRole] = useState('unified');
   const [industryTags, setIndustryTags] = useState('saas, agency, b2b');
@@ -50,9 +62,11 @@ export function PractitionerBrainPanel() {
 
   // Live RAG Simulator State
   const [ragQuery, setRagQuery] = useState('');
+  const [ragCategory, setRagCategory] = useState<string>('');
   const [ragRole, setRagRole] = useState('unified');
   const [ragTesting, setRagTesting] = useState(false);
   const [ragMatches, setRagMatches] = useState<PreviewTactic[]>([]);
+  const [resolvedRagCat, setResolvedRagCat] = useState('');
 
   async function loadSources() {
     setLoading(true);
@@ -91,6 +105,7 @@ export function PractitionerBrainPanel() {
         body: JSON.stringify({
           action: 'ingest',
           title,
+          knowledgeCategory,
           sourceType,
           specialistRole,
           industryTags: industryTags
@@ -113,7 +128,7 @@ export function PractitionerBrainPanel() {
         throw new Error(data.error || 'Playbook ingestion failed.');
       }
       setStatusMsg(
-        `Saved playbook · ${data.chunksCreated ?? 0} Tactic Cards chunked (${data.embeddedChunks ?? 0} pgvector embedded).`,
+        `Saved to ${CATEGORY_LABEL_MAP[knowledgeCategory]} · ${data.chunksCreated ?? 0} Tactic Cards chunked (${data.embeddedChunks ?? 0} pgvector embedded).`,
       );
       setTitle('');
       setParentSummary('');
@@ -139,16 +154,19 @@ export function PractitionerBrainPanel() {
         body: JSON.stringify({
           action: 'preview_rag',
           queryText: ragQuery,
+          knowledgeCategory: ragCategory || undefined,
           specialistRole: ragRole,
         }),
       });
       const data = (await res.json()) as {
         ok?: boolean;
+        resolvedCategory?: string;
         tactics?: PreviewTactic[];
         error?: string;
       };
       if (!res.ok || !data.ok) throw new Error(data.error || 'RAG preview failed.');
       setRagMatches(Array.isArray(data.tactics) ? data.tactics : []);
+      setResolvedRagCat(data.resolvedCategory || '');
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : 'RAG preview failed.');
     } finally {
@@ -181,17 +199,17 @@ export function PractitionerBrainPanel() {
   return (
     <section className="space-y-5 rounded-xl border border-slate-800 bg-[#111827] p-5 text-slate-100">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4">
-        <div className="min-w-0 flex-1">
+        <div>
           <p className="text-[11px] font-semibold uppercase tracking-widest text-blue-400">
-            Phase 10 Commercial Moat · Supabase pgvector RAG
+            Category-Indexed Practitioner Knowledge Base · pgvector RAG
           </p>
-          <h2 className="break-words text-lg font-semibold text-white">
-            {access?.brandName || 'DoItWithAI Strategist Pro'} — Practitioner Brain
+          <h2 className="text-lg font-semibold text-white">
+            {access?.brandName || 'DoItWithAI Strategist Pro'} — Playbooks &amp; Specialist Prompts
           </h2>
         </div>
         {access && (
           <span
-            className={`max-w-full break-words rounded-full border px-3 py-1 font-mono text-[11px] font-semibold uppercase ${
+            className={`rounded-full border px-3 py-1 font-mono text-[11px] font-semibold uppercase ${
               access.enabled
                 ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
                 : 'border-amber-500/30 bg-amber-500/10 text-amber-300'
@@ -215,20 +233,31 @@ export function PractitionerBrainPanel() {
 
       {/* Playbook Intake Form */}
       <form onSubmit={(e) => void handleIngest(e)} className="space-y-3 rounded-xl border border-slate-800 bg-[#0B0F17] p-4">
-        <h3 className="text-sm font-semibold text-white">Ingest Curated Playbook into pgvector</h3>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <h3 className="text-sm font-semibold text-white">Ingest Curated Playbook by Category</h3>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <input
             type="text"
             required
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Playbook Title (e.g. SaaS BoFu Comparison SEO)"
-            className="min-w-0 w-full rounded-lg border border-slate-700 bg-[#111827] px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+            placeholder="Playbook Title (e.g. SaaS On-Page CTR Guide)"
+            className="rounded-lg border border-slate-700 bg-[#111827] px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
           />
+          <select
+            value={knowledgeCategory}
+            onChange={(e) => setKnowledgeCategory(e.target.value as KnowledgeCategory)}
+            className="rounded-lg border border-slate-700 bg-[#111827] px-3 py-2 text-xs text-slate-200 focus:border-blue-500 focus:outline-none"
+          >
+            {KNOWLEDGE_CATEGORIES.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                Category: {cat.label}
+              </option>
+            ))}
+          </select>
           <select
             value={sourceType}
             onChange={(e) => setSourceType(e.target.value)}
-            className="min-w-0 w-full rounded-lg border border-slate-700 bg-[#111827] px-3 py-2 text-xs text-slate-200 focus:border-blue-500 focus:outline-none"
+            className="rounded-lg border border-slate-700 bg-[#111827] px-3 py-2 text-xs text-slate-200 focus:border-blue-500 focus:outline-none"
           >
             <option value="seo_playbook">SEO Playbook</option>
             <option value="case_study">Case Study</option>
@@ -239,7 +268,7 @@ export function PractitionerBrainPanel() {
           <select
             value={specialistRole}
             onChange={(e) => setSpecialistRole(e.target.value)}
-            className="min-w-0 w-full rounded-lg border border-slate-700 bg-[#111827] px-3 py-2 text-xs text-slate-200 focus:border-blue-500 focus:outline-none sm:col-span-2 lg:col-span-1"
+            className="rounded-lg border border-slate-700 bg-[#111827] px-3 py-2 text-xs text-slate-200 focus:border-blue-500 focus:outline-none"
           >
             <option value="unified">All Specialists (Unified)</option>
             <option value="keywords">Keyword &amp; Topics</option>
@@ -259,14 +288,14 @@ export function PractitionerBrainPanel() {
             value={industryTags}
             onChange={(e) => setIndustryTags(e.target.value)}
             placeholder="Industry tags (comma-separated)"
-            className="min-w-0 w-full rounded-lg border border-slate-700 bg-[#111827] px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+            className="rounded-lg border border-slate-700 bg-[#111827] px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
           />
           <input
             type="text"
             value={storagePath}
             onChange={(e) => setStoragePath(e.target.value)}
             placeholder="Optional Supabase Storage ref (agency-practitioner-refs/...)"
-            className="min-w-0 w-full rounded-lg border border-slate-700 bg-[#111827] px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+            className="rounded-lg border border-slate-700 bg-[#111827] px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
           />
         </div>
 
@@ -283,7 +312,7 @@ export function PractitionerBrainPanel() {
           required
           value={rawPlaybook}
           onChange={(e) => setRawPlaybook(e.target.value)}
-          placeholder="Paste Markdown playbook (use ## headings to auto-split into focused Tactic Cards)…"
+          placeholder="Paste Markdown playbook, distilled research, or case study (use ## headings to auto-split into focused Tactic Cards)…"
           className="w-full rounded-lg border border-slate-700 bg-[#111827] px-3 py-2 font-mono text-xs text-slate-200 placeholder-slate-500 focus:border-blue-500 focus:outline-none"
         />
 
@@ -292,39 +321,59 @@ export function PractitionerBrainPanel() {
           disabled={submitting}
           className="rounded-lg bg-[#2563EB] px-4 py-2 text-xs font-semibold text-white transition hover:bg-blue-500 disabled:opacity-50"
         >
-          {submitting ? 'Chunking & Embedding…' : 'Chunk, Embed & Save to pgvector'}
+          {submitting ? 'Chunking & Embedding…' : 'Chunk, Embed & Save to Category'}
         </button>
       </form>
 
       {/* Live RAG Retrieval Simulator */}
       <form onSubmit={(e) => void handlePreviewRag(e)} className="space-y-3 rounded-xl border border-slate-800 bg-[#0B0F17] p-4">
-        <h3 className="text-sm font-semibold text-white">Test Live Semantic RAG Retrieval</h3>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h3 className="text-sm font-semibold text-white">Test Category-Aware Semantic RAG Retrieval</h3>
+          {resolvedRagCat && (
+            <span className="rounded bg-blue-500/15 px-2 py-0.5 font-mono text-[10px] text-blue-300">
+              Routed Category: {CATEGORY_LABEL_MAP[resolvedRagCat] || resolvedRagCat}
+            </span>
+          )}
+        </div>
         <div className="flex flex-col gap-2 sm:flex-row">
           <input
             type="text"
             value={ragQuery}
             onChange={(e) => setRagQuery(e.target.value)}
-            placeholder="Test query (e.g. How should I refresh a declining SaaS pricing comparison post?)"
+            placeholder="Ask a specific SEO, Technical, Off-Page, or Content question…"
             className="min-w-0 flex-1 rounded-lg border border-slate-700 bg-[#111827] px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
           />
           <select
+            value={ragCategory}
+            onChange={(e) => setRagCategory(e.target.value)}
+            className="rounded-lg border border-slate-700 bg-[#111827] px-3 py-2 text-xs text-slate-200 focus:border-blue-500 focus:outline-none"
+          >
+            <option value="">Auto-detect Category</option>
+            {KNOWLEDGE_CATEGORIES.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.label}
+              </option>
+            ))}
+          </select>
+          <select
             value={ragRole}
             onChange={(e) => setRagRole(e.target.value)}
-            className="w-full min-w-0 rounded-lg border border-slate-700 bg-[#111827] px-3 py-2 text-xs text-slate-200 focus:border-blue-500 focus:outline-none sm:w-auto"
+            className="rounded-lg border border-slate-700 bg-[#111827] px-3 py-2 text-xs text-slate-200 focus:border-blue-500 focus:outline-none"
           >
             <option value="unified">Unified</option>
             <option value="keywords">Keywords</option>
             <option value="writer">Writer</option>
             <option value="refresh">Refresh</option>
             <option value="technical">Technical</option>
+            <option value="pr">Off-Page &amp; PR</option>
             <option value="visual">Visual</option>
           </select>
           <button
             type="submit"
             disabled={ragTesting}
-            className="w-full shrink-0 rounded-lg border border-blue-500/40 bg-blue-500/15 px-3.5 py-2 text-center text-xs font-semibold text-blue-200 hover:bg-blue-500/25 disabled:opacity-50 sm:w-auto"
+            className="shrink-0 rounded-lg border border-blue-500/40 bg-blue-500/15 px-3.5 py-2 text-xs font-semibold text-blue-200 hover:bg-blue-500/25 disabled:opacity-50"
           >
-            {ragTesting ? 'Retrieving…' : 'Retrieve Top Tactics'}
+            {ragTesting ? 'Retrieving…' : 'Retrieve Tactics'}
           </button>
         </div>
 
@@ -332,18 +381,43 @@ export function PractitionerBrainPanel() {
           <ul className="space-y-2 pt-1">
             {ragMatches.map((m) => (
               <li key={m.chunkId} className="rounded-lg border border-slate-800 bg-[#111827] p-3 text-xs">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <strong className="min-w-0 break-words text-white">{m.tacticTitle}</strong>
-                  <span className="shrink-0 font-mono text-[10px] text-blue-300">
-                    sim {m.similarity.toFixed(2)} · {m.sourceTitle}
+                <div className="flex items-center justify-between gap-2">
+                  <strong className="text-white">{m.tacticTitle}</strong>
+                  <span className="font-mono text-[10px] text-blue-300">
+                    {CATEGORY_LABEL_MAP[m.knowledgeCategory || ''] || m.knowledgeCategory} · sim {m.similarity.toFixed(2)}
                   </span>
                 </div>
-                <p className="mt-1 break-words text-slate-300">{m.tacticBody}</p>
+                <p className="mt-1 text-slate-300">{m.tacticBody}</p>
               </li>
             ))}
           </ul>
         )}
       </form>
+
+      {/* Built-in Default Specialist System Prompts & Evaluation Criteria */}
+      <details className="rounded-xl border border-slate-800 bg-[#0B0F17] p-4">
+        <summary className="cursor-pointer text-sm font-semibold text-white">
+          Default Specialist System Prompts &amp; Criteria ({Object.keys(DEFAULT_SPECIALIST_PROMPTS).length} Agents Active)
+        </summary>
+        <div className="mt-3 grid gap-3 border-t border-slate-800 pt-3 md:grid-cols-2">
+          {Object.values(DEFAULT_SPECIALIST_PROMPTS).map((spec) => (
+            <div key={spec.id} className="space-y-1.5 rounded-lg border border-slate-800 bg-[#111827] p-3 text-xs">
+              <div className="flex items-center justify-between gap-2">
+                <strong className="text-white">{spec.roleTitle}</strong>
+                <span className="rounded bg-blue-500/15 px-2 py-0.5 font-mono text-[10px] text-blue-300">
+                  {CATEGORY_LABEL_MAP[spec.category]}
+                </span>
+              </div>
+              <p className="text-[11px] leading-relaxed text-slate-300">{spec.systemPrompt}</p>
+              <ul className="list-disc space-y-0.5 pl-4 text-[11px] text-slate-400">
+                {spec.evaluationCriteria.map((c, idx) => (
+                  <li key={idx}>{c}</li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </details>
 
       {/* Curated Playbooks Ledger */}
       <div className="space-y-2">
@@ -354,15 +428,20 @@ export function PractitionerBrainPanel() {
           <p className="text-xs text-slate-400">Loading curated playbooks…</p>
         ) : sources.length === 0 ? (
           <p className="text-xs text-slate-400">
-            No playbooks ingested yet. Paste your first practitioner playbook above to power Strategist Pro RAG.
+            No custom playbooks ingested yet. Default specialist prompts above are active right now; paste curated playbooks above to expand your proprietary agency brain.
           </p>
         ) : (
           <div className="divide-y divide-slate-800 rounded-xl border border-slate-800 bg-[#0B0F17]">
             {sources.map((src) => (
               <div key={src.id} className="flex flex-wrap items-center justify-between gap-3 p-3 text-xs">
                 <div className="min-w-0 flex-1">
-                  <p className="break-words font-semibold text-white">{src.title}</p>
-                  <p className="mt-0.5 break-all text-[11px] text-slate-400">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="truncate font-semibold text-white">{src.title}</p>
+                    <span className="rounded bg-blue-500/15 px-2 py-0.5 font-mono text-[10px] text-blue-300">
+                      {CATEGORY_LABEL_MAP[src.knowledge_category || 'on_page_seo'] || 'On-Page SEO'}
+                    </span>
+                  </div>
+                  <p className="mt-0.5 text-[11px] text-slate-400">
                     {src.source_type} · role: <span className="text-slate-200">{src.specialist_role}</span>
                     {src.storage_object_path ? ` · ref: ${src.storage_object_path}` : ''}
                   </p>
