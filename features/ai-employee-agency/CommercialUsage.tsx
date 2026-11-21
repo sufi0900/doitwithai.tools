@@ -18,6 +18,19 @@ const ASSET_LABELS: Record<string, string> = {
   audit: 'Site Audits',
 };
 
+const OPERATION_LABELS: Record<string, string> = {
+  web_research: 'Web Research (Reddit / Quora / SERP)',
+  keywords: 'Keyword & Topic Strategist',
+  writer: 'SEO & GEO Article Writer',
+  refresh: 'On-Page & Page Optimizer',
+  technical: 'Technical Site Auditor',
+  visual: 'Visual & Brand Designer',
+  qa: '100-Pt QA & Fact-Check',
+  social: 'Social Distribution',
+  chief: 'Chief AI Officer',
+  copilot: 'Workspace Copilot',
+};
+
 export function CommercialUsage() {
   const [budget, setBudget] = useState<Budget>();
   const [error, setError] = useState('');
@@ -52,7 +65,7 @@ export function CommercialUsage() {
       <header className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3.5">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-wider text-blue-400">
-            Metered Token &amp; Dual-Quota Ledger
+            Metered Token, Web Research &amp; Dual-Quota Ledger
           </p>
           <h2 className="text-base font-semibold text-white">Workspace allowance</h2>
         </div>
@@ -85,7 +98,7 @@ export function CommercialUsage() {
               return (
                 <div
                   key={period}
-                  className="min-w-0 space-y-2.5 rounded-xl border border-slate-800 bg-[#0B0F17] p-4"
+                  className="space-y-2.5 rounded-xl border border-slate-800 bg-[#0B0F17] p-4"
                 >
                   <div className="flex items-center justify-between">
                     <strong className="text-sm font-semibold text-white">
@@ -161,15 +174,15 @@ export function CommercialUsage() {
           </div>
 
           <p className="text-xs text-slate-400">
-            Allowances include pending reservations. Specialist totals show reported tokens and calculated cost at model rates.
+            Zero-LLM mechanical checks (crawl, meta/image audit) and live Reddit/Quora web research are tracked separately from paid Gemini/OpenAI specialist tokens.
           </p>
 
           {budget.specialists.length ? (
             <div className="overflow-x-auto rounded-xl border border-slate-800 bg-[#0B0F17]">
-              <table className="w-full min-w-[420px] text-left text-xs">
+              <table className="w-full text-left text-xs">
                 <thead className="border-b border-slate-800 text-[11px] uppercase tracking-wider text-slate-400">
                   <tr>
-                    {['Specialist', 'Tokens', 'USD', 'Pending'].map((h) => (
+                    {['Specialist / Operation', 'Mode', 'Tokens', 'USD', 'Pending'].map((h) => (
                       <th key={h} className="px-4 py-2.5 font-semibold">
                         {h}
                       </th>
@@ -177,20 +190,36 @@ export function CommercialUsage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/70">
-                  {budget.specialists.map((s) => (
-                    <tr key={s.operation} className="text-slate-200">
-                      <td className="px-4 py-2.5 font-medium capitalize">{s.operation}</td>
-                      <td className="px-4 py-2.5 font-mono">{s.tokens.toLocaleString()}</td>
-                      <td className="px-4 py-2.5 font-mono">${Number(s.usd).toFixed(6)}</td>
-                      <td className="px-4 py-2.5 font-mono text-slate-400">{s.pending}</td>
-                    </tr>
-                  ))}
+                  {budget.specialists.map((s) => {
+                    const isWebResearch = s.operation === 'web_research';
+                    return (
+                      <tr key={s.operation} className="text-slate-200">
+                        <td className="px-4 py-2.5 font-medium">
+                          {OPERATION_LABELS[s.operation] || s.operation}
+                        </td>
+                        <td className="px-4 py-2.5">
+                          <span
+                            className={`rounded-full px-2 py-0.5 font-mono text-[10px] font-semibold ${
+                              isWebResearch
+                                ? 'bg-emerald-500/15 text-emerald-300'
+                                : 'bg-blue-500/15 text-blue-300'
+                            }`}
+                          >
+                            {isWebResearch ? 'Live Web ($0)' : 'LLM Metered'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-2.5 font-mono">{s.tokens.toLocaleString()}</td>
+                        <td className="px-4 py-2.5 font-mono">${Number(s.usd).toFixed(6)}</td>
+                        <td className="px-4 py-2.5 font-mono text-slate-400">{s.pending}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           ) : (
             <p className="rounded-lg border border-slate-800 bg-[#0B0F17] p-4 text-xs text-slate-400">
-              No specialist calls recorded this month yet.
+              No specialist or web research calls recorded this month yet.
             </p>
           )}
         </>

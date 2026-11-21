@@ -3,6 +3,7 @@ import { load } from 'cheerio';
 import { fetchPublic, publicUrl } from '@/features/backlink-verifier/fetch.server';
 import { robotsAllows } from '@/features/internal-linking/server';
 import { meteredAgencyCall } from '@/lib/ai-agency/billing.server';
+import { runLiveWebResearch } from '@/lib/ai-agency/live-web-research.server';
 import {
   classifySiteMaturity,
   topicDecision,
@@ -182,6 +183,7 @@ export function buildDeterministicBrandAndKeywords(params: {
   metaDescription?: string;
   navLabels?: string[];
   autocompleteSeeds?: string[];
+  excludeKeywords?: string[];
 }): {
   brandPatch: Partial<SiteKnowledge>;
   suggestedKeywords: SuggestedKeywordCard[];
@@ -223,6 +225,9 @@ export function buildDeterministicBrandAndKeywords(params: {
     .replace(/\s+/g, ' ')
     .slice(0, 50);
 
+  const excludeSet = new Set(
+    (params.excludeKeywords || []).map((k) => k.trim().toLowerCase()).filter(Boolean),
+  );
   const seedCandidates = [
     ...(params.autocompleteSeeds || []),
     `${coreTopic} step by step checklist`,
@@ -231,14 +236,22 @@ export function buildDeterministicBrandAndKeywords(params: {
     `${coreTopic} vs manual process comparison`,
     `how to measure ${coreTopic} roi`,
     `${coreTopic} templates and examples`,
+    `${coreTopic} automation playbook for teams`,
+    `free ${coreTopic} alternatives compared`,
+    `${coreTopic} pricing and cost breakdown`,
+    `advanced ${coreTopic} strategies for growth`,
+    `${coreTopic} audit checklist for existing sites`,
+    `${coreTopic} case study and benchmarks`,
   ];
 
   const uniqueKeywords: string[] = [];
   for (const candidate of seedCandidates) {
     const normalized = candidate.replace(/\s+/g, ' ').trim();
+    const lower = normalized.toLowerCase();
     if (
       normalized.length >= 6 &&
-      !uniqueKeywords.some((k) => k.toLowerCase() === normalized.toLowerCase())
+      !excludeSet.has(lower) &&
+      !uniqueKeywords.some((k) => k.toLowerCase() === lower)
     ) {
       uniqueKeywords.push(normalized);
     }
@@ -281,18 +294,36 @@ export async function synthesizeInitialBrandAndKeywords(params: {
   metaDescription?: string;
   jsonLdSummary?: string;
   navLabels?: string[];
+  excludeKeywords?: string[];
 }): Promise<SiteKnowledge> {
+  const previouslySuggested = Array.from(
+    new Set([
+      ...(params.excludeKeywords || []),
+      ...(params.knowledge.suggestedKeywords || []).map((k) => k.keyword.trim()),
+    ].filter(Boolean)),
+  );
   const seedQuery =
     params.knowledge.headings[0]?.split(/[:|–—-]/)[0]?.trim() ||
     params.knowledge.name ||
     params.domain;
-  const autocompleteSeeds = await fetchGoogleAutocompleteSeeds(seedQuery);
+  const [autocompleteSeeds, webResearch] = await Promise.all([
+    fetchGoogleAutocompleteSeeds(seedQuery),
+    runLiveWebResearch({
+      workspaceId: params.workspaceId,
+      query: seedQuery,
+      excludeKeywords: previouslySuggested,
+    }),
+  ]);
+  const combinedFreshSeeds = Array.from(
+    new Set([...webResearch.freshSeeds, ...autocompleteSeeds]),
+  );
   const deterministic = buildDeterministicBrandAndKeywords({
     domain: params.domain,
     knowledge: params.knowledge,
     metaDescription: params.metaDescription,
     navLabels: params.navLabels,
-    autocompleteSeeds,
+    autocompleteSeeds: combinedFreshSeeds,
+    excludeKeywords: previouslySuggested,
   });
 
   const baseProfile: SiteKnowledge = {
@@ -303,14 +334,13 @@ export async function synthesizeInitialBrandAndKeywords(params: {
 
   try {
     const call = await meteredAgencyCall(params.workspaceId, 'keywords', {
-      modelId: 'gemini-2.5-flash',
-      temperature: 0.25,
-      maxOutputTokens: 1100,
+      temperature: 0.65,
+      maxOutputTokens: 1200,
       systemPrompt: [
         'You are the DoItWithAI Onboarding Brand DNA & Keyword Strategist.',
-        'Analyze the supplied live website crawl signals and return STRICT JSON only (no markdown fences) with this exact shape:',
+        'Analyze the supplied live website crawl signals, Reddit community discussions, and Quora/Google buyer questions, then return STRICT JSON only (no markdown fences) with this exact shape:',
         '{"name":"...","industry":"...","sub_niche":"...","audience":"...","offer":"...","goal":"...","business_model":"b2b_saas|ecommerce|local_service|publisher|agency","brand_voice":["..."],"locale":"en-US","currency":"USD","keywords":[{"keyword":"...","recommendedTitle":"...","intent":"informational|commercial|transactional|comparison","estimatedKd":24,"rationale":"..."}]}',
-        'Rules: Provide exactly 6 practical, low-competition keyword ideas grounded in the site niche and autocomplete seeds. Never leave name, industry, audience, or offer empty.',
+        'Rules: (1) Provide exactly 6 fresh, high-value, low-competition keyword ideas grounded in real buyer questions from Reddit/Quora/Autocomplete. (2) NEVER repeat any keyword listed in excludeKeywords. (3) Never leave name, industry, audience, or offer empty.',
       ].join('\n'),
       userPrompt: JSON.stringify({
         domain: params.domain,
@@ -319,12 +349,17 @@ export async function synthesizeInitialBrandAndKeywords(params: {
         headings: params.knowledge.headings.slice(0, 15),
         navLabels: (params.navLabels || []).slice(0, 12),
         jsonLd: params.jsonLdSummary || '',
-        existingPagesSample: params.knowledge.pages.slice(0, 25).map((p) => ({
+        existingPagesSample: params.knowledge.pages.slice(0, 15).map((p) => ({
           url: p.url,
           title: p.title,
         })),
         maturity: baseProfile.domain_maturity,
-        autocompleteSeeds,
+        excludeKeywords: previouslySuggested,
+        freshQuestionSeeds: combinedFreshSeeds.slice(0, 12),
+        redditPainPoints: webResearch.redditThreads.map((t) => ({
+          subreddit: t.subreddit,
+          title: t.title,
+        })),
       }),
     });
 
@@ -431,6 +466,23 @@ export async function discoverKnowledge(
   db: SupabaseClient,
 ): Promise<SiteKnowledge> {
   const site = publicUrl(raw);
+  let priorKeywords: string[] = [];
+  try {
+    const existing = await db
+      .from('tenant_brand_dna')
+      .select('profile')
+      .eq('workspace_id', owner)
+      .maybeSingle();
+    const prevList = (existing.data?.profile as { suggestedKeywords?: Array<{ keyword?: string }> } | null)
+      ?.suggestedKeywords;
+    if (Array.isArray(prevList)) {
+      priorKeywords = prevList
+        .map((k) => (typeof k?.keyword === 'string' ? k.keyword.trim() : ''))
+        .filter(Boolean);
+    }
+  } catch {
+    // Non-fatal if no prior record exists
+  }
   const result: SiteKnowledge = {
     source: 'external_export',
     coverage: 'manual',
@@ -500,6 +552,7 @@ export async function discoverKnowledge(
         workspaceId: owner,
         domain: site.href,
         knowledge: result,
+        excludeKeywords: priorKeywords,
       });
     }
   }
@@ -660,5 +713,6 @@ export async function discoverKnowledge(
     metaDescription,
     jsonLdSummary,
     navLabels,
+    excludeKeywords: priorKeywords,
   });
 }
