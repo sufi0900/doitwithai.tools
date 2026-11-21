@@ -1,4 +1,4 @@
-# Founder Hub Dashboard Update Entry — V8.1 Active Research & Startup Architecture
+# Founder Hub Dashboard Update Entry — V8.2 Active Research & Startup Architecture
 
 > **STATUS: INCOMPLETE — ACTIVE RESEARCH IN PROGRESS (DO NOT START IMPLEMENTATION YET)**
 > **Note for Antigravity / Maintainer:** `lib/founder-hub/data.ts` is ~130 KB (~3,000+ lines). Paste the structured entries below into `FOUNDER_AI_CHANGELOG`, **Founder Vision**, and **Active Research Discussions** inside `lib/founder-hub/data.ts` when syncing the Founder Hub UI.
@@ -10,24 +10,23 @@
 
 ```ts
 {
-  id: 'v8-1-master-architecture-assembly-war-room-memory-2026-11-22',
+  id: 'v8-2-master-architecture-onpage-rubric-behavior-card-relay-2026-11-22',
   date: '2026-11-22',
-  version: 'V8.1-RESEARCH-INCOMPLETE',
+  version: 'V8.2-RESEARCH-INCOMPLETE',
   status: 'incomplete-research-in-progress',
-  title: 'V8.1 Master Architecture Paper: 7-Step Assembly Line, Multi-Agent War Room, Existing Page Two-Track Flow & 4-Pillar Memory Precedence',
+  title: 'V8.2 Master Architecture Paper: On-Page SEO 100-Pt Rubric, Zero-Conflict Relay, Workspace Behavior Card & Existing-Page Social Promotion',
   author: 'Gemini (Lead Systems Architect) + Founder',
   summary:
-    'Expanded A-to-Z V8.1 living research paper (incomplete — research continuing on On-Page & Technical SEO rubrics before implementation). Adds the 7-Step Locked Article Assembly Line, Visual Designer vs. Social Manager org chart, Multi-Agent Group Chat War Room, Two-Track Existing Page Optimization (no redundant Audit Agent), Universal Agency Awareness & polite off-topic guardrails, and 4-Pillar Memory Management with Strict Latest-Version Precedence.',
+    'Locked V8.2 living research paper (incomplete — Technical SEO, Visual Studio & Social Hub rubrics remaining before implementation). Adds the $0 Workspace Behavior & Site Health Snapshot, Existing-Page Social Media Promotion, On-Page SEO 100-Point Objective Rubric, On-Demand Existing Page Keyword Plans tab, strict Keyword-to-OnPage-to-Writer relay, one-line Chief Copilot trigger, and Universal Live Pipeline Status Card.',
   highlights: [
-    '7-Step Locked Article Assembly Line: Keyword Recheck -> On-Page Blueprint -> Staged Writing (AI Overview Box, Hook/Intro/TOC, Body, Live-Researched FAQs) -> On-Page Link Approval -> Readability/Originality Final QA -> Blog Visuals -> Article Studio.',
-    'Visual vs. Social Org Chart: Visual Designer owns all blog & social visuals (with built-in Visual Copywriter micro-skill); Social Manager owns platform hooks/calendars and hands visual briefs to Visual Designer.',
-    'Multi-Agent Group Chat (Agency War Room): Users select up to 3 specialists together; lightweight router executes clean sequential turns so agents collaborate without talking over each other.',
-    'Two-Track Existing Page Optimization: Chief Copilot compiles 4-Part Page Scorecards (no separate Audit Agent); On-Page & Refresh houses Existing Website Pages with Quick On-Page Fix vs. Deep Keyword & Content Refresh preserving original text; strict Landing/Service Page vs. Blog Post rule.',
-    'Universal Agency Awareness & Off-Topic Guardrails: Every agent holds a cached Agency Handbook of teammates & existing tools, gives honest workarounds for unbuilt tools, and redirects off-topic chats politely using the fast low-cost model.',
-    '4-Pillar Memory & Strict Latest-Version Precedence: Master Project Binder (4 Supabase folders) + $0 Smart Context Picker + Strict Rule that Live Dashboard Article Card ALWAYS overrides older chat logs, newest-first history filtering, Sliding Window + 5-Bullet Rolling Summary, and strict workspace_id isolation.',
+    'Workspace Behavior Card ($0 counters in Supabase): Tracks user habits (e.g., E-E-A-T skip rate, unfixed Meta issues, unpromoted posts) so every specialist gives workspace-specific advice instead of generic ChatGPT replies.',
+    'Whole-Site Goals & Existing-Page Social Promotion: Chief Copilot leads site-wide strategy while specialists answer through their own lens; 1-click "Promote / Repurpose Existing Page" turns older posts/landing pages into fresh social campaigns.',
+    'On-Page SEO 100-Point Objective Rubric ($0 Live HTML Audit): Meta Title/CTR (20), Slug/Canonical (10), Heading Hierarchy & Page-Type Fit (15), Keyword Placement & Anti-Stuffing Density (15), Internal & External Links (15), Schema & AI Overview GEO (15), Media/Alt Text & Scannability (10).',
+    'Zero-Conflict Relay & On-Demand Existing Page Tab: Keyword Research owns WHAT to target; On-Page SEO owns WHERE & HOW to place it. Keyword Research Tab 2 stays empty by default and activates only for user-requested existing URLs with a dedicated 5-column gap table.',
+    'Strict Prerequisite Gate & Universal Status Check: On-Page SEO waits for Keyword Research before keyword optimization, finishes Meta/Schema/Links, and hands off to Article Writer for body text. Chief Copilot triggers the full chain in 1 line, and any agent can report live progress from Supabase.',
   ],
   specPath: 'docs/AI_AGENCY_V8_KEYWORD_OS_AND_SAAS_BACKEND_SPEC.md',
-  implementationStatus: 'INCOMPLETE — RESEARCH IN PROGRESS. Next up: On-Page SEO 100-Point Rubric and Technical SEO 100-Point Rubric.',
+  implementationStatus: 'INCOMPLETE — RESEARCH IN PROGRESS. Next up: Technical SEO Audit AI Agent 100-Point Rubric & Zero-LLM Diagnostic Architecture.',
 }
 ```
 
@@ -35,7 +34,6 @@
 
 ## 2. Founder Vision & Active Research Summary (Plain-English)
 
-- **Trust-First Positioning:** Market DoItWithAI.tools as **Live Search Data + Specialist AI Strategy**—never fake AI-guessed search volume.
-- **Human E-E-A-T Moat:** Our **Middle E-E-A-T Agent** coaches users to inject 3–4 personal insights, custom tool lists, or research notes before writing begins.
-- **True Agency Boundaries & War Room Collaboration:** Every specialist owns one clear lane (On-Page SEO owns Slugs, Meta, Schema & Final Link Approval), knows the whole team via a shared Agency Handbook, and can collaborate in sequential 2–3 agent Group Chats.
-- **Zero-Confusion Memory:** For articles updated multiple times, the **Live Dashboard Memory Card** is always the #1 Source of Truth over old chat logs, and past chats are strictly filtered newest-first so AI agents never confuse an older draft with the latest live version.
+- **Anti-Generic Agency Brain:** Every specialist reads the user's live **Workspace Behavior Card** (seeing skipped E-E-A-T points, long titles, and unpromoted posts) and answers through its own expert mindset—never generic ChatGPT boilerplate.
+- **Zero-Conflict On-Page Relay:** Keyword Research discovers missing gaps on demand (activating Tab 2 only for requested existing URLs); On-Page SEO scores the live HTML honestly out of 100 and optimizes Meta/Schema/Links; Article Writer updates body prose; and **any** agent can report exact live pipeline status the next day.
+- **True Agency Boundaries & Zero Blind Auto-Publishing:** Upstash Redis + Supabase protect margins and memory; every agent prompt or mistake fix stays in **`DRAFT`** until verified in **Beta Sandbox Mode** and published live by the founder.

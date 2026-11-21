@@ -1,9 +1,9 @@
-# DoItWithAI.tools — 24/7 AI Employee Digital Agency OS (V8.1 Master Research & Architecture Spec)
+# DoItWithAI.tools — 24/7 AI Employee Digital Agency OS (V8.2 Master Research & Architecture Spec)
 
 > **STATUS: INCOMPLETE — ACTIVE RESEARCH & ARCHITECTURE PAPER (DO NOT START IMPLEMENTATION YET)**
 > **Last Updated:** November 22, 2026
 > **Branch Scope:** `codex/infographic-studio-redesign` (Cloudflare Workers Preview ONLY — never touch `production-cloudflare` or `main`)
-> **Purpose:** Complete A-to-Z living startup architecture and founder vision knowledge base. Covers Keyword Research OS, Keyword Overview, Free-to-Paid SEO Data APIs, Upstash Redis + Supabase 2-Layer Caching, Super Admin Control Center, AI Agent Draft/Test/Publish Studio, Thinking-AI Brain Cost Controls, Privacy-Safe Learning Policy, 3-Watchdog Mistake Triage & Live Simulation Mode, Dashboard Mutation Rules, Calendar Agent & Rolling Lock Window, Animated Node Handoffs, Middle E-E-A-T Agent, Strict Specialist Ownership Matrix, 7-Step Locked Article Assembly Line, Visual vs. Social Org Chart, Multi-Agent Group Chat War Room, Two-Track Existing Page Optimization, Universal Agency Awareness & Off-Topic Guardrails, and 4-Pillar Memory & Context Management with Strict Latest-Version Precedence.
+> **Purpose:** Complete A-to-Z living startup architecture and founder vision knowledge base. Covers Keyword Research OS, Keyword Overview, Free-to-Paid SEO Data APIs, Upstash Redis + Supabase 2-Layer Caching, Super Admin Control Center, AI Agent Draft/Test/Publish Studio, Thinking-AI Brain Cost Controls, Privacy-Safe Learning Policy, 3-Watchdog Mistake Triage & Live Simulation Mode, Dashboard Mutation Rules, Calendar Agent & Rolling Lock Window, Animated Node Handoffs, Middle E-E-A-T Agent, Strict Specialist Ownership Matrix, 7-Step Locked Article Assembly Line, Visual vs. Social Org Chart, Multi-Agent Group Chat War Room, Two-Track Existing Page Optimization, Universal Agency Awareness & Off-Topic Guardrails, 4-Pillar Memory & Latest-Version Precedence, Personalized Workspace Behavior Card & Existing-Page Social Promotion, and the On-Page SEO Specialist 100-Point Objective Rubric & Zero-Conflict Relay.
 
 ---
 
@@ -206,7 +206,7 @@ Once a keyword locks, the dashboard sets clear expectations (*"Crafting step-by-
 
 - **Visual & Infographic Designer:** Owns **all visuals** (blog featured images, in-article infographics, and social graphics) to keep every asset 100% brand-locked. Includes a built-in **Visual Copywriter micro-skill** (punchy 4–7 word headlines, stat callouts—never walls of blog text) and pulls alt text/SEO context from On-Page SEO.
 - **Social Media Manager:** Owns **platform distribution** (LinkedIn posts/carousels, Pinterest SEO pins, Facebook posts, TikTok/Reels scripts). Writes platform-native hooks/captions and hands visual briefs to the Visual Designer via animated node handoff.
-- **Multi-Agent Group Chat ("Agency War Room"):** Users can select up to **3 specialists together** (e.g., `Visual Designer` + `On-Page SEO`) in one chat. A lightweight router executes **sequential turns** (e.g., On-Page SEO outputs keyword-aligned labels & alt text first → Visual Designer immediately builds the brand-locked layout around those exact words) so agents never talk over each other or waste tokens.
+- **Multi-Agent Group Chat ("Agency War Room"):** Users can select up to **3 specialists together** (e.g., `Visual Designer` + `On-Page SEO`) in one chat. A lightweight router executes **sequential turns** (On-Page SEO outputs keyword-aligned labels & alt text first → Visual Designer immediately builds the brand-locked layout around those exact words) so agents never talk over each other or waste tokens.
 
 ---
 
@@ -216,7 +216,7 @@ No separate redundant "Audit Agent" is needed—**Chief Copilot** runs all 4 spe
 
 | Dashboard Screen | Two Clean Tabs | What Lives There |
 | :--- | :--- | :--- |
-| **Keyword & Topics** | **Tab 1:** New Keyword Ideas · **Tab 2:** Existing Page Gaps | Tab 1 = clean 11-column new backlog; Tab 2 = only existing pages with missed keywords/cannibalization (`Send to On-Page Optimizer`). |
+| **Keyword & Topics** | **Tab 1:** New Keyword Ideas · **Tab 2:** Existing Page Optimization Plans *(inactive by default)* | Tab 1 = clean 11-column new backlog; Tab 2 = activates ONLY on-demand for user-requested existing URLs with a dedicated 5-column gap table. |
 | **On-Page & Refresh** *(Home of Existing Pages)* | **Tab 1:** Existing Website Pages · **Tab 2:** New Article Blueprints | Tab 1 lists all sitemap URLs (Blogs/Services/Landing/Tools) with **Quick On-Page Fix** (30s Meta/H1/Schema patch) OR **Deep Keyword & Content Refresh**. |
 | **Article Studio** | **Tab 1:** New Articles · **Tab 2:** Refreshed Pages | Tab 2 preserves live text word-for-word and shows a **Side-by-Side Diff** with newly woven keywords + fresh E-E-A-T points. |
 | **Agency Calendar** | **One Unified Timeline** (`New Article` vs. `Page Refresh` badges) | Shares the exact same Rolling Lock Window & 5-minute buffer. |
@@ -235,22 +235,58 @@ No separate redundant "Audit Agent" is needed—**Chief Copilot** runs all 4 spe
 
 ## 20. 4-Pillar Memory & Context Management (With Strict Latest-Version Precedence)
 
-- **Master Project Binder (4 Supabase Folders per `workspace_id`):**
-  1. **Brand & Site Identity Card** (niche, ICP, colors, tone, sitemap index).
-  2. **Article & Page Memory Cards** (1 card per page: Live URL, Target Keyword, Publish Date, Last Refresh Date, User's E-E-A-T Points, Approved Meta/Schema, Social Posts Published).
-  3. **Active Pipeline & Calendar State** (`Queued` / `Locked` / `In Production` / `Ready for Review`).
-  4. **Chat History Archive + Auto-Summaries** (ChatGPT-style `+ New Chat` threads + 4-bullet summaries).
-- **`$0` Smart Context Picker:** Never dumps 200 articles into a prompt—loads ONLY the specific Article Memory Card referenced (or currently open in the dashboard), or a compact 1-line index for broad questions.
-- **Strict Latest-Version Precedence Rules (Zero Confusion on Multi-Updated Articles):**
-  1. **Rule 1 — Live Dashboard Card Always Wins:** The `Current Live State` stored on the Dashboard / Supabase Article Memory Card is the **#1 Source of Truth** and ALWAYS overrides older chat text.
-  2. **Rule 2 — Newest-First History Filtering:** When an agent also checks past chat history for an article updated multiple times, it MUST sort strictly by newest timestamp and explicitly ignore superseded draft discussions (older versions stay archived cleanly under `Version History`).
-  3. **Rule 3 — Sliding Window + Rolling Summary:** Active chats send only the **last 6–8 messages verbatim** + a background **5-bullet Rolling Summary** to prevent token snowballing.
-  4. **Rule 4 — Strict `workspace_id` Isolation:** Zero memory bleed across different client websites.
-  5. **Transparent Activity Timeline:** Users can inspect and edit their own saved Memory Cards right inside the Article Panel and global Activity Timeline.
+- **Master Project Binder (4 Supabase Folders per `workspace_id`):** (1) Brand & Site Identity Card, (2) Article & Page Memory Cards (Live URL, Keyword, Publish Date, Last Refresh Date, E-E-A-T Points, Approved Meta/Schema, Social Posts Published), (3) Active Pipeline & Calendar State, (4) Chat History Archive + 4-Bullet Summaries.
+- **`$0` Smart Context Picker:** Never dumps 200 articles into a prompt—loads ONLY the specific Article Memory Card referenced (or open on screen), or a compact 1-line index for broad questions.
+- **Strict Latest-Version Precedence Rules:** (1) **Live Dashboard Memory Card ALWAYS wins** over older chat text; (2) when reading chat history for multi-updated articles, agents MUST sort strictly by **newest timestamp** and ignore superseded drafts; (3) active chats use a **Sliding Window (last 6–8 messages) + 5-Bullet Rolling Summary**; (4) strict `workspace_id` isolation; (5) transparent Activity Timeline where users can view/edit saved memory notes.
 
 ---
 
-## 21. Ongoing Research Queue (Incomplete — Next Rubrics to Architect)
+## 21. Workspace Behavior Card, Anti-Generic Thinking & Existing-Page Social Promotion
+
+- **`$0` Workspace Behavior & Site Health Snapshot (Supabase):** Automatically tracks user habits (`eeat_skip_rate`, `avg_onpage_score`, `social_promotion_coverage`, `preferred_working_style`, `recent_wins` vs. `untouched_gaps`) via simple counters. When a user asks *"Why isn't my site ranking?"*, specialists call out real workspace blockers naturally (e.g., *"You skipped E-E-A-T unique points on 5 of your last 6 posts"*) instead of generic ChatGPT advice.
+- **Whole-Website Goals:** **Chief Copilot** owns site-wide strategy; individual specialists answer broad site-wide questions through their own unique expert lens (Keyword vs. On-Page vs. Visual) and link straight to exact dashboard panels.
+- **Existing Page Social Media Optimization:** 1-click **`Promote / Repurpose Existing Page`** button inside `On-Page & Refresh → Existing Site Pages` and `Social & Video Hub`. Social Manager reads any existing blog or landing page, builds LinkedIn/Pinterest/Facebook/Reels assets, hands visual briefs to Visual Designer, and logs results onto that page's Memory Card.
+- **4-Ingredient Anti-Generic Formula:** Every specialist reply blends (1) its unique specialist mindset, (2) the user's live Workspace Behavior Card, (3) exact dashboard placement, and (4) honest niche-specific SEO/GEO strategy.
+
+---
+
+## 22. On-Page SEO Specialist: 100-Point Objective Rubric & Zero-Conflict Relay
+
+### Zero-Overlap Boundary (70% Existing Pages · 30% New Articles)
+- **Keyword Research = "WHAT to target"** (discovery, intent, KD/KGR, competitor gaps).
+- **On-Page SEO = "WHERE & HOW to optimize the page"** (Slug URL, Meta Title, Meta Description, H1–H3, keyword placement & density, Schema Markup, Alt Text, Internal & External Link approval).
+
+### Objective 100-Point On-Page SEO Rubric (`$0` Live HTML Audit — Zero Fake Scores)
+
+| Category | Max Pts | Exact Measurable Checks |
+| :--- | :---: | :--- |
+| **1. Meta Title & Description CTR** | **20** | Title 50–60 chars (no truncation), primary keyword near front, unique; Meta Description 140–158 chars with benefit; current year (`2026`). |
+| **2. Slug URL & Canonical Hygiene** | **10** | Short lowercase slug (`<= 5` words), matches primary keyword, no random IDs/dates, fits site folder pattern, valid canonical tag. |
+| **3. Heading Hierarchy & Page-Type Fit** | **15** | Exactly one H1 aligned with Title, clean H2→H3 nesting, secondary keywords in natural H2s, format matches Page Type (Landing/Service vs. Blog). |
+| **4. Keyword Placement & Natural Density** | **15** | Primary keyword in H1, first 100 words, and an H2; secondary terms woven naturally; penalizes stuffing (>2.5%) and cannibalization. |
+| **5. Internal & Authority External Links** | **15** | Minimum 3 relevant internal links with descriptive anchors, 1–2 authoritative external citations, zero `404` broken links, non-orphan page. |
+| **6. Schema Markup & AI Overview (GEO)** | **15** | Valid JSON-LD Schema matching page type (`Article`, `FAQPage`, `SoftwareApplication`, `Service`) + crisp 40–60 word direct-answer summary near top. |
+| **7. On-Page Media, Alt Text & Scannability** | **10** | Descriptive Alt Text on all content images, flags oversized images (`>200 KB`), short scannable paragraphs and clean lists/tables. |
+| **Total On-Page Score** | **100** | **85–100:** Strong (Green) · **60–84:** Needs Polish (Amber) · **<60:** Priority Fix (Red) |
+
+### On-Demand `Existing Page Optimization Plans` Tab (Inside Keyword Research)
+- **Inactive/Empty by Default:** Keeps Keyword & Topics clutter-free. Activates **only** for specific existing URLs requested for optimization.
+- **Dedicated 5-Column Gap Table (Stored in Supabase for Reuse):**
+  1. `Current Target Keyword` (from live H1/Title)
+  2. `Coverage Status` (`Covered ✓`, `Under-Optimized`, `Missing`, `Cannibalization Risk`)
+  3. `Missing Long-Tail & Subtopics` (high-value secondary terms + PAA/Reddit questions)
+  4. `Competitor Gap Proof` (rival URLs winning on this gap & their angle)
+  5. `Recommended Placement` (`Add to Meta/H1`, `Add New H2 Section`, `Add to FAQ`, `Keep As-Is`)
+
+### Strict Relay Race, One-Line Chief Trigger & Universal Live Status Check
+1. **Keyword Prerequisite Gate:** On-Page SEO never starts keyword optimization until Keyword Research delivers the Existing Page Keyword Plan.
+2. **On-Page → Article Writer Handoff:** On-Page SEO upgrades only what it owns (Meta, Schema, Slug guidance, Density/Cannibalization check, Link plan), then sends the complete SEO Copy & Keyword Plan to **Article Writer** for body updates and guides the user to switch over.
+3. **One-Line Chief Copilot Trigger:** Telling Chief Copilot *"Optimize `example.com/blog/meta-title-guide`"* automatically coordinates `Keyword Research → On-Page SEO → Article Writer → Final QA`.
+4. **Universal Live Pipeline Status Card (Supabase):** Any specialist asked *"Where did yesterday's optimization reach?"* reads the shared status card and reports exact progress across all stages.
+
+---
+
+## 23. Ongoing Research Queue (Incomplete — Next Rubrics to Architect)
 
 - [x] Keyword Research OS (12 Skills, 100-Pt Rubric, Cannibalization, KGR, Topical Maps, Mode A & B Competitor Gap)
 - [x] Dedicated Keyword Overview Deep-Dive View (Semrush Parity + AI-Native Edge)
@@ -259,6 +295,6 @@ No separate redundant "Audit Agent" is needed—**Chief Copilot** runs all 4 spe
 - [x] Super Admin AI Agent Studio (Draft/Test/Publish), Thinking-AI Cost Controls, Privacy Policy & 3-Watchdog Mistake Detection + Live Simulation Mode
 - [x] Dashboard Mutation Rules, Calendar Agent, Rolling Lock Window, Animated Node Handoffs, Middle E-E-A-T Agent, Strict Specialist Ownership Matrix, Article Writer V8 & Final QA Gate
 - [x] 7-Step Locked Article Assembly Line, Visual vs. Social Org Chart, Multi-Agent Group Chat War Room, Two-Track Existing Page Optimization, Universal Agency Awareness, Off-Topic Guardrails & 4-Pillar Memory Management with Strict Latest-Version Precedence
-- [ ] **Next:** On-Page SEO Specialist 100-Point Rubric & Page Optimization Scoring System
+- [x] Workspace Behavior Card, Anti-Generic Thinking, Existing-Page Social Promotion, On-Page SEO 100-Point Objective Rubric, On-Demand Existing Page Keyword Plans & Universal Live Pipeline Status Card
 - [ ] **Next:** Technical SEO Audit AI Agent 100-Point Rubric & Zero-LLM Diagnostic Architecture
 - [ ] **Next:** Visual & Brand Studio V8 and Social/Video Hub V8 Scoring Rubrics
