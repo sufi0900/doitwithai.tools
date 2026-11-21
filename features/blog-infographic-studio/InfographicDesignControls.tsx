@@ -373,6 +373,42 @@ export function InfographicProceduralStyleControls({
             />
           </label>
           <label className="block">
+            Diagram / Funnel / Flywheel size{" "}
+            <span className="float-right font-semibold">
+              {Math.round((ov.diagramScale ?? 1) * 100)}%
+            </span>
+            <input
+              aria-label="Diagram visual size scale"
+              type="range"
+              min={0.75}
+              max={1.35}
+              step={0.05}
+              value={ov.diagramScale ?? 1}
+              onChange={(e) =>
+                patchOverrides({ diagramScale: Number(e.target.value) })
+              }
+              className="mt-1.5 w-full accent-indigo-600"
+            />
+          </label>
+          <label className="block">
+            Global icon size{" "}
+            <span className="float-right font-semibold">
+              {Math.round((ov.iconScale ?? 1) * 100)}%
+            </span>
+            <input
+              aria-label="Global icon size scale"
+              type="range"
+              min={0.65}
+              max={1.5}
+              step={0.05}
+              value={ov.iconScale ?? 1}
+              onChange={(e) =>
+                patchOverrides({ iconScale: Number(e.target.value) })
+              }
+              className="mt-1.5 w-full accent-indigo-600"
+            />
+          </label>
+          <label className="block">
             Card vertical padding{" "}
             <span className="float-right font-semibold">
               {(ov.cardPaddingY ?? 0) >= 0

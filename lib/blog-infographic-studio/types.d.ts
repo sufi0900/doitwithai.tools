@@ -19,6 +19,10 @@ export interface InfographicStyleOverrides {
   cardTitleScale?: number;
   /** Scale multiplier for card body detail font size (0.75..1.35) */
   bodyScale?: number;
+  /** Global scale multiplier for card & diagram icons (0.65..1.5) */
+  iconScale?: number;
+  /** Scale multiplier for the primary diagram visual (Flywheel, Donut, Pie, Funnel, Pyramid, Roadmap) (0.75..1.35) */
+  diagramScale?: number;
   /** Extra internal vertical padding inside cards (-12..40 px) */
   cardPaddingY?: number;
   /** Extra vertical gap between cards (-12..48 px) */
@@ -60,6 +64,8 @@ declare module "@/lib/blog-writer/canonical-state" {
     customIconDataUrl?: string;
     /** Optional accent hex override for this specific card */
     accentHex?: string;
+    /** Optional per-card icon size multiplier (0.65..1.5) */
+    iconScale?: number;
   }
   interface BlogInfographicConfig {
     /** Optional fields keep existing 25-layout projects compatible. */

@@ -1,15 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Image as ImageIcon, Palette, Sparkles, Trash2, Type, Upload, X } from "lucide-react";
-import type {
-  BlogInfographicConfig,
-  BlogInfographicNodeItem,
-} from "@/lib/blog-writer/canonical-state";
-import { BLOG_INFOGRAPHIC_PALETTES } from "@/lib/blog-infographic-studio/palettes";
-import { extractHeadlineHighlightPhrases } from "@/lib/blog-infographic-studio/appearance";
-import { VECTOR_SCENE_CATALOG } from "@/lib/visual-stock/vector-scenes";
-import { IconPickerGrid } from "./IconPickerGrid";
+import type { BlogInfographicConfig } from "@/lib/blog-writer/canonical-state";
 
 export type CanvasSelection =
   | { kind: "none" }
@@ -35,13 +27,8 @@ export interface InteractiveInfographicCanvasProps {
   width: number;
   height: number;
   zoom: number;
-  busy?: boolean;
   selection: CanvasSelection;
   onSelect: (next: CanvasSelection) => void;
-  onUpdateConfig: (patch: Partial<BlogInfographicConfig>) => void;
-  onUpdateNode: (nodeId: string, patch: Partial<BlogInfographicNodeItem>) => void;
-  onUploadNodeIcon: (nodeId: string, file?: File) => void;
-  onUploadSceneImage: (file?: File) => void;
 }
 
 function parseLayerId(layerId: string): CanvasSelection {
@@ -76,21 +63,20 @@ function selectionToLayerId(sel: CanvasSelection): string | null {
 }
 
 function labelForLayer(layerId: string): string {
-  if (layerId === "headline") return "Headline · Click to edit";
-  if (layerId === "scene-illustration") return "Illustration · Click to swap or upload";
-  if (layerId === "callout") return "Callout banner · Click to edit";
-  if (layerId === "footer") return "Footer · Click to edit";
+  if (layerId === "headline") return "Headline · Click to edit in Left Panel";
+  if (layerId === "scene-illustration")
+    return "Illustration · Click to edit in Left Panel";
+  if (layerId === "callout")
+    return "Callout banner · Click to edit in Left Panel";
+  if (layerId === "footer") return "Footer · Click to edit in Left Panel";
   const iconMatch = layerId.match(/^node-icon-(\d+)$/);
-  if (iconMatch) return `Icon ${Number(iconMatch[1]) + 1} · Click to change or upload`;
+  if (iconMatch)
+    return `Object / Icon ${Number(iconMatch[1]) + 1} · Click to edit color, icon & size in Left Panel`;
   const nodeMatch = layerId.match(/^node-(\d+)$/);
-  if (nodeMatch) return `Card ${Number(nodeMatch[1]) + 1} · Click to edit`;
-  return "Click to edit";
+  if (nodeMatch)
+    return `Card ${Number(nodeMatch[1]) + 1} · Click to edit in Left Panel`;
+  return "Click to edit in Left Panel";
 }
-
-const inputCls =
-  "mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-slate-700 dark:bg-slate-950 dark:text-white";
-const btnCls =
-  "inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-indigo-400 hover:text-indigo-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200";
 
 export function InteractiveInfographicCanvas({
   svg,
@@ -98,13 +84,8 @@ export function InteractiveInfographicCanvas({
   width,
   height,
   zoom,
-  busy = false,
   selection,
   onSelect,
-  onUpdateConfig,
-  onUpdateNode,
-  onUploadNodeIcon,
-  onUploadSceneImage,
 }: InteractiveInfographicCanvasProps) {
   const stageRef = useRef<HTMLDivElement>(null);
   const [hoverBox, setHoverBox] = useState<HighlightBox | null>(null);
@@ -180,458 +161,11 @@ export function InteractiveInfographicCanvas({
     onSelect(nextSel);
   };
 
-  const accentHex =
-    config.brand?.customColors?.accent ||
-    config.extractedBrand?.accent ||
-    BLOG_INFOGRAPHIC_PALETTES[config.paletteId]?.accent ||
-    "#4F46E5";
-
-  const activeNode =
-    selection.kind === "card" || selection.kind === "icon"
-      ? config.nodes[selection.index]
-      : undefined;
-
   const displayHeight = Math.round(680 * zoom);
   const aspectRatioCss = `${width} / ${height}`;
 
   return (
     <div className="flex flex-col">
-      {/* Contextual Canva-style Direct-Click Inspector Bar (appears ONLY when an element on the canvas is clicked) */}
-      {selection.kind !== "none" && (
-        <div
-          className="border-b border-indigo-200 bg-indigo-50/90 p-3.5 text-xs dark:border-indigo-500/30 dark:bg-slate-900/95"
-          aria-label="Direct canvas element editor"
-        >
-          <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-600 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
-                {selection.kind === "headline" && (
-                  <>
-                    <Type size={11} /> Headline &amp; Subtitle
-                  </>
-                )}
-                {selection.kind === "scene" && (
-                  <>
-                    <ImageIcon size={11} /> Header Illustration Object
-                  </>
-                )}
-                {selection.kind === "card" && (
-                  <>
-                    <Type size={11} /> Card {selection.index + 1} Content
-                  </>
-                )}
-                {selection.kind === "icon" && (
-                  <>
-                    <Sparkles size={11} /> Card {selection.index + 1} Icon &amp; Image
-                  </>
-                )}
-                {selection.kind === "callout" && (
-                  <>
-                    <Sparkles size={11} /> Bottom Callout Banner
-                  </>
-                )}
-                {selection.kind === "footer" && (
-                  <>
-                    <Type size={11} /> Footer Source &amp; Brand
-                  </>
-                )}
-              </span>
-              {(selection.kind === "card" || selection.kind === "icon") && (
-                <div className="inline-flex rounded-lg border border-indigo-200 bg-white p-0.5 dark:border-slate-700 dark:bg-slate-800">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      onSelect({ kind: "card", index: selection.index })
-                    }
-                    className={`rounded-md px-2 py-0.5 text-[11px] font-bold ${
-                      selection.kind === "card"
-                        ? "bg-indigo-600 text-white"
-                        : "text-slate-600 hover:text-indigo-600 dark:text-slate-300"
-                    }`}
-                  >
-                    Edit Text &amp; Color
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      onSelect({ kind: "icon", index: selection.index })
-                    }
-                    className={`rounded-md px-2 py-0.5 text-[11px] font-bold ${
-                      selection.kind === "icon"
-                        ? "bg-indigo-600 text-white"
-                        : "text-slate-600 hover:text-indigo-600 dark:text-slate-300"
-                    }`}
-                  >
-                    Change Icon / Upload Image
-                  </button>
-                </div>
-              )}
-            </div>
-            <button
-              type="button"
-              onClick={() => onSelect({ kind: "none" })}
-              className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-2 py-1 text-[11px] font-bold text-slate-600 hover:border-indigo-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-            >
-              <X size={12} />
-              Done
-            </button>
-          </div>
-
-          {selection.kind === "headline" && (
-            <div className="grid gap-2.5 sm:grid-cols-2">
-              <label className="block font-semibold text-slate-700 dark:text-slate-200">
-                Headline
-                <input
-                  autoFocus
-                  className={inputCls}
-                  value={config.headline}
-                  maxLength={180}
-                  onChange={(e) => onUpdateConfig({ headline: e.target.value })}
-                />
-              </label>
-              <label className="block font-semibold text-slate-700 dark:text-slate-200">
-                Subtitle
-                <input
-                  className={inputCls}
-                  value={config.subheadline}
-                  maxLength={240}
-                  onChange={(e) =>
-                    onUpdateConfig({ subheadline: e.target.value })
-                  }
-                />
-              </label>
-              <label className="block font-semibold text-slate-700 dark:text-slate-200">
-                <span className="flex items-center justify-between">
-                  <span>2-Tone Highlight Words</span>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      onUpdateConfig({
-                        highlightWords: extractHeadlineHighlightPhrases(
-                          config.headline,
-                        ).join(", "),
-                      })
-                    }
-                    className="text-[11px] font-bold text-indigo-600 hover:underline dark:text-indigo-400"
-                  >
-                    Auto-pick
-                  </button>
-                </span>
-                <input
-                  className={inputCls}
-                  value={config.highlightWords || ""}
-                  maxLength={140}
-                  placeholder="Comma-separated words to highlight"
-                  onChange={(e) =>
-                    onUpdateConfig({ highlightWords: e.target.value })
-                  }
-                />
-              </label>
-              <label className="block font-semibold text-slate-700 dark:text-slate-200">
-                Headline Size ({Math.round((config.styleOverrides?.headlineScale ?? 1) * 100)}%)
-                <input
-                  type="range"
-                  min={0.75}
-                  max={1.3}
-                  step={0.05}
-                  value={config.styleOverrides?.headlineScale ?? 1}
-                  onChange={(e) =>
-                    onUpdateConfig({
-                      styleOverrides: {
-                        ...config.styleOverrides,
-                        headlineScale: Number(e.target.value),
-                      },
-                    })
-                  }
-                  className="mt-2.5 w-full accent-indigo-600"
-                />
-              </label>
-            </div>
-          )}
-
-          {selection.kind === "card" && activeNode && (
-            <div className="space-y-2.5">
-              <div className="grid gap-2.5 sm:grid-cols-[1fr_1.5fr]">
-                <label className="block font-semibold text-slate-700 dark:text-slate-200">
-                  Card Title
-                  <input
-                    autoFocus
-                    className={inputCls}
-                    value={activeNode.title}
-                    maxLength={120}
-                    onChange={(e) =>
-                      onUpdateNode(activeNode.id, { title: e.target.value })
-                    }
-                  />
-                </label>
-                <label className="block font-semibold text-slate-700 dark:text-slate-200">
-                  Card Explanation
-                  <input
-                    className={inputCls}
-                    value={activeNode.detail}
-                    maxLength={360}
-                    onChange={(e) =>
-                      onUpdateNode(activeNode.id, { detail: e.target.value })
-                    }
-                  />
-                </label>
-              </div>
-              <div className="flex flex-wrap items-center gap-3">
-                <label className="flex items-center gap-1.5 font-semibold text-slate-700 dark:text-slate-200">
-                  Badge
-                  <input
-                    className="w-16 rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
-                    value={activeNode.badge}
-                    maxLength={8}
-                    onChange={(e) =>
-                      onUpdateNode(activeNode.id, { badge: e.target.value })
-                    }
-                  />
-                </label>
-                <label className="flex items-center gap-1.5 font-semibold text-slate-700 dark:text-slate-200">
-                  <Palette size={12} />
-                  Card Accent
-                  <input
-                    type="color"
-                    aria-label="Card accent color"
-                    value={activeNode.accentHex || accentHex}
-                    onChange={(e) =>
-                      onUpdateNode(activeNode.id, { accentHex: e.target.value })
-                    }
-                    className="h-7 w-9 cursor-pointer rounded border-0 bg-transparent"
-                  />
-                </label>
-                {activeNode.accentHex && (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      onUpdateNode(activeNode.id, { accentHex: undefined })
-                    }
-                    className="text-[11px] font-semibold text-indigo-600 hover:underline dark:text-indigo-400"
-                  >
-                    Reset color
-                  </button>
-                )}
-                <label className={btnCls + " ml-auto cursor-pointer"}>
-                  <Upload size={12} />
-                  {activeNode.customIconDataUrl
-                    ? "Replace Card Image"
-                    : "Upload Card Image"}
-                  <input
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp"
-                    className="sr-only"
-                    disabled={busy}
-                    onChange={(e) => {
-                      onUploadNodeIcon(activeNode.id, e.target.files?.[0]);
-                      e.target.value = "";
-                    }}
-                  />
-                </label>
-              </div>
-            </div>
-          )}
-
-          {selection.kind === "icon" && activeNode && (
-            <IconPickerGrid
-              value={activeNode.icon}
-              customIconDataUrl={activeNode.customIconDataUrl}
-              accentColor={activeNode.accentHex || accentHex}
-              busy={busy}
-              onSelectIcon={(icon) =>
-                onUpdateNode(activeNode.id, {
-                  icon,
-                  customIconDataUrl: undefined,
-                })
-              }
-              onUploadCustomIcon={(file) =>
-                onUploadNodeIcon(activeNode.id, file)
-              }
-              onRemoveCustomIcon={() =>
-                onUpdateNode(activeNode.id, { customIconDataUrl: undefined })
-              }
-            />
-          )}
-
-          {selection.kind === "scene" && (
-            <div className="space-y-2.5">
-              <div className="flex flex-wrap items-center gap-2">
-                <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-indigo-500">
-                  <Upload size={13} />
-                  {config.customSceneImageUrl
-                    ? "Replace Custom Illustration / Object"
-                    : "Upload Custom Illustration / Object (PNG, JPG, WebP)"}
-                  <input
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp"
-                    className="sr-only"
-                    disabled={busy}
-                    onChange={(e) => {
-                      onUploadSceneImage(e.target.files?.[0]);
-                      e.target.value = "";
-                    }}
-                  />
-                </label>
-                {config.customSceneImageUrl && (
-                  <button
-                    type="button"
-                    className={btnCls}
-                    onClick={() =>
-                      onUpdateConfig({ customSceneImageUrl: undefined })
-                    }
-                  >
-                    <Trash2 size={12} />
-                    Remove Custom Image
-                  </button>
-                )}
-                <button
-                  type="button"
-                  className={btnCls}
-                  onClick={() =>
-                    onUpdateConfig({
-                      sceneIllustration: "none",
-                      customSceneImageUrl: undefined,
-                    })
-                  }
-                >
-                  Hide Illustration
-                </button>
-              </div>
-              <div className="grid max-h-40 grid-cols-3 gap-1.5 overflow-y-auto pr-1 sm:grid-cols-6">
-                {VECTOR_SCENE_CATALOG.map((scene) => {
-                  const selected =
-                    !config.customSceneImageUrl &&
-                    config.sceneIllustration === scene.id;
-                  const previewSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 220">${scene.renderSvgNodes({
-                    primary: accentHex,
-                    secondary: config.secondaryAccent || "#10B981",
-                    surface: "#0F172A",
-                    ink: "#F8FAFC",
-                    muted: "#94A3B8",
-                  })}</svg>`;
-                  return (
-                    <button
-                      type="button"
-                      key={scene.id}
-                      aria-pressed={selected}
-                      onClick={() =>
-                        onUpdateConfig({
-                          sceneIllustration: scene.id,
-                          customSceneImageUrl: undefined,
-                        })
-                      }
-                      className={`flex flex-col overflow-hidden rounded-lg border text-left transition ${
-                        selected
-                          ? "border-indigo-500 bg-indigo-50 ring-1 ring-indigo-500 dark:bg-indigo-950/60"
-                          : "border-slate-200 bg-white hover:border-indigo-400 dark:border-slate-700 dark:bg-slate-800"
-                      }`}
-                    >
-                      <div className="flex h-12 items-center justify-center bg-slate-900 p-1">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(previewSvg)}`}
-                          alt={scene.title}
-                          loading="lazy"
-                          className="h-full w-full object-contain"
-                        />
-                      </div>
-                      <span className="truncate px-1.5 py-1 text-[9px] font-bold text-slate-700 dark:text-slate-200">
-                        {scene.title}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {selection.kind === "callout" && (
-            <div className="grid gap-2.5 sm:grid-cols-[150px_1fr_160px]">
-              <label className="block font-semibold text-slate-700 dark:text-slate-200">
-                Callout Badge
-                <input
-                  className={inputCls}
-                  value={config.calloutBadge || ""}
-                  maxLength={28}
-                  placeholder="KEY TAKEAWAY"
-                  onChange={(e) =>
-                    onUpdateConfig({ calloutBadge: e.target.value })
-                  }
-                />
-              </label>
-              <label className="block font-semibold text-slate-700 dark:text-slate-200">
-                Callout Text
-                <input
-                  autoFocus
-                  className={inputCls}
-                  value={config.calloutText || ""}
-                  maxLength={140}
-                  onChange={(e) =>
-                    onUpdateConfig({ calloutText: e.target.value })
-                  }
-                />
-              </label>
-              <label className="block font-semibold text-slate-700 dark:text-slate-200">
-                Banner Style
-                <select
-                  className={inputCls}
-                  value={config.styleOverrides?.calloutStyle || "default"}
-                  onChange={(e) =>
-                    onUpdateConfig({
-                      styleOverrides: {
-                        ...config.styleOverrides,
-                        calloutStyle: e.target.value as NonNullable<
-                          BlogInfographicConfig["styleOverrides"]
-                        >["calloutStyle"],
-                      },
-                    })
-                  }
-                >
-                  <option value="default">Editorial border</option>
-                  <option value="gold-pill">Gold highlight bar</option>
-                  <option value="accent-pill">Brand accent bar</option>
-                  <option value="hidden">Hide callout</option>
-                </select>
-              </label>
-            </div>
-          )}
-
-          {selection.kind === "footer" && (
-            <div className="grid gap-2.5 sm:grid-cols-2">
-              <label className="block font-semibold text-slate-700 dark:text-slate-200">
-                Source / Footer Line
-                <input
-                  autoFocus
-                  className={inputCls}
-                  value={config.footerSourceLabel}
-                  maxLength={180}
-                  placeholder="Leave blank to hide source credit"
-                  onChange={(e) =>
-                    onUpdateConfig({ footerSourceLabel: e.target.value })
-                  }
-                />
-              </label>
-              <label className="block font-semibold text-slate-700 dark:text-slate-200">
-                Brand Signature Name
-                <input
-                  className={inputCls}
-                  value={config.signature?.name || ""}
-                  maxLength={64}
-                  placeholder="Your website or brand name"
-                  onChange={(e) =>
-                    onUpdateConfig({
-                      signature: {
-                        ...config.signature,
-                        name: e.target.value,
-                      },
-                    })
-                  }
-                />
-              </label>
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Clean, Unobstructed Live SVG Canvas with Direct Element Selection & Canva Outline */}
       <div

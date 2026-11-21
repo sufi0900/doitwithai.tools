@@ -998,7 +998,65 @@ test("V5 Overhaul: content-aware visual-fit stops forced templates, fixes <detai
   assert.ok(faqStudioHtml.includes("Best for this section (4)"));
   assert.ok(!faqStudioHtml.includes("Conversion Funnel layout with your content"));
   assert.ok(!faqStudioHtml.includes("Pie Chart layout with your content"));
+  // Single Left Panel architecture: zero duplicate top canvas inspector bar, explicit Stage Color, Icon Size & Diagram/Funnel Size controls in Left Panel
+  assert.ok(!faqStudioHtml.includes('aria-label="Direct canvas element editor"'));
+  assert.ok(faqStudioHtml.includes("Stage Color"));
+  assert.ok(faqStudioHtml.includes("Icon Size"));
+  assert.ok(faqStudioHtml.includes("Diagram / Funnel Size"));
+
+  // 6. Hero-scale Flywheel radius (>= 92px) + diagramScale/iconScale responsiveness + JSON round-trip
+  const { createLayoutSample } = await import(
+    "../../lib/blog-infographic-studio/samples"
+  );
+  const { importInfographicProject } = await import(
+    "../../lib/blog-infographic-studio/project"
+  );
+  const flywheelSample = createLayoutSample("cycle-wheel");
+  const defaultFlywheelSvg = buildInfographicScene(flywheelSample).svg;
+  const radiusMatches = [...defaultFlywheelSvg.matchAll(/<circle[^>]*\sr="(\d+(?:\.\d+)?)"/g)].map(
+    (m) => Number(m[1]),
+  );
+  assert.ok(
+    radiusMatches.some((r) => r >= 92 && r <= 150),
+    `Expected hero-scale Flywheel orbital radius >= 92px, got radii: ${radiusMatches.join(", ")}`,
+  );
+
+  const scaledFunnel = withPrismLayout(
+    {
+      ...createLayoutSample("funnel-stages"),
+      styleOverrides: {
+        diagramScale: 1.25,
+        iconScale: 1.3,
+      },
+      nodes: createLayoutSample("funnel-stages").nodes.map((n, idx) =>
+        idx === 0 ? { ...n, accentHex: "#E11D48", iconScale: 1.2 } : n,
+      ),
+    },
+    "funnel-stages",
+  );
+  const scaledFunnelScene = buildInfographicScene(scaledFunnel);
+  assert.deepEqual(scaledFunnelScene.issues, []);
+  assert.ok(scaledFunnelScene.svg.includes("#E11D48"));
+
+  const [restoredScaled] = importInfographicProject(
+    JSON.stringify({ version: 1, cards: [scaledFunnel] }),
+  );
+  assert.equal(restoredScaled.styleOverrides?.diagramScale, 1.25);
+  assert.equal(restoredScaled.styleOverrides?.iconScale, 1.3);
+  assert.equal(restoredScaled.nodes[0].iconScale, 1.2);
+  assert.equal(restoredScaled.nodes[0].accentHex, "#E11D48");
+
+  // Historical evolution headings never force cycle-wheel or funnel-stages
+  const evolutionFit = getRecommendedLayoutsForConfig({
+    ...faqCard,
+    headline: "The Evolution of Google Search",
+    subheadline: "From Keyword Matching to AI-Generated Answers",
+    nodes: denseSixCard.nodes.slice(0, 5),
+  });
+  assert.ok(!evolutionFit.compatibleLayouts.includes("cycle-wheel"));
+  assert.ok(!evolutionFit.compatibleLayouts.includes("funnel-stages"));
 });
+
 
 
 

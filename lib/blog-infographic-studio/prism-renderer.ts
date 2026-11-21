@@ -746,6 +746,20 @@ export function buildPrismScene(
       ? Math.max(0, Math.min(14, ov.accentBarWidth))
       : 6;
 
+  const globalIconScale =
+    typeof ov.iconScale === "number"
+      ? Math.max(0.65, Math.min(1.5, ov.iconScale))
+      : 1;
+  const diagramScale =
+    typeof ov.diagramScale === "number"
+      ? Math.max(0.75, Math.min(1.35, ov.diagramScale))
+      : 1;
+  const nodeIconMult = (n: BlogInfographicNodeItem) =>
+    globalIconScale *
+    (typeof n.iconScale === "number"
+      ? Math.max(0.65, Math.min(1.5, n.iconScale))
+      : 1);
+
   const surfaceRectInto = (
     target: JSXNode[],
     x: number,
@@ -779,13 +793,24 @@ export function buildPrismScene(
         ...boxAttr,
         stroke:
           cardStyle === "bordered-bento"
-            ? mixColor(surface, accentColor, 0.45)
-            : mixColor(surface, accentColor, 0.18),
-        strokeWidth: cardStyle === "bordered-bento" ? 2 : 1,
+            ? mixColor(surface, accentColor, 0.52)
+            : mixColor(surface, accentColor, 0.24),
+        strokeWidth: cardStyle === "bordered-bento" ? 2 : 1.25,
       }),
     );
     if (tint || cardStyle === "playbook-contrast")
       target.push(rect(x, y, w, h, svgRef("band"), cardRadius, layerAttr));
+    // Tactile top-edge specular rim highlight for Photoshop-grade card depth
+    if (w > 88 && h > 44) {
+      target.push(
+        path(
+          `M ${x + Math.min(24, cardRadius)} ${y + 1.5} H ${x + w - Math.min(24, cardRadius)}`,
+          "#FFFFFF",
+          1.25,
+          { opacity: light ? 0.65 : 0.16 },
+        ),
+      );
+    }
     if (
       (cardStyle === "playbook-contrast" ||
         typeof ov.accentBarWidth === "number") &&
@@ -822,17 +847,24 @@ export function buildPrismScene(
     n: BlogInfographicNodeItem,
     x: number,
     y: number,
-    r: number,
+    baseR: number,
     c: string,
     nodeIndex?: number,
   ) => {
+    const r = Math.max(14, Math.round(baseR * nodeIconMult(n)));
     const medallionChildren: JSXNode[] = [
-      circle(x, y, r + 12, c, { opacity: 0.08 }),
+      circle(x, y, r + 11, c, { opacity: light ? 0.1 : 0.14 }),
+      circle(x, y, r + 4, c, {
+        fill: "none",
+        stroke: c,
+        strokeOpacity: 0.22,
+        strokeWidth: 1,
+      }),
       circle(x, y, r, surface, {
         ...shadow,
         stroke: c,
-        strokeOpacity: 0.3,
-        strokeWidth: 1.5,
+        strokeOpacity: 0.48,
+        strokeWidth: 1.8,
       }),
       n.customIconDataUrl
         ? el("image", {
@@ -1224,7 +1256,8 @@ export function buildPrismScene(
       wrap(n.detail, w, bodySize).length * bodySize * 1.32;
 
     if (layout === "pie-chart") {
-      const pieZoneW = Math.round(contentW * 0.4);
+      const pieRatio = Math.min(0.49, Math.max(0.32, 0.4 * diagramScale));
+      const pieZoneW = Math.round(contentW * pieRatio);
       const legendGap = 36;
       const legendW = contentW - pieZoneW - legendGap;
       const useTwoColLegend = nodes.length >= 5;
@@ -1251,7 +1284,10 @@ export function buildPrismScene(
       const legendTotal =
         rowHeights.reduce((a, b) => a + b, 0) +
         Math.max(0, rowHeights.length - 1) * minGap;
-      const minTotal = Math.max(Math.round(340 * s), legendTotal);
+      const minTotal = Math.max(
+        Math.round(340 * s * Math.min(1.15, diagramScale)),
+        legendTotal,
+      );
       return {
         s,
         labelSize,
@@ -1276,7 +1312,7 @@ export function buildPrismScene(
       const colGap = cols >= 5 ? 16 : 24;
       const colW = Math.floor((contentW - colGap * (cols - 1)) / cols);
       const colTextW = Math.max(115, colW - 28);
-      const barPlotH = Math.round(215 * s);
+      const barPlotH = Math.round(215 * s * Math.min(1.22, Math.max(0.82, diagramScale)));
       const captionGap = Math.max(14, Math.round(20 * s));
       const colHeights = nodes
         .slice(0, cols)
@@ -1339,7 +1375,9 @@ export function buildPrismScene(
         Math.round(96 * s),
         ...botNodes.map((n) => cardNeed(n, botCardW)),
       );
-      const roadBandH = Math.round(132 * s);
+      const roadBandH = Math.round(
+        136 * s * Math.min(1.22, Math.max(0.84, diagramScale)),
+      );
       const minTotal = topRowH + roadBandH + botRowH;
       return {
         s,
@@ -1361,7 +1399,8 @@ export function buildPrismScene(
     }
 
     if (layout === "pyramid-tiers" || layout === "funnel-stages") {
-      const visualW = Math.round(contentW * 0.39);
+      const splitRatio = Math.min(0.48, Math.max(0.3, 0.39 * diagramScale));
+      const visualW = Math.round(contentW * splitRatio);
       const connGap = 32;
       const rightCardW = contentW - visualW - connGap;
       const rightTextW = Math.max(220, rightCardW - 44);
@@ -1506,7 +1545,12 @@ export function buildPrismScene(
     }
 
     if (layout === "donut-breakdown" || layout === "cycle-wheel") {
-      const visualZoneH = Math.round((nodes.length >= 5 ? 186 : 220) * Math.min(1, s + 0.08));
+      const baseVisualH = nodes.length >= 5 ? 236 : 276;
+      const visualZoneH = Math.round(
+        baseVisualH *
+          Math.min(1, s + 0.08) *
+          Math.min(1.22, Math.max(0.82, diagramScale)),
+      );
       const colGap = 22;
       const cellW = (contentW - colGap) / 2;
       const textW = Math.max(180, cellW - 102);
@@ -1648,9 +1692,11 @@ export function buildPrismScene(
 
     if (layout === "constellation") {
       const orbitRy = Math.round(
-        (H <= 1400 ? 74 : 94) * Math.min(1, s + 0.08),
+        (H <= 1400 ? 78 : 98) *
+          Math.min(1, s + 0.08) *
+          Math.min(1.18, Math.max(0.84, diagramScale)),
       );
-      const hubZoneH = orbitRy * 2 + Math.round(58 * s);
+      const hubZoneH = orbitRy * 2 + Math.round(62 * s);
       const textW = contentW - 144;
       const rowHeights = nodes.map((n) =>
         Math.max(Math.round(92 * s), textHeight(n, textW) + padY * 2),
@@ -1904,12 +1950,12 @@ export function buildPrismScene(
     const totalH = Math.min(availBodyH, minTotal + Math.round(slack * 0.65));
     const startY = top + Math.min(24, Math.round((availBodyH - totalH) * 0.35));
 
-    // Left Segmented Pie Chart
+    // Left Segmented Pie Chart with 3D Bevel Rim & Inner Specular Arc
     const pieCx = M + Math.round(pieZoneW / 2);
     const pieCy = startY + Math.round(totalH / 2);
     const pieR = Math.max(
-      110,
-      Math.min(Math.round(pieZoneW * 0.42), Math.round(totalH * 0.43)),
+      115,
+      Math.min(Math.round(pieZoneW * 0.44), Math.round(totalH * 0.44)),
     );
     const parsedNums = nodes.map(extractVerifiedNumeric);
     const verifiedCount = parsedNums.filter((p) => typeof p.weight === "number").length;
@@ -1920,14 +1966,14 @@ export function buildPrismScene(
     );
     const totalWeight = weights.reduce((a, b) => a + b, 0) || 1;
 
-    // Subtle outer halo behind pie chart
+    // Multi-layered outer glow + recessed bezel ring behind pie chart
     bodyParts.push(
-      circle(pieCx, pieCy, pieR + 14, accent, { opacity: 0.08 }),
-      circle(pieCx, pieCy, pieR + 4, surface, {
+      circle(pieCx, pieCy, pieR + 18, accent, { opacity: light ? 0.08 : 0.12 }),
+      circle(pieCx, pieCy, pieR + 8, surface, {
         ...shadow,
         stroke: accent,
-        strokeOpacity: 0.2,
-        strokeWidth: 1.5,
+        strokeOpacity: 0.3,
+        strokeWidth: 2,
       }),
     );
 
@@ -1942,6 +1988,14 @@ export function buildPrismScene(
       const y2 = +(pieCy + pieR * Math.sin(endAngle)).toFixed(1);
       const largeArc = sweep > Math.PI ? 1 : 0;
       const sliceD = `M ${pieCx} ${pieCy} L ${x1} ${y1} A ${pieR} ${pieR} 0 ${largeArc} 1 ${x2} ${y2} Z`;
+      // Inner specular bevel arc along the outer rim of each wedge
+      const rimR = pieR - 6;
+      const rx1 = +(pieCx + rimR * Math.cos(startAngle + 0.04)).toFixed(1);
+      const ry1 = +(pieCy + rimR * Math.sin(startAngle + 0.04)).toFixed(1);
+      const rx2 = +(pieCx + rimR * Math.cos(endAngle - 0.04)).toFixed(1);
+      const ry2 = +(pieCy + rimR * Math.sin(endAngle - 0.04)).toFixed(1);
+      const rimArcD = `M ${rx1} ${ry1} A ${rimR} ${rimR} 0 ${largeArc} 1 ${rx2} ${ry2}`;
+
       const midAngle = startAngle + sweep / 2;
       const labelR = pieR * 0.62;
       const lx = Math.round(pieCx + labelR * Math.cos(midAngle));
@@ -1965,6 +2019,7 @@ export function buildPrismScene(
             strokeWidth: 4,
             strokeLinejoin: "round",
           }),
+          path(rimArcD, "#FFFFFF", 3, { opacity: 0.24 }),
           textBlock(
             sliceLabel,
             lx - 34,
@@ -1981,14 +2036,17 @@ export function buildPrismScene(
       startAngle = endAngle;
     });
 
-    // Crisp central pin hub
+    // Crisp central 3D cap hub
+    const capR = Math.round(pieR * 0.18);
     bodyParts.push(
-      circle(pieCx, pieCy, Math.round(pieR * 0.16), surface, {
+      circle(pieCx, pieCy, capR + 4, "#000000", { opacity: 0.16 }),
+      circle(pieCx, pieCy, capR, surface, {
+        ...shadow,
         stroke: accent,
-        strokeOpacity: 0.45,
-        strokeWidth: 2,
+        strokeOpacity: 0.55,
+        strokeWidth: 2.5,
       }),
-      circle(pieCx, pieCy, 5, accent),
+      circle(pieCx, pieCy, 6, accent),
     );
 
     // Right Color-Coded Legend & Explanation Cards
@@ -2060,17 +2118,19 @@ export function buildPrismScene(
     const baselineY = startY + plotH;
     const maxBarH = Math.max(70, baselineY - plotTop - 16);
 
-    // Horizontal Y-axis dashed gridlines + crisp solid X-axis baseline
+    // Horizontal Y-axis dashed gridlines + crisp solid X-axis baseline plinth
     [0.25, 0.5, 0.75, 1].forEach((frac) => {
       const gy = Math.round(baselineY - maxBarH * frac);
       bodyParts.push(
         path(`M ${M} ${gy} H ${W - M}`, muted, 1.5, {
           strokeDasharray: "5 7",
-          opacity: 0.22,
+          opacity: 0.24,
         }),
       );
     });
-    bodyParts.push(path(`M ${M} ${baselineY} H ${W - M}`, accent, 2.5, { opacity: 0.5 }));
+    bodyParts.push(
+      rect(M, baselineY - 2, contentW, 5, accent, 2.5, { opacity: 0.55 }),
+    );
 
     const parsedNums = nodes.slice(0, cols).map(extractVerifiedNumeric);
     const verifiedCount = parsedNums.filter((p) => typeof p.weight === "number").length;
@@ -2090,15 +2150,21 @@ export function buildPrismScene(
           ? Math.max(0.18, parsedNums[i].weight! / maxWeight)
           : defaultSteps[i % defaultSteps.length];
       const barH = Math.max(44, Math.round(maxBarH * frac));
-      const barW = Math.min(86, Math.max(44, Math.round(colW * 0.44)));
+      const barW = Math.min(
+        96,
+        Math.max(46, Math.round(colW * 0.46 * Math.min(1.18, diagramScale))),
+      );
       const barX = colCx - Math.round(barW / 2);
       const barY = baselineY - barH;
       barPeaks.push({ x: colCx, y: barY, c });
 
-      // Column track shadow + vivid vertical bar + specular highlight + semantic icon emblem
+      // Column track shadow + 3D beveled vertical bar + specular highlight + scaled semantic icon emblem
       const fg =
         contrast("#FFFFFF", c) >= contrast("#081322", c) ? "#FFFFFF" : "#081322";
-      const barIconSize = Math.min(24, Math.max(16, Math.round(barW * 0.42)));
+      const barIconSize = Math.min(
+        Math.max(16, barW - 14),
+        Math.max(14, Math.round(barW * 0.42 * nodeIconMult(n))),
+      );
       const barIconY = barY + Math.max(8, Math.round((barH - barIconSize) / 2));
       bodyParts.push(
         el(
@@ -2108,10 +2174,14 @@ export function buildPrismScene(
             "data-layer-box": `node-icon-${i}`,
             style: "cursor:pointer",
           },
-          rect(barX, plotTop, barW, baselineY - plotTop, c, 12, { opacity: 0.08 }),
+          rect(barX, plotTop, barW, baselineY - plotTop, c, 12, { opacity: 0.09 }),
           rect(barX, barY, barW, barH, c, 12, { ...shadow }),
-          rect(barX + 6, barY + 6, Math.max(6, Math.round(barW * 0.18)), Math.max(12, barH - 12), "#FFFFFF", 4, {
-            opacity: 0.2,
+          // Left 3D specular gloss strip & top cap shine
+          rect(barX + 5, barY + 5, Math.max(6, Math.round(barW * 0.2)), Math.max(12, barH - 10), "#FFFFFF", 5, {
+            opacity: 0.24,
+          }),
+          rect(barX + Math.round(barW * 0.65), barY + 4, Math.max(6, Math.round(barW * 0.26)), Math.max(12, barH - 8), "#000000", 5, {
+            opacity: 0.12,
           }),
           n.customIconDataUrl
             ? el("image", {
@@ -2134,13 +2204,17 @@ export function buildPrismScene(
 
       // Floating value / index pill above bar
       const pillLabel = parsedNums[i].label || String(i + 1).padStart(2, "0");
-      const pillW = Math.max(54, widthOf(pillLabel, 13, true) + 22);
+      const pillW = Math.max(56, widthOf(pillLabel, 13, true) + 22);
       bodyParts.push(
-        rect(colCx - Math.round(pillW / 2), barY - 30, pillW, 24, c, 12),
+        rect(colCx - Math.round(pillW / 2), barY - 32, pillW, 24, c, 12, {
+          ...shadow,
+          stroke: surface,
+          strokeWidth: 1.5,
+        }),
         textBlock(
           pillLabel,
           colCx - Math.round(pillW / 2),
-          barY - 24,
+          barY - 26,
           pillW,
           13,
           fg,
@@ -2186,7 +2260,7 @@ export function buildPrismScene(
       );
     });
 
-    // Connecting trend line across column peaks
+    // Connecting trend line + vertex markers across column peaks
     if (barPeaks.length >= 2) {
       const trendPoints = barPeaks.map((p) => `${p.x},${p.y - 4}`).join(" ");
       bodyParts.push(
@@ -2196,19 +2270,24 @@ export function buildPrismScene(
           stroke: ink,
           strokeWidth: 2.5,
           strokeDasharray: "6 5",
-          opacity: 0.42,
+          opacity: 0.45,
         }),
       );
+      barPeaks.forEach((p) => {
+        bodyParts.push(
+          circle(p.x, p.y - 4, 4.5, surface, { stroke: p.c, strokeWidth: 2.5 }),
+        );
+      });
     }
     bottom = baselineY + captionGap + captionH;
   } else if (layout === "winding-roadmap") {
     const count = Math.max(2, Math.min(6, nodes.length));
     const topRowBaseH = (chosen as { topRowH?: number }).topRowH || Math.round(135 * fitScale);
     const botRowBaseH = (chosen as { botRowH?: number }).botRowH || Math.round(135 * fitScale);
-    const roadBandBaseH = (chosen as { roadBandH?: number }).roadBandH || Math.round(132 * fitScale);
+    const roadBandBaseH = (chosen as { roadBandH?: number }).roadBandH || Math.round(136 * fitScale);
     const extraTopH = Math.min(44, Math.round(slack * 0.35));
     const extraBotH = Math.min(44, Math.round(slack * 0.35));
-    const extraRoadH = Math.min(40, Math.round(slack * 0.25));
+    const extraRoadH = Math.min(44, Math.round(slack * 0.25));
     const topRowH = topRowBaseH + extraTopH;
     const botRowH = botRowBaseH + extraBotH;
     const roadBandH = roadBandBaseH + extraRoadH;
@@ -2219,7 +2298,7 @@ export function buildPrismScene(
     // Pin coordinates along a smooth sinusoidal S-curve road
     const roadStartX = M + 76;
     const roadEndX = W - M - 76;
-    const waveAmp = Math.min(22, Math.round(roadBandH * 0.18));
+    const waveAmp = Math.min(26, Math.round(roadBandH * 0.2));
     const pins = nodes.slice(0, count).map((_, i) => {
       const t = count === 1 ? 0.5 : i / (count - 1);
       const x = Math.round(roadStartX + t * (roadEndX - roadStartX));
@@ -2238,16 +2317,21 @@ export function buildPrismScene(
     const lastPin = pins[pins.length - 1];
     roadD += ` L ${W - M - 18} ${lastPin.y}`;
 
-    const roadBodyColor = light ? "#1E293B" : mixColor(surface, "#020617", 0.55);
+    const roadBodyColor = light ? "#1E293B" : mixColor(surface, "#020617", 0.62);
+    const roadScale = Math.min(1.25, Math.max(0.85, diagramScale));
     bodyParts.push(
-      path(roadD, accent, 34, { opacity: 0.18 }),
-      path(roadD, roadBodyColor, 24),
-      path(roadD, "#FFFFFF", 2.6, { strokeDasharray: "12 10", opacity: 0.8 }),
+      // Multi-layered realistic highway: outer glow shoulder -> curbing -> dark asphalt -> white dashed lane
+      path(roadD, accent, Math.round(42 * roadScale), { opacity: 0.16 }),
+      path(roadD, mixColor(roadBodyColor, accent, 0.35), Math.round(31 * roadScale), {
+        opacity: 0.75,
+      }),
+      path(roadD, roadBodyColor, Math.round(25 * roadScale)),
+      path(roadD, "#FFFFFF", 2.8, { strokeDasharray: "12 10", opacity: 0.86 }),
       // Directional end arrowhead on the road
       path(
-        `M ${W - M - 26} ${lastPin.y - 8} L ${W - M - 12} ${lastPin.y} L ${W - M - 26} ${lastPin.y + 8}`,
+        `M ${W - M - 28} ${lastPin.y - 9} L ${W - M - 12} ${lastPin.y} L ${W - M - 28} ${lastPin.y + 9}`,
         accent,
-        3.5,
+        4,
       ),
     );
 
@@ -2263,20 +2347,27 @@ export function buildPrismScene(
       const c = isHex(n.accentHex) ? n.accentHex : extendedColors[idx % extendedColors.length];
       const pin = pins[idx];
       const stemFromY = isTop ? y + h : y;
-      const pinHeadY = isTop ? pin.y - 28 : pin.y + 28;
+      const pinMult = Math.min(1.35, Math.max(0.75, nodeIconMult(n)));
+      const pinHeadDist = Math.round(30 * pinMult);
+      const pinHeadY = isTop ? pin.y - pinHeadDist : pin.y + pinHeadDist;
 
       // Connector stem from card to pin
       bodyParts.push(
-        path(`M ${pin.x} ${stemFromY} V ${pin.y}`, c, 2.5, { strokeDasharray: "4 4", opacity: 0.7 }),
+        path(`M ${pin.x} ${stemFromY} V ${pin.y}`, c, 2.5, { strokeDasharray: "4 4", opacity: 0.72 }),
       );
 
-      // Teardrop Map Pin Marker directly on the road with semantic icon emblem inside
-      const fg = contrast("#FFFFFF", c) >= contrast("#081322", c) ? "#FFFFFF" : "#081322";
+      // 3D Teardrop Map Pin Marker with drop shadow ellipse, inner gloss disc & scaled semantic icon
+      const hw1 = Math.round(20 * pinMult);
+      const hw2 = Math.round(23 * pinMult);
+      const hd1 = Math.round(18 * pinMult);
+      const hd2 = Math.round(15 * pinMult);
+      const hd3 = Math.round(22 * pinMult);
       const teardropPath = isTop
-        ? `M ${pin.x} ${pin.y - 2} C ${pin.x - 19} ${pin.y - 17}, ${pin.x - 21} ${pinHeadY - 14}, ${pin.x} ${pinHeadY - 20} C ${pin.x + 21} ${pinHeadY - 14}, ${pin.x + 19} ${pin.y - 17}, ${pin.x} ${pin.y - 2} Z`
-        : `M ${pin.x} ${pin.y + 2} C ${pin.x - 19} ${pin.y + 17}, ${pin.x - 21} ${pinHeadY + 14}, ${pin.x} ${pinHeadY + 20} C ${pin.x + 21} ${pinHeadY + 14}, ${pin.x + 19} ${pin.y + 17}, ${pin.x} ${pin.y + 2} Z`;
-      const pinCenterY = isTop ? pinHeadY - 1 : pinHeadY + 1;
-      const pinIconSize = 18;
+        ? `M ${pin.x} ${pin.y - 2} C ${pin.x - hw1} ${pin.y - hd1}, ${pin.x - hw2} ${pinHeadY - hd2}, ${pin.x} ${pinHeadY - hd3} C ${pin.x + hw2} ${pinHeadY - hd2}, ${pin.x + hw1} ${pin.y - hd1}, ${pin.x} ${pin.y - 2} Z`
+        : `M ${pin.x} ${pin.y + 2} C ${pin.x - hw1} ${pin.y + hd1}, ${pin.x - hw2} ${pinHeadY + hd2}, ${pin.x} ${pinHeadY + hd3} C ${pin.x + hw2} ${pinHeadY + hd2}, ${pin.x + hw1} ${pin.y + hd1}, ${pin.x} ${pin.y + 2} Z`;
+      const pinCenterY = isTop ? pinHeadY - Math.round(2 * pinMult) : pinHeadY + Math.round(2 * pinMult);
+      const innerDiscR = Math.max(10, Math.round(13 * pinMult));
+      const pinIconSize = Math.max(12, Math.round(16 * pinMult));
       bodyParts.push(
         el(
           "g",
@@ -2285,8 +2376,28 @@ export function buildPrismScene(
             "data-layer-box": `node-icon-${idx}`,
             style: "cursor:pointer",
           },
-          circle(pin.x, pin.y, 7, surface, { stroke: c, strokeWidth: 3.5 }),
-          el("path", { d: teardropPath, fill: c, ...shadow }),
+          el("ellipse", {
+            cx: pin.x,
+            cy: pin.y + 3,
+            rx: 10,
+            ry: 4,
+            fill: "#000000",
+            opacity: 0.35,
+          }),
+          circle(pin.x, pin.y, 7.5, surface, { stroke: c, strokeWidth: 3.5 }),
+          el("path", {
+            d: teardropPath,
+            fill: c,
+            stroke: "#FFFFFF",
+            strokeOpacity: 0.45,
+            strokeWidth: 1.5,
+            ...shadow,
+          }),
+          circle(pin.x, pinCenterY, innerDiscR, surface, {
+            stroke: "#FFFFFF",
+            strokeOpacity: 0.35,
+            strokeWidth: 1,
+          }),
           n.customIconDataUrl
             ? el("image", {
                 href: n.customIconDataUrl,
@@ -2301,18 +2412,35 @@ export function buildPrismScene(
                 pin.x - pinIconSize / 2,
                 pinCenterY - pinIconSize / 2,
                 pinIconSize,
-                fg,
+                c,
               ),
         ),
       );
 
-      // Milestone Card
+      // Milestone Card with corner step badge pill
       surfaceRectInto(bodyParts, x, y, w, h, idx === 0, c, `node-${idx}`);
       bodyParts.push(
         rect(x + 18, isTop ? y + h - 4 : y, w - 36, 4, c, 2),
       );
+      const stepPill = n.badge.trim() || String(idx + 1).padStart(2, "0");
+      const stepPillW = Math.max(42, widthOf(stepPill, 12, true) + 18);
+      const stepFg = contrast("#FFFFFF", c) >= contrast("#081322", c) ? "#FFFFFF" : "#081322";
+      bodyParts.push(
+        rect(x + w - stepPillW - 14, y + 12, stepPillW, 22, c, 11),
+        textBlock(
+          stepPill,
+          x + w - stepPillW - 14,
+          y + 16,
+          stepPillW,
+          12,
+          stepFg,
+          true,
+          true,
+          fontStack,
+        ).node,
+      );
       const cardTextW = Math.max(130, w - 36);
-      const tNode = textBlock(n.title, x + 18, y + padY, cardTextW, labelSize, ink, true, false, fontStack);
+      const tNode = textBlock(n.title, x + 18, y + padY, Math.max(110, cardTextW - stepPillW - 8), labelSize, ink, true, false, fontStack);
       const dNode = textBlock(n.detail, x + 18, y + padY + tNode.height + titleGap, cardTextW, bodySize, muted, false, false, fontStack);
       bodyParts.push(
         el("g", { "data-layer-id": `node-${idx}`, style: "cursor:pointer" }, tNode.node, dNode.node),
@@ -2329,7 +2457,7 @@ export function buildPrismScene(
     });
     bottom = startY + totalH;
   } else if (layout === "pyramid-tiers" || layout === "funnel-stages") {
-    // True Designer Split-Diagram Pyramid & 3D Tapered Conversion Funnel (ZERO overlapping boxes, ZERO overflow)
+    // True Designer 3D Split-Diagram Pyramid & 3D Tapered Conversion Funnel (ZERO overlapping boxes, ZERO overflow)
     const isPyramidSplit = layout === "pyramid-tiers";
     const visualW = (chosen as { splitVisualW?: number }).splitVisualW || Math.round(contentW * 0.39);
     const connGap = (chosen as { splitConnGap?: number }).splitConnGap || 32;
@@ -2382,39 +2510,75 @@ export function buildPrismScene(
       const blX = vx - halfWBot;
       const rightMidX = vx + Math.round((halfWTop + halfWBot) / 2);
 
-      // Left Geometric 3D-Shaded Pyramid or Funnel Tier (pure vector shape, no overlapping rectangle!)
+      // Left Geometric 3D-Shaded Pyramid or Funnel Tier (Photoshop-grade 3D facets + rim depth)
       const tierChildren: JSXNode[] = [];
       if (!isPyramidSplit && i === 0) {
-        // 3D Funnel Top Intake Rim Ellipse
+        // 3D Funnel Top Intake Mouth Ellipse (outer rim + recessed inner cavity)
         tierChildren.push(
           el("ellipse", {
             cx: vx,
             cy: y,
             rx: halfWTop,
-            ry: 8,
-            fill: mixColor(c, "#FFFFFF", 0.3),
-            opacity: 0.55,
+            ry: 11,
+            fill: mixColor(c, "#FFFFFF", 0.34),
+            stroke: "#FFFFFF",
+            strokeOpacity: 0.4,
+            strokeWidth: 1.5,
+          }),
+          el("ellipse", {
+            cx: vx,
+            cy: y + 1,
+            rx: Math.max(12, Math.round(halfWTop * 0.78)),
+            ry: 6,
+            fill: mixColor(c, "#020617", 0.35),
+            opacity: 0.65,
           }),
         );
       }
       tierChildren.push(
+        // Main 3D trapezoid/triangle body
         el("polygon", {
           points: `${tlX},${y} ${trX},${y} ${brX},${y + h} ${blX},${y + h}`,
           fill: c,
+          stroke: "#FFFFFF",
+          strokeOpacity: 0.28,
+          strokeWidth: 1.25,
           ...shadow,
         }),
-        // Left-side 3D bevel light facet
+        // Left-side 3D studio key-light bevel facet
         el("polygon", {
           points: `${tlX},${y} ${vx},${y} ${vx},${y + h} ${blX},${y + h}`,
           fill: "#FFFFFF",
-          opacity: 0.14,
+          opacity: 0.16,
+        }),
+        // Right-side 3D ambient shadow facet for realistic depth
+        el("polygon", {
+          points: `${vx},${y} ${trX},${y} ${brX},${y + h} ${vx},${y + h}`,
+          fill: "#000000",
+          opacity: 0.1,
         }),
       );
-      // Centered semantic icon + tier badge inside the geometric tier
+      if (!isPyramidSplit) {
+        // Subtle 3D curved seam line at the bottom of each funnel stage
+        tierChildren.push(
+          el("ellipse", {
+            cx: vx,
+            cy: y + h,
+            rx: halfWBot,
+            ry: 6,
+            fill: mixColor(c, "#000000", 0.22),
+            opacity: 0.5,
+          }),
+        );
+      }
+      // Centered scaled semantic icon + tier badge inside the geometric tier
       const badgeLabel = n.badge.trim() || String(i + 1).padStart(2, "0");
-      const iconSz = Math.max(16, Math.round(20 * fitScale));
+      const iconSz = Math.min(
+        Math.max(18, Math.round(h * 0.48)),
+        Math.max(14, Math.round(21 * fitScale * nodeIconMult(n))),
+      );
       const isNarrowApex = isPyramidSplit && i === 0;
-      const iconOffsetX = isNarrowApex ? vx - iconSz / 2 : vx - 30;
+      const iconOffsetX = isNarrowApex ? vx - iconSz / 2 : vx - Math.round(iconSz + 10);
       const iconOffsetY = isNarrowApex ? cy + 2 : cy - iconSz / 2;
       tierChildren.push(
         n.customIconDataUrl
@@ -2432,9 +2596,9 @@ export function buildPrismScene(
         tierChildren.push(
           textBlock(
             badgeLabel,
-            vx - 4,
+            vx - 2,
             cy - 10,
-            56,
+            60,
             Math.max(15, Math.round(19 * fitScale)),
             fg,
             true,
@@ -2472,10 +2636,10 @@ export function buildPrismScene(
       bodyParts.push(
         path(`M ${rightMidX + 4} ${cy} H ${cardX - 4}`, c, 2.5, {
           strokeDasharray: "4 4",
-          opacity: 0.72,
+          opacity: 0.76,
         }),
-        circle(rightMidX + 4, cy, 4.5, c),
-        circle(cardX, cy, 5, c),
+        circle(rightMidX + 4, cy, 5, surface, { stroke: c, strokeWidth: 2.5 }),
+        circle(cardX, cy, 5.5, c),
       );
 
       // Right Spacious Explanation Card (exact measured height, ZERO overflow!)
@@ -2843,44 +3007,50 @@ export function buildPrismScene(
     bottom = y - rowGap;
   } else if (layout === "donut-breakdown" || layout === "cycle-wheel") {
     const isDonut = layout === "donut-breakdown";
-    const visualZoneH =
+    const baseZoneH =
       (chosen as { visualZoneH?: number }).visualZoneH ||
-      Math.round(210 * fitScale);
+      Math.round(268 * fitScale);
+    const extraVisualH = Math.min(72, Math.round(slack * 0.34));
+    const visualZoneH = baseZoneH + extraVisualH;
+    const remSlack = Math.max(0, slack - extraVisualH);
     const colGap = 22;
     const cellW = (contentW - colGap) / 2;
     const textW = Math.max(170, cellW - 102);
     const pairCount = Math.max(1, rowHeights.length);
     const extraGap = Math.min(
-      28,
-      Math.round((slack * 0.24) / Math.max(1, pairCount)),
+      26,
+      Math.round((remSlack * 0.25) / Math.max(1, pairCount)),
     );
     const rowGap = minGap + extraGap;
     const extraCardH = Math.min(
-      68,
+      64,
       Math.round(
-        (slack - extraGap * Math.max(1, pairCount)) / Math.max(1, pairCount),
+        (remSlack - extraGap * Math.max(1, pairCount)) / Math.max(1, pairCount),
       ),
     );
     const cx = W / 2;
     const cy = top + Math.round(visualZoneH / 2);
-    const radius = Math.min(88, Math.round(visualZoneH * 0.39));
+    const radius = Math.min(138, Math.max(92, Math.round(visualZoneH * 0.39)));
 
     if (isDonut) {
       // Multi-segment SVG Donut Chart using circumference dash segments
-      const strokeW = Math.max(22, Math.round(radius * 0.34));
+      const strokeW = Math.max(26, Math.round(radius * 0.35));
       const circ = 2 * Math.PI * radius;
       const rawWeights = nodes.map((n) => {
-        const m = `${n.title} ${n.detail}`.match(/\b(\d{1,3})\s*%/);
+        const m = `${n.metricValue || ""} ${n.title} ${n.detail}`.match(/\b(\d{1,3})\s*%/);
         return m ? Math.max(8, Math.min(100, Number(m[1]))) : 1;
       });
       const totalW = rawWeights.reduce((a, b) => a + b, 0) || 1;
       let offset = 0;
       const gapLen = 6;
       bodyParts.push(
+        circle(cx, cy, radius + Math.round(strokeW * 0.65), accent, {
+          opacity: light ? 0.06 : 0.1,
+        }),
         circle(cx, cy, radius, "none", {
           stroke: muted,
           strokeWidth: strokeW,
-          opacity: 0.14,
+          opacity: 0.16,
         }),
       );
       nodes.forEach((n, idx) => {
@@ -2888,7 +3058,7 @@ export function buildPrismScene(
           10,
           (rawWeights[idx] / totalW) * circ - gapLen,
         );
-        const c = isHex(n.accentHex) ? n.accentHex : colors[idx % 4];
+        const c = isHex(n.accentHex) ? n.accentHex : extendedColors[idx % extendedColors.length];
         bodyParts.push(
           circle(cx, cy, radius, "none", {
             stroke: c,
@@ -2901,11 +3071,11 @@ export function buildPrismScene(
         // Outer radial index dot on ring midline
         const midAngle =
           -Math.PI / 2 + ((offset + segLen / 2) / circ) * Math.PI * 2;
-        const badgeR = radius + strokeW * 0.72 + 12;
+        const badgeR = radius + strokeW * 0.72 + 13;
         const bx = cx + Math.cos(midAngle) * badgeR;
         const by = cy + Math.sin(midAngle) * badgeR;
         bodyParts.push(
-          circle(bx, by, 14, c, { stroke: surface, strokeWidth: 2 }),
+          circle(bx, by, 15, c, { stroke: surface, strokeWidth: 2.5 }),
           textBlock(
             String(idx + 1),
             bx - 12,
@@ -2923,19 +3093,19 @@ export function buildPrismScene(
         offset += (rawWeights[idx] / totalW) * circ;
       });
       // Center summary hub
-      const innerR = Math.max(38, radius - Math.round(strokeW * 0.65));
+      const innerR = Math.max(44, radius - Math.round(strokeW * 0.62));
       bodyParts.push(
         circle(cx, cy, innerR, surface, {
           ...shadow,
           stroke: accent,
-          strokeWidth: 2,
+          strokeWidth: 2.5,
         }),
         textBlock(
           String(nodes.length),
-          cx - 32,
-          cy - 22,
-          64,
-          28,
+          cx - 34,
+          cy - 24,
+          68,
+          Math.max(26, Math.round(30 * fitScale)),
           accent,
           true,
           true,
@@ -2943,10 +3113,10 @@ export function buildPrismScene(
         ).node,
         textBlock(
           (config.centerLabel || "PILLARS").slice(0, 12).toUpperCase(),
-          cx - 42,
+          cx - 46,
           cy + 8,
-          84,
-          12,
+          92,
+          13,
           muted,
           true,
           true,
@@ -2954,24 +3124,53 @@ export function buildPrismScene(
         ).node,
       );
     } else {
-      // Continuous Flywheel Cycle Loop with directional arrows between orbital nodes
+      // Hero-Scale Continuous Flywheel Cycle Loop with wide track, radial spokes & bold orbital nodes
+      const hubR = Math.max(48, Math.round(radius * 0.48));
+      const trackW = Math.max(14, Math.round(radius * 0.16));
       bodyParts.push(
+        // Outer ambient halo
+        circle(cx, cy, radius + 24, accent, { opacity: light ? 0.06 : 0.1 }),
+        // Wide orbital track ring
         circle(cx, cy, radius, "none", {
           stroke: accent,
-          strokeWidth: 5,
-          opacity: 0.32,
+          strokeWidth: trackW,
+          opacity: light ? 0.14 : 0.2,
         }),
-        circle(cx, cy, Math.round(radius * 0.48), surface, {
+        // Inner dashed momentum ring
+        circle(cx, cy, radius, "none", {
+          stroke: accent,
+          strokeWidth: 3.5,
+          strokeDasharray: "8 8",
+          opacity: 0.55,
+        }),
+      );
+      // Radial energy spokes from center hub to orbital nodes
+      nodes.forEach((n, idx) => {
+        const a = -Math.PI / 2 + (Math.PI * 2 * idx) / nodes.length;
+        const nx = cx + Math.cos(a) * radius;
+        const ny = cy + Math.sin(a) * radius;
+        const c = isHex(n.accentHex) ? n.accentHex : extendedColors[idx % extendedColors.length];
+        bodyParts.push(
+          path(`M ${cx} ${cy} L ${nx.toFixed(1)} ${ny.toFixed(1)}`, c, 2, {
+            strokeDasharray: "4 5",
+            opacity: 0.35,
+          }),
+        );
+      });
+      // Elevated central Flywheel core hub (never overlapped by orbital nodes!)
+      bodyParts.push(
+        circle(cx, cy, hubR + 5, accent, { opacity: 0.15 }),
+        circle(cx, cy, hubR, surface, {
           ...shadow,
           stroke: accent,
-          strokeWidth: 2.5,
+          strokeWidth: 3,
         }),
         textBlock(
           (config.centerLabel || "FLYWHEEL").slice(0, 12).toUpperCase(),
-          cx - 46,
-          cy - 9,
-          92,
-          14,
+          cx - hubR + 6,
+          cy - 10,
+          (hubR - 6) * 2,
+          Math.max(13, Math.round(16 * fitScale)),
           accent,
           true,
           true,
@@ -2982,7 +3181,7 @@ export function buildPrismScene(
         const a = -Math.PI / 2 + (Math.PI * 2 * idx) / nodes.length;
         const nx = cx + Math.cos(a) * radius;
         const ny = cy + Math.sin(a) * radius;
-        const c = isHex(n.accentHex) ? n.accentHex : colors[idx % 4];
+        const c = isHex(n.accentHex) ? n.accentHex : extendedColors[idx % extendedColors.length];
         // Directional chevron halfway to next orbital node
         const midA = a + Math.PI / nodes.length;
         const ax = cx + Math.cos(midA) * radius;
@@ -2992,15 +3191,16 @@ export function buildPrismScene(
           el(
             "g",
             { transform: `translate(${ax.toFixed(1)}, ${ay.toFixed(1)}) rotate(${deg})` },
-            path("M -6 -5 L 5 0 L -6 5", c, 3.2),
+            path("M -6 -5 L 5 0 L -6 5", c, 3.4),
           ),
         );
+        const orbitNodeR = Math.max(24, Math.round(radius * 0.23));
         medallionInto(
           bodyParts,
           n,
           nx,
           ny,
-          Math.max(20, Math.round(24 * fitScale)),
+          orbitNodeR,
           c,
           idx,
         );
@@ -3018,10 +3218,11 @@ export function buildPrismScene(
         const wCard = isSolo ? contentW : cellW;
         const x = isSolo ? M : M + k * (cellW + colGap);
         const tw = isSolo ? contentW - 116 : textW;
-        const c = isHex(n.accentHex) ? n.accentHex : colors[idx % 4];
+        const c = isHex(n.accentHex) ? n.accentHex : extendedColors[idx % extendedColors.length];
         const ntH = textHeight(n, tw);
         const textY = y + Math.max(padY, Math.round((h - ntH) / 2));
         surfaceRectInto(bodyParts, x, y, wCard, h, k === 1, c, `node-${idx}`);
+        bodyParts.push(rect(x, y + 12, 5, Math.max(18, h - 24), c, 2.5));
         medallionInto(
           bodyParts,
           n,

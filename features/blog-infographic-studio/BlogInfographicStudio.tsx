@@ -1510,9 +1510,11 @@ export function BlogInfographicStudio({
                                   />
                                 </label>
                                 <label
-                                  className="ml-auto inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500 dark:text-slate-400"
-                                  title="Custom card accent color"
+                                  className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-2 py-1 text-[11px] font-bold text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                                  title="Click to change stage / funnel / card color"
                                 >
+                                  <Palette size={12} className="text-indigo-500" />
+                                  <span>Stage Color</span>
                                   <input
                                     type="color"
                                     aria-label={`Card ${i + 1} accent color`}
@@ -1528,7 +1530,7 @@ export function BlogInfographicStudio({
                                         accentHex: e.target.value,
                                       })
                                     }
-                                    className="h-7 w-7 cursor-pointer rounded border-0 bg-transparent"
+                                    className="h-5 w-6 cursor-pointer rounded border-0 bg-transparent"
                                   />
                                 </label>
                                 {n.accentHex && (
@@ -1542,6 +1544,66 @@ export function BlogInfographicStudio({
                                     Reset
                                   </button>
                                 )}
+                              </div>
+                              <div className="grid grid-cols-2 gap-2.5 pt-1 text-[11px]">
+                                <label className="block font-semibold text-slate-600 dark:text-slate-300">
+                                  Icon Size ·{" "}
+                                  <span className="font-bold text-indigo-600 dark:text-indigo-400">
+                                    {Math.round(
+                                      (n.iconScale ??
+                                        active.styleOverrides?.iconScale ??
+                                        1) * 100,
+                                    )}
+                                    %
+                                  </span>
+                                  <input
+                                    type="range"
+                                    aria-label={`Point ${i + 1} icon size`}
+                                    min={0.65}
+                                    max={1.5}
+                                    step={0.05}
+                                    value={
+                                      n.iconScale ??
+                                      active.styleOverrides?.iconScale ??
+                                      1
+                                    }
+                                    onChange={(e) =>
+                                      updateNode(n.id, {
+                                        iconScale: Number(e.target.value),
+                                      })
+                                    }
+                                    className="mt-1 w-full accent-indigo-600"
+                                  />
+                                </label>
+                                <label className="block font-semibold text-slate-600 dark:text-slate-300">
+                                  Diagram / Funnel Size ·{" "}
+                                  <span className="font-bold text-indigo-600 dark:text-indigo-400">
+                                    {Math.round(
+                                      (active.styleOverrides?.diagramScale ??
+                                        1) * 100,
+                                    )}
+                                    %
+                                  </span>
+                                  <input
+                                    type="range"
+                                    aria-label="Diagram and funnel size"
+                                    min={0.75}
+                                    max={1.35}
+                                    step={0.05}
+                                    value={
+                                      active.styleOverrides?.diagramScale ?? 1
+                                    }
+                                    onChange={(e) =>
+                                      update({
+                                        styleOverrides: {
+                                          ...active.styleOverrides,
+                                          diagramScale: Number(e.target.value),
+                                        },
+                                      })
+                                    }
+                                    className="mt-1 w-full accent-indigo-600"
+                                  />
+                                </label>
                               </div>
                               {n.customIconDataUrl && (
                                 <div className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-2 py-1.5 dark:border-slate-700 dark:bg-slate-950">
@@ -2431,22 +2493,26 @@ export function BlogInfographicStudio({
               width={dimensions.width}
               height={dimensions.height}
               zoom={zoom}
-              busy={busy}
               selection={canvasSelection}
               onSelect={(nextSel) => {
                 setCanvasSelection(nextSel);
                 if (nextSel.kind === "card" || nextSel.kind === "icon") {
+                  setPanel("content");
                   setOpenNodeIdx(nextSel.index);
+                  if (nextSel.kind === "icon") {
+                    const targetNode = active.nodes[nextSel.index];
+                    if (targetNode) setOpenIconPickerNodeId(targetNode.id);
+                  }
+                } else if (nextSel.kind === "scene") {
+                  setPanel("design");
+                } else if (
+                  nextSel.kind === "headline" ||
+                  nextSel.kind === "callout" ||
+                  nextSel.kind === "footer"
+                ) {
+                  setPanel("content");
                 }
               }}
-              onUpdateConfig={update}
-              onUpdateNode={updateNode}
-              onUploadNodeIcon={(nodeId, file) =>
-                void uploadNodeCustomIcon(nodeId, file)
-              }
-              onUploadSceneImage={(file) =>
-                void uploadCustomSceneObject(file)
-              }
             />
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 px-4 py-3 dark:border-slate-800">
               <p className="text-xs text-slate-500 dark:text-slate-400">

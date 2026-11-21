@@ -235,39 +235,50 @@ export function getSectionVisualFitProfile(input: {
       intentLabel = "Process & Roadmap";
       reason =
         "Sequential steps, workflows, and growth loops map naturally to roadmaps, pipelines, funnels, flowcharts, and flywheels.";
-      rawCandidates = /\b(cycle|flywheel|loop|continuous|iterative|recurring)\b/i.test(
+      rawCandidates = /\b(evolution|history|chronology|timeline|eras?|decades?)\b/i.test(
         title,
       )
         ? [
-            "cycle-wheel",
             "winding-roadmap",
-            "zigzag-flowchart",
-            "pipeline-flow",
             "timeline",
+            "pipeline-flow",
+            "zigzag-flowchart",
             "before-after",
             "editorial",
           ]
-        : /\b(funnel|conversion|lead|stage|stages|qualify)\b/i.test(title)
+        : /\b(cycle|flywheel|loop|continuous|iterative|recurring)\b/i.test(
+            title,
+          )
           ? [
-              "funnel-stages",
+              "cycle-wheel",
               "winding-roadmap",
-              "pipeline-flow",
               "zigzag-flowchart",
+              "pipeline-flow",
               "timeline",
               "before-after",
               "editorial",
             ]
-          : [
-              "winding-roadmap",
-              "pipeline-flow",
-              "zigzag-flowchart",
-              "funnel-stages",
-              "timeline",
-              "cycle-wheel",
-              "checklist",
-              "before-after",
-              "editorial",
-            ];
+          : /\b(funnel|conversion|lead|stage|stages|qualify)\b/i.test(title)
+            ? [
+                "funnel-stages",
+                "winding-roadmap",
+                "pipeline-flow",
+                "zigzag-flowchart",
+                "timeline",
+                "before-after",
+                "editorial",
+              ]
+            : [
+                "winding-roadmap",
+                "pipeline-flow",
+                "zigzag-flowchart",
+                "funnel-stages",
+                "timeline",
+                "cycle-wheel",
+                "checklist",
+                "before-after",
+                "editorial",
+              ];
       break;
 
     case "hierarchy-framework":

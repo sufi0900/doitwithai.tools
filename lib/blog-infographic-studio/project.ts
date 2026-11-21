@@ -285,6 +285,22 @@ export function importInfographicProject(
                     ),
                   }
                 : {}),
+              ...(typeof c.styleOverrides.iconScale === "number"
+                ? {
+                    iconScale: Math.min(
+                      1.5,
+                      Math.max(0.65, c.styleOverrides.iconScale),
+                    ),
+                  }
+                : {}),
+              ...(typeof c.styleOverrides.diagramScale === "number"
+                ? {
+                    diagramScale: Math.min(
+                      1.35,
+                      Math.max(0.75, c.styleOverrides.diagramScale),
+                    ),
+                  }
+                : {}),
               ...(typeof c.styleOverrides.cardPaddingY === "number"
                 ? {
                     cardPaddingY: Math.min(
@@ -396,6 +412,9 @@ export function importInfographicProject(
           ? { customIconDataUrl: n.customIconDataUrl }
           : {}),
         ...(isHex(n.accentHex) ? { accentHex: n.accentHex } : {}),
+        ...(typeof n.iconScale === "number"
+          ? { iconScale: Math.min(1.5, Math.max(0.65, n.iconScale)) }
+          : {}),
         sourceBlockIds: Array.isArray(n.sourceBlockIds)
           ? n.sourceBlockIds.filter((id) => typeof id === "string").slice(0, 12)
           : undefined,
