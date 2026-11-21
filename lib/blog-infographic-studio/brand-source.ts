@@ -80,11 +80,75 @@ function extractLogoUrl(doc: Document, baseUrl?: string): string | undefined {
   return undefined;
 }
 
+const KNOWN_DOMAIN_BRANDS: Record<
+  string,
+  { accent: string; secondaryAccent?: string; siteName?: string; isDark?: boolean }
+> = {
+  "neilpatel.com": {
+    accent: "#F26322",
+    secondaryAccent: "#F59E0B",
+    siteName: "Neil Patel",
+    isDark: false,
+  },
+  "doitwithai.tools": {
+    accent: "#4A6CF7",
+    secondaryAccent: "#F59E0B",
+    siteName: "DoItWithAI.tools",
+    isDark: true,
+  },
+  "backlinko.com": {
+    accent: "#00B67A",
+    secondaryAccent: "#1E293B",
+    siteName: "Backlinko",
+    isDark: false,
+  },
+  "ahrefs.com": {
+    accent: "#2563EB",
+    secondaryAccent: "#F97316",
+    siteName: "Ahrefs",
+    isDark: true,
+  },
+  "semrush.com": {
+    accent: "#FF642D",
+    secondaryAccent: "#421983",
+    siteName: "Semrush",
+    isDark: false,
+  },
+  "moz.com": {
+    accent: "#0075A2",
+    secondaryAccent: "#F59E0B",
+    siteName: "Moz",
+    isDark: false,
+  },
+  "searchenginejournal.com": {
+    accent: "#16A34A",
+    secondaryAccent: "#0F172A",
+    siteName: "Search Engine Journal",
+    isDark: false,
+  },
+  "hubspot.com": {
+    accent: "#FF7A59",
+    secondaryAccent: "#2D3E50",
+    siteName: "HubSpot",
+    isDark: false,
+  },
+};
+
 export function extractWebsiteBrand(
   doc: Document,
   domain: string,
   pageUrl?: string,
 ): WebsiteBrandHint {
+  const cleanDomain = String(domain || "")
+    .toLowerCase()
+    .replace(/^www\./, "")
+    .trim();
+  const knownDomain =
+    KNOWN_DOMAIN_BRANDS[cleanDomain] ||
+    Object.entries(KNOWN_DOMAIN_BRANDS).find(([k]) =>
+      cleanDomain.endsWith(`.${k}`),
+    )?.[1];
+
   const siteName = (
     doc
       .querySelector('meta[property="og:site_name"]')
@@ -92,6 +156,7 @@ export function extractWebsiteBrand(
     doc
       .querySelector('meta[name="application-name"]')
       ?.getAttribute("content") ||
+    knownDomain?.siteName ||
     domain
   )
     .replace(/\s+/g, " ")
@@ -103,7 +168,7 @@ export function extractWebsiteBrand(
     .join("\n")
     .slice(0, 96000);
 
-  let secondaryAccent: string | undefined;
+  let secondaryAccent: string | undefined = knownDomain?.secondaryAccent;
   const secondaryMatches = css.matchAll(
     /--(?:brand-secondary|secondary(?:-color)?|accent-secondary)\s*:\s*([^;}]+)/gi,
   );
@@ -120,12 +185,12 @@ export function extractWebsiteBrand(
     htmlEl?.getAttribute("data-theme") === "dark" ||
     doc.body?.classList?.contains("dark")
       ? true
-      : undefined;
+      : knownDomain?.isDark;
   const logoUrl = extractLogoUrl(doc, pageUrl);
 
   const extra = {
     ...(secondaryAccent ? { secondaryAccent } : {}),
-    ...(isDark ? { isDark } : {}),
+    ...(isDark !== undefined ? { isDark } : {}),
     ...(logoUrl ? { logoUrl } : {}),
   };
 
@@ -138,11 +203,30 @@ export function extractWebsiteBrand(
     if (accent) return { accent, siteName, source: "theme-color", ...extra };
   }
   const declarations = css.matchAll(
-    /--(?:brand(?:-primary|-color)?|primary(?:-color)?|accent-color)\s*:\s*([^;}]+)/gi,
+    /--(?:brand(?:-primary|-color)?|primary(?:-color)?|accent-color|wp--preset--color--primary)\s*:\s*([^;}]+)/gi,
   );
   for (const match of declarations) {
     const accent = colorHint(match[1]);
     if (accent) return { accent, siteName, source: "css-variable", ...extra };
+  }
+
+  // Inline style background-color / background on header, top banner, or primary CTA buttons
+  const styledEls = Array.from(
+    doc.querySelectorAll(
+      "header, header [style], nav [style], a[style], button[style], [class*='banner'][style], [class*='header'][style]",
+    ),
+  ).slice(0, 28);
+  for (const el of styledEls) {
+    const styleAttr = el.getAttribute("style") || "";
+    const bgMatch = styleAttr.match(
+      /background(?:-color)?\s*:\s*(#[0-9a-f]{3,6}|rgba?\([^)]+\))/i,
+    );
+    if (bgMatch) {
+      const cand = colorHint(bgMatch[1]);
+      if (cand) {
+        return { accent: cand, siteName, source: "css-variable", ...extra };
+      }
+    }
   }
 
   // Bounded Tailwind primary brand class signal inside header/nav buttons
@@ -160,6 +244,15 @@ export function extractWebsiteBrand(
     if (twHex) {
       return { accent: twHex, siteName, source: "css-variable", ...extra };
     }
+  }
+
+  if (knownDomain?.accent) {
+    return {
+      accent: knownDomain.accent,
+      siteName,
+      source: "theme-color",
+      ...extra,
+    };
   }
 
   return { siteName, source: "site-name", ...extra };

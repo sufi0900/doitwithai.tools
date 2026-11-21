@@ -23,6 +23,7 @@ import type {
 } from "@/lib/blog-infographic-studio/article-source";
 import {
   buildAllArticleSectionVisuals,
+  buildSectionConceptAlternatives,
   withPrismLayout,
   type PrismLayout,
 } from "@/lib/blog-infographic-studio/visual-brief";
@@ -116,6 +117,7 @@ function sampleBlocksAcrossSection(
 export async function POST(request: Request) {
   let body: {
     sections?: ArticleSourceSection[];
+    articleTitle?: string;
     sourceUrl?: string;
     domain?: string;
     baseConfig?: BlogInfographicConfig;
@@ -144,6 +146,7 @@ export async function POST(request: Request) {
   const deterministicVisuals = buildAllArticleSectionVisuals(sections, {
     sourceUrl: body.sourceUrl,
     domain: body.domain,
+    articleTitle: body.articleTitle,
     baseConfig: body.baseConfig,
     brandTheme: body.brandTheme,
     includeUniversalOverview: false,
@@ -185,22 +188,23 @@ Transform each extracted article section into a standalone, social-shareable vis
 
 Strict Editorial & Storytelling Rules:
 1. COMPLETE SECTION ARC: Cover EVERY major subheading/phase/category in the section (e.g., if a timeline has 4 phases from Keyword Era to AI Search, cover all 4 phases in order—never stop at Phase 1).
-2. HEADLINE & SUBHEADLINE: Never copy bare questions like "What Is X?" verbatim. Write a sharp editorial thesis headline (4–8 words, max 52 chars) and a clear 1-sentence subheadline (max 92 chars).
+2. STANDALONE HEADLINE & SUBHEADLINE: Never copy bare questions like "What Is X?" or context-dependent headings like "Common Mistakes When Implementing These Strategies" or "FAQs". Always replace demonstratives ("these strategies", "them", "this") with the explicit article subject so the headline makes 100% standalone sense on social media (4–8 words, max 52 chars) and write a clear 1-sentence subheadline (max 92 chars).
 3. STANDALONE NODES (2 to 6 nodes per section):
-   - "badge": Sequential "01", "02", "03"... (or "Q1", "Q2"... for FAQs, or "AEO"/"GEO"/"AI" when appropriate). NEVER skip numbers.
-   - "title": Crisp 2–5 word Concept Kernel (or complete FAQ question ending in "?").
-   - "detail": Self-contained 1–2 sentence explanation (70–155 chars) that makes complete sense on its own, NEVER repeats the title, and NEVER leaves out Yes/No polarity on FAQ answers.
+   - "badge": Sequential "01", "02", "03"... (or "Q1", "Q2"... for FAQs, or "PART 1"/"PART 2" for split equations). NEVER skip numbers.
+   - "title": Crisp 2–5 word Concept Kernel (or complete FAQ question ending in "?"). Never leave pronouns like "them" or "these" without naming the subject.
+   - "detail": Self-contained 1–2 sentence explanation (70–155 chars) that makes complete sense on its own, NEVER starts with a period, NEVER repeats the title, and NEVER leaves out Yes/No polarity on FAQ answers.
    - For tool/resource directory categories, name the actual top 3–4 tools from that category and explain what they do together (do NOT pick 1 random bullet).
    - "sourceBlockIds": 1–3 exact block "id" strings from that section's "blocks" that prove the claim.
 4. GENUINE CALLOUT ("calloutText"): Write 1 concise actionable takeaway sentence (40–78 chars) ONLY when it adds a real concluding insight. NEVER copy the subheadline or join card titles with middots.
 5. ZERO HALLUCINATIONS: Never invent statistics or percentages. Preserve qualifiers ("up to", "about", "nearly") if present in source blocks.
 6. LAYOUTS & SCENES:
-   - "prismLayout": one of "editorial", "timeline", "comparison", "ribbon", "constellation", "checklist". (Use "comparison" ONLY with an even number of nodes and paired "comparisonLabels": ["Left", "Right"].)
+   - "prismLayout": one of "editorial", "timeline", "comparison", "ribbon", "constellation", "checklist", "pipeline-flow", "split-equation", "funnel-stages", "quadrant-matrix". (Use "comparison" or "split-equation" when contrasting 2 sides/meanings; use "pipeline-flow" or "funnel-stages" for 3-stage processes; use "quadrant-matrix" for 4 pillars.)
    - "sceneIllustration": one of "ai-search-intelligence", "editorial-workflow-pipeline", "side-by-side-comparison-scale", "analytics-benchmark-telemetry", "verification-trust-shield", "knowledge-hub-architecture", "autonomous-agent-orchestrator", "conversion-funnel-velocity", "editorial-publishing-studio", "social-carousel-distribution", "lifestyle-home-companion", "technical-code-schema", "quadrant-priority-matrix", "executive-roadmap-milestone", "audience-persona-collaboration", "roi-value-calculator".
 
 Return strict JSON: { "sections": [ { "sectionId": "...", "headline": "...", "subheadline": "...", "eyebrowLabel": "...", "prismLayout": "...", "sceneIllustration": "...", "comparisonLabels": ["Left", "Right"], "calloutText": "...", "nodes": [ { "badge": "01", "title": "...", "detail": "...", "sourceBlockIds": ["..."] } ] } ] }`;
 
   const userPrompt = JSON.stringify({
+    articleTitle: body.articleTitle || "",
     sourceUrl: body.sourceUrl || "",
     domain: body.domain || "",
     sections: compactSections,
@@ -314,10 +318,15 @@ Return strict JSON: { "sections": [ { "sectionId": "...", "headline": "...", "su
         : card.subheadline;
 
     const requestedLayout = plan.prismLayout as PrismLayout | undefined;
+    const isTall916 =
+      requestedLayout === "checklist" ||
+      requestedLayout === "ribbon" ||
+      requestedLayout === "constellation";
     const layout: PrismLayout =
       requestedLayout &&
       VALID_LAYOUTS.has(requestedLayout) &&
-      (requestedLayout !== "comparison" || reindexedNodes.length % 2 === 0)
+      (requestedLayout !== "comparison" || reindexedNodes.length % 2 === 0) &&
+      !(reindexedNodes.length <= 2 && isTall916)
         ? requestedLayout
         : card.prismLayout || "editorial";
 
@@ -335,12 +344,12 @@ Return strict JSON: { "sections": [ { "sectionId": "...", "headline": "...", "su
     const aiCallout =
       typeof plan.calloutText === "string" &&
       plan.calloutText.trim().length >= 18 &&
-      plan.calloutText.trim().length <= 84 &&
+      plan.calloutText.trim().length <= 140 &&
       plan.calloutText.trim().toLowerCase() !== subheadline.trim().toLowerCase()
         ? plan.calloutText.trim()
         : undefined;
 
-    return runInfographicQaCritic(
+    const criticized = runInfographicQaCritic(
       withPrismLayout(
         {
           ...card,
@@ -366,7 +375,17 @@ Return strict JSON: { "sections": [ { "sectionId": "...", "headline": "...", "su
         },
         layout,
       ),
+      body.articleTitle,
     );
+    const concepts = buildSectionConceptAlternatives(
+      criticized,
+      body.articleTitle,
+    );
+    return {
+      ...criticized,
+      conceptAlternatives: concepts,
+      activeConceptId: concepts[0]?.id,
+    };
   });
 
   return NextResponse.json({

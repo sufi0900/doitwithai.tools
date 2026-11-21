@@ -482,11 +482,12 @@ function finalizePair(
       const strippedLead = detail
         .replace(
           new RegExp(
-            `^${title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}[,:;\\s-]*`,
+            `^${title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}[.,:;!?\\s\\-–—•·]*`,
             "i",
           ),
           "",
         )
+        .replace(/^[.,:;!?\-–—•·]+\s*/, "")
         .replace(/^(?:including|that|which|to|by|with|and|for)\s+/i, "")
         .trim();
 
@@ -515,7 +516,9 @@ function finalizePair(
     }
   }
 
-  const finalDetail = clean(detail).replace(/^\p{Ll}/u, (c) => c.toUpperCase());
+  const finalDetail = clean(detail)
+    .replace(/^[.,:;!?\-–—•·]+\s*/, "")
+    .replace(/^\p{Ll}/u, (c) => c.toUpperCase());
   return {
     title: toHeadlineCase(stripTrailingCliffhangers(title)),
     detail: /[.!?]$/.test(finalDetail) ? finalDetail : `${finalDetail}.`,

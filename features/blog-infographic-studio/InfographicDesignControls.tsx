@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import type { BlogInfographicConfig } from "@/lib/blog-writer/canonical-state";
+import type { InfographicStyleOverrides } from "@/lib/blog-infographic-studio/types";
 import {
   BACKGROUND_PATTERNS,
   CARD_STYLES,
@@ -24,6 +25,33 @@ type Props = {
   onChange: (patch: Partial<BlogInfographicConfig>) => void;
 };
 
+const BRAND_BG_MODES: Array<{
+  id: NonNullable<InfographicStyleOverrides["brandBackgroundMode"]>;
+  label: string;
+  desc: string;
+}> = [
+  {
+    id: "theme-default",
+    label: "Theme Default",
+    desc: "Use the active palette background with brand accent highlights",
+  },
+  {
+    id: "brand-vibrant",
+    label: "Vibrant Brand Fill",
+    desc: "Full saturated brand canvas (Hero Blue / Neil Patel Orange) with crisp white cards",
+  },
+  {
+    id: "brand-dark",
+    label: "Deep Brand Dark",
+    desc: "Executive dark brand canvas with high-contrast luminous cards",
+  },
+  {
+    id: "brand-soft",
+    label: "Soft Brand Tint",
+    desc: "Light editorial brand wash with dark ink typography",
+  },
+];
+
 export function InfographicProceduralStyleControls({
   config,
   onChange,
@@ -32,11 +60,57 @@ export function InfographicProceduralStyleControls({
   const activeCardStyle = config.cardStyle || "glass-editorial";
   const activeFont = config.fontFamily || "system-arial";
   const activeScene = config.sceneIllustration || "";
+  const ov: InfographicStyleOverrides = config.styleOverrides || {};
+  const activeBrandMode = ov.brandBackgroundMode || "theme-default";
+
+  const patchOverrides = (nextPatch: Partial<InfographicStyleOverrides>) => {
+    onChange({
+      styleOverrides: {
+        ...ov,
+        ...nextPatch,
+      },
+    });
+  };
+
   return (
     <section
       className="space-y-4 border-t border-slate-200 pt-5 dark:border-slate-700"
       aria-label="Procedural visual style"
     >
+      <div>
+        <h3 className={heading}>Website brand background mode</h3>
+        <p className="mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+          Lock your website’s primary brand color across the canvas background
+          and cards.
+        </p>
+        <div className="mt-2.5 grid grid-cols-2 gap-2">
+          {BRAND_BG_MODES.map((m) => (
+            <button
+              type="button"
+              key={m.id}
+              aria-pressed={activeBrandMode === m.id}
+              onClick={() => patchOverrides({ brandBackgroundMode: m.id })}
+              className={`rounded-xl border px-3 py-2 text-left text-xs transition ${
+                activeBrandMode === m.id
+                  ? "border-indigo-500 bg-indigo-600 text-white"
+                  : "border-slate-300 hover:border-indigo-400 dark:border-slate-700"
+              }`}
+            >
+              <span className="block font-bold">{m.label}</span>
+              <span
+                className={`mt-0.5 block text-[10px] leading-snug ${
+                  activeBrandMode === m.id
+                    ? "text-indigo-100"
+                    : "text-slate-500 dark:text-slate-400"
+                }`}
+              >
+                {m.desc}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div>
         <h3 className={heading}>Background shader &amp; pattern</h3>
         <p className="mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
@@ -134,6 +208,196 @@ export function InfographicProceduralStyleControls({
           ))}
         </select>
       </label>
+
+      <details
+        id="canva-fine-layout-controls"
+        className="rounded-xl border border-slate-200 p-3 text-xs dark:border-slate-700"
+      >
+        <summary className="cursor-pointer font-bold text-slate-800 dark:text-slate-100">
+          Canva-style typography, spacing &amp; banner controls
+        </summary>
+        <div className="mt-4 space-y-3.5">
+          <label className="block">
+            Headline size{" "}
+            <span className="float-right font-semibold">
+              {Math.round((ov.headlineScale ?? 1) * 100)}%
+            </span>
+            <input
+              aria-label="Headline size scale"
+              type="range"
+              min={0.75}
+              max={1.3}
+              step={0.05}
+              value={ov.headlineScale ?? 1}
+              onChange={(e) =>
+                patchOverrides({ headlineScale: Number(e.target.value) })
+              }
+              className="mt-1.5 w-full accent-indigo-600"
+            />
+          </label>
+          <label className="block">
+            Card heading size{" "}
+            <span className="float-right font-semibold">
+              {Math.round((ov.cardTitleScale ?? 1) * 100)}%
+            </span>
+            <input
+              aria-label="Card heading size scale"
+              type="range"
+              min={0.75}
+              max={1.3}
+              step={0.05}
+              value={ov.cardTitleScale ?? 1}
+              onChange={(e) =>
+                patchOverrides({ cardTitleScale: Number(e.target.value) })
+              }
+              className="mt-1.5 w-full accent-indigo-600"
+            />
+          </label>
+          <label className="block">
+            Card body text size{" "}
+            <span className="float-right font-semibold">
+              {Math.round((ov.bodyScale ?? 1) * 100)}%
+            </span>
+            <input
+              aria-label="Card body text size scale"
+              type="range"
+              min={0.75}
+              max={1.3}
+              step={0.05}
+              value={ov.bodyScale ?? 1}
+              onChange={(e) =>
+                patchOverrides({ bodyScale: Number(e.target.value) })
+              }
+              className="mt-1.5 w-full accent-indigo-600"
+            />
+          </label>
+          <label className="block">
+            Card vertical padding{" "}
+            <span className="float-right font-semibold">
+              {(ov.cardPaddingY ?? 0) >= 0
+                ? `+${ov.cardPaddingY ?? 0}px`
+                : `${ov.cardPaddingY}px`}
+            </span>
+            <input
+              aria-label="Card vertical padding"
+              type="range"
+              min={-12}
+              max={36}
+              step={2}
+              value={ov.cardPaddingY ?? 0}
+              onChange={(e) =>
+                patchOverrides({ cardPaddingY: Number(e.target.value) })
+              }
+              className="mt-1.5 w-full accent-indigo-600"
+            />
+          </label>
+          <label className="block">
+            Gap between cards{" "}
+            <span className="float-right font-semibold">
+              {(ov.cardGap ?? 0) >= 0
+                ? `+${ov.cardGap ?? 0}px`
+                : `${ov.cardGap}px`}
+            </span>
+            <input
+              aria-label="Gap between cards"
+              type="range"
+              min={-12}
+              max={44}
+              step={2}
+              value={ov.cardGap ?? 0}
+              onChange={(e) =>
+                patchOverrides({ cardGap: Number(e.target.value) })
+              }
+              className="mt-1.5 w-full accent-indigo-600"
+            />
+          </label>
+          <label className="block">
+            Card corner radius{" "}
+            <span className="float-right font-semibold">
+              {ov.cardRadius ?? 22}px
+            </span>
+            <input
+              aria-label="Card corner radius"
+              type="range"
+              min={8}
+              max={36}
+              step={2}
+              value={ov.cardRadius ?? 22}
+              onChange={(e) =>
+                patchOverrides({ cardRadius: Number(e.target.value) })
+              }
+              className="mt-1.5 w-full accent-indigo-600"
+            />
+          </label>
+          <label className="block">
+            Left accent bar width{" "}
+            <span className="float-right font-semibold">
+              {ov.accentBarWidth ?? 8}px
+            </span>
+            <input
+              aria-label="Left accent bar width"
+              type="range"
+              min={0}
+              max={14}
+              step={1}
+              value={ov.accentBarWidth ?? 8}
+              onChange={(e) =>
+                patchOverrides({ accentBarWidth: Number(e.target.value) })
+              }
+              className="mt-1.5 w-full accent-indigo-600"
+            />
+          </label>
+          <label className="block font-semibold">
+            Bottom callout banner style
+            <select
+              className={field}
+              value={ov.calloutStyle || "default"}
+              onChange={(e) =>
+                patchOverrides({
+                  calloutStyle: e.target
+                    .value as InfographicStyleOverrides["calloutStyle"],
+                })
+              }
+            >
+              <option value="default">Editorial border banner</option>
+              <option value="gold-pill">High-contrast Gold formula bar</option>
+              <option value="accent-pill">Brand accent banner</option>
+              <option value="hidden">Hide bottom callout banner</option>
+            </select>
+          </label>
+          <label className="block font-semibold">
+            Bottom footer &amp; logo dock style
+            <select
+              className={field}
+              value={ov.footerBarStyle || "minimal"}
+              onChange={(e) =>
+                patchOverrides({
+                  footerBarStyle: e.target
+                    .value as InfographicStyleOverrides["footerBarStyle"],
+                })
+              }
+            >
+              <option value="minimal">Minimal divider line</option>
+              <option value="pill-banner">Rounded pill banner</option>
+              <option value="dark-dock">Dark executive footer dock</option>
+              <option value="light-dock">Crisp white footer dock</option>
+            </select>
+          </label>
+          <button
+            type="button"
+            onClick={() =>
+              onChange({
+                styleOverrides: {
+                  brandBackgroundMode: ov.brandBackgroundMode,
+                },
+              })
+            }
+            className="mt-1 text-xs font-semibold text-indigo-600 hover:underline dark:text-indigo-400"
+          >
+            Reset typography &amp; spacing sliders
+          </button>
+        </div>
+      </details>
     </section>
   );
 }

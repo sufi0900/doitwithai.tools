@@ -54,6 +54,38 @@ export const PRISM_LAYOUTS = [
     description:
       "A practical checklist with large illustrations and readable action notes.",
   },
+  {
+    id: "pipeline-flow",
+    name: "3-Stage pipeline flow",
+    ratio: "16:9",
+    purpose: "sequence",
+    description:
+      "Connected left-to-right flow diagram with stage headers, directional arrows, and punchline bar.",
+  },
+  {
+    id: "split-equation",
+    name: "Two-part formula split",
+    ratio: "16:9",
+    purpose: "concepts",
+    description:
+      "Dual pillar cards linked by a central '+' equation hub and a bottom definition formula bar.",
+  },
+  {
+    id: "funnel-stages",
+    name: "Tapered conversion funnel",
+    ratio: "4:5",
+    purpose: "sequence",
+    description:
+      "Progressively narrowing funnel tiers showing how broad inputs refine into high-value outcomes.",
+  },
+  {
+    id: "quadrant-matrix",
+    name: "2×2 strategic matrix",
+    ratio: "1:1",
+    purpose: "comparison",
+    description:
+      "Four balanced quadrant cards arranged on a 2×2 grid for multi-discipline or priority comparisons.",
+  },
 ] as const;
 export type PrismLayout = (typeof PRISM_LAYOUTS)[number]["id"];
 

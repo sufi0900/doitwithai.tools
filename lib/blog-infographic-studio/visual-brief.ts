@@ -4,6 +4,7 @@ import type {
   BlogInfographicNodeItem,
   BlogSectionNode,
 } from "@/lib/blog-writer/canonical-state";
+import type { InfographicConceptAlternative } from "./types";
 import type {
   ArticleSourceSection,
   ArticleSourceBlock,
@@ -622,11 +623,117 @@ export function recommendPrismLayout(
  * substantive sections of an extracted article, cycling layouts, procedural SVG
  * background shaders, card styles, and 2-tone headline highlights.
  */
+export function buildSectionConceptAlternatives(
+  baseCard: BlogInfographicConfig,
+  articleTitle?: string,
+): InfographicConceptAlternative[] {
+  const nodes = baseCard.nodes;
+  const primaryLayout = baseCard.prismLayout || "editorial";
+  const headlineBase = baseCard.headline.split(":")[0].trim() || baseCard.headline;
+
+  const alt1: InfographicConceptAlternative = {
+    id: `${baseCard.sectionId}-concept-1`,
+    label: "Concept 1 · Editorial Overview",
+    archetypeLabel: prismLayoutSpec(primaryLayout).name,
+    prismLayout: primaryLayout,
+    headline: baseCard.headline,
+    subheadline: baseCard.subheadline,
+    eyebrowLabel: baseCard.eyebrowLabel,
+    calloutBadge: baseCard.calloutBadge,
+    calloutText: baseCard.calloutText,
+    comparisonLabels: baseCard.comparisonLabels,
+    sceneIllustration: baseCard.sceneIllustration,
+    nodes,
+  };
+
+  // Concept 2: Process Pipeline Flow (3-stage horizontal flow) or Funnel Stages
+  const flowLayout: PrismLayout =
+    nodes.length <= 3 ? "pipeline-flow" : "funnel-stages";
+  const flowNodes = (nodes.length <= 3 ? nodes : nodes.slice(0, 4)).map(
+    (n, i) => ({
+      ...n,
+      badge:
+        flowLayout === "pipeline-flow"
+          ? i === 0
+            ? "START"
+            : i === Math.min(2, nodes.length - 1)
+              ? "RESULT"
+              : "CORE STEP"
+          : `STAGE 0${i + 1}`,
+    }),
+  );
+  const alt2: InfographicConceptAlternative = {
+    id: `${baseCard.sectionId}-concept-2`,
+    label:
+      flowLayout === "pipeline-flow"
+        ? "Concept 2 · 3-Stage Pipeline Flow"
+        : "Concept 2 · Conversion Funnel",
+    archetypeLabel: prismLayoutSpec(flowLayout).name,
+    prismLayout: flowLayout,
+    headline: `${headlineBase}: Execution Pipeline`,
+    subheadline:
+      baseCard.subheadline ||
+      `How ${headlineBase} moves from initial input to measurable search outcomes.`,
+    eyebrowLabel: "STEP-BY-STEP EXECUTION FLOW",
+    calloutBadge: "FLOW RULE",
+    calloutText: `Execute each stage of ${headlineBase.slice(0, 34)} in order for compounding visibility.`,
+    sceneIllustration: "editorial-workflow-pipeline",
+    nodes: flowNodes,
+  };
+
+  // Concept 3: Two-Part Formula Split Equation (for 2–3 nodes) or 2x2 Quadrant Matrix (for 4+ nodes)
+  const matrixLayout: PrismLayout =
+    nodes.length >= 4 ? "quadrant-matrix" : "split-equation";
+  const matrixNodes = (
+    matrixLayout === "split-equation" ? nodes.slice(0, 2) : nodes.slice(0, 4)
+  ).map((n, i) => ({
+    ...n,
+    badge:
+      matrixLayout === "split-equation"
+        ? `PART ${i + 1}`
+        : `Q${i + 1}`,
+  }));
+  const alt3: InfographicConceptAlternative = {
+    id: `${baseCard.sectionId}-concept-3`,
+    label:
+      matrixLayout === "split-equation"
+        ? "Concept 3 · Two-Part Formula"
+        : "Concept 3 · 2×2 Strategic Matrix",
+    archetypeLabel: prismLayoutSpec(matrixLayout).name,
+    prismLayout: matrixLayout,
+    headline:
+      matrixLayout === "split-equation"
+        ? `${headlineBase}: Complete 2-Part Formula`
+        : `${headlineBase}: 4-Pillar Strategic Matrix`,
+    subheadline:
+      matrixLayout === "split-equation"
+        ? `Combining both sides of ${headlineBase} into one unified strategy.`
+        : `How all four dimensions of ${headlineBase} interact across search surfaces.`,
+    eyebrowLabel:
+      matrixLayout === "split-equation"
+        ? "CORE FORMULA · 2-PART DEFINITION"
+        : "STRATEGIC 2×2 MATRIX",
+    calloutBadge: matrixLayout === "split-equation" ? "DEFINITION" : "MATRIX RULE",
+    calloutText:
+      matrixLayout === "split-equation"
+        ? `${headlineBase.slice(0, 26)} = ${matrixNodes[0]?.title.slice(0, 22) || "Part 1"} + ${matrixNodes[1]?.title.slice(0, 22) || "Part 2"}`
+        : `Align all 4 quadrants of ${headlineBase.slice(0, 32)} for complete coverage.`,
+    sceneIllustration:
+      matrixLayout === "split-equation"
+        ? "side-by-side-comparison-scale"
+        : "quadrant-priority-matrix",
+    nodes: matrixNodes,
+  };
+
+  return [alt1, alt2, alt3];
+}
+
 export function buildAllArticleSectionVisuals(
   sections: ArticleSourceSection[],
   options: {
     sourceUrl?: string;
     domain?: string;
+    articleTitle?: string;
     coverage?: ArticleSourceCoverage;
     baseConfig?: BlogInfographicConfig;
     brandTheme?: WebsiteBrandHint;
@@ -634,14 +741,20 @@ export function buildAllArticleSectionVisuals(
   } = {},
 ): BlogInfographicConfig[] {
   const base = options.baseConfig || createPrismSample();
+  const inferredArticleTitle =
+    options.articleTitle ||
+    sections.find((s) => s.role === "introduction")?.title ||
+    sections[0]?.title;
+
   const contentCandidates = sections
     .filter(
       (s) =>
-        s.role === "content" && classifySectionArchetype(s).archetype !== "skip",
+        s.role === "content" &&
+        classifySectionArchetype(s, inferredArticleTitle).archetype !== "skip",
     )
     .map((section) => ({
       section,
-      intel: classifySectionArchetype(section),
+      intel: classifySectionArchetype(section, inferredArticleTitle),
       visual: buildSectionVisual(section, options.sourceUrl),
     }))
     .filter((item) => item.visual.nodes.length >= 2);
@@ -652,7 +765,7 @@ export function buildAllArticleSectionVisuals(
       : sections
           .map((section) => ({
             section,
-            intel: classifySectionArchetype(section),
+            intel: classifySectionArchetype(section, inferredArticleTitle),
             visual: buildSectionVisual(section, options.sourceUrl),
           }))
           .filter((item) => item.visual.nodes.length >= 2);
@@ -679,6 +792,7 @@ export function buildAllArticleSectionVisuals(
   const depthCycle = ["soft", "raised", "layered"] as const;
 
   const hint = options.brandTheme;
+  const isNewDomainExtraction = Boolean(options.domain || options.sourceUrl || hint);
   let prevLayout: PrismLayout | undefined;
 
   const sectionVisuals = selected.map(({ section, intel, visual }, idx) => {
@@ -706,7 +820,10 @@ export function buildAllArticleSectionVisuals(
 
     let layout: PrismLayout;
     if (intel.isFaq) {
-      layout = prevLayout !== "checklist" ? "checklist" : "editorial";
+      layout =
+        nodesForSection.length >= 3 && prevLayout !== "checklist"
+          ? "checklist"
+          : "editorial";
     } else if (hasBothComparisonSides && nodesForSection.length >= 2 && nodesForSection.length % 2 === 0) {
       layout = "comparison";
       comparisonLabels = derivedLabels;
@@ -718,6 +835,7 @@ export function buildAllArticleSectionVisuals(
       /\b(checklist|check|audit|verify|guide|rules|criteria|myths|mistakes)\b/i.test(
         section.title,
       ) &&
+      nodesForSection.length >= 3 &&
       prevLayout !== "checklist"
     ) {
       layout = "checklist";
@@ -725,6 +843,10 @@ export function buildAllArticleSectionVisuals(
       layout = layoutCycle[idx % layoutCycle.length];
       if (layout === prevLayout) {
         layout = layoutCycle[(idx + 1) % layoutCycle.length];
+      }
+      // Never put a 2-card section on a tall 9:16 ribbon/constellation canvas (prevents 45% bottom gap)
+      if (nodesForSection.length <= 2 && (layout === "ribbon" || layout === "constellation")) {
+        layout = "editorial";
       }
     }
     prevLayout = layout;
@@ -744,7 +866,11 @@ export function buildAllArticleSectionVisuals(
               : count,
           )
         : section.title;
-    const { headline, subheadline } = sectionHeadline(adjustedTitle, nodesForSection);
+    const { headline, subheadline } = sectionHeadline(
+      adjustedTitle,
+      nodesForSection,
+      inferredArticleTitle,
+    );
     const autoHighlights = extractHeadlineHighlightPhrases(headline).join(", ");
     const domainLabel = (
       hint?.siteName ||
@@ -761,7 +887,16 @@ export function buildAllArticleSectionVisuals(
         ? `SECTION ${String(idx + 1).padStart(2, "0")} · ${domainLabel.toUpperCase()}`
         : undefined;
 
-    return runInfographicQaCritic(
+    // Prevent cross-website signature/logo leakage: when extracting a domain/URL,
+    // use ONLY the extracted domain/brandTheme, never stale signature/logo from a previous site.
+    const cleanSignatureName = isNewDomainExtraction
+      ? hint?.siteName || options.domain || ""
+      : base.signature?.name || hint?.siteName || options.domain || "";
+    const cleanLogoDataUrl = isNewDomainExtraction
+      ? hint?.logoDataUrl
+      : base.brand?.logoDataUrl || hint?.logoDataUrl;
+
+    const compiledCard = runInfographicQaCritic(
       withPrismLayout(
         {
           ...base,
@@ -798,22 +933,16 @@ export function buildAllArticleSectionVisuals(
             ? `Source: ${options.domain}`
             : base.footerSourceLabel,
           altText: `${headline}: ${nodesForSection.map((n) => n.title).join("; ")}`,
-          extractedBrand: hint || base.extractedBrand,
+          extractedBrand: hint || (isNewDomainExtraction ? undefined : base.extractedBrand),
           signature: {
             ...normalizeSignature(base.signature),
-            name: base.signature?.name || hint?.siteName || options.domain || "",
-            showLogo: Boolean(
-              base.brand?.logoDataUrl ||
-                hint?.logoDataUrl ||
-                base.signature?.showLogo,
-            ),
+            name: cleanSignatureName,
+            showLogo: Boolean(cleanLogoDataUrl),
           },
           brand: {
             ...base.brand,
-            ...(base.brand?.logoDataUrl || hint?.logoDataUrl
-              ? { logoDataUrl: base.brand?.logoDataUrl || hint?.logoDataUrl }
-              : {}),
-            ...(base.brand?.customColors
+            logoDataUrl: cleanLogoDataUrl,
+            ...(base.brand?.customColors && !isNewDomainExtraction
               ? { customColors: base.brand.customColors }
               : hint?.accent && idx === 0
                 ? { customColors: brandColors(hint.accent, Boolean(hint.isDark ?? true)) }
@@ -822,7 +951,18 @@ export function buildAllArticleSectionVisuals(
         },
         layout,
       ),
+      inferredArticleTitle,
     );
+
+    const alternatives = buildSectionConceptAlternatives(
+      compiledCard,
+      inferredArticleTitle,
+    );
+    return {
+      ...compiledCard,
+      conceptAlternatives: alternatives,
+      activeConceptId: alternatives[0]?.id,
+    };
   });
   const overview =
     aiSeoOverview(sections, base, options.sourceUrl) ||
@@ -886,7 +1026,11 @@ export function shuffleInfographicVisualVariation(
 }
 
 /** A short definition can carry its own headline when it names the subject. */
-function sectionHeadline(title: string, nodes: BlogInfographicNodeItem[]) {
+function sectionHeadline(
+  title: string,
+  nodes: BlogInfographicNodeItem[],
+  articleTitle?: string,
+) {
   const subject = clean(title).match(/^what (?:is|are) (?:an?\s+|the\s+)?(.+?)\?$/i)?.[1];
   const answer =
     subject &&
@@ -911,7 +1055,7 @@ function sectionHeadline(title: string, nodes: BlogInfographicNodeItem[]) {
       };
     }
   }
-  return synthesizeInfographicHeadlineAndSubheadline(title);
+  return synthesizeInfographicHeadlineAndSubheadline(title, articleTitle);
 }
 
 /** Direct writer adapter. It consumes section bodies, never re-scrapes generated article HTML. */

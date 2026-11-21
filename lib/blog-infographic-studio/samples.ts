@@ -12,6 +12,10 @@ export const PRISM_LAYOUT_THEMES: Record<
   timeline: "blue-trust",
   comparison: "amber-executive",
   checklist: "rose-editorial",
+  "pipeline-flow": "blue-trust",
+  "split-equation": "indigo-cyber",
+  "funnel-stages": "emerald-growth",
+  "quadrant-matrix": "violet-saas",
 };
 
 /** Curated examples are only for the showcase and QA. Never mix them into extracted article data. */
@@ -29,9 +33,17 @@ export function createLayoutSample(layout: PrismLayout): BlogInfographicConfig {
     strength: 65,
   };
   if (
-    ["constellation", "ribbon", "timeline", "checklist", "comparison"].includes(
-      layout,
-    )
+    [
+      "constellation",
+      "ribbon",
+      "timeline",
+      "checklist",
+      "comparison",
+      "pipeline-flow",
+      "split-equation",
+      "funnel-stages",
+      "quadrant-matrix",
+    ].includes(layout)
   ) {
     const sets = {
       constellation: {
@@ -164,6 +176,94 @@ export function createLayoutSample(layout: PrismLayout): BlogInfographicConfig {
             "Support the process",
             "Summarize material and revise drafts while preserving sources for review.",
             "workflow",
+          ],
+        ],
+      },
+      "pipeline-flow": {
+        headline: "AEO: Answer Engine Optimization",
+        subheadline:
+          "Optimizing content so AI systems extract and display direct answers.",
+        items: [
+          [
+            "Traditional SEO",
+            "Search query maps to a ranked list of blue links where the user clicks through to read a full article.",
+            "search",
+          ],
+          [
+            "Answer Engine",
+            "AI engine synthesizes cited sources and delivers a direct answer before the click.",
+            "sparkle",
+          ],
+          [
+            "Your AEO Content",
+            "Structured headings, concise 40-60 word answer blocks, and FAQ schema win the citation.",
+            "check",
+          ],
+        ],
+      },
+      "split-equation": {
+        headline: "What Exactly Is AI SEO?",
+        subheadline:
+          "Two complementary meanings that work together in modern search.",
+        items: [
+          [
+            "Using AI to Do SEO",
+            "Accelerating keyword research, topic clustering, content briefs, and technical audits with AI workflows.",
+            "workflow",
+          ],
+          [
+            "Optimizing for AI Search",
+            "Structuring pages so ChatGPT, Perplexity, and Google AI Overviews cite and recommend your brand.",
+            "target",
+          ],
+        ],
+      },
+      "funnel-stages": {
+        headline: "AI Search Visibility Funnel",
+        subheadline:
+          "How technical crawlability converts into verified AI citations.",
+        items: [
+          [
+            "Crawlable Entity Architecture",
+            "Ensure AI crawlers can parse clean HTML, structured schema, and unambiguous entity definitions.",
+            "search",
+          ],
+          [
+            "Answer-First Formatting",
+            "Lead every section with a self-contained answer block backed by verifiable data.",
+            "answer",
+          ],
+          [
+            "Cross-Web Authority Citations",
+            "Earn consistent brand mentions across trusted publications and community discussions.",
+            "evidence",
+          ],
+        ],
+      },
+      "quadrant-matrix": {
+        headline: "Four Quadrants of Search Optimization",
+        subheadline:
+          "Aligning traditional rankings, direct answers, AI citations, and brand entities.",
+        items: [
+          [
+            "SEO: Organic Rankings",
+            "Build topical authority, technical health, and backlinks for traditional search results.",
+            "search",
+          ],
+          [
+            "AEO: Direct Answers",
+            "Format concise question-and-answer blocks for featured snippets and voice assistants.",
+            "answer",
+          ],
+          [
+            "GEO: Generative Citations",
+            "Publish original statistics and expert quotes that generative engines synthesize.",
+            "sparkle",
+          ],
+          [
+            "LLMO: Brand Entity Memory",
+            "Reinforce consistent entity associations across authoritative third-party sources.",
+            "target",
           ],
         ],
       },

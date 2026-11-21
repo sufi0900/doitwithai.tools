@@ -253,6 +253,92 @@ export function importInfographicProject(
         typeof c.sceneIllustration === "string"
           ? c.sceneIllustration.slice(0, 80)
           : undefined,
+      styleOverrides:
+        c.styleOverrides && typeof c.styleOverrides === "object"
+          ? {
+              ...(typeof c.styleOverrides.headlineScale === "number"
+                ? {
+                    headlineScale: Math.min(
+                      1.35,
+                      Math.max(0.75, c.styleOverrides.headlineScale),
+                    ),
+                  }
+                : {}),
+              ...(typeof c.styleOverrides.cardTitleScale === "number"
+                ? {
+                    cardTitleScale: Math.min(
+                      1.35,
+                      Math.max(0.75, c.styleOverrides.cardTitleScale),
+                    ),
+                  }
+                : {}),
+              ...(typeof c.styleOverrides.bodyScale === "number"
+                ? {
+                    bodyScale: Math.min(
+                      1.35,
+                      Math.max(0.75, c.styleOverrides.bodyScale),
+                    ),
+                  }
+                : {}),
+              ...(typeof c.styleOverrides.cardPaddingY === "number"
+                ? {
+                    cardPaddingY: Math.min(
+                      40,
+                      Math.max(-12, Math.round(c.styleOverrides.cardPaddingY)),
+                    ),
+                  }
+                : {}),
+              ...(typeof c.styleOverrides.cardGap === "number"
+                ? {
+                    cardGap: Math.min(
+                      48,
+                      Math.max(-12, Math.round(c.styleOverrides.cardGap)),
+                    ),
+                  }
+                : {}),
+              ...(typeof c.styleOverrides.cardRadius === "number"
+                ? {
+                    cardRadius: Math.min(
+                      36,
+                      Math.max(8, Math.round(c.styleOverrides.cardRadius)),
+                    ),
+                  }
+                : {}),
+              ...(typeof c.styleOverrides.accentBarWidth === "number"
+                ? {
+                    accentBarWidth: Math.min(
+                      14,
+                      Math.max(0, Math.round(c.styleOverrides.accentBarWidth)),
+                    ),
+                  }
+                : {}),
+              ...([
+                "default",
+                "full-banner",
+                "accent-pill",
+                "gold-pill",
+                "hidden",
+              ].includes(c.styleOverrides.calloutStyle || "")
+                ? { calloutStyle: c.styleOverrides.calloutStyle }
+                : {}),
+              ...(["minimal", "pill-banner", "dark-dock", "light-dock"].includes(
+                c.styleOverrides.footerBarStyle || "",
+              )
+                ? { footerBarStyle: c.styleOverrides.footerBarStyle }
+                : {}),
+              ...([
+                "theme-default",
+                "brand-vibrant",
+                "brand-dark",
+                "brand-soft",
+              ].includes(c.styleOverrides.brandBackgroundMode || "")
+                ? {
+                    brandBackgroundMode:
+                      c.styleOverrides.brandBackgroundMode,
+                  }
+                : {}),
+            }
+          : undefined,
       extractedBrand:
         c.extractedBrand && typeof c.extractedBrand.siteName === "string"
           ? {
@@ -264,6 +350,13 @@ export function importInfographicProject(
                 : {}),
               ...(typeof c.extractedBrand.isDark === "boolean"
                 ? { isDark: c.extractedBrand.isDark }
+                : {}),
+              ...(typeof c.extractedBrand.logoUrl === "string"
+                ? { logoUrl: c.extractedBrand.logoUrl.slice(0, 500) }
+                : {}),
+              ...(typeof c.extractedBrand.logoDataUrl === "string" &&
+              isSafeInfographicImage(c.extractedBrand.logoDataUrl)
+                ? { logoDataUrl: c.extractedBrand.logoDataUrl }
                 : {}),
               siteName: c.extractedBrand.siteName.slice(0, 64),
               source: ["theme-color", "css-variable"].includes(
@@ -293,6 +386,11 @@ export function importInfographicProject(
         badge: n.badge,
         metricValue: n.metricValue || "",
         icon: isInfographicTopicIcon(n.icon) ? n.icon : undefined,
+        ...(typeof n.customIconDataUrl === "string" &&
+        isSafeInfographicImage(n.customIconDataUrl)
+          ? { customIconDataUrl: n.customIconDataUrl }
+          : {}),
+        ...(isHex(n.accentHex) ? { accentHex: n.accentHex } : {}),
         sourceBlockIds: Array.isArray(n.sourceBlockIds)
           ? n.sourceBlockIds.filter((id) => typeof id === "string").slice(0, 12)
           : undefined,

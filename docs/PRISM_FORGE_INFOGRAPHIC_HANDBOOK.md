@@ -140,3 +140,23 @@ To power `/tools/blog-section-infographic-generator`, `/ai-content-writer`, and 
 4. **Interactive Canvas Layer Inspector & Scene Picker (`BlogInfographicStudio.tsx`, `InfographicDesignControls.tsx`)**:
    - Users can switch vector scene illustrations in Design controls, trigger **AI Re-Synthesize Visuals** from the URL extraction bar, and jump directly to headline, points, or scene art via the **Interactive canvas layer inspector**.
 
+## 16. V3 6-Phase Architecture — Anaphora Resolution, 10 Flagship Layouts, Multi-Concept Ideation & Canva-Style Studio (Shipped)
+
+To ensure every generated infographic stands alone on social media and matches agency-grade reference benchmarks (`16:9` 3-stage pipeline flow, `16:9` two-part formula split, `4:5` tapered conversion funnel, and `1:1` 2×2 strategic matrix):
+
+1. **Phase 0 & 1 — Zero-Collision Header, Responsive Multi-Line Callout Banner, Anaphora Resolution & Leading-Punctuation Repair**:
+   - `prism-renderer.ts` renders a single top-right vector scene slot (`hasHeaderScene`) and computes responsive multi-line `calloutBoxH` (`Math.max(54, calloutLines.length * 24 + 26)`) so bottom takeaway text never truncates mid-word or overflows.
+   - `topic-intelligence.ts` (`extractArticleSubject`, `rewriteDependentSectionTitle`) and `visual-qa-critic.ts` resolve context-dependent headings (`"Common Mistakes When Implementing These Strategies"` → `"GEO, SEO, AEO & LLMO: Common Mistakes to Avoid"`, `"Treating Them as Mutually Exclusive"` → `"Treating GEO, SEO, AEO & LLMO as Mutually Exclusive"`, `"FAQs"` → `"GEO, SEO, AEO & LLMO: Frequently Asked Questions"`).
+   - `standalone-copywriter.ts` and `visual-qa-critic.ts` strip leading punctuation (`^[.,:;!?\-–—•·]+\s*`) when removing bold/title prefixes so card explanations never start with `". You don't pick..."`.
+   - 2-card sections are never assigned tall `9:16` layouts, eliminating 45% bottom empty canvas voids.
+2. **Phase 2 — Strict Per-Domain Brand Isolation & Brand Background Lock Mode (`brand-source.ts`, `appearance.ts`, `visual-brief.ts`)**:
+   - Extracting a new domain (`isNewDomainExtraction`) resets `signature.name` and `brand.logoDataUrl` strictly to the newly extracted domain so a previous domain's logo or signature never leaks into a new domain's footer.
+   - `KNOWN_DOMAIN_BRANDS` and inline header/CTA CSS scanning detect primary brand accents (e.g. Neil Patel `#F26322` orange, DoItWithAI `#4A6CF7` royal blue), and `styleOverrides.brandBackgroundMode` (`"theme-default"`, `"brand-vibrant"`, `"brand-dark"`, `"brand-soft"`) locks the brand color across the canvas background and cards.
+3. **Phase 3 & 4 — 10 Flagship Layouts & 3 Switchable Infographic Concepts per Section (`layout-registry.ts`, `prism-renderer.ts`, `visual-brief.ts`, `/api/ai-tools/infographic-plan`)**:
+   - Expands `PRISM_LAYOUTS` to 10 flagship compositions, adding `"pipeline-flow"` (`16:9` 3-stage pipeline with directional arrows), `"split-equation"` (`16:9` two-part split with central `+` hub and gold formula bar), `"funnel-stages"` (`4:5` progressively tapered funnel), and `"quadrant-matrix"` (`1:1` 2×2 bento matrix).
+   - `buildSectionConceptAlternatives` generates 3 distinct `InfographicConceptAlternative` items per section (`Concept 1 · Editorial Overview`, `Concept 2 · 3-Stage Pipeline Flow / Conversion Funnel`, `Concept 3 · Two-Part Formula / 2×2 Strategic Matrix`), each with tailored copy and layout.
+4. **Phase 5 — Canva-Style Studio Controls & 56-Icon Searchable Database + Custom Card Icon Upload (`icon-database.ts`, `InfographicDesignControls.tsx`, `BlogInfographicStudio.tsx`)**:
+   - `lib/visual-stock/icon-database.ts` wraps all 56 semantic SVG icons across 7 categories with keyword search (`searchIconCatalog`), and each card supports custom PNG/JPG/WebP icon/badge upload (`customIconDataUrl`) and per-card accent color (`accentHex`).
+   - `InfographicDesignControls.tsx` exposes sliders for headline scale, card title scale, body text scale, card vertical padding, card gap, corner radius, left accent bar width, bottom callout banner style (`default`, `gold-pill`, `accent-pill`, `hidden`), and footer dock style (`minimal`, `pill-banner`, `dark-dock`, `light-dock`).
+
+

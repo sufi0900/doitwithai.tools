@@ -55,6 +55,7 @@ import type {
 import {
   PRISM_LAYOUTS,
   buildAllArticleSectionVisuals,
+  buildSectionConceptAlternatives,
   buildSectionVisual,
   createPrismSample,
   recommendPrismLayout,
@@ -64,6 +65,10 @@ import {
   withPrismLayout,
 } from "@/lib/blog-infographic-studio/visual-brief";
 import { INFOGRAPHIC_TOPIC_ICONS } from "@/lib/blog-infographic-studio/skills/semantic-iconography";
+import {
+  ICON_CATALOG,
+  ICON_CATEGORIES,
+} from "@/lib/visual-stock/icon-database";
 import {
   classifySectionArchetype,
   synthesizeInfographicHeadlineAndSubheadline,
@@ -543,6 +548,40 @@ export function BlogInfographicStudio({
       notify("Logo added. It will travel with your saved infographic.");
     });
   }
+  async function uploadNodeCustomIcon(nodeId: string, file?: File) {
+    if (!file) return;
+    await run(async () => {
+      if (
+        file.size > 1_500_000 ||
+        !["image/png", "image/jpeg", "image/webp"].includes(file.type)
+      )
+        throw new Error("Choose a PNG, JPG or WebP icon under 1.5 MB.");
+      const src = await new Promise<string>((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(String(r.result));
+        r.onerror = () => reject(new Error("The icon could not be read."));
+        r.readAsDataURL(file);
+      });
+      const image = new Image();
+      await new Promise<void>((resolve, reject) => {
+        image.onload = () => resolve();
+        image.onerror = () =>
+          reject(new Error("This image could not be opened."));
+        image.src = src;
+      });
+      const canvas = document.createElement("canvas"),
+        scale = Math.min(1, 160 / Math.max(image.width, image.height));
+      canvas.width = Math.max(1, Math.round(image.width * scale));
+      canvas.height = Math.max(1, Math.round(image.height * scale));
+      canvas
+        .getContext("2d")!
+        .drawImage(image, 0, 0, canvas.width, canvas.height);
+      updateNode(nodeId, {
+        customIconDataUrl: canvas.toDataURL("image/png"),
+      });
+      notify("Custom card icon added.");
+    });
+  }
   function addSection() {
     if (cards.length >= 12) return;
     const card = {
@@ -712,6 +751,7 @@ export function BlogInfographicStudio({
                     {
                       sourceUrl: data.url,
                       domain: data.domain,
+                      articleTitle: data.title,
                       coverage: data.coverage,
                       baseConfig: active,
                       brandTheme: data.brandTheme,
@@ -729,7 +769,7 @@ export function BlogInfographicStudio({
                     commit(allVisuals);
                     setActiveIdx(allVisuals[0]?.id === "ai-seo-overview" ? 0 : recIdx);
                     notify(
-                      `Generated ${allVisuals.length} unique section infographics across the article with distinct layouts and shaders. Click any section tab to edit, or use "AI Re-Synthesize Visuals" for an AI editorial pass.`,
+                      `Generated ${allVisuals.length} unique section infographics across the article with 3 switchable concepts per section. Click any section tab or concept pill to customize.`,
                     );
                     return;
                   }
@@ -814,27 +854,38 @@ export function BlogInfographicStudio({
                     extractedBrand: hint,
                     signature: {
                       ...normalizeSignature(active.signature),
-                      name: active.signature?.name || hint.siteName,
+                      name: hint.siteName || data.domain,
+                      showLogo: Boolean(hint.logoDataUrl),
                     },
                     ...(hint.secondaryAccent
                       ? { secondaryAccent: hint.secondaryAccent }
                       : {}),
-                    ...(hint.accent
-                      ? {
-                          brand: {
-                            ...active.brand,
+                    brand: {
+                      ...active.brand,
+                      logoDataUrl: hint.logoDataUrl,
+                      ...(hint.accent
+                        ? {
                             customColors: brandColors(
                               hint.accent,
                               hint.isDark ??
                                 !BLOG_INFOGRAPHIC_PALETTES[active.paletteId]
                                   .isLight,
                             ),
-                          },
-                        }
-                      : {}),
+                          }
+                        : {}),
+                    },
                   };
                 }
-                update(runInfographicQaCritic(next));
+                const criticized = runInfographicQaCritic(next, data.title);
+                const concepts = buildSectionConceptAlternatives(
+                  criticized,
+                  data.title,
+                );
+                update({
+                  ...criticized,
+                  conceptAlternatives: concepts,
+                  activeConceptId: concepts[0]?.id,
+                });
                 notify(
                   `${result.nodes.length} supported points from the selected section.${data.coverage?.truncated ? " Article exceeded extraction limits; inspect source coverage." : " Review the source text before publishing."}`,
                 );
@@ -858,6 +909,7 @@ export function BlogInfographicStudio({
                           {
                             sourceUrl: extractedArticle.url,
                             domain: extractedArticle.domain,
+                            articleTitle: extractedArticle.title,
                             coverage: extractedArticle.coverage,
                             baseConfig: active,
                             brandTheme: extractedArticle.brandTheme,
@@ -898,6 +950,7 @@ export function BlogInfographicStudio({
                               headers: { "Content-Type": "application/json" },
                               body: JSON.stringify({
                                 sections: extractedArticle.sections,
+                                articleTitle: extractedArticle.title,
                                 sourceUrl: extractedArticle.url,
                                 domain: extractedArticle.domain,
                                 baseConfig: active,
@@ -1862,11 +1915,14 @@ export function BlogInfographicStudio({
                               signature: active.signature,
                               fontFamily: active.fontFamily,
                               extractedBrand: active.extractedBrand,
+                              styleOverrides: active.styleOverrides
+                                ? { ...active.styleOverrides }
+                                : undefined,
                             }),
                           ),
                         );
                         notify(
-                          "Applied colors, depth and branding to all sections.",
+                          "Applied brand color mode, depth, typography and logo across all sections.",
                         );
                       }}
                     >
@@ -1940,6 +1996,65 @@ export function BlogInfographicStudio({
                 <Trash2 size={14} />
               </button>
             </div>
+            {active.conceptAlternatives &&
+              active.conceptAlternatives.length > 1 && (
+                <div
+                  className="flex flex-wrap items-center gap-2 border-b border-slate-200 bg-indigo-50/50 px-3 py-2.5 text-xs dark:border-slate-800 dark:bg-indigo-950/25"
+                  role="group"
+                  aria-label="Infographic concept alternatives"
+                >
+                  <span className="font-bold text-indigo-800 dark:text-indigo-200">
+                    Section Visual Concepts:
+                  </span>
+                  {active.conceptAlternatives.map((concept) => {
+                    const isSelected =
+                      (active.activeConceptId ||
+                        active.conceptAlternatives?.[0]?.id) === concept.id;
+                    return (
+                      <button
+                        type="button"
+                        key={concept.id}
+                        aria-pressed={isSelected}
+                        onClick={() => {
+                          update(
+                            withPrismLayout(
+                              {
+                                ...active,
+                                activeConceptId: concept.id,
+                                headline: concept.headline,
+                                subheadline: concept.subheadline,
+                                eyebrowLabel:
+                                  concept.eyebrowLabel || active.eyebrowLabel,
+                                calloutBadge: concept.calloutBadge,
+                                calloutText: concept.calloutText,
+                                comparisonLabels: concept.comparisonLabels,
+                                sceneIllustration:
+                                  concept.sceneIllustration ||
+                                  active.sceneIllustration,
+                                highlightWords: extractHeadlineHighlightPhrases(
+                                  concept.headline,
+                                ).join(", "),
+                                nodes: concept.nodes,
+                              },
+                              concept.prismLayout,
+                            ),
+                          );
+                          notify(
+                            `Switched to ${concept.label} (${concept.prismLayout}).`,
+                          );
+                        }}
+                        className={`rounded-xl border px-3 py-1.5 text-xs font-bold transition ${
+                          isSelected
+                            ? "border-indigo-600 bg-indigo-600 text-white shadow-sm"
+                            : "border-indigo-200 bg-white text-slate-700 hover:border-indigo-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                        }`}
+                      >
+                        {concept.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             <div className="flex flex-wrap items-center gap-2 p-3">
               <button
                 type="button"
@@ -2113,7 +2228,14 @@ export function BlogInfographicStudio({
                   onClick={() => setPanel("design")}
                   className="rounded-full border border-indigo-300 bg-indigo-50 px-2.5 py-1 font-semibold text-indigo-700 hover:border-indigo-500 dark:border-indigo-500/40 dark:bg-indigo-950/40 dark:text-indigo-200"
                 >
-                  Scene art &amp; shader
+                  Brand &amp; Background
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPanel("design")}
+                  className="rounded-full border border-indigo-300 bg-indigo-50 px-2.5 py-1 font-semibold text-indigo-700 hover:border-indigo-500 dark:border-indigo-500/40 dark:bg-indigo-950/40 dark:text-indigo-200"
+                >
+                  Spacing &amp; Banner
                 </button>
               </div>
             </div>
@@ -2157,7 +2279,7 @@ export function BlogInfographicStudio({
               An editorial collection for your section
             </h3>
             <p className="mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-              Six original compositions with fixed canvases. Your explanations,
+              Ten original compositions with fixed canvases. Your explanations,
               colors and logo stay in place when you switch.
             </p>
             <div className="mt-4 grid gap-4 sm:grid-cols-3">

@@ -149,6 +149,51 @@ export function isFaqHeadingOrSection(
  * Normalizes dependent or numbered section headings into clean, standalone
  * infographic headlines without altering already strong technical headings.
  */
+/**
+ * Extracts a concise 2–5 word core subject from an article title or section list
+ * (e.g. "GEO vs SEO vs AEO vs LLMO: What's The Difference?" -> "GEO, SEO, AEO & LLMO").
+ */
+export function extractArticleSubject(articleTitle?: string): string {
+  const raw = cleanText(articleTitle || "");
+  if (!raw) return "";
+  // Multi-acronym VS pattern: "GEO vs. SEO vs. AEO vs. LLMO: What's The Difference?"
+  const vsParts = raw.split(/[:?—–|]/)[0].trim();
+  if (/\b(?:vs\.?|versus)\b/i.test(vsParts)) {
+    const tokens = vsParts
+      .split(/\s+(?:vs\.?|versus)\s+/i)
+      .map((t) => cleanText(t))
+      .filter((t) => t.length >= 2 && t.length <= 24);
+    if (tokens.length >= 2 && tokens.length <= 5) {
+      if (tokens.length === 2) return `${tokens[0]} vs. ${tokens[1]}`;
+      return `${tokens.slice(0, -1).join(", ")} & ${tokens[tokens.length - 1]}`;
+    }
+  }
+  // Already-normalized comma/& subject series (e.g. "GEO, SEO, AEO & LLMO")
+  if (
+    /^[A-Z0-9][A-Za-z0-9\s,&.-]{2,36}$/.test(vsParts) &&
+    vsParts.includes("&") &&
+    vsParts.split(/\s+/).length <= 6
+  ) {
+    return vsParts.replace(/\s*&\s*$/, "").trim();
+  }
+  const whatIs = raw.match(
+    /^what\s+(?:is|are)\s+(?:an?\s+|the\s+)?([^:?—–|]{2,36})/i,
+  );
+  if (whatIs) return cleanText(whatIs[1]);
+  const head = vsParts
+    .replace(/^(?:how\s+to|the\s+complete\s+guide\s+to|a\s+guide\s+to|understanding)\s+/i, "")
+    .split(/\s+/)
+    .slice(0, 5)
+    .join(" ")
+    .replace(/\s*[&,]\s*$/, "")
+    .trim();
+  return head.length >= 3 ? head : "";
+}
+
+/**
+ * Normalizes dependent, anaphoric, or numbered section headings into clean,
+ * standalone infographic headlines that make 100% sense when shared on social media.
+ */
 export function rewriteDependentSectionTitle(
   title: string,
   articleTitle?: string,
@@ -158,21 +203,58 @@ export function rewriteDependentSectionTitle(
     .replace(/^\d+\s*[.)\-–—]\s+/, "")
     .trim();
 
-  if (!out) return cleanText(articleTitle || "Key Concepts");
+  const subject = extractArticleSubject(articleTitle);
+  if (!out) return subject || cleanText(articleTitle || "Key Concepts");
 
-  if (/\b(?:this|that) (?:section|step|approach)\b/i.test(out) && articleTitle) {
-    const shortTopic = cleanText(articleTitle)
-      .split(/[:|\-–—]/)[0]
-      .trim()
-      .split(/\s+/)
-      .slice(0, 4)
-      .join(" ");
-    if (shortTopic.length >= 6) {
-      out = out.replace(
-        /\b(?:this|that) (?:section|step|approach)\b/gi,
-        shortTopic,
-      );
+  // Bare FAQ heading -> Contextual FAQ heading when articleSubject is available
+  if (
+    subject &&
+    /^(?:faqs?|frequently\s+asked\s+questions?)$/i.test(out)
+  ) {
+    return `${subject}: Frequently Asked Questions`;
+  }
+
+  // Bare "Key Takeaways" or "Overview" -> Contextual heading
+  if (
+    subject &&
+    /^(?:key\s+takeaways?|overview|executive\s+summary|core\s+summary)$/i.test(out)
+  ) {
+    return `${subject}: Key Takeaways`;
+  }
+
+  // Anaphoric demonstrative phrases: "Common Mistakes When Implementing These Strategies",
+  // "How to Measure ROI Across These Channels", "When to Prioritize Each Discipline"
+  const anaphoraRe =
+    /\b(?:these|those|this|that|both|all\s+(?:four|three|two)|each)\s+(?:strategies|methods|approaches|tactics|steps|tips|tools|disciplines|techniques|factors|channels|systems|models|frameworks|section|step|approach)\b/i;
+  if (anaphoraRe.test(out)) {
+    if (subject) {
+      out = out.replace(anaphoraRe, subject);
+    } else {
+      out = out
+        .replace(
+          /\s+(?:when|while|for|in)\s+(?:implementing|using|applying|running|executing)\s+(?:these|those|this|that)\s+\w+$/i,
+          "",
+        )
+        .replace(anaphoraRe, "Your Strategy");
     }
+  }
+
+  // Card/section titles with dangling pronouns like "Treating Them as Mutually Exclusive"
+  if (/\b(?:treating|using|applying|combining|ignoring)\s+them\b/i.test(out)) {
+    out = out.replace(
+      /\b(treating|using|applying|combining|ignoring)\s+them\b/i,
+      (_, verb) => `${verb} ${subject || "Search Channels"}`,
+    );
+  }
+
+  // If title is still a generic stem like "Common Mistakes" or "Common Mistakes to Avoid" and we know the subject
+  if (
+    subject &&
+    /^(?:common\s+mistakes(?:\s+to\s+avoid)?|best\s+practices|implementation\s+checklist)$/i.test(
+      out,
+    )
+  ) {
+    out = `${subject}: ${out}`;
   }
 
   return out;
@@ -187,16 +269,44 @@ export function synthesizeInfographicHeadlineAndSubheadline(
   articleTitle?: string,
 ): { headline: string; subheadline: string } {
   const cleaned = rewriteDependentSectionTitle(rawTitle, articleTitle);
+  const subject = extractArticleSubject(articleTitle);
 
   // Bare definitional question: "What Is AI SEO?" or "What Are Answer Engines?"
   const bareWhatIs = cleaned.match(
     /^what\s+(?:is|are)\s+(?:an?\s+|the\s+)?(.{2,44}?)\?$/i,
   );
   if (bareWhatIs) {
-    const subject = cleanText(bareWhatIs[1]);
+    const subj = cleanText(bareWhatIs[1]);
     return {
-      headline: `${subject}: Core Pillars & Practical Workflow`,
-      subheadline: `How ${subject} works in practice and why it matters.`,
+      headline: `${subj}: Core Pillars & Practical Workflow`,
+      subheadline: `How ${subj} works in practice and why it matters.`,
+    };
+  }
+
+  // "Common Mistakes When Implementing [Subject]" -> "[Subject]: Common Mistakes to Avoid"
+  const mistakesMatch = cleaned.match(
+    /^common\s+mistakes\s+(?:when|while|in)\s+(?:implementing|using|applying)\s+(.{3,48})$/i,
+  );
+  if (mistakesMatch) {
+    const target = cleanText(mistakesMatch[1]);
+    return {
+      headline:
+        target.length <= 28
+          ? `${target}: Common Mistakes to Avoid`
+          : "Common Implementation Mistakes to Avoid",
+      subheadline: `Critical pitfalls that hurt ${target} visibility and how to fix them.`,
+    };
+  }
+
+  if (
+    subject &&
+    /^common\s+mistakes\s+(?:when|while|in)\s+(?:implementing|using|applying)\b/i.test(
+      rawTitle,
+    )
+  ) {
+    return {
+      headline: `${subject}: Common Mistakes to Avoid`,
+      subheadline: `Critical pitfalls that undermine ${subject} performance and how to fix them.`,
     };
   }
 
@@ -209,10 +319,10 @@ export function synthesizeInfographicHeadlineAndSubheadline(
       /^what\s+(?:is|are)\s+(?:an?\s+|the\s+)?(.{2,44}?)\?$/i,
     );
     if (whatSubject) {
-      const subject = cleanText(whatSubject[1]);
+      const subj = cleanText(whatSubject[1]);
       return {
-        headline: `${subject}: ${qSub.length <= 42 ? qSub : "Core Pillars & Workflow"}`,
-        subheadline: qSub.length > 42 ? qSub : `Key concepts and practical execution for ${subject}.`,
+        headline: `${subj}: ${qSub.length <= 42 ? qSub : "Core Pillars & Workflow"}`,
+        subheadline: qSub.length > 42 ? qSub : `Key concepts and practical execution for ${subj}.`,
       };
     }
     return {

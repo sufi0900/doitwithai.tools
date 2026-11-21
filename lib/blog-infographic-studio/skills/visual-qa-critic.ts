@@ -3,8 +3,9 @@
  *
  * Audits and auto-repairs a compiled BlogInfographicConfig before SVG/Canvas
  * synthesis so every output has crisp standalone headlines, clean 2-tone highlights,
- * zero title-body duplication, zero dangling cliffhangers, distinct sibling icons,
- * preserved FAQ questions with Q1..Qn badges, and balanced 2–3 card bottom callouts.
+ * zero title-body duplication, zero dangling cliffhangers, zero leading punctuation,
+ * zero anaphoric dangling pronouns, distinct sibling icons, preserved FAQ questions
+ * with Q1..Qn badges, and word-boundary-safe bottom callouts.
  */
 import type { BlogInfographicConfig } from "@/lib/blog-writer/canonical-state";
 import { assignDistinctSectionIcons } from "./semantic-iconography";
@@ -15,7 +16,28 @@ import {
   scoreHeadlineHighlightPhrases,
   synthesizeStandaloneTitleAndDetail,
 } from "./standalone-copywriter";
-import { isFaqHeadingOrSection } from "./topic-intelligence";
+import {
+  extractArticleSubject,
+  isFaqHeadingOrSection,
+  rewriteDependentSectionTitle,
+} from "./topic-intelligence";
+
+function trimAtWordBoundary(text: string, maxChars: number): string {
+  const cleaned = text.trim();
+  if (cleaned.length <= maxChars) return cleaned;
+  const sliced = cleaned.slice(0, maxChars);
+  const lastSpace = sliced.lastIndexOf(" ");
+  return (lastSpace > 14 ? sliced.slice(0, lastSpace) : sliced).replace(
+    /[\s,:;–—-]+$/,
+    "",
+  );
+}
+
+function stripLeadingPunctuation(raw: string): string {
+  return String(raw || "")
+    .replace(/^[\s.,;:!?\-–—•·]+/, "")
+    .trim();
+}
 
 function synthesizeCalloutText(
   config: BlogInfographicConfig,
@@ -24,18 +46,29 @@ function synthesizeCalloutText(
   if (isFaq) {
     return `Review all ${config.nodes.length} verified answers before applying changes.`;
   }
-  const headlineCore = decontextualizeProse(config.headline)
-    .split(":")[0]
-    .replace(/[?.!]+$/, "")
-    .trim()
-    .slice(0, 44);
-  if (config.prismLayout === "comparison") {
+  const headlineCore = trimAtWordBoundary(
+    decontextualizeProse(config.headline)
+      .split(":")[0]
+      .replace(/[?.!]+$/, "")
+      .trim(),
+    38,
+  );
+  if (config.prismLayout === "comparison" || config.prismLayout === "quadrant-matrix") {
     return `Balance both sides of ${headlineCore} for durable search visibility.`;
   }
-  if (config.prismLayout === "timeline") {
-    return `Follow each phase of ${headlineCore} in sequence for reliable execution.`;
+  if (
+    config.prismLayout === "timeline" ||
+    config.prismLayout === "pipeline-flow" ||
+    config.prismLayout === "funnel-stages"
+  ) {
+    return `Follow each stage of ${headlineCore} in sequence for reliable execution.`;
   }
-  return `Apply these ${config.nodes.length} pillars of ${headlineCore} together with verified evidence.`;
+  if (config.prismLayout === "split-equation") {
+    const t0 = trimAtWordBoundary(config.nodes[0]?.title || "Workflow", 24);
+    const t1 = trimAtWordBoundary(config.nodes[1]?.title || "Discovery", 24);
+    return `${headlineCore} = ${t0} + ${t1}`;
+  }
+  return `Apply these ${config.nodes.length} pillars of ${headlineCore} with verified evidence.`;
 }
 
 /**
@@ -44,21 +77,36 @@ function synthesizeCalloutText(
  */
 export function runInfographicQaCritic(
   config: BlogInfographicConfig,
+  articleTitle?: string,
 ): BlogInfographicConfig {
-  const cleanHeadline = decontextualizeProse(config.headline) || config.headline;
+  const rawHeadline = stripLeadingPunctuation(
+    decontextualizeProse(config.headline) || config.headline,
+  );
+  const cleanHeadline = rewriteDependentSectionTitle(rawHeadline, articleTitle);
   const cleanSubheadline = config.subheadline
-    ? decontextualizeProse(config.subheadline)
+    ? stripLeadingPunctuation(decontextualizeProse(config.subheadline))
     : "";
+
+  const subject =
+    extractArticleSubject(articleTitle) ||
+    extractArticleSubject(cleanHeadline);
 
   const isFaq =
     isFaqHeadingOrSection(cleanHeadline) ||
     config.nodes.filter((n) => n.title.trim().endsWith("?")).length >= 2;
 
   const repairedNodes = config.nodes.map((node, idx) => {
-    const cleanTitle = decontextualizeProse(node.title).trim();
-    const cleanDetail = decontextualizeProse(node.detail).trim();
+    const cleanTitle = stripLeadingPunctuation(
+      decontextualizeProse(node.title),
+    );
+    const cleanDetail = stripLeadingPunctuation(
+      decontextualizeProse(node.detail),
+    );
 
-    let nextTitle = cleanTitle || node.title;
+    let nextTitle = rewriteDependentSectionTitle(
+      cleanTitle || node.title,
+      subject || articleTitle,
+    );
     let nextDetail = cleanDetail || node.detail;
 
     if (
@@ -72,9 +120,18 @@ export function runInfographicQaCritic(
         nextTitle,
         { isFaq, index: idx },
       );
-      nextTitle = synthesized.title || nextTitle;
-      nextDetail = synthesized.detail || nextDetail;
+      nextTitle = rewriteDependentSectionTitle(
+        stripLeadingPunctuation(synthesized.title || nextTitle),
+        subject || articleTitle,
+      );
+      nextDetail = stripLeadingPunctuation(synthesized.detail || nextDetail);
     }
+
+    // Ensure card detail starts with an uppercase letter or digit after leading punctuation removal
+    nextDetail = stripLeadingPunctuation(nextDetail).replace(
+      /^\p{Ll}/u,
+      (c) => c.toUpperCase(),
+    );
 
     const badge = isFaq
       ? `Q${idx + 1}`
@@ -103,7 +160,10 @@ export function runInfographicQaCritic(
     (isFaq ? "FAQ PLAYBOOK · KEY QUESTIONS" : undefined);
 
   const shouldSynthesizeCallout =
-    diversifiedNodes.length <= 3 && !config.calloutText?.trim();
+    (diversifiedNodes.length <= 3 ||
+      config.prismLayout === "pipeline-flow" ||
+      config.prismLayout === "split-equation") &&
+    !config.calloutText?.trim();
 
   return {
     ...config,
@@ -113,7 +173,11 @@ export function runInfographicQaCritic(
     ...(eyebrowLabel ? { eyebrowLabel } : {}),
     ...(shouldSynthesizeCallout
       ? {
-          calloutBadge: config.calloutBadge?.trim() || "KEY TAKEAWAY",
+          calloutBadge:
+            config.calloutBadge?.trim() ||
+            (config.prismLayout === "split-equation"
+              ? "DEFINITION"
+              : "KEY TAKEAWAY"),
           calloutText: synthesizeCalloutText(
             {
               ...config,
@@ -126,7 +190,11 @@ export function runInfographicQaCritic(
         }
       : {
           ...(config.calloutText
-            ? { calloutText: decontextualizeProse(config.calloutText) }
+            ? {
+                calloutText: stripLeadingPunctuation(
+                  decontextualizeProse(config.calloutText),
+                ),
+              }
             : {}),
         }),
     nodes: diversifiedNodes,

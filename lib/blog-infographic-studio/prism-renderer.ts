@@ -36,6 +36,10 @@ export type JSXNode =
       props: Record<string, unknown> & { children?: JSXNode | JSXNode[] };
     };
 
+function isHex(v: unknown): v is string {
+  return typeof v === "string" && /^#[0-9a-fA-F]{6}$/.test(v);
+}
+
 function escapeXml(str: unknown): string {
   return String(str ?? "")
     .replace(/&/g, "&amp;")
@@ -710,35 +714,15 @@ export function buildPrismScene(
     );
   }
 
-  // Render commercial-safe recolorable vector scene illustration in top-right header backdrop
-  if (config.sceneIllustration !== "none") {
-    const activeScene =
-      getVectorSceneById(config.sceneIllustration) ||
-      matchVectorSceneForTopic(
-        `${config.headline} ${config.subheadline}`,
-        layout,
-      );
-    const sceneMarkup = activeScene.renderSvgNodes({
-      primary: accent,
-      secondary: colors[1] || accent,
-      surface,
-      ink,
-      muted,
-    });
-    const sceneX = Math.round(W - M - 210);
-    const sceneY = Math.round(Math.max(24, M * 0.42));
-    parts.push(
-      el(
-        "g",
-        {
-          transform: `translate(${sceneX}, ${sceneY}) scale(0.82)`,
-          opacity: light ? 0.24 : 0.28,
-          "data-vector-scene": activeScene.id,
-        },
-        el("__raw_svg__", { svg: sceneMarkup }),
-      ),
-    );
-  }
+  const ov = config.styleOverrides || {};
+  const cardRadius =
+    typeof ov.cardRadius === "number"
+      ? Math.max(8, Math.min(36, ov.cardRadius))
+      : 22;
+  const accentBarW =
+    typeof ov.accentBarWidth === "number"
+      ? Math.max(0, Math.min(14, ov.accentBarWidth))
+      : 6;
 
   const surfaceRectInto = (
     target: JSXNode[],
@@ -748,7 +732,9 @@ export function buildPrismScene(
     h: number,
     tint = false,
     accentColor = accent,
+    layerId?: string,
   ) => {
+    const layerAttr = layerId ? { "data-layer-id": layerId } : {};
     if (depth.preset === "layered" && strength > 0)
       target.push(
         rect(
@@ -757,12 +743,13 @@ export function buildPrismScene(
           w,
           h,
           mixColor(surface, accentColor, 0.18),
-          22,
+          cardRadius,
         ),
       );
     target.push(
-      rect(x, y, w, h, surface, 22, {
+      rect(x, y, w, h, surface, cardRadius, {
         ...shadow,
+        ...layerAttr,
         stroke:
           cardStyle === "bordered-bento"
             ? mixColor(surface, accentColor, 0.45)
@@ -771,10 +758,21 @@ export function buildPrismScene(
       }),
     );
     if (tint || cardStyle === "playbook-contrast")
-      target.push(rect(x, y, w, h, svgRef("band"), 22));
-    if (cardStyle === "playbook-contrast") {
+      target.push(rect(x, y, w, h, svgRef("band"), cardRadius, layerAttr));
+    if (
+      (cardStyle === "playbook-contrast" ||
+        typeof ov.accentBarWidth === "number") &&
+      accentBarW > 0
+    ) {
       target.push(
-        rect(x, y + 14, 6, Math.max(20, h - 28), accentColor, 3),
+        rect(
+          x,
+          y + 14,
+          accentBarW,
+          Math.max(20, h - 28),
+          accentColor,
+          Math.round(accentBarW / 2),
+        ),
       );
     } else if (cardStyle === "minimal-stripe") {
       target.push(
@@ -799,16 +797,32 @@ export function buildPrismScene(
     y: number,
     r: number,
     c: string,
+    nodeIndex?: number,
   ) => {
+    const iconLayerAttr =
+      typeof nodeIndex === "number"
+        ? { "data-layer-id": `node-icon-${nodeIndex}` }
+        : {};
     target.push(
-      circle(x, y, r + 12, c, { opacity: 0.08 }),
+      circle(x, y, r + 12, c, { opacity: 0.08, ...iconLayerAttr }),
       circle(x, y, r, surface, {
         ...shadow,
+        ...iconLayerAttr,
         stroke: c,
         strokeOpacity: 0.3,
         strokeWidth: 1.5,
       }),
-      pictogram(iconForNode(n), x - r * 0.55, y - r * 0.55, r * 1.1, c),
+      n.customIconDataUrl
+        ? el("image", {
+            href: n.customIconDataUrl,
+            x: x - r * 0.65,
+            y: y - r * 0.65,
+            width: r * 1.3,
+            height: r * 1.3,
+            preserveAspectRatio: "xMidYMid meet",
+            ...iconLayerAttr,
+          })
+        : pictogram(iconForNode(n), x - r * 0.55, y - r * 0.55, r * 1.1, c),
     );
   };
   const drawSignature = (y: number) => {
@@ -932,7 +946,7 @@ export function buildPrismScene(
   const nodes = config.nodes.slice(0, 6);
   const isSyntheticOverflow =
     config.headline.length > 220 || nodes.some((n) => n.detail.length > 600);
-  const headlineSize = isSyntheticOverflow
+  const baseHeadlineSize = isSyntheticOverflow
     ? W > 1200
       ? 60
       : 62
@@ -951,6 +965,11 @@ export function buildPrismScene(
         : config.headline.length > 68
           ? 50
           : 58;
+  const hScale = config.styleOverrides?.headlineScale;
+  const headlineSize =
+    typeof hScale === "number" && hScale >= 0.7 && hScale <= 1.4
+      ? Math.round(baseHeadlineSize * hScale)
+      : baseHeadlineSize;
 
   const highlightPhrases = (config.highlightWords || "")
     .split(",")
@@ -978,7 +997,7 @@ export function buildPrismScene(
     fontStack,
     highlightPhrases,
   );
-  parts.push(headline.node);
+  const headlineChildren: JSXNode[] = [headline.node];
   let top = headerTop + 26 + headline.height + 16;
   if (config.subheadline.trim()) {
     const subSize = H <= 960 ? 22 : 25;
@@ -993,9 +1012,16 @@ export function buildPrismScene(
       false,
       fontStack,
     );
-    parts.push(sub.node);
+    headlineChildren.push(sub.node);
     top += sub.height + 16;
   }
+  parts.push(
+    el(
+      "g",
+      { "data-layer-id": "headline", style: "cursor:pointer" },
+      ...headlineChildren,
+    ),
+  );
   if (hasHeaderScene) {
     const activeScene =
       getVectorSceneById(config.sceneIllustration) ||
@@ -1048,8 +1074,40 @@ export function buildPrismScene(
       );
   });
 
-  const hasCallout = Boolean(config.calloutText?.trim());
-  const calloutReserve = hasCallout ? 74 : 0;
+  const hasCallout =
+    Boolean(config.calloutText?.trim()) && ov.calloutStyle !== "hidden";
+  const calloutBadgeLabel = (
+    config.calloutBadge?.trim() || "KEY TAKEAWAY"
+  ).toUpperCase();
+  const calloutBadgeW = Math.max(
+    110,
+    widthOf(calloutBadgeLabel, 14, true) + 28,
+  );
+  const calloutTextW = Math.max(200, contentW - calloutBadgeW - 44);
+  const calloutLines = hasCallout
+    ? wrap(config.calloutText!.trim(), calloutTextW, 18, true)
+    : [];
+  const calloutBoxH = hasCallout
+    ? Math.max(54, calloutLines.length * 24 + 26)
+    : 0;
+  const calloutReserve = hasCallout ? calloutBoxH + 22 : 0;
+
+  const titleScaleMult =
+    typeof ov.cardTitleScale === "number"
+      ? Math.max(0.75, Math.min(1.35, ov.cardTitleScale))
+      : 1;
+  const bodyScaleMult =
+    typeof ov.bodyScale === "number"
+      ? Math.max(0.75, Math.min(1.35, ov.bodyScale))
+      : 1;
+  const padYDelta =
+    typeof ov.cardPaddingY === "number"
+      ? Math.max(-12, Math.min(40, ov.cardPaddingY))
+      : 0;
+  const gapDelta =
+    typeof ov.cardGap === "number"
+      ? Math.max(-12, Math.min(48, ov.cardGap))
+      : 0;
 
   // Multi-pass adaptive typography and spacing solver so 2–6 points fit cleanly above footerY
   const candidateScales = isSyntheticOverflow
@@ -1057,19 +1115,93 @@ export function buildPrismScene(
     : [1.0, 0.94, 0.88, 0.82, 0.76, 0.7, 0.65, 0.6, 0.55];
 
   const metricsForScale = (s: number) => {
-    const labelSize = Math.max(18, Math.round(32 * s));
-    const bodySize = Math.max(15, Math.round(26 * s));
+    const labelSize = Math.max(
+      17,
+      Math.round(32 * s * titleScaleMult),
+    );
+    const bodySize = Math.max(14, Math.round(26 * s * bodyScaleMult));
     const badgeSize = Math.max(13, Math.round(18 * s));
+    const isFaqChecklist =
+      layout === "checklist" &&
+      nodes.length > 0 &&
+      nodes.every((n) => /^Q\d+$/i.test(n.badge.trim()));
     const badgeOffset =
-      layout === "comparison" ? 0 : Math.max(20, Math.round(28 * s));
+      layout === "comparison" ||
+      layout === "timeline" ||
+      layout === "pipeline-flow" ||
+      layout === "split-equation" ||
+      isFaqChecklist
+        ? 0
+        : Math.max(20, Math.round(28 * s));
     const titleGap = Math.max(6, Math.round(10 * s));
-    const padY = Math.max(11, Math.round(18 * s));
-    const minGap = Math.max(12, Math.round(20 * s));
+    const padY = Math.max(10, Math.round(18 * s) + padYDelta);
+    const minGap = Math.max(10, Math.round(20 * s) + gapDelta);
     const textHeight = (n: BlogInfographicNodeItem, w: number) =>
       badgeOffset +
       wrap(n.title, w, labelSize, true).length * labelSize * 1.3 +
       titleGap +
       wrap(n.detail, w, bodySize).length * bodySize * 1.3;
+
+    if (layout === "pipeline-flow") {
+      const cols = Math.min(3, Math.max(2, nodes.length));
+      const arrowGap = 44;
+      const colW = Math.floor(
+        (contentW - arrowGap * (cols - 1)) / cols,
+      );
+      const colTextW = colW - 44;
+      const headReserve = Math.round(88 * s);
+      const colHeights = nodes.slice(0, cols).map(
+        (n) =>
+          headReserve +
+          wrap(n.title, colTextW, labelSize, true).length * labelSize * 1.28 +
+          titleGap +
+          wrap(n.detail, colTextW, bodySize).length * bodySize * 1.3 +
+          padY * 2,
+      );
+      const cardH = Math.max(Math.round(220 * s), ...colHeights);
+      return {
+        s,
+        labelSize,
+        bodySize,
+        badgeSize,
+        badgeOffset,
+        titleGap,
+        padY,
+        minGap,
+        textHeight,
+        rowHeights: [cardH],
+        minTotal: cardH,
+      };
+    }
+
+    if (layout === "split-equation") {
+      const hubGap = 96;
+      const colW = Math.floor((contentW - hubGap) / 2);
+      const colTextW = colW - 48;
+      const headReserve = Math.round(92 * s);
+      const colHeights = nodes.slice(0, 2).map(
+        (n) =>
+          headReserve +
+          wrap(n.title, colTextW, labelSize, true).length * labelSize * 1.28 +
+          titleGap +
+          wrap(n.detail, colTextW, bodySize).length * bodySize * 1.3 +
+          padY * 2,
+      );
+      const cardH = Math.max(Math.round(220 * s), ...colHeights);
+      return {
+        s,
+        labelSize,
+        bodySize,
+        badgeSize,
+        badgeOffset,
+        titleGap,
+        padY,
+        minGap,
+        textHeight,
+        rowHeights: [cardH],
+        minTotal: cardH,
+      };
+    }
 
     if (layout === "comparison") {
       const gap = 38,
@@ -1148,9 +1280,10 @@ export function buildPrismScene(
     }
 
     const isEditorialBento =
-      layout === "editorial" &&
-      !isSyntheticOverflow &&
-      (nodes.length === 4 || nodes.length === 6);
+      (layout === "editorial" &&
+        !isSyntheticOverflow &&
+        (nodes.length === 4 || nodes.length === 6)) ||
+      layout === "quadrant-matrix";
     if (isEditorialBento) {
       const colGap = 28;
       const cellW = (contentW - colGap) / 2;
@@ -1245,13 +1378,14 @@ export function buildPrismScene(
     w: number,
     i: number,
   ) => {
+    const c = isHex(n.accentHex) ? n.accentHex : colors[i % 4];
     const badge = textBlock(
       n.badge.trim() || String(i + 1).padStart(2, "0"),
       x,
       y,
       w,
       badgeSize,
-      colors[i % 4],
+      c,
       true,
       false,
       fontStack,
@@ -1286,7 +1420,207 @@ export function buildPrismScene(
   const slack = Math.max(0, availBodyH - minTotal);
   let bottom = top;
 
-  if (layout === "comparison") {
+  if (layout === "pipeline-flow") {
+    const cols = Math.min(3, Math.max(2, nodes.length));
+    const flowNodes = nodes.slice(0, cols);
+    const arrowGap = 44;
+    const colW = Math.floor((contentW - arrowGap * (cols - 1)) / cols);
+    const colTextW = colW - 44;
+    const cardH = Math.min(
+      availBodyH,
+      rowHeights[0] + Math.round(slack * 0.45),
+    );
+    const startY = top + Math.min(28, Math.round(slack * 0.2));
+    flowNodes.forEach((n, idx) => {
+      const x = M + idx * (colW + arrowGap);
+      const c = isHex(n.accentHex) ? n.accentHex : colors[idx % 4];
+      surfaceRectInto(
+        bodyParts,
+        x,
+        startY,
+        colW,
+        cardH,
+        idx === 1,
+        c,
+        `node-${idx}`,
+      );
+      const pillLabel = (
+        n.badge.trim() ||
+        (idx === 0 ? "START" : idx === cols - 1 ? "RESULT" : `STAGE ${idx + 1}`)
+      ).toUpperCase();
+      const pillW = Math.max(84, widthOf(pillLabel, 14, true) + 28);
+      bodyParts.push(
+        rect(
+          x + Math.round((colW - pillW) / 2),
+          startY - 14,
+          pillW,
+          28,
+          c,
+          14,
+        ),
+        textBlock(
+          pillLabel,
+          x + Math.round((colW - pillW) / 2),
+          startY - 8,
+          pillW,
+          13,
+          contrast("#FFFFFF", c) >= contrast("#081322", c)
+            ? "#FFFFFF"
+            : "#081322",
+          true,
+          true,
+          fontStack,
+        ).node,
+      );
+      medallionInto(
+        bodyParts,
+        n,
+        x + Math.round(colW / 2),
+        startY + 52,
+        Math.max(22, Math.round(28 * fitScale)),
+        c,
+        idx,
+      );
+      const titleNode = textBlock(
+        n.title,
+        x + 22,
+        startY + 94,
+        colTextW,
+        labelSize,
+        ink,
+        true,
+        true,
+        fontStack,
+      );
+      const detailNode = textBlock(
+        n.detail,
+        x + 22,
+        startY + 94 + titleNode.height + titleGap,
+        colTextW,
+        bodySize,
+        muted,
+        false,
+        false,
+        fontStack,
+      );
+      bodyParts.push(titleNode.node, detailNode.node);
+      if (idx < cols - 1) {
+        const ax = x + colW + 8;
+        const ay = startY + Math.round(cardH / 2);
+        bodyParts.push(
+          path(
+            `M ${ax} ${ay} H ${ax + arrowGap - 18}`,
+            colors[(idx + 1) % 4],
+            4,
+          ),
+          path(
+            `M ${ax + arrowGap - 24} ${ay - 8} L ${ax + arrowGap - 14} ${ay} L ${ax + arrowGap - 24} ${ay + 8}`,
+            colors[(idx + 1) % 4],
+            4,
+          ),
+        );
+      }
+    });
+    bottom = startY + cardH;
+  } else if (layout === "split-equation") {
+    const pair = nodes.slice(0, 2);
+    const hubGap = 96;
+    const colW = Math.floor((contentW - hubGap) / 2);
+    const colTextW = colW - 48;
+    const cardH = Math.min(
+      availBodyH,
+      rowHeights[0] + Math.round(slack * 0.45),
+    );
+    const startY = top + Math.min(28, Math.round(slack * 0.2));
+    pair.forEach((n, idx) => {
+      const x = M + idx * (colW + hubGap);
+      const c = isHex(n.accentHex) ? n.accentHex : colors[idx % 4];
+      surfaceRectInto(
+        bodyParts,
+        x,
+        startY,
+        colW,
+        cardH,
+        idx === 1,
+        c,
+        `node-${idx}`,
+      );
+      const pillLabel = (n.badge.trim() || `PART ${idx + 1}`).toUpperCase();
+      const pillW = Math.max(96, widthOf(pillLabel, 14, true) + 28);
+      bodyParts.push(
+        rect(
+          x + Math.round((colW - pillW) / 2),
+          startY - 14,
+          pillW,
+          28,
+          c,
+          14,
+        ),
+        textBlock(
+          pillLabel,
+          x + Math.round((colW - pillW) / 2),
+          startY - 8,
+          pillW,
+          13,
+          contrast("#FFFFFF", c) >= contrast("#081322", c)
+            ? "#FFFFFF"
+            : "#081322",
+          true,
+          true,
+          fontStack,
+        ).node,
+      );
+      medallionInto(
+        bodyParts,
+        n,
+        x + 54,
+        startY + 52,
+        Math.max(22, Math.round(28 * fitScale)),
+        c,
+        idx,
+      );
+      const titleNode = textBlock(
+        n.title,
+        x + 96,
+        startY + 34,
+        colTextW - 72,
+        labelSize,
+        ink,
+        true,
+        false,
+        fontStack,
+      );
+      const detailNode = textBlock(
+        n.detail,
+        x + 24,
+        startY + Math.max(94, 42 + titleNode.height + titleGap),
+        colTextW,
+        bodySize,
+        muted,
+        false,
+        false,
+        fontStack,
+      );
+      bodyParts.push(titleNode.node, detailNode.node);
+    });
+    const plusCx = W / 2;
+    const plusCy = startY + Math.round(cardH / 2);
+    bodyParts.push(
+      circle(plusCx, plusCy, 34, colors[3], {
+        ...shadow,
+        stroke: surface,
+        strokeWidth: 4,
+      }),
+      path(
+        `M ${plusCx - 13} ${plusCy} H ${plusCx + 13} M ${plusCx} ${plusCy - 13} V ${plusCy + 13}`,
+        contrast("#FFFFFF", colors[3]) >= contrast("#081322", colors[3])
+          ? "#FFFFFF"
+          : "#081322",
+        5,
+      ),
+    );
+    bottom = startY + cardH;
+  } else if (layout === "comparison") {
     const gap = 38,
       cellW = (contentW - gap) / 2;
     const labels = config.comparisonLabels || [
@@ -1369,19 +1703,22 @@ export function buildPrismScene(
         );
       }
       row.forEach((n, k) => {
+        const idx = i + k;
         const x = M + k * (cellW + gap);
         const ntH = textHeight(n, textW);
         const textY = y + Math.max(padY, Math.round((h - ntH) / 2));
-        surfaceRectInto(bodyParts, x, y, cellW, h, false, colors[k]);
+        const c = isHex(n.accentHex) ? n.accentHex : colors[k];
+        surfaceRectInto(bodyParts, x, y, cellW, h, false, c, `node-${idx}`);
         medallionInto(
           bodyParts,
           n,
           x + 52,
           y + h / 2,
           Math.max(20, Math.round(26 * fitScale)),
-          colors[k],
+          c,
+          idx,
         );
-        drawText(n, x + 96, textY, textW, i + k);
+        drawText(n, x + 96, textY, textW, idx);
       });
       y += h + rowGap;
     }
@@ -1423,8 +1760,9 @@ export function buildPrismScene(
       const a = -Math.PI / 2 + (Math.PI * 2 * i) / nodes.length,
         x = cx + Math.cos(a) * radius,
         y = cy + Math.sin(a) * orbitRy;
+      const c = isHex(n.accentHex) ? n.accentHex : colors[i % 4];
       bodyParts.push(
-        path(`M ${cx} ${cy} L ${x} ${y}`, colors[i % 4], 2, { opacity: 0.3 }),
+        path(`M ${cx} ${cy} L ${x} ${y}`, c, 2, { opacity: 0.3 }),
       );
       medallionInto(
         bodyParts,
@@ -1432,7 +1770,8 @@ export function buildPrismScene(
         x,
         y,
         Math.max(24, Math.round(31 * fitScale)),
-        colors[i % 4],
+        c,
+        i,
       );
     });
     const centerR = Math.max(50, Math.round(62 * fitScale));
@@ -1471,10 +1810,19 @@ export function buildPrismScene(
     const textW = contentW - 144;
     nodes.forEach((n, i) => {
       const h = rowHeights[i] + extraCardH;
-      const c = colors[i % 4];
+      const c = isHex(n.accentHex) ? n.accentHex : colors[i % 4];
       const ntH = textHeight(n, textW);
       const textY = y + Math.max(padY, Math.round((h - ntH) / 2));
-      surfaceRectInto(bodyParts, M, y, contentW, h, i % 2 === 0, c);
+      surfaceRectInto(
+        bodyParts,
+        M,
+        y,
+        contentW,
+        h,
+        i % 2 === 0,
+        c,
+        `node-${i}`,
+      );
       bodyParts.push(rect(M, y + 14, 5, Math.max(16, h - 28), c, 2));
       drawText(n, M + 28, textY, textW, i);
       medallionInto(
@@ -1484,6 +1832,7 @@ export function buildPrismScene(
         y + h / 2,
         Math.max(24, Math.round(30 * fitScale)),
         c,
+        i,
       );
       y += h + rowGap;
     });
@@ -1519,8 +1868,17 @@ export function buildPrismScene(
       row.forEach((n, k) => {
         const idx = i + k;
         const x = M + k * (cellW + colGap);
-        const c = colors[idx % 4];
-        surfaceRectInto(bodyParts, x, y, cellW, h, idx % 2 === 0, c);
+        const c = isHex(n.accentHex) ? n.accentHex : colors[idx % 4];
+        surfaceRectInto(
+          bodyParts,
+          x,
+          y,
+          cellW,
+          h,
+          idx % 2 === 0,
+          c,
+          `node-${idx}`,
+        );
         bodyParts.push(rect(x + 24, y, cellW - 48, 4, c, 2));
         medallionInto(
           bodyParts,
@@ -1529,6 +1887,7 @@ export function buildPrismScene(
           y + 42,
           Math.max(18, Math.round(23 * fitScale)),
           c,
+          idx,
         );
         const badgeLabel = n.badge.trim() || String(idx + 1).padStart(2, "0");
         const pillW = Math.max(52, widthOf(badgeLabel, badgeSize, true) + 22);
@@ -1582,7 +1941,8 @@ export function buildPrismScene(
   } else {
     const isTimeline = layout === "timeline",
       isChecklist = layout === "checklist",
-      isRibbon = layout === "ribbon";
+      isRibbon = layout === "ribbon",
+      isFunnel = layout === "funnel-stages";
     const textW = contentW - (isChecklist ? 228 : isTimeline ? 250 : 196);
     const extraGap = Math.min(
       48,
@@ -1625,12 +1985,25 @@ export function buildPrismScene(
     }
     nodes.forEach((n, i) => {
       const h = rowHeights[i] + extraCardH,
-        c = colors[i % 4];
-      const ntH = textHeight(n, textW);
+        c = isHex(n.accentHex) ? n.accentHex : colors[i % 4];
+      const funnelInset = isFunnel ? Math.min(96, i * 26) : 0;
+      const rowX = M + funnelInset;
+      const rowW = contentW - funnelInset * 2;
+      const rowTextW = Math.max(240, textW - funnelInset * 2);
+      const ntH = textHeight(n, rowTextW);
       const textY = y + Math.max(padY, Math.round((h - ntH) / 2));
       const cy = y + h / 2;
       if (isTimeline) {
-        surfaceRectInto(bodyParts, M + 112, y, contentW - 112, h, false, c);
+        surfaceRectInto(
+          bodyParts,
+          M + 112,
+          y,
+          contentW - 112,
+          h,
+          false,
+          c,
+          `node-${i}`,
+        );
         bodyParts.push(
           circle(M + 42, cy, 32, surface, {
             ...shadow,
@@ -1659,9 +2032,19 @@ export function buildPrismScene(
           cy,
           Math.max(22, Math.round(30 * fitScale)),
           c,
+          i,
         );
       } else if (isChecklist) {
-        surfaceRectInto(bodyParts, M, y, contentW, h, i % 2 === 0, c);
+        surfaceRectInto(
+          bodyParts,
+          M,
+          y,
+          contentW,
+          h,
+          i % 2 === 0,
+          c,
+          `node-${i}`,
+        );
         if (/^Q\d+$/i.test(n.badge.trim())) {
           const badgeFg =
             contrast("#FFFFFF", c) >= contrast("#081322", c)
@@ -1699,12 +2082,23 @@ export function buildPrismScene(
           cy,
           Math.max(26, Math.round(35 * fitScale)),
           c,
+          i,
         );
       } else {
         const right = isRibbon && i % 2 === 1;
-        if (isRibbon) surfaceRectInto(bodyParts, M, y, contentW, h, true, c);
+        if (isRibbon)
+          surfaceRectInto(bodyParts, rowX, y, rowW, h, true, c, `node-${i}`);
         else {
-          surfaceRectInto(bodyParts, M, y, contentW, h, i % 2 === 0, c);
+          surfaceRectInto(
+            bodyParts,
+            rowX,
+            y,
+            rowW,
+            h,
+            i % 2 === 0,
+            c,
+            `node-${i}`,
+          );
           if (i < nodes.length - 1) {
             bodyParts.push(
               path(`M ${W / 2} ${y + h} V ${y + h + rowGap}`, accent, 2, {
@@ -1715,7 +2109,7 @@ export function buildPrismScene(
             );
           }
         }
-        const ix = right ? W - M - 70 : M + 68;
+        const ix = right ? rowX + rowW - 70 : rowX + 68;
         medallionInto(
           bodyParts,
           n,
@@ -1723,49 +2117,83 @@ export function buildPrismScene(
           cy,
           Math.max(30, Math.round(44 * fitScale)),
           c,
+          i,
         );
-        drawText(n, right ? M + 24 : M + 168, textY, textW, i);
+        drawText(n, right ? rowX + 24 : rowX + 168, textY, rowTextW, i);
       }
       y += h + rowGap;
     });
     bottom = y - rowGap;
   }
 
-  if (hasCallout && bottom + 68 <= footerY - 16) {
-    const calloutY = Math.min(footerY - 68, bottom + 18);
-    const badgeLabel = (config.calloutBadge?.trim() || "KEY TAKEAWAY").toUpperCase();
-    const badgeW = Math.max(110, widthOf(badgeLabel, 14, true) + 28);
-    bodyParts.push(
-      rect(M, calloutY, contentW, 52, surface, 14, {
-        stroke: colors[3],
-        strokeOpacity: 0.5,
-        strokeWidth: 1.5,
-      }),
-      rect(M + 12, calloutY + 11, badgeW, 30, colors[3], 8),
-      textBlock(
-        badgeLabel,
-        M + 12,
-        calloutY + 17,
-        badgeW,
-        14,
-        light ? "#FFFFFF" : "#0F172A",
-        true,
-        true,
-        fontStack,
-      ).node,
-      textBlock(
-        config.calloutText!.trim(),
-        M + badgeW + 26,
-        calloutY + 14,
-        contentW - badgeW - 40,
-        18,
-        ink,
-        true,
-        false,
-        fontStack,
-      ).node,
+  if (hasCallout && bottom + calloutBoxH + 14 <= footerY - 12) {
+    const calloutY = Math.min(footerY - calloutBoxH - 14, bottom + 18);
+    const isGoldBanner =
+      ov.calloutStyle === "gold-pill" || layout === "split-equation";
+    const isAccentBanner = isGoldBanner || ov.calloutStyle === "accent-pill";
+    const bannerBg = isGoldBanner
+      ? "#FACC15"
+      : isAccentBanner
+        ? colors[3]
+        : surface;
+    const bannerInk = isAccentBanner
+      ? contrast("#0F172A", bannerBg) >= contrast("#FFFFFF", bannerBg)
+        ? "#0F172A"
+        : "#FFFFFF"
+      : ink;
+    const badgeFill = isAccentBanner ? "#0F172A" : colors[3];
+    const badgeFg =
+      contrast("#FFFFFF", badgeFill) >= contrast("#0F172A", badgeFill)
+        ? "#FFFFFF"
+        : "#0F172A";
+    const calloutTextNode = textBlock(
+      config.calloutText!.trim(),
+      M + calloutBadgeW + 26,
+      calloutY + Math.max(12, Math.round((calloutBoxH - calloutLines.length * 23) / 2)),
+      calloutTextW,
+      18,
+      bannerInk,
+      true,
+      false,
+      fontStack,
     );
-    bottom = calloutY + 52;
+    bodyParts.push(
+      rect(
+        M,
+        calloutY,
+        contentW,
+        calloutBoxH,
+        bannerBg,
+        ov.calloutStyle === "accent-pill" ? Math.round(calloutBoxH / 2) : 16,
+        {
+          "data-layer-id": "callout",
+          stroke: colors[3],
+          strokeOpacity: 0.65,
+          strokeWidth: 1.5,
+        },
+      ),
+      rect(
+        M + 12,
+        calloutY + Math.round((calloutBoxH - 30) / 2),
+        calloutBadgeW,
+        30,
+        badgeFill,
+        8,
+      ),
+      textBlock(
+        calloutBadgeLabel,
+        M + 12,
+        calloutY + Math.round((calloutBoxH - 30) / 2) + 6,
+        calloutBadgeW,
+        14,
+        badgeFg,
+        true,
+        true,
+        fontStack,
+      ).node,
+      calloutTextNode.node,
+    );
+    bottom = calloutY + calloutBoxH;
   }
 
   parts.push(el("g", { clipPath: svgRef("body-clip") }, bodyParts));
@@ -1776,10 +2204,39 @@ export function buildPrismScene(
       "This fixed composition is full. Shorten the explanations, choose a roomier layout, or split the section. Export is paused to prevent cropped text.",
     );
 
+  const footerStyle = ov.footerBarStyle || "minimal";
   if (hasFooterSource || hasFooterSig) {
-    parts.push(
-      path(`M ${M} ${footerY - 8} H ${W - M}`, accent, 1, { opacity: 0.25 }),
-    );
+    if (footerStyle !== "minimal") {
+      const dockFill =
+        footerStyle === "dark-dock"
+          ? "#0B1120"
+          : footerStyle === "light-dock"
+            ? "#F8FAFC"
+            : surface;
+      parts.push(
+        rect(
+          M - 12,
+          footerY - 6,
+          contentW + 24,
+          Math.max(54, footerBandH + 8),
+          dockFill,
+          footerStyle === "pill-banner" ? 28 : 14,
+          {
+            "data-layer-id": "footer",
+            stroke: accent,
+            strokeOpacity: 0.35,
+            strokeWidth: 1.5,
+          },
+        ),
+      );
+    } else {
+      parts.push(
+        path(`M ${M} ${footerY - 8} H ${W - M}`, accent, 1, {
+          opacity: 0.25,
+          "data-layer-id": "footer",
+        }),
+      );
+    }
   }
   if (hasFooterSource) {
     const sourceMaxW = shareFooterBand
@@ -1792,13 +2249,19 @@ export function buildPrismScene(
     const sourceY = shareFooterBand
       ? footerY + Math.max(8, Math.round((footerBandH - 36) / 2))
       : footerY + 8;
+    const footerInk =
+      footerStyle === "dark-dock"
+        ? "#CBD5E1"
+        : footerStyle === "light-dock"
+          ? "#334155"
+          : muted;
     const footer = textBlock(
       config.footerSourceLabel,
       sourceX,
       sourceY,
       sourceMaxW,
       18,
-      muted,
+      footerInk,
       false,
       false,
       fontStack,

@@ -160,11 +160,36 @@ export function brandColors(accent: string, dark = false) {
     textMain: dark ? "#F8FAFC" : "#111B32",
   };
 }
+export function brandBackgroundColors(
+  accent: string,
+  mode: "brand-vibrant" | "brand-dark" | "brand-soft",
+) {
+  const safe = isHex(accent) ? accent : "#4A6CF7";
+  if (mode === "brand-vibrant") {
+    return {
+      bgStart: mixColor("#0B1020", safe, 0.28),
+      surface: mixColor("#11182E", safe, 0.22),
+      accent: readableAccent(safe, "#11182E"),
+      textMain: "#FFFFFF",
+    };
+  }
+  if (mode === "brand-dark") {
+    return brandColors(safe, true);
+  }
+  return brandColors(safe, false);
+}
 export function infographicColors(config: BlogInfographicConfig) {
   const p =
     BLOG_INFOGRAPHIC_PALETTES[config.paletteId] ||
     BLOG_INFOGRAPHIC_PALETTES["blue-trust"];
-  const c = config.brand?.customColors;
+  const mode = config.styleOverrides?.brandBackgroundMode;
+  const brandAccent =
+    config.extractedBrand?.accent || config.brand?.customColors?.accent;
+  const modeColors =
+    mode && mode !== "theme-default" && isHex(brandAccent)
+      ? brandBackgroundColors(brandAccent, mode)
+      : undefined;
+  const c = modeColors || config.brand?.customColors;
   const bg = isHex(c?.bgStart) ? c.bgStart : p.bgStart;
   const surface = isHex(c?.surface) ? c.surface : p.surface;
   const ink = isHex(c?.textMain) ? c.textMain : p.textMain;
