@@ -79,6 +79,8 @@ declare module "@/lib/blog-writer/canonical-state" {
     calloutText?: string;
     /** Optional commercial-safe vector scene illustration ID from `lib/visual-stock/vector-scenes.ts` (or `"none"`). */
     sceneIllustration?: string;
+    /** Optional user-uploaded custom illustration/object data URL (PNG/JPG/WebP) replacing the header scene illustration */
+    customSceneImageUrl?: string;
     /** Canva-style fine-grained typography, padding, margin, bar & footer overrides */
     styleOverrides?: InfographicStyleOverrides;
     /** Multi-concept AI ideas for this section (each with distinct layout + tailored copy) */

@@ -195,11 +195,19 @@ export function buildSectionVisual(
           cells.length !== headers.length
         )
           continue;
-        const cleanValues = values.map((v) => clean(v)).filter(Boolean);
+        const cleanValues = values
+          .map((v) => clean(v).replace(/\.+$/, ""))
+          .filter(Boolean);
+        const formatRhsCell = (rhs: string) =>
+          /^(?:[A-Z0-9]{2,}|AI\b|SEO\b|GEO\b|AEO\b|LLMO\b|ChatGPT\b|Claude\b|Gemini\b|Perplexity\b|Google\b|Bing\b|Copilot\b|OpenAI\b|Anthropic\b|Search Console\b)/.test(
+            rhs,
+          )
+            ? rhs
+            : rhs.replace(/^\p{Lu}/u, (c) => c.toLowerCase());
         const detail =
           cleanValues.length >= 2
-            ? `${cleanValues[0].replace(/\.$/, "")} — ${cleanValues[1].replace(/^\p{Lu}/u, (c) => c.toLowerCase())}.`
-            : cleanValues.join(". ");
+            ? `${cleanValues[0]} — ${formatRhsCell(cleanValues[1])}.`
+            : `${cleanValues.join(". ")}.`;
         if (detail.length >= 12 && detail.length <= 260) {
           eligible.push({ ...b, kind: "list", heading: label, text: detail });
         }
@@ -774,8 +782,13 @@ export function buildAllArticleSectionVisuals(
   const total = selected.length;
   const layoutCycle: PrismLayout[] = [
     "editorial",
-    "ribbon",
+    "pipeline-flow",
+    "funnel-stages",
+    "quadrant-matrix",
+    "timeline",
     "constellation",
+    "split-equation",
+    "ribbon",
   ];
   const paletteCycle: BlogInfographicConfig["paletteId"][] = [
     "indigo-cyber",
@@ -801,7 +814,7 @@ export function buildAllArticleSectionVisuals(
 
     const rawComparisonCandidate =
       intel.archetype === "comparison" ||
-      /\b(vs\.?|versus|compare|comparison|difference|trade-off|two revolutions|two worlds)\b/i.test(
+      /\b(vs\.?|versus|compare|comparison|difference|trade-off|two revolutions|two worlds|two meanings)\b/i.test(
         section.title,
       );
     const derivedLabels = rawComparisonCandidate
@@ -824,13 +837,24 @@ export function buildAllArticleSectionVisuals(
         nodesForSection.length >= 3 && prevLayout !== "checklist"
           ? "checklist"
           : "editorial";
+    } else if (
+      nodesForSection.length === 2 &&
+      (rawComparisonCandidate || prevLayout !== "split-equation")
+    ) {
+      layout = prevLayout === "split-equation" ? "editorial" : "split-equation";
     } else if (hasBothComparisonSides && nodesForSection.length >= 2 && nodesForSection.length % 2 === 0) {
-      layout = "comparison";
+      layout = prevLayout === "comparison" ? "quadrant-matrix" : "comparison";
       comparisonLabels = derivedLabels;
     } else if (
-      visual.brief.relationship === "sequence"
+      visual.brief.relationship === "sequence" ||
+      intel.archetype === "process"
     ) {
-      layout = "timeline";
+      layout =
+        nodesForSection.length === 3 && prevLayout !== "pipeline-flow"
+          ? "pipeline-flow"
+          : prevLayout === "timeline"
+            ? "funnel-stages"
+            : "timeline";
     } else if (
       /\b(checklist|check|audit|verify|guide|rules|criteria|myths|mistakes)\b/i.test(
         section.title,
@@ -839,14 +863,33 @@ export function buildAllArticleSectionVisuals(
       prevLayout !== "checklist"
     ) {
       layout = "checklist";
+    } else if (
+      nodesForSection.length === 3 &&
+      prevLayout !== "pipeline-flow" &&
+      prevLayout !== "funnel-stages"
+    ) {
+      layout = idx % 2 === 0 ? "pipeline-flow" : "funnel-stages";
+    } else if (
+      nodesForSection.length === 4 &&
+      prevLayout !== "quadrant-matrix" &&
+      prevLayout !== "funnel-stages"
+    ) {
+      layout = idx % 2 === 0 ? "quadrant-matrix" : "funnel-stages";
     } else {
       layout = layoutCycle[idx % layoutCycle.length];
       if (layout === prevLayout) {
         layout = layoutCycle[(idx + 1) % layoutCycle.length];
       }
-      // Never put a 2-card section on a tall 9:16 ribbon/constellation canvas (prevents 45% bottom gap)
-      if (nodesForSection.length <= 2 && (layout === "ribbon" || layout === "constellation")) {
-        layout = "editorial";
+      // Match layout capacity to node count
+      if (nodesForSection.length <= 2) {
+        layout = prevLayout === "split-equation" ? "editorial" : "split-equation";
+      } else if (
+        nodesForSection.length >= 5 &&
+        (layout === "pipeline-flow" ||
+          layout === "split-equation" ||
+          layout === "quadrant-matrix")
+      ) {
+        layout = prevLayout === "constellation" ? "ribbon" : "constellation";
       }
     }
     prevLayout = layout;

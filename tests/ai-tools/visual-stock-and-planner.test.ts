@@ -506,4 +506,108 @@ test("V3 regression: Neil Patel GEO vs AEO anaphora resolution, leading-period f
   assert.ok(roundTripped[0].nodes[0].customIconDataUrl?.startsWith("data:image/png"));
 });
 
+test("regression: theseoagent.ai/blog/what-is-ai-seo filters video/pricing promos, preserves table acronyms (GEO/AI), extracts bold-headed paragraphs without H3s, and assigns diverse diagram archetypes", async () => {
+  const { parseHTML } = await import("linkedom");
+  const { extractArticleSource } = await import(
+    "../../lib/blog-infographic-studio/article-source"
+  );
+  const { importInfographicProject } = await import(
+    "../../lib/blog-infographic-studio/project"
+  );
+
+  const html = `<!doctype html><html><body><article>
+    <h2>What is AI SEO?</h2>
+    <p>AI SEO means two things. AI-driven SEO is using AI models such as ChatGPT, Claude or Gemini to do SEO work, from keyword clustering to drafts, titles and schema. SEO for AI search is getting your pages read and cited in answers from Google AI Overviews and AI Mode, ChatGPT search, Perplexity and Claude.</p>
+    <h2>What an AI SEO agent actually does, one agent at a time</h2>
+    <p>The ten agents inside The SEO Agent on one real site: five plan the keywords, five research, outline, draft, check the claims and save the article. And the two SEO jobs none of them does: indexing and links.</p>
+    <h2>1. What is AI SEO? One name, two meanings.</h2>
+    <table>
+      <tr><th>Aspect</th><th>AI-driven SEO</th><th>SEO for AI search</th></tr>
+      <tr><td>What it means</td><td>AI models and tools do SEO work: research, briefs, drafts, titles, schema, links.</td><td>Your pages get read, retrieved and cited when an AI engine answers a question.</td></tr>
+      <tr><td>Also called</td><td>AI-driven SEO, AI-powered SEO, SEO with AI.</td><td>GEO, AEO, LLMO, AI search optimization.</td></tr>
+      <tr><td>The AI involved</td><td>ChatGPT, Claude, Gemini and tools built on models like them.</td><td>AI Overviews, AI Mode, ChatGPT search, Perplexity, Claude, Copilot.</td></tr>
+    </table>
+    <h2>7. Getting started: six checks for this quarter.</h2>
+    <p><strong>Confirm the base.</strong> In Search Console, check that the pages you want cited are indexed, carry no nosnippet rule, and have their main content in server-rendered HTML.</p>
+    <p><strong>Decide AI crawler access one bot at a time.</strong> Allow the search crawlers you want to be cited by (OAI-SearchBot, Claude-SearchBot, PerplexityBot) and decide separately on training crawlers.</p>
+    <p><strong>Turn on the AI reports.</strong> Open the generative AI performance report in Search Console and AI Performance in Bing Webmaster Tools to track citations.</p>
+    <p><strong>Pick topics from measured data.</strong> Take queries from Search Console and volume from a keyword tool export, let an AI assistant cluster them, and verify every figure.</p>
+    <h2>Common mistakes with AI SEO.</h2>
+    <p><strong>Treating AI SEO as a replacement for SEO.</strong> Google says its AI features run on its core ranking systems and calls the work still SEO. Fix crawling, indexing and content first.</p>
+    <p><strong>Paying for llms.txt files, chunking and AI schema.</strong> Google's guide lists each one as unnecessary for its AI features. Spend the money on pages worth citing.</p>
+    <p><strong>Blocking every AI crawler with one copied rule.</strong> A rule meant to stop training often lists the search crawlers too, which takes the site out of ChatGPT search and Perplexity answers.</p>
+    <h2>Answer-first, source-checked articles every day, for Google and the AI answers built on it.</h2>
+    <p>The SEO Agent picks keywords from live search volume and difficulty, researches the pages that rank, puts the answer first, checks every claim against its sources, and publishes natively to WordPress, Webflow, Shopify, Wix, Ghost or Framer. Cancel in one click.</p>
+    <p>US$1 for your first 3 articles, then US$99/month.</p>
+  </article></body></html>`;
+
+  const doc = parseHTML(html).document;
+  const tree = extractArticleSource(
+    doc,
+    "What is AI SEO? The two meanings, and how it differs from traditional SEO.",
+  );
+  const contentSections = tree.sections.filter((s) => s.role === "content");
+
+  // 1. Video promo teaser and bottom pricing CTA box are filtered out as promotional
+  assert.ok(
+    !contentSections.some((s) =>
+      /What an AI SEO agent actually does/i.test(s.title),
+    ),
+  );
+  assert.ok(
+    !contentSections.some((s) =>
+      /Answer-first, source-checked articles every day/i.test(s.title),
+    ),
+  );
+
+  const suite = buildAllArticleSectionVisuals(tree.sections, {
+    sourceUrl: "https://www.theseoagent.ai/blog/what-is-ai-seo",
+    domain: "theseoagent.ai",
+    articleTitle:
+      "What is AI SEO? The two meanings, and how it differs from traditional SEO.",
+    includeUniversalOverview: false,
+  });
+
+  // 2. Table cells preserve "GEO, AEO, LLMO" and "AI Overviews" (never "gEO" or "aI Overviews") and have no ".." double periods
+  const tableSection = suite.find((c) =>
+    c.nodes.some((n) => /Also Called/i.test(n.title)),
+  );
+  assert.ok(tableSection, "Table section must be generated");
+  for (const node of tableSection!.nodes) {
+    assert.doesNotMatch(node.detail, /\bgEO\b/);
+    assert.doesNotMatch(node.detail, /\baI Overviews\b/);
+    assert.doesNotMatch(node.detail, /\.\.$/);
+  }
+
+  // 3. Bold-headed paragraphs without H3s ("Confirm the base.", "Decide AI crawler access...") extract clean concept titles
+  const checksSection = suite.find((c) => /Six Checks|Getting Started/i.test(c.headline));
+  assert.ok(checksSection);
+  assert.equal(checksSection!.nodes.length, 4);
+  assert.match(checksSection!.nodes[0].title, /Confirm the Base/i);
+
+  // 4. Every section receives a distinct infographic diagram type across the article
+  const layouts = suite.map((c) => c.prismLayout);
+  const uniqueLayouts = new Set(layouts);
+  assert.ok(
+    uniqueLayouts.size >= 3,
+    `Expected diverse layouts across sections, got: ${layouts.join(", ")}`,
+  );
+
+  // 5. Custom uploaded scene illustration object renders <image data-layer-id="scene-illustration"> and survives round-trip
+  const cardWithCustomScene = {
+    ...suite[0],
+    customSceneImageUrl:
+      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+  };
+  const svgWithCustomScene = generateBlogInfographicSvg(cardWithCustomScene);
+  assert.ok(svgWithCustomScene.includes('data-layer-id="scene-illustration"'));
+  const imported = importInfographicProject(
+    JSON.stringify({ version: 1, cards: [cardWithCustomScene] }),
+  );
+  assert.ok(
+    imported[0].customSceneImageUrl?.startsWith("data:image/png;base64,"),
+  );
+});
+
+
 

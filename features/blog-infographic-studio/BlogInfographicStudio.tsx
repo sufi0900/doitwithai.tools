@@ -299,6 +299,10 @@ export function BlogInfographicStudio({
     [busy, setBusy] = useState(false),
     [zoom, setZoom] = useState(1);
   const [classicOpen, setClassicOpen] = useState(false);
+  const [openNodeIdx, setOpenNodeIdx] = useState<number>(0);
+  const [canvasEditLayer, setCanvasEditLayer] = useState<
+    "none" | "headline" | "scene" | number
+  >("none");
   const [extractedArticle, setExtractedArticle] =
     useState<UniversalExtractResponse | null>(null);
   const lastExtractedUrlRef = useRef<string>("");
@@ -582,6 +586,45 @@ export function BlogInfographicStudio({
       notify("Custom card icon added.");
     });
   }
+  async function uploadCustomSceneObject(file?: File) {
+    if (!file) return;
+    await run(async () => {
+      if (
+        file.size > 2_000_000 ||
+        !["image/png", "image/jpeg", "image/webp"].includes(file.type)
+      )
+        throw new Error(
+          "Choose a PNG, JPG or WebP illustration image under 2 MB.",
+        );
+      const src = await new Promise<string>((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(String(r.result));
+        r.onerror = () =>
+          reject(new Error("The illustration image could not be read."));
+        r.readAsDataURL(file);
+      });
+      const image = new Image();
+      await new Promise<void>((resolve, reject) => {
+        image.onload = () => resolve();
+        image.onerror = () =>
+          reject(new Error("This image could not be opened."));
+        image.src = src;
+      });
+      const canvas = document.createElement("canvas"),
+        scale = Math.min(1, 360 / Math.max(image.width, image.height));
+      canvas.width = Math.max(1, Math.round(image.width * scale));
+      canvas.height = Math.max(1, Math.round(image.height * scale));
+      canvas
+        .getContext("2d")!
+        .drawImage(image, 0, 0, canvas.width, canvas.height);
+      update({
+        customSceneImageUrl: canvas.toDataURL("image/png"),
+      });
+      notify(
+        "Custom illustration object uploaded and placed in the infographic header.",
+      );
+    });
+  }
   function addSection() {
     if (cards.length >= 12) return;
     const card = {
@@ -793,6 +836,12 @@ export function BlogInfographicStudio({
                   }
                 }
 
+                const sectionIdx = Math.max(
+                  0,
+                  data.sections?.findIndex(
+                    (s) => s.id === data.selectedSectionId,
+                  ) ?? 0,
+                );
                 const section = data.sections?.find(
                   (s) => s.id === data.selectedSectionId,
                 );
@@ -818,11 +867,41 @@ export function BlogInfographicStudio({
                 )
                   .slice(0, 28)
                   .toUpperCase();
+                const paletteKeys = Object.keys(
+                  BLOG_INFOGRAPHIC_PALETTES,
+                ) as Array<BlogInfographicConfig["paletteId"]>;
+                const chosenPalette =
+                  paletteKeys[sectionIdx % paletteKeys.length] ||
+                  active.paletteId;
+                const chosenLayout: PrismLayout = intel.isFaq
+                  ? "checklist"
+                  : result.nodes.length === 2
+                    ? sectionIdx % 2 === 0
+                      ? "split-equation"
+                      : "editorial"
+                    : result.nodes.length === 3
+                      ? sectionIdx % 2 === 0
+                        ? "pipeline-flow"
+                        : "funnel-stages"
+                      : result.nodes.length === 4
+                        ? (
+                            [
+                              "quadrant-matrix",
+                              "funnel-stages",
+                              "timeline",
+                              "constellation",
+                            ] as const
+                          )[sectionIdx % 4]
+                        : recommendPrismLayout(
+                            result.brief,
+                            result.nodes.length,
+                          );
                 let next = withPrismLayout(
                   {
                     ...active,
                     id: active.id,
                     sectionId: input.id,
+                    paletteId: chosenPalette,
                     headline: synthesized.headline,
                     subheadline: synthesized.subheadline,
                     eyebrowLabel: intel.isFaq
@@ -844,7 +923,7 @@ export function BlogInfographicStudio({
                     footerSourceLabel: `Source: ${data.domain}`,
                     altText: `${synthesized.headline}: ${result.nodes.map((n) => n.title).join("; ")}`,
                   },
-                  recommendPrismLayout(result.brief, result.nodes.length),
+                  chosenLayout,
                 );
                 const newArticle = active.visualBrief?.sourceUrl !== data.url;
                 if (newArticle && data.brandTheme) {
@@ -1293,7 +1372,10 @@ export function BlogInfographicStudio({
                     {active.nodes.map((n, i) => (
                       <details
                         key={n.id}
-                        open={i === 0}
+                        open={i === openNodeIdx}
+                        onToggle={(e) => {
+                          if (e.currentTarget.open) setOpenNodeIdx(i);
+                        }}
                         className="rounded-xl border border-slate-200 p-3 dark:border-slate-700"
                       >
                         <summary className="flex cursor-pointer items-center gap-2 text-sm font-bold text-slate-800 dark:text-white">
@@ -2137,6 +2219,186 @@ export function BlogInfographicStudio({
                 All sections ZIP
               </button>
             </div>
+            {canvasEditLayer !== "none" && (
+              <div
+                className="border-t border-b border-indigo-200 bg-indigo-50/80 p-3.5 text-xs dark:border-indigo-500/30 dark:bg-indigo-950/40"
+                aria-label="On-canvas quick editor"
+              >
+                <div className="mb-2.5 flex items-center justify-between gap-2">
+                  <span className="font-extrabold uppercase tracking-wider text-indigo-700 dark:text-indigo-300">
+                    {canvasEditLayer === "headline"
+                      ? "Editing Canvas Headline & Subtitle"
+                      : canvasEditLayer === "scene"
+                        ? "Editing Top-Right Illustration Object"
+                        : `Editing Card ${Number(canvasEditLayer) + 1}: ${active.nodes[Number(canvasEditLayer)]?.title || ""}`}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setCanvasEditLayer("none")}
+                    className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-[11px] font-bold text-slate-600 hover:border-indigo-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                  >
+                    Done
+                  </button>
+                </div>
+                {canvasEditLayer === "headline" && (
+                  <div className="grid gap-2.5 sm:grid-cols-2">
+                    <label className="block font-semibold text-slate-700 dark:text-slate-200">
+                      Headline
+                      <input
+                        className={field}
+                        value={active.headline}
+                        maxLength={180}
+                        onChange={(e) => update({ headline: e.target.value })}
+                      />
+                    </label>
+                    <label className="block font-semibold text-slate-700 dark:text-slate-200">
+                      Subtitle
+                      <input
+                        className={field}
+                        value={active.subheadline}
+                        maxLength={240}
+                        onChange={(e) =>
+                          update({ subheadline: e.target.value })
+                        }
+                      />
+                    </label>
+                  </div>
+                )}
+                {canvasEditLayer === "scene" && (
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <label className={primary + " cursor-pointer"}>
+                      <Upload size={13} />
+                      {active.customSceneImageUrl
+                        ? "Replace custom illustration / object"
+                        : "Upload custom illustration / object (PNG, JPG, WebP)"}
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        className="sr-only"
+                        disabled={busy}
+                        onChange={(e) => {
+                          void uploadCustomSceneObject(e.target.files?.[0]);
+                          e.target.value = "";
+                        }}
+                      />
+                    </label>
+                    {active.customSceneImageUrl && (
+                      <button
+                        type="button"
+                        className={button}
+                        onClick={() =>
+                          update({ customSceneImageUrl: undefined })
+                        }
+                      >
+                        <Trash2 size={13} />
+                        Restore vector scene
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      className={button}
+                      onClick={() => setPanel("design")}
+                    >
+                      Browse 16 Vector Scenes in Design Tab
+                    </button>
+                  </div>
+                )}
+                {typeof canvasEditLayer === "number" &&
+                  active.nodes[canvasEditLayer] && (
+                    <div className="space-y-2.5">
+                      <div className="grid gap-2.5 sm:grid-cols-[1fr_1.4fr]">
+                        <label className="block font-semibold text-slate-700 dark:text-slate-200">
+                          Card Title
+                          <input
+                            className={field}
+                            value={active.nodes[canvasEditLayer].title}
+                            maxLength={120}
+                            onChange={(e) =>
+                              updateNode(active.nodes[canvasEditLayer].id, {
+                                title: e.target.value,
+                              })
+                            }
+                          />
+                        </label>
+                        <label className="block font-semibold text-slate-700 dark:text-slate-200">
+                          Card Explanation
+                          <input
+                            className={field}
+                            value={active.nodes[canvasEditLayer].detail}
+                            maxLength={360}
+                            onChange={(e) =>
+                              updateNode(active.nodes[canvasEditLayer].id, {
+                                detail: e.target.value,
+                              })
+                            }
+                          />
+                        </label>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <select
+                          aria-label="Quick card vector icon"
+                          className={field + " !mt-0 max-w-[240px] !py-1.5 text-xs"}
+                          value={active.nodes[canvasEditLayer].icon || "auto"}
+                          onChange={(e) =>
+                            updateNode(active.nodes[canvasEditLayer].id, {
+                              icon:
+                                e.target.value === "auto"
+                                  ? undefined
+                                  : (e.target
+                                      .value as BlogInfographicNodeItem["icon"]),
+                            })
+                          }
+                        >
+                          <option value="auto">Auto-match topic icon</option>
+                          {ICON_CATEGORIES.map((cat) => (
+                            <optgroup key={cat} label={cat}>
+                              {ICON_CATALOG.filter(
+                                (entry) => entry.category === cat,
+                              ).map((entry) => (
+                                <option key={entry.id} value={entry.id}>
+                                  {entry.label}
+                                </option>
+                              ))}
+                            </optgroup>
+                          ))}
+                        </select>
+                        <label className={button + " cursor-pointer !py-1.5"}>
+                          <Upload size={12} />
+                          {active.nodes[canvasEditLayer].customIconDataUrl
+                            ? "Replace custom card image/icon"
+                            : "Upload custom card image/icon"}
+                          <input
+                            type="file"
+                            accept="image/png,image/jpeg,image/webp"
+                            className="sr-only"
+                            disabled={busy}
+                            onChange={(e) => {
+                              void uploadNodeCustomIcon(
+                                active.nodes[canvasEditLayer].id,
+                                e.target.files?.[0],
+                              );
+                              e.target.value = "";
+                            }}
+                          />
+                        </label>
+                        {active.nodes[canvasEditLayer].customIconDataUrl && (
+                          <button
+                            type="button"
+                            className={button + " !py-1.5"}
+                            onClick={() =>
+                              updateNode(active.nodes[canvasEditLayer].id, {
+                                customIconDataUrl: undefined,
+                              })
+                            }
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+              </div>
+            )}
             <div
               className="overflow-auto bg-slate-200/70 px-4 py-8 dark:bg-[#080E1B] sm:px-8"
               style={{
@@ -2152,22 +2414,77 @@ export function BlogInfographicStudio({
                   maxWidth: zoom === 1 ? "100%" : "none",
                 }}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={svgSource(scene.svg)}
-                  alt={active.altText || active.headline}
-                  width={dimensions.width}
-                  height={dimensions.height}
-                  className="h-auto max-h-[680px] max-w-full object-contain drop-shadow-xl"
-                  style={{ maxHeight: 680 * zoom }}
-                />
+                <div className="group relative inline-block">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={svgSource(scene.svg)}
+                    alt={active.altText || active.headline}
+                    width={dimensions.width}
+                    height={dimensions.height}
+                    className="h-auto max-h-[680px] max-w-full object-contain drop-shadow-xl"
+                    style={{ maxHeight: 680 * zoom }}
+                  />
+                  {/* Interactive Click-to-Edit Hotspots directly over the infographic canvas */}
+                  <div
+                    className="pointer-events-none absolute inset-0 flex flex-col justify-between p-3 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100"
+                    aria-label="Direct canvas click-to-edit hotspots"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCanvasEditLayer("headline");
+                          setPanel("content");
+                        }}
+                        className="pointer-events-auto rounded-lg bg-slate-950/80 px-2.5 py-1.5 text-[11px] font-bold text-white shadow-md ring-1 ring-white/25 backdrop-blur-xs hover:bg-indigo-600"
+                      >
+                        Edit Headline &amp; Subtitle
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCanvasEditLayer("scene");
+                        }}
+                        className="pointer-events-auto rounded-lg bg-slate-950/80 px-2.5 py-1.5 text-[11px] font-bold text-white shadow-md ring-1 ring-white/25 backdrop-blur-xs hover:bg-indigo-600"
+                      >
+                        Replace / Upload Illustration Object
+                      </button>
+                    </div>
+                    <div className="my-auto flex flex-wrap items-center justify-center gap-1.5 px-2">
+                      {active.nodes.map((node, ni) => (
+                        <button
+                          type="button"
+                          key={node.id}
+                          onClick={() => {
+                            setCanvasEditLayer(ni);
+                            setOpenNodeIdx(ni);
+                            setPanel("content");
+                          }}
+                          className="pointer-events-auto rounded-lg bg-slate-950/80 px-2.5 py-1.5 text-[11px] font-bold text-white shadow-md ring-1 ring-white/25 backdrop-blur-xs hover:bg-indigo-600"
+                        >
+                          Edit Card {ni + 1} &amp; Icon
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setPanel("design")}
+                        className="pointer-events-auto rounded-lg bg-slate-950/80 px-2.5 py-1.5 text-[11px] font-bold text-white shadow-md ring-1 ring-white/25 backdrop-blur-xs hover:bg-indigo-600"
+                      >
+                        Edit Brand Colors &amp; Layout Spacing
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 px-4 py-3 dark:border-slate-800">
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 {dimensions.width} × {dimensions.height} · {active.aspectRatio}{" "}
                 <span className="ml-2 text-indigo-500">
-                  Editable source included in ZIP
+                  Hover or click any element on the infographic to edit text,
+                  icons, or upload custom objects
                 </span>
               </p>
               <div className="flex items-center gap-2">
@@ -2203,20 +2520,34 @@ export function BlogInfographicStudio({
             >
               <div className="flex flex-wrap items-center gap-1.5">
                 <span className="font-bold text-slate-600 dark:text-slate-300">
-                  Quick inspect:
+                  Click to edit:
                 </span>
                 <button
                   type="button"
-                  onClick={() => setPanel("content")}
+                  onClick={() => {
+                    setCanvasEditLayer("headline");
+                    setPanel("content");
+                  }}
                   className="rounded-full border border-slate-300 bg-white px-2.5 py-1 font-semibold text-slate-700 hover:border-indigo-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                 >
                   Headline
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCanvasEditLayer("scene")}
+                  className="rounded-full border border-indigo-300 bg-indigo-50 px-2.5 py-1 font-semibold text-indigo-700 hover:border-indigo-500 dark:border-indigo-500/40 dark:bg-indigo-950/40 dark:text-indigo-200"
+                >
+                  Illustration Object (Upload / Change)
                 </button>
                 {active.nodes.map((node, ni) => (
                   <button
                     type="button"
                     key={node.id}
-                    onClick={() => setPanel("content")}
+                    onClick={() => {
+                      setCanvasEditLayer(ni);
+                      setOpenNodeIdx(ni);
+                      setPanel("content");
+                    }}
                     className="rounded-full border border-slate-300 bg-white px-2.5 py-1 font-semibold text-slate-700 hover:border-indigo-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                     title={node.title}
                   >

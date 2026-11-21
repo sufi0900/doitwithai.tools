@@ -188,26 +188,62 @@ export function InfographicProceduralStyleControls({
         </select>
       </label>
 
-      <label className="block text-xs font-semibold">
-        Editable vector scene illustration (MIT / CC0 stock)
-        <select
-          className={field}
-          value={activeScene}
-          onChange={(e) =>
-            onChange({
-              sceneIllustration: e.target.value || undefined,
-            })
-          }
-        >
-          <option value="">Auto-match section topic</option>
-          <option value="none">No scene illustration</option>
-          {VECTOR_SCENE_CATALOG.map((scene) => (
-            <option key={scene.id} value={scene.id}>
-              {scene.title} ({scene.category})
-            </option>
-          ))}
-        </select>
-      </label>
+      <div className="space-y-2">
+        <label className="block text-xs font-semibold">
+          Editable vector scene illustration (MIT / CC0 stock)
+          <select
+            className={field}
+            value={activeScene}
+            onChange={(e) =>
+              onChange({
+                sceneIllustration: e.target.value || undefined,
+              })
+            }
+          >
+            <option value="">Auto-match section topic</option>
+            <option value="none">No scene illustration</option>
+            {VECTOR_SCENE_CATALOG.map((scene) => (
+              <option key={scene.id} value={scene.id}>
+                {scene.title} ({scene.category})
+              </option>
+            ))}
+          </select>
+        </label>
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="inline-flex min-h-9 flex-1 cursor-pointer items-center justify-center rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-semibold hover:border-indigo-400 dark:border-slate-700">
+            {config.customSceneImageUrl
+              ? "Replace custom illustration / object"
+              : "Upload custom illustration / object (PNG, JPG, WebP)"}
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              className="sr-only"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                e.target.value = "";
+                if (!file || file.size > 2_000_000) return;
+                const reader = new FileReader();
+                reader.onload = () => {
+                  const dataUrl = String(reader.result || "");
+                  if (/^data:image\/(png|jpeg|webp);base64,/i.test(dataUrl)) {
+                    onChange({ customSceneImageUrl: dataUrl });
+                  }
+                };
+                reader.readAsDataURL(file);
+              }}
+            />
+          </label>
+          {config.customSceneImageUrl && (
+            <button
+              type="button"
+              onClick={() => onChange({ customSceneImageUrl: undefined })}
+              className="rounded-xl border border-slate-300 px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:border-red-400 dark:border-slate-700 dark:text-slate-300"
+            >
+              Remove custom image
+            </button>
+          )}
+        </div>
+      </div>
 
       <details
         id="canva-fine-layout-controls"

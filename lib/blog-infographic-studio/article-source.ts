@@ -146,21 +146,26 @@ export function extractArticleSource(document: Document, title: string) {
               )));
         br.replaceWith(prevIsShortLabel ? " — " : " ");
       }
-      // If a list item starts with <strong>Tool Name</strong> followed directly by text without punctuation
-      if (copy.tagName === "LI") {
+      // If a list item or paragraph starts with <strong>Concept Title</strong> followed by explanatory text
+      if (copy.tagName === "LI" || copy.tagName === "P") {
         const firstEl = copy.firstElementChild;
+        const hasLeadingTextBeforeFirstEl =
+          copy.firstChild &&
+          copy.firstChild !== firstEl &&
+          tidy(copy.firstChild.textContent).length > 0;
         if (
+          !hasLeadingTextBeforeFirstEl &&
           firstEl &&
           /^(?:STRONG|B|A)$/i.test(firstEl.tagName || "") &&
           firstEl.nextSibling
         ) {
-          const lead = tidy(firstEl.textContent);
+          const lead = tidy(firstEl.textContent).replace(/[.!?:]+$/, "");
           const next = tidy(firstEl.nextSibling.textContent || "");
           if (
-            lead.length >= 2 &&
-            lead.length <= 56 &&
-            next.length >= 12 &&
-            !/[.!?;:—–-]$/.test(lead) &&
+            lead.length >= 3 &&
+            lead.length <= 68 &&
+            next.length >= 16 &&
+            !/[;—–-]$/.test(lead) &&
             !/^[:—–-]/.test(next)
           ) {
             firstEl.textContent = `${lead} — `;
@@ -181,6 +186,18 @@ export function extractArticleSource(document: Document, title: string) {
       .replace(/\s+;/g, ";")
       .replace(/\s+—\s+—\s+/g, " — ");
     if (!text) continue;
+    // Skip inline SaaS pricing/CTA button rows embedded inside articles
+    if (
+      el.tagName !== "H2" &&
+      (/^(?:US?\$\d+\s+for\s+your\s+first\b.*?\$\d+\/month\.?|get started\s+(?:see the agent|how claim checking works)|missing something\?\s*ask us directly\.?)$/i.test(
+        text,
+      ) ||
+        /\bUS?\$\d+\s+for\s+your\s+first\s+\d+\s+articles,\s+then\s+(?:a\s+flat\s+)?US?\$\d+\/month\b/i.test(
+          text,
+        ))
+    ) {
+      continue;
+    }
     if (el.tagName === "H2") {
       begin(text, false);
       continue;
@@ -257,7 +274,31 @@ export function extractArticleSource(document: Document, title: string) {
       preH2Section.role = "introduction";
     }
   }
+  const hasMultipleContentSections =
+    useful.filter((s) => s.role === "content").length >= 3;
   for (const s of useful) {
+    const nonHeadingBlocks = s.blocks.filter((b) => b.kind !== "heading");
+    const combinedText = `${s.title} ${nonHeadingBlocks.map((b) => b.text).join(" ")}`;
+    const totalBodyChars = nonHeadingBlocks.reduce(
+      (sum, b) => sum + b.text.length,
+      0,
+    );
+    // Filter out bottom/inline product sales CTAs or 1-paragraph video embed blurbs when real article sections exist
+    const isProductSalesCta =
+      /\b(?:cancel in one click|publishes natively to wordpress,\s*webflow|US?\$\d+\/month|start your free trial)\b/i.test(
+        combinedText,
+      ) ||
+      (/^answer-first,\s*source-checked articles every day/i.test(s.title) &&
+        nonHeadingBlocks.length <= 2);
+    const isShortVideoTeaser =
+      hasMultipleContentSections &&
+      nonHeadingBlocks.length === 1 &&
+      totalBodyChars < 240 &&
+      !/^\d+[.)]\s/.test(s.title);
+    if ((isProductSalesCta || isShortVideoTeaser) && s.role === "content") {
+      s.role = "promotional";
+      continue;
+    }
     s.archetype = classifySectionArchetype(s, title).archetype;
     if (s.archetype === "skip" && s.role === "content") {
       s.role = "introduction";

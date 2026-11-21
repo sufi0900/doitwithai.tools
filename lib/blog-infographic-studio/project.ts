@@ -253,6 +253,11 @@ export function importInfographicProject(
         typeof c.sceneIllustration === "string"
           ? c.sceneIllustration.slice(0, 80)
           : undefined,
+      customSceneImageUrl:
+        typeof c.customSceneImageUrl === "string" &&
+        isSafeInfographicImage(c.customSceneImageUrl)
+          ? c.customSceneImageUrl
+          : undefined,
       styleOverrides:
         c.styleOverrides && typeof c.styleOverrides === "object"
           ? {

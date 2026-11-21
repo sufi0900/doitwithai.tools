@@ -57,6 +57,7 @@ export function UrlArticleExtractorBar({
     isInitialAutoSelect = false,
   ) {
     setActiveTopicIdx(idx);
+    setErrorMsg("");
     if (idx === -1 || !data.subTopics[idx]) {
       onExtracted(data);
       return;
@@ -65,7 +66,10 @@ export function UrlArticleExtractorBar({
     const focusedPayload: UniversalExtractResponse = {
       ...data,
       selectedSectionId: chosen.sectionId,
-      title: chosen.title,
+      title:
+        extractionPurpose === "infographic" && data.sections?.length
+          ? data.title
+          : chosen.title,
       cleanText: chosen.content,
       paragraphs: chosen.content.split("\n\n").filter(Boolean),
       keyTakeaways:

@@ -1023,19 +1023,6 @@ export function buildPrismScene(
     ),
   );
   if (hasHeaderScene) {
-    const activeScene =
-      getVectorSceneById(config.sceneIllustration) ||
-      matchVectorSceneForTopic(
-        `${config.headline} ${config.subheadline}`,
-        layout,
-      );
-    const sceneMarkup = activeScene.renderSvgNodes({
-      primary: accent,
-      secondary: colors[1] || accent,
-      surface,
-      ink,
-      muted,
-    });
     const headerBlockH = Math.max(118, top - (headerTop + 26));
     const sceneScale = 0.74;
     const sceneH = Math.round(160 * sceneScale);
@@ -1044,17 +1031,50 @@ export function buildPrismScene(
     const sceneY = Math.round(
       headerTop + 26 + Math.max(0, (headerBlockH - sceneH) / 2),
     );
-    parts.push(
-      el(
-        "g",
-        {
-          transform: `translate(${sceneX}, ${sceneY}) scale(${sceneScale})`,
-          opacity: light ? 0.88 : 0.92,
-          "data-vector-scene": activeScene.id,
-        },
-        el("__raw_svg__", { svg: sceneMarkup }),
-      ),
-    );
+    if (
+      config.customSceneImageUrl &&
+      /^data:image\/(png|jpeg|webp);base64,/i.test(config.customSceneImageUrl)
+    ) {
+      parts.push(
+        el("image", {
+          href: config.customSceneImageUrl,
+          x: sceneX,
+          y: sceneY,
+          width: sceneW,
+          height: sceneH,
+          preserveAspectRatio: "xMidYMid meet",
+          "data-layer-id": "scene-illustration",
+          style: "cursor:pointer",
+        }),
+      );
+    } else {
+      const activeScene =
+        getVectorSceneById(config.sceneIllustration) ||
+        matchVectorSceneForTopic(
+          `${config.headline} ${config.subheadline}`,
+          layout,
+        );
+      const sceneMarkup = activeScene.renderSvgNodes({
+        primary: accent,
+        secondary: colors[1] || accent,
+        surface,
+        ink,
+        muted,
+      });
+      parts.push(
+        el(
+          "g",
+          {
+            transform: `translate(${sceneX}, ${sceneY}) scale(${sceneScale})`,
+            opacity: light ? 0.88 : 0.92,
+            "data-vector-scene": activeScene.id,
+            "data-layer-id": "scene-illustration",
+            style: "cursor:pointer",
+          },
+          el("__raw_svg__", { svg: sceneMarkup }),
+        ),
+      );
+    }
     top = Math.max(top, sceneY + sceneH + 14);
   }
   top += H <= 960 ? 20 : 24;
@@ -1413,6 +1433,30 @@ export function buildPrismScene(
       fontStack,
     );
     if (badgeOffset) bodyParts.push(badge.node);
+    const combinedStatText = `${n.title} ${n.detail}`;
+    const pctStatMatch = combinedStatText.match(/\b(\d{1,3})\s*%/);
+    const ratioStatMatch = combinedStatText.match(
+      /\b(\d{1,4})\s+of\s+(\d{1,4})\b/i,
+    );
+    let statPct: number | undefined;
+    if (pctStatMatch) {
+      const val = Number(pctStatMatch[1]);
+      if (val > 0 && val <= 100) statPct = val;
+    } else if (ratioStatMatch) {
+      const num = Number(ratioStatMatch[1]);
+      const den = Number(ratioStatMatch[2]);
+      if (den > 0 && num <= den) statPct = Math.round((num / den) * 100);
+    }
+    if (typeof statPct === "number" && w >= 240 && !isSyntheticOverflow) {
+      const barW = Math.min(126, Math.round(w * 0.28));
+      const barX = x + w - barW;
+      const barY = y + 3;
+      const fillW = Math.max(10, Math.round((barW * statPct) / 100));
+      bodyParts.push(
+        rect(barX, barY, barW, 8, c, 4, { opacity: 0.18 }),
+        rect(barX, barY, fillW, 8, c, 4),
+      );
+    }
     bodyParts.push(title.node, detail.node);
     return badgeOffset + title.height + titleGap + detail.height;
   };
@@ -1971,22 +2015,32 @@ export function buildPrismScene(
     );
     let y = top + topLead;
     if (isTimeline && nodes.length > 1) {
-      const firstCy = y + (rowHeights[0] + extraCardH) / 2;
-      const totalSpan =
-        rowHeights.reduce((a, b) => a + b + extraCardH, 0) +
-        Math.max(0, nodes.length - 1) * rowGap;
-      const lastCy =
-        y + totalSpan - (rowHeights[rowHeights.length - 1] + extraCardH) / 2;
-      bodyParts.push(
-        path(`M ${M + 42} ${firstCy} V ${lastCy}`, accent, 5, {
-          opacity: 0.3,
-        }),
-      );
+      let trackY = y;
+      for (let ti = 0; ti < nodes.length - 1; ti++) {
+        const curH = rowHeights[ti] + extraCardH;
+        const nextH = rowHeights[ti + 1] + extraCardH;
+        const curCy = trackY + curH / 2;
+        const nextCy = trackY + curH + rowGap + nextH / 2;
+        const curCx = ti % 2 === 0 ? M + 42 : W - M - 42;
+        const nextCx = (ti + 1) % 2 === 0 ? M + 42 : W - M - 42;
+        const midY = Math.round((curCy + nextCy) / 2);
+        bodyParts.push(
+          path(
+            `M ${curCx} ${curCy} C ${curCx} ${midY}, ${nextCx} ${midY}, ${nextCx} ${nextCy}`,
+            accent,
+            3.5,
+            { strokeDasharray: "6 6", opacity: 0.32 },
+          ),
+        );
+        trackY += curH + rowGap;
+      }
     }
     nodes.forEach((n, i) => {
       const h = rowHeights[i] + extraCardH,
         c = isHex(n.accentHex) ? n.accentHex : colors[i % 4];
-      const funnelInset = isFunnel ? Math.min(96, i * 26) : 0;
+      const funnelInsetTop = isFunnel ? Math.min(110, i * 28) : 0;
+      const funnelInsetBot = isFunnel ? Math.min(138, (i + 1) * 28) : 0;
+      const funnelInset = isFunnel ? funnelInsetTop : 0;
       const rowX = M + funnelInset;
       const rowW = contentW - funnelInset * 2;
       const rowTextW = Math.max(240, textW - funnelInset * 2);
@@ -1994,27 +2048,32 @@ export function buildPrismScene(
       const textY = y + Math.max(padY, Math.round((h - ntH) / 2));
       const cy = y + h / 2;
       if (isTimeline) {
+        const isOddStep = i % 2 === 1;
+        const cardX = isOddStep ? M : M + 112;
+        const cardW = contentW - 112;
+        const milestoneCx = isOddStep ? W - M - 42 : M + 42;
+        const armFromX = isOddStep ? cardX + cardW : milestoneCx + 32;
+        const armToX = isOddStep ? milestoneCx - 32 : cardX;
         surfaceRectInto(
           bodyParts,
-          M + 112,
+          cardX,
           y,
-          contentW - 112,
+          cardW,
           h,
-          false,
+          isOddStep,
           c,
           `node-${i}`,
         );
         bodyParts.push(
-          circle(M + 42, cy, 32, surface, {
+          path(`M ${armFromX} ${cy} H ${armToX}`, c, 3, { opacity: 0.65 }),
+          circle(milestoneCx, cy, 32, surface, {
             ...shadow,
             stroke: c,
-            strokeWidth: 3,
+            strokeWidth: 3.5,
           }),
-        );
-        bodyParts.push(
           textBlock(
             String(i + 1).padStart(2, "0"),
-            M + 18,
+            milestoneCx - 24,
             cy - 15,
             48,
             22,
@@ -2024,11 +2083,11 @@ export function buildPrismScene(
             fontStack,
           ).node,
         );
-        drawText(n, M + 138, textY, textW, i);
+        drawText(n, cardX + 26, textY, textW, i);
         medallionInto(
           bodyParts,
           n,
-          W - M - 54,
+          cardX + cardW - 54,
           cy,
           Math.max(22, Math.round(30 * fitScale)),
           c,
@@ -2084,6 +2143,50 @@ export function buildPrismScene(
           c,
           i,
         );
+      } else if (isFunnel) {
+        const tlX = M + Math.max(0, funnelInsetTop - 16);
+        const trX = W - M - Math.max(0, funnelInsetTop - 16);
+        const brX = W - M - funnelInsetBot;
+        const blX = M + funnelInsetBot;
+        bodyParts.push(
+          el("polygon", {
+            points: `${tlX},${y} ${trX},${y} ${brX},${y + h} ${blX},${y + h}`,
+            fill: c,
+            opacity: light ? 0.16 : 0.24,
+            stroke: c,
+            strokeWidth: 2.5,
+          }),
+        );
+        surfaceRectInto(
+          bodyParts,
+          rowX,
+          y + 4,
+          rowW,
+          Math.max(40, h - 8),
+          i % 2 === 0,
+          c,
+          `node-${i}`,
+        );
+        if (i < nodes.length - 1) {
+          const chevCy = y + h + Math.round(rowGap / 2);
+          bodyParts.push(
+            path(
+              `M ${W / 2 - 12} ${chevCy - 5} L ${W / 2} ${chevCy + 6} L ${W / 2 + 12} ${chevCy - 5}`,
+              c,
+              3.5,
+            ),
+          );
+        }
+        medallionInto(
+          bodyParts,
+          n,
+          rowX + 64,
+          cy,
+          Math.max(28, Math.round(38 * fitScale)),
+          c,
+          i,
+        );
+        drawText(n, rowX + 148, textY, rowTextW, i);
       } else {
         const right = isRibbon && i % 2 === 1;
         if (isRibbon)
