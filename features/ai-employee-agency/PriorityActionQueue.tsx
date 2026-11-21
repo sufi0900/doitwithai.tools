@@ -85,8 +85,8 @@ export function PriorityActionQueue({
     actions.push({
       id: 'p0-run-audit',
       priority: 'P0',
-      title: 'Run Stage 1 Zero-LLM Technical & Media Audit ($0.00)',
-      detail: `Check robots.txt, sitemap.xml, llms.txt, Meta OK/Fix status, missing alt-text, and >200 KB images across ${website.domain}.`,
+      title: 'Run Zero-LLM Technical & Media Audit ($0.00)',
+      detail: `Score crawl files, Meta OK/Fix status, missing alt-text, and >200 KB images across ${website.domain}.`,
       targetView: 'Technical Site Audit',
       ctaLabel: 'Open Technical Audit →',
     });
@@ -94,10 +94,10 @@ export function PriorityActionQueue({
     actions.push({
       id: 'p0-fix-meta-media',
       priority: 'P0',
-      title: `Fix ${scanSummary.metaNeedsFix || 0} pages needing Meta updates & ${scanSummary.missingAltCount || 0} missing alt tags`,
-      detail: `Batch cap active: Top ${optimizeLimit} Priority Pages this month (${optimizeUsed}/${optimizeLimit} used).`,
+      title: `Inspect ${scanSummary.metaNeedsFix || 0} pages needing Meta fixes & ${scanSummary.missingAltCount || 0} missing alt tags`,
+      detail: `Opt-in Existing Articles Studio · ${optimizeUsed}/${optimizeLimit} monthly deep optimizations used.`,
       targetView: 'On-Page & Refresh',
-      ctaLabel: 'Fix Priority Pages →',
+      ctaLabel: 'Open Page Studio →',
     });
   }
 
@@ -128,10 +128,10 @@ export function PriorityActionQueue({
     priority: 'P2',
     title: isEstablished
       ? 'Benchmark rival blogs & AI answer-engine citations'
-      : 'Expand topical authority with 6 new low-KD keyword gaps',
+      : 'Expand topical authority with fresh Reddit/Quora keyword gaps',
     detail: isEstablished
       ? 'Run $0.00 ChatGPT/Perplexity/Gemini readiness and 1–3 competitor keyword gap teardowns.'
-      : 'Use live Google Autocomplete + sitemap overlap gate to queue your next batch of topics.',
+      : 'Use live Reddit, Quora, and Autocomplete signals to queue your next batch of topics.',
     targetView: isEstablished ? 'AI Visibility & Links' : 'Keyword & Topics',
     ctaLabel: isEstablished ? 'Open AI Visibility →' : 'Discover Keywords →',
   });
@@ -144,11 +144,11 @@ export function PriorityActionQueue({
         : 'border-blue-500/40 bg-blue-500/15 text-blue-300';
 
   return (
-    <section className="space-y-4 rounded-xl border border-slate-800 bg-[#111827] p-5">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3.5">
+    <section className="overflow-hidden rounded-xl border border-slate-800 bg-[#111827]">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 px-5 py-4">
         <div className="space-y-0.5">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-blue-400">
-            Dual-Track Priority Action Queue · {isEstablished ? 'Established Site' : 'New Site'}
+            Dual-Track Priority Queue · {isEstablished ? 'Established Site' : 'New Site'}
           </p>
           <h2 className="text-base font-semibold text-white">
             Ranked Next Actions &amp; Monthly Dual-Quota Pacing
@@ -157,35 +157,32 @@ export function PriorityActionQueue({
         <button
           type="button"
           onClick={() => onNavigate('Token & API Usage')}
-          className="text-xs font-semibold text-blue-400 hover:text-blue-300"
+          className="text-xs font-semibold text-blue-400 transition hover:text-blue-300"
         >
           Full Quota Ledger →
         </button>
       </div>
 
-      {/* Dual-Quota Live Meters (Existing Page Optimizations vs. New Articles) */}
-      <div className="grid gap-3 md:grid-cols-2">
+      {/* Subtle Hairline-Divided Dual-Quota Strip */}
+      <div className="grid divide-y divide-slate-800/80 border-b border-slate-800 bg-[#0D131F]/60 md:grid-cols-2 md:divide-x md:divide-y-0">
         {[
           {
-            label: `Existing Page Optimizations (Top ${optimizeLimit}/mo)`,
+            label: `Existing Page Optimizations (${optimizeLimit}/mo pool)`,
             used: optimizeUsed,
             limit: optimizeLimit,
           },
           {
-            label: 'New Articles Produced (Monthly Pool)',
+            label: `New Articles Produced (${articleLimit}/mo pool)`,
             used: articleUsed,
             limit: articleLimit,
           },
         ].map((meter) => {
           const pct = Math.min(100, Math.round((meter.used / Math.max(1, meter.limit)) * 100));
           return (
-            <div
-              key={meter.label}
-              className="min-w-0 space-y-2 rounded-xl border border-slate-800 bg-[#0B0F17] p-3.5 text-xs"
-            >
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="min-w-0 font-medium text-slate-200">{meter.label}</span>
-                <span className="shrink-0 font-mono text-blue-300">
+            <div key={meter.label} className="space-y-2 px-5 py-3.5 text-xs">
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-medium text-slate-300">{meter.label}</span>
+                <span className="font-mono text-blue-300">
                   {meter.used} / {meter.limit}
                 </span>
               </div>
@@ -202,12 +199,12 @@ export function PriorityActionQueue({
         })}
       </div>
 
-      {/* Ranked P0 -> P1 -> P2 Action Rows */}
-      <div className="space-y-2">
+      {/* Editorial Hairline List of Ranked P0 -> P1 -> P2 Actions */}
+      <div className="divide-y divide-slate-800/80">
         {actions.slice(0, 4).map((item) => (
           <div
             key={item.id}
-            className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-800 bg-[#0B0F17] p-3.5 text-xs"
+            className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5 text-xs transition hover:bg-slate-800/30"
           >
             <div className="min-w-0 flex-1 space-y-1">
               <div className="flex flex-wrap items-center gap-2">
@@ -218,14 +215,14 @@ export function PriorityActionQueue({
                 >
                   {item.priority}
                 </span>
-                <strong className="break-words text-slate-100">{item.title}</strong>
+                <strong className="text-slate-100">{item.title}</strong>
               </div>
-              <p className="break-words text-slate-400">{item.detail}</p>
+              <p className="text-slate-400">{item.detail}</p>
             </div>
             <button
               type="button"
               onClick={() => onNavigate(item.targetView)}
-              className="w-full shrink-0 rounded-lg border border-slate-700 bg-[#111827] px-3 py-1.5 text-center text-xs font-semibold text-slate-200 transition hover:border-blue-500/60 hover:text-white sm:w-auto"
+              className="shrink-0 rounded-lg border border-slate-700/90 bg-[#0B0F17] px-3 py-1.5 text-xs font-semibold text-slate-200 transition hover:border-blue-500/60 hover:text-white"
             >
               {item.ctaLabel}
             </button>

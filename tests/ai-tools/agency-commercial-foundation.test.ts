@@ -9,9 +9,14 @@ import { selectRelevantSitePages, verifiedReply } from '../../lib/ai-agency/prom
 import { estimatePromptTokens, isUnlimitedTestingEnabled, resolveMeteredAssetKind } from '../../lib/ai-agency/billing.server';
 import {
   classifyPageMetaHealth,
+  evaluatePageDiagnostics,
   fieldFindings,
   repairFields,
 } from '../../lib/ai-agency/refresh.server';
+import {
+  getDefaultSpecialistPrompt,
+  inferKnowledgeCategoryFromQuery,
+} from '../../lib/ai-agency/default-specialist-prompts';
 import {
   chunkPlaybookIntoTacticCards,
   formatPractitionerRagBlock,
@@ -405,4 +410,98 @@ test('V6 Phase 1: estimatePromptTokens avoids 4x byte over-reservation, unlimite
   assert.equal(compact.length, 15);
   assert.ok(compact.some((p) => p.url === 'https://doitwithai.tools/'));
   assert.ok(compact.some((p) => p.title === 'Generative Engine Optimization Guide'));
+});
+
+test('V6 Phase 2-4: evaluatePageDiagnostics scores 100-pt rubric, inferKnowledgeCategoryFromQuery routes all 6 categories, and excludeKeywords ensures fresh discovery', () => {
+  const perfect = evaluatePageDiagnostics({
+    fields: {
+      heading: 'Complete Technical SEO Audit Guide',
+      title: 'Technical SEO Audit Guide for SaaS Teams | Acme',
+      description:
+        'Follow our step-by-step technical SEO audit guide covering crawlability, canonical tags, JSON-LD schema, internal linking, and WebP image speed.',
+    },
+    h1Count: 1,
+    wordCount: 1450,
+    h2Count: 5,
+    h3Count: 4,
+    h2List: ['Crawlability', 'Meta Hygiene'],
+    internalLinkCount: 6,
+    externalLinkCount: 2,
+    hasCanonical: true,
+    hasSchemaJsonLd: true,
+    schemaTypes: ['Article'],
+    images: [
+      {
+        src: 'https://acme.example/hero.webp',
+        alt: 'Technical SEO audit dashboard',
+        missingAlt: false,
+        sizeKb: 95,
+        isWebpOrAvif: true,
+        isOversized: false,
+      },
+    ],
+  });
+  assert.equal(perfect.score, 100);
+  assert.equal(perfect.criteriaChecks.every((c) => c.passed), true);
+
+  assert.equal(inferKnowledgeCategoryFromQuery('How to earn high-authority backlinks via Digital PR?'), 'off_page_seo');
+  assert.equal(inferKnowledgeCategoryFromQuery('Fix robots.txt and Core Web Vitals LCP speed'), 'technical_seo');
+  assert.equal(inferKnowledgeCategoryFromQuery('Mine Reddit and Quora for low KD keyword gaps'), 'keyword_research');
+  assert.equal(inferKnowledgeCategoryFromQuery('Improve H1, meta title, and JSON-LD schema'), 'on_page_seo');
+  assert.equal(inferKnowledgeCategoryFromQuery('Design a clean infographic hero banner'), 'visual_design');
+  assert.equal(getDefaultSpecialistPrompt('refresh').category, 'on_page_seo');
+
+  const firstRun = buildDeterministicBrandAndKeywords({
+    domain: 'https://acme-seo.example',
+    knowledge: {
+      source: 'external_export',
+      coverage: 'partial',
+      name: 'Acme SEO',
+      industry: 'AI SEO',
+      audience: 'Founders',
+      offer: 'SEO Tools',
+      goal: 'Traffic',
+      locale: 'en-US',
+      currency: 'USD',
+      colors: [],
+      fonts: [],
+      headings: ['AI SEO Platform'],
+      logo: '',
+      socials: [],
+      pages: [{ url: 'https://acme-seo.example/', title: 'Home' }],
+      checkedAt: '2026-11-21T00:00:00Z',
+      note: '',
+      humanReview: false,
+    },
+  });
+  const secondRun = buildDeterministicBrandAndKeywords({
+    domain: 'https://acme-seo.example',
+    knowledge: {
+      source: 'external_export',
+      coverage: 'partial',
+      name: 'Acme SEO',
+      industry: 'AI SEO',
+      audience: 'Founders',
+      offer: 'SEO Tools',
+      goal: 'Traffic',
+      locale: 'en-US',
+      currency: 'USD',
+      colors: [],
+      fonts: [],
+      headings: ['AI SEO Platform'],
+      logo: '',
+      socials: [],
+      pages: [{ url: 'https://acme-seo.example/', title: 'Home' }],
+      checkedAt: '2026-11-21T00:00:00Z',
+      note: '',
+      humanReview: false,
+    },
+    excludeKeywords: firstRun.suggestedKeywords.map((k) => k.keyword),
+  });
+  const firstSet = new Set(firstRun.suggestedKeywords.map((k) => k.keyword.toLowerCase()));
+  assert.equal(secondRun.suggestedKeywords.length, 6);
+  assert.equal(
+    secondRun.suggestedKeywords.some((k) => firstSet.has(k.keyword.toLowerCase())),
+    false,
+  );
 });
