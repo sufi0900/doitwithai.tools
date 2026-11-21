@@ -132,12 +132,90 @@ const KNOWN_DOMAIN_BRANDS: Record<
     siteName: "HubSpot",
     isDark: false,
   },
+  "theseoagent.ai": {
+    accent: "#16A34A",
+    secondaryAccent: "#0F172A",
+    siteName: "The SEO Agent",
+    isDark: false,
+  },
+  "openai.com": {
+    accent: "#10A37F",
+    secondaryAccent: "#0F172A",
+    siteName: "OpenAI",
+    isDark: true,
+  },
+  "anthropic.com": {
+    accent: "#D97757",
+    secondaryAccent: "#141413",
+    siteName: "Anthropic",
+    isDark: false,
+  },
+  "shopify.com": {
+    accent: "#008060",
+    secondaryAccent: "#95BF47",
+    siteName: "Shopify",
+    isDark: false,
+  },
+  "stripe.com": {
+    accent: "#635BFF",
+    secondaryAccent: "#00D4FF",
+    siteName: "Stripe",
+    isDark: true,
+  },
+  "webflow.com": {
+    accent: "#146EF5",
+    secondaryAccent: "#080808",
+    siteName: "Webflow",
+    isDark: true,
+  },
+  "yoast.com": {
+    accent: "#A4286A",
+    secondaryAccent: "#77B227",
+    siteName: "Yoast",
+    isDark: false,
+  },
+  "sproutsocial.com": {
+    accent: "#0CA750",
+    secondaryAccent: "#1F2937",
+    siteName: "Sprout Social",
+    isDark: false,
+  },
+  "searchengineland.com": {
+    accent: "#0066CC",
+    secondaryAccent: "#D97706",
+    siteName: "Search Engine Land",
+    isDark: false,
+  },
 };
+
+function extractInlineHeaderSvgBrandColor(doc: Document): string | undefined {
+  const svgs = Array.from(
+    doc.querySelectorAll("header svg, nav svg, a[href='/'] svg"),
+  ).slice(0, 8);
+  for (const svg of svgs) {
+    const paintNodes = Array.from(
+      svg.querySelectorAll("path, rect, circle, polygon, stop"),
+    ).slice(0, 24);
+    for (const node of paintNodes) {
+      const candidates = [
+        node.getAttribute("fill"),
+        node.getAttribute("stop-color"),
+        node.getAttribute("stroke"),
+      ];
+      for (const raw of candidates) {
+        const cand = colorHint(raw);
+        if (cand) return cand;
+      }
+    }
+  }
+  return undefined;
+}
 
 export function extractWebsiteBrand(
   doc: Document,
   domain: string,
   pageUrl?: string,
+  externalCss?: string,
 ): WebsiteBrandHint {
   const cleanDomain = String(domain || "")
     .toLowerCase()
@@ -162,15 +240,18 @@ export function extractWebsiteBrand(
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, 64);
-  const css = Array.from(doc.querySelectorAll("style"))
+  const inlineCss = Array.from(doc.querySelectorAll("style"))
     .slice(0, 24)
     .map((n) => (n.textContent || "").slice(0, 12000))
     .join("\n")
     .slice(0, 96000);
+  const css = [inlineCss, (externalCss || "").slice(0, 120000)]
+    .filter(Boolean)
+    .join("\n");
 
   let secondaryAccent: string | undefined = knownDomain?.secondaryAccent;
   const secondaryMatches = css.matchAll(
-    /--(?:brand-secondary|secondary(?:-color)?|accent-secondary)\s*:\s*([^;}]+)/gi,
+    /--(?:brand-secondary|secondary(?:-color)?|accent-secondary|color-secondary)\s*:\s*([^;}]+)/gi,
   );
   for (const match of secondaryMatches) {
     const cand = colorHint(match[1]);
@@ -203,7 +284,7 @@ export function extractWebsiteBrand(
     if (accent) return { accent, siteName, source: "theme-color", ...extra };
   }
   const declarations = css.matchAll(
-    /--(?:brand(?:-primary|-color)?|primary(?:-color)?|accent-color|wp--preset--color--primary)\s*:\s*([^;}]+)/gi,
+    /--(?:brand(?:-primary|-color|-accent)?|primary(?:-color|-500|-600)?|color-primary|accent(?:-color)?|theme-color|wp--preset--color--primary)\s*:\s*([^;}]+)/gi,
   );
   for (const match of declarations) {
     const accent = colorHint(match[1]);
@@ -229,6 +310,12 @@ export function extractWebsiteBrand(
     }
   }
 
+  // Inline header / navbar SVG logo saturated brand fills
+  const svgAccent = extractInlineHeaderSvgBrandColor(doc);
+  if (svgAccent) {
+    return { accent: svgAccent, siteName, source: "css-variable", ...extra };
+  }
+
   // Bounded Tailwind primary brand class signal inside header/nav buttons
   const headerClasses = Array.from(
     doc.querySelectorAll("header a, header button, nav a, nav button"),
@@ -243,6 +330,17 @@ export function extractWebsiteBrand(
     const twHex = TAILWIND_BRAND_HEX[twMatch[1].toLowerCase()];
     if (twHex) {
       return { accent: twHex, siteName, source: "css-variable", ...extra };
+    }
+  }
+
+  // Primary CTA / button selector rule inside inline or external stylesheets
+  const ctaRules = css.matchAll(
+    /(?:\.btn-primary|\.button-primary|\.wp-block-button__link|\[class\*=["']cta["']\]|\.cta-button)[^{]{0,80}\{[^}]*background(?:-color)?\s*:\s*(#[0-9a-f]{3,6}|rgba?\([^)]+\))/gi,
+  );
+  for (const match of ctaRules) {
+    const cand = colorHint(match[1]);
+    if (cand) {
+      return { accent: cand, siteName, source: "css-variable", ...extra };
     }
   }
 

@@ -71,6 +71,33 @@ export const INFOGRAPHIC_TOPIC_ICONS = [
   "user-check",
   "globe",
   "share-2",
+  // Data, Charts & Quantitative (12 new)
+  "bar-chart-2",
+  "line-chart",
+  "donut-chart",
+  "sigma",
+  "binary",
+  "table-2",
+  // Diagrams & Visual Structure
+  "sitemap",
+  "pyramid",
+  "repeat",
+  "arrow-right-circle",
+  "workflow-diamond",
+  "layout-grid",
+  // Business, Growth & Channels (12 new)
+  "dollar-sign",
+  "briefcase",
+  "rocket",
+  "magnet",
+  "crown",
+  "megaphone",
+  "map-pin",
+  "smartphone",
+  "cloud",
+  "server",
+  "mail",
+  "star",
 ] as const;
 
 export type InfographicTopicIcon = (typeof INFOGRAPHIC_TOPIC_ICONS)[number];
@@ -304,6 +331,85 @@ export const SEMANTIC_ICON_PATHS: Record<InfographicTopicIcon, string[]> = {
     "M18 16a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z",
     "m8.59 13.51 6.83 3.98M15.41 6.51l-6.82 3.98",
   ],
+
+  // Data, Charts & Quantitative
+  "bar-chart-2": ["M18 20V10", "M12 20V4", "M6 20v-6"],
+  "line-chart": ["M3 3v18h18", "m19 9-5 5-4-4-3 3"],
+  "donut-chart": [
+    "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Z",
+    "M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10Z",
+    "M12 2v5M17 12h5",
+  ],
+  sigma: ["M18 7V4H6l6 8-6 8h12v-3"],
+  binary: [
+    "M6 4h4v6H6V4Z",
+    "M14 14h4v6h-4v-6Z",
+    "M6 20h4M8 14v6M14 4h4M16 4v6",
+  ],
+  "table-2": ["M3 5h18v14H3V5Z", "M3 10h18M3 15h18M9 5v14M15 5v14"],
+
+  // Diagrams & Visual Structure
+  sitemap: [
+    "M9 3h6v4H9V3ZM3 17h5v4H3v-4ZM16 17h5v4h-5v-4ZM9.5 17h5v4h-5v-4Z",
+    "M12 7v5M5.5 17v-5h13v5M12 12v5",
+  ],
+  pyramid: ["M12 3 2 20h20L12 3Z", "M6.5 12h11M4.2 16h15.6"],
+  repeat: [
+    "m17 2 4 4-4 4",
+    "M3 11v-1a4 4 0 0 1 4-4h14",
+    "m7 22-4-4 4-4",
+    "M21 13v1a4 4 0 0 1-4 4H3",
+  ],
+  "arrow-right-circle": [
+    "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Z",
+    "m12 16 4-4-4-4M8 12h8",
+  ],
+  "workflow-diamond": [
+    "m12 3 9 9-9 9-9-9 9-9Z",
+    "M12 8v8M8 12h8",
+  ],
+  "layout-grid": [
+    "M3 3h7v7H3V3ZM14 3h7v7h-7V3ZM14 14h7v7h-7v-7ZM3 14h7v7H3v-7Z",
+  ],
+
+  // Business, Growth & Channels
+  "dollar-sign": [
+    "M12 2v20",
+    "M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6",
+  ],
+  briefcase: [
+    "M3 7h18v13H3V7Z",
+    "M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2",
+    "M3 12h18",
+  ],
+  rocket: [
+    "M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09Z",
+    "m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2Z",
+  ],
+  magnet: [
+    "m6 15-4-4 6.75-6.77a7.79 7.79 0 0 1 11 11L13 22l-4-4 6.39-6.36a2.14 2.14 0 0 0-3-3L6 15Z",
+  ],
+  crown: ["m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7Zm3 16h14"],
+  megaphone: [
+    "m3 11 18-5v12L3 13v-2Z",
+    "M11.6 16.8a3 3 0 1 1-5.8-1.6",
+  ],
+  "map-pin": [
+    "M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z",
+    "M12 7a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z",
+  ],
+  smartphone: ["M7 2h10v20H7V2Z", "M12 18h.01"],
+  cloud: [
+    "M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z",
+  ],
+  server: [
+    "M2 4h20v6H2V4ZM2 14h20v6H2v-6Z",
+    "M6 7h.01M6 17h.01",
+  ],
+  mail: ["M3 5h18v14H3V5Z", "m3 7 9 6 9-6"],
+  star: [
+    "m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2Z",
+  ],
 };
 
 const ICON_RULES: Array<[InfographicTopicIcon, RegExp]> = [
@@ -313,7 +419,7 @@ const ICON_RULES: Array<[InfographicTopicIcon, RegExp]> = [
   ["layers", /\b(?:section|coherent|context|structure|layer|stack|nearby|module|pillar)\b/i],
   ["scale", /\b(?:compare|comparison|original|benchmark|balance|trade-?off|difference|vs\.?|same)\b/i],
   ["search", /\b(?:identify|diagnose|audit|unclear|search|research|query|find|gap|missing)\b/i],
-  ["filter", /\b(?:dense|prune|filter|trim|clarity|noise|ambigu|vague)\b/i],
+  ["filter", /\b(?:dense|prune|filter|trim|clarity|noise|ambigu|vague|funnel|qualify)\b/i],
   ["backlink", /\b(?:backlinks?|link authority|referring domains?)\b/i],
   ["fingerprint", /\b(?:original insights?|firsthand|first-hand|unique value)\b/i],
   ["braces", /\b(?:structured data|json-ld|schema markup)\b/i],
@@ -328,6 +434,21 @@ const ICON_RULES: Array<[InfographicTopicIcon, RegExp]> = [
   ["gauge", /\b(?:score|readability|flesch|grade level|speed|cwv|performance|metric|rating)\b/i],
   ["workflow", /\b(?:workflows?|pipeline|process|sequence|automate|chain|ai-assisted)\b/i],
   ["trending-up", /\b(?:seo|ranking|rankings|traffic|growth|ctr|conversion|boost|lift)\b/i],
+  ["bar-chart-2", /\b(?:bar chart|compare stats|survey|study|percentage|clicks|impressions)\b/i],
+  ["donut-chart", /\b(?:share of voice|breakdown|distribution|allocation|split)\b/i],
+  ["sitemap", /\b(?:hierarchy|taxonomy|architecture|tree|org chart|hub|parent|child)\b/i],
+  ["pyramid", /\b(?:tier|tiers|pyramid|foundation|base|hierarchy|levels)\b/i],
+  ["repeat", /\b(?:flywheel|cycle|continuous|loop|recurring|cadence|retention)\b/i],
+  ["arrow-right-circle", /\b(?:before|after|transform|upgrade|shift|transition|migrate)\b/i],
+  ["workflow-diamond", /\b(?:decision|if|whether|choose|routing|branch|flowchart)\b/i],
+  ["dollar-sign", /\b(?:cost|price|budget|revenue|roi|profit|savings|monetize)\b/i],
+  ["rocket", /\b(?:launch|scale|accelerate|velocity|ship|publish|deploy)\b/i],
+  ["magnet", /\b(?:lead|inbound|attract|capture|acquisition|magnet)\b/i],
+  ["megaphone", /\b(?:pr|social|promote|outreach|broadcast|campaign|distribute)\b/i],
+  ["map-pin", /\b(?:local|geo|location|region|map|city|country|near me)\b/i],
+  ["smartphone", /\b(?:mobile|app|phone|responsive|small screen)\b/i],
+  ["server", /\b(?:crawler|bot|robots\.txt|server-rendered|ssr|hosting|infrastructure)\b/i],
+  ["mail", /\b(?:email|newsletter|inbox|outreach|subscriber)\b/i],
   ["chart", /\b(?:data|analytics|statistics|chart|report|ratio|benchmark)\b/i],
   ["percent", /\b(?:percent|%|rate|share|proportion|conversion rate)\b/i],
   ["help-circle", /\b(?:what is|who is|why does|why do|question|faq|wonder)\?/i],

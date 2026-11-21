@@ -11,12 +11,17 @@ import type {
   ArticleSourceCoverage,
 } from "./article-source";
 import { getBlockHeadingLevel, sourceId } from "./article-source";
-import { PRISM_LAYOUTS, prismLayoutSpec } from "./layout-registry";
-import type { PrismLayout } from "./layout-registry";
+import {
+  PRISM_LAYOUTS,
+  PRISM_LAYOUT_CATEGORIES,
+  prismLayoutSpec,
+} from "./layout-registry";
+import type { PrismLayout, PrismLayoutCategory } from "./layout-registry";
 import {
   BACKGROUND_PATTERNS,
   CARD_STYLES,
   brandColors,
+  brandSectionVariantColors,
   extractHeadlineHighlightPhrases,
   normalizeSignature,
 } from "./appearance";
@@ -36,8 +41,8 @@ import {
 } from "./skills/topic-intelligence";
 import { runInfographicQaCritic } from "./skills/visual-qa-critic";
 
-export { PRISM_LAYOUTS } from "./layout-registry";
-export type { PrismLayout } from "./layout-registry";
+export { PRISM_LAYOUTS, PRISM_LAYOUT_CATEGORIES } from "./layout-registry";
+export type { PrismLayout, PrismLayoutCategory } from "./layout-registry";
 export interface VisualBrief {
   sourceUrl?: string;
   sectionId: string;
@@ -621,27 +626,60 @@ export function withPrismLayout(
 export function recommendPrismLayout(
   brief: VisualBrief,
   points: number,
+  topicText = "",
 ): PrismLayout {
-  if (brief.relationship === "sequence") return "timeline";
-  return points > 3 ? "ribbon" : "editorial";
+  const txt = topicText.toLowerCase();
+  if (/\b\d+%|\b(benchmark|metric|kpi|roi|stat|growth|score|rate)\b/.test(txt)) {
+    return points <= 4 ? "kpi-bento" : "stat-bars";
+  }
+  if (/\b(pyramid|tier|maturity|foundation|priority)\b/.test(txt) && points >= 3) {
+    return "pyramid-tiers";
+  }
+  if (/\b(hierarchy|architecture|ecosystem|taxonomy|anatomy|stack)\b/.test(txt) && points >= 3) {
+    return "hierarchy-tree";
+  }
+  if (/\b(cycle|flywheel|loop|continuous|iterative|feedback)\b/.test(txt) && points >= 3) {
+    return "cycle-wheel";
+  }
+  if (/\b(before|after|legacy|modern|shift|transform)\b/.test(txt) && points >= 2) {
+    return "before-after";
+  }
+  if (brief.relationship === "sequence") {
+    return points === 3 ? "pipeline-flow" : points <= 5 ? "zigzag-flowchart" : "timeline";
+  }
+  if (points === 2) return "split-equation";
+  if (points === 4) return "donut-breakdown";
+  return points > 4 ? "ribbon" : "editorial";
+}
+
+function pickUniqueLayout(
+  candidates: PrismLayout[],
+  used: Set<PrismLayout>,
+): PrismLayout {
+  for (const cand of candidates) {
+    if (!used.has(cand)) return cand;
+  }
+  return candidates[0];
 }
 
 /**
- * Generates a complete, visually diverse suite of section infographics across all
- * substantive sections of an extracted article, cycling layouts, procedural SVG
- * background shaders, card styles, and 2-tone headline highlights.
+ * Generates 4 genuinely distinct multi-genre visual concepts per section
+ * (Primary Diagram, Data/Stats Visualization, Flow/Funnel/Cycle Process,
+ * and Structural Tree/Pyramid/Split Architecture) so every section can be
+ * switched with one click across completely different visual genres.
  */
 export function buildSectionConceptAlternatives(
   baseCard: BlogInfographicConfig,
-  articleTitle?: string,
+  _articleTitle?: string,
 ): InfographicConceptAlternative[] {
   const nodes = baseCard.nodes;
   const primaryLayout = baseCard.prismLayout || "editorial";
   const headlineBase = baseCard.headline.split(":")[0].trim() || baseCard.headline;
+  const used = new Set<PrismLayout>([primaryLayout]);
 
   const alt1: InfographicConceptAlternative = {
     id: `${baseCard.sectionId}-concept-1`,
-    label: "Concept 1 · Editorial Overview",
+    label: `Concept 1 · ${prismLayoutSpec(primaryLayout).name}`,
     archetypeLabel: prismLayoutSpec(primaryLayout).name,
     prismLayout: primaryLayout,
     headline: baseCard.headline,
@@ -654,86 +692,202 @@ export function buildSectionConceptAlternatives(
     nodes,
   };
 
-  // Concept 2: Process Pipeline Flow (3-stage horizontal flow) or Funnel Stages
-  const flowLayout: PrismLayout =
-    nodes.length <= 3 ? "pipeline-flow" : "funnel-stages";
-  const flowNodes = (nodes.length <= 3 ? nodes : nodes.slice(0, 4)).map(
-    (n, i) => ({
-      ...n,
-      badge:
-        flowLayout === "pipeline-flow"
-          ? i === 0
-            ? "START"
-            : i === Math.min(2, nodes.length - 1)
-              ? "RESULT"
-              : "CORE STEP"
-          : `STAGE 0${i + 1}`,
-    }),
+  // Concept 2: Statistical / Data Visualization Genre (stat-bars, donut-breakdown, or kpi-bento)
+  const dataLayout = pickUniqueLayout(
+    nodes.length <= 4
+      ? ["stat-bars", "donut-breakdown", "kpi-bento", "quadrant-matrix"]
+      : ["stat-bars", "donut-breakdown", "constellation", "ribbon"],
+    used,
   );
-  const alt2: InfographicConceptAlternative = {
-    id: `${baseCard.sectionId}-concept-2`,
-    label:
-      flowLayout === "pipeline-flow"
-        ? "Concept 2 · 3-Stage Pipeline Flow"
-        : "Concept 2 · Conversion Funnel",
-    archetypeLabel: prismLayoutSpec(flowLayout).name,
-    prismLayout: flowLayout,
-    headline: `${headlineBase}: Execution Pipeline`,
-    subheadline:
-      baseCard.subheadline ||
-      `How ${headlineBase} moves from initial input to measurable search outcomes.`,
-    eyebrowLabel: "STEP-BY-STEP EXECUTION FLOW",
-    calloutBadge: "FLOW RULE",
-    calloutText: `Execute each stage of ${headlineBase.slice(0, 34)} in order for compounding visibility.`,
-    sceneIllustration: "editorial-workflow-pipeline",
-    nodes: flowNodes,
-  };
-
-  // Concept 3: Two-Part Formula Split Equation (for 2–3 nodes) or 2x2 Quadrant Matrix (for 4+ nodes)
-  const matrixLayout: PrismLayout =
-    nodes.length >= 4 ? "quadrant-matrix" : "split-equation";
-  const matrixNodes = (
-    matrixLayout === "split-equation" ? nodes.slice(0, 2) : nodes.slice(0, 4)
+  used.add(dataLayout);
+  const dataNodes = (
+    dataLayout === "kpi-bento" ? nodes.slice(0, 4) : nodes
   ).map((n, i) => ({
     ...n,
     badge:
-      matrixLayout === "split-equation"
-        ? `PART ${i + 1}`
-        : `Q${i + 1}`,
+      dataLayout === "kpi-bento"
+        ? `KPI 0${i + 1}`
+        : dataLayout === "donut-breakdown"
+          ? `0${i + 1}`
+          : String(i + 1).padStart(2, "0"),
+  }));
+  const alt2: InfographicConceptAlternative = {
+    id: `${baseCard.sectionId}-concept-2`,
+    label: `Concept 2 · ${prismLayoutSpec(dataLayout).name}`,
+    archetypeLabel: prismLayoutSpec(dataLayout).name,
+    prismLayout: dataLayout,
+    headline:
+      dataLayout === "donut-breakdown"
+        ? `${headlineBase}: Core Breakdown`
+        : dataLayout === "kpi-bento"
+          ? `${headlineBase}: Key Signal Dashboard`
+          : `${headlineBase}: Ranked Priority Breakdown`,
+    subheadline:
+      baseCard.subheadline ||
+      `Visualizing the key signals and drivers behind ${headlineBase}.`,
+    eyebrowLabel:
+      dataLayout === "kpi-bento"
+        ? "EXECUTIVE METRICS · KPI BENTO"
+        : "DATA & SIGNAL BREAKDOWN",
+    calloutBadge: "DATA SIGNAL",
+    calloutText: `Compare all ${dataNodes.length} drivers of ${headlineBase.slice(0, 32)} before prioritizing work.`,
+    sceneIllustration:
+      dataLayout === "donut-breakdown"
+        ? "donut-ring-analytics"
+        : dataLayout === "kpi-bento"
+          ? "analytics-benchmark-telemetry"
+          : "horizontal-bar-benchmark",
+    nodes: dataNodes,
+  };
+
+  // Concept 3: Process / Funnel / Flowchart / Cycle Genre
+  const flowLayout = pickUniqueLayout(
+    nodes.length <= 3
+      ? ["pipeline-flow", "funnel-stages", "cycle-wheel", "zigzag-flowchart"]
+      : nodes.length === 4
+        ? ["funnel-stages", "cycle-wheel", "zigzag-flowchart", "pipeline-flow"]
+        : ["zigzag-flowchart", "funnel-stages", "timeline", "cycle-wheel"],
+    used,
+  );
+  used.add(flowLayout);
+  const flowNodes = (
+    flowLayout === "pipeline-flow" ? nodes.slice(0, 3) : nodes.slice(0, 6)
+  ).map((n, i, arr) => ({
+    ...n,
+    badge:
+      flowLayout === "pipeline-flow"
+        ? i === 0
+          ? "START"
+          : i === arr.length - 1
+            ? "RESULT"
+            : "CORE STEP"
+        : flowLayout === "funnel-stages"
+          ? `STAGE 0${i + 1}`
+          : flowLayout === "cycle-wheel"
+            ? `PHASE ${i + 1}`
+            : `STEP 0${i + 1}`,
   }));
   const alt3: InfographicConceptAlternative = {
     id: `${baseCard.sectionId}-concept-3`,
-    label:
-      matrixLayout === "split-equation"
-        ? "Concept 3 · Two-Part Formula"
-        : "Concept 3 · 2×2 Strategic Matrix",
-    archetypeLabel: prismLayoutSpec(matrixLayout).name,
-    prismLayout: matrixLayout,
+    label: `Concept 3 · ${prismLayoutSpec(flowLayout).name}`,
+    archetypeLabel: prismLayoutSpec(flowLayout).name,
+    prismLayout: flowLayout,
     headline:
-      matrixLayout === "split-equation"
-        ? `${headlineBase}: Complete 2-Part Formula`
-        : `${headlineBase}: 4-Pillar Strategic Matrix`,
+      flowLayout === "cycle-wheel"
+        ? `${headlineBase}: Continuous Flywheel`
+        : flowLayout === "funnel-stages"
+          ? `${headlineBase}: Stage-by-Stage Funnel`
+          : `${headlineBase}: Execution Workflow`,
     subheadline:
-      matrixLayout === "split-equation"
-        ? `Combining both sides of ${headlineBase} into one unified strategy.`
-        : `How all four dimensions of ${headlineBase} interact across search surfaces.`,
+      baseCard.subheadline ||
+      `How ${headlineBase} moves step by step from initial setup to measurable outcomes.`,
     eyebrowLabel:
-      matrixLayout === "split-equation"
-        ? "CORE FORMULA · 2-PART DEFINITION"
-        : "STRATEGIC 2×2 MATRIX",
-    calloutBadge: matrixLayout === "split-equation" ? "DEFINITION" : "MATRIX RULE",
-    calloutText:
-      matrixLayout === "split-equation"
-        ? `${headlineBase.slice(0, 26)} = ${matrixNodes[0]?.title.slice(0, 22) || "Part 1"} + ${matrixNodes[1]?.title.slice(0, 22) || "Part 2"}`
-        : `Align all 4 quadrants of ${headlineBase.slice(0, 32)} for complete coverage.`,
+      flowLayout === "cycle-wheel"
+        ? "CONTINUOUS LOOP · FLYWHEEL"
+        : "STEP-BY-STEP EXECUTION FLOW",
+    calloutBadge: flowLayout === "cycle-wheel" ? "LOOP RULE" : "FLOW RULE",
+    calloutText: `Execute each stage of ${headlineBase.slice(0, 34)} in sequence for compounding visibility.`,
     sceneIllustration:
-      matrixLayout === "split-equation"
-        ? "side-by-side-comparison-scale"
-        : "quadrant-priority-matrix",
-    nodes: matrixNodes,
+      flowLayout === "cycle-wheel"
+        ? "continuous-flywheel-cycle"
+        : flowLayout === "funnel-stages"
+          ? "conversion-funnel-velocity"
+          : flowLayout === "zigzag-flowchart"
+            ? "decision-flowchart-nodes"
+            : "editorial-workflow-pipeline",
+    nodes: flowNodes,
   };
 
-  return [alt1, alt2, alt3];
+  // Concept 4: Structural / Hierarchy / Pyramid / Before-After / Matrix Genre
+  const structLayout = pickUniqueLayout(
+    nodes.length === 2
+      ? ["split-equation", "before-after", "editorial", "kpi-bento"]
+      : nodes.length === 3
+        ? ["pyramid-tiers", "hierarchy-tree", "before-after", "editorial"]
+        : nodes.length === 4
+          ? ["hierarchy-tree", "pyramid-tiers", "quadrant-matrix", "before-after"]
+          : ["pyramid-tiers", "hierarchy-tree", "constellation", "editorial"],
+    used,
+  );
+  used.add(structLayout);
+  const structNodes = (
+    structLayout === "split-equation"
+      ? nodes.slice(0, 2)
+      : structLayout === "quadrant-matrix"
+        ? nodes.slice(0, 4)
+        : nodes.slice(0, 5)
+  ).map((n, i) => ({
+    ...n,
+    badge:
+      structLayout === "split-equation"
+        ? `PART ${i + 1}`
+        : structLayout === "pyramid-tiers"
+          ? `TIER ${i + 1}`
+          : structLayout === "before-after"
+            ? i % 2 === 0
+              ? "BEFORE"
+              : "AFTER"
+            : structLayout === "quadrant-matrix"
+              ? `Q${i + 1}`
+              : `NODE ${i + 1}`,
+  }));
+  const alt4: InfographicConceptAlternative = {
+    id: `${baseCard.sectionId}-concept-4`,
+    label: `Concept 4 · ${prismLayoutSpec(structLayout).name}`,
+    archetypeLabel: prismLayoutSpec(structLayout).name,
+    prismLayout: structLayout,
+    headline:
+      structLayout === "split-equation"
+        ? `${headlineBase}: Complete 2-Part Formula`
+        : structLayout === "pyramid-tiers"
+          ? `${headlineBase}: Strategic Priority Pyramid`
+          : structLayout === "hierarchy-tree"
+            ? `${headlineBase}: System Architecture Tree`
+            : structLayout === "before-after"
+              ? `${headlineBase}: Before vs. After Shift`
+              : `${headlineBase}: 4-Pillar Strategic Matrix`,
+    subheadline:
+      structLayout === "split-equation"
+        ? `Combining both sides of ${headlineBase} into one unified strategy.`
+        : structLayout === "pyramid-tiers"
+          ? `Layering ${headlineBase} from core technical foundation up to strategic peak.`
+          : structLayout === "hierarchy-tree"
+            ? `How each component branches from the core ${headlineBase} architecture.`
+            : `How the core dimensions of ${headlineBase} work together for durable results.`,
+    eyebrowLabel:
+      structLayout === "pyramid-tiers"
+        ? "STRATEGIC PYRAMID · PRIORITY TIERS"
+        : structLayout === "hierarchy-tree"
+          ? "ARCHITECTURE · HIERARCHY TREE"
+          : structLayout === "before-after"
+            ? "TRANSFORMATION · BEFORE VS AFTER"
+            : structLayout === "split-equation"
+              ? "CORE FORMULA · 2-PART DEFINITION"
+              : "STRATEGIC 2×2 MATRIX",
+    calloutBadge:
+      structLayout === "split-equation"
+        ? "DEFINITION"
+        : structLayout === "pyramid-tiers"
+          ? "FOUNDATION"
+          : "ARCHITECTURE",
+    calloutText:
+      structLayout === "split-equation"
+        ? `${headlineBase.slice(0, 26)} = ${structNodes[0]?.title.slice(0, 22) || "Part 1"} + ${structNodes[1]?.title.slice(0, 22) || "Part 2"}`
+        : `Align every layer of ${headlineBase.slice(0, 32)} for complete, durable coverage.`,
+    sceneIllustration:
+      structLayout === "pyramid-tiers"
+        ? "stacked-pyramid-tiers"
+        : structLayout === "hierarchy-tree"
+          ? "hierarchy-org-tree"
+          : structLayout === "before-after"
+            ? "before-after-transform"
+            : structLayout === "split-equation"
+              ? "side-by-side-comparison-scale"
+              : "quadrant-priority-matrix",
+    nodes: structNodes,
+  };
+
+  return [alt1, alt2, alt3, alt4];
 }
 
 export function buildAllArticleSectionVisuals(
@@ -782,9 +936,17 @@ export function buildAllArticleSectionVisuals(
   const total = selected.length;
   const layoutCycle: PrismLayout[] = [
     "editorial",
+    "stat-bars",
     "pipeline-flow",
+    "donut-breakdown",
     "funnel-stages",
+    "hierarchy-tree",
     "quadrant-matrix",
+    "pyramid-tiers",
+    "cycle-wheel",
+    "kpi-bento",
+    "before-after",
+    "zigzag-flowchart",
     "timeline",
     "constellation",
     "split-equation",
@@ -807,9 +969,14 @@ export function buildAllArticleSectionVisuals(
   const hint = options.brandTheme;
   const isNewDomainExtraction = Boolean(options.domain || options.sourceUrl || hint);
   let prevLayout: PrismLayout | undefined;
+  const usedLayoutsInArticle = new Set<PrismLayout>();
 
   const sectionVisuals = selected.map(({ section, intel, visual }, idx) => {
     const nodesForSection = visual.nodes;
+    const nCount = nodesForSection.length;
+    const sectionCombinedText = `${section.title} ${nodesForSection
+      .map((n) => `${n.title} ${n.detail}`)
+      .join(" ")}`;
     let comparisonLabels: [string, string] | undefined;
 
     const rawComparisonCandidate =
@@ -831,68 +998,132 @@ export function buildAllArticleSectionVisuals(
             `${n.title} ${n.detail}`.toLowerCase().includes(rightSideToken),
         ));
 
+    const isBeforeAfterSignal =
+      /\b(before|after|legacy|modern|shift|transform|evolution|old way|new way|traditional seo vs)\b/i.test(
+        section.title,
+      );
+    const isQuantitativeSignal =
+      /\b\d+%|\b\d+(?:\.\d+)?x\b|\b(benchmark|metric|metrics|kpi|kpis|roi|statistics|stats|ranking factors|impact|growth rate|traffic share|score)\b/i.test(
+        sectionCombinedText,
+      );
+    const isHierarchySignal =
+      /\b(architecture|hierarchy|ecosystem|taxonomy|structure|stack|anatomy|components|layers|types of|categories)\b/i.test(
+        section.title,
+      );
+    const isPyramidSignal =
+      /\b(pyramid|tier|tiers|level|levels|foundation|maturity|priority|priorities)\b/i.test(
+        section.title,
+      );
+    const isCycleSignal =
+      /\b(cycle|flywheel|loop|continuous|iterative|feedback|recurring|ongoing)\b/i.test(
+        section.title,
+      );
+    const isBreakdownSignal =
+      /\b(breakdown|mix|composition|allocation|distribution|share|pillars|factors|elements)\b/i.test(
+        section.title,
+      );
+
+    const pickUnused = (optionsList: PrismLayout[]): PrismLayout => {
+      const fresh = optionsList.find(
+        (l) => l !== prevLayout && !usedLayoutsInArticle.has(l),
+      );
+      if (fresh) return fresh;
+      return optionsList.find((l) => l !== prevLayout) || optionsList[0];
+    };
+
     let layout: PrismLayout;
     if (intel.isFaq) {
       layout =
-        nodesForSection.length >= 3 && prevLayout !== "checklist"
-          ? "checklist"
-          : "editorial";
-    } else if (
-      nodesForSection.length === 2 &&
-      (rawComparisonCandidate || prevLayout !== "split-equation")
-    ) {
-      layout = prevLayout === "split-equation" ? "editorial" : "split-equation";
-    } else if (hasBothComparisonSides && nodesForSection.length >= 2 && nodesForSection.length % 2 === 0) {
-      layout = prevLayout === "comparison" ? "quadrant-matrix" : "comparison";
+        nCount >= 3 && prevLayout !== "checklist" ? "checklist" : "editorial";
+    } else if (nCount === 2) {
+      layout = isBeforeAfterSignal
+        ? pickUnused(["before-after", "split-equation", "editorial"])
+        : pickUnused(["split-equation", "before-after", "kpi-bento", "editorial"]);
+    } else if (hasBothComparisonSides && nCount >= 2 && nCount % 2 === 0) {
+      layout = isBeforeAfterSignal
+        ? pickUnused(["before-after", "comparison", "quadrant-matrix"])
+        : pickUnused(["comparison", "before-after", "quadrant-matrix"]);
       comparisonLabels = derivedLabels;
+    } else if (isPyramidSignal && nCount >= 3 && nCount <= 5) {
+      layout = pickUnused(["pyramid-tiers", "funnel-stages", "hierarchy-tree"]);
+    } else if (isHierarchySignal && nCount >= 3 && nCount <= 5) {
+      layout = pickUnused(["hierarchy-tree", "pyramid-tiers", "donut-breakdown"]);
+    } else if (isCycleSignal && nCount >= 3 && nCount <= 5) {
+      layout = pickUnused(["cycle-wheel", "zigzag-flowchart", "timeline"]);
+    } else if (isQuantitativeSignal) {
+      layout =
+        nCount <= 4
+          ? pickUnused(["stat-bars", "kpi-bento", "donut-breakdown"])
+          : pickUnused(["stat-bars", "donut-breakdown", "constellation"]);
+    } else if (isBreakdownSignal && nCount >= 3 && nCount <= 5) {
+      layout = pickUnused(["donut-breakdown", "stat-bars", "quadrant-matrix"]);
     } else if (
       visual.brief.relationship === "sequence" ||
       intel.archetype === "process"
     ) {
       layout =
-        nodesForSection.length === 3 && prevLayout !== "pipeline-flow"
-          ? "pipeline-flow"
-          : prevLayout === "timeline"
-            ? "funnel-stages"
-            : "timeline";
+        nCount === 3
+          ? pickUnused(["pipeline-flow", "funnel-stages", "zigzag-flowchart", "timeline"])
+          : pickUnused(["zigzag-flowchart", "funnel-stages", "timeline", "cycle-wheel"]);
     } else if (
       /\b(checklist|check|audit|verify|guide|rules|criteria|myths|mistakes)\b/i.test(
         section.title,
       ) &&
-      nodesForSection.length >= 3 &&
-      prevLayout !== "checklist"
+      nCount >= 3
     ) {
-      layout = "checklist";
-    } else if (
-      nodesForSection.length === 3 &&
-      prevLayout !== "pipeline-flow" &&
-      prevLayout !== "funnel-stages"
-    ) {
-      layout = idx % 2 === 0 ? "pipeline-flow" : "funnel-stages";
-    } else if (
-      nodesForSection.length === 4 &&
-      prevLayout !== "quadrant-matrix" &&
-      prevLayout !== "funnel-stages"
-    ) {
-      layout = idx % 2 === 0 ? "quadrant-matrix" : "funnel-stages";
+      layout = pickUnused(["checklist", "stat-bars", "pyramid-tiers", "editorial"]);
+    } else if (nCount === 3) {
+      layout = pickUnused([
+        "pipeline-flow",
+        "pyramid-tiers",
+        "donut-breakdown",
+        "hierarchy-tree",
+        "funnel-stages",
+        "stat-bars",
+        "kpi-bento",
+      ]);
+    } else if (nCount === 4) {
+      layout = pickUnused([
+        "quadrant-matrix",
+        "kpi-bento",
+        "donut-breakdown",
+        "hierarchy-tree",
+        "cycle-wheel",
+        "funnel-stages",
+        "before-after",
+        "stat-bars",
+      ]);
+    } else if (nCount === 5) {
+      layout = pickUnused([
+        "pyramid-tiers",
+        "stat-bars",
+        "cycle-wheel",
+        "zigzag-flowchart",
+        "funnel-stages",
+        "donut-breakdown",
+        "constellation",
+      ]);
     } else {
-      layout = layoutCycle[idx % layoutCycle.length];
-      if (layout === prevLayout) {
-        layout = layoutCycle[(idx + 1) % layoutCycle.length];
-      }
-      // Match layout capacity to node count
-      if (nodesForSection.length <= 2) {
-        layout = prevLayout === "split-equation" ? "editorial" : "split-equation";
-      } else if (
-        nodesForSection.length >= 5 &&
-        (layout === "pipeline-flow" ||
-          layout === "split-equation" ||
-          layout === "quadrant-matrix")
-      ) {
-        layout = prevLayout === "constellation" ? "ribbon" : "constellation";
-      }
+      const candidateCycle = layoutCycle.filter((l) => {
+        if (l === "split-equation") return nCount === 2;
+        if (l === "comparison" || l === "before-after") return nCount % 2 === 0;
+        if (l === "pipeline-flow" || l === "quadrant-matrix" || l === "kpi-bento") {
+          return nCount <= 4;
+        }
+        if (
+          l === "hierarchy-tree" ||
+          l === "pyramid-tiers" ||
+          l === "cycle-wheel" ||
+          l === "donut-breakdown"
+        ) {
+          return nCount >= 3 && nCount <= 5;
+        }
+        return true;
+      });
+      layout = pickUnused(candidateCycle.length ? candidateCycle : ["stat-bars", "zigzag-flowchart", "constellation", "ribbon"]);
     }
     prevLayout = layout;
+    usedLayoutsInArticle.add(layout);
 
     const paletteId =
       idx === 0 &&
@@ -987,8 +1218,15 @@ export function buildAllArticleSectionVisuals(
             logoDataUrl: cleanLogoDataUrl,
             ...(base.brand?.customColors && !isNewDomainExtraction
               ? { customColors: base.brand.customColors }
-              : hint?.accent && idx === 0
-                ? { customColors: brandColors(hint.accent, Boolean(hint.isDark ?? true)) }
+              : hint?.accent
+                ? {
+                    customColors: brandSectionVariantColors(
+                      hint.accent,
+                      hint.secondaryAccent,
+                      idx,
+                      Boolean(hint.isDark ?? true),
+                    ),
+                  }
                 : { customColors: undefined }),
           },
         },

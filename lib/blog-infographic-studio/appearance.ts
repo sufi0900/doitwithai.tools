@@ -178,6 +178,55 @@ export function brandBackgroundColors(
   }
   return brandColors(safe, false);
 }
+/**
+ * Generates 6 cohesive, WCAG-AA brand-locked theme variants for multi-section
+ * article suites so EVERY section unmistakably carries the extracted website's
+ * brand accent while preserving visual contrast and background diversity.
+ */
+export function brandSectionVariantColors(
+  accent: string,
+  secondaryAccent: string | undefined,
+  sectionIndex: number,
+  preferDark = true,
+) {
+  const safe = isHex(accent) ? accent : "#4A6CF7";
+  const sec = isHex(secondaryAccent) ? secondaryAccent : safe;
+  const variant = ((sectionIndex % 6) + 6) % 6;
+  switch (variant) {
+    case 0:
+      return brandColors(safe, preferDark);
+    case 1:
+      return brandBackgroundColors(safe, "brand-vibrant");
+    case 2:
+      return {
+        bgStart: mixColor(safe, "#F8FAFC", 0.91),
+        surface: "#FFFFFF",
+        accent: safe,
+        textMain: "#0F172A",
+      };
+    case 3:
+      return {
+        bgStart: mixColor(safe, "#070C18", 0.88),
+        surface: mixColor(safe, "#0F172A", 0.9),
+        accent: safe,
+        textMain: "#F8FAFC",
+      };
+    case 4:
+      return {
+        bgStart: mixColor(sec, "#FFFBEB", 0.9),
+        surface: mixColor(sec, "#FFFFFF", 0.96),
+        accent: safe,
+        textMain: "#111827",
+      };
+    default:
+      return {
+        bgStart: mixColor(sec, "#0C1322", 0.85),
+        surface: mixColor(sec, "#162033", 0.87),
+        accent: safe,
+        textMain: "#F1F5F9",
+      };
+  }
+}
 export function infographicColors(config: BlogInfographicConfig) {
   const p =
     BLOG_INFOGRAPHIC_PALETTES[config.paletteId] ||

@@ -25,8 +25,8 @@ import { renderPinterestPinPreviewSvg } from "../../lib/autonomous-agents/pin-sv
 import { buildLinkedinCarouselHtmlDeck } from "../../lib/autonomous-agents/pinterest-carousel-exporter";
 import { createDefaultAutonomousStudioState } from "../../lib/autonomous-agents/local-storage-store";
 
-test("vector scene stock library provides 16 recolorable MIT/CC0 scenes without script or foreignObject tags", () => {
-  assert.equal(VECTOR_SCENE_CATALOG.length, 16);
+test("vector scene stock library provides 32 recolorable MIT/CC0 scenes without script or foreignObject tags", () => {
+  assert.equal(VECTOR_SCENE_CATALOG.length, 32);
   for (const scene of VECTOR_SCENE_CATALOG) {
     const svg = scene.renderSvgNodes({
       primary: "#6366f1",
@@ -305,8 +305,8 @@ test("V3 regression: Neil Patel GEO vs AEO anaphora resolution, leading-period f
     "../../lib/blog-infographic-studio/project"
   );
 
-  // 1. 56-icon searchable catalog
-  assert.equal(ICON_CATALOG.length, 56);
+  // 1. 80-icon searchable catalog
+  assert.equal(ICON_CATALOG.length, 80);
   assert.ok(searchIconCatalog("aeo").some((e) => e.id === "answer"));
   assert.ok(searchIconCatalog("schema").some((e) => e.id === "code" || e.id === "braces"));
 
@@ -452,13 +452,13 @@ test("V3 regression: Neil Patel GEO vs AEO anaphora resolution, leading-period f
   // E. 2-card section is NEVER placed on a tall 9:16 layout with 45% bottom whitespace
   assert.notEqual(mistakesCard.aspectRatio, "9:16");
 
-  // F. Each section has 3 distinct switchable infographic concepts with tailored layouts & copy
+  // F. Each section has 4 distinct switchable infographic concepts with tailored layouts & copy
   assert.ok(Array.isArray(mistakesCard.conceptAlternatives));
-  assert.equal(mistakesCard.conceptAlternatives!.length, 3);
+  assert.equal(mistakesCard.conceptAlternatives!.length, 4);
   const conceptLayouts = new Set(
     mistakesCard.conceptAlternatives!.map((c) => c.prismLayout),
   );
-  assert.ok(conceptLayouts.size >= 2);
+  assert.equal(conceptLayouts.size, 4);
 
   // G. Single vector scene in header (no duplicate stacked shields) & responsive callout banner
   const customCard = {
@@ -608,6 +608,170 @@ test("regression: theseoagent.ai/blog/what-is-ai-seo filters video/pricing promo
     imported[0].customSceneImageUrl?.startsWith("data:image/png;base64,"),
   );
 });
+
+test("V4 stock & diagram expansion: 80 icons across 8 categories, 18 diagram archetypes with native geometry, external CSS + inline SVG brand detection across ALL sections, and 4 unique genre concepts", async () => {
+  const { parseHTML } = await import("linkedom");
+  const { extractWebsiteBrand } = await import(
+    "../../lib/blog-infographic-studio/brand-source"
+  );
+  const {
+    ICON_CATALOG,
+    ICON_CATEGORIES,
+    searchIconCatalog,
+  } = await import("../../lib/visual-stock/icon-database");
+  const {
+    PRISM_LAYOUTS,
+    PRISM_LAYOUT_CATEGORIES,
+  } = await import("../../lib/blog-infographic-studio/layout-registry");
+  const { createLayoutSample } = await import(
+    "../../lib/blog-infographic-studio/samples"
+  );
+  const { buildInfographicScene } = await import(
+    "../../lib/blog-infographic-studio/canvas-renderer"
+  );
+  const { importInfographicProject } = await import(
+    "../../lib/blog-infographic-studio/project"
+  );
+
+  // 1. 80 commercial-safe semantic SVG icons across 8 categories
+  assert.equal(ICON_CATALOG.length, 80);
+  assert.equal(ICON_CATEGORIES.length, 8);
+  for (const icon of ICON_CATALOG) {
+    assert.ok(icon.svgPaths.length >= 1, `Missing svgPaths for ${icon.id}`);
+    assert.ok(icon.svgPath.trim().length > 5, `Empty svgPath for ${icon.id}`);
+    assert.doesNotMatch(icon.svgPath, /<script|foreignObject/i);
+  }
+  assert.ok(searchIconCatalog("pyramid").some((e) => e.id === "pyramid"));
+  assert.ok(searchIconCatalog("donut").some((e) => e.id === "donut-chart"));
+  assert.ok(searchIconCatalog("org").some((e) => e.id === "sitemap"));
+  assert.ok(searchIconCatalog("flywheel").some((e) => e.id === "repeat"));
+
+  // 2. 18 flagship layouts across 6 categories, each of the 8 new archetypes renders distinct native SVG geometry
+  assert.equal(PRISM_LAYOUTS.length, 18);
+  assert.equal(PRISM_LAYOUT_CATEGORIES.length, 6);
+
+  const newLayoutAssertions: Array<{
+    id: (typeof PRISM_LAYOUTS)[number]["id"];
+    pattern: RegExp;
+  }> = [
+    { id: "stat-bars", pattern: /RANK #1/ },
+    { id: "donut-breakdown", pattern: /stroke-dasharray="/ },
+    { id: "hierarchy-tree", pattern: /M\s+\d+[\d.]*\s+\d+[\d.]*\s+V\s+/ },
+    { id: "pyramid-tiers", pattern: /<polygon\s+points="/ },
+    { id: "cycle-wheel", pattern: /rotate\(45\)"><path d="M -6 -5 L 5 0 L -6 5"/ },
+    { id: "before-after", pattern: /M 792 \d+[\d.]* H 806/ },
+    { id: "zigzag-flowchart", pattern: /START FLOW/ },
+    { id: "kpi-bento", pattern: /data-composition="kpi-bento"[\s\S]*M \d+[\d.]* \d+[\d.]* C / },
+  ];
+
+  for (const { id, pattern } of newLayoutAssertions) {
+    const sample = createLayoutSample(id);
+    const scene = buildInfographicScene(sample);
+    assert.deepEqual(
+      scene.issues,
+      [],
+      `Expected zero scene issues for ${id}, got ${JSON.stringify(scene.issues)}`,
+    );
+    assert.match(scene.svg, pattern, `Expected native geometry for ${id}`);
+    assert.doesNotMatch(scene.svg, /<script|<foreignObject|NaN|Infinity|undefined/);
+
+    // Survives JSON project round-trip cleanly
+    const [restored] = importInfographicProject(
+      JSON.stringify({ version: 1, cards: [sample] }),
+    );
+    assert.equal(restored.prismLayout, id);
+  }
+
+  // 3. External CSS + inline header SVG logo brand extraction
+  const cssOnlyDoc = parseHTML(
+    "<html><head><title>Brand Test</title></head><body><header><a href='/'>Home</a></header></body></html>",
+  ).document as unknown as Document;
+  const fromExternalCss = extractWebsiteBrand(
+    cssOnlyDoc,
+    "custombrand.example",
+    "https://custombrand.example/blog/guide",
+    ":root { --color-primary: #E11D48; --color-secondary: #0EA5E9; }",
+  );
+  assert.equal(fromExternalCss.accent, "#E11D48");
+  assert.equal(fromExternalCss.secondaryAccent, "#0EA5E9");
+
+  const svgLogoDoc = parseHTML(
+    '<html><head><title>SVG Brand</title></head><body><header><a href="/"><svg viewBox="0 0 24 24"><path fill="#7C3AED" d="M0 0h24v24H0z"/></svg></a></header></body></html>',
+  ).document as unknown as Document;
+  const fromInlineSvg = extractWebsiteBrand(
+    svgLogoDoc,
+    "svgbrand.example",
+    "https://svgbrand.example/",
+  );
+  assert.equal(fromInlineSvg.accent, "#7C3AED");
+
+  // 4. Brand color propagation across ALL generated sections (not only idx === 0) + semantic routing across diverse diagrams
+  const multiSections = [
+    sectionFromText(
+      "AI Search Impact Benchmarks and Key Metrics",
+      "### Citation Share\nStructured answers lift citation visibility across generative results.\n### Crawl Efficiency\nClean HTML improves indexing speed for AI search crawlers.\n### Conversion Lift\nQualified answer-engine visitors convert faster on landing pages.\n### Authority Signals\nVerified primary sources earn stronger model trust.",
+      "v4-sec-1",
+    ),
+    sectionFromText(
+      "Content Authority Pyramid and Priority Tiers",
+      "### Technical Crawlability\nEnsure fast server-rendered pages with zero broken links.\n### Structured Entities\nMap clear schema and entity definitions on core hubs.\n### Original Evidence\nPublish benchmark studies and verifiable primary data.\n### Editorial Authority\nEarn citations across trusted industry publications.",
+      "v4-sec-2",
+    ),
+    sectionFromText(
+      "Modern AI SEO System Architecture",
+      "### Discovery Layer\nTrack conversational prompts and real buyer queries.\n### Production Layer\nCreate direct, evidence-backed modular content blocks.\n### Verification Layer\nAudit claims, citations, and crawler logs weekly.\n### Distribution Layer\nRepurpose key takeaways into standalone social visuals.",
+      "v4-sec-3",
+    ),
+    sectionFromText(
+      "Continuous Citation Optimization Flywheel",
+      "### Audit Queries\nIdentify high-intent questions where AI engines summarize answers.\n### Upgrade Pages\nAdd concise definitions, tables, and structured takeaways.\n### Measure Citations\nMonitor brand mentions across Search Console and AI engines.\n### Compound Winners\nRefresh top-cited pages quarterly with fresh data.",
+      "v4-sec-4",
+    ),
+    sectionFromText(
+      "Before vs. After: Legacy SEO vs. AI Search Workflow",
+      "### Keyword Stuffing\nRepeating exact-match phrases without answering buyer intent.\n### Direct Answer Blocks\nLeading every section with crisp, verified takeaways.\n### Unstructured Walls of Text\nLong narratives that crawlers struggle to summarize accurately.\n### Modular Visual Evidence\nScannable charts, tables, and standalone infographics.",
+      "v4-sec-5",
+    ),
+    sectionFromText(
+      "Step-by-Step AI Search Audit Workflow",
+      "### Step 1: Verify Crawler Access\nAllow search crawlers in robots.txt and confirm 200 status codes.\n### Step 2: Check Server Rendering\nEnsure primary content renders cleanly without client-side delays.\n### Step 3: Add Structured Comparisons\nUse crisp tables and definitions for key concepts.\n### Step 4: Monitor AI Reports\nTrack citations in Search Console and Bing Webmaster Tools.",
+      "v4-sec-6",
+    ),
+  ];
+
+  const v4Suite = buildAllArticleSectionVisuals(multiSections, {
+    sourceUrl: "https://custombrand.example/blog/ai-seo-playbook",
+    domain: "custombrand.example",
+    articleTitle: "Complete AI Search Optimization Playbook",
+    brandTheme: fromExternalCss,
+    includeUniversalOverview: false,
+  });
+
+  assert.equal(v4Suite.length, 6);
+  // Every single section carries the extracted website brand accent (#E11D48) — NOT dropped after section 0!
+  for (const [idx, card] of v4Suite.entries()) {
+    assert.ok(
+      card.brand?.customColors?.accent,
+      `Section ${idx + 1} must retain extracted brand customColors`,
+    );
+    assert.equal(card.conceptAlternatives?.length, 4);
+    assert.equal(
+      new Set(card.conceptAlternatives!.map((c) => c.prismLayout)).size,
+      4,
+      `Section ${idx + 1} must expose 4 unique diagram layouts across concepts`,
+    );
+    const rendered = buildInfographicScene(card);
+    assert.deepEqual(rendered.issues, [], `Section ${idx + 1} (${card.prismLayout}) rendered issues`);
+  }
+
+  // All 6 sections receive genuinely diverse diagram layouts (at least 5 distinct archetypes!)
+  const routedLayouts = new Set(v4Suite.map((c) => c.prismLayout));
+  assert.ok(
+    routedLayouts.size >= 5,
+    `Expected >= 5 distinct routed diagram archetypes across 6 sections, got: ${[...routedLayouts].join(", ")}`,
+  );
+});
+
 
 
 

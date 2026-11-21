@@ -1132,24 +1132,29 @@ export function buildPrismScene(
   // Multi-pass adaptive typography and spacing solver so 2–6 points fit cleanly above footerY
   const candidateScales = isSyntheticOverflow
     ? [1.0]
-    : [1.0, 0.94, 0.88, 0.82, 0.76, 0.7, 0.65, 0.6, 0.55];
+    : [1.0, 0.94, 0.88, 0.82, 0.76, 0.7, 0.65, 0.6, 0.55, 0.5];
 
   const metricsForScale = (s: number) => {
     const labelSize = Math.max(
-      17,
+      16,
       Math.round(32 * s * titleScaleMult),
     );
-    const bodySize = Math.max(14, Math.round(26 * s * bodyScaleMult));
-    const badgeSize = Math.max(13, Math.round(18 * s));
+    const bodySize = Math.max(13, Math.round(26 * s * bodyScaleMult));
+    const badgeSize = Math.max(12, Math.round(18 * s));
     const isFaqChecklist =
       layout === "checklist" &&
       nodes.length > 0 &&
       nodes.every((n) => /^Q\d+$/i.test(n.badge.trim()));
     const badgeOffset =
       layout === "comparison" ||
+      layout === "before-after" ||
       layout === "timeline" ||
       layout === "pipeline-flow" ||
       layout === "split-equation" ||
+      layout === "hierarchy-tree" ||
+      layout === "donut-breakdown" ||
+      layout === "cycle-wheel" ||
+      layout === "kpi-bento" ||
       isFaqChecklist
         ? 0
         : Math.max(20, Math.round(28 * s));
@@ -1223,14 +1228,155 @@ export function buildPrismScene(
       };
     }
 
-    if (layout === "comparison") {
-      const gap = 38,
+    if (layout === "hierarchy-tree") {
+      const rootH = Math.round(52 * s);
+      const busH = Math.round(46 * s);
+      const topRowCount = nodes.length <= 4 ? nodes.length : Math.ceil(nodes.length / 2);
+      const colGap = 22;
+      const colW = Math.floor((contentW - colGap * (topRowCount - 1)) / topRowCount);
+      const colTextW = Math.max(160, colW - 36);
+      const headReserve = Math.round(64 * s);
+      const rowHeights: number[] = [];
+      for (let i = 0; i < nodes.length; i += topRowCount) {
+        const slice = nodes.slice(i, i + topRowCount);
+        const h = Math.max(
+          Math.round(140 * s),
+          ...slice.map(
+            (n) =>
+              headReserve +
+              wrap(n.title, colTextW, labelSize, true).length * labelSize * 1.28 +
+              titleGap +
+              wrap(n.detail, colTextW, bodySize).length * bodySize * 1.3 +
+              padY * 2,
+          ),
+        );
+        rowHeights.push(h);
+      }
+      const minTotal =
+        rootH +
+        busH +
+        rowHeights.reduce((a, b) => a + b, 0) +
+        Math.max(0, rowHeights.length - 1) * minGap;
+      return {
+        s,
+        labelSize,
+        bodySize,
+        badgeSize,
+        badgeOffset,
+        titleGap,
+        padY,
+        minGap,
+        textHeight,
+        rootH,
+        busH,
+        topRowCount,
+        rowHeights,
+        minTotal,
+      };
+    }
+
+    if (layout === "donut-breakdown" || layout === "cycle-wheel") {
+      const visualZoneH = Math.round((nodes.length >= 5 ? 186 : 220) * Math.min(1, s + 0.08));
+      const colGap = 22;
+      const cellW = (contentW - colGap) / 2;
+      const textW = Math.max(180, cellW - 102);
+      const rowHeights: number[] = [];
+      for (let i = 0; i < nodes.length; i += 2) {
+        const slice = nodes.slice(i, i + 2);
+        const h = Math.max(
+          Math.round(92 * s),
+          ...slice.map((n) => textHeight(n, textW) + padY * 2),
+        );
+        rowHeights.push(h);
+      }
+      const minTotal =
+        visualZoneH +
+        minGap +
+        rowHeights.reduce((a, b) => a + b, 0) +
+        Math.max(0, rowHeights.length - 1) * minGap;
+      return {
+        s,
+        labelSize,
+        bodySize,
+        badgeSize,
+        badgeOffset,
+        titleGap,
+        padY,
+        minGap,
+        textHeight,
+        visualZoneH,
+        rowHeights,
+        minTotal,
+      };
+    }
+
+    if (layout === "kpi-bento") {
+      const colGap = 26;
+      const heroW = Math.round(contentW * 0.39);
+      const rightW = contentW - heroW - colGap;
+      const heroNode = nodes[0];
+      const supportNodes = nodes.slice(1);
+      const heroTextW = heroW - 48;
+      const heroMinH = heroNode
+        ? Math.round(132 * s) +
+          wrap(heroNode.title, heroTextW, Math.round(labelSize * 1.1), true).length *
+            Math.round(labelSize * 1.1) *
+            1.28 +
+          titleGap +
+          wrap(heroNode.detail, heroTextW, bodySize).length * bodySize * 1.3 +
+          padY * 2
+        : 220;
+      const useRightGrid = supportNodes.length >= 4;
+      const rightColW = useRightGrid ? (rightW - 18) / 2 : rightW;
+      const rightTextW = Math.max(180, rightColW - (useRightGrid ? 40 : 108));
+      const rowHeights: number[] = [];
+      if (useRightGrid) {
+        for (let i = 0; i < supportNodes.length; i += 2) {
+          const slice = supportNodes.slice(i, i + 2);
+          const h = Math.max(
+            Math.round(108 * s),
+            ...slice.map((n) => Math.round(36 * s) + textHeight(n, rightTextW) + padY * 2),
+          );
+          rowHeights.push(h);
+        }
+      } else {
+        for (const n of supportNodes) {
+          rowHeights.push(
+            Math.max(Math.round(88 * s), textHeight(n, rightTextW) + padY * 2),
+          );
+        }
+      }
+      const rightTotal =
+        rowHeights.reduce((a, b) => a + b, 0) +
+        Math.max(0, rowHeights.length - 1) * minGap;
+      const minTotal = Math.max(heroMinH, rightTotal);
+      return {
+        s,
+        labelSize,
+        bodySize,
+        badgeSize,
+        badgeOffset,
+        titleGap,
+        padY,
+        minGap,
+        textHeight,
+        heroW,
+        rightW,
+        useRightGrid,
+        rowHeights,
+        minTotal,
+      };
+    }
+
+    if (layout === "comparison" || layout === "before-after") {
+      const gap = layout === "before-after" ? 64 : 38,
         cellW = (contentW - gap) / 2;
-      const labels = config.comparisonLabels || [
-        "Perspective A",
-        "Perspective B",
-      ];
-      const headerFont = Math.max(20, Math.round(30 * s));
+      const labels =
+        config.comparisonLabels ||
+        (layout === "before-after"
+          ? ["Before · Legacy State", "After · Optimized Result"]
+          : ["Perspective A", "Perspective B"]);
+      const headerFont = Math.max(18, Math.round(28 * s));
       const labelH =
         Math.max(
           ...labels.map(
@@ -1242,8 +1388,9 @@ export function buildPrismScene(
       const rowHeights: number[] = [];
       for (let i = 0; i < nodes.length; i += 2) {
         const row = nodes.slice(i, i + 2);
+        const rowW = row.length === 1 && layout === "before-after" ? contentW - 140 : textW;
         const h =
-          Math.max(...row.map((n) => textHeight(n, textW)), Math.round(88 * s)) +
+          Math.max(...row.map((n) => textHeight(n, rowW)), Math.round(84 * s)) +
           padY * 2;
         rowHeights.push(h);
       }
@@ -1344,15 +1491,30 @@ export function buildPrismScene(
     }
 
     const isTimeline = layout === "timeline",
-      isChecklist = layout === "checklist";
-    const textW = contentW - (isChecklist ? 228 : isTimeline ? 250 : 196);
-    const minCardH = Math.round((isChecklist ? 128 : 120) * s);
-    const rowHeights = nodes.map((n) =>
-      Math.max(minCardH, textHeight(n, textW) + padY * 2),
-    );
+      isChecklist = layout === "checklist",
+      isStatBars = layout === "stat-bars",
+      isPyramid = layout === "pyramid-tiers",
+      isFlowchart = layout === "zigzag-flowchart";
+    const baseTextW =
+      contentW -
+      (isChecklist ? 228 : isTimeline ? 250 : isFlowchart ? 260 : 196);
+    const barExtraH = isStatBars ? Math.round(30 * s) : 0;
+    const flowHeaderH = isFlowchart ? Math.round(52 * s) : 0;
+    const flowStepGap = isFlowchart ? Math.max(minGap, Math.round(36 * s)) : minGap;
+    const minCardH = Math.round((isChecklist ? 128 : 114) * s);
+    const rowHeights = nodes.map((n, idx) => {
+      const pyrInset = isPyramid
+        ? Math.round(
+            ((nodes.length - 1 - idx) / Math.max(1, nodes.length - 1)) * 108,
+          )
+        : 0;
+      const rowTW = Math.max(240, baseTextW - pyrInset * 2);
+      return Math.max(minCardH, textHeight(n, rowTW) + barExtraH + padY * 2);
+    });
     const minTotal =
+      flowHeaderH +
       rowHeights.reduce((a, b) => a + b, 0) +
-      Math.max(0, rowHeights.length - 1) * minGap;
+      Math.max(0, rowHeights.length - 1) * flowStepGap;
     return {
       s,
       labelSize,
@@ -1361,8 +1523,10 @@ export function buildPrismScene(
       badgeOffset,
       titleGap,
       padY,
-      minGap,
+      minGap: flowStepGap,
       textHeight,
+      flowHeaderH,
+      barExtraH,
       rowHeights,
       minTotal,
     };
@@ -1664,13 +1828,522 @@ export function buildPrismScene(
       ),
     );
     bottom = startY + cardH;
-  } else if (layout === "comparison") {
-    const gap = 38,
+  } else if (layout === "hierarchy-tree") {
+    const rootH = (chosen as { rootH?: number }).rootH || Math.round(52 * fitScale);
+    const busH = (chosen as { busH?: number }).busH || Math.round(46 * fitScale);
+    const topRowCount =
+      (chosen as { topRowCount?: number }).topRowCount ||
+      (nodes.length <= 4 ? nodes.length : Math.ceil(nodes.length / 2));
+    const colGap = 22;
+    const rowCount = rowHeights.length;
+    const extraCardH = Math.min(
+      84,
+      Math.round((slack * 0.6) / Math.max(1, rowCount)),
+    );
+    const rowGap = minGap + Math.min(28, Math.round((slack * 0.2) / Math.max(1, rowCount)));
+    const rootW = Math.min(540, Math.round(contentW * 0.44));
+    const rootX = Math.round((W - rootW) / 2);
+    const rootY = top + Math.min(18, Math.round(slack * 0.12));
+    const rootLabel = (
+      config.centerLabel ||
+      config.headline.split(":")[0] ||
+      "Core Architecture"
+    )
+      .trim()
+      .slice(0, 38);
+    // Root node capsule
+    bodyParts.push(
+      rect(rootX, rootY, rootW, rootH, accent, 16, {
+        ...shadow,
+        stroke: colors[1],
+        strokeWidth: 2,
+      }),
+      textBlock(
+        rootLabel,
+        rootX + 18,
+        rootY + Math.max(10, Math.round((rootH - 22) / 2)),
+        rootW - 36,
+        Math.max(16, Math.round(21 * fitScale)),
+        contrast("#FFFFFF", accent) >= contrast("#081322", accent)
+          ? "#FFFFFF"
+          : "#081322",
+        true,
+        true,
+        fontStack,
+      ).node,
+    );
+    const firstRowY = rootY + rootH + busH;
+    const busY = rootY + rootH + Math.round(busH * 0.52);
+    const firstSliceCount = Math.min(topRowCount, nodes.length);
+    const firstColW = Math.floor(
+      (contentW - colGap * (firstSliceCount - 1)) / firstSliceCount,
+    );
+    const firstCx = M + Math.round(firstColW / 2);
+    const lastCx =
+      M + (firstSliceCount - 1) * (firstColW + colGap) + Math.round(firstColW / 2);
+    // Orthogonal trunk & distribution bus
+    bodyParts.push(
+      path(`M ${W / 2} ${rootY + rootH} V ${busY}`, accent, 3.5),
+      path(`M ${firstCx} ${busY} H ${lastCx}`, accent, 3.5),
+    );
+    let y = firstRowY;
+    for (let r = 0; r < rowCount; r++) {
+      const slice = nodes.slice(r * topRowCount, (r + 1) * topRowCount);
+      const cols = slice.length;
+      const colW = Math.floor((contentW - colGap * (cols - 1)) / cols);
+      const colTextW = Math.max(150, colW - 36);
+      const h = rowHeights[r] + extraCardH;
+      slice.forEach((n, k) => {
+        const idx = r * topRowCount + k;
+        const x = M + k * (colW + colGap);
+        const cx = x + Math.round(colW / 2);
+        const c = isHex(n.accentHex) ? n.accentHex : colors[idx % 4];
+        if (r === 0) {
+          bodyParts.push(
+            path(`M ${cx} ${busY} V ${y}`, c, 3),
+            circle(cx, y, 6, c),
+          );
+        } else {
+          bodyParts.push(
+            path(`M ${cx} ${y - rowGap} V ${y}`, c, 2.5, {
+              strokeDasharray: "4 4",
+              opacity: 0.65,
+            }),
+            circle(cx, y, 5, c),
+          );
+        }
+        surfaceRectInto(bodyParts, x, y, colW, h, r % 2 === 1, c, `node-${idx}`);
+        medallionInto(
+          bodyParts,
+          n,
+          cx,
+          y + Math.round(34 * fitScale),
+          Math.max(18, Math.round(23 * fitScale)),
+          c,
+          idx,
+        );
+        const textStartY = y + Math.round(64 * fitScale);
+        const titleNode = textBlock(
+          n.title,
+          x + 18,
+          textStartY,
+          colTextW,
+          labelSize,
+          ink,
+          true,
+          true,
+          fontStack,
+        );
+        const detailNode = textBlock(
+          n.detail,
+          x + 18,
+          textStartY + titleNode.height + titleGap,
+          colTextW,
+          bodySize,
+          muted,
+          false,
+          true,
+          fontStack,
+        );
+        bodyParts.push(titleNode.node, detailNode.node);
+      });
+      y += h + rowGap;
+    }
+    bottom = y - rowGap;
+  } else if (layout === "donut-breakdown" || layout === "cycle-wheel") {
+    const isDonut = layout === "donut-breakdown";
+    const visualZoneH =
+      (chosen as { visualZoneH?: number }).visualZoneH ||
+      Math.round(210 * fitScale);
+    const colGap = 22;
+    const cellW = (contentW - colGap) / 2;
+    const textW = Math.max(170, cellW - 102);
+    const pairCount = Math.max(1, rowHeights.length);
+    const extraGap = Math.min(
+      28,
+      Math.round((slack * 0.24) / Math.max(1, pairCount)),
+    );
+    const rowGap = minGap + extraGap;
+    const extraCardH = Math.min(
+      68,
+      Math.round(
+        (slack - extraGap * Math.max(1, pairCount)) / Math.max(1, pairCount),
+      ),
+    );
+    const cx = W / 2;
+    const cy = top + Math.round(visualZoneH / 2);
+    const radius = Math.min(88, Math.round(visualZoneH * 0.39));
+
+    if (isDonut) {
+      // Multi-segment SVG Donut Chart using circumference dash segments
+      const strokeW = Math.max(22, Math.round(radius * 0.34));
+      const circ = 2 * Math.PI * radius;
+      const rawWeights = nodes.map((n) => {
+        const m = `${n.title} ${n.detail}`.match(/\b(\d{1,3})\s*%/);
+        return m ? Math.max(8, Math.min(100, Number(m[1]))) : 1;
+      });
+      const totalW = rawWeights.reduce((a, b) => a + b, 0) || 1;
+      let offset = 0;
+      const gapLen = 6;
+      bodyParts.push(
+        circle(cx, cy, radius, "none", {
+          stroke: muted,
+          strokeWidth: strokeW,
+          opacity: 0.14,
+        }),
+      );
+      nodes.forEach((n, idx) => {
+        const segLen = Math.max(
+          10,
+          (rawWeights[idx] / totalW) * circ - gapLen,
+        );
+        const c = isHex(n.accentHex) ? n.accentHex : colors[idx % 4];
+        bodyParts.push(
+          circle(cx, cy, radius, "none", {
+            stroke: c,
+            strokeWidth: strokeW,
+            strokeDasharray: `${segLen.toFixed(1)} ${circ.toFixed(1)}`,
+            strokeDashoffset: (-offset).toFixed(1),
+            transform: `rotate(-90 ${cx} ${cy})`,
+          }),
+        );
+        // Outer radial index dot on ring midline
+        const midAngle =
+          -Math.PI / 2 + ((offset + segLen / 2) / circ) * Math.PI * 2;
+        const badgeR = radius + strokeW * 0.72 + 12;
+        const bx = cx + Math.cos(midAngle) * badgeR;
+        const by = cy + Math.sin(midAngle) * badgeR;
+        bodyParts.push(
+          circle(bx, by, 14, c, { stroke: surface, strokeWidth: 2 }),
+          textBlock(
+            String(idx + 1),
+            bx - 12,
+            by - 9,
+            24,
+            13,
+            contrast("#FFFFFF", c) >= contrast("#081322", c)
+              ? "#FFFFFF"
+              : "#081322",
+            true,
+            true,
+            fontStack,
+          ).node,
+        );
+        offset += (rawWeights[idx] / totalW) * circ;
+      });
+      // Center summary hub
+      const innerR = Math.max(38, radius - Math.round(strokeW * 0.65));
+      bodyParts.push(
+        circle(cx, cy, innerR, surface, {
+          ...shadow,
+          stroke: accent,
+          strokeWidth: 2,
+        }),
+        textBlock(
+          String(nodes.length),
+          cx - 32,
+          cy - 22,
+          64,
+          28,
+          accent,
+          true,
+          true,
+          fontStack,
+        ).node,
+        textBlock(
+          (config.centerLabel || "PILLARS").slice(0, 12).toUpperCase(),
+          cx - 42,
+          cy + 8,
+          84,
+          12,
+          muted,
+          true,
+          true,
+          fontStack,
+        ).node,
+      );
+    } else {
+      // Continuous Flywheel Cycle Loop with directional arrows between orbital nodes
+      bodyParts.push(
+        circle(cx, cy, radius, "none", {
+          stroke: accent,
+          strokeWidth: 5,
+          opacity: 0.32,
+        }),
+        circle(cx, cy, Math.round(radius * 0.48), surface, {
+          ...shadow,
+          stroke: accent,
+          strokeWidth: 2.5,
+        }),
+        textBlock(
+          (config.centerLabel || "FLYWHEEL").slice(0, 12).toUpperCase(),
+          cx - 46,
+          cy - 9,
+          92,
+          14,
+          accent,
+          true,
+          true,
+          fontStack,
+        ).node,
+      );
+      nodes.forEach((n, idx) => {
+        const a = -Math.PI / 2 + (Math.PI * 2 * idx) / nodes.length;
+        const nx = cx + Math.cos(a) * radius;
+        const ny = cy + Math.sin(a) * radius;
+        const c = isHex(n.accentHex) ? n.accentHex : colors[idx % 4];
+        // Directional chevron halfway to next orbital node
+        const midA = a + Math.PI / nodes.length;
+        const ax = cx + Math.cos(midA) * radius;
+        const ay = cy + Math.sin(midA) * radius;
+        const deg = Math.round(((midA + Math.PI / 2) * 180) / Math.PI);
+        bodyParts.push(
+          el(
+            "g",
+            { transform: `translate(${ax.toFixed(1)}, ${ay.toFixed(1)}) rotate(${deg})` },
+            path("M -6 -5 L 5 0 L -6 5", c, 3.2),
+          ),
+        );
+        medallionInto(
+          bodyParts,
+          n,
+          nx,
+          ny,
+          Math.max(20, Math.round(24 * fitScale)),
+          c,
+          idx,
+        );
+      });
+    }
+
+    // Lower 2-column color-coded breakdown cards
+    let y = top + visualZoneH + rowGap;
+    for (let i = 0; i < nodes.length; i += 2) {
+      const slice = nodes.slice(i, i + 2);
+      const h = rowHeights[Math.floor(i / 2)] + extraCardH;
+      slice.forEach((n, k) => {
+        const idx = i + k;
+        const isSolo = slice.length === 1;
+        const wCard = isSolo ? contentW : cellW;
+        const x = isSolo ? M : M + k * (cellW + colGap);
+        const tw = isSolo ? contentW - 116 : textW;
+        const c = isHex(n.accentHex) ? n.accentHex : colors[idx % 4];
+        const ntH = textHeight(n, tw);
+        const textY = y + Math.max(padY, Math.round((h - ntH) / 2));
+        surfaceRectInto(bodyParts, x, y, wCard, h, k === 1, c, `node-${idx}`);
+        medallionInto(
+          bodyParts,
+          n,
+          x + 44,
+          y + h / 2,
+          Math.max(20, Math.round(24 * fitScale)),
+          c,
+          idx,
+        );
+        drawText(n, x + 84, textY, tw, idx);
+      });
+      y += h + rowGap;
+    }
+    bottom = y - rowGap;
+  } else if (layout === "kpi-bento") {
+    const colGap = 26;
+    const heroW =
+      (chosen as { heroW?: number }).heroW || Math.round(contentW * 0.39);
+    const rightW =
+      (chosen as { rightW?: number }).rightW || contentW - heroW - colGap;
+    const useRightGrid = Boolean(
+      (chosen as { useRightGrid?: boolean }).useRightGrid,
+    );
+    const supportNodes = nodes.slice(1);
+    const totalH = Math.min(
+      availBodyH,
+      minTotal + Math.round(slack * 0.65),
+    );
+    const startY = top + Math.min(20, Math.round(slack * 0.16));
+
+    // Left Hero Spotlight Card (Node 0) with decorative sparkline curve
+    const hero = nodes[0];
+    if (hero) {
+      const hc = isHex(hero.accentHex) ? hero.accentHex : colors[0];
+      surfaceRectInto(
+        bodyParts,
+        M,
+        startY,
+        heroW,
+        totalH,
+        true,
+        hc,
+        "node-0",
+      );
+      bodyParts.push(rect(M + 24, startY, heroW - 48, 5, hc, 2.5));
+      medallionInto(
+        bodyParts,
+        hero,
+        M + 58,
+        startY + 56,
+        Math.max(26, Math.round(32 * fitScale)),
+        hc,
+        0,
+      );
+      const pillTxt = (hero.badge.trim() || "CORE SIGNAL").toUpperCase();
+      const pillW = Math.max(82, widthOf(pillTxt, 13, true) + 24);
+      bodyParts.push(
+        rect(M + heroW - 24 - pillW, startY + 38, pillW, 28, hc, 14),
+        textBlock(
+          pillTxt,
+          M + heroW - 24 - pillW,
+          startY + 44,
+          pillW,
+          13,
+          contrast("#FFFFFF", hc) >= contrast("#081322", hc)
+            ? "#FFFFFF"
+            : "#081322",
+          true,
+          true,
+          fontStack,
+        ).node,
+      );
+      const heroTitleSize = Math.round(labelSize * 1.1);
+      const heroTitleNode = textBlock(
+        hero.title,
+        M + 24,
+        startY + Math.round(104 * fitScale),
+        heroW - 48,
+        heroTitleSize,
+        ink,
+        true,
+        false,
+        fontStack,
+      );
+      const heroDetailNode = textBlock(
+        hero.detail,
+        M + 24,
+        startY + Math.round(104 * fitScale) + heroTitleNode.height + titleGap,
+        heroW - 48,
+        bodySize,
+        muted,
+        false,
+        false,
+        fontStack,
+      );
+      bodyParts.push(heroTitleNode.node, heroDetailNode.node);
+      // Decorative telemetry sparkline at bottom of hero tile when room allows
+      const sparkY = startY + totalH - 36;
+      const textBottom =
+        startY +
+        Math.round(104 * fitScale) +
+        heroTitleNode.height +
+        titleGap +
+        heroDetailNode.height;
+      if (sparkY - textBottom >= 26) {
+        const sx = M + 28;
+        const sw = heroW - 56;
+        bodyParts.push(
+          path(
+            `M ${sx} ${sparkY + 12} C ${sx + sw * 0.22} ${sparkY + 4}, ${sx + sw * 0.42} ${sparkY - 12}, ${sx + sw * 0.65} ${sparkY - 2} S ${sx + sw * 0.88} ${sparkY - 18}, ${sx + sw} ${sparkY - 22}`,
+            hc,
+            3.5,
+            { opacity: 0.72 },
+          ),
+          circle(sx + sw, sparkY - 22, 6, colors[1]),
+        );
+      }
+    }
+
+    // Right Supporting Insight Tiles
+    const rxBase = M + heroW + colGap;
+    const rRows = Math.max(1, rowHeights.length);
+    const rightRowGap = minGap;
+    const rightSlack = Math.max(
+      0,
+      totalH -
+        rowHeights.reduce((a, b) => a + b, 0) -
+        Math.max(0, rRows - 1) * rightRowGap,
+    );
+    const extraRH = Math.floor(rightSlack / rRows);
+    let ry = startY;
+    if (useRightGrid) {
+      const tileGap = 18;
+      const tileW = (rightW - tileGap) / 2;
+      const tileTextW = Math.max(160, tileW - 40);
+      for (let i = 0; i < supportNodes.length; i += 2) {
+        const slice = supportNodes.slice(i, i + 2);
+        const h = rowHeights[Math.floor(i / 2)] + extraRH;
+        slice.forEach((n, k) => {
+          const idx = 1 + i + k;
+          const isSolo = slice.length === 1;
+          const wTile = isSolo ? rightW : tileW;
+          const x = isSolo ? rxBase : rxBase + k * (tileW + tileGap);
+          const tw = isSolo ? rightW - 44 : tileTextW;
+          const c = isHex(n.accentHex) ? n.accentHex : colors[idx % 4];
+          surfaceRectInto(bodyParts, x, ry, wTile, h, false, c, `node-${idx}`);
+          medallionInto(
+            bodyParts,
+            n,
+            x + 34,
+            ry + 30,
+            Math.max(16, Math.round(18 * fitScale)),
+            c,
+            idx,
+          );
+          const tNode = textBlock(
+            n.title,
+            x + 62,
+            ry + 18,
+            tw - 26,
+            labelSize,
+            ink,
+            true,
+            false,
+            fontStack,
+          );
+          const dNode = textBlock(
+            n.detail,
+            x + 20,
+            ry + Math.max(54, 22 + tNode.height + titleGap),
+            tw,
+            bodySize,
+            muted,
+            false,
+            false,
+            fontStack,
+          );
+          bodyParts.push(tNode.node, dNode.node);
+        });
+        ry += h + rightRowGap;
+      }
+    } else {
+      const tileTextW = Math.max(180, rightW - 108);
+      supportNodes.forEach((n, k) => {
+        const idx = 1 + k;
+        const h = rowHeights[k] + extraRH;
+        const c = isHex(n.accentHex) ? n.accentHex : colors[idx % 4];
+        const ntH = textHeight(n, tileTextW);
+        const textY = ry + Math.max(padY, Math.round((h - ntH) / 2));
+        surfaceRectInto(bodyParts, rxBase, ry, rightW, h, false, c, `node-${idx}`);
+        medallionInto(
+          bodyParts,
+          n,
+          rxBase + 46,
+          ry + h / 2,
+          Math.max(20, Math.round(24 * fitScale)),
+          c,
+          idx,
+        );
+        drawText(n, rxBase + 88, textY, tileTextW, idx);
+        ry += h + rightRowGap;
+      });
+    }
+    bottom = startY + totalH;
+  } else if (layout === "comparison" || layout === "before-after") {
+    const isBeforeAfter = layout === "before-after";
+    const gap = isBeforeAfter ? 64 : 38,
       cellW = (contentW - gap) / 2;
-    const labels = config.comparisonLabels || [
-      "Perspective A",
-      "Perspective B",
-    ];
+    const labels =
+      config.comparisonLabels ||
+      (isBeforeAfter
+        ? ["Before · Legacy State", "After · Optimized Result"]
+        : ["Perspective A", "Perspective B"]);
     const labelH = chosen.labelH!;
     const headerFont = chosen.headerFont!;
     const topLead = Math.min(20, Math.round(slack * 0.1));
@@ -1688,6 +2361,11 @@ export function buildPrismScene(
     );
     const startY = top + topLead;
     [0, 1].forEach((k) => {
+      const colColor = isBeforeAfter
+        ? k === 0
+          ? colors[3]
+          : colors[1]
+        : colors[k];
       surfaceRectInto(
         bodyParts,
         M + k * (cellW + gap),
@@ -1695,7 +2373,7 @@ export function buildPrismScene(
         cellW,
         labelH,
         true,
-        colors[k],
+        colColor,
       );
       bodyParts.push(
         textBlock(
@@ -1711,48 +2389,88 @@ export function buildPrismScene(
         ).node,
       );
     });
-    // Central VS divider medallion between the two column headers
+    // Central VS or Transformation Arrow medallion between the two column headers
     const vsCx = W / 2,
       vsCy = startY + labelH / 2;
-    bodyParts.push(
-      circle(vsCx, vsCy, 22, surface, {
-        ...shadow,
-        stroke: accent,
-        strokeWidth: 2,
-      }),
-      textBlock(
-        "VS",
-        vsCx - 18,
-        vsCy - 10,
-        36,
-        15,
-        accent,
-        true,
-        true,
-        fontStack,
-      ).node,
-    );
+    if (isBeforeAfter) {
+      bodyParts.push(
+        circle(vsCx, vsCy, 24, colors[1], {
+          ...shadow,
+          stroke: surface,
+          strokeWidth: 3,
+        }),
+        path(
+          `M ${vsCx - 8} ${vsCy} H ${vsCx + 6} M ${vsCx + 1} ${vsCy - 6} L ${vsCx + 8} ${vsCy} L ${vsCx + 1} ${vsCy + 6}`,
+          contrast("#FFFFFF", colors[1]) >= contrast("#081322", colors[1])
+            ? "#FFFFFF"
+            : "#081322",
+          3.2,
+        ),
+      );
+    } else {
+      bodyParts.push(
+        circle(vsCx, vsCy, 22, surface, {
+          ...shadow,
+          stroke: accent,
+          strokeWidth: 2,
+        }),
+        textBlock(
+          "VS",
+          vsCx - 18,
+          vsCy - 10,
+          36,
+          15,
+          accent,
+          true,
+          true,
+          fontStack,
+        ).node,
+      );
+    }
     let y = startY + labelH + rowGap;
     const textW = cellW - 118;
     for (let i = 0; i < nodes.length; i += 2) {
       const row = nodes.slice(i, i + 2);
       const h = rowHeights[Math.floor(i / 2)] + extraCardH;
       if (row.length === 2) {
-        bodyParts.push(
-          path(`M ${M + cellW} ${y + h / 2} H ${M + cellW + gap}`, accent, 2, {
-            strokeDasharray: "4 4",
-            opacity: 0.45,
-          }),
-          circle(W / 2, y + h / 2, 5, colors[3]),
-        );
+        if (isBeforeAfter) {
+          const midY = y + h / 2;
+          bodyParts.push(
+            path(`M ${M + cellW + 4} ${midY} H ${M + cellW + gap - 4}`, colors[1], 3),
+            circle(W / 2, midY, 16, colors[1]),
+            path(
+              `M ${W / 2 - 5} ${midY} H ${W / 2 + 4} M ${W / 2 + 1} ${midY - 4} L ${W / 2 + 6} ${midY} L ${W / 2 + 1} ${midY + 4}`,
+              contrast("#FFFFFF", colors[1]) >= contrast("#081322", colors[1])
+                ? "#FFFFFF"
+                : "#081322",
+              2.6,
+            ),
+          );
+        } else {
+          bodyParts.push(
+            path(`M ${M + cellW} ${y + h / 2} H ${M + cellW + gap}`, accent, 2, {
+              strokeDasharray: "4 4",
+              opacity: 0.45,
+            }),
+            circle(W / 2, y + h / 2, 5, colors[3]),
+          );
+        }
       }
       row.forEach((n, k) => {
         const idx = i + k;
-        const x = M + k * (cellW + gap);
-        const ntH = textHeight(n, textW);
+        const isSoloAfter = isBeforeAfter && row.length === 1;
+        const wCard = isSoloAfter ? contentW : cellW;
+        const x = isSoloAfter ? M : M + k * (cellW + gap);
+        const tw = isSoloAfter ? contentW - 140 : textW;
+        const ntH = textHeight(n, tw);
         const textY = y + Math.max(padY, Math.round((h - ntH) / 2));
-        const c = isHex(n.accentHex) ? n.accentHex : colors[k];
-        surfaceRectInto(bodyParts, x, y, cellW, h, false, c, `node-${idx}`);
+        const colAccent = isBeforeAfter
+          ? k === 0 && !isSoloAfter
+            ? colors[3]
+            : colors[1]
+          : colors[k];
+        const c = isHex(n.accentHex) ? n.accentHex : colAccent;
+        surfaceRectInto(bodyParts, x, y, wCard, h, isBeforeAfter && k === 1, c, `node-${idx}`);
         medallionInto(
           bodyParts,
           n,
@@ -1762,7 +2480,7 @@ export function buildPrismScene(
           c,
           idx,
         );
-        drawText(n, x + 96, textY, textW, idx);
+        drawText(n, x + 96, textY, tw, idx);
       });
       y += h + rowGap;
     }
@@ -1986,8 +2704,13 @@ export function buildPrismScene(
     const isTimeline = layout === "timeline",
       isChecklist = layout === "checklist",
       isRibbon = layout === "ribbon",
-      isFunnel = layout === "funnel-stages";
-    const textW = contentW - (isChecklist ? 228 : isTimeline ? 250 : 196);
+      isFunnel = layout === "funnel-stages",
+      isStatBars = layout === "stat-bars",
+      isPyramid = layout === "pyramid-tiers",
+      isFlowchart = layout === "zigzag-flowchart";
+    const textW =
+      contentW -
+      (isChecklist ? 228 : isTimeline ? 250 : isFlowchart ? 260 : 196);
     const extraGap = Math.min(
       48,
       Math.round((slack * 0.34) / Math.max(1, nodes.length - 1)),
@@ -2014,6 +2737,47 @@ export function buildPrismScene(
       ),
     );
     let y = top + topLead;
+    if (isStatBars) {
+      // Subtle vertical statistical chart gridlines spanning behind bar rows
+      const chartLeft = M + 150;
+      const chartW = contentW - 180;
+      const chartH =
+        rowHeights.reduce((a, b) => a + b + extraCardH, 0) +
+        Math.max(0, nodes.length - 1) * rowGap;
+      [0.25, 0.5, 0.75, 1].forEach((frac) => {
+        const gx = Math.round(chartLeft + chartW * frac);
+        bodyParts.push(
+          path(`M ${gx} ${y - 6} V ${y + chartH + 6}`, muted, 1.5, {
+            strokeDasharray: "4 6",
+            opacity: 0.2,
+          }),
+        );
+      });
+    }
+    if (isFlowchart) {
+      const flowH = (chosen as { flowHeaderH?: number }).flowHeaderH || Math.round(48 * fitScale);
+      const pillW = 144;
+      const pillX = Math.round(W / 2 - pillW / 2);
+      bodyParts.push(
+        rect(pillX, y, pillW, 34, accent, 17, { ...shadow }),
+        textBlock(
+          "START FLOW",
+          pillX,
+          y + 9,
+          pillW,
+          13,
+          contrast("#FFFFFF", accent) >= contrast("#081322", accent)
+            ? "#FFFFFF"
+            : "#081322",
+          true,
+          true,
+          fontStack,
+        ).node,
+        path(`M ${W / 2} ${y + 34} V ${y + flowH}`, accent, 3),
+        path(`M ${W / 2 - 7} ${y + flowH - 8} L ${W / 2} ${y + flowH} L ${W / 2 + 7} ${y + flowH - 8}`, accent, 3),
+      );
+      y += flowH;
+    }
     if (isTimeline && nodes.length > 1) {
       let trackY = y;
       for (let ti = 0; ti < nodes.length - 1; ti++) {
@@ -2040,10 +2804,23 @@ export function buildPrismScene(
         c = isHex(n.accentHex) ? n.accentHex : colors[i % 4];
       const funnelInsetTop = isFunnel ? Math.min(110, i * 28) : 0;
       const funnelInsetBot = isFunnel ? Math.min(138, (i + 1) * 28) : 0;
-      const funnelInset = isFunnel ? funnelInsetTop : 0;
-      const rowX = M + funnelInset;
-      const rowW = contentW - funnelInset * 2;
-      const rowTextW = Math.max(240, textW - funnelInset * 2);
+      const pyrInsetTop = isPyramid
+        ? Math.round(
+            ((nodes.length - 1 - i) / Math.max(1, nodes.length - 1)) * 108,
+          )
+        : 0;
+      const pyrInsetBot = isPyramid
+        ? i === nodes.length - 1
+          ? 0
+          : Math.round(
+              ((nodes.length - 1 - (i + 1)) / Math.max(1, nodes.length - 1)) *
+                108,
+            )
+        : 0;
+      const sideInset = isFunnel ? funnelInsetTop : isPyramid ? pyrInsetTop : 0;
+      const rowX = M + sideInset;
+      const rowW = contentW - sideInset * 2;
+      const rowTextW = Math.max(240, textW - sideInset * 2);
       const ntH = textHeight(n, rowTextW);
       const textY = y + Math.max(padY, Math.round((h - ntH) / 2));
       const cy = y + h / 2;
@@ -2143,6 +2920,179 @@ export function buildPrismScene(
           c,
           i,
         );
+      } else if (isStatBars) {
+        // Dedicated Horizontal Bar Chart Row with real percentage extraction or qualitative rank meter (zero fake %!)
+        surfaceRectInto(bodyParts, M, y, contentW, h, false, c, `node-${i}`);
+        medallionInto(
+          bodyParts,
+          n,
+          M + 64,
+          cy,
+          Math.max(28, Math.round(38 * fitScale)),
+          c,
+          i,
+        );
+        const pctMatch = `${n.title} ${n.detail}`.match(/\b(\d{1,3})\s*%/);
+        const ratioMatch = `${n.title} ${n.detail}`.match(
+          /\b(\d{1,4})\s+of\s+(\d{1,4})\b/i,
+        );
+        let fillRatio = Math.max(0.32, 0.94 - i * 0.13);
+        let pillLabel = `RANK #${i + 1}`;
+        if (pctMatch) {
+          const val = Number(pctMatch[1]);
+          if (val > 0 && val <= 100) {
+            fillRatio = Math.max(0.14, val / 100);
+            pillLabel = `${val}%`;
+          }
+        } else if (ratioMatch) {
+          const num = Number(ratioMatch[1]);
+          const den = Number(ratioMatch[2]);
+          if (den > 0 && num <= den) {
+            fillRatio = Math.max(0.14, num / den);
+            pillLabel = `${num}/${den}`;
+          }
+        }
+        const barX = M + 150;
+        const barW = Math.max(180, contentW - 280);
+        const barY = y + Math.max(14, Math.round(padY * 0.72));
+        const fillW = Math.max(24, Math.round(barW * fillRatio));
+        const pillW = Math.max(76, widthOf(pillLabel, 13, true) + 22);
+        bodyParts.push(
+          rect(barX, barY, barW, 14, c, 7, { opacity: 0.18 }),
+          rect(barX, barY, fillW, 14, c, 7),
+          rect(W - M - 20 - pillW, barY - 5, pillW, 24, c, 12),
+          textBlock(
+            pillLabel,
+            W - M - 20 - pillW,
+            barY,
+            pillW,
+            13,
+            contrast("#FFFFFF", c) >= contrast("#081322", c)
+              ? "#FFFFFF"
+              : "#081322",
+            true,
+            true,
+            fontStack,
+          ).node,
+        );
+        const barTextY = barY + 26;
+        const titleN = textBlock(
+          n.title,
+          barX,
+          barTextY,
+          contentW - 180,
+          labelSize,
+          ink,
+          true,
+          false,
+          fontStack,
+        );
+        const detailN = textBlock(
+          n.detail,
+          barX,
+          barTextY + titleN.height + titleGap,
+          contentW - 180,
+          bodySize,
+          muted,
+          false,
+          false,
+          fontStack,
+        );
+        bodyParts.push(titleN.node, detailN.node);
+      } else if (isPyramid) {
+        // Geometric Stacked Pyramid Tiers widening from Apex (Tier 1) down to Base (Tier N)
+        const tlX = M + pyrInsetTop;
+        const trX = W - M - pyrInsetTop;
+        const brX = W - M - pyrInsetBot;
+        const blX = M + pyrInsetBot;
+        bodyParts.push(
+          el("polygon", {
+            points: `${tlX},${y} ${trX},${y} ${brX},${y + h} ${blX},${y + h}`,
+            fill: c,
+            opacity: light ? 0.16 : 0.25,
+            stroke: c,
+            strokeWidth: 2.5,
+          }),
+        );
+        surfaceRectInto(
+          bodyParts,
+          rowX,
+          y + 4,
+          rowW,
+          Math.max(40, h - 8),
+          i === 0,
+          c,
+          `node-${i}`,
+        );
+        if (i === 0) {
+          // Apex crown triangle indicator above Tier 1
+          bodyParts.push(
+            el("polygon", {
+              points: `${W / 2},${y - 16} ${W / 2 + 16},${y + 2} ${W / 2 - 16},${y + 2}`,
+              fill: c,
+            }),
+          );
+        }
+        medallionInto(
+          bodyParts,
+          n,
+          rowX + 58,
+          cy,
+          Math.max(24, Math.round(34 * fitScale)),
+          c,
+          i,
+        );
+        drawText(n, rowX + 132, textY, rowTextW, i);
+      } else if (isFlowchart) {
+        // Decision & Process Flowchart with alternating boxes and rotated diamond checkpoints
+        const shiftX = i % 2 === 1 ? 68 : 0;
+        const boxX = M + shiftX;
+        const boxW = contentW - 68;
+        surfaceRectInto(
+          bodyParts,
+          boxX,
+          y,
+          boxW,
+          h,
+          i % 2 === 1,
+          c,
+          `node-${i}`,
+        );
+        medallionInto(
+          bodyParts,
+          n,
+          boxX + 58,
+          cy,
+          Math.max(24, Math.round(34 * fitScale)),
+          c,
+          i,
+        );
+        drawText(n, boxX + 130, textY, textW, i);
+        if (i < nodes.length - 1) {
+          const nextShiftX = (i + 1) % 2 === 1 ? 68 : 0;
+          const fromCx = boxX + Math.round(boxW / 2);
+          const toCx = M + nextShiftX + Math.round(boxW / 2);
+          const midY = y + h + Math.round(rowGap / 2);
+          bodyParts.push(
+            path(
+              `M ${fromCx} ${y + h} V ${midY} H ${toCx} V ${y + h + rowGap}`,
+              c,
+              3,
+            ),
+            path(
+              `M ${toCx - 7} ${y + h + rowGap - 8} L ${toCx} ${y + h + rowGap} L ${toCx + 7} ${y + h + rowGap - 8}`,
+              c,
+              3,
+            ),
+            // Rotated diamond decision checkpoint at the elbow midpoint
+            el("polygon", {
+              points: `${W / 2},${midY - 11} ${W / 2 + 11},${midY} ${W / 2},${midY + 11} ${W / 2 - 11},${midY}`,
+              fill: surface,
+              stroke: c,
+              strokeWidth: 2.5,
+            }),
+          );
+        }
       } else if (isFunnel) {
         const tlX = M + Math.max(0, funnelInsetTop - 16);
         const trX = W - M - Math.max(0, funnelInsetTop - 16);

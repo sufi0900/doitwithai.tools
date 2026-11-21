@@ -598,6 +598,320 @@ export const VECTOR_SCENE_CATALOG: VectorSceneIllustration[] = [
       </g>`;
     },
   },
+  // 16 Additional Commercial-Safe Vector Scenes (Total = 32)
+  {
+    id: "hierarchy-org-tree",
+    title: "Hierarchical Taxonomy & Org Tree",
+    category: "comparison-strategy",
+    keywords: ["hierarchy", "tree", "org", "taxonomy", "sitemap", "parent", "branch", "structure", "architecture", "nodes"],
+    license: "MIT-unDraw-Style",
+    attributionRequired: false,
+    renderSvgNodes: (raw) => {
+      const p = normalizePalette(raw);
+      return `<g data-scene="hierarchy-org-tree">
+        <rect x="78" y="16" width="84" height="32" rx="10" fill="${p.primary}" opacity="0.25" stroke="${p.primary}" stroke-width="2.5"/>
+        <rect x="96" y="28" width="48" height="8" rx="4" fill="${p.ink}" opacity="0.8"/>
+        <path d="M120 48 V74 M46 74 H194 M46 74 V96 M120 74 V96 M194 74 V96" fill="none" stroke="${p.secondary}" stroke-width="2.6" stroke-linecap="round"/>
+        <rect x="18" y="96" width="56" height="40" rx="10" fill="${p.surface}" stroke="${p.primary}" stroke-width="2"/>
+        <rect x="92" y="96" width="56" height="40" rx="10" fill="${p.surface}" stroke="${p.secondary}" stroke-width="2.4"/>
+        <rect x="166" y="96" width="56" height="40" rx="10" fill="${p.surface}" stroke="${p.primary}" stroke-width="2"/>
+        <circle cx="46" cy="116" r="7" fill="${p.primary}"/>
+        <circle cx="120" cy="116" r="7" fill="${p.secondary}"/>
+        <circle cx="194" cy="116" r="7" fill="${p.primary}"/>
+      </g>`;
+    },
+  },
+  {
+    id: "donut-ring-analytics",
+    title: "Radial Donut Share & Segment Breakdown",
+    category: "analytics-data",
+    keywords: ["donut", "pie", "ring", "share", "breakdown", "distribution", "allocation", "percentage", "split", "analytics"],
+    license: "MIT-unDraw-Style",
+    attributionRequired: false,
+    renderSvgNodes: (raw) => {
+      const p = normalizePalette(raw);
+      return `<g data-scene="donut-ring-analytics">
+        <circle cx="88" cy="80" r="46" fill="none" stroke="${p.muted}" stroke-width="18" opacity="0.22"/>
+        <circle cx="88" cy="80" r="46" fill="none" stroke="${p.primary}" stroke-width="18" stroke-dasharray="145 290" stroke-linecap="round"/>
+        <circle cx="88" cy="80" r="46" fill="none" stroke="${p.secondary}" stroke-width="18" stroke-dasharray="78 290" stroke-dashoffset="-156" stroke-linecap="round"/>
+        <circle cx="88" cy="80" r="24" fill="${p.surface}" stroke="${p.primary}" stroke-width="1.5"/>
+        <rect x="152" y="42" width="68" height="14" rx="7" fill="${p.primary}" opacity="0.35"/>
+        <rect x="152" y="68" width="56" height="14" rx="7" fill="${p.secondary}" opacity="0.45"/>
+        <rect x="152" y="94" width="62" height="14" rx="7" fill="${p.muted}" opacity="0.35"/>
+      </g>`;
+    },
+  },
+  {
+    id: "stacked-pyramid-tiers",
+    title: "Stacked Strategic Pyramid Tiers",
+    category: "comparison-strategy",
+    keywords: ["pyramid", "tiers", "levels", "foundation", "apex", "maslow", "stack", "layers", "maturity"],
+    license: "MIT-unDraw-Style",
+    attributionRequired: false,
+    renderSvgNodes: (raw) => {
+      const p = normalizePalette(raw);
+      return `<g data-scene="stacked-pyramid-tiers">
+        <polygon points="120,18 150,56 90,56" fill="${p.secondary}" opacity="0.9"/>
+        <polygon points="84,64 156,64 178,96 62,96" fill="${p.primary}" opacity="0.72"/>
+        <polygon points="56,104 184,104 208,138 32,138" fill="${p.surface}" stroke="${p.primary}" stroke-width="2.6"/>
+        <rect x="86" y="116" width="68" height="9" rx="4.5" fill="${p.ink}" opacity="0.65"/>
+      </g>`;
+    },
+  },
+  {
+    id: "continuous-flywheel-cycle",
+    title: "Continuous Flywheel & Growth Loop",
+    category: "workflow-automation",
+    keywords: ["flywheel", "cycle", "loop", "wheel", "recurring", "retention", "momentum", "cadence", "refresh"],
+    license: "MIT-unDraw-Style",
+    attributionRequired: false,
+    renderSvgNodes: (raw) => {
+      const p = normalizePalette(raw);
+      return `<g data-scene="continuous-flywheel-cycle">
+        <circle cx="120" cy="80" r="50" fill="none" stroke="${p.primary}" stroke-width="5" stroke-dasharray="58 18"/>
+        <circle cx="120" cy="80" r="24" fill="${p.surface}" stroke="${p.secondary}" stroke-width="3"/>
+        <circle cx="120" cy="30" r="11" fill="${p.secondary}"/>
+        <circle cx="170" cy="80" r="11" fill="${p.primary}"/>
+        <circle cx="120" cy="130" r="11" fill="${p.secondary}"/>
+        <circle cx="70" cy="80" r="11" fill="${p.primary}"/>
+        <path d="M113 80 L120 72 L127 80 L120 88 Z" fill="${p.secondary}"/>
+      </g>`;
+    },
+  },
+  {
+    id: "before-after-transform",
+    title: "Before vs. After Transformation Split",
+    category: "comparison-strategy",
+    keywords: ["before", "after", "transform", "upgrade", "shift", "legacy", "modern", "old vs new", "migration"],
+    license: "MIT-unDraw-Style",
+    attributionRequired: false,
+    renderSvgNodes: (raw) => {
+      const p = normalizePalette(raw);
+      return `<g data-scene="before-after-transform">
+        <rect x="16" y="28" width="76" height="104" rx="12" fill="${p.surface}" stroke="${p.muted}" stroke-width="2" stroke-dasharray="5 4" opacity="0.82"/>
+        <rect x="30" y="48" width="48" height="8" rx="4" fill="${p.muted}" opacity="0.5"/>
+        <rect x="30" y="66" width="38" height="8" rx="4" fill="${p.muted}" opacity="0.35"/>
+        <rect x="148" y="22" width="76" height="116" rx="12" fill="${p.surface}" stroke="${p.secondary}" stroke-width="3"/>
+        <rect x="162" y="44" width="48" height="10" rx="5" fill="${p.secondary}"/>
+        <rect x="162" y="64" width="44" height="8" rx="4" fill="${p.ink}" opacity="0.7"/>
+        <rect x="162" y="82" width="36" height="8" rx="4" fill="${p.primary}"/>
+        <circle cx="120" cy="80" r="18" fill="${p.primary}"/>
+        <path d="M112 80 H126 M121 74 L128 80 L121 86" fill="none" stroke="${p.ink}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      </g>`;
+    },
+  },
+  {
+    id: "decision-flowchart-nodes",
+    title: "Branching Decision Flowchart",
+    category: "workflow-automation",
+    keywords: ["flowchart", "decision", "branch", "if", "routing", "logic", "path", "tree", "conditional"],
+    license: "MIT-unDraw-Style",
+    attributionRequired: false,
+    renderSvgNodes: (raw) => {
+      const p = normalizePalette(raw);
+      return `<g data-scene="decision-flowchart-nodes">
+        <rect x="82" y="14" width="76" height="26" rx="13" fill="${p.primary}" opacity="0.3" stroke="${p.primary}" stroke-width="2"/>
+        <line x1="120" y1="40" x2="120" y2="56" stroke="${p.primary}" stroke-width="2.5"/>
+        <polygon points="120,56 154,82 120,108 86,82" fill="${p.surface}" stroke="${p.secondary}" stroke-width="3"/>
+        <path d="M86 82 H48 V112 M154 82 H192 V112" fill="none" stroke="${p.primary}" stroke-width="2.5"/>
+        <rect x="20" y="112" width="56" height="30" rx="8" fill="${p.surface}" stroke="${p.primary}" stroke-width="2"/>
+        <rect x="164" y="112" width="56" height="30" rx="8" fill="${p.surface}" stroke="${p.secondary}" stroke-width="2.4"/>
+      </g>`;
+    },
+  },
+  {
+    id: "horizontal-bar-benchmark",
+    title: "Horizontal Bar Chart & Statistical Benchmark",
+    category: "analytics-data",
+    keywords: ["bar chart", "stat", "statistics", "benchmark", "survey", "study", "clicks", "impressions", "data", "metrics"],
+    license: "MIT-unDraw-Style",
+    attributionRequired: false,
+    renderSvgNodes: (raw) => {
+      const p = normalizePalette(raw);
+      return `<g data-scene="horizontal-bar-benchmark">
+        <rect x="18" y="18" width="204" height="124" rx="14" fill="${p.surface}" stroke="${p.primary}" stroke-width="2"/>
+        <line x1="42" y1="34" x2="42" y2="126" stroke="${p.muted}" stroke-width="2" opacity="0.5"/>
+        <rect x="46" y="40" width="146" height="16" rx="8" fill="${p.primary}"/>
+        <rect x="46" y="68" width="112" height="16" rx="8" fill="${p.secondary}"/>
+        <rect x="46" y="96" width="82" height="16" rx="8" fill="${p.primary}" opacity="0.6"/>
+      </g>`;
+    },
+  },
+  {
+    id: "global-geo-map-pins",
+    title: "Geographic & Local SEO Map Pins",
+    category: "ai-seo",
+    keywords: ["local", "geo", "map", "location", "regional", "city", "country", "global", "near me", "geography"],
+    license: "MIT-unDraw-Style",
+    attributionRequired: false,
+    renderSvgNodes: (raw) => {
+      const p = normalizePalette(raw);
+      return `<g data-scene="global-geo-map-pins">
+        <rect x="20" y="24" width="200" height="112" rx="16" fill="${p.surface}" stroke="${p.primary}" stroke-width="2"/>
+        <path d="M36 96 Q84 52 128 84 T204 58" fill="none" stroke="${p.primary}" stroke-width="2.5" stroke-dasharray="5 5" opacity="0.55"/>
+        <circle cx="72" cy="76" r="14" fill="${p.primary}" opacity="0.25"/>
+        <circle cx="72" cy="76" r="6" fill="${p.primary}"/>
+        <circle cx="132" cy="84" r="18" fill="${p.secondary}" opacity="0.28"/>
+        <circle cx="132" cy="84" r="8" fill="${p.secondary}"/>
+        <circle cx="184" cy="58" r="12" fill="${p.primary}" opacity="0.3"/>
+        <circle cx="184" cy="58" r="5" fill="${p.primary}"/>
+      </g>`;
+    },
+  },
+  {
+    id: "mobile-first-experience",
+    title: "Mobile-First UX & Responsive Core Web Vitals",
+    category: "ai-seo",
+    keywords: ["mobile", "phone", "responsive", "app", "ux", "core web vitals", "small screen", "page experience"],
+    license: "MIT-unDraw-Style",
+    attributionRequired: false,
+    renderSvgNodes: (raw) => {
+      const p = normalizePalette(raw);
+      return `<g data-scene="mobile-first-experience">
+        <rect x="76" y="14" width="88" height="132" rx="16" fill="${p.surface}" stroke="${p.primary}" stroke-width="3"/>
+        <rect x="104" y="22" width="32" height="5" rx="2.5" fill="${p.muted}" opacity="0.55"/>
+        <rect x="88" y="36" width="64" height="36" rx="8" fill="${p.primary}" opacity="0.25"/>
+        <rect x="88" y="82" width="64" height="10" rx="5" fill="${p.secondary}"/>
+        <rect x="88" y="100" width="48" height="8" rx="4" fill="${p.ink}" opacity="0.6"/>
+        <rect x="88" y="116" width="56" height="8" rx="4" fill="${p.muted}" opacity="0.45"/>
+      </g>`;
+    },
+  },
+  {
+    id: "cloud-crawler-pipeline",
+    title: "AI Crawler, Indexing & Server-Side Rendering",
+    category: "ai-seo",
+    keywords: ["crawler", "bot", "robots", "gptbot", "oai-searchbot", "perplexitybot", "claudebot", "ssr", "indexing", "cloud"],
+    license: "MIT-unDraw-Style",
+    attributionRequired: false,
+    renderSvgNodes: (raw) => {
+      const p = normalizePalette(raw);
+      return `<g data-scene="cloud-crawler-pipeline">
+        <rect x="24" y="28" width="68" height="42" rx="10" fill="${p.surface}" stroke="${p.primary}" stroke-width="2.2"/>
+        <rect x="24" y="86" width="68" height="42" rx="10" fill="${p.surface}" stroke="${p.secondary}" stroke-width="2.2"/>
+        <circle cx="44" cy="49" r="5" fill="${p.primary}"/>
+        <circle cx="44" cy="107" r="5" fill="${p.secondary}"/>
+        <rect x="56" y="45" width="24" height="8" rx="4" fill="${p.ink}" opacity="0.65"/>
+        <rect x="56" y="103" width="24" height="8" rx="4" fill="${p.ink}" opacity="0.65"/>
+        <path d="M92 49 H138 V78 M92 107 H138 V78 H162" fill="none" stroke="${p.primary}" stroke-width="2.8"/>
+        <circle cx="186" cy="78" r="28" fill="${p.surface}" stroke="${p.secondary}" stroke-width="3"/>
+        <circle cx="186" cy="78" r="11" fill="${p.secondary}"/>
+      </g>`;
+    },
+  },
+  {
+    id: "email-newsletter-growth",
+    title: "Newsletter, CRM & Lifecycle Automation",
+    category: "ecommerce-growth",
+    keywords: ["email", "newsletter", "crm", "outreach", "subscriber", "drip", "retention", "lifecycle", "inbox"],
+    license: "MIT-unDraw-Style",
+    attributionRequired: false,
+    renderSvgNodes: (raw) => {
+      const p = normalizePalette(raw);
+      return `<g data-scene="email-newsletter-growth">
+        <rect x="28" y="34" width="184" height="96" rx="14" fill="${p.surface}" stroke="${p.primary}" stroke-width="2.8"/>
+        <path d="M32 42 L120 96 L208 42" fill="none" stroke="${p.secondary}" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="192" cy="40" r="16" fill="${p.secondary}"/>
+        <path d="M186 40 L191 45 L199 35" fill="none" stroke="${p.surface}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      </g>`;
+    },
+  },
+  {
+    id: "saas-product-dashboard",
+    title: "Executive SaaS KPI Scorecard & Bento",
+    category: "analytics-data",
+    keywords: ["saas", "dashboard", "scorecard", "kpi", "bento", "executive", "report", "search console", "bing"],
+    license: "MIT-unDraw-Style",
+    attributionRequired: false,
+    renderSvgNodes: (raw) => {
+      const p = normalizePalette(raw);
+      return `<g data-scene="saas-product-dashboard">
+        <rect x="18" y="18" width="90" height="124" rx="12" fill="${p.primary}" opacity="0.22" stroke="${p.primary}" stroke-width="2.4"/>
+        <rect x="118" y="18" width="104" height="56" rx="12" fill="${p.surface}" stroke="${p.secondary}" stroke-width="2.2"/>
+        <rect x="118" y="86" width="104" height="56" rx="12" fill="${p.surface}" stroke="${p.primary}" stroke-width="2.2"/>
+        <path d="M34 114 L54 88 L72 98 L94 64" fill="none" stroke="${p.secondary}" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect x="134" y="38" width="66" height="12" rx="6" fill="${p.secondary}"/>
+        <rect x="134" y="106" width="72" height="12" rx="6" fill="${p.primary}"/>
+      </g>`;
+    },
+  },
+  {
+    id: "video-multimedia-studio",
+    title: "Video, Podcast & Multimedia Repurposing",
+    category: "editorial-knowledge",
+    keywords: ["video", "youtube", "podcast", "audio", "multimedia", "script", "repurpose", "media", "visual"],
+    license: "MIT-unDraw-Style",
+    attributionRequired: false,
+    renderSvgNodes: (raw) => {
+      const p = normalizePalette(raw);
+      return `<g data-scene="video-multimedia-studio">
+        <rect x="22" y="26" width="196" height="108" rx="16" fill="${p.surface}" stroke="${p.primary}" stroke-width="2.6"/>
+        <circle cx="120" cy="80" r="28" fill="${p.primary}" opacity="0.25" stroke="${p.secondary}" stroke-width="3"/>
+        <polygon points="112,67 136,80 112,93" fill="${p.secondary}"/>
+        <rect x="42" y="116" width="156" height="6" rx="3" fill="${p.muted}" opacity="0.35"/>
+        <rect x="42" y="116" width="84" height="6" rx="3" fill="${p.secondary}"/>
+      </g>`;
+    },
+  },
+  {
+    id: "backlink-authority-web",
+    title: "Digital PR & Backlink Authority Graph",
+    category: "ai-seo",
+    keywords: ["backlink", "links", "authority", "pr", "mentions", "off-page", "domain rating", "referring", "citations"],
+    license: "MIT-unDraw-Style",
+    attributionRequired: false,
+    renderSvgNodes: (raw) => {
+      const p = normalizePalette(raw);
+      return `<g data-scene="backlink-authority-web">
+        <line x1="56" y1="42" x2="120" y2="80" stroke="${p.primary}" stroke-width="2.5"/>
+        <line x1="184" y1="42" x2="120" y2="80" stroke="${p.secondary}" stroke-width="2.5"/>
+        <line x1="56" y1="120" x2="120" y2="80" stroke="${p.secondary}" stroke-width="2.5"/>
+        <line x1="184" y1="120" x2="120" y2="80" stroke="${p.primary}" stroke-width="2.5"/>
+        <circle cx="56" cy="42" r="14" fill="${p.surface}" stroke="${p.primary}" stroke-width="2.5"/>
+        <circle cx="184" cy="42" r="14" fill="${p.surface}" stroke="${p.secondary}" stroke-width="2.5"/>
+        <circle cx="56" cy="120" r="14" fill="${p.surface}" stroke="${p.secondary}" stroke-width="2.5"/>
+        <circle cx="184" cy="120" r="14" fill="${p.surface}" stroke="${p.primary}" stroke-width="2.5"/>
+        <circle cx="120" cy="80" r="24" fill="${p.primary}"/>
+        <circle cx="120" cy="80" r="10" fill="${p.ink}"/>
+      </g>`;
+    },
+  },
+  {
+    id: "prompt-engineering-lab",
+    title: "LLM Prompt Engineering & Fact-Check Lab",
+    category: "audit-security",
+    keywords: ["prompt", "chatgpt", "claude", "gemini", "fact check", "claim", "hallucination", "verify", "llm"],
+    license: "MIT-unDraw-Style",
+    attributionRequired: false,
+    renderSvgNodes: (raw) => {
+      const p = normalizePalette(raw);
+      return `<g data-scene="prompt-engineering-lab">
+        <rect x="20" y="22" width="136" height="116" rx="14" fill="${p.surface}" stroke="${p.primary}" stroke-width="2.5"/>
+        <path d="M40 52 L54 64 L40 76" fill="none" stroke="${p.secondary}" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <line x1="64" y1="74" x2="112" y2="74" stroke="${p.ink}" stroke-width="4" stroke-linecap="round" opacity="0.7"/>
+        <rect x="40" y="96" width="94" height="10" rx="5" fill="${p.primary}" opacity="0.45"/>
+        <circle cx="184" cy="82" r="32" fill="${p.surface}" stroke="${p.secondary}" stroke-width="3"/>
+        <path d="M170 82 L180 92 L200 70" fill="none" stroke="${p.secondary}" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </g>`;
+    },
+  },
+  {
+    id: "ecommerce-checkout-funnel",
+    title: "E-Commerce & Conversion Optimization Funnel",
+    category: "ecommerce-growth",
+    keywords: ["ecommerce", "shop", "checkout", "conversion", "buyer", "store", "product", "sales", "cart"],
+    license: "MIT-unDraw-Style",
+    attributionRequired: false,
+    renderSvgNodes: (raw) => {
+      const p = normalizePalette(raw);
+      return `<g data-scene="ecommerce-checkout-funnel">
+        <polygon points="36,24 204,24 176,62 64,62" fill="${p.primary}" opacity="0.32" stroke="${p.primary}" stroke-width="2.2"/>
+        <polygon points="68,70 172,70 150,104 90,104" fill="${p.secondary}" opacity="0.42" stroke="${p.secondary}" stroke-width="2.2"/>
+        <rect x="94" y="112" width="52" height="28" rx="10" fill="${p.secondary}"/>
+        <path d="M111 126 L118 132 L130 120" fill="none" stroke="${p.surface}" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+      </g>`;
+    },
+  },
 ];
 
 export function getVectorSceneById(
@@ -621,10 +935,22 @@ export function matchVectorSceneForTopic(
 
   const layoutPreferredCategory: Record<string, VectorSceneCategory> = {
     comparison: "comparison-strategy",
+    "before-after": "comparison-strategy",
+    "split-equation": "comparison-strategy",
+    "quadrant-matrix": "comparison-strategy",
+    "hierarchy-tree": "comparison-strategy",
+    "pyramid-tiers": "comparison-strategy",
     "process-flow": "workflow-automation",
+    "pipeline-flow": "workflow-automation",
+    "zigzag-flowchart": "workflow-automation",
+    "cycle-wheel": "workflow-automation",
     timeline: "workflow-automation",
     funnel: "ecommerce-growth",
+    "funnel-stages": "ecommerce-growth",
     "kpi-metrics": "analytics-data",
+    "stat-bars": "analytics-data",
+    "donut-breakdown": "analytics-data",
+    "kpi-bento": "analytics-data",
     quadrant: "comparison-strategy",
     "hub-spoke": "ai-seo",
     "anatomy-diagram": "ai-seo",

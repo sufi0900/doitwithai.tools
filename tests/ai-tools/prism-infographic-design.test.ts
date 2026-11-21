@@ -38,7 +38,7 @@ import {
   scoreHeadlineHighlightPhrases,
 } from "../../lib/content-intelligence/url-to-standalone-visual";
 
-test("ten distinct compositions keep every sample explanation within a fixed canvas across all eight themes", () => {
+test("eighteen distinct compositions keep every sample explanation within a fixed canvas across all eight themes", () => {
   const dimensions = {
     editorial: [1080, 1350],
     constellation: [1080, 1920],
@@ -50,8 +50,16 @@ test("ten distinct compositions keep every sample explanation within a fixed can
     "split-equation": [1600, 900],
     "funnel-stages": [1080, 1350],
     "quadrant-matrix": [1080, 1080],
+    "stat-bars": [1080, 1350],
+    "donut-breakdown": [1080, 1080],
+    "hierarchy-tree": [1600, 900],
+    "pyramid-tiers": [1080, 1350],
+    "cycle-wheel": [1080, 1080],
+    "before-after": [1600, 900],
+    "zigzag-flowchart": [1080, 1920],
+    "kpi-bento": [1600, 900],
   };
-  assert.equal(PRISM_LAYOUTS.length, 10);
+  assert.equal(PRISM_LAYOUTS.length, 18);
   for (const layout of PRISM_LAYOUTS)
     for (const paletteId of Object.keys(
       BLOG_INFOGRAPHIC_PALETTES,

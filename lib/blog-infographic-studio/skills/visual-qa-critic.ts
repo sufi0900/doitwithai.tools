@@ -53,15 +53,36 @@ function synthesizeCalloutText(
       .trim(),
     38,
   );
-  if (config.prismLayout === "comparison" || config.prismLayout === "quadrant-matrix") {
+  if (
+    config.prismLayout === "comparison" ||
+    config.prismLayout === "quadrant-matrix" ||
+    config.prismLayout === "before-after"
+  ) {
     return `Balance both sides of ${headlineCore} for durable search visibility.`;
   }
   if (
     config.prismLayout === "timeline" ||
     config.prismLayout === "pipeline-flow" ||
-    config.prismLayout === "funnel-stages"
+    config.prismLayout === "funnel-stages" ||
+    config.prismLayout === "zigzag-flowchart"
   ) {
     return `Follow each stage of ${headlineCore} in sequence for reliable execution.`;
+  }
+  if (
+    config.prismLayout === "stat-bars" ||
+    config.prismLayout === "donut-breakdown" ||
+    config.prismLayout === "kpi-bento"
+  ) {
+    return `Track these ${config.nodes.length} signals of ${headlineCore} to prioritize high-impact work.`;
+  }
+  if (
+    config.prismLayout === "hierarchy-tree" ||
+    config.prismLayout === "pyramid-tiers"
+  ) {
+    return `Build ${headlineCore} from the core foundation upward for compounding results.`;
+  }
+  if (config.prismLayout === "cycle-wheel") {
+    return `Run ${headlineCore} as a continuous feedback loop to compound every cycle.`;
   }
   if (config.prismLayout === "split-equation") {
     const t0 = trimAtWordBoundary(config.nodes[0]?.title || "Workflow", 24);
@@ -162,7 +183,10 @@ export function runInfographicQaCritic(
   const shouldSynthesizeCallout =
     (diversifiedNodes.length <= 3 ||
       config.prismLayout === "pipeline-flow" ||
-      config.prismLayout === "split-equation") &&
+      config.prismLayout === "split-equation" ||
+      config.prismLayout === "before-after" ||
+      config.prismLayout === "hierarchy-tree" ||
+      config.prismLayout === "kpi-bento") &&
     !config.calloutText?.trim();
 
   return {

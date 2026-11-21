@@ -34,6 +34,7 @@ import {
   InfographicProceduralStyleControls,
   InfographicSignatureControls,
 } from "./InfographicDesignControls";
+import { IconPickerGrid } from "./IconPickerGrid";
 import {
   getInfographicDimensions,
   lockInfographicGeometry,
@@ -41,6 +42,7 @@ import {
 import { PRISM_LAYOUT_THEMES } from "@/lib/blog-infographic-studio/samples";
 import {
   brandColors,
+  brandSectionVariantColors,
   extractHeadlineHighlightPhrases,
   normalizeSignature,
 } from "@/lib/blog-infographic-studio/appearance";
@@ -54,6 +56,7 @@ import type {
 } from "@/lib/blog-writer/canonical-state";
 import {
   PRISM_LAYOUTS,
+  PRISM_LAYOUT_CATEGORIES,
   buildAllArticleSectionVisuals,
   buildSectionConceptAlternatives,
   buildSectionVisual,
@@ -66,15 +69,14 @@ import {
 } from "@/lib/blog-infographic-studio/visual-brief";
 import { INFOGRAPHIC_TOPIC_ICONS } from "@/lib/blog-infographic-studio/skills/semantic-iconography";
 import {
-  ICON_CATALOG,
-  ICON_CATEGORIES,
-} from "@/lib/visual-stock/icon-database";
-import {
   classifySectionArchetype,
   synthesizeInfographicHeadlineAndSubheadline,
 } from "@/lib/blog-infographic-studio/skills/topic-intelligence";
 import { runInfographicQaCritic } from "@/lib/blog-infographic-studio/skills/visual-qa-critic";
-import type { PrismLayout } from "@/lib/blog-infographic-studio/visual-brief";
+import type {
+  PrismLayout,
+  PrismLayoutCategory,
+} from "@/lib/blog-infographic-studio/visual-brief";
 import { autoRecommendInfographicTemplate } from "@/lib/blog-writer/deterministic-analyzers";
 import { BLOG_INFOGRAPHIC_25_TEMPLATES } from "@/lib/blog-infographic-studio/templates";
 import {
@@ -195,7 +197,15 @@ function PrismTemplateCard({
         />
       </div>
       <div className="p-3">
-        <p className="text-sm font-bold text-slate-900 dark:text-white">
+        <div className="flex items-center justify-between gap-1.5">
+          <span className="truncate text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-300">
+            {spec.category}
+          </span>
+          <span className="shrink-0 rounded bg-slate-200/80 px-1.5 py-0.5 text-[10px] font-bold text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+            {spec.ratio}
+          </span>
+        </div>
+        <p className="mt-1 text-sm font-bold text-slate-900 dark:text-white">
           {selected ? "✓ " : ""}
           {spec.name}
         </p>
@@ -291,6 +301,9 @@ export function BlogInfographicStudio({
   ]);
   const [activeIdx, setActiveIdx] = useState(0),
     [panel, setPanel] = useState<"content" | "design">("content"),
+    [prismCategory, setPrismCategory] = useState<PrismLayoutCategory | "all">(
+      "all",
+    ),
     [family, setFamily] = useState(0),
     [query, setQuery] = useState("");
   const [paste, setPaste] = useState(""),
@@ -812,7 +825,7 @@ export function BlogInfographicStudio({
                     commit(allVisuals);
                     setActiveIdx(allVisuals[0]?.id === "ai-seo-overview" ? 0 : recIdx);
                     notify(
-                      `Generated ${allVisuals.length} unique section infographics across the article with 3 switchable concepts per section. Click any section tab or concept pill to customize.`,
+                      `Generated ${allVisuals.length} unique section infographics across the article with 4 switchable multi-genre concepts per section. Click any section tab or concept pill to customize.`,
                     );
                     return;
                   }
@@ -873,29 +886,16 @@ export function BlogInfographicStudio({
                 const chosenPalette =
                   paletteKeys[sectionIdx % paletteKeys.length] ||
                   active.paletteId;
+                const topicSignals = `${input.title} ${result.nodes
+                  .map((n) => `${n.title} ${n.detail}`)
+                  .join(" ")}`;
                 const chosenLayout: PrismLayout = intel.isFaq
                   ? "checklist"
-                  : result.nodes.length === 2
-                    ? sectionIdx % 2 === 0
-                      ? "split-equation"
-                      : "editorial"
-                    : result.nodes.length === 3
-                      ? sectionIdx % 2 === 0
-                        ? "pipeline-flow"
-                        : "funnel-stages"
-                      : result.nodes.length === 4
-                        ? (
-                            [
-                              "quadrant-matrix",
-                              "funnel-stages",
-                              "timeline",
-                              "constellation",
-                            ] as const
-                          )[sectionIdx % 4]
-                        : recommendPrismLayout(
-                            result.brief,
-                            result.nodes.length,
-                          );
+                  : recommendPrismLayout(
+                      result.brief,
+                      result.nodes.length,
+                      topicSignals,
+                    );
                 let next = withPrismLayout(
                   {
                     ...active,
@@ -944,8 +944,10 @@ export function BlogInfographicStudio({
                       logoDataUrl: hint.logoDataUrl,
                       ...(hint.accent
                         ? {
-                            customColors: brandColors(
+                            customColors: brandSectionVariantColors(
                               hint.accent,
+                              hint.secondaryAccent,
+                              sectionIdx,
                               hint.isDark ??
                                 !BLOG_INFOGRAPHIC_PALETTES[active.paletteId]
                                   .isLight,
@@ -975,8 +977,8 @@ export function BlogInfographicStudio({
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-indigo-200/80 bg-indigo-50/60 px-3.5 py-2.5 text-xs dark:border-indigo-500/30 dark:bg-indigo-950/30">
                   <span className="font-semibold text-slate-700 dark:text-slate-200">
                     AI Visual Engine:{" "}
-                    <strong>{cards.length} section visuals</strong> ready with
-                    unique compositions, 2-tone headlines &amp; SVG shaders.
+                    <strong>{cards.length} section visuals</strong> ready across
+                    18 diagram types, brand colors &amp; 4 concepts each.
                   </span>
                   <div className="flex flex-wrap gap-2">
                     <button
@@ -1020,6 +1022,71 @@ export function BlogInfographicStudio({
                       type="button"
                       className={button}
                       disabled={busy}
+                      title="Runs AI only on the currently selected section to save ~85% of API tokens"
+                      onClick={() =>
+                        void run(async () => {
+                          const targetSectionId = active.sectionId;
+                          const matchingSection =
+                            extractedArticle.sections?.find(
+                              (s) => s.id === targetSectionId,
+                            );
+                          if (!matchingSection) {
+                            throw new Error(
+                              "Select an extracted article section to run single-section AI polish.",
+                            );
+                          }
+                          const res = await fetch(
+                            "/api/ai-tools/infographic-plan",
+                            {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({
+                                sections: [matchingSection],
+                                sectionIds: [matchingSection.id],
+                                articleTitle: extractedArticle.title,
+                                sourceUrl: extractedArticle.url,
+                                domain: extractedArticle.domain,
+                                baseConfig: active,
+                                brandTheme: extractedArticle.brandTheme,
+                              }),
+                            },
+                          );
+                          if (!res.ok) {
+                            throw new Error(
+                              "Single-section AI polish request failed.",
+                            );
+                          }
+                          const planned = (await res.json()) as {
+                            visuals?: BlogInfographicConfig[];
+                            providerUsed?: string;
+                            cached?: boolean;
+                          };
+                          if (
+                            Array.isArray(planned.visuals) &&
+                            planned.visuals.length > 0
+                          ) {
+                            const upgraded = lockInfographicGeometry(
+                              planned.visuals[0],
+                            );
+                            commit(
+                              cards.map((c, idx) =>
+                                idx === activeIdx ? upgraded : c,
+                              ),
+                            );
+                            notify(
+                              `AI polished Section ${activeIdx + 1} (${planned.providerUsed || "verified planner"}${planned.cached ? " · cached, 0 tokens" : " · low-cost single section"}).`,
+                            );
+                          }
+                        })
+                      }
+                    >
+                      <Sparkles size={14} />
+                      AI Polish This Section (Low-Cost)
+                    </button>
+                    <button
+                      type="button"
+                      className={button}
+                      disabled={busy}
                       onClick={() =>
                         void run(async () => {
                           const res = await fetch(
@@ -1043,6 +1110,7 @@ export function BlogInfographicStudio({
                           const planned = (await res.json()) as {
                             visuals?: BlogInfographicConfig[];
                             providerUsed?: string;
+                            cached?: boolean;
                           };
                           if (
                             Array.isArray(planned.visuals) &&
@@ -1051,14 +1119,14 @@ export function BlogInfographicStudio({
                             commit(planned.visuals.map(lockInfographicGeometry));
                             setActiveIdx(0);
                             notify(
-                              `AI Visual Director (${planned.providerUsed || "verified planner"}) synthesized ${planned.visuals.length} section visuals.`,
+                              `AI Visual Director (${planned.providerUsed || "verified planner"}${planned.cached ? " · cached, 0 tokens" : ""}) synthesized ${planned.visuals.length} section visuals.`,
                             );
                           }
                         })
                       }
                     >
                       <Sparkles size={14} />
-                      AI Re-Synthesize Visuals
+                      AI Re-Synthesize All
                     </button>
                     {cards.length > 1 && (
                       <button
@@ -1389,31 +1457,67 @@ export function BlogInfographicStudio({
                         </summary>
                         <div className="mt-3 space-y-3">
                           {active.visualEngine && (
-                            <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400">
-                              Illustration
-                              <select
-                                className={field}
-                                value={n.icon || "auto"}
-                                onChange={(e) =>
-                                  updateNode(n.id, {
-                                    icon:
-                                      e.target.value === "auto"
-                                        ? undefined
-                                        : (e.target
-                                            .value as BlogInfographicNodeItem["icon"]),
-                                  })
-                                }
-                              >
-                                <option value="auto">
-                                  Match the topic automatically
-                                </option>
-                                {INFOGRAPHIC_TOPIC_ICONS.map((icon) => (
-                                  <option key={icon} value={icon}>
-                                    {icon}
+                            <div className="space-y-2">
+                              <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400">
+                                Illustration ({INFOGRAPHIC_TOPIC_ICONS.length}{" "}
+                                SVG icons)
+                                <select
+                                  className={field}
+                                  value={n.icon || "auto"}
+                                  onChange={(e) =>
+                                    updateNode(n.id, {
+                                      icon:
+                                        e.target.value === "auto"
+                                          ? undefined
+                                          : (e.target
+                                              .value as BlogInfographicNodeItem["icon"]),
+                                      customIconDataUrl: undefined,
+                                    })
+                                  }
+                                >
+                                  <option value="auto">
+                                    Match the topic automatically
                                   </option>
-                                ))}
-                              </select>
-                            </label>
+                                  {INFOGRAPHIC_TOPIC_ICONS.map((icon) => (
+                                    <option key={icon} value={icon}>
+                                      {icon}
+                                    </option>
+                                  ))}
+                                </select>
+                              </label>
+                              <details className="rounded-lg border border-slate-200 p-2 dark:border-slate-700">
+                                <summary className="cursor-pointer text-[11px] font-bold text-indigo-600 dark:text-indigo-300">
+                                  Browse visual 80-icon grid or upload custom image
+                                </summary>
+                                <div className="mt-2">
+                                  <IconPickerGrid
+                                    value={n.icon}
+                                    customIconDataUrl={n.customIconDataUrl}
+                                    accentColor={
+                                      active.brand?.customColors?.accent ||
+                                      active.extractedBrand?.accent ||
+                                      BLOG_INFOGRAPHIC_PALETTES[active.paletteId]
+                                        .accent
+                                    }
+                                    busy={busy}
+                                    onSelectIcon={(icon) =>
+                                      updateNode(n.id, {
+                                        icon,
+                                        customIconDataUrl: undefined,
+                                      })
+                                    }
+                                    onUploadCustomIcon={(file) =>
+                                      void uploadNodeCustomIcon(n.id, file)
+                                    }
+                                    onRemoveCustomIcon={() =>
+                                      updateNode(n.id, {
+                                        customIconDataUrl: undefined,
+                                      })
+                                    }
+                                  />
+                                </div>
+                              </details>
+                            </div>
                           )}
                           <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400">
                             Title
@@ -1450,14 +1554,18 @@ export function BlogInfographicStudio({
                                 }
                               />
                             </label>
-                            {!active.visualEngine && (
+                            {(!active.visualEngine ||
+                              active.prismLayout === "stat-bars" ||
+                              active.prismLayout === "donut-breakdown" ||
+                              active.prismLayout === "kpi-bento" ||
+                              active.prismLayout === "funnel-stages") && (
                               <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                                Value / metric
+                                Verified metric (optional)
                                 <input
                                   className={field}
                                   value={n.metricValue || ""}
                                   maxLength={30}
-                                  placeholder="e.g. 42%"
+                                  placeholder="e.g. 42% or 3.2x"
                                   onChange={(e) =>
                                     updateNode(n.id, {
                                       metricValue: e.target.value,
@@ -1605,11 +1713,14 @@ export function BlogInfographicStudio({
                   )}
                 </div>
                 {(active.visualEngine
-                  ? active.prismLayout === "comparison"
+                  ? active.prismLayout === "comparison" ||
+                    active.prismLayout === "before-after"
                   : [6, 8, 9, 10, 23].includes(active.templateId)) && (
                   <div className="space-y-3">
                     <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                      Comparison headings
+                      {active.prismLayout === "before-after"
+                        ? "Before & After column headings"
+                        : "Comparison headings"}
                     </h3>
                     {[0, 1].map((i) => (
                       <label
@@ -1623,8 +1734,12 @@ export function BlogInfographicStudio({
                           value={active.comparisonLabels?.[i] || ""}
                           placeholder={
                             i === 0
-                              ? "e.g. Manual workflow"
-                              : "e.g. Assisted workflow"
+                              ? active.prismLayout === "before-after"
+                                ? "e.g. BEFORE · Legacy Approach"
+                                : "e.g. Manual workflow"
+                              : active.prismLayout === "before-after"
+                                ? "e.g. AFTER · Modern Approach"
+                                : "e.g. Assisted workflow"
                           }
                           onChange={(e) => {
                             const labels: [string, string] = [
@@ -1640,17 +1755,26 @@ export function BlogInfographicStudio({
                   </div>
                 )}
                 {(active.visualEngine
-                  ? active.prismLayout === "constellation"
+                  ? active.prismLayout === "constellation" ||
+                    active.prismLayout === "donut-breakdown" ||
+                    active.prismLayout === "cycle-wheel" ||
+                    active.prismLayout === "hierarchy-tree"
                   : [3, 19].includes(active.templateId)) && (
                   <label className="block text-xs font-bold text-slate-600 dark:text-slate-300">
-                    Center label
+                    {active.prismLayout === "hierarchy-tree"
+                      ? "Root tree node label"
+                      : "Center hub label"}
                     <input
                       className={field}
                       maxLength={45}
                       value={active.centerLabel || ""}
                       placeholder={
                         active.visualEngine
-                          ? "Key ideas"
+                          ? active.prismLayout === "cycle-wheel"
+                            ? "Continuous Loop"
+                            : active.prismLayout === "hierarchy-tree"
+                              ? "Core System"
+                              : "Key ideas"
                           : active.templateId === 3
                             ? "Cycle"
                             : "Topic"
@@ -2299,7 +2423,7 @@ export function BlogInfographicStudio({
                       className={button}
                       onClick={() => setPanel("design")}
                     >
-                      Browse 16 Vector Scenes in Design Tab
+                      Browse 32 Vector Scenes in Design Tab
                     </button>
                   </div>
                 )}
@@ -2334,67 +2458,35 @@ export function BlogInfographicStudio({
                           />
                         </label>
                       </div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <select
-                          aria-label="Quick card vector icon"
-                          className={field + " !mt-0 max-w-[240px] !py-1.5 text-xs"}
-                          value={active.nodes[canvasEditLayer].icon || "auto"}
-                          onChange={(e) =>
-                            updateNode(active.nodes[canvasEditLayer].id, {
-                              icon:
-                                e.target.value === "auto"
-                                  ? undefined
-                                  : (e.target
-                                      .value as BlogInfographicNodeItem["icon"]),
-                            })
-                          }
-                        >
-                          <option value="auto">Auto-match topic icon</option>
-                          {ICON_CATEGORIES.map((cat) => (
-                            <optgroup key={cat} label={cat}>
-                              {ICON_CATALOG.filter(
-                                (entry) => entry.category === cat,
-                              ).map((entry) => (
-                                <option key={entry.id} value={entry.id}>
-                                  {entry.label}
-                                </option>
-                              ))}
-                            </optgroup>
-                          ))}
-                        </select>
-                        <label className={button + " cursor-pointer !py-1.5"}>
-                          <Upload size={12} />
-                          {active.nodes[canvasEditLayer].customIconDataUrl
-                            ? "Replace custom card image/icon"
-                            : "Upload custom card image/icon"}
-                          <input
-                            type="file"
-                            accept="image/png,image/jpeg,image/webp"
-                            className="sr-only"
-                            disabled={busy}
-                            onChange={(e) => {
-                              void uploadNodeCustomIcon(
-                                active.nodes[canvasEditLayer].id,
-                                e.target.files?.[0],
-                              );
-                              e.target.value = "";
-                            }}
-                          />
-                        </label>
-                        {active.nodes[canvasEditLayer].customIconDataUrl && (
-                          <button
-                            type="button"
-                            className={button + " !py-1.5"}
-                            onClick={() =>
-                              updateNode(active.nodes[canvasEditLayer].id, {
-                                customIconDataUrl: undefined,
-                              })
-                            }
-                          >
-                            <Trash2 size={12} />
-                          </button>
-                        )}
-                      </div>
+                      <IconPickerGrid
+                        value={active.nodes[canvasEditLayer].icon}
+                        customIconDataUrl={
+                          active.nodes[canvasEditLayer].customIconDataUrl
+                        }
+                        accentColor={
+                          active.brand?.customColors?.accent ||
+                          active.extractedBrand?.accent ||
+                          BLOG_INFOGRAPHIC_PALETTES[active.paletteId].accent
+                        }
+                        busy={busy}
+                        onSelectIcon={(icon) =>
+                          updateNode(active.nodes[canvasEditLayer].id, {
+                            icon,
+                            customIconDataUrl: undefined,
+                          })
+                        }
+                        onUploadCustomIcon={(file) =>
+                          void uploadNodeCustomIcon(
+                            active.nodes[canvasEditLayer].id,
+                            file,
+                          )
+                        }
+                        onRemoveCustomIcon={() =>
+                          updateNode(active.nodes[canvasEditLayer].id, {
+                            customIconDataUrl: undefined,
+                          })
+                        }
+                      />
                     </div>
                   )}
               </div>
@@ -2606,15 +2698,62 @@ export function BlogInfographicStudio({
             id="infographic-layouts"
             className="scroll-mt-28 rounded-2xl border border-indigo-200 bg-white p-4 dark:border-indigo-500/30 dark:bg-slate-900 sm:p-5"
           >
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white">
-              An editorial collection for your section
-            </h3>
-            <p className="mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-              Ten original compositions with fixed canvases. Your explanations,
-              colors and logo stay in place when you switch.
-            </p>
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+                  18 Flagship Diagram &amp; Infographic Archetypes
+                </h3>
+                <p className="mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                  Eighteen original diagram &amp; infographic compositions with
+                  fixed canvases—including charts, donuts, funnels, pyramids,
+                  trees, flywheels, flowcharts, and KPI bentos. Your writing,
+                  brand colors and logo stay in place when you switch.
+                </p>
+              </div>
+            </div>
+            <div
+              className="mt-4 flex flex-wrap gap-1.5"
+              role="group"
+              aria-label="Filter infographic diagram categories"
+            >
+              <button
+                type="button"
+                aria-pressed={prismCategory === "all"}
+                onClick={() => setPrismCategory("all")}
+                className={`rounded-full border px-3 py-1.5 text-xs font-bold transition ${
+                  prismCategory === "all"
+                    ? "border-indigo-600 bg-indigo-600 text-white"
+                    : "border-slate-200 bg-slate-50 text-slate-600 hover:border-indigo-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                }`}
+              >
+                All ({PRISM_LAYOUTS.length})
+              </button>
+              {PRISM_LAYOUT_CATEGORIES.map((cat) => {
+                const count = PRISM_LAYOUTS.filter(
+                  (l) => l.category === cat,
+                ).length;
+                return (
+                  <button
+                    type="button"
+                    key={cat}
+                    aria-pressed={prismCategory === cat}
+                    onClick={() => setPrismCategory(cat)}
+                    className={`rounded-full border px-3 py-1.5 text-xs font-bold transition ${
+                      prismCategory === cat
+                        ? "border-indigo-600 bg-indigo-600 text-white"
+                        : "border-slate-200 bg-slate-50 text-slate-600 hover:border-indigo-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                    }`}
+                  >
+                    {cat} ({count})
+                  </button>
+                );
+              })}
+            </div>
             <div className="mt-4 grid gap-4 sm:grid-cols-3">
-              {PRISM_LAYOUTS.map((layout) => (
+              {PRISM_LAYOUTS.filter(
+                (layout) =>
+                  prismCategory === "all" || layout.category === prismCategory,
+              ).map((layout) => (
                 <PrismTemplateCard
                   key={layout.id}
                   config={deferred}

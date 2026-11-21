@@ -2,10 +2,10 @@
  * Searchable Commercial-Safe Vector Icon & Custom Icon Badge Registry
  * File: lib/visual-stock/icon-database.ts
  *
- * Wraps all 56 core semantic SVG icons (`SEMANTIC_ICON_PATHS`) with rich
+ * Wraps all 80 core semantic SVG icons (`SEMANTIC_ICON_PATHS`) with rich
  * categories, human-readable labels, search keywords, and custom image/icon
- * upload helpers so users can search and pick any icon or upload their own
- * custom PNG/JPG/WebP/SVG icon per card in the Canva-style studio.
+ * upload helpers so users can search and pick any icon in a visual SVG grid
+ * or upload their own custom PNG/JPG/WebP icon per card in the studio.
  */
 
 import {
@@ -18,6 +18,7 @@ export type IconCategory =
   | "AI & Search"
   | "SEO & Content"
   | "Analytics & Data"
+  | "Diagrams & Visuals"
   | "Workflow & Process"
   | "Audit & Security"
   | "Strategy & Business"
@@ -110,7 +111,7 @@ const ICON_METADATA: Partial<
   },
   layers: {
     label: "Stacked Architecture Layers",
-    category: "Strategy & Business",
+    category: "Diagrams & Visuals",
     keywords: ["layers", "stack", "hierarchy", "framework", "structure"],
   },
   sliders: {
@@ -145,7 +146,7 @@ const ICON_METADATA: Partial<
   },
   scale: {
     label: "Comparison Balance Scale",
-    category: "Strategy & Business",
+    category: "Diagrams & Visuals",
     keywords: ["scale", "compare", "vs", "balance", "tradeoff", "evaluate"],
   },
   "alert-triangle": {
@@ -165,7 +166,7 @@ const ICON_METADATA: Partial<
   },
   filter: {
     label: "Conversion Funnel & Filter",
-    category: "Analytics & Data",
+    category: "Diagrams & Visuals",
     keywords: ["filter", "funnel", "qualify", "refine", "segment"],
   },
   bug: {
@@ -265,7 +266,7 @@ const ICON_METADATA: Partial<
   },
   network: {
     label: "Entity Graph & Network",
-    category: "AI & Search",
+    category: "Diagrams & Visuals",
     keywords: ["network", "entity", "graph", "semantic", "nodes", "cluster"],
   },
   backlink: {
@@ -318,6 +319,127 @@ const ICON_METADATA: Partial<
     category: "People & Social",
     keywords: ["share", "social", "distribute", "syndicate", "network", "viral"],
   },
+  // 24 New Icons
+  "bar-chart-2": {
+    label: "Statistical Vertical Bar Chart",
+    category: "Analytics & Data",
+    keywords: ["bar", "chart", "stats", "data", "benchmark", "metrics"],
+  },
+  "line-chart": {
+    label: "Time-Series Trend Graph",
+    category: "Analytics & Data",
+    keywords: ["line", "trend", "timeseries", "timeline", "growth", "graph"],
+  },
+  "donut-chart": {
+    label: "Radial Donut Breakdown",
+    category: "Analytics & Data",
+    keywords: ["donut", "ring", "pie", "breakdown", "share", "segment"],
+  },
+  sigma: {
+    label: "Formula & Aggregate Total",
+    category: "Analytics & Data",
+    keywords: ["sigma", "sum", "formula", "equation", "math", "total"],
+  },
+  binary: {
+    label: "Structured Data & Signals",
+    category: "AI & Search",
+    keywords: ["binary", "data", "algorithm", "machine", "signals", "crawl"],
+  },
+  "table-2": {
+    label: "Comparison Table Matrix",
+    category: "Diagrams & Visuals",
+    keywords: ["table", "grid", "matrix", "compare", "rows", "columns"],
+  },
+  sitemap: {
+    label: "Hierarchical Org & Site Tree",
+    category: "Diagrams & Visuals",
+    keywords: ["sitemap", "tree", "hierarchy", "org", "taxonomy", "nodes"],
+  },
+  pyramid: {
+    label: "Strategic Tier Pyramid",
+    category: "Diagrams & Visuals",
+    keywords: ["pyramid", "tiers", "levels", "maslow", "foundation", "apex"],
+  },
+  repeat: {
+    label: "Flywheel & Continuous Loop",
+    category: "Diagrams & Visuals",
+    keywords: ["repeat", "flywheel", "cycle", "loop", "retention", "recurring"],
+  },
+  "arrow-right-circle": {
+    label: "Before-to-After Transformation",
+    category: "Diagrams & Visuals",
+    keywords: ["arrow", "transform", "before", "after", "shift", "next", "flow"],
+  },
+  "workflow-diamond": {
+    label: "Decision Flowchart Node",
+    category: "Diagrams & Visuals",
+    keywords: ["diamond", "decision", "flowchart", "if", "routing", "logic"],
+  },
+  "layout-grid": {
+    label: "2x2 Quadrant & Bento Grid",
+    category: "Diagrams & Visuals",
+    keywords: ["quadrant", "bento", "grid", "matrix", "cards", "dashboard"],
+  },
+  "dollar-sign": {
+    label: "Revenue, Pricing & ROI",
+    category: "Strategy & Business",
+    keywords: ["dollar", "money", "price", "cost", "roi", "revenue", "budget"],
+  },
+  briefcase: {
+    label: "Agency & Enterprise Business",
+    category: "Strategy & Business",
+    keywords: ["briefcase", "business", "agency", "b2b", "enterprise", "work"],
+  },
+  rocket: {
+    label: "Launch & Growth Velocity",
+    category: "Strategy & Business",
+    keywords: ["rocket", "launch", "scale", "growth", "startup", "boost"],
+  },
+  magnet: {
+    label: "Lead Magnet & Acquisition",
+    category: "Strategy & Business",
+    keywords: ["magnet", "lead", "inbound", "attract", "conversion", "funnel"],
+  },
+  crown: {
+    label: "Market Leader & #1 Rank",
+    category: "Strategy & Business",
+    keywords: ["crown", "king", "leader", "top", "authority", "premium"],
+  },
+  megaphone: {
+    label: "Digital PR & Brand Campaigns",
+    category: "People & Social",
+    keywords: ["megaphone", "pr", "marketing", "campaign", "social", "reach"],
+  },
+  "map-pin": {
+    label: "Local & Geographic SEO Pin",
+    category: "SEO & Content",
+    keywords: ["map", "pin", "local", "geo", "location", "city", "region"],
+  },
+  smartphone: {
+    label: "Mobile-First UX & Apps",
+    category: "AI & Search",
+    keywords: ["mobile", "smartphone", "phone", "responsive", "app", "ux"],
+  },
+  cloud: {
+    label: "Cloud SaaS & Edge Platform",
+    category: "AI & Search",
+    keywords: ["cloud", "saas", "edge", "api", "hosting", "platform"],
+  },
+  server: {
+    label: "SSR, Hosting & Crawl Server",
+    category: "AI & Search",
+    keywords: ["server", "ssr", "crawler", "robots", "html", "infrastructure"],
+  },
+  mail: {
+    label: "Email & Newsletter Growth",
+    category: "People & Social",
+    keywords: ["mail", "email", "newsletter", "outreach", "inbox", "crm"],
+  },
+  star: {
+    label: "Featured Highlight & Review",
+    category: "People & Social",
+    keywords: ["star", "review", "rating", "featured", "best", "favorite"],
+  },
 };
 
 export const ICON_CATALOG: IconCatalogEntry[] = INFOGRAPHIC_TOPIC_ICONS.map(
@@ -335,9 +457,10 @@ export const ICON_CATALOG: IconCatalogEntry[] = INFOGRAPHIC_TOPIC_ICONS.map(
 );
 
 export const ICON_CATEGORIES: IconCategory[] = [
+  "Diagrams & Visuals",
+  "Analytics & Data",
   "AI & Search",
   "SEO & Content",
-  "Analytics & Data",
   "Workflow & Process",
   "Audit & Security",
   "Strategy & Business",

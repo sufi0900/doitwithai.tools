@@ -1661,8 +1661,49 @@ export async function POST(request: NextRequest) {
     const sourceParagraphs = exposedSections?.flatMap((s) =>
       s.blocks.filter((b) => b.kind !== "heading").map((b) => b.text),
     );
+    let externalCss = "";
+    if (sourceTree) {
+      try {
+        const sheetLinks = Array.from(
+          document.querySelectorAll('link[rel="stylesheet"][href]'),
+        )
+          .map((el) => el.getAttribute("href") || "")
+          .filter(
+            (href) =>
+              href &&
+              !/fonts\.googleapis|fontawesome|cdn\.jsdelivr|unpkg\.com|cookie/i.test(
+                href,
+              ),
+          )
+          .slice(0, 2);
+        for (const href of sheetLinks) {
+          const absHref = new URL(href, finalUrl).href;
+          const safeCssUrl = publicUrl(absHref);
+          const cssRes = await fetchPublic(safeCssUrl.href, {
+            text: true,
+            timeout: 2000,
+            bytes: 120_000,
+            maxDecodedBytes: 120_000,
+          });
+          if (cssRes.status >= 200 && cssRes.status < 300) {
+            const text = (cssRes.html || "").slice(0, 120_000);
+            if (text) {
+              externalCss += "\n" + text;
+              if (externalCss.length >= 90_000) break;
+            }
+          }
+        }
+      } catch {
+        // Non-blocking: fall back cleanly to inline styles & metadata when external CSS cannot be fetched
+      }
+    }
     let brandTheme = sourceTree
-      ? extractWebsiteBrand(document as unknown as Document, domain, finalUrl)
+      ? extractWebsiteBrand(
+          document as unknown as Document,
+          domain,
+          finalUrl,
+          externalCss,
+        )
       : undefined;
     if (brandTheme?.logoUrl) {
       try {

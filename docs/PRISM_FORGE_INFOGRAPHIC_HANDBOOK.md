@@ -159,4 +159,30 @@ To ensure every generated infographic stands alone on social media and matches a
    - `lib/visual-stock/icon-database.ts` wraps all 56 semantic SVG icons across 7 categories with keyword search (`searchIconCatalog`), and each card supports custom PNG/JPG/WebP icon/badge upload (`customIconDataUrl`) and per-card accent color (`accentHex`).
    - `InfographicDesignControls.tsx` exposes sliders for headline scale, card title scale, body text scale, card vertical padding, card gap, corner radius, left accent bar width, bottom callout banner style (`default`, `gold-pill`, `accent-pill`, `hidden`), and footer dock style (`minimal`, `pill-banner`, `dark-dock`, `light-dock`).
 
+## 17. V4 Stock & Diagram Expansion — 18 Flagship Diagram Archetypes, 80 Icons, 32 Vector Scenes, All-Section Brand Harmony & Low-Cost AI Caching (Shipped)
+
+To ensure every extracted article produces genuinely varied visual diagram genres—not repetitive vertical/left-right card stacks—and gives users massive commercial-safe creative stock with minimal AI token spend:
+
+1. **18 Flagship Diagram Archetypes Across 6 Categories (`layout-registry.ts`, `prism-renderer.ts`, `samples.ts`)**:
+   - Expanded `PRISM_LAYOUTS` from 10 → **18 structurally distinct native SVG diagram engines** grouped into 6 filterable categories (`Statistical & Data`, `Funnel & Pyramid`, `Process & Flowchart`, `Hierarchy & Cycle`, `Comparison & Split`, `Editorial & Lists`):
+     - `stat-bars` (`4:5`): Horizontal Statistical Bar Chart with proportional tracks and zero-fake-percentage ranking pills (`RANK #1..#N`, displaying real `%` only when verified in source).
+     - `donut-breakdown` (`1:1`): Radial Donut Breakdown chart with multi-color `stroke-dasharray` SVG ring segments and coordinated callout cards.
+     - `hierarchy-tree` (`16:9`): Root-to-Branch Hierarchical Node Tree with orthogonal elbow branch connectors and root emblem.
+     - `pyramid-tiers` (`4:5`): Stacked Strategic Pyramid Tiers built from expanding `<polygon>` trapezoid layers from peak to foundation.
+     - `cycle-wheel` (`1:1`): Continuous Orbital Flywheel Cycle with dashed ring loop, directional arrowheads, and radial phase nodes.
+     - `before-after` (`16:9`): High-contrast Before (rose/red) vs. After (emerald/green) transformation split with central directional chevron bridge.
+     - `zigzag-flowchart` (`9:16`): Alternating S-Curve Decision Flowchart with diamond branch nodes and directional arrow connectors.
+     - `kpi-bento` (`16:9`): Executive KPI Bento Dashboard with featured hero signal card, embedded SVG trend sparklines, and supporting cards.
+   - All **18 layouts × 8 palettes (144 combinations)** pass strict zero-overlap, zero-clipping, WCAG-AA contrast validation (`scene.issues === []`).
+2. **80 Commercial-Safe Semantic SVG Icons + 32 Recolorable Vector Scenes (`semantic-iconography.ts`, `icon-database.ts`, `vector-scenes.ts`, `IconPickerGrid.tsx`)**:
+   - Expanded `ICON_CATALOG` from 56 → **80 Lucide-grade SVG icons** across **8 searchable categories** (adding `Diagrams & Visuals`) with a Canva-style live `<svg>` preview picker (`IconPickerGrid.tsx`) embedded in both the Content tab and On-Canvas Quick Editor alongside custom PNG/JPG/WebP uploads.
+   - Expanded `VECTOR_SCENE_CATALOG` from 16 → **32 multi-layered MIT/CC0 vector scenes** with a live brand-recolored visual thumbnail gallery inside `InfographicDesignControls.tsx`.
+3. **Real-Time Website Brand Extraction Applied Across ALL Sections (`brand-source.ts`, `universal-extract/route.ts`, `appearance.ts`, `visual-brief.ts`)**:
+   - `universal-extract/route.ts` safely fetches up to 2 external site stylesheets (`fetchPublic`, 2000ms timeout, 120KB cap) and passes `externalCss` to `extractWebsiteBrand`, which also scans inline `<header>`/`<nav>` `<svg>` logo fills, primary CTA button rules, and an expanded `KNOWN_DOMAIN_BRANDS` registry.
+   - `brandSectionVariantColors` propagates the extracted website's primary brand accent across **every generated section** (`idx = 0..11`, fixing the previous `idx === 0`-only drop) while alternating 6 harmonious WCAG-AA brand surfaces.
+4. **4 Multi-Genre Concepts per Section + Low-Cost Single-Section AI Polish & TTL Cache (`visual-brief.ts`, `/api/ai-tools/infographic-plan`, `BlogInfographicStudio.tsx`)**:
+   - `buildSectionConceptAlternatives` generates **4 unique diagram-genre concepts per section** (Primary Auto-Matched Diagram, Data/Stats View, Process/Funnel/Cycle View, and Structural Tree/Pyramid/Split View).
+   - `/api/ai-tools/infographic-plan` now supports `sectionIds?: string[]` (for **AI Polish This Section (Low-Cost)**, saving ~85% of tokens) and a bounded 40-entry 15-minute TTL LRU cache returning repeated requests at **0 token cost**.
+
+
 

@@ -16,6 +16,14 @@ export const PRISM_LAYOUT_THEMES: Record<
   "split-equation": "indigo-cyber",
   "funnel-stages": "emerald-growth",
   "quadrant-matrix": "violet-saas",
+  "stat-bars": "cyan-tech",
+  "donut-breakdown": "violet-saas",
+  "hierarchy-tree": "indigo-cyber",
+  "pyramid-tiers": "amber-executive",
+  "cycle-wheel": "emerald-growth",
+  "before-after": "rose-editorial",
+  "zigzag-flowchart": "blue-trust",
+  "kpi-bento": "slate-minimal",
 };
 
 /** Curated examples are only for the showcase and QA. Never mix them into extracted article data. */
@@ -43,6 +51,14 @@ export function createLayoutSample(layout: PrismLayout): BlogInfographicConfig {
       "split-equation",
       "funnel-stages",
       "quadrant-matrix",
+      "stat-bars",
+      "donut-breakdown",
+      "hierarchy-tree",
+      "pyramid-tiers",
+      "cycle-wheel",
+      "before-after",
+      "zigzag-flowchart",
+      "kpi-bento",
     ].includes(layout)
   ) {
     const sets = {
@@ -267,6 +283,222 @@ export function createLayoutSample(layout: PrismLayout): BlogInfographicConfig {
           ],
         ],
       },
+      "stat-bars": {
+        headline: "AI Search Signal Weight Breakdown",
+        subheadline:
+          "How technical crawlability, answer clarity, and citations drive visibility.",
+        items: [
+          [
+            "Server-Rendered HTML",
+            "Ensure crawlers can read primary content and tables without client-side rendering gaps.",
+            "server",
+          ],
+          [
+            "Answer-First Structure",
+            "Place direct, verified definitions right below key headings for extraction.",
+            "answer",
+          ],
+          [
+            "Verified Source Evidence",
+            "Back claims with named studies, primary data, and transparent attribution.",
+            "evidence",
+          ],
+          [
+            "Cross-Web Authority",
+            "Build consistent brand mentions across trusted industry publications.",
+            "backlink",
+          ],
+        ],
+      },
+      "donut-breakdown": {
+        headline: "Core Pillars of Modern Content Mix",
+        subheadline:
+          "Balancing discovery guides, comparisons, original research, and technical upkeep.",
+        items: [
+          [
+            "Answer Guides",
+            "Solve specific reader questions with clear summaries and structured steps.",
+            "book-open",
+          ],
+          [
+            "Comparison Hubs",
+            "Clarify trade-offs between methods, platforms, and workflows.",
+            "scale",
+          ],
+          [
+            "Original Data",
+            "Publish repeatable audits, benchmarks, and verifiable examples.",
+            "bar-chart-2",
+          ],
+          [
+            "Technical Upkeep",
+            "Keep pages fast, indexable, and linked cleanly across topic clusters.",
+            "code",
+          ],
+        ],
+      },
+      "hierarchy-tree": {
+        headline: "AI Search Architecture Tree",
+        subheadline:
+          "How one authoritative domain branches into crawlable, citable topic clusters.",
+        items: [
+          [
+            "Technical Crawl Layer",
+            "Clean HTML, XML sitemaps, and clear crawler policies for search bots.",
+            "server",
+          ],
+          [
+            "Topic Hub Pages",
+            "Comprehensive pillar guides linking directly to focused subtopic answers.",
+            "sitemap",
+          ],
+          [
+            "Verified Evidence Layer",
+            "Primary citations, author credentials, and transparent editorial checks.",
+            "shield-check",
+          ],
+          [
+            "Measurement Feedback",
+            "Track impressions, citations, and referral traffic to guide updates.",
+            "gauge",
+          ],
+        ],
+      },
+      "pyramid-tiers": {
+        headline: "Hierarchy of AI Search Readiness",
+        subheadline:
+          "Build from a crawlable technical foundation up to market-leading authority.",
+        items: [
+          [
+            "Apex: Cited Brand Authority",
+            "Earn repeated citations in AI answers and trusted editorial roundups.",
+            "crown",
+          ],
+          [
+            "Tier 2: Verified Original Evidence",
+            "Publish transparent examples, checklists, and clear source documentation.",
+            "evidence",
+          ],
+          [
+            "Tier 3: Answer-First Content",
+            "Organize sections around real audience intent with concise summaries.",
+            "answer",
+          ],
+          [
+            "Base: Crawlable Technical SEO",
+            "Ensure fast, indexable, server-rendered pages with healthy internal links.",
+            "server",
+          ],
+        ],
+      },
+      "cycle-wheel": {
+        headline: "Continuous AI SEO Growth Flywheel",
+        subheadline:
+          "Four recurring stages that compound search visibility month after month.",
+        items: [
+          [
+            "Research Real Intent",
+            "Pull real audience queries from Search Console and customer questions.",
+            "search",
+          ],
+          [
+            "Draft & Fact-Check",
+            "Structure answer-first drafts and verify every claim against primary sources.",
+            "clipboard-check",
+          ],
+          [
+            "Publish & Distribute",
+            "Ship clean HTML pages and repurpose visuals across social channels.",
+            "rocket",
+          ],
+          [
+            "Measure & Refresh",
+            "Monitor impressions, citations, and referrals to update winning pages.",
+            "repeat",
+          ],
+        ],
+      },
+      "before-after": {
+        headline: "Legacy SEO vs. AI-Ready Content",
+        subheadline:
+          "How modern editorial workflows shift from keyword stuffing to verified answers.",
+        items: [
+          [
+            "Buried Long Introductions",
+            "Readers scroll past fluff paragraphs before finding a clear answer.",
+            "alert-triangle",
+          ],
+          [
+            "Direct Answer Blocks",
+            "Key takeaways sit immediately below headings for readers and AI engines.",
+            "check",
+          ],
+          [
+            "Unchecked AI Drafts",
+            "Generic claims without source verification erode trust and rankings.",
+            "bug",
+          ],
+          [
+            "Source-Checked Publishing",
+            "Every claim maps back to real documentation and editorial review.",
+            "shield-check",
+          ],
+        ],
+      },
+      "zigzag-flowchart": {
+        headline: "Editorial Publishing Decision Flowchart",
+        subheadline:
+          "Step-by-step verification path before any AI-assisted page goes live.",
+        items: [
+          [
+            "Validate Search Intent",
+            "Confirm the query maps to a clear reader problem and existing crawlable page.",
+            "search",
+          ],
+          [
+            "Outline Evidence & Structure",
+            "List primary sources, headings, and visual callouts before drafting.",
+            "workflow-diamond",
+          ],
+          [
+            "Audit Claims & Readability",
+            "Remove unsupported figures, sharpen prose, and confirm clear formatting.",
+            "clipboard-check",
+          ],
+          [
+            "Ship & Monitor Citations",
+            "Publish server-rendered HTML and review Search Console performance monthly.",
+            "rocket",
+          ],
+        ],
+      },
+      "kpi-bento": {
+        headline: "AI SEO Executive Scorecard",
+        subheadline:
+          "The core operational signals that separate resilient sites from flat traffic.",
+        items: [
+          [
+            "Editorial Cadence & Quality",
+            "Consistent publishing paired with strict claim checking compounds both traditional rankings and AI search citations over time.",
+            "trending-up",
+          ],
+          [
+            "Index & Crawl Health",
+            "Confirm priority pages render cleanly in server HTML without bot blocks.",
+            "server",
+          ],
+          [
+            "AI Citation Impressions",
+            "Track Search Console AI performance and Bing citation reports monthly.",
+            "eye",
+          ],
+          [
+            "Verified Referral Visits",
+            "Measure engaged visitors arriving from ChatGPT, Perplexity, and search.",
+            "users",
+          ],
+        ],
+      },
     } as const;
     const set = sets[layout as keyof typeof sets];
     sample.headline = set.headline;
@@ -281,6 +513,8 @@ export function createLayoutSample(layout: PrismLayout): BlogInfographicConfig {
     }));
     if (layout === "comparison")
       sample.comparisonLabels = ["Human judgment", "AI assistance"];
+    if (layout === "before-after")
+      sample.comparisonLabels = ["Before · Legacy Approach", "After · AI-Ready Workflow"];
   }
   sample.altText = `${sample.headline}: ${sample.nodes.map((n) => n.title).join("; ")}`;
   return sample;

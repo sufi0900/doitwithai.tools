@@ -188,27 +188,92 @@ export function InfographicProceduralStyleControls({
         </select>
       </label>
 
-      <div className="space-y-2">
-        <label className="block text-xs font-semibold">
-          Editable vector scene illustration (MIT / CC0 stock)
-          <select
-            className={field}
-            value={activeScene}
-            onChange={(e) =>
-              onChange({
-                sceneIllustration: e.target.value || undefined,
-              })
-            }
-          >
-            <option value="">Auto-match section topic</option>
-            <option value="none">No scene illustration</option>
-            {VECTOR_SCENE_CATALOG.map((scene) => (
-              <option key={scene.id} value={scene.id}>
-                {scene.title} ({scene.category})
-              </option>
-            ))}
-          </select>
-        </label>
+      <div className="space-y-2.5">
+        <div className="flex items-center justify-between">
+          <h3 className={heading}>
+            Editable vector scene stock ({VECTOR_SCENE_CATALOG.length} MIT/CC0)
+          </h3>
+          {activeScene && (
+            <button
+              type="button"
+              onClick={() => onChange({ sceneIllustration: undefined })}
+              className="text-[11px] font-semibold text-indigo-600 hover:underline dark:text-indigo-400"
+            >
+              Auto-match
+            </button>
+          )}
+        </div>
+        <select
+          aria-label="Editable vector scene illustration (MIT / CC0 stock)"
+          className={field + " !mt-0"}
+          value={activeScene}
+          onChange={(e) =>
+            onChange({
+              sceneIllustration: e.target.value || undefined,
+            })
+          }
+        >
+          <option value="">Auto-match section topic</option>
+          <option value="none">No scene illustration</option>
+          {VECTOR_SCENE_CATALOG.map((scene) => (
+            <option key={scene.id} value={scene.id}>
+              {scene.title} ({scene.category})
+            </option>
+          ))}
+        </select>
+        <details className="rounded-xl border border-slate-200 p-2.5 text-xs dark:border-slate-700">
+          <summary className="cursor-pointer font-bold text-slate-700 dark:text-slate-200">
+            Browse visual scene gallery ({VECTOR_SCENE_CATALOG.length} scenes)
+          </summary>
+          <div className="mt-2.5 grid max-h-56 grid-cols-2 gap-2 overflow-y-auto pr-1">
+            {VECTOR_SCENE_CATALOG.map((scene) => {
+              const selected = activeScene === scene.id;
+              const accent =
+                config.brand?.customColors?.accent ||
+                config.extractedBrand?.accent ||
+                "#4F46E5";
+              const sec = config.secondaryAccent || "#10B981";
+              const previewSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 220">${scene.renderSvgNodes({
+                primary: accent,
+                secondary: sec,
+                surface: "#0F172A",
+                ink: "#F8FAFC",
+                muted: "#94A3B8",
+              })}</svg>`;
+              return (
+                <button
+                  type="button"
+                  key={scene.id}
+                  aria-pressed={selected}
+                  onClick={() =>
+                    onChange({
+                      sceneIllustration: scene.id,
+                      customSceneImageUrl: undefined,
+                    })
+                  }
+                  className={`flex flex-col overflow-hidden rounded-lg border text-left transition ${
+                    selected
+                      ? "border-indigo-500 bg-indigo-50 ring-1 ring-indigo-500 dark:bg-indigo-950/40"
+                      : "border-slate-200 bg-slate-50 hover:border-indigo-400 dark:border-slate-700 dark:bg-slate-800/70"
+                  }`}
+                >
+                  <div className="flex h-16 items-center justify-center bg-slate-900/90 p-1.5">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(previewSvg)}`}
+                      alt={scene.title}
+                      loading="lazy"
+                      className="h-full w-full object-contain"
+                    />
+                  </div>
+                  <span className="truncate px-2 py-1 text-[10px] font-bold text-slate-700 dark:text-slate-200">
+                    {scene.title}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </details>
         <div className="flex flex-wrap items-center gap-2">
           <label className="inline-flex min-h-9 flex-1 cursor-pointer items-center justify-center rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-semibold hover:border-indigo-400 dark:border-slate-700">
             {config.customSceneImageUrl
