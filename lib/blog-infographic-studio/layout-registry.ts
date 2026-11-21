@@ -185,6 +185,33 @@ export const PRISM_LAYOUTS = [
     description:
       "Asymmetric magazine scorecard featuring a hero spotlight tile with trend sparkline alongside supporting insights.",
   },
+  {
+    id: "pie-chart",
+    name: "Segmented pie chart",
+    ratio: "16:9",
+    purpose: "data",
+    category: "Statistical & Data" as PrismLayoutCategory,
+    description:
+      "Vibrant multi-slice pie chart paired with color-matched legend callouts for share, mix, and breakdown stories.",
+  },
+  {
+    id: "vertical-bars",
+    name: "Vertical column chart",
+    ratio: "16:9",
+    purpose: "data",
+    category: "Statistical & Data" as PrismLayoutCategory,
+    description:
+      "Vertical bar columns with horizontal gridlines, top callout badges, trend line, and aligned category takeaways.",
+  },
+  {
+    id: "winding-roadmap",
+    name: "Winding S-curve roadmap",
+    ratio: "16:9",
+    purpose: "sequence",
+    category: "Process & Flowchart" as PrismLayoutCategory,
+    description:
+      "Curved milestone road with dashed center stripe, teardrop map pins, and alternating phase cards.",
+  },
 ] as const;
 export type PrismLayout = (typeof PRISM_LAYOUTS)[number]["id"];
 

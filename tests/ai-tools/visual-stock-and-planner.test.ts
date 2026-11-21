@@ -646,8 +646,8 @@ test("V4 stock & diagram expansion: 80 icons across 8 categories, 18 diagram arc
   assert.ok(searchIconCatalog("org").some((e) => e.id === "sitemap"));
   assert.ok(searchIconCatalog("flywheel").some((e) => e.id === "repeat"));
 
-  // 2. 18 flagship layouts across 6 categories, each of the 8 new archetypes renders distinct native SVG geometry
-  assert.equal(PRISM_LAYOUTS.length, 18);
+  // 2. 21 flagship layouts across 6 categories, each flagship chart/diagram archetype renders distinct native SVG geometry
+  assert.equal(PRISM_LAYOUTS.length, 21);
   assert.equal(PRISM_LAYOUT_CATEGORIES.length, 6);
 
   const newLayoutAssertions: Array<{
@@ -656,6 +656,9 @@ test("V4 stock & diagram expansion: 80 icons across 8 categories, 18 diagram arc
   }> = [
     { id: "stat-bars", pattern: /RANK #1/ },
     { id: "donut-breakdown", pattern: /stroke-dasharray="/ },
+    { id: "pie-chart", pattern: /data-composition="pie-chart"[\s\S]*A \d+[\d.]* \d+[\d.]* 0 [01] 1/ },
+    { id: "vertical-bars", pattern: /data-composition="vertical-bars"[\s\S]*<polyline\s+points="/ },
+    { id: "winding-roadmap", pattern: /data-composition="winding-roadmap"[\s\S]*stroke-dasharray="12 10"/ },
     { id: "hierarchy-tree", pattern: /M\s+\d+[\d.]*\s+\d+[\d.]*\s+V\s+/ },
     { id: "pyramid-tiers", pattern: /<polygon\s+points="/ },
     { id: "cycle-wheel", pattern: /rotate\(45\)"><path d="M -6 -5 L 5 0 L -6 5"/ },
@@ -799,6 +802,204 @@ test("V4 stock & diagram expansion: 80 icons across 8 categories, 18 diagram arc
   assert.ok(studioHtml.includes("Upload Image"));
   assert.match(studioHtml, /(?:Choose Icon|Icon: [a-z0-9-]+) \(80\)/);
 });
+
+test("V5 Overhaul: content-aware visual-fit stops forced templates, fixes <details>/<dl>/<button> FAQs, and guarantees zero overflow on 6-card Pyramid, Funnel, Pie, Vertical Bars & Winding Roadmap", async () => {
+  const { parseHTML } = await import("linkedom");
+  const { extractArticleSource } = await import(
+    "../../lib/blog-infographic-studio/article-source"
+  );
+  const { buildInfographicScene } = await import(
+    "../../lib/blog-infographic-studio/canvas-renderer"
+  );
+  const {
+    getRecommendedLayoutsForConfig,
+    shuffleInfographicVisualVariation,
+    withPrismLayout,
+  } = await import("../../lib/blog-infographic-studio/visual-brief");
+
+  // 1. Exact FAQ DOM extraction (<details><summary>, <dl><dt><dd>, accordion <button>)
+  const faqHtml = `
+    <html><head><title>What is AI SEO?</title></head><body><main><article>
+      <h1>What is AI SEO?</h1>
+      <h2>Common questions about AI SEO.</h2>
+      <details>
+        <summary>Does Google require an llms.txt file?</summary>
+        <p>Not for Google. Normal structured data and clean HTML still help describe a page accurately.</p>
+      </details>
+      <details>
+        <summary>Will Google penalize pages written with AI?</summary>
+        <p>Not for being AI-generated. Quality systems evaluate originality, clarity, and helpfulness regardless of tooling.</p>
+      </details>
+      <dl>
+        <dt>How can you measure AI search visibility today?</dt>
+        <dd>With three partial views. Combine Search Console trends, Bing Webmaster reports, and direct brand citation spot checks.</dd>
+      </dl>
+      <div>
+        <button aria-expanded="false">Does traditional SEO still matter for AI citations?</button>
+        <p>Yes. Technical crawlability, clean internal linking, and deep domain authority remain essential for retrieval.</p>
+      </div>
+    </article></main></body></html>
+  `;
+
+  const extracted = extractArticleSource(
+    parseHTML(faqHtml).document as unknown as Document,
+    "https://theseoagent.ai/blog/what-is-ai-seo",
+  );
+  const faqVisuals = buildAllArticleSectionVisuals(extracted.sections, {
+    sourceUrl: "https://theseoagent.ai/blog/what-is-ai-seo",
+    domain: "theseoagent.ai",
+    articleTitle: "What is AI SEO?",
+    includeUniversalOverview: false,
+  });
+
+  assert.equal(faqVisuals.length, 1);
+  const faqCard = faqVisuals[0];
+
+  // Headline strips decorative trailing period & never highlights stop-word "about"
+  assert.ok(
+    !faqCard.headline.endsWith("."),
+    `Headline must not end with trailing period: ${faqCard.headline}`,
+  );
+  assert.ok(
+    !(faqCard.highlightWords || "").toLowerCase().includes("about"),
+    `Highlight must not target stop-word "about": ${faqCard.highlightWords}`,
+  );
+
+  // All 4 real FAQ questions stay in title & full 2-sentence answers stay in detail (NEVER truncated to "Not for Google.")
+  assert.equal(faqCard.nodes.length, 4);
+  assert.equal(faqCard.nodes[0].title, "Does Google require an llms.txt file?");
+  assert.ok(
+    faqCard.nodes[0].detail.includes("Not for Google.") &&
+      faqCard.nodes[0].detail.includes("Normal structured data"),
+    `FAQ 1 answer must remain complete: ${faqCard.nodes[0].detail}`,
+  );
+  assert.equal(faqCard.nodes[1].title, "Will Google penalize pages written with AI?");
+  assert.ok(
+    faqCard.nodes[1].detail.includes("Not for being AI-generated.") &&
+      faqCard.nodes[1].detail.includes("Quality systems"),
+    `FAQ 2 answer must remain complete: ${faqCard.nodes[1].detail}`,
+  );
+  assert.equal(faqCard.nodes[2].title, "How can you measure AI search visibility today?");
+  assert.ok(
+    faqCard.nodes[2].detail.includes("With three partial views.") &&
+      faqCard.nodes[2].detail.includes("Search Console"),
+    `FAQ 3 answer must remain complete: ${faqCard.nodes[2].detail}`,
+  );
+  assert.equal(faqCard.nodes[3].title, "Does traditional SEO still matter for AI citations?");
+
+  // 2. Strict Visual-Fit Enforcement: FAQs NEVER receive Funnels, Pyramids, Pie Charts, Vertical Bars, or Roadmaps
+  const forbiddenForFaq = new Set([
+    "funnel-stages",
+    "pyramid-tiers",
+    "pie-chart",
+    "vertical-bars",
+    "winding-roadmap",
+    "donut-breakdown",
+    "cycle-wheel",
+  ]);
+  const faqFit = getRecommendedLayoutsForConfig(faqCard);
+  assert.equal(faqFit.intent, "faq");
+  assert.ok(
+    !forbiddenForFaq.has(faqCard.prismLayout!),
+    `FAQ section must never route to ${faqCard.prismLayout}`,
+  );
+  for (const concept of faqCard.conceptAlternatives || []) {
+    assert.ok(
+      !forbiddenForFaq.has(concept.prismLayout),
+      `FAQ concept "${concept.label}" must never force incompatible layout ${concept.prismLayout}`,
+    );
+  }
+  const shuffledFaq = shuffleInfographicVisualVariation(faqCard, 1);
+  assert.ok(
+    !forbiddenForFaq.has(shuffledFaq.prismLayout!),
+    `Shuffling FAQ must stay strictly within compatible FAQ layouts, got ${shuffledFaq.prismLayout}`,
+  );
+
+  // 3. Content-Aware Routing: Data Share -> Pie/Bar Charts, Roadmap -> Winding Roadmap
+  const targetedSections = [
+    sectionFromText(
+      "AI Search Citation Traffic Share Breakdown",
+      "### Brand Documentation\nAccounts for 38% of verified AI citations across technical queries.\n### Benchmark Studies\nOriginal research drives 27% of high-authority synthesis links.\n### Comparison Guides\nStructured versus pages capture 21% of commercial buyer citations.\n### Glossary Definitions\nConcise entity pages contribute 14% of informational references.",
+      "v5-data-share",
+    ),
+    sectionFromText(
+      "Quarterly AI SEO Implementation Roadmap",
+      "### Step 1: Audit Technical Crawlers\nConfirm robots.txt allows primary search and AI indexing bots.\n### Step 2: Structure Core Answer Blocks\nAdd direct 40-word summaries under every primary heading.\n### Step 3: Publish Original Benchmarks\nRelease verifiable data tables that models cite directly.\n### Step 4: Track Multi-Engine Citations\nMonitor visibility trends weekly across Google, Bing, and AI chats.",
+      "v5-roadmap",
+    ),
+  ];
+  const targetedSuite = buildAllArticleSectionVisuals(targetedSections, {
+    articleTitle: "AI SEO Strategy Guide",
+    includeUniversalOverview: false,
+  });
+  assert.equal(targetedSuite[0].prismLayout, "pie-chart");
+  assert.equal(targetedSuite[1].prismLayout, "winding-roadmap");
+
+  // 4. Dense 6-card zero-overflow verification on redesigned Split-Diagram Pyramid, Funnel, Pie, Vertical Bars & Winding Roadmap
+  const denseIcons = [
+    "search",
+    "database",
+    "target",
+    "chart",
+    "layers",
+    "award",
+  ] as const;
+  const denseSixCard = {
+    ...faqCard,
+    headline: "Six-Stage AI Search Visibility Architecture",
+    subheadline:
+      "Every layer builds compounding search authority across traditional and generative engines.",
+    nodes: Array.from({ length: 6 }, (_, i) => ({
+      id: `dense-${i}`,
+      badge: `0${i + 1}`,
+      title: `Priority Layer ${i + 1}: Structured Retrieval Signal`,
+      detail:
+        "Ensure clean semantic HTML, explicit entity markup, and verifiable primary evidence so AI engines synthesize accurate citations cleanly.",
+      metricValue: `${[32, 24, 18, 12, 8, 6][i]}%`,
+      icon: denseIcons[i],
+    })),
+  };
+
+  for (const layoutId of [
+    "pyramid-tiers",
+    "funnel-stages",
+    "pie-chart",
+    "vertical-bars",
+    "winding-roadmap",
+  ] as const) {
+    const rendered = buildInfographicScene(withPrismLayout(denseSixCard, layoutId));
+    assert.deepEqual(
+      rendered.issues,
+      [],
+      `Dense 6-card ${layoutId} must render with zero overflow/overlap issues, got: ${JSON.stringify(rendered.issues)}`,
+    );
+    assert.ok(
+      rendered.svg.includes('data-layer-box="node-5"'),
+      `Dense 6-card ${layoutId} must render and expose direct-click layer for 6th card`,
+    );
+    assert.doesNotMatch(rendered.svg, /NaN|Infinity|undefined|<script|<foreignObject/);
+  }
+
+  // 5. Studio SSR defaults gallery to smart-matched compatible layouts for an FAQ card
+  const { createRequire } = await import("node:module");
+  const nativeRequire = createRequire(import.meta.url);
+  nativeRequire.extensions[".css"] = (module) => {
+    module.exports = {};
+  };
+  const React = await import("react");
+  const { renderToStaticMarkup } = await import("react-dom/server");
+  const { default: BlogInfographicStudio } = await import(
+    "../../features/blog-infographic-studio/BlogInfographicStudio"
+  );
+  const faqStudioHtml = renderToStaticMarkup(
+    React.createElement(BlogInfographicStudio, { initialConfig: faqCard }),
+  );
+  assert.ok(faqStudioHtml.includes("Matched for FAQ &amp; Q&amp;A"));
+  assert.ok(faqStudioHtml.includes("Best for this section (4)"));
+  assert.ok(!faqStudioHtml.includes("Conversion Funnel layout with your content"));
+  assert.ok(!faqStudioHtml.includes("Pie Chart layout with your content"));
+});
+
 
 
 

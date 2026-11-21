@@ -40,9 +40,22 @@ import {
   synthesizeInfographicHeadlineAndSubheadline,
 } from "./skills/topic-intelligence";
 import { runInfographicQaCritic } from "./skills/visual-qa-critic";
+import {
+  classifyVisualContentIntent,
+  getRecommendedLayoutsForConfig,
+  getSectionVisualFitProfile,
+  type SectionVisualFitProfile,
+  type VisualContentIntent,
+} from "./visual-fit";
 
 export { PRISM_LAYOUTS, PRISM_LAYOUT_CATEGORIES } from "./layout-registry";
 export type { PrismLayout, PrismLayoutCategory } from "./layout-registry";
+export {
+  classifyVisualContentIntent,
+  getRecommendedLayoutsForConfig,
+  getSectionVisualFitProfile,
+};
+export type { SectionVisualFitProfile, VisualContentIntent };
 export interface VisualBrief {
   sourceUrl?: string;
   sectionId: string;
@@ -622,60 +635,323 @@ export function withPrismLayout(
     renderedSvgMarkup: undefined,
   };
 }
-/** Relationships select geometry; raw word count never stretches a fixed template. */
+/** Relationships and content intent select geometry; incompatible layouts are never forced. */
 export function recommendPrismLayout(
   brief: VisualBrief,
   points: number,
   topicText = "",
 ): PrismLayout {
-  const txt = topicText.toLowerCase();
-  if (/\b\d+%|\b(benchmark|metric|kpi|roi|stat|growth|score|rate)\b/.test(txt)) {
-    return points <= 4 ? "kpi-bento" : "stat-bars";
-  }
-  if (/\b(pyramid|tier|maturity|foundation|priority)\b/.test(txt) && points >= 3) {
-    return "pyramid-tiers";
-  }
-  if (/\b(hierarchy|architecture|ecosystem|taxonomy|anatomy|stack)\b/.test(txt) && points >= 3) {
-    return "hierarchy-tree";
-  }
-  if (/\b(cycle|flywheel|loop|continuous|iterative|feedback)\b/.test(txt) && points >= 3) {
-    return "cycle-wheel";
-  }
-  if (/\b(before|after|legacy|modern|shift|transform)\b/.test(txt) && points >= 2) {
-    return "before-after";
-  }
-  if (brief.relationship === "sequence") {
-    return points === 3 ? "pipeline-flow" : points <= 5 ? "zigzag-flowchart" : "timeline";
-  }
-  if (points === 2) return "split-equation";
-  if (points === 4) return "donut-breakdown";
-  return points > 4 ? "ribbon" : "editorial";
+  const fit = getSectionVisualFitProfile({
+    title: topicText,
+    nodeCount: points,
+    relationship: brief.relationship,
+  });
+  return fit.compatibleLayouts[0] || "editorial";
 }
 
-function pickUniqueLayout(
-  candidates: PrismLayout[],
-  used: Set<PrismLayout>,
-): PrismLayout {
-  for (const cand of candidates) {
-    if (!used.has(cand)) return cand;
-  }
-  return candidates[0];
+function buildConceptVariantForLayout(
+  baseCard: BlogInfographicConfig,
+  layout: PrismLayout,
+  conceptNumber: number,
+  isFaq: boolean,
+): InfographicConceptAlternative {
+  const spec = prismLayoutSpec(layout);
+  const headlineBase = baseCard.headline.split(":")[0].trim() || baseCard.headline;
+  const rawNodes = baseCard.nodes;
+
+  const slicedNodes =
+    layout === "split-equation"
+      ? rawNodes.slice(0, 2)
+      : layout === "pipeline-flow"
+        ? rawNodes.slice(0, 4)
+        : layout === "kpi-bento"
+          ? rawNodes.slice(0, 5)
+          : layout === "comparison" && rawNodes.length % 2 === 1
+            ? rawNodes.slice(0, Math.max(2, rawNodes.length - 1))
+            : rawNodes.slice(0, 6);
+
+  const styledNodes = slicedNodes.map((n, i, arr) => {
+    if (isFaq) {
+      return { ...n, badge: `Q${i + 1}` };
+    }
+    let badge = String(i + 1).padStart(2, "0");
+    if (layout === "kpi-bento") badge = `KPI 0${i + 1}`;
+    else if (layout === "pipeline-flow") {
+      badge = i === 0 ? "START" : i === arr.length - 1 ? "RESULT" : `STEP 0${i + 1}`;
+    } else if (layout === "funnel-stages") badge = `STAGE 0${i + 1}`;
+    else if (layout === "winding-roadmap") badge = `STOP 0${i + 1}`;
+    else if (layout === "cycle-wheel") badge = `PHASE ${i + 1}`;
+    else if (layout === "pyramid-tiers") badge = `TIER ${i + 1}`;
+    else if (layout === "split-equation") badge = `PART ${i + 1}`;
+    else if (layout === "before-after") badge = i % 2 === 0 ? "BEFORE" : "AFTER";
+    else if (layout === "quadrant-matrix") badge = `0${i + 1}`;
+    else if (layout === "hierarchy-tree") badge = `NODE ${i + 1}`;
+    else if (layout === "zigzag-flowchart" || layout === "timeline") {
+      badge = `STEP 0${i + 1}`;
+    }
+    return { ...n, badge };
+  });
+
+  const metaByLayout: Record<
+    PrismLayout,
+    {
+      headline: string;
+      subheadline: string;
+      eyebrow: string;
+      calloutBadge: string;
+      calloutText: string;
+      scene: string;
+    }
+  > = {
+    "pie-chart": {
+      headline: `${headlineBase}: Share & Composition`,
+      subheadline:
+        baseCard.subheadline ||
+        `Proportional breakdown of the key components driving ${headlineBase}.`,
+      eyebrow: "COMPOSITION · SEGMENTED PIE CHART",
+      calloutBadge: "DATA SIGNAL",
+      calloutText: `Compare all ${styledNodes.length} slices of ${headlineBase.slice(0, 32)} at a glance.`,
+      scene: "donut-ring-analytics",
+    },
+    "vertical-bars": {
+      headline: `${headlineBase}: Comparative Column Chart`,
+      subheadline:
+        baseCard.subheadline ||
+        `Side-by-side column comparison highlighting top priorities across ${headlineBase}.`,
+      eyebrow: "BENCHMARKS · VERTICAL BAR CHART",
+      calloutBadge: "KEY METRIC",
+      calloutText: `Prioritize the highest-impact columns across ${headlineBase.slice(0, 32)}.`,
+      scene: "horizontal-bar-benchmark",
+    },
+    "winding-roadmap": {
+      headline: `${headlineBase}: Milestone Roadmap`,
+      subheadline:
+        baseCard.subheadline ||
+        `Follow the sequential stops from initial setup to execution across ${headlineBase}.`,
+      eyebrow: "JOURNEY · WINDING MILESTONE ROADMAP",
+      calloutBadge: "ROADMAP",
+      calloutText: `Complete each milestone stop in sequence to build momentum on ${headlineBase.slice(0, 28)}.`,
+      scene: "editorial-workflow-pipeline",
+    },
+    "stat-bars": {
+      headline: `${headlineBase}: Ranked Signal Breakdown`,
+      subheadline:
+        baseCard.subheadline ||
+        `Visualizing the ranked signals and drivers behind ${headlineBase}.`,
+      eyebrow: "DATA & SIGNAL BREAKDOWN",
+      calloutBadge: "DATA SIGNAL",
+      calloutText: `Compare all ${styledNodes.length} drivers of ${headlineBase.slice(0, 32)} before prioritizing work.`,
+      scene: "horizontal-bar-benchmark",
+    },
+    "donut-breakdown": {
+      headline: `${headlineBase}: Core Breakdown`,
+      subheadline:
+        baseCard.subheadline ||
+        `How the core pillars of ${headlineBase} compose a complete strategy.`,
+      eyebrow: "COMPOSITION · DONUT BREAKDOWN",
+      calloutBadge: "CORE MIX",
+      calloutText: `Balance every pillar of ${headlineBase.slice(0, 32)} for durable results.`,
+      scene: "donut-ring-analytics",
+    },
+    "kpi-bento": {
+      headline: `${headlineBase}: Key Signal Dashboard`,
+      subheadline:
+        baseCard.subheadline ||
+        `Executive scorecard highlighting the vital levers of ${headlineBase}.`,
+      eyebrow: isFaq ? "FAQ QUICK SCORECARD" : "EXECUTIVE METRICS · KPI BENTO",
+      calloutBadge: isFaq ? "QUICK ANSWER" : "KEY TAKEAWAY",
+      calloutText: `Review all ${styledNodes.length} headline signals for ${headlineBase.slice(0, 32)}.`,
+      scene: "analytics-benchmark-telemetry",
+    },
+    "pipeline-flow": {
+      headline: `${headlineBase}: Execution Pipeline`,
+      subheadline:
+        baseCard.subheadline ||
+        `How ${headlineBase} flows horizontally from input to measurable output.`,
+      eyebrow: "STEP-BY-STEP EXECUTION FLOW",
+      calloutBadge: "FLOW RULE",
+      calloutText: `Execute each stage of ${headlineBase.slice(0, 32)} in sequence.`,
+      scene: "editorial-workflow-pipeline",
+    },
+    "funnel-stages": {
+      headline: `${headlineBase}: Stage-by-Stage Funnel`,
+      subheadline:
+        baseCard.subheadline ||
+        `Narrowing focus across ${styledNodes.length} progressive stages of ${headlineBase}.`,
+      eyebrow: "CONVERSION · TAPERED FUNNEL",
+      calloutBadge: "FUNNEL RULE",
+      calloutText: `Eliminate drop-off at every stage of ${headlineBase.slice(0, 32)}.`,
+      scene: "conversion-funnel-velocity",
+    },
+    "zigzag-flowchart": {
+      headline: `${headlineBase}: Decision Flowchart`,
+      subheadline:
+        baseCard.subheadline ||
+        `Step-by-step decision checkpoints for executing ${headlineBase}.`,
+      eyebrow: "WORKFLOW · DECISION FLOWCHART",
+      calloutBadge: "FLOW RULE",
+      calloutText: `Validate each checkpoint before moving forward in ${headlineBase.slice(0, 30)}.`,
+      scene: "decision-flowchart-nodes",
+    },
+    timeline: {
+      headline: `${headlineBase}: Chronological Timeline`,
+      subheadline:
+        baseCard.subheadline ||
+        `Key milestones and phases shaping ${headlineBase} over time.`,
+      eyebrow: "PROGRESSION · MILESTONE TIMELINE",
+      calloutBadge: "MILESTONES",
+      calloutText: `Track each phase of ${headlineBase.slice(0, 32)} from start to finish.`,
+      scene: "evolution-timeline-arc",
+    },
+    "cycle-wheel": {
+      headline: `${headlineBase}: Continuous Flywheel`,
+      subheadline:
+        baseCard.subheadline ||
+        `How ${headlineBase} reinforces itself in a recurring optimization loop.`,
+      eyebrow: "CONTINUOUS LOOP · FLYWHEEL",
+      calloutBadge: "LOOP RULE",
+      calloutText: `Repeat every phase of ${headlineBase.slice(0, 32)} for compounding results.`,
+      scene: "continuous-flywheel-cycle",
+    },
+    "pyramid-tiers": {
+      headline: `${headlineBase}: Strategic Priority Pyramid`,
+      subheadline:
+        baseCard.subheadline ||
+        `Layering ${headlineBase} from core foundation up to top-tier impact.`,
+      eyebrow: "STRATEGIC PYRAMID · PRIORITY TIERS",
+      calloutBadge: "FOUNDATION",
+      calloutText: `Build the base layer of ${headlineBase.slice(0, 32)} firmly before scaling.`,
+      scene: "stacked-pyramid-tiers",
+    },
+    "hierarchy-tree": {
+      headline: `${headlineBase}: System Architecture Tree`,
+      subheadline:
+        baseCard.subheadline ||
+        `How each component branches cleanly from ${headlineBase}.`,
+      eyebrow: "ARCHITECTURE · HIERARCHY TREE",
+      calloutBadge: "ARCHITECTURE",
+      calloutText: `Align every branch of ${headlineBase.slice(0, 32)} under one clear structure.`,
+      scene: "hierarchy-org-tree",
+    },
+    "before-after": {
+      headline: `${headlineBase}: Before vs. After Shift`,
+      subheadline:
+        baseCard.subheadline ||
+        `Contrasting the old approach against modern execution in ${headlineBase}.`,
+      eyebrow: "TRANSFORMATION · BEFORE VS AFTER",
+      calloutBadge: "SHIFT",
+      calloutText: `Upgrade every legacy step of ${headlineBase.slice(0, 32)} systematically.`,
+      scene: "before-after-transform",
+    },
+    comparison: {
+      headline: `${headlineBase}: Side-by-Side Comparison`,
+      subheadline:
+        baseCard.subheadline ||
+        `Directly comparing both perspectives across ${headlineBase}.`,
+      eyebrow: "COMPARISON · SIDE BY SIDE",
+      calloutBadge: "KEY CONTRAST",
+      calloutText: `Weigh both sides of ${headlineBase.slice(0, 32)} before committing.`,
+      scene: "side-by-side-comparison-scale",
+    },
+    "split-equation": {
+      headline: `${headlineBase}: Complete 2-Part Formula`,
+      subheadline:
+        baseCard.subheadline ||
+        `Combining both pillars of ${headlineBase} into one clear view.`,
+      eyebrow: isFaq ? "FAQ · 2-PART SUMMARY" : "CORE FORMULA · 2-PART DEFINITION",
+      calloutBadge: isFaq ? "SUMMARY" : "DEFINITION",
+      calloutText: `${headlineBase.slice(0, 26)} = ${styledNodes[0]?.title.slice(0, 20) || "Part 1"} + ${styledNodes[1]?.title.slice(0, 20) || "Part 2"}`,
+      scene: "side-by-side-comparison-scale",
+    },
+    "quadrant-matrix": {
+      headline: isFaq ? baseCard.headline : `${headlineBase}: Reference Matrix`,
+      subheadline:
+        baseCard.subheadline ||
+        `Structured grid view organizing all ${styledNodes.length} items of ${headlineBase}.`,
+      eyebrow: isFaq ? "FAQ MATRIX · QUICK ANSWERS" : "STRATEGIC MATRIX · CORE GRID",
+      calloutBadge: isFaq ? "FAQ SUMMARY" : "MATRIX RULE",
+      calloutText: isFaq
+        ? `Scan every core question on ${headlineBase.slice(0, 30)} in one shareable grid.`
+        : `Cover every quadrant of ${headlineBase.slice(0, 32)} for complete clarity.`,
+      scene: "quadrant-priority-matrix",
+    },
+    checklist: {
+      headline: isFaq ? baseCard.headline : `${headlineBase}: Action Checklist`,
+      subheadline:
+        baseCard.subheadline ||
+        `Clear, scannable checklist covering every essential point of ${headlineBase}.`,
+      eyebrow: isFaq ? "FAQ PLAYBOOK · KEY QUESTIONS" : "ACTION PLAYBOOK · CHECKLIST",
+      calloutBadge: isFaq ? "FAQ GUIDE" : "CHECKLIST",
+      calloutText: isFaq
+        ? `Use these verified answers to navigate ${headlineBase.slice(0, 32)} confidently.`
+        : `Verify every item on this ${headlineBase.slice(0, 28)} checklist before publishing.`,
+      scene: "qa-checklist-verification",
+    },
+    editorial: {
+      headline: isFaq ? baseCard.headline : `${headlineBase}: Editorial Playbook`,
+      subheadline:
+        baseCard.subheadline ||
+        `Clean editorial overview summarizing all ${styledNodes.length} points of ${headlineBase}.`,
+      eyebrow: isFaq ? "FAQ GUIDE · CLEAR ANSWERS" : "EDITORIAL PLAYBOOK · OVERVIEW",
+      calloutBadge: isFaq ? "KEY ANSWERS" : "TAKEAWAY",
+      calloutText: `Keep all ${styledNodes.length} points of ${headlineBase.slice(0, 32)} front of mind.`,
+      scene: "editorial-cards-overview",
+    },
+    ribbon: {
+      headline: isFaq ? baseCard.headline : `${headlineBase}: Visual Playbook Bands`,
+      subheadline:
+        baseCard.subheadline ||
+        `Alternating editorial bands breaking down ${headlineBase} cleanly.`,
+      eyebrow: isFaq ? "FAQ BANDS · KEY ANSWERS" : "VISUAL PLAYBOOK · RIBBON BANDS",
+      calloutBadge: isFaq ? "Q&A GUIDE" : "PLAYBOOK",
+      calloutText: `Review each band of ${headlineBase.slice(0, 32)} in sequence.`,
+      scene: "alternating-ribbon-band",
+    },
+    constellation: {
+      headline: `${headlineBase}: Connected Pillars`,
+      subheadline:
+        baseCard.subheadline ||
+        `How every core pillar connects around ${headlineBase}.`,
+      eyebrow: "ECOSYSTEM · CONNECTED PILLARS",
+      calloutBadge: "CORE HUB",
+      calloutText: `Every pillar reinforces the others across ${headlineBase.slice(0, 30)}.`,
+      scene: "connected-constellation-hub",
+    },
+  };
+
+  const meta = metaByLayout[layout];
+  return {
+    id: `${baseCard.sectionId}-concept-${conceptNumber}`,
+    label: `Concept ${conceptNumber} · ${spec.name}`,
+    archetypeLabel: spec.name,
+    prismLayout: layout,
+    headline: meta.headline,
+    subheadline: meta.subheadline,
+    eyebrowLabel: meta.eyebrow,
+    calloutBadge: meta.calloutBadge,
+    calloutText: meta.calloutText,
+    comparisonLabels:
+      layout === "comparison" || layout === "before-after"
+        ? baseCard.comparisonLabels ||
+          (layout === "before-after" ? ["Before", "After"] : undefined)
+        : undefined,
+    sceneIllustration: meta.scene,
+    nodes: styledNodes,
+  };
 }
 
 /**
- * Generates 4 genuinely distinct multi-genre visual concepts per section
- * (Primary Diagram, Data/Stats Visualization, Flow/Funnel/Cycle Process,
- * and Structural Tree/Pyramid/Split Architecture) so every section can be
- * switched with one click across completely different visual genres.
+ * Generates up to 4 genuinely compatible visual concepts per section drawn
+ * STRICTLY from `getRecommendedLayoutsForConfig(baseCard).compatibleLayouts`
+ * so incompatible archetypes (e.g., Funnel/Pyramid/Pie on FAQs) are never forced.
  */
 export function buildSectionConceptAlternatives(
   baseCard: BlogInfographicConfig,
   _articleTitle?: string,
 ): InfographicConceptAlternative[] {
-  const nodes = baseCard.nodes;
-  const primaryLayout = baseCard.prismLayout || "editorial";
-  const headlineBase = baseCard.headline.split(":")[0].trim() || baseCard.headline;
-  const used = new Set<PrismLayout>([primaryLayout]);
+  const fit = getRecommendedLayoutsForConfig(baseCard);
+  const isFaq = fit.intent === "faq";
+  const primaryLayout = baseCard.prismLayout || fit.compatibleLayouts[0] || "editorial";
 
   const alt1: InfographicConceptAlternative = {
     id: `${baseCard.sectionId}-concept-1`,
@@ -689,205 +965,18 @@ export function buildSectionConceptAlternatives(
     calloutText: baseCard.calloutText,
     comparisonLabels: baseCard.comparisonLabels,
     sceneIllustration: baseCard.sceneIllustration,
-    nodes,
+    nodes: baseCard.nodes,
   };
 
-  // Concept 2: Statistical / Data Visualization Genre (stat-bars, donut-breakdown, or kpi-bento)
-  const dataLayout = pickUniqueLayout(
-    nodes.length <= 4
-      ? ["stat-bars", "donut-breakdown", "kpi-bento", "quadrant-matrix"]
-      : ["stat-bars", "donut-breakdown", "constellation", "ribbon"],
-    used,
+  const compatibleRest = fit.compatibleLayouts
+    .filter((l) => l !== primaryLayout)
+    .slice(0, 3);
+
+  const others = compatibleRest.map((layout, idx) =>
+    buildConceptVariantForLayout(baseCard, layout, idx + 2, isFaq),
   );
-  used.add(dataLayout);
-  const dataNodes = (
-    dataLayout === "kpi-bento" ? nodes.slice(0, 4) : nodes
-  ).map((n, i) => ({
-    ...n,
-    badge:
-      dataLayout === "kpi-bento"
-        ? `KPI 0${i + 1}`
-        : dataLayout === "donut-breakdown"
-          ? `0${i + 1}`
-          : String(i + 1).padStart(2, "0"),
-  }));
-  const alt2: InfographicConceptAlternative = {
-    id: `${baseCard.sectionId}-concept-2`,
-    label: `Concept 2 · ${prismLayoutSpec(dataLayout).name}`,
-    archetypeLabel: prismLayoutSpec(dataLayout).name,
-    prismLayout: dataLayout,
-    headline:
-      dataLayout === "donut-breakdown"
-        ? `${headlineBase}: Core Breakdown`
-        : dataLayout === "kpi-bento"
-          ? `${headlineBase}: Key Signal Dashboard`
-          : `${headlineBase}: Ranked Priority Breakdown`,
-    subheadline:
-      baseCard.subheadline ||
-      `Visualizing the key signals and drivers behind ${headlineBase}.`,
-    eyebrowLabel:
-      dataLayout === "kpi-bento"
-        ? "EXECUTIVE METRICS · KPI BENTO"
-        : "DATA & SIGNAL BREAKDOWN",
-    calloutBadge: "DATA SIGNAL",
-    calloutText: `Compare all ${dataNodes.length} drivers of ${headlineBase.slice(0, 32)} before prioritizing work.`,
-    sceneIllustration:
-      dataLayout === "donut-breakdown"
-        ? "donut-ring-analytics"
-        : dataLayout === "kpi-bento"
-          ? "analytics-benchmark-telemetry"
-          : "horizontal-bar-benchmark",
-    nodes: dataNodes,
-  };
 
-  // Concept 3: Process / Funnel / Flowchart / Cycle Genre
-  const flowLayout = pickUniqueLayout(
-    nodes.length <= 3
-      ? ["pipeline-flow", "funnel-stages", "cycle-wheel", "zigzag-flowchart"]
-      : nodes.length === 4
-        ? ["funnel-stages", "cycle-wheel", "zigzag-flowchart", "pipeline-flow"]
-        : ["zigzag-flowchart", "funnel-stages", "timeline", "cycle-wheel"],
-    used,
-  );
-  used.add(flowLayout);
-  const flowNodes = (
-    flowLayout === "pipeline-flow" ? nodes.slice(0, 3) : nodes.slice(0, 6)
-  ).map((n, i, arr) => ({
-    ...n,
-    badge:
-      flowLayout === "pipeline-flow"
-        ? i === 0
-          ? "START"
-          : i === arr.length - 1
-            ? "RESULT"
-            : "CORE STEP"
-        : flowLayout === "funnel-stages"
-          ? `STAGE 0${i + 1}`
-          : flowLayout === "cycle-wheel"
-            ? `PHASE ${i + 1}`
-            : `STEP 0${i + 1}`,
-  }));
-  const alt3: InfographicConceptAlternative = {
-    id: `${baseCard.sectionId}-concept-3`,
-    label: `Concept 3 · ${prismLayoutSpec(flowLayout).name}`,
-    archetypeLabel: prismLayoutSpec(flowLayout).name,
-    prismLayout: flowLayout,
-    headline:
-      flowLayout === "cycle-wheel"
-        ? `${headlineBase}: Continuous Flywheel`
-        : flowLayout === "funnel-stages"
-          ? `${headlineBase}: Stage-by-Stage Funnel`
-          : `${headlineBase}: Execution Workflow`,
-    subheadline:
-      baseCard.subheadline ||
-      `How ${headlineBase} moves step by step from initial setup to measurable outcomes.`,
-    eyebrowLabel:
-      flowLayout === "cycle-wheel"
-        ? "CONTINUOUS LOOP · FLYWHEEL"
-        : "STEP-BY-STEP EXECUTION FLOW",
-    calloutBadge: flowLayout === "cycle-wheel" ? "LOOP RULE" : "FLOW RULE",
-    calloutText: `Execute each stage of ${headlineBase.slice(0, 34)} in sequence for compounding visibility.`,
-    sceneIllustration:
-      flowLayout === "cycle-wheel"
-        ? "continuous-flywheel-cycle"
-        : flowLayout === "funnel-stages"
-          ? "conversion-funnel-velocity"
-          : flowLayout === "zigzag-flowchart"
-            ? "decision-flowchart-nodes"
-            : "editorial-workflow-pipeline",
-    nodes: flowNodes,
-  };
-
-  // Concept 4: Structural / Hierarchy / Pyramid / Before-After / Matrix Genre
-  const structLayout = pickUniqueLayout(
-    nodes.length === 2
-      ? ["split-equation", "before-after", "editorial", "kpi-bento"]
-      : nodes.length === 3
-        ? ["pyramid-tiers", "hierarchy-tree", "before-after", "editorial"]
-        : nodes.length === 4
-          ? ["hierarchy-tree", "pyramid-tiers", "quadrant-matrix", "before-after"]
-          : ["pyramid-tiers", "hierarchy-tree", "constellation", "editorial"],
-    used,
-  );
-  used.add(structLayout);
-  const structNodes = (
-    structLayout === "split-equation"
-      ? nodes.slice(0, 2)
-      : structLayout === "quadrant-matrix"
-        ? nodes.slice(0, 4)
-        : nodes.slice(0, 5)
-  ).map((n, i) => ({
-    ...n,
-    badge:
-      structLayout === "split-equation"
-        ? `PART ${i + 1}`
-        : structLayout === "pyramid-tiers"
-          ? `TIER ${i + 1}`
-          : structLayout === "before-after"
-            ? i % 2 === 0
-              ? "BEFORE"
-              : "AFTER"
-            : structLayout === "quadrant-matrix"
-              ? `Q${i + 1}`
-              : `NODE ${i + 1}`,
-  }));
-  const alt4: InfographicConceptAlternative = {
-    id: `${baseCard.sectionId}-concept-4`,
-    label: `Concept 4 · ${prismLayoutSpec(structLayout).name}`,
-    archetypeLabel: prismLayoutSpec(structLayout).name,
-    prismLayout: structLayout,
-    headline:
-      structLayout === "split-equation"
-        ? `${headlineBase}: Complete 2-Part Formula`
-        : structLayout === "pyramid-tiers"
-          ? `${headlineBase}: Strategic Priority Pyramid`
-          : structLayout === "hierarchy-tree"
-            ? `${headlineBase}: System Architecture Tree`
-            : structLayout === "before-after"
-              ? `${headlineBase}: Before vs. After Shift`
-              : `${headlineBase}: 4-Pillar Strategic Matrix`,
-    subheadline:
-      structLayout === "split-equation"
-        ? `Combining both sides of ${headlineBase} into one unified strategy.`
-        : structLayout === "pyramid-tiers"
-          ? `Layering ${headlineBase} from core technical foundation up to strategic peak.`
-          : structLayout === "hierarchy-tree"
-            ? `How each component branches from the core ${headlineBase} architecture.`
-            : `How the core dimensions of ${headlineBase} work together for durable results.`,
-    eyebrowLabel:
-      structLayout === "pyramid-tiers"
-        ? "STRATEGIC PYRAMID · PRIORITY TIERS"
-        : structLayout === "hierarchy-tree"
-          ? "ARCHITECTURE · HIERARCHY TREE"
-          : structLayout === "before-after"
-            ? "TRANSFORMATION · BEFORE VS AFTER"
-            : structLayout === "split-equation"
-              ? "CORE FORMULA · 2-PART DEFINITION"
-              : "STRATEGIC 2×2 MATRIX",
-    calloutBadge:
-      structLayout === "split-equation"
-        ? "DEFINITION"
-        : structLayout === "pyramid-tiers"
-          ? "FOUNDATION"
-          : "ARCHITECTURE",
-    calloutText:
-      structLayout === "split-equation"
-        ? `${headlineBase.slice(0, 26)} = ${structNodes[0]?.title.slice(0, 22) || "Part 1"} + ${structNodes[1]?.title.slice(0, 22) || "Part 2"}`
-        : `Align every layer of ${headlineBase.slice(0, 32)} for complete, durable coverage.`,
-    sceneIllustration:
-      structLayout === "pyramid-tiers"
-        ? "stacked-pyramid-tiers"
-        : structLayout === "hierarchy-tree"
-          ? "hierarchy-org-tree"
-          : structLayout === "before-after"
-            ? "before-after-transform"
-            : structLayout === "split-equation"
-              ? "side-by-side-comparison-scale"
-              : "quadrant-priority-matrix",
-    nodes: structNodes,
-  };
-
-  return [alt1, alt2, alt3, alt4];
+  return [alt1, ...others];
 }
 
 export function buildAllArticleSectionVisuals(
@@ -934,24 +1023,6 @@ export function buildAllArticleSectionVisuals(
 
   const selected = pool.slice(0, 12);
   const total = selected.length;
-  const layoutCycle: PrismLayout[] = [
-    "editorial",
-    "stat-bars",
-    "pipeline-flow",
-    "donut-breakdown",
-    "funnel-stages",
-    "hierarchy-tree",
-    "quadrant-matrix",
-    "pyramid-tiers",
-    "cycle-wheel",
-    "kpi-bento",
-    "before-after",
-    "zigzag-flowchart",
-    "timeline",
-    "constellation",
-    "split-equation",
-    "ribbon",
-  ];
   const paletteCycle: BlogInfographicConfig["paletteId"][] = [
     "indigo-cyber",
     "blue-trust",
@@ -974,9 +1045,6 @@ export function buildAllArticleSectionVisuals(
   const sectionVisuals = selected.map(({ section, intel, visual }, idx) => {
     const nodesForSection = visual.nodes;
     const nCount = nodesForSection.length;
-    const sectionCombinedText = `${section.title} ${nodesForSection
-      .map((n) => `${n.title} ${n.detail}`)
-      .join(" ")}`;
     let comparisonLabels: [string, string] | undefined;
 
     const rawComparisonCandidate =
@@ -998,30 +1066,18 @@ export function buildAllArticleSectionVisuals(
             `${n.title} ${n.detail}`.toLowerCase().includes(rightSideToken),
         ));
 
-    const isBeforeAfterSignal =
-      /\b(before|after|legacy|modern|shift|transform|evolution|old way|new way|traditional seo vs)\b/i.test(
-        section.title,
-      );
-    const isQuantitativeSignal =
-      /\b\d+%|\b\d+(?:\.\d+)?x\b|\b(benchmark|metric|metrics|kpi|kpis|roi|statistics|stats|ranking factors|impact|growth rate|traffic share|score)\b/i.test(
-        sectionCombinedText,
-      );
-    const isHierarchySignal =
-      /\b(architecture|hierarchy|ecosystem|taxonomy|structure|stack|anatomy|components|layers|types of|categories)\b/i.test(
-        section.title,
-      );
-    const isPyramidSignal =
-      /\b(pyramid|tier|tiers|level|levels|foundation|maturity|priority|priorities)\b/i.test(
-        section.title,
-      );
-    const isCycleSignal =
-      /\b(cycle|flywheel|loop|continuous|iterative|feedback|recurring|ongoing)\b/i.test(
-        section.title,
-      );
-    const isBreakdownSignal =
-      /\b(breakdown|mix|composition|allocation|distribution|share|pillars|factors|elements)\b/i.test(
-        section.title,
-      );
+    const fit = getSectionVisualFitProfile({
+      title: section.title,
+      nodeTitles: nodesForSection.map((n) => n.title),
+      nodeDetails: nodesForSection.map((n) => n.detail),
+      nodeBadges: nodesForSection.map((n) => n.badge),
+      nodeMetrics: nodesForSection.map((n) => n.metricValue || ""),
+      nodeCount: nCount,
+      isFaqHint: intel.isFaq,
+      relationship: visual.brief.relationship,
+      hasBothComparisonSides,
+      archetype: intel.archetype,
+    });
 
     const pickUnused = (optionsList: PrismLayout[]): PrismLayout => {
       const fresh = optionsList.find(
@@ -1031,96 +1087,12 @@ export function buildAllArticleSectionVisuals(
       return optionsList.find((l) => l !== prevLayout) || optionsList[0];
     };
 
-    let layout: PrismLayout;
-    if (intel.isFaq) {
-      layout =
-        nCount >= 3 && prevLayout !== "checklist" ? "checklist" : "editorial";
-    } else if (nCount === 2) {
-      layout = isBeforeAfterSignal
-        ? pickUnused(["before-after", "split-equation", "editorial"])
-        : pickUnused(["split-equation", "before-after", "kpi-bento", "editorial"]);
-    } else if (hasBothComparisonSides && nCount >= 2 && nCount % 2 === 0) {
-      layout = isBeforeAfterSignal
-        ? pickUnused(["before-after", "comparison", "quadrant-matrix"])
-        : pickUnused(["comparison", "before-after", "quadrant-matrix"]);
+    const layout: PrismLayout = pickUnused(fit.compatibleLayouts);
+    if (
+      (layout === "comparison" || layout === "before-after") &&
+      derivedLabels
+    ) {
       comparisonLabels = derivedLabels;
-    } else if (isPyramidSignal && nCount >= 3 && nCount <= 5) {
-      layout = pickUnused(["pyramid-tiers", "funnel-stages", "hierarchy-tree"]);
-    } else if (isHierarchySignal && nCount >= 3 && nCount <= 5) {
-      layout = pickUnused(["hierarchy-tree", "pyramid-tiers", "donut-breakdown"]);
-    } else if (isCycleSignal && nCount >= 3 && nCount <= 5) {
-      layout = pickUnused(["cycle-wheel", "zigzag-flowchart", "timeline"]);
-    } else if (isQuantitativeSignal) {
-      layout =
-        nCount <= 4
-          ? pickUnused(["stat-bars", "kpi-bento", "donut-breakdown"])
-          : pickUnused(["stat-bars", "donut-breakdown", "constellation"]);
-    } else if (isBreakdownSignal && nCount >= 3 && nCount <= 5) {
-      layout = pickUnused(["donut-breakdown", "stat-bars", "quadrant-matrix"]);
-    } else if (
-      visual.brief.relationship === "sequence" ||
-      intel.archetype === "process"
-    ) {
-      layout =
-        nCount === 3
-          ? pickUnused(["pipeline-flow", "funnel-stages", "zigzag-flowchart", "timeline"])
-          : pickUnused(["zigzag-flowchart", "funnel-stages", "timeline", "cycle-wheel"]);
-    } else if (
-      /\b(checklist|check|audit|verify|guide|rules|criteria|myths|mistakes)\b/i.test(
-        section.title,
-      ) &&
-      nCount >= 3
-    ) {
-      layout = pickUnused(["checklist", "stat-bars", "pyramid-tiers", "editorial"]);
-    } else if (nCount === 3) {
-      layout = pickUnused([
-        "pipeline-flow",
-        "pyramid-tiers",
-        "donut-breakdown",
-        "hierarchy-tree",
-        "funnel-stages",
-        "stat-bars",
-        "kpi-bento",
-      ]);
-    } else if (nCount === 4) {
-      layout = pickUnused([
-        "quadrant-matrix",
-        "kpi-bento",
-        "donut-breakdown",
-        "hierarchy-tree",
-        "cycle-wheel",
-        "funnel-stages",
-        "before-after",
-        "stat-bars",
-      ]);
-    } else if (nCount === 5) {
-      layout = pickUnused([
-        "pyramid-tiers",
-        "stat-bars",
-        "cycle-wheel",
-        "zigzag-flowchart",
-        "funnel-stages",
-        "donut-breakdown",
-        "constellation",
-      ]);
-    } else {
-      const candidateCycle = layoutCycle.filter((l) => {
-        if (l === "split-equation") return nCount === 2;
-        if (l === "comparison" || l === "before-after") return nCount % 2 === 0;
-        if (l === "pipeline-flow" || l === "quadrant-matrix" || l === "kpi-bento") {
-          return nCount <= 4;
-        }
-        if (
-          l === "hierarchy-tree" ||
-          l === "pyramid-tiers" ||
-          l === "cycle-wheel" ||
-          l === "donut-breakdown"
-        ) {
-          return nCount >= 3 && nCount <= 5;
-        }
-        return true;
-      });
-      layout = pickUnused(candidateCycle.length ? candidateCycle : ["stat-bars", "zigzag-flowchart", "constellation", "ribbon"]);
     }
     prevLayout = layout;
     usedLayoutsInArticle.add(layout);
@@ -1260,22 +1232,25 @@ export function buildAllArticleSectionVisuals(
 }
 
 /**
- * Cycles a section infographic through a fresh combination of layout,
+ * Cycles a section infographic through a fresh compatible combination of layout,
  * procedural background pattern, card surface style, and 2-tone highlights.
  */
 export function shuffleInfographicVisualVariation(
   config: BlogInfographicConfig,
   step = 1,
 ): BlogInfographicConfig {
-  const nonComparisonLayouts = PRISM_LAYOUTS.filter(
-    (l) => l.id !== "comparison" || config.nodes.length % 2 === 0,
-  ).map((l) => l.id);
+  const fit = getRecommendedLayoutsForConfig(config);
+  const compatibleLayouts = fit.compatibleLayouts.length
+    ? fit.compatibleLayouts
+    : PRISM_LAYOUTS.filter(
+        (l) => l.id !== "comparison" || config.nodes.length % 2 === 0,
+      ).map((l) => l.id);
   const currLayoutIdx = Math.max(
     0,
-    nonComparisonLayouts.indexOf(config.prismLayout || "editorial"),
+    compatibleLayouts.indexOf(config.prismLayout || "editorial"),
   );
   const nextLayout =
-    nonComparisonLayouts[(currLayoutIdx + step) % nonComparisonLayouts.length];
+    compatibleLayouts[(currLayoutIdx + step) % compatibleLayouts.length];
 
   const patterns = BACKGROUND_PATTERNS.map((p) => p.id);
   const currPatIdx = Math.max(

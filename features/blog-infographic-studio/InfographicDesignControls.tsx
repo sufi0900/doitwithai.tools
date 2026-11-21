@@ -58,7 +58,7 @@ export function InfographicProceduralStyleControls({
 }: Props) {
   const activePattern = config.backgroundPattern || "dots-glow";
   const activeCardStyle = config.cardStyle || "glass-editorial";
-  const activeFont = config.fontFamily || "system-arial";
+  const activeFont = config.fontFamily || "inter-jakarta";
   const activeScene = config.sceneIllustration || "";
   const ov: InfographicStyleOverrides = config.styleOverrides || {};
   const activeBrandMode = ov.brandBackgroundMode || "theme-default";

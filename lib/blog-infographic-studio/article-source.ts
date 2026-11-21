@@ -99,11 +99,51 @@ export function extractArticleSource(document: Document, title: string) {
     hLevel = 3;
   };
   for (const el of Array.from(
-    root.querySelectorAll("h2,h3,h4,p,li,table,figcaption"),
+    root.querySelectorAll(
+      "h2,h3,h4,h5,summary,dt,dd,button,p,li,table,figcaption",
+    ),
   )) {
     if (el.closest(excluded)) continue;
-    if (el.parentElement?.closest("table, li") && !/^H[234]$/.test(el.tagName))
+    const tag = el.tagName;
+    if (
+      el.parentElement?.closest("table, li") &&
+      !/^(?:H[2345]|SUMMARY|DT)$/.test(tag)
+    )
       continue;
+    // Skip <dd> wrapper when it already contains <p> or <li> blocks so content is never duplicated
+    if (tag === "DD" && el.querySelector("p, li")) continue;
+    // Skip <p> or <div> text nested inside <summary>, <dt>, or <button> so the heading is not emitted twice
+    if (
+      (tag === "P" || tag === "LI") &&
+      el.parentElement?.closest("summary, dt, button")
+    )
+      continue;
+    // Only treat <button> as a section/FAQ question heading when it is an accordion trigger or a real question
+    if (tag === "BUTTON") {
+      const btnText = tidy(el.textContent);
+      const isAccordionBtn =
+        el.hasAttribute("aria-expanded") ||
+        el.hasAttribute("aria-controls") ||
+        el.hasAttribute("data-state") ||
+        el.hasAttribute("data-accordion-trigger");
+      const looksLikeQuestion =
+        btnText.endsWith("?") &&
+        btnText.length >= 12 &&
+        btnText.length <= 160 &&
+        !/^(?:missing something\?|need help\?|have questions\?)$/i.test(btnText);
+      const looksLikeFaqAccordion =
+        isAccordionBtn &&
+        btnText.length >= 14 &&
+        btnText.length <= 160 &&
+        (btnText.endsWith("?") ||
+          Boolean(
+            current &&
+              /\b(?:faq|frequently asked|common questions|questions about)\b/i.test(
+                current.title,
+              ),
+          ));
+      if (!looksLikeQuestion && !looksLikeFaqAccordion) continue;
+    }
     const needsClone = Boolean(
       el.querySelector("br, ul, ol, p, div, strong, b"),
     );
@@ -147,7 +187,7 @@ export function extractArticleSource(document: Document, title: string) {
         br.replaceWith(prevIsShortLabel ? " — " : " ");
       }
       // If a list item or paragraph starts with <strong>Concept Title</strong> followed by explanatory text
-      if (copy.tagName === "LI" || copy.tagName === "P") {
+      if (copy.tagName === "LI" || copy.tagName === "P" || copy.tagName === "DD") {
         const firstEl = copy.firstElementChild;
         const hasLeadingTextBeforeFirstEl =
           copy.firstChild &&
@@ -174,7 +214,7 @@ export function extractArticleSource(document: Document, title: string) {
       }
     }
     let rawContent = copy.textContent || "";
-    if (el.tagName === "LI") {
+    if (tag === "LI") {
       rawContent = rawContent.replace(
         /^\s*([A-Za-z0-9.+#&/\-\s]{2,48}?)\s*\n+\s*([A-Z][^\n]{12,})/,
         "$1 — $2",
@@ -188,7 +228,7 @@ export function extractArticleSource(document: Document, title: string) {
     if (!text) continue;
     // Skip inline SaaS pricing/CTA button rows embedded inside articles
     if (
-      el.tagName !== "H2" &&
+      tag !== "H2" &&
       (/^(?:US?\$\d+\s+for\s+your\s+first\b.*?\$\d+\/month\.?|get started\s+(?:see the agent|how claim checking works)|missing something\?\s*ask us directly\.?)$/i.test(
         text,
       ) ||
@@ -198,21 +238,25 @@ export function extractArticleSource(document: Document, title: string) {
     ) {
       continue;
     }
-    if (el.tagName === "H2") {
+    if (tag === "H2") {
       begin(text, false);
       continue;
     }
     if (!current) begin(title, true);
-    const isH3 = el.tagName === "H3";
-    const isH4 = el.tagName === "H4";
+    const isH3 =
+      tag === "H3" ||
+      tag === "SUMMARY" ||
+      tag === "DT" ||
+      tag === "BUTTON";
+    const isH4 = tag === "H4" || tag === "H5";
     const kind: ArticleSourceBlock["kind"] =
       isH3 || isH4
         ? "heading"
-        : el.tagName === "LI"
+        : tag === "LI"
           ? "list"
-          : el.tagName === "TABLE"
+          : tag === "TABLE"
             ? "table"
-            : el.tagName === "FIGCAPTION"
+            : tag === "FIGCAPTION"
               ? "caption"
               : "paragraph";
     if (isH3) {

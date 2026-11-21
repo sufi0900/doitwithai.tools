@@ -24,6 +24,7 @@ import type {
 import {
   buildAllArticleSectionVisuals,
   buildSectionConceptAlternatives,
+  getRecommendedLayoutsForConfig,
   withPrismLayout,
   type PrismLayout,
 } from "@/lib/blog-infographic-studio/visual-brief";
@@ -292,13 +293,14 @@ Strict Editorial & Storytelling Rules:
    - "sourceBlockIds": 1–3 exact block "id" strings from that section's "blocks" that prove the claim.
 4. GENUINE CALLOUT ("calloutText"): Write 1 concise actionable takeaway sentence (40–78 chars) ONLY when it adds a real concluding insight. NEVER copy the subheadline or join card titles with middots.
 5. ZERO HALLUCINATIONS: Never invent statistics or percentages. Preserve qualifiers ("up to", "about", "nearly") if present in source blocks.
-6. DIVERSE DIAGRAM LAYOUTS & VECTOR SCENES (never repeat the same layout twice in a row):
-   - "prismLayout": choose the best visual diagram genre from: ${ALL_LAYOUT_IDS_STR}.
-     * Quantitative / ranked benchmarks -> "stat-bars" or "kpi-bento" or "donut-breakdown"
-     * Processes / stages / decisions -> "funnel-stages", "pipeline-flow", "zigzag-flowchart", "timeline"
-     * Hierarchies / layers / loops -> "hierarchy-tree", "pyramid-tiers", "cycle-wheel"
-     * Contrasts / shifts / definitions -> "before-after", "comparison", "split-equation", "quadrant-matrix"
-     * Lists / FAQs / playbooks -> "checklist", "editorial", "constellation", "ribbon"
+6. STRICT CONTENT-AWARE DIAGRAM MATCHING (NEVER force incompatible templates onto a section, and never repeat the same layout twice in a row):
+   - "prismLayout": choose ONLY a genuinely appropriate visual diagram genre from: ${ALL_LAYOUT_IDS_STR}.
+     * FAQs / Q&A -> ONLY "editorial", "checklist", "quadrant-matrix", or "ribbon" (NEVER "funnel-stages", "pyramid-tiers", "pie-chart", "vertical-bars", or "winding-roadmap")
+     * Quantitative / stats / share / benchmarks -> "pie-chart", "vertical-bars", "stat-bars", "donut-breakdown", or "kpi-bento"
+     * Processes / roadmaps / workflows / funnels / loops -> "winding-roadmap", "pipeline-flow", "zigzag-flowchart", "funnel-stages", "timeline", or "cycle-wheel"
+     * Hierarchies / layers / maturity tiers -> "pyramid-tiers", "hierarchy-tree", or "constellation"
+     * Contrasts / shifts / two-part definitions -> "before-after", "comparison", "split-equation", or "quadrant-matrix"
+     * Listings / checklists / mistakes / tool playbooks -> "checklist", "editorial", "quadrant-matrix", "ribbon", "kpi-bento", or "constellation"
    - "sceneIllustration": one of ${ALL_SCENE_IDS_STR}.
 
 Return strict JSON: { "sections": [ { "sectionId": "...", "headline": "...", "subheadline": "...", "eyebrowLabel": "...", "prismLayout": "...", "sceneIllustration": "...", "comparisonLabels": ["Left", "Right"], "calloutText": "...", "nodes": [ { "badge": "01", "title": "...", "detail": "...", "sourceBlockIds": ["..."] } ] } ] }`;
@@ -410,7 +412,7 @@ Return strict JSON: { "sections": [ { "sectionId": "...", "headline": "...", "su
       typeof plan.headline === "string" &&
       plan.headline.trim().length >= 6 &&
       plan.headline.trim().length <= 68
-        ? plan.headline.trim()
+        ? plan.headline.trim().replace(/\.+$/, "")
         : card.headline;
 
     const subheadline =
@@ -419,20 +421,23 @@ Return strict JSON: { "sections": [ { "sectionId": "...", "headline": "...", "su
         ? plan.subheadline.trim()
         : card.subheadline;
 
+    // Enforce content-aware visual-fit compatibility (rejects e.g. funnel/pyramid/pie on FAQs)
+    const candidateFit = getRecommendedLayoutsForConfig({
+      ...card,
+      headline,
+      subheadline,
+      nodes: reindexedNodes,
+    });
+    const compatibleSet = new Set<PrismLayout>(candidateFit.compatibleLayouts);
     const requestedLayout = plan.prismLayout as PrismLayout | undefined;
-    const isTall916 =
-      requestedLayout === "checklist" ||
-      requestedLayout === "ribbon" ||
-      requestedLayout === "constellation" ||
-      requestedLayout === "zigzag-flowchart" ||
-      requestedLayout === "timeline";
     const layout: PrismLayout =
       requestedLayout &&
       VALID_LAYOUTS.has(requestedLayout) &&
-      (requestedLayout !== "comparison" || reindexedNodes.length % 2 === 0) &&
-      !(reindexedNodes.length <= 2 && isTall916)
+      compatibleSet.has(requestedLayout)
         ? requestedLayout
-        : card.prismLayout || "editorial";
+        : card.prismLayout && compatibleSet.has(card.prismLayout)
+          ? card.prismLayout
+          : candidateFit.compatibleLayouts[0] || "editorial";
 
     const nodesWithIcons = assignDistinctSectionIcons(reindexedNodes, headline);
     const resolvedStock = resolveSectionVisualStock({

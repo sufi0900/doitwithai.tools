@@ -42,6 +42,7 @@ import {
 import {
   getInfographicDimensions,
   lockInfographicGeometry,
+  prismLayoutSpec,
 } from "@/lib/blog-infographic-studio/layout-registry";
 import { PRISM_LAYOUT_THEMES } from "@/lib/blog-infographic-studio/samples";
 import {
@@ -65,6 +66,7 @@ import {
   buildSectionConceptAlternatives,
   buildSectionVisual,
   createPrismSample,
+  getRecommendedLayoutsForConfig,
   recommendPrismLayout,
   sectionFromText,
   shuffleInfographicVisualVariation,
@@ -304,9 +306,9 @@ export function BlogInfographicStudio({
   ]);
   const [activeIdx, setActiveIdx] = useState(0),
     [panel, setPanel] = useState<"content" | "design">("content"),
-    [prismCategory, setPrismCategory] = useState<PrismLayoutCategory | "all">(
-      "all",
-    ),
+    [prismCategory, setPrismCategory] = useState<
+      PrismLayoutCategory | "recommended" | "all"
+    >("recommended"),
     [family, setFamily] = useState(0),
     [query, setQuery] = useState("");
   const [paste, setPaste] = useState(""),
@@ -331,6 +333,10 @@ export function BlogInfographicStudio({
   const active = cards[Math.min(activeIdx, cards.length - 1)];
   const deferred = useDeferredValue(active);
   const scene = useMemo(() => buildInfographicScene(deferred), [deferred]);
+  const fitProfile = useMemo(
+    () => getRecommendedLayoutsForConfig(active),
+    [active],
+  );
   const dimensions = getInfographicDimensions(active);
   const spec = BLOG_INFOGRAPHIC_25_TEMPLATES.find(
     (t) => t.id === active.templateId,
@@ -1880,17 +1886,15 @@ export function BlogInfographicStudio({
                     className={button + " mt-3 w-full"}
                     onClick={() => {
                       if (active.visualEngine) {
-                        const layout = active.visualBrief
-                          ? recommendPrismLayout(
-                              active.visualBrief,
-                              active.nodes.length,
-                            )
-                          : active.nodes.length > 3
-                            ? "ribbon"
-                            : "editorial";
+                        const layout =
+                          fitProfile.compatibleLayouts.find(
+                            (l) => l !== active.prismLayout,
+                          ) ||
+                          fitProfile.compatibleLayouts[0] ||
+                          "editorial";
                         update(withPrismLayout(active, layout));
                         notify(
-                          "Suggested an editorial composition for this point count. Check the text fit before exporting.",
+                          `Matched ${prismLayoutSpec(layout).name} for ${fitProfile.intentLabel}.`,
                         );
                         return;
                       }
@@ -2288,7 +2292,7 @@ export function BlogInfographicStudio({
                   aria-label="Infographic concept alternatives"
                 >
                   <span className="font-bold text-indigo-800 dark:text-indigo-200">
-                    Section Visual Concepts:
+                    Matched Concepts ({fitProfile.intentLabel}):
                   </span>
                   {active.conceptAlternatives.map((concept) => {
                     const isSelected =
@@ -2515,16 +2519,21 @@ export function BlogInfographicStudio({
             id="infographic-layouts"
             className="scroll-mt-28 rounded-2xl border border-indigo-200 bg-white p-4 dark:border-indigo-500/30 dark:bg-slate-900 sm:p-5"
           >
-            <div className="flex flex-wrap items-end justify-between gap-3">
+            <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white">
-                  18 Flagship Diagram &amp; Infographic Archetypes
-                </h3>
-                <p className="mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-                  Eighteen original diagram &amp; infographic compositions with
-                  fixed canvases—including charts, donuts, funnels, pyramids,
-                  trees, flywheels, flowcharts, and KPI bentos. Your writing,
-                  brand colors and logo stay in place when you switch.
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+                    Smart-Matched Infographic Layouts
+                  </h3>
+                  <span className="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-[11px] font-bold text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-200">
+                    Matched for {fitProfile.intentLabel} ·{" "}
+                    {fitProfile.compatibleLayouts.length} best fits
+                  </span>
+                </div>
+                <p className="mt-1.5 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                  {fitProfile.reason} Browse all {PRISM_LAYOUTS.length} flagship
+                  archetypes anytime—including pie charts, vertical bar charts,
+                  winding roadmaps, pyramids, funnels, trees, and playbooks.
                 </p>
               </div>
             </div>
@@ -2533,6 +2542,18 @@ export function BlogInfographicStudio({
               role="group"
               aria-label="Filter infographic diagram categories"
             >
+              <button
+                type="button"
+                aria-pressed={prismCategory === "recommended"}
+                onClick={() => setPrismCategory("recommended")}
+                className={`rounded-full border px-3 py-1.5 text-xs font-bold transition ${
+                  prismCategory === "recommended"
+                    ? "border-indigo-600 bg-indigo-600 text-white"
+                    : "border-indigo-200 bg-indigo-50/70 text-indigo-700 hover:border-indigo-400 dark:border-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-200"
+                }`}
+              >
+                Best for this section ({fitProfile.compatibleLayouts.length})
+              </button>
               <button
                 type="button"
                 aria-pressed={prismCategory === "all"}
@@ -2567,9 +2588,13 @@ export function BlogInfographicStudio({
               })}
             </div>
             <div className="mt-4 grid gap-4 sm:grid-cols-3">
-              {PRISM_LAYOUTS.filter(
-                (layout) =>
-                  prismCategory === "all" || layout.category === prismCategory,
+              {(prismCategory === "recommended"
+                ? fitProfile.compatibleLayouts.map((id) => prismLayoutSpec(id))
+                : PRISM_LAYOUTS.filter(
+                    (layout) =>
+                      prismCategory === "all" ||
+                      layout.category === prismCategory,
+                  )
               ).map((layout) => (
                 <PrismTemplateCard
                   key={layout.id}

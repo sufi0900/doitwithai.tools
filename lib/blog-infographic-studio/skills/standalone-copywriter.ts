@@ -437,6 +437,16 @@ function splitSentences(text: string): string[] {
     .filter(Boolean);
 }
 
+function isGenuineQuestion(text: string): boolean {
+  const t = clean(text);
+  return (
+    t.endsWith("?") ||
+    /^(?:what|how|why|when|where|who|which|does|do|is|are|can|will|should|could|would)\b/i.test(
+      t,
+    )
+  );
+}
+
 function finalizePair(
   rawTitle: string,
   rawDetail: string,
@@ -446,13 +456,22 @@ function finalizePair(
   let title = clean(rawTitle);
   let detail = decontextualizeProse(rawDetail);
 
-  if (isFaq || title.endsWith("?")) {
+  if ((isFaq && isGenuineQuestion(title)) || title.endsWith("?")) {
     const q = title.endsWith("?")
       ? title
       : `${stripTrailingCliffhangers(title)}?`;
-    const bodySentences = splitSentences(decontextualizeProse(fullSourceText));
-    const answerText =
-      bodySentences.find((s) => !s.trim().endsWith("?")) || detail;
+    const bodySentences = splitSentences(
+      decontextualizeProse(fullSourceText),
+    ).filter((s) => !s.trim().endsWith("?") && normText(s) !== normText(q));
+    let answerText = detail && !detail.trim().endsWith("?") ? detail : "";
+    if (!answerText || answerText.length < 36) {
+      const s0 = bodySentences[0] || answerText;
+      const s1 = bodySentences[1];
+      answerText =
+        s0 && s1 && s0.length < 115 && s0.length + s1.length + 1 <= 200
+          ? `${s0} ${s1}`
+          : s0 || detail;
+    }
     const subject = q.match(/^what is (.+?)\?$/i)?.[1];
     const standaloneAnswer = subject
       ? answerText.replace(/^it\s+/i, () => `${subject} `)
@@ -767,21 +786,30 @@ export function synthesizeStandaloneTitleAndDetail(
     s.trim().endsWith("?"),
   );
 
-  // Rule A: FAQ Question Preservation — only when section is an FAQ or heading itself is a genuine Q&A question
+  // Rule A: FAQ Question Preservation — only when a genuine question heading or question sentence exists
   const cleanPreset = clean(presetTitle || "");
+  const hasRealFaqQuestion =
+    (cleanPreset &&
+      isGenuineQuestion(cleanPreset) &&
+      !/\b(?:so what|what exactly)\b/i.test(cleanPreset)) ||
+    Boolean(firstQuestionSentence);
   if (
-    options?.isFaq ||
+    (options?.isFaq && hasRealFaqQuestion) ||
     (cleanPreset.endsWith("?") &&
       !/\b(?:so what|what exactly)\b/i.test(cleanPreset))
   ) {
-    const qTitle = cleanPreset.endsWith("?")
+    const qTitle = isGenuineQuestion(cleanPreset)
       ? cleanPreset
-      : firstQuestionSentence || cleanPreset || candidate;
+      : firstQuestionSentence!;
     const answerCandidates = fullSentences.filter(
       (s) => normText(s) !== normText(qTitle) && !s.trim().endsWith("?"),
     );
+    const s0 = answerCandidates[0] || "";
+    const s1 = answerCandidates[1] || "";
     const answerText =
-      answerCandidates.slice(0, 2).join(" ") ||
+      (s0 && s1 && s0.length < 115 && s0.length + s1.length + 1 <= 200
+        ? `${s0} ${s1}`
+        : s0) ||
       decontextualizeProse(rawBlockText)
         .replace(qTitle, "")
         .trim() ||
@@ -1074,6 +1102,10 @@ const HIGHLIGHT_STOPWORDS = new Set([
   "should",
   "does",
   "do",
+  "about",
+  "using",
+  "without",
+  "through",
 ]);
 
 const GENERIC_META_WORDS = new Set([
@@ -1092,8 +1124,10 @@ const GENERIC_META_WORDS = new Set([
   "step",
   "steps",
   "asked",
+  "question",
   "questions",
   "frequently",
+  "common",
 ]);
 
 const HIGH_SIGNAL_ACTION_VERBS = new Set([

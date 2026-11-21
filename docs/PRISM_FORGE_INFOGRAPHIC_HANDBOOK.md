@@ -186,3 +186,20 @@ To ensure every extracted article produces genuinely varied visual diagram genre
 
 
 
+## 18. V5 Content-Aware Visual Fit, Authentic Data Charts & Roadmap Engines, Zero-Overflow Split Pyramid/Funnel & FAQ DOM Repair (Shipped)
+
+To eliminate blindly forced templates across mismatched sections, repair live accordion/FAQ extraction defects, and deliver publication-grade data visualization & roadmap diagrams matching Venngage/Canva/Piktochart benchmarks:
+
+1. **Content-Aware Visual Fit & Compatibility Engine (`lib/blog-infographic-studio/visual-fit.ts`, `visual-brief.ts`, `/api/ai-tools/infographic-plan`, `BlogInfographicStudio.tsx`)**:
+   - `classifyVisualContentIntent` and `getSectionVisualFitProfile` classify every section into 6 editorial intents (`faq`, `data-stats`, `comparison`, `process-roadmap`, `hierarchy-framework`, `listing-playbook`) and compute strictly compatible layout lists filtered by node capacity.
+   - **Zero forced templates**: FAQ sections ONLY receive Q&A-friendly layouts (`editorial`, `checklist`, `quadrant-matrix`, `ribbon`) across automatic routing, `buildSectionConceptAlternatives`, `shuffleInfographicVisualVariation`, LLM planner server-side validation, and the Studio's default **`Best for this section (N)`** smart-matched gallery filter—NEVER Conversion Funnels, Pyramids, Pie Charts, Vertical Bars, or Roadmaps (users can still browse **`All (21)`** or any category tab manually).
+2. **21 Flagship Diagram Archetypes — Authentic Pie Chart, Vertical Column Bar Chart & Winding S-Curve Roadmap (`layout-registry.ts`, `prism-renderer.ts`, `samples.ts`)**:
+   - `pie-chart` (`16:9`): True circular SVG segmented pie chart (`A` arc wedges) with outer accent ring, optional center metric badge, and coordinated right-side breakdown legend (showing real `%` only when verified in source; clean `01..06` rank labels otherwise).
+   - `vertical-bars` (`16:9`): Vertical column bar chart with dashed horizontal gridlines, embedded semantic icons, floating value pills, smooth trend polyline, and a bottom legend card strip.
+   - `winding-roadmap` (`16:9`): Scenic winding S-curve asphalt highway path (`stroke-dasharray="12 10"`) with color-coded teardrop map pins carrying semantic icons and milestone callout cards anchored above and below the road.
+   - All **21 layouts × 8 palettes (168 combinations)** pass strict zero-overflow, zero-overlap, WCAG-AA contrast validation (`scene.issues === []`).
+3. **Redesigned Split-Diagram Pyramid & 3D Tapered Funnel with Guaranteed Zero Overflow (`prism-renderer.ts`)**:
+   - Replaced overlapping trapezoid-plus-card stacking on `pyramid-tiers` and `funnel-stages` with clean **split-diagram architecture**: pure geometric apex Pyramid or 3D elliptical-rim Tapered Funnel on the left (`39%`) carrying semantic icons, linked by horizontal dashed leader lines to crisp, spacious right-side explanation cards (`57%`) solved at exact `rightTextW` so even dense 6-card inputs render with zero overflow (`scene.issues === []`).
+4. **Accordion/Semantic FAQ Extraction & Editorial Typography Polish (`article-source.ts`, `standalone-copywriter.ts`, `topic-intelligence.ts`, `appearance.ts`)**:
+   - `article-source.ts` now traverses `<details><summary>`, `<dl><dt><dd>`, `<h5>`, and FAQ accordion `<button>` elements as structured headings, preventing missing FAQ questions and inverted/truncated answers (`"Not for Google."` + Sentence 2 now stay intact as complete 2-sentence answers under their genuine question title).
+   - Upgraded default editorial typography stack to `Plus Jakarta Sans` / `Inter` with tight headline kerning (`-0.02em`), tracked micro-labels (`0.06em`), stripped decorative trailing periods on headlines, and expanded highlight stop-words (`about`, `common`, `question`, `using`, `without`, `through`).

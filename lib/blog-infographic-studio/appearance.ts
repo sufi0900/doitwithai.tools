@@ -86,30 +86,34 @@ export const FONT_FAMILIES: {
   stack: string;
 }[] = [
   {
-    id: "system-arial",
-    label: "Classic Clean (Arial)",
-    stack: "Arial, sans-serif",
-  },
-  {
     id: "inter-jakarta",
-    label: "Modern Sans (Inter / Jakarta)",
-    stack: "Inter, 'Plus Jakarta Sans', Arial, sans-serif",
+    label: "Modern Editorial (Plus Jakarta / Inter)",
+    stack:
+      "'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
   },
   {
     id: "space-grotesk",
     label: "Tech Geometric (Space Grotesk)",
-    stack: "'Space Grotesk', Inter, Arial, sans-serif",
+    stack:
+      "'Space Grotesk', 'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif",
   },
   {
     id: "editorial-serif",
     label: "Executive Serif (Georgia)",
     stack: "Georgia, 'Times New Roman', serif",
   },
+  {
+    id: "system-arial",
+    label: "Classic Clean (Arial)",
+    stack: "Arial, Helvetica, sans-serif",
+  },
 ];
 
 export function resolveFontStack(fontFamily?: InfographicFontFamily): string {
   const found = FONT_FAMILIES.find((f) => f.id === fontFamily);
-  return found ? found.stack : "Arial, sans-serif";
+  return found
+    ? found.stack
+    : "'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
 }
 
 export const DEPTH_PRESETS: DepthPreset[] = [

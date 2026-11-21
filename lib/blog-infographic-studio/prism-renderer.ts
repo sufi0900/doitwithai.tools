@@ -388,11 +388,17 @@ function textBlock(
   fill: string,
   bold = false,
   center = false,
-  fontStack = "Arial, sans-serif",
+  fontStack = "'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
   highlights?: { phrase: string; color: string }[],
 ) {
   const lines = wrap(text, width, size, bold),
     lineHeight = size * 1.3;
+  const letterSpacing =
+    size >= 40 && bold
+      ? "-0.02em"
+      : size <= 15 && bold
+        ? "0.06em"
+        : undefined;
   return {
     height: lines.length * lineHeight,
     node: el(
@@ -402,7 +408,8 @@ function textBlock(
         y: y + size,
         fontSize: size,
         fontFamily: fontStack,
-        fontWeight: bold ? 700 : 400,
+        fontWeight: bold ? (size >= 40 ? 800 : 700) : 400,
+        ...(letterSpacing ? { letterSpacing } : {}),
         fill,
         textAnchor: center ? "middle" : "start",
       },
@@ -1199,6 +1206,11 @@ export function buildPrismScene(
       layout === "donut-breakdown" ||
       layout === "cycle-wheel" ||
       layout === "kpi-bento" ||
+      layout === "pie-chart" ||
+      layout === "vertical-bars" ||
+      layout === "winding-roadmap" ||
+      layout === "pyramid-tiers" ||
+      layout === "funnel-stages" ||
       isFaqChecklist
         ? 0
         : Math.max(20, Math.round(28 * s));
@@ -1207,9 +1219,183 @@ export function buildPrismScene(
     const minGap = Math.max(10, Math.round(20 * s) + gapDelta);
     const textHeight = (n: BlogInfographicNodeItem, w: number) =>
       badgeOffset +
-      wrap(n.title, w, labelSize, true).length * labelSize * 1.3 +
+      wrap(n.title, w, labelSize, true).length * labelSize * 1.32 +
       titleGap +
-      wrap(n.detail, w, bodySize).length * bodySize * 1.3;
+      wrap(n.detail, w, bodySize).length * bodySize * 1.32;
+
+    if (layout === "pie-chart") {
+      const pieZoneW = Math.round(contentW * 0.4);
+      const legendGap = 36;
+      const legendW = contentW - pieZoneW - legendGap;
+      const useTwoColLegend = nodes.length >= 5;
+      const colGap = 18;
+      const tileW = useTwoColLegend ? (legendW - colGap) / 2 : legendW;
+      const tileTextW = Math.max(150, tileW - 92);
+      const rowHeights: number[] = [];
+      if (useTwoColLegend) {
+        for (let i = 0; i < nodes.length; i += 2) {
+          const slice = nodes.slice(i, i + 2);
+          const h = Math.max(
+            Math.round(88 * s),
+            ...slice.map((n) => textHeight(n, tileTextW) + padY * 2 + 8),
+          );
+          rowHeights.push(h);
+        }
+      } else {
+        for (const n of nodes) {
+          rowHeights.push(
+            Math.max(Math.round(86 * s), textHeight(n, tileTextW) + padY * 2 + 8),
+          );
+        }
+      }
+      const legendTotal =
+        rowHeights.reduce((a, b) => a + b, 0) +
+        Math.max(0, rowHeights.length - 1) * minGap;
+      const minTotal = Math.max(Math.round(340 * s), legendTotal);
+      return {
+        s,
+        labelSize,
+        bodySize,
+        badgeSize,
+        badgeOffset,
+        titleGap,
+        padY,
+        minGap,
+        textHeight,
+        pieZoneW,
+        legendGap,
+        legendW,
+        useTwoColLegend,
+        rowHeights,
+        minTotal,
+      };
+    }
+
+    if (layout === "vertical-bars") {
+      const cols = Math.max(2, Math.min(6, nodes.length));
+      const colGap = cols >= 5 ? 16 : 24;
+      const colW = Math.floor((contentW - colGap * (cols - 1)) / cols);
+      const colTextW = Math.max(115, colW - 28);
+      const barPlotH = Math.round(215 * s);
+      const captionGap = Math.max(14, Math.round(20 * s));
+      const colHeights = nodes
+        .slice(0, cols)
+        .map((n) =>
+          Math.max(
+            Math.round(120 * s),
+            wrap(n.title, colTextW, labelSize, true).length * labelSize * 1.32 +
+              titleGap +
+              wrap(n.detail, colTextW, bodySize).length * bodySize * 1.32 +
+              padY * 2 +
+              8,
+          ),
+        );
+      const captionCardH = Math.max(...colHeights);
+      const minTotal = barPlotH + captionGap + captionCardH;
+      return {
+        s,
+        labelSize,
+        bodySize,
+        badgeSize,
+        badgeOffset,
+        titleGap,
+        padY,
+        minGap,
+        textHeight,
+        barPlotH,
+        captionGap,
+        rowHeights: [captionCardH],
+        minTotal,
+      };
+    }
+
+    if (layout === "winding-roadmap") {
+      const count = Math.max(2, Math.min(6, nodes.length));
+      const topNodes = nodes.filter((_, i) => i % 2 === 0);
+      const botNodes = nodes.filter((_, i) => i % 2 === 1);
+      const topCols = Math.max(1, topNodes.length);
+      const botCols = Math.max(1, botNodes.length);
+      const gapX = 22;
+      const topCardW = Math.floor((contentW - gapX * (topCols - 1)) / topCols);
+      const botCardW = Math.floor((contentW - gapX * (botCols - 1)) / botCols);
+      const cardNeed = (n: BlogInfographicNodeItem, w: number) =>
+        Math.max(
+          Math.round(92 * s),
+          wrap(n.title, Math.max(130, w - 36), labelSize, true).length *
+            labelSize *
+            1.32 +
+            titleGap +
+            wrap(n.detail, Math.max(130, w - 36), bodySize).length *
+              bodySize *
+              1.32 +
+            padY * 2 +
+            8,
+        );
+      const topRowH = Math.max(
+        Math.round(96 * s),
+        ...topNodes.map((n) => cardNeed(n, topCardW)),
+      );
+      const botRowH = Math.max(
+        Math.round(96 * s),
+        ...botNodes.map((n) => cardNeed(n, botCardW)),
+      );
+      const roadBandH = Math.round(132 * s);
+      const minTotal = topRowH + roadBandH + botRowH;
+      return {
+        s,
+        labelSize,
+        bodySize,
+        badgeSize,
+        badgeOffset,
+        titleGap,
+        padY,
+        minGap,
+        textHeight,
+        topRowH,
+        botRowH,
+        roadBandH,
+        roadmapCount: count,
+        rowHeights: [topRowH, botRowH],
+        minTotal,
+      };
+    }
+
+    if (layout === "pyramid-tiers" || layout === "funnel-stages") {
+      const visualW = Math.round(contentW * 0.39);
+      const connGap = 32;
+      const rightCardW = contentW - visualW - connGap;
+      const rightTextW = Math.max(220, rightCardW - 44);
+      const tierGap = Math.max(10, Math.round(16 * s) + Math.round(gapDelta * 0.5));
+      const rowHeights = nodes.map((n) =>
+        Math.max(
+          Math.round(94 * s),
+          wrap(n.title, rightTextW, labelSize, true).length * labelSize * 1.32 +
+            titleGap +
+            wrap(n.detail, rightTextW, bodySize).length * bodySize * 1.32 +
+            padY * 2 +
+            10,
+        ),
+      );
+      const minTotal =
+        rowHeights.reduce((a, b) => a + b, 0) +
+        Math.max(0, rowHeights.length - 1) * tierGap;
+      return {
+        s,
+        labelSize,
+        bodySize,
+        badgeSize,
+        badgeOffset,
+        titleGap,
+        padY,
+        minGap: tierGap,
+        textHeight,
+        splitVisualW: visualW,
+        splitConnGap: connGap,
+        splitCardW: rightCardW,
+        rowHeights,
+        minTotal,
+      };
+    }
 
     if (layout === "pipeline-flow") {
       const cols = Math.min(3, Math.max(2, nodes.length));
@@ -1537,24 +1723,17 @@ export function buildPrismScene(
     const isTimeline = layout === "timeline",
       isChecklist = layout === "checklist",
       isStatBars = layout === "stat-bars",
-      isPyramid = layout === "pyramid-tiers",
       isFlowchart = layout === "zigzag-flowchart";
     const baseTextW =
       contentW -
       (isChecklist ? 228 : isTimeline ? 250 : isFlowchart ? 260 : 196);
-    const barExtraH = isStatBars ? Math.round(30 * s) : 0;
+    const barExtraH = isStatBars ? Math.round(32 * s) : 0;
     const flowHeaderH = isFlowchart ? Math.round(52 * s) : 0;
     const flowStepGap = isFlowchart ? Math.max(minGap, Math.round(36 * s)) : minGap;
     const minCardH = Math.round((isChecklist ? 128 : 114) * s);
-    const rowHeights = nodes.map((n, idx) => {
-      const pyrInset = isPyramid
-        ? Math.round(
-            ((nodes.length - 1 - idx) / Math.max(1, nodes.length - 1)) * 108,
-          )
-        : 0;
-      const rowTW = Math.max(240, baseTextW - pyrInset * 2);
-      return Math.max(minCardH, textHeight(n, rowTW) + barExtraH + padY * 2);
-    });
+    const rowHeights = nodes.map((n) =>
+      Math.max(minCardH, textHeight(n, baseTextW) + barExtraH + padY * 2 + 8),
+    );
     const minTotal =
       flowHeaderH +
       rowHeights.reduce((a, b) => a + b, 0) +
@@ -1680,7 +1859,646 @@ export function buildPrismScene(
   const slack = Math.max(0, availBodyH - minTotal);
   let bottom = top;
 
-  if (layout === "pipeline-flow") {
+  const extractVerifiedNumeric = (n: BlogInfographicNodeItem): {
+    weight?: number;
+    label?: string;
+  } => {
+    const raw = `${n.metricValue || ""} ${n.title} ${n.detail}`;
+    const pct = raw.match(/\b(\d+(?:\.\d+)?)\s*%/);
+    if (pct) {
+      const v = Number(pct[1]);
+      if (v > 0 && v <= 100) return { weight: v, label: `${pct[1]}%` };
+    }
+    const ratio = raw.match(/\b(\d{1,4})\s+of\s+(\d{1,4})\b/i);
+    if (ratio) {
+      const num = Number(ratio[1]),
+        den = Number(ratio[2]);
+      if (den > 0 && num > 0 && num <= den) {
+        return { weight: (num / den) * 100, label: `${num}/${den}` };
+      }
+    }
+    const mult = raw.match(/\b(\d+(?:\.\d+)?)\s*x\b/i);
+    if (mult) {
+      const v = Number(mult[1]);
+      if (v > 0 && v <= 100) return { weight: v * 10, label: `${mult[1]}x` };
+    }
+    return {};
+  };
+
+  const extendedColors = [
+    colors[0],
+    colors[1],
+    colors[2],
+    colors[3],
+    mixColor(colors[0], colors[1], 0.5),
+    mixColor(colors[2], colors[3], 0.5),
+  ];
+
+  if (layout === "pie-chart") {
+    const pieZoneW = (chosen as { pieZoneW?: number }).pieZoneW || Math.round(contentW * 0.4);
+    const legendGap = (chosen as { legendGap?: number }).legendGap || 36;
+    const legendW = (chosen as { legendW?: number }).legendW || contentW - pieZoneW - legendGap;
+    const useTwoColLegend = Boolean(
+      (chosen as { useTwoColLegend?: boolean }).useTwoColLegend,
+    );
+    const totalH = Math.min(availBodyH, minTotal + Math.round(slack * 0.65));
+    const startY = top + Math.min(24, Math.round((availBodyH - totalH) * 0.35));
+
+    // Left Segmented Pie Chart
+    const pieCx = M + Math.round(pieZoneW / 2);
+    const pieCy = startY + Math.round(totalH / 2);
+    const pieR = Math.max(
+      110,
+      Math.min(Math.round(pieZoneW * 0.42), Math.round(totalH * 0.43)),
+    );
+    const parsedNums = nodes.map(extractVerifiedNumeric);
+    const verifiedCount = parsedNums.filter((p) => typeof p.weight === "number").length;
+    const weights = nodes.map((_, i) =>
+      verifiedCount >= 2 && typeof parsedNums[i].weight === "number"
+        ? Math.max(4, parsedNums[i].weight!)
+        : 1,
+    );
+    const totalWeight = weights.reduce((a, b) => a + b, 0) || 1;
+
+    // Subtle outer halo behind pie chart
+    bodyParts.push(
+      circle(pieCx, pieCy, pieR + 14, accent, { opacity: 0.08 }),
+      circle(pieCx, pieCy, pieR + 4, surface, {
+        ...shadow,
+        stroke: accent,
+        strokeOpacity: 0.2,
+        strokeWidth: 1.5,
+      }),
+    );
+
+    let startAngle = -Math.PI / 2;
+    nodes.forEach((n, i) => {
+      const sweep = (weights[i] / totalWeight) * Math.PI * 2;
+      const endAngle = startAngle + sweep;
+      const c = isHex(n.accentHex) ? n.accentHex : extendedColors[i % extendedColors.length];
+      const x1 = +(pieCx + pieR * Math.cos(startAngle)).toFixed(1);
+      const y1 = +(pieCy + pieR * Math.sin(startAngle)).toFixed(1);
+      const x2 = +(pieCx + pieR * Math.cos(endAngle)).toFixed(1);
+      const y2 = +(pieCy + pieR * Math.sin(endAngle)).toFixed(1);
+      const largeArc = sweep > Math.PI ? 1 : 0;
+      const sliceD = `M ${pieCx} ${pieCy} L ${x1} ${y1} A ${pieR} ${pieR} 0 ${largeArc} 1 ${x2} ${y2} Z`;
+      const midAngle = startAngle + sweep / 2;
+      const labelR = pieR * 0.62;
+      const lx = Math.round(pieCx + labelR * Math.cos(midAngle));
+      const ly = Math.round(pieCy + labelR * Math.sin(midAngle));
+      const sliceLabel =
+        parsedNums[i].label || String(i + 1).padStart(2, "0");
+      const fg =
+        contrast("#FFFFFF", c) >= contrast("#081322", c) ? "#FFFFFF" : "#081322";
+      bodyParts.push(
+        el(
+          "g",
+          {
+            "data-layer-id": `node-icon-${i}`,
+            "data-layer-box": `node-icon-${i}`,
+            style: "cursor:pointer",
+          },
+          el("path", {
+            d: sliceD,
+            fill: c,
+            stroke: bg,
+            strokeWidth: 4,
+            strokeLinejoin: "round",
+          }),
+          textBlock(
+            sliceLabel,
+            lx - 34,
+            ly - 10,
+            68,
+            Math.max(14, Math.round(18 * fitScale)),
+            fg,
+            true,
+            true,
+            fontStack,
+          ).node,
+        ),
+      );
+      startAngle = endAngle;
+    });
+
+    // Crisp central pin hub
+    bodyParts.push(
+      circle(pieCx, pieCy, Math.round(pieR * 0.16), surface, {
+        stroke: accent,
+        strokeOpacity: 0.45,
+        strokeWidth: 2,
+      }),
+      circle(pieCx, pieCy, 5, accent),
+    );
+
+    // Right Color-Coded Legend & Explanation Cards
+    const legendX = M + pieZoneW + legendGap;
+    const rowCount = Math.max(1, rowHeights.length);
+    const legendMinTotal =
+      rowHeights.reduce((a, b) => a + b, 0) +
+      Math.max(0, rowCount - 1) * minGap;
+    const legendSlack = Math.max(0, totalH - legendMinTotal);
+    const extraGap = Math.min(20, Math.round((legendSlack * 0.3) / Math.max(1, rowCount - 1 || 1)));
+    const rowGap = minGap + extraGap;
+    const extraCardH = Math.min(
+      48,
+      Math.floor((legendSlack - extraGap * Math.max(0, rowCount - 1)) / rowCount),
+    );
+    let ly = startY + Math.round(Math.max(0, totalH - (legendMinTotal + extraGap * Math.max(0, rowCount - 1) + extraCardH * rowCount)) / 2);
+
+    if (useTwoColLegend) {
+      const colGap = 18;
+      const tileW = (legendW - colGap) / 2;
+      const tileTextW = Math.max(150, tileW - 92);
+      for (let i = 0; i < nodes.length; i += 2) {
+        const slice = nodes.slice(i, i + 2);
+        const h = rowHeights[Math.floor(i / 2)] + extraCardH;
+        slice.forEach((n, k) => {
+          const idx = i + k;
+          const isSolo = slice.length === 1;
+          const wCard = isSolo ? legendW : tileW;
+          const x = isSolo ? legendX : legendX + k * (tileW + colGap);
+          const tw = isSolo ? legendW - 96 : tileTextW;
+          const c = isHex(n.accentHex) ? n.accentHex : extendedColors[idx % extendedColors.length];
+          const ntH = textHeight(n, tw);
+          const textY = ly + Math.max(padY, Math.round((h - ntH) / 2));
+          surfaceRectInto(bodyParts, x, ly, wCard, h, false, c, `node-${idx}`);
+          bodyParts.push(rect(x, ly + 12, 6, Math.max(18, h - 24), c, 3));
+          medallionInto(bodyParts, n, x + 42, ly + h / 2, Math.max(18, Math.round(22 * fitScale)), c, idx);
+          drawText(n, x + 78, textY, tw, idx);
+        });
+        ly += h + rowGap;
+      }
+    } else {
+      const tileTextW = Math.max(180, legendW - 96);
+      nodes.forEach((n, idx) => {
+        const h = rowHeights[idx] + extraCardH;
+        const c = isHex(n.accentHex) ? n.accentHex : extendedColors[idx % extendedColors.length];
+        const ntH = textHeight(n, tileTextW);
+        const textY = ly + Math.max(padY, Math.round((h - ntH) / 2));
+        surfaceRectInto(bodyParts, legendX, ly, legendW, h, idx === 0, c, `node-${idx}`);
+        bodyParts.push(rect(legendX, ly + 12, 6, Math.max(18, h - 24), c, 3));
+        medallionInto(bodyParts, n, legendX + 44, ly + h / 2, Math.max(20, Math.round(24 * fitScale)), c, idx);
+        drawText(n, legendX + 82, textY, tileTextW, idx);
+        ly += h + rowGap;
+      });
+    }
+    bottom = startY + totalH;
+  } else if (layout === "vertical-bars") {
+    const cols = Math.max(2, Math.min(6, nodes.length));
+    const colGap = cols >= 5 ? 16 : 24;
+    const colW = Math.floor((contentW - colGap * (cols - 1)) / cols);
+    const colTextW = Math.max(115, colW - 28);
+    const barPlotBaseH = (chosen as { barPlotH?: number }).barPlotH || Math.round(215 * fitScale);
+    const captionGap = (chosen as { captionGap?: number }).captionGap || 18;
+    const extraPlotH = Math.min(84, Math.round(slack * 0.55));
+    const extraCaptionH = Math.min(56, Math.round(slack * 0.35));
+    const plotH = barPlotBaseH + extraPlotH;
+    const captionH = rowHeights[0] + extraCaptionH;
+    const startY = top + Math.min(18, Math.round(Math.max(0, slack - extraPlotH - extraCaptionH) * 0.35));
+    const plotTop = startY + 28;
+    const baselineY = startY + plotH;
+    const maxBarH = Math.max(70, baselineY - plotTop - 16);
+
+    // Horizontal Y-axis dashed gridlines + crisp solid X-axis baseline
+    [0.25, 0.5, 0.75, 1].forEach((frac) => {
+      const gy = Math.round(baselineY - maxBarH * frac);
+      bodyParts.push(
+        path(`M ${M} ${gy} H ${W - M}`, muted, 1.5, {
+          strokeDasharray: "5 7",
+          opacity: 0.22,
+        }),
+      );
+    });
+    bodyParts.push(path(`M ${M} ${baselineY} H ${W - M}`, accent, 2.5, { opacity: 0.5 }));
+
+    const parsedNums = nodes.slice(0, cols).map(extractVerifiedNumeric);
+    const verifiedCount = parsedNums.filter((p) => typeof p.weight === "number").length;
+    const maxWeight = Math.max(
+      1,
+      ...parsedNums.map((p) => (typeof p.weight === "number" ? p.weight : 0)),
+    );
+    const defaultSteps = [0.88, 0.74, 0.62, 0.52, 0.44, 0.36];
+    const barPeaks: Array<{ x: number; y: number; c: string }> = [];
+
+    nodes.slice(0, cols).forEach((n, i) => {
+      const colX = M + i * (colW + colGap);
+      const colCx = colX + Math.round(colW / 2);
+      const c = isHex(n.accentHex) ? n.accentHex : extendedColors[i % extendedColors.length];
+      const frac =
+        verifiedCount >= 2 && typeof parsedNums[i].weight === "number"
+          ? Math.max(0.18, parsedNums[i].weight! / maxWeight)
+          : defaultSteps[i % defaultSteps.length];
+      const barH = Math.max(44, Math.round(maxBarH * frac));
+      const barW = Math.min(86, Math.max(44, Math.round(colW * 0.44)));
+      const barX = colCx - Math.round(barW / 2);
+      const barY = baselineY - barH;
+      barPeaks.push({ x: colCx, y: barY, c });
+
+      // Column track shadow + vivid vertical bar + specular highlight + semantic icon emblem
+      const fg =
+        contrast("#FFFFFF", c) >= contrast("#081322", c) ? "#FFFFFF" : "#081322";
+      const barIconSize = Math.min(24, Math.max(16, Math.round(barW * 0.42)));
+      const barIconY = barY + Math.max(8, Math.round((barH - barIconSize) / 2));
+      bodyParts.push(
+        el(
+          "g",
+          {
+            "data-layer-id": `node-icon-${i}`,
+            "data-layer-box": `node-icon-${i}`,
+            style: "cursor:pointer",
+          },
+          rect(barX, plotTop, barW, baselineY - plotTop, c, 12, { opacity: 0.08 }),
+          rect(barX, barY, barW, barH, c, 12, { ...shadow }),
+          rect(barX + 6, barY + 6, Math.max(6, Math.round(barW * 0.18)), Math.max(12, barH - 12), "#FFFFFF", 4, {
+            opacity: 0.2,
+          }),
+          n.customIconDataUrl
+            ? el("image", {
+                href: n.customIconDataUrl,
+                x: colCx - barIconSize / 2,
+                y: barIconY,
+                width: barIconSize,
+                height: barIconSize,
+                preserveAspectRatio: "xMidYMid meet",
+              })
+            : pictogram(
+                iconForNode(n),
+                colCx - barIconSize / 2,
+                barIconY,
+                barIconSize,
+                fg,
+              ),
+        ),
+      );
+
+      // Floating value / index pill above bar
+      const pillLabel = parsedNums[i].label || String(i + 1).padStart(2, "0");
+      const pillW = Math.max(54, widthOf(pillLabel, 13, true) + 22);
+      bodyParts.push(
+        rect(colCx - Math.round(pillW / 2), barY - 30, pillW, 24, c, 12),
+        textBlock(
+          pillLabel,
+          colCx - Math.round(pillW / 2),
+          barY - 24,
+          pillW,
+          13,
+          fg,
+          true,
+          true,
+          fontStack,
+        ).node,
+      );
+
+      // Lower aligned caption card directly below column
+      const cardY = baselineY + captionGap;
+      surfaceRectInto(bodyParts, colX, cardY, colW, captionH, i === 0, c, `node-${i}`);
+      bodyParts.push(rect(colX + 18, cardY, colW - 36, 4, c, 2));
+      const titleN = textBlock(
+        n.title,
+        colX + 14,
+        cardY + padY,
+        colTextW,
+        labelSize,
+        ink,
+        true,
+        true,
+        fontStack,
+      );
+      const detailN = textBlock(
+        n.detail,
+        colX + 14,
+        cardY + padY + titleN.height + titleGap,
+        colTextW,
+        bodySize,
+        muted,
+        false,
+        false,
+        fontStack,
+      );
+      bodyParts.push(
+        el(
+          "g",
+          { "data-layer-id": `node-${i}`, style: "cursor:pointer" },
+          titleN.node,
+          detailN.node,
+        ),
+      );
+    });
+
+    // Connecting trend line across column peaks
+    if (barPeaks.length >= 2) {
+      const trendPoints = barPeaks.map((p) => `${p.x},${p.y - 4}`).join(" ");
+      bodyParts.push(
+        el("polyline", {
+          points: trendPoints,
+          fill: "none",
+          stroke: ink,
+          strokeWidth: 2.5,
+          strokeDasharray: "6 5",
+          opacity: 0.42,
+        }),
+      );
+    }
+    bottom = baselineY + captionGap + captionH;
+  } else if (layout === "winding-roadmap") {
+    const count = Math.max(2, Math.min(6, nodes.length));
+    const topRowBaseH = (chosen as { topRowH?: number }).topRowH || Math.round(135 * fitScale);
+    const botRowBaseH = (chosen as { botRowH?: number }).botRowH || Math.round(135 * fitScale);
+    const roadBandBaseH = (chosen as { roadBandH?: number }).roadBandH || Math.round(132 * fitScale);
+    const extraTopH = Math.min(44, Math.round(slack * 0.35));
+    const extraBotH = Math.min(44, Math.round(slack * 0.35));
+    const extraRoadH = Math.min(40, Math.round(slack * 0.25));
+    const topRowH = topRowBaseH + extraTopH;
+    const botRowH = botRowBaseH + extraBotH;
+    const roadBandH = roadBandBaseH + extraRoadH;
+    const totalH = topRowH + roadBandH + botRowH;
+    const startY = top + Math.min(18, Math.round(Math.max(0, availBodyH - totalH) * 0.35));
+    const roadMidY = startY + topRowH + Math.round(roadBandH / 2);
+
+    // Pin coordinates along a smooth sinusoidal S-curve road
+    const roadStartX = M + 76;
+    const roadEndX = W - M - 76;
+    const waveAmp = Math.min(22, Math.round(roadBandH * 0.18));
+    const pins = nodes.slice(0, count).map((_, i) => {
+      const t = count === 1 ? 0.5 : i / (count - 1);
+      const x = Math.round(roadStartX + t * (roadEndX - roadStartX));
+      const y = roadMidY + (i % 2 === 0 ? -waveAmp : waveAmp);
+      return { x, y };
+    });
+
+    // Build smooth cubic bezier winding S-curve road path
+    let roadD = `M ${M + 18} ${pins[0].y} L ${pins[0].x} ${pins[0].y}`;
+    for (let i = 0; i < pins.length - 1; i++) {
+      const p0 = pins[i];
+      const p1 = pins[i + 1];
+      const midX = Math.round((p0.x + p1.x) / 2);
+      roadD += ` C ${midX} ${p0.y}, ${midX} ${p1.y}, ${p1.x} ${p1.y}`;
+    }
+    const lastPin = pins[pins.length - 1];
+    roadD += ` L ${W - M - 18} ${lastPin.y}`;
+
+    const roadBodyColor = light ? "#1E293B" : mixColor(surface, "#020617", 0.55);
+    bodyParts.push(
+      path(roadD, accent, 34, { opacity: 0.18 }),
+      path(roadD, roadBodyColor, 24),
+      path(roadD, "#FFFFFF", 2.6, { strokeDasharray: "12 10", opacity: 0.8 }),
+      // Directional end arrowhead on the road
+      path(
+        `M ${W - M - 26} ${lastPin.y - 8} L ${W - M - 12} ${lastPin.y} L ${W - M - 26} ${lastPin.y + 8}`,
+        accent,
+        3.5,
+      ),
+    );
+
+    // Place top row cards (even indices) and bottom row cards (odd indices) cleanly
+    const topIndices = nodes.slice(0, count).map((_, i) => i).filter((i) => i % 2 === 0);
+    const botIndices = nodes.slice(0, count).map((_, i) => i).filter((i) => i % 2 === 1);
+    const gapX = 22;
+    const topCardW = Math.floor((contentW - gapX * Math.max(0, topIndices.length - 1)) / Math.max(1, topIndices.length));
+    const botCardW = Math.floor((contentW - gapX * Math.max(0, botIndices.length - 1)) / Math.max(1, botIndices.length));
+
+    const drawRoadmapCard = (idx: number, x: number, y: number, w: number, h: number, isTop: boolean) => {
+      const n = nodes[idx];
+      const c = isHex(n.accentHex) ? n.accentHex : extendedColors[idx % extendedColors.length];
+      const pin = pins[idx];
+      const stemFromY = isTop ? y + h : y;
+      const pinHeadY = isTop ? pin.y - 28 : pin.y + 28;
+
+      // Connector stem from card to pin
+      bodyParts.push(
+        path(`M ${pin.x} ${stemFromY} V ${pin.y}`, c, 2.5, { strokeDasharray: "4 4", opacity: 0.7 }),
+      );
+
+      // Teardrop Map Pin Marker directly on the road with semantic icon emblem inside
+      const fg = contrast("#FFFFFF", c) >= contrast("#081322", c) ? "#FFFFFF" : "#081322";
+      const teardropPath = isTop
+        ? `M ${pin.x} ${pin.y - 2} C ${pin.x - 19} ${pin.y - 17}, ${pin.x - 21} ${pinHeadY - 14}, ${pin.x} ${pinHeadY - 20} C ${pin.x + 21} ${pinHeadY - 14}, ${pin.x + 19} ${pin.y - 17}, ${pin.x} ${pin.y - 2} Z`
+        : `M ${pin.x} ${pin.y + 2} C ${pin.x - 19} ${pin.y + 17}, ${pin.x - 21} ${pinHeadY + 14}, ${pin.x} ${pinHeadY + 20} C ${pin.x + 21} ${pinHeadY + 14}, ${pin.x + 19} ${pin.y + 17}, ${pin.x} ${pin.y + 2} Z`;
+      const pinCenterY = isTop ? pinHeadY - 1 : pinHeadY + 1;
+      const pinIconSize = 18;
+      bodyParts.push(
+        el(
+          "g",
+          {
+            "data-layer-id": `node-icon-${idx}`,
+            "data-layer-box": `node-icon-${idx}`,
+            style: "cursor:pointer",
+          },
+          circle(pin.x, pin.y, 7, surface, { stroke: c, strokeWidth: 3.5 }),
+          el("path", { d: teardropPath, fill: c, ...shadow }),
+          n.customIconDataUrl
+            ? el("image", {
+                href: n.customIconDataUrl,
+                x: pin.x - pinIconSize / 2,
+                y: pinCenterY - pinIconSize / 2,
+                width: pinIconSize,
+                height: pinIconSize,
+                preserveAspectRatio: "xMidYMid meet",
+              })
+            : pictogram(
+                iconForNode(n),
+                pin.x - pinIconSize / 2,
+                pinCenterY - pinIconSize / 2,
+                pinIconSize,
+                fg,
+              ),
+        ),
+      );
+
+      // Milestone Card
+      surfaceRectInto(bodyParts, x, y, w, h, idx === 0, c, `node-${idx}`);
+      bodyParts.push(
+        rect(x + 18, isTop ? y + h - 4 : y, w - 36, 4, c, 2),
+      );
+      const cardTextW = Math.max(130, w - 36);
+      const tNode = textBlock(n.title, x + 18, y + padY, cardTextW, labelSize, ink, true, false, fontStack);
+      const dNode = textBlock(n.detail, x + 18, y + padY + tNode.height + titleGap, cardTextW, bodySize, muted, false, false, fontStack);
+      bodyParts.push(
+        el("g", { "data-layer-id": `node-${idx}`, style: "cursor:pointer" }, tNode.node, dNode.node),
+      );
+    };
+
+    topIndices.forEach((idx, slot) => {
+      const x = M + slot * (topCardW + gapX);
+      drawRoadmapCard(idx, x, startY, topCardW, topRowH, true);
+    });
+    botIndices.forEach((idx, slot) => {
+      const x = M + slot * (botCardW + gapX);
+      drawRoadmapCard(idx, x, startY + topRowH + roadBandH, botCardW, botRowH, false);
+    });
+    bottom = startY + totalH;
+  } else if (layout === "pyramid-tiers" || layout === "funnel-stages") {
+    // True Designer Split-Diagram Pyramid & 3D Tapered Conversion Funnel (ZERO overlapping boxes, ZERO overflow)
+    const isPyramidSplit = layout === "pyramid-tiers";
+    const visualW = (chosen as { splitVisualW?: number }).splitVisualW || Math.round(contentW * 0.39);
+    const connGap = (chosen as { splitConnGap?: number }).splitConnGap || 32;
+    const cardW = (chosen as { splitCardW?: number }).splitCardW || contentW - visualW - connGap;
+    const cardX = M + visualW + connGap;
+    const cardTextW = Math.max(220, cardW - 44);
+    const vx = M + Math.round(visualW / 2);
+
+    const extraGap = Math.min(
+      24,
+      Math.round((slack * 0.28) / Math.max(1, nodes.length - 1)),
+    );
+    const rowGap = minGap + extraGap;
+    const slackAfterGaps = Math.max(
+      0,
+      slack - extraGap * Math.max(0, nodes.length - 1),
+    );
+    const extraCardH = Math.min(
+      68,
+      Math.round((slackAfterGaps * 0.6) / Math.max(1, nodes.length)),
+    );
+    const remSlack = Math.max(0, slackAfterGaps - extraCardH * nodes.length);
+    let y = top + Math.min(48, Math.round(remSlack * 0.4));
+
+    nodes.forEach((n, i) => {
+      const h = rowHeights[i] + extraCardH;
+      const cy = y + h / 2;
+      const c = isHex(n.accentHex) ? n.accentHex : extendedColors[i % extendedColors.length];
+      const fg = contrast("#FFFFFF", c) >= contrast("#081322", c) ? "#FFFFFF" : "#081322";
+
+      let halfWTop: number;
+      let halfWBot: number;
+      if (isPyramidSplit) {
+        // Pointed apex triangle at Tier 0 widening cleanly down to the full base at Tier N-1
+        const fracTop = i / nodes.length;
+        const fracBot = (i + 1) / nodes.length;
+        halfWTop = i === 0 ? 0 : Math.round(visualW * 0.49 * fracTop);
+        halfWBot = Math.round(visualW * 0.49 * fracBot);
+      } else {
+        // Wide intake mouth at Stage 0 narrowing smoothly down to conversion spout at Stage N-1
+        const fracTop = 1 - (i / nodes.length) * 0.66;
+        const fracBot = 1 - ((i + 1) / nodes.length) * 0.66;
+        halfWTop = Math.round(visualW * 0.49 * fracTop);
+        halfWBot = Math.round(visualW * 0.49 * fracBot);
+      }
+
+      const tlX = vx - halfWTop;
+      const trX = vx + halfWTop;
+      const brX = vx + halfWBot;
+      const blX = vx - halfWBot;
+      const rightMidX = vx + Math.round((halfWTop + halfWBot) / 2);
+
+      // Left Geometric 3D-Shaded Pyramid or Funnel Tier (pure vector shape, no overlapping rectangle!)
+      const tierChildren: JSXNode[] = [];
+      if (!isPyramidSplit && i === 0) {
+        // 3D Funnel Top Intake Rim Ellipse
+        tierChildren.push(
+          el("ellipse", {
+            cx: vx,
+            cy: y,
+            rx: halfWTop,
+            ry: 8,
+            fill: mixColor(c, "#FFFFFF", 0.3),
+            opacity: 0.55,
+          }),
+        );
+      }
+      tierChildren.push(
+        el("polygon", {
+          points: `${tlX},${y} ${trX},${y} ${brX},${y + h} ${blX},${y + h}`,
+          fill: c,
+          ...shadow,
+        }),
+        // Left-side 3D bevel light facet
+        el("polygon", {
+          points: `${tlX},${y} ${vx},${y} ${vx},${y + h} ${blX},${y + h}`,
+          fill: "#FFFFFF",
+          opacity: 0.14,
+        }),
+      );
+      // Centered semantic icon + tier badge inside the geometric tier
+      const badgeLabel = n.badge.trim() || String(i + 1).padStart(2, "0");
+      const iconSz = Math.max(16, Math.round(20 * fitScale));
+      const isNarrowApex = isPyramidSplit && i === 0;
+      const iconOffsetX = isNarrowApex ? vx - iconSz / 2 : vx - 30;
+      const iconOffsetY = isNarrowApex ? cy + 2 : cy - iconSz / 2;
+      tierChildren.push(
+        n.customIconDataUrl
+          ? el("image", {
+              href: n.customIconDataUrl,
+              x: iconOffsetX,
+              y: iconOffsetY,
+              width: iconSz,
+              height: iconSz,
+              preserveAspectRatio: "xMidYMid meet",
+            })
+          : pictogram(iconForNode(n), iconOffsetX, iconOffsetY, iconSz, fg),
+      );
+      if (!isNarrowApex) {
+        tierChildren.push(
+          textBlock(
+            badgeLabel,
+            vx - 4,
+            cy - 10,
+            56,
+            Math.max(15, Math.round(19 * fitScale)),
+            fg,
+            true,
+            false,
+            fontStack,
+          ).node,
+        );
+      }
+      bodyParts.push(
+        el(
+          "g",
+          {
+            "data-layer-id": `node-icon-${i}`,
+            "data-layer-box": `node-icon-${i}`,
+            style: "cursor:pointer",
+          },
+          ...tierChildren,
+        ),
+      );
+
+      // Subtle downward flow chevron between funnel stages
+      if (!isPyramidSplit && i < nodes.length - 1) {
+        const chevY = y + h + Math.round(rowGap / 2);
+        bodyParts.push(
+          path(
+            `M ${vx - 10} ${chevY - 4} L ${vx} ${chevY + 5} L ${vx + 10} ${chevY - 4}`,
+            c,
+            3,
+            { opacity: 0.75 },
+          ),
+        );
+      }
+
+      // Crisp Horizontal Leader Connector Line + Terminal Dot linking left tier -> right card
+      bodyParts.push(
+        path(`M ${rightMidX + 4} ${cy} H ${cardX - 4}`, c, 2.5, {
+          strokeDasharray: "4 4",
+          opacity: 0.72,
+        }),
+        circle(rightMidX + 4, cy, 4.5, c),
+        circle(cardX, cy, 5, c),
+      );
+
+      // Right Spacious Explanation Card (exact measured height, ZERO overflow!)
+      surfaceRectInto(bodyParts, cardX, y, cardW, h, i === 0, c, `node-${i}`);
+      bodyParts.push(rect(cardX, y + 12, 6, Math.max(18, h - 24), c, 3));
+      const tNode = textBlock(n.title, cardX + 24, y + padY, cardTextW, labelSize, ink, true, false, fontStack);
+      const dNode = textBlock(n.detail, cardX + 24, y + padY + tNode.height + titleGap, cardTextW, bodySize, muted, false, false, fontStack);
+      const textBlockTotal = tNode.height + titleGap + dNode.height;
+      const centeredStartY = y + Math.max(padY, Math.round((h - textBlockTotal) / 2));
+      const tCentered = textBlock(n.title, cardX + 24, centeredStartY, cardTextW, labelSize, ink, true, false, fontStack);
+      const dCentered = textBlock(n.detail, cardX + 24, centeredStartY + tCentered.height + titleGap, cardTextW, bodySize, muted, false, false, fontStack);
+      bodyParts.push(
+        el(
+          "g",
+          { "data-layer-id": `node-${i}`, style: "cursor:pointer" },
+          tCentered.node,
+          dCentered.node,
+        ),
+      );
+      y += h + rowGap;
+    });
+    bottom = y - rowGap;
+  } else if (layout === "pipeline-flow") {
     const cols = Math.min(3, Math.max(2, nodes.length));
     const flowNodes = nodes.slice(0, cols);
     const arrowGap = 44;
@@ -2798,9 +3616,7 @@ export function buildPrismScene(
     const isTimeline = layout === "timeline",
       isChecklist = layout === "checklist",
       isRibbon = layout === "ribbon",
-      isFunnel = layout === "funnel-stages",
       isStatBars = layout === "stat-bars",
-      isPyramid = layout === "pyramid-tiers",
       isFlowchart = layout === "zigzag-flowchart";
     const textW =
       contentW -
@@ -2896,25 +3712,9 @@ export function buildPrismScene(
     nodes.forEach((n, i) => {
       const h = rowHeights[i] + extraCardH,
         c = isHex(n.accentHex) ? n.accentHex : colors[i % 4];
-      const funnelInsetTop = isFunnel ? Math.min(110, i * 28) : 0;
-      const funnelInsetBot = isFunnel ? Math.min(138, (i + 1) * 28) : 0;
-      const pyrInsetTop = isPyramid
-        ? Math.round(
-            ((nodes.length - 1 - i) / Math.max(1, nodes.length - 1)) * 108,
-          )
-        : 0;
-      const pyrInsetBot = isPyramid
-        ? i === nodes.length - 1
-          ? 0
-          : Math.round(
-              ((nodes.length - 1 - (i + 1)) / Math.max(1, nodes.length - 1)) *
-                108,
-            )
-        : 0;
-      const sideInset = isFunnel ? funnelInsetTop : isPyramid ? pyrInsetTop : 0;
-      const rowX = M + sideInset;
-      const rowW = contentW - sideInset * 2;
-      const rowTextW = Math.max(240, textW - sideInset * 2);
+      const rowX = M;
+      const rowW = contentW;
+      const rowTextW = textW;
       const ntH = textHeight(n, rowTextW);
       const textY = y + Math.max(padY, Math.round((h - ntH) / 2));
       const cy = y + h / 2;
@@ -3100,50 +3900,6 @@ export function buildPrismScene(
             detailN.node,
           ),
         );
-      } else if (isPyramid) {
-        // Geometric Stacked Pyramid Tiers widening from Apex (Tier 1) down to Base (Tier N)
-        const tlX = M + pyrInsetTop;
-        const trX = W - M - pyrInsetTop;
-        const brX = W - M - pyrInsetBot;
-        const blX = M + pyrInsetBot;
-        bodyParts.push(
-          el("polygon", {
-            points: `${tlX},${y} ${trX},${y} ${brX},${y + h} ${blX},${y + h}`,
-            fill: c,
-            opacity: light ? 0.16 : 0.25,
-            stroke: c,
-            strokeWidth: 2.5,
-          }),
-        );
-        surfaceRectInto(
-          bodyParts,
-          rowX,
-          y + 4,
-          rowW,
-          Math.max(40, h - 8),
-          i === 0,
-          c,
-          `node-${i}`,
-        );
-        if (i === 0) {
-          // Apex crown triangle indicator above Tier 1
-          bodyParts.push(
-            el("polygon", {
-              points: `${W / 2},${y - 16} ${W / 2 + 16},${y + 2} ${W / 2 - 16},${y + 2}`,
-              fill: c,
-            }),
-          );
-        }
-        medallionInto(
-          bodyParts,
-          n,
-          rowX + 58,
-          cy,
-          Math.max(24, Math.round(34 * fitScale)),
-          c,
-          i,
-        );
-        drawText(n, rowX + 132, textY, rowTextW, i);
       } else if (isFlowchart) {
         // Decision & Process Flowchart with alternating boxes and rotated diamond checkpoints
         const shiftX = i % 2 === 1 ? 68 : 0;
@@ -3194,50 +3950,6 @@ export function buildPrismScene(
             }),
           );
         }
-      } else if (isFunnel) {
-        const tlX = M + Math.max(0, funnelInsetTop - 16);
-        const trX = W - M - Math.max(0, funnelInsetTop - 16);
-        const brX = W - M - funnelInsetBot;
-        const blX = M + funnelInsetBot;
-        bodyParts.push(
-          el("polygon", {
-            points: `${tlX},${y} ${trX},${y} ${brX},${y + h} ${blX},${y + h}`,
-            fill: c,
-            opacity: light ? 0.16 : 0.24,
-            stroke: c,
-            strokeWidth: 2.5,
-          }),
-        );
-        surfaceRectInto(
-          bodyParts,
-          rowX,
-          y + 4,
-          rowW,
-          Math.max(40, h - 8),
-          i % 2 === 0,
-          c,
-          `node-${i}`,
-        );
-        if (i < nodes.length - 1) {
-          const chevCy = y + h + Math.round(rowGap / 2);
-          bodyParts.push(
-            path(
-              `M ${W / 2 - 12} ${chevCy - 5} L ${W / 2} ${chevCy + 6} L ${W / 2 + 12} ${chevCy - 5}`,
-              c,
-              3.5,
-            ),
-          );
-        }
-        medallionInto(
-          bodyParts,
-          n,
-          rowX + 64,
-          cy,
-          Math.max(28, Math.round(38 * fitScale)),
-          c,
-          i,
-        );
-        drawText(n, rowX + 148, textY, rowTextW, i);
       } else {
         const right = isRibbon && i % 2 === 1;
         if (isRibbon)

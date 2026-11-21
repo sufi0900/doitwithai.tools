@@ -257,6 +257,9 @@ export function rewriteDependentSectionTitle(
     out = `${subject}: ${out}`;
   }
 
+  // Headlines look cleaner without a decorative trailing period (preserve ? and !)
+  out = out.replace(/\.+$/, "").trim();
+
   return out;
 }
 

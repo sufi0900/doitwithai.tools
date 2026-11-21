@@ -64,14 +64,17 @@ function synthesizeCalloutText(
     config.prismLayout === "timeline" ||
     config.prismLayout === "pipeline-flow" ||
     config.prismLayout === "funnel-stages" ||
-    config.prismLayout === "zigzag-flowchart"
+    config.prismLayout === "zigzag-flowchart" ||
+    config.prismLayout === "winding-roadmap"
   ) {
     return `Follow each stage of ${headlineCore} in sequence for reliable execution.`;
   }
   if (
     config.prismLayout === "stat-bars" ||
     config.prismLayout === "donut-breakdown" ||
-    config.prismLayout === "kpi-bento"
+    config.prismLayout === "kpi-bento" ||
+    config.prismLayout === "pie-chart" ||
+    config.prismLayout === "vertical-bars"
   ) {
     return `Track these ${config.nodes.length} signals of ${headlineCore} to prioritize high-impact work.`;
   }

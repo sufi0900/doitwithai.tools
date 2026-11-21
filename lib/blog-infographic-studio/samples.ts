@@ -24,6 +24,9 @@ export const PRISM_LAYOUT_THEMES: Record<
   "before-after": "rose-editorial",
   "zigzag-flowchart": "blue-trust",
   "kpi-bento": "slate-minimal",
+  "pie-chart": "indigo-cyber",
+  "vertical-bars": "cyan-tech",
+  "winding-roadmap": "emerald-growth",
 };
 
 /** Curated examples are only for the showcase and QA. Never mix them into extracted article data. */
@@ -59,6 +62,9 @@ export function createLayoutSample(layout: PrismLayout): BlogInfographicConfig {
       "before-after",
       "zigzag-flowchart",
       "kpi-bento",
+      "pie-chart",
+      "vertical-bars",
+      "winding-roadmap",
     ].includes(layout)
   ) {
     const sets = {
@@ -496,6 +502,87 @@ export function createLayoutSample(layout: PrismLayout): BlogInfographicConfig {
             "Verified Referral Visits",
             "Measure engaged visitors arriving from ChatGPT, Perplexity, and search.",
             "users",
+          ],
+        ],
+      },
+      "pie-chart": {
+        headline: "AI Search Visibility Mix by Channel",
+        subheadline:
+          "How organic discovery distributes across classic search, AI answers, and authority hubs.",
+        items: [
+          [
+            "Core Organic Rankings",
+            "Server-rendered evergreen guides that anchor crawlable domain authority.",
+            "search",
+          ],
+          [
+            "AI Overviews & Citations",
+            "Direct answer blocks and verified tables cited inside generative responses.",
+            "sparkle",
+          ],
+          [
+            "Structured Entity Hubs",
+            "Consistent brand definitions, schema graphs, and internal topic links.",
+            "sitemap",
+          ],
+          [
+            "Earned Editorial Mentions",
+            "Original benchmarks and visual studies referenced by third-party publishers.",
+            "globe",
+          ],
+        ],
+      },
+      "vertical-bars": {
+        headline: "Priority Impact Pillars for AI Search",
+        subheadline:
+          "Comparing the four levers that compound long-term citations and organic clicks.",
+        items: [
+          [
+            "Direct Answer Clarity",
+            "Lead each section with a crisp, self-contained explanation readers can quote.",
+            "answer",
+          ],
+          [
+            "Primary Source Evidence",
+            "Back claims with original studies, documentation, and real test data.",
+            "evidence",
+          ],
+          [
+            "Technical Crawlability",
+            "Keep HTML fast, indexable, and open to chosen search crawlers.",
+            "server",
+          ],
+          [
+            "Freshness & Audits",
+            "Refresh top guides quarterly as AI engine guidance evolves.",
+            "repeat",
+          ],
+        ],
+      },
+      "winding-roadmap": {
+        headline: "90-Day AI SEO Execution Roadmap",
+        subheadline:
+          "Four sequential milestones from technical audit to compounding AI citations.",
+        items: [
+          [
+            "Audit Crawl & Indexing",
+            "Confirm priority URLs render in server HTML and allow search bots cleanly.",
+            "search",
+          ],
+          [
+            "Restructure Core Guides",
+            "Add clear definitions, comparison tables, and verified takeaways above the fold.",
+            "layers",
+          ],
+          [
+            "Publish Visual Proof",
+            "Embed crisp diagrams and data charts that editors and readers share.",
+            "bar-chart-2",
+          ],
+          [
+            "Measure & Compound",
+            "Track Search Console AI impressions and refresh high-intent pages monthly.",
+            "rocket",
           ],
         ],
       },
