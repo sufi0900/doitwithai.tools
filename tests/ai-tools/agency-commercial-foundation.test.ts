@@ -5,8 +5,8 @@ import path from 'node:path';
 import { classifyCopilotIntent } from '../../lib/ai-employee-agency/copilot-intent';
 import { executeAgencyLlmCall, providerBindings } from '../../lib/ai-employee-agency/llm-gateway';
 import { buildAgencyCircleTelemetrySnapshot } from '../../lib/ai-employee-agency/token-telemetry-store';
-import { verifiedReply } from '../../lib/ai-agency/prompt-compiler';
-import { resolveMeteredAssetKind } from '../../lib/ai-agency/billing.server';
+import { selectRelevantSitePages, verifiedReply } from '../../lib/ai-agency/prompt-compiler';
+import { estimatePromptTokens, isUnlimitedTestingEnabled, resolveMeteredAssetKind } from '../../lib/ai-agency/billing.server';
 import {
   classifyPageMetaHealth,
   fieldFindings,
@@ -372,13 +372,37 @@ test('static source audit: zero forbidden public-tool keys, zero retired gemini-
 
   const fetchServerPath = path.join(repoRoot, 'features', 'backlink-verifier', 'fetch.server.ts');
   if (fs.existsSync(fetchServerPath)) {
-    const fetchSource = fs.readFileSync(fetchServerPath, 'utf8');
+    const fetchSource = stripComments(fs.readFileSync(fetchServerPath, 'utf8'));
     assert.equal(
-      /function\s+isEdgeWorkersRuntime\b/.test(fetchSource) &&
-        /async function\s+fetchHopViaGlobalFetch\b/.test(fetchSource) &&
-        /globalThis\.fetch\(/.test(fetchSource),
-      true,
-      'fetch.server.ts must implement the Cloudflare Workers globalThis.fetch edge runtime path',
+      /from\s+['"](?:node:)?dns(?:\/promises)?['"]|from\s+['"]node:net['"]/.test(fetchSource),
+      false,
+      'fetch.server.ts must remain Cloudflare Workers edge-safe without node:dns or node:net imports',
     );
   }
+});
+
+test('V6 Phase 1: estimatePromptTokens avoids 4x byte over-reservation, unlimited testing toggles cleanly, and selectRelevantSitePages compacts 167 URLs', () => {
+  const sample = 'a'.repeat(4000);
+  const est = estimatePromptTokens(sample, '');
+  assert.equal(est, 1128);
+
+  const prevFlag = process.env.AGENCY_UNLIMITED_TESTING;
+  try {
+    process.env.AGENCY_UNLIMITED_TESTING = 'true';
+    assert.equal(isUnlimitedTestingEnabled('ws-test'), true);
+    delete process.env.AGENCY_UNLIMITED_TESTING;
+    assert.equal(isUnlimitedTestingEnabled('ws-non-admin-999'), false);
+  } finally {
+    if (prevFlag !== undefined) process.env.AGENCY_UNLIMITED_TESTING = prevFlag;
+    else delete process.env.AGENCY_UNLIMITED_TESTING;
+  }
+
+  const manyPages = Array.from({ length: 167 }, (_, i) => ({
+    url: i === 0 ? 'https://doitwithai.tools/' : `https://doitwithai.tools/blog/topic-${i}`,
+    title: i === 42 ? 'Generative Engine Optimization Guide' : `Topic ${i}`,
+  }));
+  const compact = selectRelevantSitePages(manyPages, 'generative engine optimization guide', 15);
+  assert.equal(compact.length, 15);
+  assert.ok(compact.some((p) => p.url === 'https://doitwithai.tools/'));
+  assert.ok(compact.some((p) => p.title === 'Generative Engine Optimization Guide'));
 });

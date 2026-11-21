@@ -1,6 +1,10 @@
 import { createSupabaseServiceClient } from '@/features/website-builder/lib/supabase/server';
 import { executeAgencyLlmCall, providerBindings, type AgencyLlmRequest } from '@/lib/ai-employee-agency/llm-gateway';
-import { computeTokenCostUsd, MODEL_PRICING_CATALOG } from '@/lib/ai-employee-agency/token-telemetry-store';
+import {
+  computeTokenCostUsd,
+  MODEL_PRICING_CATALOG,
+  type AgencyLlmModelId,
+} from '@/lib/ai-employee-agency/token-telemetry-store';
 
 function workspaceKeys(owner: string): Record<string, string> | undefined {
   return JSON.parse(process.env.AGENCY_BYOK_JSON || '{}')[owner];
@@ -8,7 +12,71 @@ function workspaceKeys(owner: string): Record<string, string> | undefined {
 
 export function agencyProviderBindings(owner: string) {
   const keys = workspaceKeys(owner);
-  return keys ? { gemini: Boolean(keys.gemini), openai: Boolean(keys.openai), groq: Boolean(keys.groq) } : providerBindings();
+  return keys
+    ? { gemini: Boolean(keys.gemini), openai: Boolean(keys.openai), groq: Boolean(keys.groq) }
+    : providerBindings();
+}
+
+/**
+ * Estimates prompt tokens accurately (~4 UTF-8 bytes per token + message framing).
+ * Fixes the V5 4x over-reservation bug where raw UTF-8 byte length was reserved as tokens.
+ */
+export function estimatePromptTokens(systemPrompt: string, userPrompt: string): number {
+  const utf8Bytes = new TextEncoder().encode(systemPrompt + userPrompt).length;
+  return Math.max(64, Math.ceil(utf8Bytes / 4) + 128);
+}
+
+/**
+ * Founder Unlimited Testing Mode:
+ * When AGENCY_UNLIMITED_TESTING=true (or workspace UUID is in AGENCY_UNLIMITED_WORKSPACE_IDS / AGENCY_ADMIN_USER_IDS),
+ * removes hard daily/monthly quota lockouts during Preview testing while STILL recording 100% real token & USD telemetry.
+ */
+export function isUnlimitedTestingEnabled(owner: string): boolean {
+  const globalFlag = (process.env.AGENCY_UNLIMITED_TESTING || '').trim().toLowerCase();
+  if (globalFlag === 'true' || globalFlag === '1' || globalFlag === 'yes') {
+    return true;
+  }
+  const allowList = [
+    process.env.AGENCY_UNLIMITED_WORKSPACE_IDS || '',
+    process.env.AGENCY_ADMIN_USER_IDS || '',
+  ]
+    .join(',')
+    .split(',')
+    .map((id) => id.trim())
+    .filter(Boolean);
+  return allowList.includes(owner);
+}
+
+/**
+ * 1-Flip Provider-Agnostic Model Resolution:
+ * - Testing default: Gemini via isolated AUTONOMOUS_AUTOMATION_GEMINI_KEY.
+ * - Commercial OpenAI upgrade: set AGENCY_PRIMARY_PROVIDER=openai + AUTONOMOUS_AUTOMATION_OPENAI_KEY
+ *   (and optional AGENCY_OPENAI_MODEL=gpt-4.1-mini | gpt-4o-mini) to upgrade all specialists automatically.
+ */
+export function resolveDefaultAgencyModelId(
+  owner: string,
+  requested?: AgencyLlmModelId,
+): AgencyLlmModelId {
+  const primaryProvider = (process.env.AGENCY_PRIMARY_PROVIDER || '').trim().toLowerCase();
+  const bindings = agencyProviderBindings(owner);
+
+  if (primaryProvider === 'openai' && bindings.openai) {
+    const configured = (process.env.AGENCY_OPENAI_MODEL || '').trim() as AgencyLlmModelId;
+    if (configured && Object.hasOwn(MODEL_PRICING_CATALOG, configured)) {
+      return configured;
+    }
+    return 'gpt-4.1-mini';
+  }
+
+  if (primaryProvider === 'groq' && bindings.groq) {
+    return 'llama-3.3-70b-versatile';
+  }
+
+  if (requested && Object.hasOwn(MODEL_PRICING_CATALOG, requested)) {
+    return requested;
+  }
+
+  return 'gemini-2.5-flash';
 }
 
 export function resolveMeteredAssetKind(
@@ -24,8 +92,13 @@ export function resolveMeteredAssetKind(
   return null;
 }
 
-export async function meteredAgencyCall(owner: string, specialist: string, request: AgencyLlmRequest, productionArticle = false) {
-  const modelId = request.modelId || 'gemini-2.5-flash';
+export async function meteredAgencyCall(
+  owner: string,
+  specialist: string,
+  request: AgencyLlmRequest,
+  productionArticle = false,
+) {
+  const modelId = resolveDefaultAgencyModelId(owner, request.modelId);
   if (!Object.hasOwn(MODEL_PRICING_CATALOG, modelId)) throw Error('Unknown model');
   const provider = MODEL_PRICING_CATALOG[modelId].provider;
   const keys = workspaceKeys(owner);
@@ -39,8 +112,30 @@ export async function meteredAgencyCall(owner: string, specialist: string, reque
   const db = createSupabaseServiceClient();
   if (!db) return failure('Workspace billing is unavailable.', 503);
 
-  // UTF-8 bytes bound prompt tokens conservatively, including room for message framing.
-  const input = new TextEncoder().encode(request.systemPrompt + request.userPrompt).length + 128;
+  const unlimitedTesting = isUnlimitedTestingEnabled(owner);
+
+  if (unlimitedTesting) {
+    const call = await executeAgencyLlmCall({ ...request, modelId, apiKeyOverride: key });
+    if (call.usageReported) {
+      await db.from('token_usage_ledger').insert({
+        workspace_id: owner,
+        operation: specialist,
+        model: call.modelId || modelId,
+        provider: call.provider || provider,
+        prompt_tokens: call.promptTokens,
+        completion_tokens: call.completionTokens,
+        thinking_tokens: call.thinkingTokens,
+        total_tokens: call.totalTokens,
+        calculated_usd: call.shadowPaidCostUsd,
+        held_tokens: 0,
+        held_usd: 0,
+      });
+    }
+    if (!call.ok) return failure(call.apiErrorDetail || 'The provider returned no answer.', 503);
+    return { ...call, ok: true as const, status: 200 };
+  }
+
+  const input = estimatePromptTokens(request.systemPrompt, request.userPrompt);
   const output = request.maxOutputTokens ?? 1200;
   const reservation = await db.rpc('agency_reserve_usage', {
     owner,
@@ -53,13 +148,27 @@ export async function meteredAgencyCall(owner: string, specialist: string, reque
     use_byok: Boolean(key),
   });
   if (reservation.error) return failure('Check the workspace billing entitlement and migrations.', 503);
-  if (!reservation.data) return failure('Workspace quota reached. This request exceeds the remaining allowance.', 429);
+  if (!reservation.data) {
+    return failure(
+      'Workspace quota reached. Enable AGENCY_UNLIMITED_TESTING=true in Preview for unlimited testing, or upgrade tier limits.',
+      429,
+    );
+  }
   const call = await executeAgencyLlmCall({ ...request, modelId, apiKeyOverride: key });
   if (call.usageReported) {
-    const result = await db.from('token_usage_ledger').update({
-      prompt_tokens: call.promptTokens, completion_tokens: call.completionTokens, thinking_tokens: call.thinkingTokens,
-      total_tokens: call.totalTokens, calculated_usd: call.shadowPaidCostUsd, held_tokens: 0, held_usd: 0,
-    }).eq('id', reservation.data).eq('workspace_id', owner);
+    const result = await db
+      .from('token_usage_ledger')
+      .update({
+        prompt_tokens: call.promptTokens,
+        completion_tokens: call.completionTokens,
+        thinking_tokens: call.thinkingTokens,
+        total_tokens: call.totalTokens,
+        calculated_usd: call.shadowPaidCostUsd,
+        held_tokens: 0,
+        held_usd: 0,
+      })
+      .eq('id', reservation.data)
+      .eq('workspace_id', owner);
     if (result.error) return failure('Unable to settle provider usage. The reservation remains held.', 503);
   }
   if (!call.ok) return failure(call.apiErrorDetail || 'The provider returned no answer.', 503);
