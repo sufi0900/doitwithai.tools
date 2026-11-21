@@ -1,4 +1,4 @@
-# Founder Hub Dashboard Update Entry — V8 Active Research & Startup Architecture
+# Founder Hub Dashboard Update Entry — V8.1 Active Research & Startup Architecture
 
 > **STATUS: INCOMPLETE — ACTIVE RESEARCH IN PROGRESS (DO NOT START IMPLEMENTATION YET)**
 > **Note for Antigravity / Maintainer:** `lib/founder-hub/data.ts` is ~130 KB (~3,000+ lines). Paste the structured entries below into `FOUNDER_AI_CHANGELOG`, **Founder Vision**, and **Active Research Discussions** inside `lib/founder-hub/data.ts` when syncing the Founder Hub UI.
@@ -10,27 +10,24 @@
 
 ```ts
 {
-  id: 'v8-master-research-keyword-calendar-eeat-writer-backend-2026-11-21',
-  date: '2026-11-21',
-  version: 'V8.0-RESEARCH-INCOMPLETE',
+  id: 'v8-1-master-architecture-assembly-war-room-memory-2026-11-22',
+  date: '2026-11-22',
+  version: 'V8.1-RESEARCH-INCOMPLETE',
   status: 'incomplete-research-in-progress',
-  title: 'V8 Master Architecture Paper: Keyword OS, Calendar Sync, Middle E-E-A-T Agent, Strict On-Page Ownership, SaaS Caching & Super Admin Studio',
+  title: 'V8.1 Master Architecture Paper: 7-Step Assembly Line, Multi-Agent War Room, Existing Page Two-Track Flow & 4-Pillar Memory Precedence',
   author: 'Gemini (Lead Systems Architect) + Founder',
   summary:
-    'Complete A-to-Z V8 research paper (incomplete — research continuing before implementation). Covers the 12-skill Keyword OS, Keyword Overview, $0-to-DataForSEO API economics, Upstash Redis + Supabase 2-layer caching, Super Admin Agent Studio (Draft/Beta/Publish), Thinking-AI cost controls, privacy-safe learning, 3-Watchdog mistake triage + live simulation mode, Calendar Agent + Rolling Lock Window, Animated Node Handoffs, Middle E-E-A-T Dynamic Authority Agent, Strict Specialist Ownership Matrix, Article Writer V8, and Final QA Gate.',
+    'Expanded A-to-Z V8.1 living research paper (incomplete — research continuing on On-Page & Technical SEO rubrics before implementation). Adds the 7-Step Locked Article Assembly Line, Visual Designer vs. Social Manager org chart, Multi-Agent Group Chat War Room, Two-Track Existing Page Optimization (no redundant Audit Agent), Universal Agency Awareness & polite off-topic guardrails, and 4-Pillar Memory Management with Strict Latest-Version Precedence.',
   highlights: [
-    '3-Way Expert Split: Lead Systems Architect (rubrics & specs), Antigravity (debugging & backend), Frontend Designer (visual polish).',
-    '5 Live Preview Forensic Bugs documented for Antigravity.',
-    '12-Skill Keyword OS + 100-Pt Rubric + 3 Hard Bans + 11-Column Master Table + Semrush-parity 4-Zone Keyword Overview.',
-    'Free-to-Paid Data Stack: $0 launch stack -> 1-flip DataForSEO ($50 non-expiring PAYG, ~$0.50–$1.20/user/mo). Ahrefs skipped ($129–$1,499/mo).',
-    'Startup Backend & 2-Layer Caching: Upstash Serverless Redis (hot cache, atomic rate limits, in-flight request locks) + Supabase Postgres (30-day cache, credit pools, system_config).',
-    'Super Admin Agent Studio: DRAFT vs. LIVE safety model, Beta Sandbox Side-by-Side testing, 1-click Publish/Rollback, separated Founder Testing spend, 4 Thinking-AI cost controls.',
-    'Privacy-Safe Learning Policy + 3-Watchdog Mistake Detection & Grouping + built-in "Simulate Bad Reply" Fire-Alarm Test button.',
-    'Dashboard Mutation Rules, Calendar Agent with 5-Stage Rolling Lock Window, Auto-Posting toggle, and Live Animated Node-to-Node Handoffs.',
-    'Middle E-E-A-T Dynamic Authority Agent (6–8 tailored questions per topic, power-user overrides, Ranking Risk Warning if skipped) + Strict Specialist Ownership Matrix (On-Page SEO owns Slug URLs, Meta Tags, Schema & Final Link Approval) + Article Writer V8 surgical post-draft edits + Lightweight Final QA Gate.',
+    '7-Step Locked Article Assembly Line: Keyword Recheck -> On-Page Blueprint -> Staged Writing (AI Overview Box, Hook/Intro/TOC, Body, Live-Researched FAQs) -> On-Page Link Approval -> Readability/Originality Final QA -> Blog Visuals -> Article Studio.',
+    'Visual vs. Social Org Chart: Visual Designer owns all blog & social visuals (with built-in Visual Copywriter micro-skill); Social Manager owns platform hooks/calendars and hands visual briefs to Visual Designer.',
+    'Multi-Agent Group Chat (Agency War Room): Users select up to 3 specialists together; lightweight router executes clean sequential turns so agents collaborate without talking over each other.',
+    'Two-Track Existing Page Optimization: Chief Copilot compiles 4-Part Page Scorecards (no separate Audit Agent); On-Page & Refresh houses Existing Website Pages with Quick On-Page Fix vs. Deep Keyword & Content Refresh preserving original text; strict Landing/Service Page vs. Blog Post rule.',
+    'Universal Agency Awareness & Off-Topic Guardrails: Every agent holds a cached Agency Handbook of teammates & existing tools, gives honest workarounds for unbuilt tools, and redirects off-topic chats politely using the fast low-cost model.',
+    '4-Pillar Memory & Strict Latest-Version Precedence: Master Project Binder (4 Supabase folders) + $0 Smart Context Picker + Strict Rule that Live Dashboard Article Card ALWAYS overrides older chat logs, newest-first history filtering, Sliding Window + 5-Bullet Rolling Summary, and strict workspace_id isolation.',
   ],
   specPath: 'docs/AI_AGENCY_V8_KEYWORD_OS_AND_SAAS_BACKEND_SPEC.md',
-  implementationStatus: 'INCOMPLETE — RESEARCH IN PROGRESS. Do not implement yet; On-Page SEO, Technical SEO, Visual Studio, and Social Hub rubrics are next.',
+  implementationStatus: 'INCOMPLETE — RESEARCH IN PROGRESS. Next up: On-Page SEO 100-Point Rubric and Technical SEO 100-Point Rubric.',
 }
 ```
 
@@ -39,6 +36,6 @@
 ## 2. Founder Vision & Active Research Summary (Plain-English)
 
 - **Trust-First Positioning:** Market DoItWithAI.tools as **Live Search Data + Specialist AI Strategy**—never fake AI-guessed search volume.
-- **Human E-E-A-T Moat:** Unlike generic AI writers that lose rankings long-term, our **Middle E-E-A-T Agent** coaches users to inject 3–4 real personal insights, custom tool lists, or research notes before writing begins.
-- **True Agency Boundaries:** Every specialist owns one clear lane (On-Page SEO owns Slugs, Meta, Schema & Final Link Approval; Keyword Research owns Keywords & SERP Dossiers; Writer owns Storytelling & Surgical Edits; Calendar owns Schedules & Rolling Locks; Final QA verifies the finished package).
-- **Office-Model Backend & Zero Blind Auto-Publishing:** Upstash Redis protects Supabase and paid APIs; every agent update or mistake fix stays in **`DRAFT`** until verified in **Beta Sandbox Mode** and published live by the founder.
+- **Human E-E-A-T Moat:** Our **Middle E-E-A-T Agent** coaches users to inject 3–4 personal insights, custom tool lists, or research notes before writing begins.
+- **True Agency Boundaries & War Room Collaboration:** Every specialist owns one clear lane (On-Page SEO owns Slugs, Meta, Schema & Final Link Approval), knows the whole team via a shared Agency Handbook, and can collaborate in sequential 2–3 agent Group Chats.
+- **Zero-Confusion Memory:** For articles updated multiple times, the **Live Dashboard Memory Card** is always the #1 Source of Truth over old chat logs, and past chats are strictly filtered newest-first so AI agents never confuse an older draft with the latest live version.
