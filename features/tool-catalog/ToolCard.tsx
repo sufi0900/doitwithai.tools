@@ -196,6 +196,7 @@ export default function ToolCard({
           {tool.categories.map((slug) => (
             <Link
               key={slug}
+              prefetch={false}
               href={categoryPath(slug)}
               className="text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-[#4662df] dark:text-slate-400 dark:hover:text-[#93B4FF]"
             >
@@ -207,6 +208,7 @@ export default function ToolCard({
           (guide) => (
             <Link
               key={guide.path}
+              prefetch={false}
               href={guide.path}
               className="inline-flex min-h-8 items-center gap-1.5 text-xs font-semibold text-slate-500 transition hover:text-[#5271FF] dark:text-slate-400 dark:hover:text-[#93B4FF]"
             >

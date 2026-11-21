@@ -1,0 +1,75 @@
+import Image from "next/image";
+import { ArrowUpRight, Asterisk, BriefcaseBusiness, GraduationCap, Mail, MapPin, Sparkles, Terminal, Leaf, Globe2 } from "lucide-react";
+import type { SiteDocument } from "@/features/website-builder/domain/site-document";
+import { projectsForPresentation } from "@/features/website-builder/domain/opportunity";
+
+export function CollectionPortrait({ document }: { document: SiteDocument }) {
+  const initials = document.identity.name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("");
+  const Icon = document.design.template === "rose-studio" ? Sparkles : document.design.template === "midnight-bento" ? Terminal : Leaf;
+  return <aside className="collection-portrait"><div className="collection-portrait-frame">{document.media.headshotUrl ? <Image src={document.media.headshotUrl} alt={document.media.headshotAlt || `${document.identity.name} portrait`} fill sizes="(max-width: 700px) 80vw, 420px" unoptimized /> : <div className="collection-monogram" aria-label={`${document.identity.name} monogram`}><Icon size={36} strokeWidth={1.2} /><strong>{initials}</strong><span>{document.identity.role}</span></div>}</div><div className="collection-portrait-caption"><Icon size={17} /><span>{document.identity.name}</span><ArrowUpRight size={18} /></div></aside>;
+}
+
+/** Theme-specific hero compositions retain the same approved identity fields. */
+export function CollectionHero({ document, publicBasePath, navigate }: { document: SiteDocument; publicBasePath?: string; navigate?: (section: "projects" | "contact") => void }) {
+  const theme = document.design.template;
+  const Title = publicBasePath ? "h1" : "h2";
+  const Role = publicBasePath ? "h2" : "h3";
+  const link = (section: "projects" | "contact", label: string) => publicBasePath ? <a href={section === "projects" ? `${publicBasePath}/projects` : "#contact"}>{label}<ArrowUpRight size={16} /></a> : <button type="button" onClick={() => navigate?.(section)}>{label}<ArrowUpRight size={16} /></button>;
+  if (theme === "midnight-bento") return <section className="portfolio-hero collection-hero collection-hero-bento" id="hero"><div className="collection-bento-masthead"><span>PORTFOLIO / {document.identity.name}</span><span>{document.identity.availability}</span></div><div className="portfolio-copy"><span className="collection-hero-index">01 / INTRODUCTION</span><Title>{document.identity.name}</Title><Role>{document.identity.role}</Role><p className="intro">{document.identity.intro}</p><div className="hero-actions">{link("projects", "Explore projects")}{link("contact", "Get in touch")}</div></div><CollectionPortrait document={document} /><div className="collection-bento-footer"><span>{document.skills.length} skills</span><span>{document.content.projects.length} projects</span><span>{document.content.experience.length} experience entries</span></div></section>;
+  if (theme === "olive-journal") return <section className="portfolio-hero collection-hero collection-hero-journal" id="hero"><div className="collection-journal-masthead"><span>THE PORTFOLIO OF</span><span>{document.content.contact.location || "A PERSONAL JOURNAL"}</span></div><CollectionPortrait document={document} /><div className="portfolio-copy"><span className="collection-hero-index">INTRODUCTION / 001</span><Title>{document.identity.name}</Title><Role>{document.identity.role}</Role><p className="intro">{document.identity.intro}</p><span className="collection-journal-availability">{document.identity.availability}</span><div className="hero-actions">{link("projects", "Read selected work")}{link("contact", "Correspond")}</div></div><div className="collection-journal-rule">FIELD NOTES · EXPERIENCE · SELECTED WORK</div></section>;
+  return <section className="portfolio-hero collection-hero collection-hero-rose" id="hero"><div className="collection-rose-stamp">A CREATIVE PORTFOLIO <span>✳</span> {document.identity.availability}</div><CollectionPortrait document={document} /><div className="portfolio-copy"><span className="collection-hero-index">MEET THE CREATOR</span><Title>{document.identity.name}</Title><Role>{document.identity.role}</Role><p className="intro">{document.identity.intro}</p><div className="hero-actions">{link("projects", "Discover my work")}{link("contact", "Say hello")}</div></div><span className="collection-rose-side-note">SELECTED STORIES / PERSONAL PRACTICE</span></section>;
+}
+
+/** Three art directions, one content contract: the same editable facts, order and visibility. */
+export function CollectionSections({ document, editing = false, publicBasePath, onOpenPage, onOpenPost }: { document: SiteDocument; editing?: boolean; publicBasePath?: string; onOpenPage?: (id: string) => void; onOpenPost?: (id: string) => void }) {
+  const work = projectsForPresentation(document);
+  const aboutPage = document.publishing.pages.find((page) => page.slug === "about" && (!publicBasePath || page.status === "published"));
+  const contact = document.content.contact;
+  const Icon = document.design.template === "rose-studio" ? Asterisk : document.design.template === "midnight-bento" ? Terminal : Leaf;
+  return <div className="collection-sections">{document.content.order.map((section, index) => {
+    if (!document.content.visibility[section]) return null;
+    const heading = (title: string, label: string) => <header className="collection-heading"><span>{String(index + 1).padStart(2, "0")} / {label}</span><h2>{title}</h2><Icon size={28} strokeWidth={1.2} aria-hidden="true" /></header>;
+    if (section === "about") return <section id="about" className="collection-section collection-about" key={section}>{heading(document.content.about.heading, "PROFILE")}<div className="collection-about-grid"><p>{document.content.about.body || document.identity.intro}</p><aside><strong>{document.identity.role}</strong>{contact.location && <span><MapPin size={15} />{contact.location}</span>}{aboutPage && (publicBasePath ? <a href={`${publicBasePath}/pages/about`}>Read my story <ArrowUpRight size={16} /></a> : onOpenPage && <button type="button" onClick={() => onOpenPage(aboutPage.id)}>Read my story <ArrowUpRight size={16} /></button>)}</aside></div></section>;
+    if (section === "experience") {
+      if (!editing && !document.content.experience.length && !document.content.education.length) return null;
+      return <section id="experience" className="collection-section collection-career" key={section}>{heading("The journey so far", "EXPERIENCE & EDUCATION")}<div className="collection-career-grid"><div><h3><BriefcaseBusiness size={18} />Experience</h3>{document.content.experience.map((item) => <article key={item.id}><time>{item.period}</time><div><h4>{item.role}</h4><strong>{item.organization}</strong><p>{item.summary}</p></div></article>)}{editing && !document.content.experience.length && <p className="collection-empty">Add your first experience in Studio.</p>}</div><div><h3><GraduationCap size={19} />Education</h3>{document.content.education.map((item) => <article key={item.id}><time>{item.period}</time><div><h4>{item.credential}</h4><strong>{item.institution}</strong><p>{item.summary}</p></div></article>)}{editing && !document.content.education.length && <p className="collection-empty">Add an education entry in Studio.</p>}</div></div></section>;
+    }
+    if (section === "skills") return <section id="skills" className="collection-section collection-skills" key={section}>{heading("A considered toolkit", "CAPABILITIES")}<div className={`collection-skill-grid collection-skill-${document.design.template}`}>{document.skills.map((skill, i) => <article key={skill.id}><span className="collection-skill-number">{String(i + 1).padStart(2, "0")}</span><h3>{skill.label}</h3><small>{document.design.template === "midnight-bento" ? `${skill.level.toString().padStart(2, "0")} / 05` : ["", "Exploring", "Building", "Practicing", "Proficient", "Advanced"][skill.level]}</small><div className="collection-skill-dots" aria-label={`Level ${skill.level} of 5`}>{Array.from({length: 5}, (_, dot) => <i key={dot} data-filled={dot < skill.level} />)}</div></article>)}</div>{editing && !document.skills.length && <p className="collection-empty">Add your skills in Studio.</p>}</section>;
+    if (section === "projects") {
+      if (!editing && !work.length) return null;
+      return <section id="projects" className="collection-section collection-work" key={section}>{heading("Selected work", "PROJECTS")}<div className={`collection-work-grid collection-work-${document.design.template}`}>{work.slice(0, publicBasePath ? 4 : undefined).map((project, i) => {
+        const cover = document.media.assets.find((asset) => project.mediaIds.includes(asset.id));
+        return <article key={project.id}><div className="collection-work-cover">{cover ? <Image src={cover.url} alt={cover.alt} fill sizes="(max-width: 700px) 90vw, 540px" unoptimized /> : <div className="collection-work-placeholder" aria-hidden="true"><Icon size={48} strokeWidth={1} /><span>{String(i + 1).padStart(2,"0")}</span></div>}</div><div className="collection-work-body"><span className="collection-eyebrow">{project.role || `PROJECT ${String(i + 1).padStart(2,"0")}`}</span><h3>{project.title}</h3><p>{project.summary}</p><div className="collection-tags">{project.technologies.map((tag) => <span key={tag}>{tag}</span>)}</div><div className="collection-work-links">{publicBasePath && project.caseStudySlug && <a href={`${publicBasePath}/projects/${project.caseStudySlug}`}>Read case study <ArrowUpRight size={16} /></a>}{project.link && <a href={project.link} target="_blank" rel="noopener noreferrer">Visit project <ArrowUpRight size={16} /></a>}</div></div></article>;
+      })}</div>{publicBasePath && work.length > 0 && <a className="collection-all-work" href={`${publicBasePath}/projects`}>View all projects <ArrowUpRight size={17} /></a>}{editing && !work.length && <p className="collection-empty">Add your projects and cover images in Studio.</p>}</section>;
+    }
+    if (!editing && !contact.email && !contact.location && !contact.socials.length) return null;
+    return <section id="contact" className="collection-section collection-contact" key={section}>{heading(contact.heading, "LET'S CONNECT")}<div className="collection-contact-grid">{contact.email ? <a className="collection-contact-cta" href={`mailto:${contact.email}`}><Mail size={20} />{contact.cta}<ArrowUpRight size={20} /></a> : editing && <p>Add an email in Studio to enable contact.</p>}{contact.location && <span><MapPin size={16} />{contact.location}</span>}</div><nav className="collection-socials" aria-label="Social profiles">{contact.socials.map((item) => <a key={item.id} href={item.url} target="_blank" rel="noopener noreferrer"><Globe2 size={15} aria-hidden="true" />{item.platform}<ArrowUpRight size={14} aria-hidden="true" /></a>)}</nav></section>;
+  })}{document.publishing.posts.filter((post) => !publicBasePath || post.status === "published").length > 0 && (
+    <section id="blog" className="collection-section collection-journal-essays" style={{ marginTop: "28px", paddingTop: "24px", borderTop: "1px solid rgba(120, 131, 75, 0.28)" }}>
+      <header className="collection-heading">
+        <span>ARCHIVE / ESSAYS &amp; FIELD NOTES</span>
+        <h2>{document.design.template === "olive-journal" ? "Published Essays & Monographs" : "Journal & Dispatches"}</h2>
+        <Icon size={28} strokeWidth={1.2} aria-hidden="true" />
+      </header>
+      <div className={`collection-work-grid collection-work-${document.design.template}`} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(270px, 1fr))", gap: "18px" }}>
+        {document.publishing.posts
+          .filter((post) => !publicBasePath || post.status === "published")
+          .slice(0, 5)
+          .map((post, idx) => (
+            <article key={post.id} style={{ padding: "20px", borderRadius: "14px", border: "1px solid rgba(120, 131, 75, 0.28)", display: "grid", gap: "10px" }}>
+              <span className="collection-eyebrow">ESSAY 0{idx + 1} · {post.tags.slice(0, 2).join(" / ") || "EDITORIAL"}</span>
+              <h3 style={{ margin: 0, fontSize: "19px", lineHeight: 1.35 }}>{post.title}</h3>
+              <p style={{ margin: 0, fontSize: "14px", lineHeight: 1.65, opacity: 0.88 }}>{post.excerpt || post.seoDescription}</p>
+              <div className="collection-work-links">
+                {publicBasePath ? (
+                  <a href={`${publicBasePath}/blog/${post.slug}`}>Read full essay <ArrowUpRight size={15} /></a>
+                ) : (
+                  onOpenPost && <button type="button" onClick={() => onOpenPost(post.id)} style={{ background: "none", border: 0, padding: 0, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "5px", color: "inherit" }}>Preview essay <ArrowUpRight size={15} /></button>
+                )}
+              </div>
+            </article>
+          ))}
+      </div>
+    </section>
+  )}</div>;
+}

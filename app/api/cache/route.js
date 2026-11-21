@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
 
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN,
-});
+function getRedisClient() {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) {
+    return null;
+  }
+  return new Redis({ url, token });
+}
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
@@ -12,6 +16,11 @@ export async function GET(request) {
   
   if (!key) {
     return NextResponse.json({ error: 'Key is required' }, { status: 400 });
+  }
+
+  const redis = getRedisClient();
+  if (!redis) {
+    return NextResponse.json({ error: 'Redis is not configured' }, { status: 503 });
   }
 
   try {
@@ -29,6 +38,11 @@ export async function POST(request) {
     
     if (!key || !value) {
       return NextResponse.json({ error: 'Key and value are required' }, { status: 400 });
+    }
+
+    const redis = getRedisClient();
+    if (!redis) {
+      return NextResponse.json({ error: 'Redis is not configured' }, { status: 503 });
     }
 
     let result;
@@ -51,6 +65,11 @@ export async function DELETE(request) {
   
   if (!key) {
     return NextResponse.json({ error: 'Key is required' }, { status: 400 });
+  }
+
+  const redis = getRedisClient();
+  if (!redis) {
+    return NextResponse.json({ error: 'Redis is not configured' }, { status: 503 });
   }
 
   try {

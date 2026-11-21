@@ -47,6 +47,16 @@ export interface BlogInfographicConfig {
   nodes: BlogInfographicNodeItem[];
   footerSourceLabel: string;
   altText: string;
+  /** Brand settings travel with the section through the writer, history and ZIP export. */
+  brand?: {
+    logoDataUrl?: string;
+    logoScale?: number;
+    logoStyle?: "plain" | "white" | "dark";
+    customColors?: { bgStart?: string; surface?: string; accent?: string; textMain?: string };
+    illustration?: "none" | "paper-steps";
+  };
+  comparisonLabels?: [string, string];
+  centerLabel?: string;
   renderedPngDataUrl?: string;
   renderedSvgMarkup?: string;
 }
@@ -316,29 +326,31 @@ export const DEFAULT_FLAGSHIP_BLOG_PROJECT: CanonicalBlogProjectState = {
         sectionId: "sec-1",
         templateId: 6,
         templateSlug: "two-column-versus-card",
-        templateName: "Head-to-Head Versus Battle Card",
-        headline: "Single-Prompt Wrapper vs. 62-Tool AI Blog Studio",
-        subheadline: "Why structured multi-tool orchestration outperforms raw chatbot text",
-        paletteId: "indigo-cyber",
+        templateName: "Side-by-Side Comparison",
+        headline: "From a first draft to a page ready for review",
+        subheadline: "Illustrative workflow comparison · Adapt the points to your own process",
+        paletteId: "blue-trust",
+        comparisonLabels: ["Drafting", "Publishing"],
+        brand: { illustration: "paper-steps" },
         aspectRatio: "16:9",
         nodes: [
           {
             id: "n1",
-            badge: " wrapper",
-            title: "Generic Chatbot Wrapper",
-            detail: "Flat sentence rhythm, zero diagrams, truncated titles, and manual schema.",
-            metricValue: "42/100 SEO",
+            badge: "01",
+            title: "Develop the core answer",
+            detail: "Define the reader’s question and draft a clear, useful explanation.",
+            metricValue: "",
           },
           {
             id: "n2",
-            badge: "studio",
-            title: "62-Tool Autonomous Blog Studio",
-            detail: "Pixel-verified meta pack, 25+ editable H2 infographics, and full JSON-LD @graph.",
-            metricValue: "98/100 SEO",
+            badge: "02",
+            title: "Prepare the complete page",
+            detail: "Review sources, useful examples, related links, visuals and metadata.",
+            metricValue: "",
           },
         ],
-        footerSourceLabel: "DoItWithAI.tools · Flagship Content Architecture",
-        altText: "Comparison infographic showing Single-Prompt AI Blog Writer vs 62-Tool AI Blog Studio",
+        footerSourceLabel: "DoItWithAI.tools · Illustrative publishing workflow",
+        altText: "Comparison of drafting an answer and preparing a complete page for review.",
       },
     },
     {
@@ -361,15 +373,15 @@ export const DEFAULT_FLAGSHIP_BLOG_PROJECT: CanonicalBlogProjectState = {
         sectionId: "sec-2",
         templateId: 1,
         templateSlug: "horizontal-step-pipeline",
-        templateName: "Horizontal 4-Step Process Pipeline",
-        headline: "The 6-Stage Autonomous Blog Production Pipeline",
+        templateName: "Connected Process Steps",
+        headline: "Four stages from a keyword to a publishing package",
         subheadline: "From raw keyword or idea to publish-ready HTML, visuals, and social pack",
         paletteId: "emerald-growth",
         aspectRatio: "16:9",
         nodes: [
-          { id: "s1", badge: "01", title: "Intent & Cluster", detail: "Primary keyword, LSI entities & SERP gap", metricValue: "<10ms" },
+          { id: "s1", badge: "01", title: "Intent & Cluster", detail: "Primary keyword, related questions and search intent", metricValue: "" },
           { id: "s2", badge: "02", title: "Outline & Visual Map", detail: "H2/H3 tree paired with 25 visual templates", metricValue: "25 Templates" },
-          { id: "s3", badge: "03", title: "Humanized Draft", detail: "4-Tier AI failover + burstiness polisher", metricValue: "95+ Score" },
+          { id: "s3", badge: "03", title: "Humanized Draft", detail: "Draft useful explanations and review the wording", metricValue: "" },
           { id: "s4", badge: "04", title: "Schema & Master .ZIP", detail: "JSON-LD @graph, CWV HTML & 6 social channels", metricValue: "1-Click ZIP" },
         ],
         footerSourceLabel: "DoItWithAI.tools · Autonomous Workflow Engine",

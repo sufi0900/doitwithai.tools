@@ -107,7 +107,7 @@ const TOPIC_COLORS: Record<
   "ai-search": { accent: "#0e7490", darkAccent: "#67e8f9", rgb: "6,182,212" },
   "off-page": { accent: "#92400e", darkAccent: "#fcd34d", rgb: "217,119,6" },
   social: { accent: "#be185d", darkAccent: "#f9a8d4", rgb: "236,72,153" },
-  "local-seo": { accent: "#0d9488", darkAccent: "#5eead4", rgb: "13,148,136" },
+  "local-seo": { accent: "#0f766e", darkAccent: "#5eead4", rgb: "13,148,136" },
 };
 
 export function topicStyle(meta: TopicMeta): CSSProperties {

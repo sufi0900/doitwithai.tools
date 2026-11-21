@@ -2,7 +2,9 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { z } from "zod";
 import {
+  DEFAULT_GEMINI_MODEL,
   getGeminiClient,
+  getGeminiModel,
   geminiTextFormat,
   getGeminiApiKeys,
 } from "../../lib/ai-tools/gemini";
@@ -132,6 +134,89 @@ test("when Gemini is exhausted and OpenRouter is configured, it falls back to Op
     assert.equal(res.provider, "openrouter");
     assert.equal(res.output_parsed.answer, "Success from OpenRouter");
     assert.equal(calls.length, 2);
+  } finally {
+    process.env = env;
+    global.fetch = origFetch;
+  }
+});
+
+test("getGeminiModel defaults to gemini-flash-lite-latest when GEMINI_MODEL is unset", () => {
+  const env = { ...process.env };
+  try {
+    delete process.env.GEMINI_MODEL;
+    delete process.env.GEMINI_AUDIENCE_RESEARCH_MODEL;
+    assert.equal(getGeminiModel("AUDIENCE_RESEARCH"), DEFAULT_GEMINI_MODEL);
+    assert.equal(getGeminiModel(), "gemini-flash-lite-latest");
+  } finally {
+    process.env = env;
+  }
+});
+
+test("HTTP 400 schemaRejected retries in JSON mode for audience_research and any other tool", async () => {
+  const env = { ...process.env };
+  const origFetch = global.fetch;
+  process.env.GEMINI_API_KEY = "key-1";
+  delete process.env.GROQ_API_KEY;
+  delete process.env.OPENROUTER_API_KEY;
+  let calls = 0;
+  global.fetch = (async (_url, options) => {
+    calls++;
+    const body = JSON.parse(String(options?.body));
+    if (calls === 1) {
+      assert.ok(body.generationConfig.responseJsonSchema);
+      return Response.json(
+        { error: { status: "INVALID_ARGUMENT", message: "response_json_schema has too many states" } },
+        { status: 400 },
+      );
+    }
+    assert.equal(body.generationConfig.responseJsonSchema, undefined);
+    return geminiOk("Recovered via JSON mode");
+  }) as typeof fetch;
+  try {
+    const res = await getGeminiClient().generate({
+      ...params,
+      text: {
+        format: geminiTextFormat(
+          z.object({ answer: z.string() }).strict(),
+          "audience_research",
+        ),
+      },
+    });
+    assert.equal(res.provider, "gemini");
+    assert.equal(res.output_parsed.answer, "Recovered via JSON mode");
+    assert.equal(calls, 2);
+  } finally {
+    process.env = env;
+    global.fetch = origFetch;
+  }
+});
+
+test("HTTP 404 on a deprecated gemini-* model cascades automatically to gemini-flash-lite-latest", async () => {
+  const env = { ...process.env };
+  const origFetch = global.fetch;
+  process.env.GEMINI_API_KEY = "key-1";
+  delete process.env.GROQ_API_KEY;
+  delete process.env.OPENROUTER_API_KEY;
+  const calledUrls: string[] = [];
+  global.fetch = (async (url) => {
+    const s = String(url);
+    calledUrls.push(s);
+    if (s.includes("gemini-2.5-flash")) {
+      return Response.json({ error: { message: "no longer available" } }, { status: 404 });
+    }
+    if (s.includes("gemini-flash-lite-latest")) {
+      return geminiOk("Cascaded to flash-lite-latest");
+    }
+    throw new Error("Unexpected URL: " + s);
+  }) as typeof fetch;
+  try {
+    const res = await getGeminiClient().generate({
+      ...params,
+      model: "gemini-2.5-flash",
+    });
+    assert.equal(res.provider, "gemini");
+    assert.equal(res.output_parsed.answer, "Cascaded to flash-lite-latest");
+    assert.equal(calledUrls.length, 2);
   } finally {
     process.env = env;
     global.fetch = origFetch;

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { randomUUID } from "node:crypto";
 import { compactOutputSchema } from "./compact-schema";
-import { readBoundedJson } from "./request-body";
+import { readBoundedJson, extractJsonText, safeStderrLog } from "./request-body";
 import {
   generateOpenRouter,
   getOpenRouterModel,
@@ -15,9 +15,17 @@ import {
   GroqError,
 } from "./groq";
 
+export const DEFAULT_GEMINI_MODEL = "gemini-flash-lite-latest";
+export const GEMINI_MODEL_CASCADE = [
+  "gemini-flash-lite-latest",
+  "gemini-3.5-flash-lite",
+  "gemini-flash-latest",
+  "gemini-3.8-flash",
+] as const;
+
 export function getGeminiModel(tool?: string) {
   const override = tool ? process.env[`GEMINI_${tool}_MODEL`]?.trim() : "";
-  return override || process.env.GEMINI_MODEL?.trim() || "";
+  return override || process.env.GEMINI_MODEL?.trim() || DEFAULT_GEMINI_MODEL;
 }
 export function getGeminiApiKeys(): string[] {
   const keys: string[] = [];
@@ -142,6 +150,9 @@ async function generateGemini<T>(
     throw new GeminiError(503, "AI_NOT_CONFIGURED");
 
   const keys = getGeminiApiKeys();
+  const candidateModels = /^gemini-/i.test(params.model)
+    ? Array.from(new Set([params.model, ...GEMINI_MODEL_CASCADE]))
+    : [params.model];
   let lastFailure: GeminiError | null = null;
 
   for (let keyIdx = 0; keyIdx < keys.length; keyIdx++) {
@@ -152,166 +163,186 @@ async function generateGemini<T>(
       Math.min(options.timeout ?? 45_000, 50_000),
     );
     try {
-      const send = (jsonMode: boolean) =>
-        fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${params.model}:generateContent`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "x-goog-api-key": activeKey,
+      for (let modelIdx = 0; modelIdx < candidateModels.length; modelIdx++) {
+        const targetModel = candidateModels[modelIdx];
+        const send = (jsonMode: boolean) =>
+          fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "x-goog-api-key": activeKey,
+              },
+              cache: "no-store",
+              signal: controller.signal,
+              body: JSON.stringify({
+                systemInstruction: {
+                  parts: params.input
+                    .filter((item) => item.role === "system")
+                    .flatMap((item) => parts(item.content))
+                    .concat(
+                      jsonMode
+                        ? [
+                            {
+                              text: `Return only valid JSON matching this output contract. All values must pass these checks: ${JSON.stringify(params.text.format.schema)}`,
+                            },
+                          ]
+                        : [],
+                    ),
+                },
+                contents: params.input
+                  .filter((item) => item.role === "user")
+                  .map((item) => ({ role: "user", parts: parts(item.content) })),
+                generationConfig: {
+                  responseMimeType: "application/json",
+                  ...(!jsonMode
+                    ? { responseJsonSchema: params.text.format.schema }
+                    : {}),
+                  candidateCount: 1,
+                  maxOutputTokens: params.max_output_tokens,
+                },
+              }),
             },
-          cache: "no-store",
-          signal: controller.signal,
-          body: JSON.stringify({
-            systemInstruction: {
-              parts: params.input
-                .filter((item) => item.role === "system")
-                .flatMap((item) => parts(item.content))
-                .concat(
-                  jsonMode
-                    ? [
-                        {
-                          text: `Return only valid JSON matching this output contract. All values must pass these checks: ${JSON.stringify(params.text.format.schema)}`,
-                        },
-                      ]
-                    : [],
-                ),
-            },
-            contents: params.input
-              .filter((item) => item.role === "user")
-              .map((item) => ({ role: "user", parts: parts(item.content) })),
-            generationConfig: {
-              responseMimeType: "application/json",
-              ...(!jsonMode
-                ? { responseJsonSchema: params.text.format.schema }
-                : {}),
-              candidateCount: 1,
-              maxOutputTokens: params.max_output_tokens,
-            },
-          }),
-        },
-      );
-    let response = await send(false);
-    let rejection: Awaited<ReturnType<typeof providerStatus>> | undefined;
-    if (response.status === 400) {
-      rejection = await providerStatus(response);
-      // Only these compact tool formats opt into one schema-specific retry.
-      // Both calls share the original abort deadline and all local validators.
-      if (
-        rejection.schemaRejected &&
-        params.text.format.name &&
-        ["article_outline", "keyword_clusters", "topical_map"].includes(
-          params.text.format.name,
-        ) &&
-        !controller.signal.aborted
-      ) {
-        process.stderr.write(
-          JSON.stringify({
-            event: "ai_schema_json_mode_retry",
-            model: params.model,
-            format: params.text.format.name,
-          }) + "\n",
-        );
-        response = await send(true);
-        rejection = undefined;
-      }
-    }
-    if (!response.ok) {
-      const upstream = response.status;
-      const provider = rejection || (await providerStatus(response));
-      const failure = (status: number, code: string) =>
-        new GeminiError(status, code, upstream, provider.status);
-
-      // Rotate keys if quota exhausted or temporarily unavailable and more keys exist
-      if ((upstream === 429 || upstream === 503 || upstream === 401 || upstream === 403) && keyIdx + 1 < keys.length) {
-        process.stderr.write(
-          JSON.stringify({
-            event: "gemini_key_rotation",
-            fromKeyIdx: keyIdx,
-            toKeyIdx: keyIdx + 1,
-            upstreamStatus: upstream,
-          }) + "\n",
-        );
-        lastFailure = failure(upstream === 429 ? 429 : 503, upstream === 429 ? "PROVIDER_RATE_LIMITED" : "PROVIDER_UNAVAILABLE");
-        continue;
-      }
-
-      if (upstream === 400) throw failure(502, "PROVIDER_BAD_REQUEST");
-      if (upstream === 429) throw failure(429, "PROVIDER_RATE_LIMITED");
-      if (upstream === 401 || upstream === 403)
-        throw failure(503, "PROVIDER_AUTH_FAILED");
-      if (upstream === 404) throw failure(503, "PROVIDER_MODEL_UNAVAILABLE");
-      if (upstream === 500) throw failure(502, "PROVIDER_INTERNAL_ERROR");
-      if (upstream === 503) throw failure(503, "PROVIDER_UNAVAILABLE");
-      throw failure(502, "PROVIDER_FAILED");
-    }
-    const payload = (await readBoundedJson(response, 500_000)) as {
-      promptFeedback?: { blockReason?: string };
-      candidates?: Array<{
-        finishReason?: string;
-        content?: { parts?: Array<{ text?: string; thought?: boolean }> };
-      }>;
-    };
-    const candidate = payload.candidates?.[0];
-    const blockedReasons = new Set([
-      "SAFETY",
-      "RECITATION",
-      "BLOCKLIST",
-      "PROHIBITED_CONTENT",
-      "SPII",
-      "IMAGE_SAFETY",
-      "IMAGE_PROHIBITED_CONTENT",
-    ]);
-    if (candidate?.finishReason === "MAX_TOKENS")
-      throw new GeminiError(
-        502,
-        "OUTPUT_LIMIT_REACHED",
-        response.status,
-        undefined,
-        "MAX_TOKENS",
-      );
-    const blockReason =
-      candidate?.finishReason || payload.promptFeedback?.blockReason;
-    if (blockReason && blockedReasons.has(blockReason))
-      throw new GeminiError(
-        422,
-        "OUTPUT_BLOCKED",
-        response.status,
-        undefined,
-        blockReason,
-      );
-    if (candidate?.finishReason !== "STOP")
-      throw new GeminiError(
-        502,
-        "INCOMPLETE_OUTPUT",
-        response.status,
-        undefined,
-        "OTHER_OR_MISSING",
-      );
-    const text = candidate.content?.parts
-      ?.filter((part) => !part.thought)
-      .map((part) => part.text || "")
-      .join("");
-    if (!text) throw new GeminiError(502, "EMPTY_OUTPUT");
-    try {
-      return { output_parsed: params.text.format.parse(JSON.parse(text)) };
-    } catch {
-      throw new GeminiError(502, "MODEL_OUTPUT_INVALID");
-    }
-  } catch (cause) {
-    const failure =
-      cause instanceof GeminiError
-        ? cause
-        : new GeminiError(
-            controller.signal.aborted ? 504 : 502,
-            controller.signal.aborted
-              ? "PROVIDER_TIMEOUT"
-              : "PROVIDER_CONNECTION_FAILED",
           );
-    // Record only safe failure categories, never keys, prompts, or generated content.
-    process.stderr.write(
-      JSON.stringify({
+        let response = await send(false);
+        let rejection: Awaited<ReturnType<typeof providerStatus>> | undefined;
+        if (response.status === 400) {
+          rejection = await providerStatus(response);
+          // Retry once in JSON mode without responseJsonSchema for any tool when schema is rejected.
+          if (rejection.schemaRejected && !controller.signal.aborted) {
+            safeStderrLog({
+              event: "ai_schema_json_mode_retry",
+              model: targetModel,
+              format: params.text.format.name || "unnamed",
+            });
+            response = await send(true);
+            rejection = undefined;
+          }
+        }
+        if (!response.ok) {
+          const upstream = response.status;
+          const provider = rejection || (await providerStatus(response));
+          const failure = (status: number, code: string) =>
+            new GeminiError(status, code, upstream, provider.status);
+
+          if (upstream === 404 && modelIdx + 1 < candidateModels.length) {
+            safeStderrLog({
+              event: "gemini_model_cascade",
+              fromModel: targetModel,
+              toModel: candidateModels[modelIdx + 1],
+              upstreamStatus: upstream,
+            });
+            lastFailure = failure(503, "PROVIDER_MODEL_UNAVAILABLE");
+            continue;
+          }
+
+          // Rotate keys if quota exhausted, auth failed, or model unavailable on this key and more keys exist
+          if (
+            (upstream === 429 ||
+              upstream === 503 ||
+              upstream === 401 ||
+              upstream === 403 ||
+              upstream === 404) &&
+            keyIdx + 1 < keys.length
+          ) {
+            safeStderrLog({
+              event: "gemini_key_rotation",
+              fromKeyIdx: keyIdx,
+              toKeyIdx: keyIdx + 1,
+              upstreamStatus: upstream,
+            });
+            lastFailure = failure(
+              upstream === 429 ? 429 : 503,
+              upstream === 429
+                ? "PROVIDER_RATE_LIMITED"
+                : upstream === 404
+                  ? "PROVIDER_MODEL_UNAVAILABLE"
+                  : "PROVIDER_UNAVAILABLE",
+            );
+            break;
+          }
+
+          if (upstream === 400) throw failure(502, "PROVIDER_BAD_REQUEST");
+          if (upstream === 429) throw failure(429, "PROVIDER_RATE_LIMITED");
+          if (upstream === 401 || upstream === 403)
+            throw failure(503, "PROVIDER_AUTH_FAILED");
+          if (upstream === 404) throw failure(503, "PROVIDER_MODEL_UNAVAILABLE");
+          if (upstream === 500) throw failure(502, "PROVIDER_INTERNAL_ERROR");
+          if (upstream === 503) throw failure(503, "PROVIDER_UNAVAILABLE");
+          throw failure(502, "PROVIDER_FAILED");
+        }
+        const payload = (await readBoundedJson(response, 500_000)) as {
+          promptFeedback?: { blockReason?: string };
+          candidates?: Array<{
+            finishReason?: string;
+            content?: { parts?: Array<{ text?: string; thought?: boolean }> };
+          }>;
+        };
+        const candidate = payload.candidates?.[0];
+        const blockedReasons = new Set([
+          "SAFETY",
+          "RECITATION",
+          "BLOCKLIST",
+          "PROHIBITED_CONTENT",
+          "SPII",
+          "IMAGE_SAFETY",
+          "IMAGE_PROHIBITED_CONTENT",
+        ]);
+        if (candidate?.finishReason === "MAX_TOKENS")
+          throw new GeminiError(
+            502,
+            "OUTPUT_LIMIT_REACHED",
+            response.status,
+            undefined,
+            "MAX_TOKENS",
+          );
+        const blockReason =
+          candidate?.finishReason || payload.promptFeedback?.blockReason;
+        if (blockReason && blockedReasons.has(blockReason))
+          throw new GeminiError(
+            422,
+            "OUTPUT_BLOCKED",
+            response.status,
+            undefined,
+            blockReason,
+          );
+        if (candidate?.finishReason !== "STOP")
+          throw new GeminiError(
+            502,
+            "INCOMPLETE_OUTPUT",
+            response.status,
+            undefined,
+            "OTHER_OR_MISSING",
+          );
+        const text = candidate.content?.parts
+          ?.filter((part) => !part.thought)
+          .map((part) => part.text || "")
+          .join("");
+        if (!text) throw new GeminiError(502, "EMPTY_OUTPUT");
+        try {
+          return {
+            output_parsed: params.text.format.parse(
+              JSON.parse(extractJsonText(text)),
+            ),
+            model: targetModel,
+          };
+        } catch {
+          throw new GeminiError(502, "MODEL_OUTPUT_INVALID");
+        }
+      }
+    } catch (cause) {
+      const failure =
+        cause instanceof GeminiError
+          ? cause
+          : new GeminiError(
+              controller.signal.aborted ? 504 : 502,
+              controller.signal.aborted
+                ? "PROVIDER_TIMEOUT"
+                : "PROVIDER_CONNECTION_FAILED",
+            );
+      // Record only safe failure categories, never keys, prompts, or generated content.
+      safeStderrLog({
         event: "ai_provider_failure",
         code: failure.code,
         status: failure.status,
@@ -327,12 +358,19 @@ async function generateGemini<T>(
           ? "image"
           : "text",
         model: params.model,
-      }) + "\n",
-    );
-    throw failure;
-  } finally {
-    clearTimeout(timer);
-  }
+      });
+      if (
+        !(cause instanceof GeminiError) &&
+        !controller.signal.aborted &&
+        keyIdx + 1 < keys.length
+      ) {
+        lastFailure = failure;
+        continue;
+      }
+      throw failure;
+    } finally {
+      clearTimeout(timer);
+    }
   }
   if (lastFailure) throw lastFailure;
   throw new GeminiError(502, "PROVIDER_FAILED");
@@ -369,22 +407,20 @@ async function generate<T>(
     state: "started" | "succeeded" | "failed" | "skipped",
     code?: string,
   ) => {
-    process.stderr.write(
-      JSON.stringify({
-        event: "ai_provider_attempt",
-        traceId,
-        provider,
-        state,
-        code,
-        elapsedMs: Date.now() - startedAt,
-        model:
+    safeStderrLog({
+      event: "ai_provider_attempt",
+      traceId,
+      provider,
+      state,
+      code,
+      elapsedMs: Date.now() - startedAt,
+      model:
         provider === "gemini"
           ? params.model
           : provider === "groq"
             ? getGroqModel(image)
             : getOpenRouterModel(),
-      }) + "\n",
-    );
+    });
   };
   if (!isGroqConfigured(image)) {
     trace("groq", "skipped", "AI_NOT_CONFIGURED");
@@ -396,7 +432,11 @@ async function generate<T>(
     try {
       const result = await generateGemini(params, options);
       trace("gemini", "succeeded");
-      return { ...result, provider: "gemini", model: params.model };
+      return {
+        output_parsed: result.output_parsed,
+        provider: "gemini",
+        model: result.model || params.model,
+      };
     } catch (cause) {
       if (!(cause instanceof GeminiError)) throw cause;
       trace("gemini", "failed", cause.code);
@@ -413,24 +453,26 @@ async function generate<T>(
           );
           trace("openrouter", "succeeded");
           return {
-            ...orResult,
+            output_parsed: orResult.output_parsed,
             provider: "openrouter",
-            model: getOpenRouterModel(),
+            model: orResult.model || getOpenRouterModel(),
           };
-        } catch {
-          trace("openrouter", "failed");
+        } catch (orCause) {
+          trace(
+            "openrouter",
+            "failed",
+            orCause instanceof OpenRouterError ? orCause.code : "PROVIDER_FAILED",
+          );
         }
       }
       const failure = cause;
       failure.failures = { gemini: cause.code, groq: "NOT_CONFIGURED" };
-      process.stderr.write(
-        JSON.stringify({
-          event: "ai_generation_failed",
-          traceId,
-          requestId: failure.requestId,
-          ...failure.failures,
-        }) + "\n",
-      );
+      safeStderrLog({
+        event: "ai_generation_failed",
+        traceId,
+        requestId: failure.requestId,
+        ...failure.failures,
+      });
       throw failure;
     }
   }
@@ -448,7 +490,11 @@ async function generate<T>(
       timeout: Math.max(1, Math.min(25000, Math.floor(total * 0.55))),
     });
     trace("gemini", "succeeded");
-    return { ...result, provider: "gemini", model: params.model };
+    return {
+      output_parsed: result.output_parsed,
+      provider: "gemini",
+      model: result.model || params.model,
+    };
   } catch (cause) {
     if (!(cause instanceof GeminiError)) throw cause;
     // A provider refusal is not a service outage. Preserve the existing refusal behavior.
@@ -458,14 +504,12 @@ async function generate<T>(
   }
   const remaining = deadline - Date.now();
   if (remaining <= 0) throw new GeminiError(504, "PROVIDER_TIMEOUT");
-  process.stderr.write(
-    JSON.stringify({
-      event: "ai_provider_fallback",
-      from: "gemini",
-      to: "groq",
-      code: firstFailure.code,
-    }) + "\n",
-  );
+  safeStderrLog({
+    event: "ai_provider_fallback",
+    from: "gemini",
+    to: "groq",
+    code: firstFailure.code,
+  });
   try {
     trace("groq", "started");
     const result = await generateGroq(params, remaining, image);
@@ -492,12 +536,16 @@ async function generate<T>(
           );
           trace("openrouter", "succeeded");
           return {
-            ...orResult,
+            output_parsed: orResult.output_parsed,
             provider: "openrouter",
-            model: getOpenRouterModel(),
+            model: orResult.model || getOpenRouterModel(),
           };
-        } catch {
-          trace("openrouter", "failed");
+        } catch (orCause) {
+          trace(
+            "openrouter",
+            "failed",
+            orCause instanceof OpenRouterError ? orCause.code : "PROVIDER_FAILED",
+          );
         }
       }
     }
@@ -511,17 +559,15 @@ async function generate<T>(
       undefined,
       { gemini: firstFailure.code, groq: failure.code },
     );
-    process.stderr.write(
-      JSON.stringify({
-        event: "ai_provider_failure",
-        requestId: finalFailure.requestId,
-        traceId,
-        gemini: firstFailure.code,
-        provider: "groq",
-        code: failure.code,
-        model: getGroqModel(image),
-      }) + "\n",
-    );
+    safeStderrLog({
+      event: "ai_provider_failure",
+      requestId: finalFailure.requestId,
+      traceId,
+      gemini: firstFailure.code,
+      provider: "groq",
+      code: failure.code,
+      model: getGroqModel(image),
+    });
     throw finalFailure;
   }
 }

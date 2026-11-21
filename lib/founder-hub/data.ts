@@ -178,6 +178,42 @@ export const DAILY_ENGINEERING_VELOCITY: DailyActivityPoint[] = [
     commitsPushed: 16,
     highlightNote: "Testimonial Studio overhaul, 4-Tier AI Failover, 5 Feeder Tools (#58–#62) Live & /founder-hub",
   },
+  {
+    date: "2026-11-10",
+    shortLabel: "Nov 10",
+    errorsFixed: 8,
+    improvementsShipped: 18,
+    routesAndToolsAdded: 5,
+    commitsPushed: 12,
+    highlightNote: "All 5 Feeder Tools (#58–#62) shipped, VoxFolio V27.12 audit & Master Vision dynamic calculator",
+  },
+  {
+    date: "2026-11-11",
+    shortLabel: "Nov 11",
+    errorsFixed: 12,
+    improvementsShipped: 16,
+    routesAndToolsAdded: 3,
+    commitsPushed: 9,
+    highlightNote: "Infographic Studio redesign, Prism pure-SVG renderer engine & Next.js static build fix",
+  },
+  {
+    date: "2026-11-12",
+    shortLabel: "Nov 12",
+    errorsFixed: 14,
+    improvementsShipped: 36,
+    routesAndToolsAdded: 12,
+    commitsPushed: 9,
+    highlightNote: "GSC Top 3 + Dark Studio Fix + Full 7-Phase /ai-content-writer V3 Studio (Research, SERP Canvas, H1-H6 Tell-AI Editor, Readability, 16:9 Hero + Alt Text & Social Adapters)",
+  },
+  {
+    date: "2026-11-21",
+    shortLabel: "Nov 21",
+    errorsFixed: 19,
+    improvementsShipped: 24,
+    routesAndToolsAdded: 2,
+    commitsPushed: 5,
+    highlightNote: "Cloudflare Preview TS/Build Fix + Agency Dashboard Responsive Overhaul + Strict API Key Isolation (AUTONOMOUS_AUTOMATION_GEMINI_KEY vs 4 Public Tool Keys) + Evergreen Gemini Cascade on Preview & Production + V4 Real-Time Agency Master Plan",
+  },
 ];
 
 export interface SprintProgressBarItem {
@@ -751,6 +787,100 @@ export const GRAND_AI_CONTENT_WRITER_PIPELINE = {
   ],
 };
 
+export const AI_CONTENT_WRITER_V3_BLUEPRINT = {
+  title: "AI Content Writer Studio V3 — Multi-Agent Pipeline, Missing Tool Integration & 7-Phase Overhaul",
+  subtitle:
+    "Full UX/UI, Light/Dark contrast audit, 2026 AIO/Readability research, standalone DoItWithAI tool gap mapping, and phased execution plan for /ai-content-writer (docs/AI_CONTENT_WRITER_V3_MASTER_BLUEPRINT.md).",
+  gapAudit: [
+    {
+      area: "SERP & Rich Result Simulator",
+      standaloneRef: "features/serp-preview/",
+      gap: "Top Meta Panel only has a basic text preview without Google Desktop/Mobile SERP card, pixel width gauges, or Rich Result badges.",
+      targetPhase: "Phase 4",
+    },
+    {
+      area: "Image Alt Text Sub-Agent",
+      standaloneRef: "features/alt-text/",
+      gap: "Featured horizontal banner & section infographics lack an automated SEO + WCAG accessible Alt Text Sub-Agent and audit score.",
+      targetPhase: "Phase 5",
+    },
+    {
+      area: "Deep Readability & Comprehension",
+      standaloneRef: "features/readability/ + /ai-seo/ai-readability-tools",
+      gap: "Editor only underlines long sentences and StarterKit stops at H3; missing H4–H6, multi-band clarity highlights, diagnosis-before-rewrite, and language-aware checks.",
+      targetPhase: "Phase 3",
+    },
+    {
+      area: "Keyword & Semantic Entity Agent",
+      standaloneRef: "features/keyword-research/ & keyword-clustering/",
+      gap: "Requires manual single focus keyword instead of discovering primary, long-tail, LSI, and entity coverage automatically.",
+      targetPhase: "Phase 1 & 2",
+    },
+    {
+      area: "Competitor Search & Site Internal Linking",
+      standaloneRef: "features/internal-linking/ & external-links/",
+      gap: "Website URL sits unused in collapsed Brand accordion; missing live web search competitor packet & verified internal URL discovery.",
+      targetPhase: "Phase 1 & 2",
+    },
+    {
+      area: "Content Organizer & 50w AEO Box",
+      standaloneRef: "features/table-of-contents-generator/ & faq-schema-validator/",
+      gap: "Needs dedicated Content Organizer pass (H1–H6, 50w AEO summary, TOC, short paras, bullets/tables, quotes, FAQ + JSON-LD) and inline 'Tell AI' menu.",
+      targetPhase: "Phase 3 & 5",
+    },
+    {
+      area: "Platform-Native Social & Video Studio",
+      standaloneRef: "facebook / instagram / linkedin / pinterest / youtube studios",
+      gap: "Bottom social cards look overly similar; needs platform-authentic 2026 ratios (IG/LI 4:5 carousel, Pin 2:3, X 16:9, YT script + 1280x720) & modular adapters.",
+      targetPhase: "Phase 6",
+    },
+  ],
+  phases: [
+    {
+      phase: "Phase 1",
+      name: "Strict Onboarding Gate, Safe Internal/External Research & Animated Loading Theatre",
+      cta: "Shipped: Dashboard strictly locked during initial onboarding; OnboardingGate + 11-step AgentPipelineTheatre + SSRF-safe /api/writer-workspace/research (sitemap/anchor internal link discovery + Wikipedia/DuckDuckGo authority references).",
+      status: "Completed",
+    },
+    {
+      phase: "Phase 2",
+      name: "Left Panel Redesign (Remove Brief/Outline -> AI Helper, Readability, SEO & Links)",
+      cta: "Shipped: Replaced sidebar Brief/Outline tabs with LeftStudioPanel (AI Helper with scope + diff preview, Readability overlays scorecard, SEO & Links verified internal/external link inserter + BriefSettingsModal).",
+      status: "Completed",
+    },
+    {
+      phase: "Phase 3",
+      name: "H1–H6 Editor, Inline Right-Click 'Tell AI' Menu & Deep Readability Studio",
+      cta: "Shipped: Upgraded Tiptap StarterKit & Markdown/HTML/EPUB serializers to H1–H6, wired multi-band Readability ProseMirror decorations, and added floating toolbar + right-click 'Tell AI about it' context actions.",
+      status: "Completed",
+    },
+    {
+      phase: "Phase 4",
+      name: "Multi-Option SERP Header Agent & Top Google SERP / Rich Result Simulator",
+      cta: "Shipped: Built SearchAppearancePanel integrating SerpCanvas (Desktop/Mobile SERP preview, pixel gauges), 5 selectable Meta Titles, 4 Meta Descriptions, FAQ Rich Result card, and copyable Article + FAQPage JSON-LD.",
+      status: "Completed",
+    },
+    {
+      phase: "Phase 5",
+      name: "Content Organizer Agent, 50w AEO Box & Horizontal Featured + Section Infographics + Alt-Text",
+      cta: "Shipped: Added clickable TOC jump strip, editable 50-word AEO Direct Answer Box, 16:9 FeaturedBannerArtwork (1200x630 PNG export), zero-gap section visuals, FAQ accordion, and WCAG Alt Text Sub-Agent scoring.",
+      status: "Completed",
+    },
+    {
+      phase: "Phase 6",
+      name: "Dedicated Social/Video Sub-Agents & Modular Visual Adapter Registry",
+      cta: "Shipped: Built adapters/socialVisualRegistry.ts enforcing 2026 specs (IG/LI 1080x1350 carousel, X 1600x900, Pinterest 1000x1500 2:3 Pin, YouTube 1280x720 thumbnail + AI video scripts) with live slide deck preview.",
+      status: "Completed",
+    },
+    {
+      phase: "Phase 7",
+      name: "End-to-End QA, Light/Dark Audit, 4-Tier Failover Stress Tests & Build Verification",
+      cta: "Shipped: Audited Daylight + Dark Studio styling across all new UI panels, added V3 tests covering H1-H6 round trips, Alt Text WCAG audit, JSON-LD, Social adapters, and Research API failover.",
+      status: "Completed",
+    },
+  ],
+};
+
 export const H1_CLUSTER_DOMINATION_BLUEPRINT = {
   title: "H1 Heading & Tag Cluster Domination Blueprint (/ai-seo/h1-heading + Connected Tools)",
   subtitle:
@@ -879,22 +1009,30 @@ export const SYSTEM_ARCHITECTURE_DEPENDENCY_MAP: SystemArchitectureNode[] = [
   },
   {
     id: "ai-failover-engine",
-    title: "3. 4-Layer Multi-Key AI Failover & Smart Health Memory Engine",
+    title: "3. 4-Layer Public-Tool Failover, Evergreen Gemini Cascade & Strict Agency API Key Isolation",
     filePaths: [
       "lib/ai-tools/gemini.ts",
       "lib/ai-tools/groq.ts",
       "lib/ai-tools/openrouter.ts",
+      "lib/ai-tools/request-body.ts",
+      "lib/ai/multi-model-router.ts",
+      "lib/ai-employee-agency/llm-gateway.ts",
+      "lib/autonomous-agents/automation-ai-router.ts",
+      "docs/AI_AGENCY_V4_REALTIME_MASTER_PLAN.md",
       "tests/ai-tools/multi-key-rotation.test.ts",
+      "tests/ai-tools/agency-commercial-foundation.test.ts",
     ],
-    role: "Guarantees 99.99% uptime across all AI tools with zero user-facing quota errors. Automatically rotates across multiple Gemini API keys, Gemini model fallbacks, Groq LPU keys/models, and OpenRouter free-tier models with in-memory cooldown tracking.",
+    role: "Strictly separates the 4 public-tool keys (GEMINI_API_KEY -> GEMINI_API_KEY_2 -> GROQ_API_KEY -> OPENROUTER_API_KEY) from the 24/7 AI Digital Agency key (AUTONOMOUS_AUTOMATION_GEMINI_KEY). Uses evergreen Gemini rolling aliases (gemini-flash-lite-latest -> gemini-3.5-flash-lite -> gemini-flash-latest -> gemini-3.8-flash), all-tools HTTP 400 JSON-mode recovery, OpenRouter openrouter/free fallback, and Cloudflare Workers-safe logging.",
     dependencies: [
-      "app/api/ai-tools/[slug]/route.ts",
+      "app/api/ai-tools/*/route.ts",
+      "app/api/ai-employee-agency/*/route.ts",
       "app/api/do-it-ai/route.ts",
-      "app/api/ai-assistant/route.ts",
+      "app/api/ai-assistant/chat/route.ts",
     ],
     whenAddingOrUpgradingTool: [
-      "Always call callGeminiText() or callGeminiJson() from @/lib/ai-tools/gemini or implement 4-tier Gemini/Groq/OpenRouter/Deterministic failover.",
-      "Env vars supported on Vercel: GEMINI_API_KEY, GEMINI_API_KEY_2..5, GEMINI_API_KEYS, GROQ_API_KEY, GROQ_API_KEY_2..5, OPENROUTER_API_KEY, OPENROUTER_API_KEY_2..5.",
+      "Public tools MUST use getGeminiClient() / getGeminiApiKeys() / runMultiModelTextFailover() (never direct single GEMINI_API_KEY fetches). Remove GEMINI_MODEL in Cloudflare so DEFAULT_GEMINI_MODEL ('gemini-flash-lite-latest') auto-cascades.",
+      "24/7 AI Digital Agency features MUST route exclusively through meteredAgencyCall() -> executeAgencyLlmCall() using AUTONOMOUS_AUTOMATION_GEMINI_KEY—NEVER read GEMINI_API_KEY, GEMINI_API_KEY_2, GROQ_API_KEY, or OPENROUTER_API_KEY.",
+      "Cloudflare Workers keeps Production (production-cloudflare) and Preview (codex/infographic-studio-redesign) Runtime Variables & Secrets separate. Preview public tools also require UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN because Preview runs with NODE_ENV=production.",
     ],
   },
   {
@@ -968,6 +1106,231 @@ export interface ChangelogEntry {
 }
 
 export const FOUNDER_AI_CHANGELOG: ChangelogEntry[] = [
+  {
+    id: "log-sprint-17-cloudflare-api-isolation-and-agency-v4-blueprint",
+    sprintNumber: 17,
+    date: "2026-11-21",
+    title: "Cloudflare Workers Build & Responsive Fixes, Strict Agency vs. Public-Tool API Key Isolation, Evergreen Gemini Cascade (Preview & Production) & V4 Real-Time Agency Master Plan",
+    category: "Architecture & AI Failover",
+    founderRequestSummary:
+      "Fix Cloudflare Preview TypeScript build errors and AI Digital Agency dashboard responsive/scroll bugs; diagnose why public tools and agency Copilot were throwing HTTP 404/500/502 errors on Cloudflare; strictly isolate AUTONOMOUS_AUTOMATION_GEMINI_KEY for the 24/7 AI Digital Agency while reserving GEMINI_API_KEY, GEMINI_API_KEY_2, GROQ_API_KEY, and OPENROUTER_API_KEY for public tools with automatic rotation on BOTH Preview and production-cloudflare (preserving 100% branch separation so preview-only Website Builder & Digital Agency never leak into production); audit Cloudflare Preview vs. Production Runtime Variables; and investigate why the 24/7 AI Digital Agency is not working in real time and publish a complete V4 6-phase implementation plan for all AI experts.",
+    aiStrategicBlueprint:
+      "Executed across two isolated checkouts to enforce zero branch leakage between production-cloudflare (public site only) and codex/infographic-studio-redesign (Preview). Replaced retired gemini-2.0-flash and deprecated gemini-2.5-flash defaults with an evergreen lowest-cost-first cascade (gemini-flash-lite-latest -> gemini-3.5-flash-lite -> gemini-flash-latest -> gemini-3.8-flash), enabled all-tools HTTP 400 JSON-mode recovery, hardened Groq/OpenRouter (openrouter/free), replaced bare process.stderr.write calls with Workers-safe safeStderrLog(), and audited all 19 AI Agency routes to uncover the 7 exact code-level blockers preventing real-time agency execution—codifying the full 6-phase V4 plan in docs/AI_AGENCY_V4_REALTIME_MASTER_PLAN.md.",
+    aiImplementationDetails: [
+      "Cloudflare Preview TS Build Fix (commit 2eb44bb): Fixed EditorialFlagshipHero document.content.contact.location type bug and broken EditorialFlagshipSections import in features/website-builder/start/creation-flow.tsx.",
+      "AI Digital Agency Responsive & Layout Overhaul (commit 5c021d7): Fixed h-dvh viewport scroll-locking across AgencyWorkspaceOverview.tsx, added mobile nav drawer + z-[10000] PanelChat & CalmAgencyNodeCanvas fullscreen overlays, stopped KnowledgeReview from hijacking non-setup tabs, and fixed responsive grids across all agency panels.",
+      "Strict API Key Isolation & Evergreen Model Cascade on Preview (commit f07906b): Locked lib/ai-employee-agency/llm-gateway.ts and lib/autonomous-agents/automation-ai-router.ts exclusively onto AUTONOMOUS_AUTOMATION_GEMINI_KEY (zero fallback to public-tool keys). Upgraded lib/ai-tools/{gemini,groq,openrouter,request-body,rate-limit}.ts, lib/ai/multi-model-router.ts, 4 feature handlers, and 4 direct-fetch tool routes for 4-key rotation (GEMINI_API_KEY -> GEMINI_API_KEY_2 -> GROQ_API_KEY -> OPENROUTER_API_KEY) + evergreen gemini-flash-lite-latest cascade (47/47 unit tests passing, tsc 0 errors).",
+      "Clean Public-Tools-Only Backport to production-cloudflare (commit e1dcf00): Backported ONLY the 16 public-tool failover/test files to production-cloudflare with 0 AI Website Builder, 0 AI Digital Agency, and 0 preview-only infographic-studio files introduced (52/52 unit tests passing, tsc 0 errors). Deleting GEMINI_MODEL in Cloudflare Production now safely activates automatic lowest-cost Gemini routing.",
+      "Cloudflare Production vs. Preview Env Audit: Documented exact Runtime Variables & Secrets separation—confirming Preview's 5 vars cover core Agency & Website Builder testing, while testing rate-limited Public AI Tools on Preview also requires UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN (since Preview runs with NODE_ENV=production).",
+      "V4 Real-Time AI Digital Agency Investigation & Master Plan (docs/AI_AGENCY_V4_REALTIME_MASTER_PLAN.md): Identified all 7 root causes blocking live agency execution—(1) fetchPublic() node:dns/promises socket-pinning crash on Cloudflare Workers causing 0 indexed pages, (2) onboarding.server.ts leaving industry/audience/offer blank + <250w abort before sitemap, (3) missing dashboard onboarding lock gate, (4) verifiedReply() digit-regex bug causing HTTP 422 on any numbered list/H2/year, (5) topicDecision() rejecting all topics on partial/manual sitemaps, (6) disconnected orchestrate/run-agent-step/site-audit/visibility-check/competitor-gap routes, and (7) no browser-driven real-time 5-stage pipeline persistence without external Inngest cron—and authored the complete 6-phase V4 implementation blueprint.",
+    ],
+    blogPostDraftMarkdown: `# Engineering Bulletproof API Key Isolation & Real-Time Multi-Agent Execution on Cloudflare Workers
+
+Running both 108+ free public AI tools and a 24/7 Autonomous AI Digital Agency on Cloudflare Workers requires strict operational boundaries:
+
+1. **Zero Cross-Contamination Between Branches**: \`production-cloudflare\` serves only the public site and tools, while \`codex/infographic-studio-redesign\` isolates under-construction preview features (AI Website Builder and 24/7 AI Digital Agency).
+2. **Strict API Key Isolation + Evergreen Gemini Cascade**: Public tools rotate automatically across \`GEMINI_API_KEY\` -> \`GEMINI_API_KEY_2\` -> \`GROQ_API_KEY\` -> \`OPENROUTER_API_KEY\` starting on \`gemini-flash-lite-latest\` (with automatic HTTP 404 model cascade and all-tools JSON-mode recovery). Meanwhile, 100% of 24/7 AI Digital Agency work is locked strictly to \`AUTONOMOUS_AUTOMATION_GEMINI_KEY\`.
+3. **V4 Real-Time Agency Roadmap**: By fixing edge-safe \`fetchPublic()\` crawling on Cloudflare Workers, replacing compulsory blank onboarding forms with auto-synthesized Brand DNA + 6 clickable low-KD starter keywords, fixing the digit-citation bug in \`verifiedReply()\`, and wiring a direct 5-stage real-time pipeline runner, the agency transitions from a static scaffold into a live autonomous workspace.`,
+    filesTouched: [
+      "lib/ai-tools/gemini.ts",
+      "lib/ai-tools/groq.ts",
+      "lib/ai-tools/openrouter.ts",
+      "lib/ai-tools/request-body.ts",
+      "lib/ai-tools/rate-limit.ts",
+      "lib/ai/multi-model-router.ts",
+      "lib/ai-employee-agency/llm-gateway.ts",
+      "lib/autonomous-agents/automation-ai-router.ts",
+      "features/ai-employee-agency/AgencyWorkspaceOverview.tsx",
+      "docs/AI_AGENCY_V4_REALTIME_MASTER_PLAN.md",
+      "docs/AI_PROVIDER_FALLBACK.md",
+      "lib/founder-hub/data.ts",
+      "tests/ai-tools/agency-commercial-foundation.test.ts",
+      "tests/ai-tools/multi-key-rotation.test.ts",
+    ],
+    commits: ["2eb44bb", "5c021d7", "f07906b", "e1dcf00 (production-cloudflare)"],
+    status: "Completed & Live",
+  },
+  {
+    id: "log-sprint-16-flagship-website-builder-and-voxfolio-bridge",
+    sprintNumber: 16,
+    date: "2026-11-13",
+    title: "Unified Flagship AI Website Builder (Phases 1–6 Complete): Voxfolio Migration, 16 2D/3D Templates, Do It AI Agent Voice Studio, Writer-to-Website Bridge & /do-it-ai Master Command Center",
+    category: "Flagship Tool Overhaul",
+    founderRequestSummary:
+      "Execute all 6 Phases of UNIFIED_AI_WEBSITE_BUILDER_AND_ECOSYSTEM_ARCHITECTURE.md: integrate the Voxfolio 3D/2D voice-directed portfolio and website builder under isolated website_* Supabase tables without rewriting core governed engines, expand templates into 16 categorized archetypes led by DoItWithAI Editorial Flagship, remove the duplicate standalone blog writer in favor of a live bidirectional bridge with /ai-content-writer, rebrand the studio assistant to Do It AI Agent, add voice open_in_content_writer navigation, and turn /do-it-ai into the unified multi-website and writer workspace.",
+    aiStrategicBlueprint:
+      "Executed a zero-rewrite modular port under features/website-builder/ paired with unified browserAccounts() Google OAuth + Authorization Bearer header forwarding, 28 isolated API routes complying with Next.js 14 sync params and Vercel Hobby maxDuration <= 60s, standalone CSS layout scoping across /ai-website-builder, /do-it-ai/website-studio, /p/[slug], and /s/[token], bidirectional /api/website-builder/overview + /api/website-builder/publish-from-writer routes, an idempotent consolidated SQL migration (20261114_website_builder_projects.sql), and WorkspaceMasterHub inside /do-it-ai.",
+    aiImplementationDetails: [
+      "Phases 1–2: Registered ai-website-builder in features/tool-catalog/registry.json, created ecosystem-bridge.ts (16 curated 2D & 3D templates across Blogging & SEO Media, Personal Brand & Creator, Startup & SaaS Product, and 3D Interactive & Spatial), added writerPublishing commands + WriterStudioBridgeCard, and extended site-document.ts with sourceArticleProjectId & pillarClusterSlug.",
+      "Phase 3: Migrated domain, scene (Three.js + drei), portfolio, Tiptap v2 content editor, manual controls, and studio reducer into features/website-builder/, wired unified Google OAuth session forwarding (browser.ts + server.ts), created EditorialFlagshipHero + obsidian/indigo styling, and removed Voxfolio's duplicate blog writer.",
+      "Phase 4: Rebranded Vox to Do It AI Agent with public/pcm-processor.js + open_in_content_writer voice tool, ported all 28 API routes with website_* / website-media isolation, configured ClientLayoutShell standalone chrome for /p/, /s/, and /do-it-ai/website-studio/, and built App Router pages for /ai-website-builder, /tools/ai-website-builder, /ai-website-builder/start, /ai-website-builder/claim, /do-it-ai/website-studio/[projectId](/settings), /p/[slug]/**, and /s/[token]/[[...path]].",
+      "Phase 5: Shipped GET /api/website-builder/overview and POST /api/website-builder/publish-from-writer, enabled zero-blocker live blog publishing from Writer Studio synced posts, mounted ConnectedWebsitePublishBar in WriterWorkspace.tsx with ?targetSiteId= preselection, and auto-synced published website blog URLs into Writer Studio internal link suggestions.",
+      "Phase 6: Authored idempotent supabase/migrations/20261114_website_builder_projects.sql (all 14 website_* tables, website-media bucket, RLS policies, and 13 security-checked RPCs), added WorkspaceMasterHub to /do-it-ai for switching between AI Chat and Saved Websites + Writer Articles, added unit tests in tests/ai-tools/website-builder.test.ts, and logged progress on /founder-hub.",
+    ],
+    blogPostDraftMarkdown: `# Unifying AI Website Creation, 3D WebGL Studios & SEO Content Publishing Into One Platform
+
+In **Sprint 16**, we merged our flagship voice-and-3D **AI Website Builder** directly with the **AI Content Writer Studio** and **/do-it-ai Master Workspace**:
+
+1. **16 Purpose-Built 2D & 3D Templates**: Launch with our default **DoItWithAI Editorial Flagship** blog-first layout or switch live between 2D editorial publications, SaaS product sites, and interactive Three.js 3D stages.
+2. **Do It AI Agent Voice + Governed Editing**: Update copy, switch templates or dark/light themes, undo/redo revisions, and jump straight into AI Content Writer by voice or manual controls.
+3. **Zero-Copy-Paste Writer-to-Website Bridge**: Draft SEO-optimized articles with section infographics in \`/ai-content-writer\`, pull same-site internal links automatically, and push posts straight to your website's live \`/p/[slug]/blog\` journal in one click.`,
+    filesTouched: [
+      "features/website-builder/**",
+      "app/ai-website-builder/**",
+      "app/tools/ai-website-builder/**",
+      "app/do-it-ai/website-studio/**",
+      "app/p/**",
+      "app/s/**",
+      "app/api/website-builder/**",
+      "app/api/projects/**",
+      "app/api/shares/**",
+      "app/api/visitor/**",
+      "app/api/connect/**",
+      "app/api/assemblyai/**",
+      "features/writer-workspace/ConnectedWebsitePublishBar.tsx",
+      "features/writer-workspace/WriterWorkspace.tsx",
+      "features/do-it-ai/WorkspaceMasterHub.tsx",
+      "features/do-it-ai/DoItAiDashboardClient.tsx",
+      "supabase/migrations/20261114_website_builder_projects.sql",
+      "tests/ai-tools/website-builder.test.ts",
+      "lib/founder-hub/data.ts",
+    ],
+    commits: ["codex/infographic-studio-redesign"],
+    status: "Completed & Live",
+  },
+  {
+    id: "log-sprint-15-ai-content-writer-v3-phases-1-to-7-shipped",
+    sprintNumber: 15,
+    date: "2026-11-12",
+    title: "AI Content Writer Studio V3 Complete (Phases 1–7): Multi-Agent Pipeline, Research Engine, SERP Simulator, H1–H6 'Tell AI' Editor, Alt Text Sub-Agent & 2026 Social Registry",
+    category: "Flagship Tool Overhaul",
+    founderRequestSummary:
+      "Execute all 7 Phases of the AI_CONTENT_WRITER_V3_MASTER_BLUEPRINT autonomously on /ai-content-writer: enforce a strict onboarding gate with website URL input and an 11-step animated multi-agent loading theatre, build a real SSRF-safe internal/external link research packet engine, redesign the Left Studio Panel (AI Helper, Readability, SEO & Links), upgrade the editor to H1–H6 with embedded multi-band Readability overlays and right-click 'Tell AI about it' actions, embed the interactive Google SERP Simulator and Article/FAQ JSON-LD card, add a 50-word AEO quick answer box, TOC, horizontal 16:9 Featured Banner + WCAG Alt Text Sub-Agent, zero-gap section infographics, and modular 2026 platform-native social/video adapters.",
+    aiStrategicBlueprint:
+      "Orchestrated all 7 phases incrementally without breaking any existing writer-workspace unit test invariants or standalone /tools/* routes. Reused hardened repo engines across SSRF-safe page fetching (fetchPublic), Readability comprehension scoring (analyzeDocument/annotate), WCAG Alt Text grading (reviewAlt), interactive Google SERP rendering (SerpCanvas/RichResultCard), and clean modular React subcomponents (OnboardingGate, AgentPipelineTheatre, LeftStudioPanel, SearchAppearancePanel, FeaturedBannerArtwork, BriefSettingsModal) plus a pluggable SocialVisualAdapter registry.",
+    aiImplementationDetails: [
+      "Phase 1: Implemented features/writer-workspace/research.server.ts + app/api/writer-workspace/research/route.ts for SSRF-hardened sitemap/anchor website internal link discovery and Wikipedia/DuckDuckGo authority citations. Built OnboardingGate.tsx (locking empty studio tabs until submitted or explicitly unlocked) and AgentPipelineTheatre.tsx (animated 11-agent pipeline tracker + live ResearchPacket preview) wired to generation.server.ts (`enrichment` op) & useGeneration.ts.",
+      "Phase 2: Built LeftStudioPanel.tsx replacing Brief/Outline tabs with AI Helper (supporting both selection and full-article rewrites, quick chips, and inline diff preview), Readability (live Grade Level/Flesch metrics, language guardrails, toggleable highlight overlays), and SEO & Links (keyword/entity coverage + verified internal/external link 1-click insertion + BriefSettingsModal.tsx).",
+      "Phase 3: Upgraded ArticleEditor.tsx, model.ts, and assets.tsx exports to full H1–H6 fidelity, wired multi-tier Readability ProseMirror decorations (`veryHard`, `hard`, `passive`, `simpler`), and added both a floating selection bar and right-click 'Tell AI about it' context menu.",
+      "Phase 4: Built SearchAppearancePanel.tsx with Google Desktop/Mobile SERP Canvas simulator, character & pixel width progress bars, 5 selectable Meta Title & 4 Description options, canonical URL slug sanitization, FAQPage rich result preview, and 1-click Article + FAQPage JSON-LD copy.",
+      "Phase 5: Added clickable Table of Contents jump pills, editable 50-word AEO Direct Answer Box, 1200x630 16:9 FeaturedBannerArtwork.tsx with SVG-to-PNG download, WCAG Alt Text Sub-Agent grading across Hero + Section visuals, tighter zero-gap .visual framing, and interactive FAQ Accordion editor.",
+      "Phase 6: Shipped adapters/socialVisualRegistry.ts defining 2026 dimensions across all 9 channels (Instagram/LinkedIn 1080x1350 carousels with live multi-slide preview, X 1600x900 landscape, Pinterest 1000x1500 vertical Pin, Facebook/Reddit/Quora 1200x630, YouTube 1280x720 thumbnail + AI Short/Long video scripts).",
+      "Phase 7: Verified Daylight & Dark Studio parity in workspace.module.css, added 5 new V3 test suites in tests/ai-tools/writer-workspace.test.ts (27/27 tests passing), updated all AI_CONTENT_WRITER_V3_BLUEPRINT phases to Completed in /founder-hub, and verified clean tsc + foundation tests + Next.js build.",
+    ],
+    blogPostDraftMarkdown: `# Shipping AI Content Writer Studio V3: 11 Specialized AI Agents Inside One Unified Next.js Workspace
+
+In **Sprint 15**, we completed all 7 phases transforming \`/ai-content-writer\` into an end-to-end multi-agent editorial and distribution studio:
+
+- **Strict Onboarding + Live Research Packet**: Scans real internal pages from the author's website via SSRF-safe sitemap/HTML parsing and discovers verified background citations before outlining.
+- **11-Step Animated Multi-Agent Pipeline**: Visualizes Brief Analysis, Keywords & Entities, Web Search, Internal Links, SERP Meta, 16:9 Featured Banner + Alt Text, Outline, Section Writing, Infographics, Readability/FAQ QA, and 9 Social/Video adapters.
+- **Reader-First Studio Editor**: Full H1–H6 support, toggleable Hemingway-grade readability highlights, right-click *"Tell AI about it"* contextual editing, interactive Google Desktop/Mobile SERP simulator with Article + FAQPage JSON-LD, and modular 2026 social visual adapters.`,
+    filesTouched: [
+      "features/writer-workspace/types.ts",
+      "features/writer-workspace/model.ts",
+      "features/writer-workspace/research.server.ts",
+      "app/api/writer-workspace/research/route.ts",
+      "features/writer-workspace/generation.server.ts",
+      "features/writer-workspace/useGeneration.ts",
+      "features/writer-workspace/OnboardingGate.tsx",
+      "features/writer-workspace/AgentPipelineTheatre.tsx",
+      "features/writer-workspace/LeftStudioPanel.tsx",
+      "features/writer-workspace/BriefSettingsModal.tsx",
+      "features/writer-workspace/SearchAppearancePanel.tsx",
+      "features/writer-workspace/FeaturedBannerArtwork.tsx",
+      "features/writer-workspace/adapters/socialVisualRegistry.ts",
+      "features/writer-workspace/ArticleEditor.tsx",
+      "features/writer-workspace/assets.tsx",
+      "features/writer-workspace/AssetDeck.tsx",
+      "features/writer-workspace/WriterWorkspace.tsx",
+      "features/writer-workspace/workspace.module.css",
+      "tests/ai-tools/writer-workspace.test.ts",
+      "lib/founder-hub/data.ts",
+    ],
+    commits: ["codex/infographic-studio-redesign"],
+    status: "Completed & Live",
+  },
+  {
+    id: "log-sprint-14-ai-writer-v3-audit-contrast-and-blueprint",
+    sprintNumber: 14,
+    date: "2026-11-12",
+    title: "AI Content Writer V3 Strategy: Dark-Studio Textarea Contrast Fix, 2026 Multi-Agent Audit & 7-Phase Roadmap",
+    category: "Flagship Tool Overhaul",
+    founderRequestSummary:
+      "Review live /ai-content-writer screenshots showing white-text-on-white-textarea in Dark Studio mode and uniform social cards. Conduct deep research on 2026 AIO formatting, readability best practices (including our own /ai-seo/ai-readability-tools guide), and audit all DoItWithAI standalone tools to architect a complete multi-agent pipeline (strict onboarding gate, animated multi-agent loading preview, prompt analyzer, keyword research, competitor web search, site internal linking, SERP simulator, H1–H6 + inline 'Tell AI' editor, Left Panel AI Helper + Readability + SEO/Links, Featured + Section Infographics + Alt Text sub-agent, and modular platform-specific Social & Video adapters). Fix the dark-mode contrast bug immediately and publish the phased plan to /founder-hub.",
+    aiStrategicBlueprint:
+      "Fixed the immediate Dark Studio CSS specificity bug in features/writer-workspace/workspace.module.css where `.formStack > textarea { background: #fff !important; }` (specificity 0,2,0) beat `.darkShell :where(...)` (0,1,0), causing invisible white text in `01 · TELL YOUR STORY`. Cross-referenced 120+ repo feature modules against `features/writer-workspace/*`, DoItWithAI's published readability guide (`seo:ai-readability-tools` in sanitySnapshot.json), and 2026 AIO/social specs to write `docs/AI_CONTENT_WRITER_V3_MASTER_BLUEPRINT.md` and `AI_CONTENT_WRITER_V3_BLUEPRINT` with a clean 7-phase execution plan and modular adapter contracts so future standalone social visual upgrades auto-plug into `/ai-content-writer`.",
+    aiImplementationDetails: [
+      "Fixed Dark Studio textarea & dropdown contrast bugs in features/writer-workspace/workspace.module.css: removed `!important` from `.formStack > textarea`, added explicit `.darkShell .formStack > textarea` and `.darkShell .newsletter` dark surface rules, plus `.darkShell select option` styling for Daylight + Dark Studio parity.",
+      "Audited features/* standalone tools against features/writer-workspace/*, identifying 7 core capability integrations: SERP Simulator (`serp-preview`), Image Alt Text (`alt-text`), Deep Readability (`readability` + `seo:ai-readability-tools`), Keyword Research/Clustering (`keyword-research`), Internal/External Linking (`internal-linking`, `external-links`), Content Organizer/Schema (`faq-schema-validator`, `eeat-content-auditor`), and Platform Social/Video studios.",
+      "Authored full V3 Master Blueprint (docs/AI_CONTENT_WRITER_V3_MASTER_BLUEPRINT.md) detailing Strict Onboarding Gate, 11-Step Animated Multi-Agent Loading Theatre, Left Panel Redesign (AI Helper / Readability / SEO & Links replacing Brief/Outline), H1–H6 Tiptap upgrade + selection/right-click 'Tell AI' menu, and Modular Social Visual Adapter Registry.",
+      "Published AI_CONTENT_WRITER_V3_BLUEPRINT and Sprint 14 execution tracking directly inside /founder-hub.",
+    ],
+    blogPostDraftMarkdown: `# Designing a Multi-Agent AI Content Writer Studio: From Prompt & Competitor Research to Platform-Native Distribution
+
+Most AI article writers dump text from a single prompt into a basic box. In **Sprint 14**, we fixed a critical Dark Studio textarea contrast collision in \`/ai-content-writer\` and completed a comprehensive audit comparing our 108+ standalone SEO/visual tools against our flagship Writer Studio.
+
+### Key Architectural Upgrades Planned Across 7 Sequential Phases
+1. **Strict Onboarding + Research Packet**: Lock empty studio tabs until the user submits a topic or full human-language prompt plus an optional website URL for internal linking.
+2. **Animated Multi-Agent Loading Theatre**: Show each specialized sub-agent working live—Prompt Analyzer, Keyword Research, Competitor Web Search, Site Internal Linking, SERP Simulator, Featured Horizontal Banner + Alt Text, Content Organizer (H1–H6, 50w AEO box, tables, lists), Infographics, Readability/E-E-A-T QA, and Platform-Native Social & Video Sub-Agents.
+3. **Reader-First Editing**: Move the AI revision helper into a dedicated Left Panel alongside Deep Readability comprehension bands and SEO/Link inspection, plus an inline *"Tell AI about it"* menu inside an H1–H6 rich editor.`,
+    filesTouched: [
+      "features/writer-workspace/workspace.module.css",
+      "docs/AI_CONTENT_WRITER_V3_MASTER_BLUEPRINT.md",
+      "lib/founder-hub/data.ts",
+      "features/founder-hub/FounderCommandCenterClient.tsx",
+    ],
+    commits: ["pending"],
+    status: "Completed & Live",
+  },
+  {
+    id: "log-sprint-13-gsc-triple-optimization-and-build-fix",
+    sprintNumber: 13,
+    date: "2026-11-12",
+    title: "GSC Top 3 Performance Breakthrough, Pure-SVG Prism Engine & Triple High-Intent Tool Redesign",
+    category: "Flagship Content & Keyword Strategy",
+    founderRequestSummary:
+      "Analyze the latest Google Search Console performance data showing 3 breakthrough URLs generating clicks (tools/journalist-pitch-builder at 14.3% CTR, prompts/linkedin-personal-branding-b2b-prompts at 100% CTR pos 5.0, and tools/downloadable-ai-tools at 100% CTR pos 5.0). Optimize and improve these 3 tools with enhanced UX, scannability, interactive presets, category filters, expanded high-intent keywords, and structured HowTo/Product schemas. Also fix the Vercel production build failure caused by canvas/DOM dependencies and record all engineering actions in /founder-hub.",
+    aiStrategicBlueprint:
+      "Resolved the Vercel Next.js build failure by pruning @antv/infographic and writing an in-module, pure-SVG DOM-free AST renderer and Arial metrics table in lib/blog-infographic-studio/prism-renderer.ts (guaranteeing 234/234 static pages compile cleanly). Next, conducted deep UX and SEO enhancement across the top 3 GSC performers: (1) Added 4 real-world query presets (Connectively HARO, Featured.com Q&A, Qwoted Expert, Inc. Magazine Data Pitch) + live Scannability Scorecard status pills & HowTo schema to Journalist Pitch Builder; (2) Added interactive quick-filter category pills (All 83 Prompts, Headlines, 140c Hooks, Teardowns, Carousels, Memos, Commenting, DMs) + 2026 intent metadata to LinkedIn B2B Prompts; (3) Upgraded Downloadable AI Tools Hub metadata, H1, and copy from 90+ to 125+ portable standalone tools matching our 125 built packages with zero-terminal setup and custom BYOK API keys.",
+    aiImplementationDetails: [
+      "Fixed writer-workspace generation type error: Changed maxRetries in features/writer-workspace/generation.server.ts to 0, satisfying GeminiClient's strict options contract.",
+      "Resolved static build memory limit: Removed experimental optimizeCss from next.config.js, preventing V8 worker heap exhaustion on large CSS modules during 234-route prerendering.",
+      "Added /ai-content-writer to global navigation: Added AI Content Writer tab with 'Studio' badge to desktop navbar and mobile drawer in components/Header/menuData.tsx and index.tsx.",
+      "Synchronized navigation label: Updated menu link to 'Download & Embed 125+ Tools' matching the 125 standalone packages in the catalog.",
+      "Fixed visual-brief type error: Strongly typed `expanded: { block: ArticleSourceBlock; presetTitle?: string }[]` in lib/blog-infographic-studio/visual-brief.ts so item.presetTitle resolves correctly.",
+      "Fixed Next.js App Router page export validation: Made REQUIRE_AUTH_FOR_CONTENT_WRITER_STUDIO internal in app/ai-content-writer/page.tsx, eliminating .next/types validation errors.",
+      "Added permanentRedirect export to scripts/portable-shims/navigation.ts and updated tests/tool-catalog.test.cjs, enabling 125/125 standalone portable tools to compile cleanly.",
+      "Calibrated local-seo topic accent to `#0f766e` in features/tool-catalog/discovery.ts for WCAG 4.5:1 text contrast compliance across light and dark theme navigation cards.",
+      "Fixed Next.js static build error: Removed @antv/infographic (64 bloated transitive dependencies including canvas.cjs), replaced with an ultra-fast, zero-DOM pure SVG AST compiler in lib/blog-infographic-studio/prism-renderer.ts; verified all 234 static routes compile cleanly.",
+      "Optimized Tool 1 (/tools/journalist-pitch-builder, 14.3% CTR, pos 50.4): Added 4 real-world query presets (Connectively HARO, Featured Q&A, Qwoted Expert, Inc. Magazine Data Pitch), upgraded the Scannability Scorecard with dynamic visual status pills ('Quote-Ready' vs 'Needs Review'), word count badges, and reading time indicator, expanded target keywords, and injected structured HowTo schema.",
+      "Optimized Tool 2 (/prompts/linkedin-personal-branding-b2b-prompts, 100% CTR, pos 5.0): Built interactive quick-filter category pills (All 83 Prompts, Headlines, 140c Hooks, Teardowns, Carousels, Founder Memos, Commenting, DMs) directly above the prompt search bar, updated metadata title & description for 2026 search intent, and expanded high-intent search tags.",
+      "Optimized Tool 3 (/tools/downloadable-ai-tools, 100% CTR, pos 5.0): Synchronized page title, description, and H1 from '90+' to '125+' portable tools (matching the 125 standalone packages built by scripts/build-portable-tools.mjs), expanded metadata keywords for offline PC app and embeddable widgets, and highlighted zero-terminal setup with BYOK key management.",
+      "Logged Sprint 13 and updated engineering velocity graph in /founder-hub (lib/founder-hub/data.ts).",
+    ],
+    blogPostDraftMarkdown: `# How We Optimized Our Top 3 Search Console Pages for Maximum CTR & Conversions
+
+When Google Search Console (GSC) shows early impressions and clicks on specific pages, search engines are testing user satisfaction. In our 24-hour report, three pages proved early organic demand:
+1. **/tools/journalist-pitch-builder (14.3% CTR from Position 50.4)**: High CTR deep in SERPs means journalists, founders, and PR specialists need fast, quote-ready pitches for Connectively (formerly HARO) and Qwoted. We added 4 one-click query presets, real-time scannability health scoring, and rich HowTo schema.
+2. **/prompts/linkedin-personal-branding-b2b-prompts (100% CTR at Position 5.0)**: Ranking in the top 5 for B2B founder personal branding. We added interactive one-click category filtering for all 83 prompt templates across 8 content types (Hooks, Teardowns, Carousels, Founder Memos) to eliminate bounce rates.
+3. **/tools/downloadable-ai-tools (100% CTR at Position 5.0)**: Users searching for offline and embeddable widgets. We updated the catalog count from 90+ to 125+ portable standalone tools, detailing zero-terminal local running and transparent BYOK key configuration.
+
+By pairing rapid SEO data feedback with immediate UX execution, we convert emerging impressions into long-term organic authority.`,
+    filesTouched: [
+      "lib/blog-infographic-studio/prism-renderer.ts",
+      "package.json",
+      "pnpm-lock.yaml",
+      "features/journalist-pitch-builder/model.ts",
+      "features/journalist-pitch-builder/JournalistPitchBuilderClient.tsx",
+      "app/tools/journalist-pitch-builder/page.tsx",
+      "features/prompts/catalog.ts",
+      "features/prompts/details.ts",
+      "features/prompts/LinkedinB2bPromptLibrary.tsx",
+      "app/tools/downloadable-ai-tools/page.tsx",
+      "lib/founder-hub/data.ts",
+    ],
+    commits: ["e061c45"],
+    status: "Completed & Live",
+  },
   {
     id: "log-sprint-12-voxfolio-ecosystem-master-calculator",
     sprintNumber: 12,
@@ -1386,6 +1749,114 @@ We engineered \`PortableToolHeroBar\` across our tool pages with two built-in vi
       "scripts/tools-foundation-smoke.cjs",
     ],
     commits: ["Oct 29–Nov 2 Foundation Commits"],
+    status: "Completed & Live",
+  },
+  {
+    id: "log-sprint-14-visual-engine-vector-stock-planner",
+    sprintNumber: 14,
+    date: "2026-11-17",
+    title: "5-Phase Visual Engine Upgrade: Commercial-Safe Editable Vector Stock Library, LLM Semantic Visual Planner & Multi-Archetype Social Renderers",
+    category: "Flagship Tool Overhaul",
+    founderRequestSummary:
+      "Upgrade the Blog Section Infographic Studio, AI Content Writer, and AI Employee Agency visual engine with a rich commercial-safe editable stock library (unDraw / OpenPeeps style SVG scenes + zero-cost photo stock resolver), an LLM Semantic Visual Director that reframes generic headings into thesis headlines with verified sourceBlockIds and percentage qualifiers, and distinct visual archetypes for Pinterest 2:3 Pins and LinkedIn 4:5 Carousels.",
+    aiStrategicBlueprint:
+      "Built lib/visual-stock/vector-scenes.ts (16 recolorable MIT/CC0 vector scenes), lib/visual-stock/stock-resolver.ts (verified stock selection + Pexels/Pixabay resolver), lib/blog-infographic-studio/percentage-review.ts, app/api/ai-tools/infographic-plan/route.ts, and upgraded prism-renderer.ts, pin-svg-preview.ts, pinterest-carousel-exporter.ts, byok-batch-runner.ts, and antv-pilot/pilot.cjs.",
+    aiImplementationDetails: [
+      "Created 16 commercial-safe, multi-layered recolorable SVG vector scenes in lib/visual-stock/vector-scenes.ts and stock-resolver.ts with automatic topic matching and Pexels/Pixabay commercial-safe photo fallback.",
+      "Built /api/ai-tools/infographic-plan powered by runAutomationJsonPrompt with strict sourceBlockIds and percentage qualifier verification (lib/blog-infographic-studio/percentage-review.ts).",
+      "Upgraded synthesizeInfographicHeadlineAndSubheadline, sectionHeadline, and buildUniversalArticleOverview so definitional questions ('What Is AI SEO?') become standalone thesis headlines and multi-section articles synthesize an Executive Overview visual.",
+      "Upgraded Pinterest 2:3 Pins (pin-svg-preview.ts), LinkedIn 4:5 Carousels (pinterest-carousel-exporter.ts), and isolated AntV 18-template router (scripts/visual_engine/antv-pilot/pilot.cjs) with distinct visual archetypes and embedded vector scenes.",
+    ],
+    blogPostDraftMarkdown: `# How We Built a Zero-Cost, Source-Verified Visual Engine With Editable Vector Scenes & Multi-Archetype Social Exports`,
+    filesTouched: [
+      "lib/visual-stock/vector-scenes.ts",
+      "lib/visual-stock/stock-resolver.ts",
+      "lib/blog-infographic-studio/percentage-review.ts",
+      "app/api/ai-tools/infographic-plan/route.ts",
+      "lib/blog-infographic-studio/prism-renderer.ts",
+      "lib/autonomous-agents/pin-svg-preview.ts",
+      "lib/autonomous-agents/pinterest-carousel-exporter.ts",
+      "scripts/visual_engine/antv-pilot/pilot.cjs",
+    ],
+    commits: ["codex/infographic-studio-redesign"],
+    status: "Completed & Live",
+  },
+  {
+    id: "log-sprint-15-infographic-studio-v3-6-phase-overhaul",
+    sprintNumber: 15,
+    date: "2026-11-21",
+    title: "Blog Infographic Studio V3 (6-Phase Master Plan): Anaphora Resolution, 10 Flagship Layouts, 3 Concepts per Section, Brand Background Lock & Canva-Style Controls",
+    category: "Flagship Tool Overhaul",
+    founderRequestSummary:
+      "Execute all 6 phases of the Blog Infographic Studio V3 Master Plan end-to-end: eliminate context-dependent anaphoric headings ('Common Mistakes When Implementing These Strategies', 'Treating Them as Mutually Exclusive', bare 'FAQs'), fix leading periods and truncated bottom banners, stop cross-domain logo/signature leakage, lock website brand colors across generated infographics, generate 3 switchable infographic concepts per section with tailored copy and diagram structures (3-Stage Pipeline Flow, Two-Part Formula Split, Tapered Conversion Funnel, 2x2 Quadrant Matrix), and expose Canva-style typography/spacing/banner/icon controls.",
+    aiStrategicBlueprint:
+      "Upgraded topic-intelligence.ts, standalone-copywriter.ts, visual-qa-critic.ts, brand-source.ts, appearance.ts, layout-registry.ts (10 PRISM_LAYOUTS), prism-renderer.ts, visual-brief.ts (buildSectionConceptAlternatives), project.ts, /api/ai-tools/infographic-plan, InfographicDesignControls.tsx, BlogInfographicStudio.tsx, and created lib/visual-stock/icon-database.ts (56 searchable icons across 7 categories).",
+    aiImplementationDetails: [
+      "Phase 0 & 1: Eliminated duplicate header vector scenes, implemented responsive multi-line calloutBoxH calculation, added extractArticleSubject + rewriteDependentSectionTitle anaphora resolution, and stripped leading punctuation after bold prefix removal.",
+      "Phase 2: Added strict per-domain brand signature/logo isolation on URL extraction, KNOWN_DOMAIN_BRANDS + inline header/CTA CSS brand color scanning, and Brand Background Lock Modes (theme-default, brand-vibrant, brand-dark, brand-soft).",
+      "Phase 3 & 4: Expanded PRISM_LAYOUTS to 10 compositions (adding pipeline-flow, split-equation, funnel-stages, quadrant-matrix) and built buildSectionConceptAlternatives generating 3 switchable concepts per section with tailored copy and layouts.",
+      "Phase 5 & 6: Built lib/visual-stock/icon-database.ts (56 semantic SVG icons across 7 categories) + custom card icon upload + per-card accent color + Canva-style typography, padding, gap, corner radius, accent stripe, callout banner, and footer dock controls.",
+    ],
+    blogPostDraftMarkdown: `# Blog Infographic Studio V3: Multi-Concept Section Ideation, 10 Flagship Diagram Archetypes & Canva-Style Customization`,
+    filesTouched: [
+      "lib/visual-stock/icon-database.ts",
+      "lib/blog-infographic-studio/types.d.ts",
+      "lib/blog-infographic-studio/layout-registry.ts",
+      "lib/blog-infographic-studio/brand-source.ts",
+      "lib/blog-infographic-studio/appearance.ts",
+      "lib/blog-infographic-studio/skills/topic-intelligence.ts",
+      "lib/blog-infographic-studio/skills/standalone-copywriter.ts",
+      "lib/blog-infographic-studio/skills/visual-qa-critic.ts",
+      "lib/blog-infographic-studio/visual-brief.ts",
+      "lib/blog-infographic-studio/prism-renderer.ts",
+      "lib/blog-infographic-studio/project.ts",
+      "lib/blog-infographic-studio/samples.ts",
+      "app/api/ai-tools/infographic-plan/route.ts",
+      "features/blog-infographic-studio/InfographicDesignControls.tsx",
+      "features/blog-infographic-studio/BlogInfographicStudio.tsx",
+      "docs/PRISM_FORGE_INFOGRAPHIC_HANDBOOK.md",
+    ],
+    commits: ["codex/infographic-studio-redesign"],
+    status: "Completed & Live",
+  },
+  {
+    id: "log-sprint-16-infographic-v4-stock-18-diagrams",
+    sprintNumber: 16,
+    date: "2026-11-21",
+    title: "Blog Infographic Studio V4 Stock Expansion: 18 Flagship Diagram Archetypes, 80 Icons, 32 Vector Scenes, All-Section Brand Harmony & Low-Cost AI Caching",
+    category: "Flagship Tool Overhaul",
+    founderRequestSummary:
+      "Massively expand the commercial-safe visual stock and structurally distinct diagram types (charts, donuts, pyramids, org/hierarchy trees, flywheels, flowcharts, before/after splits, KPI bentos), detect real website brand colors from external CSS/SVG logos and apply them across all generated sections, generate 4 distinct visual genre concepts per section, add a visual searchable SVG icon & scene gallery picker, and add low-cost single-section AI polish with caching.",
+    aiStrategicBlueprint:
+      "Expanded semantic-iconography.ts & icon-database.ts to 80 icons (8 categories), vector-scenes.ts to 32 recolorable MIT/CC0 scenes, layout-registry.ts/samples.ts/prism-renderer.ts to 18 native SVG diagram engines (6 categories, 144 layout×theme combos passing), upgraded brand-source.ts + universal-extract + appearance.ts (brandSectionVariantColors) + visual-brief.ts (18-layout semantic router + 4 unique concepts/section), added sectionIds & bounded TTL LRU cache to /api/ai-tools/infographic-plan, and shipped IconPickerGrid.tsx + 6-category gallery filters + 32-scene thumbnail gallery + low-cost single-section AI polish button.",
+    aiImplementationDetails: [
+      "Expanded PRISM_LAYOUTS from 10 to 18 structurally distinct SVG diagram archetypes across 6 filterable categories: added stat-bars, donut-breakdown, hierarchy-tree, pyramid-tiers, cycle-wheel, before-after, zigzag-flowchart, and kpi-bento (144/144 layout×palette combos passing with 0 fit/contrast issues).",
+      "Expanded commercial-safe editable stock to 80 Lucide-grade SVG icons across 8 categories (with Canva-style IconPickerGrid.tsx visual SVG search & custom PNG/JPG/WebP upload) and 32 recolorable MIT/CC0 vector scenes (with live brand-tinted thumbnail gallery in Design controls).",
+      "Upgraded real-time website brand detection to fetch external site stylesheets safely via fetchPublic, inspect inline header/nav SVG logo fills and primary CTA rules, and propagate extracted brand colors across ALL article sections via brandSectionVariantColors.",
+      "Upgraded buildSectionConceptAlternatives to generate 4 unique multi-genre concepts per section and upgraded /api/ai-tools/infographic-plan with low-cost single-section sectionIds targeting (~85% token savings) plus a 40-entry 15-min TTL response cache.",
+    ],
+    blogPostDraftMarkdown: `# Scaling Our Pure-SVG Infographic Engine to 18 Diagram Archetypes, 80 Icons, 32 Editable Vector Scenes & Zero-Waste AI Caching`,
+    filesTouched: [
+      "lib/blog-infographic-studio/skills/semantic-iconography.ts",
+      "lib/visual-stock/icon-database.ts",
+      "lib/visual-stock/vector-scenes.ts",
+      "lib/blog-infographic-studio/layout-registry.ts",
+      "lib/blog-infographic-studio/samples.ts",
+      "lib/blog-infographic-studio/prism-renderer.ts",
+      "lib/blog-infographic-studio/appearance.ts",
+      "lib/blog-infographic-studio/brand-source.ts",
+      "lib/blog-infographic-studio/skills/visual-qa-critic.ts",
+      "lib/blog-infographic-studio/visual-brief.ts",
+      "app/api/ai-tools/universal-extract/route.ts",
+      "app/api/ai-tools/infographic-plan/route.ts",
+      "features/blog-infographic-studio/IconPickerGrid.tsx",
+      "features/blog-infographic-studio/InfographicDesignControls.tsx",
+      "features/blog-infographic-studio/BlogInfographicStudio.tsx",
+      "tests/ai-tools/prism-infographic-design.test.ts",
+      "tests/ai-tools/visual-stock-and-planner.test.ts",
+      "docs/PRISM_FORGE_INFOGRAPHIC_HANDBOOK.md",
+    ],
+    commits: ["codex/infographic-studio-redesign"],
     status: "Completed & Live",
   },
 ];

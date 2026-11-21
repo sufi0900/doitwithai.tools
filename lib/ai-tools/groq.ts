@@ -1,5 +1,5 @@
 import type { GenerationParams } from "./gemini";
-import { readBoundedJson } from "./request-body";
+import { readBoundedJson, extractJsonText } from "./request-body";
 
 export function getGroqModel(image = false) {
   return image
@@ -129,7 +129,7 @@ export async function generateGroq<T>(
     try {
       return {
         output_parsed: params.text.format.parse(
-          JSON.parse(choice.message?.content || ""),
+          JSON.parse(extractJsonText(choice.message?.content || "")),
         ),
       };
     } catch {
@@ -137,7 +137,10 @@ export async function generateGroq<T>(
     }
     } catch (cause) {
       if (cause instanceof GroqError) {
-        if (cause.status === 429 && keyIdx + 1 < keys.length) {
+        if (
+          [429, 503, 401, 403].includes(cause.status) &&
+          keyIdx + 1 < keys.length
+        ) {
           lastError = cause;
           continue;
         }

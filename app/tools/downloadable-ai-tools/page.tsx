@@ -12,21 +12,24 @@ import {
 
 const pageUrl = "https://doitwithai.tools/tools/downloadable-ai-tools";
 const title =
-  "90+ Free Downloadable & Embeddable AI SEO Tools (PC App, HTML5 & React)";
+  "125+ Free Downloadable & Embeddable AI SEO Tools (PC App, HTML5 & React Component)";
 const description =
-  "Download unified Next.js + HTML5 desktop and web app packages for 90+ AI SEO tools. Run on your PC with zero terminal setup, use our Default Cloud API or your own API key, customize any color, and embed on WordPress or Next.js.";
+  "Download unified Next.js + HTML5 desktop and web app packages for 125+ AI SEO tools. Run on your Windows or Mac PC with zero terminal setup, use our Default Cloud API or custom BYOK key, customize brand colors, and embed on WordPress, Webflow, or Shopify.";
 
 export const metadata: Metadata = {
   title,
   description,
   keywords: [
     "downloadable AI SEO tools",
-    "embeddable SEO widgets",
+    "embeddable SEO widgets for WordPress",
+    "offline SEO tools for PC",
     "free HTML5 SEO tools",
     "portable React SEO components",
-    "offline SEO tools for PC",
-    "white label SEO tools",
+    "standalone client side SEO calculator",
+    "white label SEO tools with BYOK",
     "vibe coding SEO tools",
+    "Next.js embeddable SEO widgets",
+    "zero install desktop SEO app",
     "Do It With AI Tools",
   ],
   alternates: { canonical: pageUrl },
@@ -135,7 +138,7 @@ export default function DownloadableAiToolsPage() {
                 Build with AI · Portable HTML, React &amp; Vibe-Coding Kit
               </p>
               <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                Download &amp; Embed 90+{" "}
+                Download &amp; Embed 125+{" "}
                 <span className={toolHeroHeading}>
                   Portable AI &amp; SEO Tools
                 </span>

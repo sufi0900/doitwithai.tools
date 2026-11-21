@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTransferredToolRuntime } from "@/features/website-builder/tools/TransferredToolRuntimeContext";
 import JSZip from "jszip";
 import {
   Archive,
@@ -1780,8 +1781,20 @@ export default function PortableToolHeroBar({
   workspaceId?: string;
 }) {
   const pathname = usePathname();
+  const transferred = useTransferredToolRuntime();
   const [modalOpen, setModalOpen] = useState(false);
   const [downloadingZip, setDownloadingZip] = useState(false);
+  const [isEmbeddedView, setIsEmbeddedView] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    setIsEmbeddedView(
+      params.get("embed") === "1" ||
+        params.get("embed") === "true" ||
+        params.get("app") === "1",
+    );
+  }, [pathname]);
 
   const detectedSlug = useMemo(() => {
     if (slug) return slug;
@@ -1798,7 +1811,7 @@ export default function PortableToolHeroBar({
     [detectedSlug],
   );
 
-  if (!tool) return null;
+  if (!tool || isEmbeddedView || transferred?.isTransferredTool) return null;
 
   function handleUseToolNow() {
     if (typeof document === "undefined") return;

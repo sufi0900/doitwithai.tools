@@ -1,0 +1,153 @@
+/*
+  Velocity Atelier — automotive section scenes (V18.2)
+  Same engine and CSS 3D system as section-cinema.css (no WebGL). Every object here is themed to a section:
+  About → alloy wheel on a turntable · Experience → night road + light-bar gantries · Skills → instrument cluster
+  Projects → showroom light rail + gallery frames · Contact → headlights on, anamorphic flares, bokeh.
+*/
+[data-cinema-template="velocity-atelier"] { --vx-ice: 143, 211, 255; }
+[data-cinema-template="velocity-atelier"] .cine-about { --gx0: 20cqw; --gy0: 60%; --gx1: 88cqw; --gy1: 20%; }
+[data-cinema-template="velocity-atelier"] .cine-glow { background: radial-gradient(ellipse 34cqw 46% at calc(20cqw + var(--gx0, 74cqw)) var(--gy0, 42%), rgba(var(--accent-rgb), .15), transparent 70%), radial-gradient(ellipse 26cqw 34% at calc(20cqw + var(--gx1, 12cqw)) var(--gy1, 86%), rgba(var(--vx-ice), .09), transparent 72%); }
+
+/* ───────── ABOUT — alloy wheel on a turntable ───────── */
+.vx-wheel { --w: clamp(120px, 19cqw, 236px); left: 15%; top: 55%; width: 0; height: 0;
+  transform: translate3d(calc(var(--cmx) * -24px * var(--cine-i)), calc(var(--cmy) * -16px * var(--cine-i) + var(--cs) * -40px * var(--cine-i)), 50px) rotateX(calc(var(--cmy) * -8deg)) rotateY(calc(-34deg + var(--cs) * 38deg + var(--cmx) * 14deg)); }
+.about-section.has-headshot .vx-wheel { left: 89%; top: 27%; --w: clamp(90px, 13cqw, 160px); }
+.vx-wheel-spin { position: absolute; inset: 0; transform-style: preserve-3d; animation: vx-spin calc(9s * var(--cine-t)) linear infinite; }
+.vx-wheel > * > *, .vx-caliper, .vx-sheen { position: absolute; left: calc(var(--d, var(--w)) / -2); top: calc(var(--d, var(--w)) / -2); width: var(--d, var(--w)); height: var(--d, var(--w)); border-radius: 50%; }
+.vx-tire { transform: translateZ(calc((var(--k) - 4) * 3.4px)); background: radial-gradient(closest-side, transparent 0 60%, #0c0e12 61%, #181b21 88%, #08090c 100%); }
+.vx-tire:nth-child(9) { background: radial-gradient(closest-side, transparent 0 60%, rgba(255, 255, 255, .16) 61% 62.4%, transparent 63%), radial-gradient(closest-side, transparent 0 60%, #1c2027 61%, #10131a 94%, #08090c 100%); }
+.vx-disc { --d: calc(var(--w) * .6); transform: translateZ(3px); background: radial-gradient(closest-side, #14171c 0 22%, #9aa2ae 23% 26%, #4b515b 27% 83%, #a4acb8 84% 88%, transparent 89%); }
+.vx-caliper { --d: calc(var(--w) * .62); transform: translateZ(9px); background: conic-gradient(from 300deg, var(--accent) 0 64deg, transparent 64deg);
+  -webkit-mask: radial-gradient(closest-side, transparent 0 62%, #000 63% 88%, transparent 89%); mask: radial-gradient(closest-side, transparent 0 62%, #000 63% 88%, transparent 89%); filter: drop-shadow(0 0 6px rgba(var(--accent-rgb), .5)); }
+.vx-rim { --d: calc(var(--w) * .62); transform: translateZ(13px); background: repeating-conic-gradient(from 0deg, #eef2f8 0 4.5deg, #8b93a1 4.5deg 8.5deg, transparent 8.5deg 36deg);
+  -webkit-mask: radial-gradient(closest-side, transparent 0 15%, #000 16% 100%); mask: radial-gradient(closest-side, transparent 0 15%, #000 16% 100%); }
+.vx-lip { --d: calc(var(--w) * .66); transform: translateZ(15px); border: calc(var(--w) * .032) solid #d3dae5; box-shadow: inset 0 0 9px rgba(0, 0, 0, .65), 0 0 0 1px rgba(255, 255, 255, .22), 0 0 24px rgba(var(--accent-rgb), .18); }
+.vx-hub { --d: calc(var(--w) * .16); transform: translateZ(18px); background: radial-gradient(circle at 35% 30%, #fff, #96a0af 40%, #2a2f38 100%); box-shadow: 0 0 0 3px #161a21; }
+.vx-sheen { transform: translateZ(22px); background: linear-gradient(115deg, transparent 38%, rgba(255, 255, 255, .26) 50%, transparent 62%) 0 0 / 260% 100%; animation: vx-sheen calc(5.5s * var(--cine-t)) ease-in-out infinite; }
+.vx-turntable { position: absolute; left: calc(15% - 13cqw); top: calc(55% - 3.5cqw); width: 26cqw; height: 26cqw; border-radius: 50%; transform: rotateX(78deg) translateZ(40px);
+  background: radial-gradient(circle, rgba(var(--accent-rgb), .26), transparent 62%); border: 1px solid rgba(var(--accent-rgb), .4); box-shadow: inset 0 0 50px rgba(var(--accent-rgb), .14); }
+.vx-turntable::after { content: ""; position: absolute; inset: 7%; border-radius: 50%; animation: vx-rotate calc(40s * var(--cine-t)) linear infinite;
+  background: repeating-conic-gradient(rgba(255, 255, 255, .4) 0 .7deg, transparent .7deg 7.5deg); -webkit-mask: radial-gradient(closest-side, transparent 0 91%, #000 92% 100%); mask: radial-gradient(closest-side, transparent 0 91%, #000 92% 100%); }
+.about-section.has-headshot .vx-turntable { left: calc(89% - 9cqw); top: calc(27% + 1cqw); width: 18cqw; height: 18cqw; }
+.vx-swatch { width: 7.5cqw; height: 10.5cqw; border-radius: 10px; border: 1px solid rgba(255, 255, 255, .18); background: linear-gradient(140deg, var(--sw1), var(--sw2));
+  box-shadow: 0 24px 50px rgba(0, 0, 0, .5), inset 0 1px 0 rgba(255, 255, 255, .45);
+  transform: translate3d(calc(var(--cmx) * var(--pm, 18) * 1px), calc(var(--cs) * var(--par, -40) * 1px * var(--cine-i)), var(--z, -120px)) rotateY(var(--ry, -24deg)) rotateZ(var(--rz, 8deg));
+  animation: cine-bob calc(10s * var(--cine-t)) ease-in-out infinite alternate; }
+.vx-swatch::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(120deg, rgba(255, 255, 255, .34), transparent 34%, transparent 70%, rgba(255, 255, 255, .1)); }
+.vx-swatch.s1 { left: 84%; top: -1%; --sw1: #ff7a5a; --sw2: #6d1108; --ry: -28deg; --rz: 10deg; --par: -50; }
+.vx-swatch.s2 { left: 100%; top: 40%; --sw1: #6c7587; --sw2: #0d1016; --ry: -36deg; --rz: -6deg; --z: -220px; --par: 30; width: 8.5cqw; height: 12cqw; }
+.vx-swatch.s3 { left: 90%; top: 76%; --sw1: #bfe8ff; --sw2: #26648b; --ry: -30deg; --rz: 14deg; --z: -160px; --par: -20; width: 6.5cqw; height: 9cqw; }
+
+/* ───────── EXPERIENCE — night road, gantries, streaks ───────── */
+.vx-road { position: absolute; left: 5%; right: -30%; bottom: -10%; height: 80%; overflow: hidden; transform-origin: 50% 100%; transform: rotateX(72deg);
+  background: linear-gradient(to top, rgba(14, 18, 26, .95), rgba(14, 18, 26, .3) 70%, transparent);
+  -webkit-mask-image: linear-gradient(to top, #000 4%, transparent 86%); mask-image: linear-gradient(to top, #000 4%, transparent 86%); }
+.vx-road-lines { position: absolute; left: 0; right: 0; top: -260px; bottom: 0; animation: vx-road calc(1.7s * var(--cine-t)) linear infinite;
+  background: linear-gradient(rgba(255, 255, 255, .85) 0 90px, transparent 90px 260px) center / 10px 260px repeat-y,
+    linear-gradient(rgba(var(--accent-rgb), .95), rgba(var(--accent-rgb), .95)) 23% 0 / 5px 100% no-repeat, linear-gradient(rgba(var(--vx-ice), .95), rgba(var(--vx-ice), .95)) 77% 0 / 5px 100% no-repeat; }
+.vx-gantries { position: absolute; left: 68%; top: 44%; width: 0; height: 0; transform-style: preserve-3d;
+  transform: translateZ(calc(var(--cs) * 150px * var(--cine-i))) rotateZ(calc(var(--cs) * 4deg)) rotateY(calc(var(--cmx) * -7deg)) rotateX(calc(var(--cmy) * 6deg)); }
+.vx-arch { position: absolute; width: 52cqw; height: 30cqw; left: -26cqw; top: -15cqw; opacity: 0; border-radius: 26px 26px 0 0; border-top: 3px solid rgba(255, 255, 255, .88); border-left: 1px solid rgba(255, 255, 255, .13); border-right: 1px solid rgba(255, 255, 255, .13);
+  box-shadow: 0 -20px 56px rgba(var(--accent-rgb), .3), inset 0 34px 60px -34px rgba(var(--accent-rgb), .2); animation: cine-tunnel calc(21s * var(--cine-t)) linear infinite; animation-delay: calc(var(--k) * -3.5s * var(--cine-t)); }
+.vx-streak { position: absolute; left: 0; height: 2px; width: 30cqw; opacity: 0; animation: vx-streak calc(var(--d, 3s) * var(--cine-t)) linear infinite; animation-delay: var(--dl, 0s);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .9), transparent); }
+.vx-streak.st0 { top: 18%; --d: 2.6s; --dl: -.4s; } .vx-streak.st1 { top: 27%; --d: 3.4s; --dl: -1.8s; width: 42cqw; background: linear-gradient(90deg, transparent, rgba(var(--accent-rgb), .95), transparent); }
+.vx-streak.st2 { top: 39%; --d: 2.2s; --dl: -.9s; width: 22cqw; } .vx-streak.st3 { top: 52%; --d: 3s; --dl: -2.1s; background: linear-gradient(90deg, transparent, rgba(var(--vx-ice), .95), transparent); }
+.vx-streak.st4 { top: 63%; --d: 2.8s; --dl: -.2s; width: 36cqw; } .vx-streak.st5 { top: 74%; --d: 3.6s; --dl: -1.3s; background: linear-gradient(90deg, transparent, rgba(var(--accent-rgb), .9), transparent); } .vx-streak.st6 { top: 84%; --d: 2.4s; --dl: -1.9s; width: 26cqw; }
+.vx-post { width: 3px; height: 14cqw; border-radius: 2px; background: linear-gradient(to top, transparent, rgba(255, 255, 255, .8)); box-shadow: 0 0 24px rgba(var(--accent-rgb), .55);
+  transform: translate3d(calc(var(--cmx) * 20px), calc(var(--cs) * var(--par, -60) * 1px * var(--cine-i)), var(--z, -200px)); animation: cine-bob calc(8s * var(--cine-t)) ease-in-out infinite alternate; }
+.vx-post.a { left: -2%; top: 24%; --z: -240px; --par: -70; } .vx-post.b { left: 101%; top: 58%; --z: -110px; --par: 44; height: 9cqw; }
+
+/* ───────── SKILLS — instrument cluster ───────── */
+.vx-cluster { --g: clamp(130px, 22cqw, 250px); left: 86%; top: 25%; width: 0; height: 0; transform-style: preserve-3d;
+  transform: translate3d(calc(var(--cmx) * -18px * var(--cine-i)), calc(var(--cmy) * -12px * var(--cine-i) + var(--cs) * -30px * var(--cine-i)), 40px) rotateX(calc(10deg + var(--cmy) * -10deg)) rotateY(calc(-16deg + var(--cs) * 30deg + var(--cmx) * 14deg)); }
+.vx-gauge { position: absolute; left: calc(var(--g) / -2); top: calc(var(--g) / -2); width: var(--g); height: var(--g); border-radius: 50%; transform-style: preserve-3d;
+  background: radial-gradient(circle at 50% 40%, #1a212c, #090b10 72%);
+  box-shadow: 0 0 0 calc(var(--g) * .03) #262c37, 0 0 0 calc(var(--g) * .036) rgba(255, 255, 255, .24), 0 30px 60px rgba(0, 0, 0, .55), 0 0 64px rgba(var(--accent-rgb), .15); }
+.vx-track, .vx-progress, .vx-ticks { position: absolute; inset: 7%; border-radius: 50%; }
+.vx-track { background: conic-gradient(from 225deg, rgba(255, 255, 255, .11) 0 270deg, transparent 270deg); -webkit-mask: radial-gradient(closest-side, transparent 0 80%, #000 81% 92%, transparent 93%); mask: radial-gradient(closest-side, transparent 0 80%, #000 81% 92%, transparent 93%); }
+.vx-progress { background: conic-gradient(from 225deg, rgba(var(--accent-rgb), .45) 0, var(--accent) calc(var(--cp) * 270deg - 2deg), #fff calc(var(--cp) * 270deg), transparent calc(var(--cp) * 270deg));
+  -webkit-mask: radial-gradient(closest-side, transparent 0 80%, #000 81% 92%, transparent 93%); mask: radial-gradient(closest-side, transparent 0 80%, #000 81% 92%, transparent 93%); filter: drop-shadow(0 0 7px rgba(var(--accent-rgb), .85)); transform: translateZ(3px); }
+.vx-ticks { inset: 3%; background: repeating-conic-gradient(from 225deg, rgba(255, 255, 255, .6) 0 .7deg, transparent .7deg 6.75deg);
+  -webkit-mask: conic-gradient(from 225deg, #000 0 270deg, transparent 270deg), radial-gradient(closest-side, transparent 0 89%, #000 90% 100%); -webkit-mask-composite: source-in;
+  mask: conic-gradient(from 225deg, #000 0 270deg, transparent 270deg), radial-gradient(closest-side, transparent 0 89%, #000 90% 100%); mask-composite: intersect; transform: translateZ(2px); }
+.vx-needle { position: absolute; left: 50%; bottom: 50%; width: calc(var(--g) * .022); height: 41%; margin-left: calc(var(--g) * -.011); border-radius: 3px; transform-origin: 50% 100%;
+  transform: translateZ(8px) rotate(calc(-135deg + var(--cp) * 270deg)); background: linear-gradient(to top, rgba(255, 255, 255, .25), #fff 32%, var(--accent)); box-shadow: 0 0 14px rgba(var(--accent-rgb), .9); }
+.vx-cap { position: absolute; left: 50%; top: 50%; width: calc(var(--g) * .13); height: calc(var(--g) * .13); margin: calc(var(--g) * -.065) 0 0 calc(var(--g) * -.065); border-radius: 50%; transform: translateZ(12px);
+  background: radial-gradient(circle at 35% 30%, #fff, #98a2b1 42%, #2a303b 100%); box-shadow: 0 4px 10px rgba(0, 0, 0, .5); }
+.vx-glass { position: absolute; inset: 0; border-radius: 50%; transform: translateZ(16px); background: linear-gradient(140deg, rgba(255, 255, 255, .17), transparent 38%, transparent 64%, rgba(255, 255, 255, .06)); }
+.vx-cluster { --gm: calc(var(--g) * .46); }
+.vx-gauge.mini { width: var(--gm); height: var(--gm); padding: 0; --g: var(--gm); left: calc(var(--gm) * -.5); top: calc(var(--gm) * -.5); }
+.vx-gauge.mini.a { transform: translate3d(calc(var(--gm) * -2.5), calc(var(--gm) * -.55), -20px); }
+.vx-gauge.mini.b { transform: translate3d(calc(var(--gm) * 2.7), calc(var(--gm) * .75), -20px); }
+.vx-gauge.mini.a .vx-needle { transform: translateZ(8px) rotate(calc(-135deg + (1 - var(--cp)) * 270deg)); }
+.vx-gauge.mini.b .vx-needle { transform: translateZ(8px) rotate(calc(var(--cs) * 105deg)); }
+.vx-leds { position: absolute; left: calc(var(--g) * -.5); top: calc(var(--g) * -.66); width: var(--g); display: flex; gap: 4%; transform: translateZ(10px); }
+.vx-leds i { flex: 1; height: calc(var(--g) * .034); border-radius: 2px; background: hsl(calc(132 - var(--k) * 14) 92% 58%); opacity: clamp(.16, calc(var(--cp) * 12 - var(--k)), 1); box-shadow: 0 0 12px hsl(calc(132 - var(--k) * 14) 92% 58% / .85); }
+
+/* ───────── PROJECTS — showroom light rail, cones, gallery frames ───────── */
+.vx-rail { position: absolute; left: 4%; right: 4%; top: 3%; height: 5px; border-radius: 3px; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .75) 10%, rgba(255, 255, 255, .75) 90%, transparent);
+  box-shadow: 0 0 44px rgba(255, 255, 255, .22); transform: translateZ(-60px) translateY(calc(var(--cs) * -20px * var(--cine-i))); }
+.vx-rail i { position: absolute; top: 5px; width: 40px; height: 16px; left: calc(14% + var(--k) * 36%); margin-left: -20px; border-radius: 0 0 12px 12px; background: linear-gradient(#232a35, #0d1015); box-shadow: 0 0 0 1px rgba(255, 255, 255, .14), 0 8px 24px rgba(255, 246, 236, .28); }
+.vx-cone { position: absolute; top: 4.5%; height: 90%; width: 26cqw; transform-origin: 50% 0; clip-path: polygon(46% 0, 54% 0, 100% 100%, 0 100%); opacity: .75; animation: vx-cone calc(6s * var(--cine-t)) ease-in-out infinite alternate;
+  background: linear-gradient(to bottom, rgba(255, 246, 236, .2), rgba(255, 246, 236, .05) 58%, transparent 96%); transform: translateZ(-80px) rotate(var(--r, 0deg)); }
+.vx-cone.c1 { left: calc(14% - 13cqw); --r: 9deg; } .vx-cone.c2 { left: calc(50% - 13cqw); --r: 0deg; animation-delay: -2s; } .vx-cone.c3 { left: calc(86% - 13cqw); --r: -9deg; animation-delay: -4s; }
+.vx-frame { --w: 12cqw; width: var(--w); height: calc(var(--w) * 1.32); left: calc(var(--cx) - var(--w) / 2); top: calc(var(--cy) - var(--w) * .66); border-radius: 6px; border: 1px solid rgba(255, 255, 255, .22);
+  background: linear-gradient(160deg, rgba(var(--accent-rgb), .26), rgba(18, 24, 33, .92) 56%);
+  box-shadow: 0 0 0 5px rgba(9, 12, 17, .95), 0 0 0 6px rgba(255, 255, 255, .15), 0 28px 60px rgba(0, 0, 0, .55), 0 22px 64px rgba(var(--accent-rgb), .2);
+  transform: translate3d(calc(var(--cmx) * var(--pm, 20) * 1px), calc(var(--cs) * var(--par, -60) * 1px * var(--cine-i)), var(--z, -100px)) rotateY(var(--ry, 0deg));
+  animation: cine-bob calc(9s * var(--cine-t)) ease-in-out infinite alternate; animation-delay: calc(var(--d, 0) * -1s); }
+.vx-frame::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(118deg, rgba(255, 255, 255, .22), transparent 32%, transparent 68%, rgba(255, 255, 255, .06)); }
+.vx-frame::before { content: ""; position: absolute; left: 18%; right: 18%; bottom: 14%; height: 34%; border-radius: 40% 40% 12% 12% / 70% 70% 12% 12%; background: linear-gradient(180deg, rgba(var(--accent-rgb), .8), rgba(var(--accent-rgb), .25)); opacity: .8; }
+.vx-frame.f1 { --cx: -2%; --cy: 22%; --ry: 42deg; --z: -80px; --par: -70; --pm: 30; } .vx-frame.f2 { --cx: 103%; --cy: 18%; --ry: -44deg; --z: -160px; --par: 40; --pm: 24; --d: 3; --w: 13cqw; }
+.vx-frame.f3 { --cx: 100%; --cy: 66%; --ry: -50deg; --z: -320px; --par: -28; --pm: 16; --d: 5; --w: 10cqw; opacity: .7; }
+
+/* ───────── CONTACT — headlights on ───────── */
+.vx-lane { position: absolute; left: 12%; right: 12%; bottom: -12%; height: 72%; overflow: hidden; transform-origin: 50% 100%; transform: rotateX(74deg);
+  background: linear-gradient(to top, rgba(14, 18, 26, .95), rgba(14, 18, 26, .25) 75%, transparent);
+  -webkit-mask-image: linear-gradient(to top, #000 4%, transparent 88%); mask-image: linear-gradient(to top, #000 4%, transparent 88%); }
+.vx-lane-lines { position: absolute; left: 0; right: 0; top: -260px; bottom: 0; animation: vx-road calc(2.2s * var(--cine-t)) linear infinite;
+  background: linear-gradient(rgba(255, 255, 255, .8) 0 90px, transparent 90px 260px) center / 9px 260px repeat-y,
+    linear-gradient(rgba(var(--accent-rgb), .9), rgba(var(--accent-rgb), .9)) 12% 0 / 4px 100% no-repeat, linear-gradient(rgba(var(--vx-ice), .9), rgba(var(--vx-ice), .9)) 88% 0 / 4px 100% no-repeat; }
+.vx-beam { position: absolute; top: 64%; height: 46%; width: 24cqw; transform-origin: 50% 0; clip-path: polygon(46% 0, 54% 0, 100% 100%, 0 100%); opacity: calc(.4 + var(--cp) * .4);
+  background: linear-gradient(to bottom, rgba(226, 243, 255, .34), rgba(226, 243, 255, .08) 60%, transparent); transform: rotate(var(--r, 0deg)); }
+.vx-beam.l { left: calc(25% - 12cqw); --r: 14deg; } .vx-beam.r { left: calc(75% - 12cqw); --r: -14deg; }
+.vx-flare { position: absolute; left: 18%; right: 18%; top: 54%; height: 18%; background: radial-gradient(ellipse at 50% 50%, rgba(var(--vx-ice), .16), transparent 70%); }
+.vx-lamp { top: 64%; width: 0; height: 0; transform: translate3d(calc(var(--cmx) * -10px), calc(var(--cmy) * -6px), 0); } .vx-lamp.l { left: 25%; } .vx-lamp.r { left: 75%; }
+.vx-lamp i { position: absolute; left: -32px; top: -32px; width: 64px; height: 64px; border-radius: 50%; animation: vx-lamp calc(4s * var(--cine-t)) ease-in-out infinite alternate;
+  background: radial-gradient(circle, #fff 0 18%, rgba(226, 244, 255, .92) 24%, rgba(var(--vx-ice), .36) 46%, transparent 70%); box-shadow: 0 0 64px 22px rgba(var(--vx-ice), .3); }
+.vx-lamp b { position: absolute; left: -15cqw; top: -1px; width: 30cqw; height: 2px; opacity: calc(.55 + var(--cp) * .45); background: linear-gradient(90deg, transparent, rgba(196, 232, 255, .98) 50%, transparent); }
+.vx-bokeh { position: absolute; --c: var(--accent-rgb); border-radius: 50%; border: 1px solid rgba(var(--c), .2); background: radial-gradient(circle, rgba(var(--c), .3), rgba(var(--c), .07) 60%, transparent 71%); animation: vx-drift calc(9s * var(--cine-t)) ease-in-out infinite alternate; }
+.vx-bokeh.k0 { left: 6%; top: 20%; width: 6cqw; height: 6cqw; } .vx-bokeh.k1 { left: 14%; top: 60%; width: 3.4cqw; height: 3.4cqw; --c: var(--vx-ice); animation-delay: -2s; }
+.vx-bokeh.k2 { left: 24%; top: 34%; width: 2.2cqw; height: 2.2cqw; animation-delay: -4s; } .vx-bokeh.k3 { left: 78%; top: 22%; width: 5cqw; height: 5cqw; --c: var(--vx-ice); animation-delay: -1s; }
+.vx-bokeh.k4 { left: 88%; top: 52%; width: 7cqw; height: 7cqw; animation-delay: -5s; } .vx-bokeh.k5 { left: 70%; top: 70%; width: 2.6cqw; height: 2.6cqw; animation-delay: -3s; }
+.vx-bokeh.k6 { left: 42%; top: 12%; width: 2cqw; height: 2cqw; --c: var(--vx-ice); animation-delay: -6s; } .vx-bokeh.k7 { left: 58%; top: 8%; width: 3cqw; height: 3cqw; animation-delay: -2.5s; } .vx-bokeh.k8 { left: 3%; top: 78%; width: 4cqw; height: 4cqw; animation-delay: -4.5s; }
+
+/* ───────── Responsive (container-based) ───────── */
+@container (max-width: 760px) {
+  .vx-wheel { --w: clamp(84px, 24cqw, 130px); left: 84%; top: 15%; } .about-section:not(.has-headshot) .vx-turntable { left: calc(84% - 13cqw); top: calc(15% + 3cqw); width: 26cqw; height: 26cqw; }
+  .vx-swatch.s2, .vx-swatch.s3, .vx-frame.f2, .vx-frame.f3, .vx-gauge.mini, .vx-arch:nth-child(n + 4), .vx-streak.st4, .vx-streak.st5, .vx-streak.st6, .vx-post, .vx-cone.c1, .vx-cone.c3, .vx-bokeh.k4, .vx-bokeh.k5, .vx-bokeh.k6, .vx-bokeh.k7, .vx-bokeh.k8 { display: none; }
+  .vx-cluster { --g: clamp(100px, 28cqw, 150px); left: 82%; top: 12%; } .vx-leds { display: none; }
+  .vx-frame { --w: 24cqw; } .vx-frame.f1 { --cx: -4%; --cy: 6%; }
+  .vx-arch { width: 82cqw; height: 46cqw; left: -41cqw; top: -23cqw; } .vx-gantries { left: 56%; opacity: .6; }
+  .vx-beam { opacity: .45; }
+}
+
+/* ───────── Motion safety ───────── */
+.cinema-on[data-motion="still"] .vx-arch { opacity: calc(.55 - var(--k) * .07); transform: translateZ(calc(var(--k) * -190px)); }
+@media (prefers-reduced-motion: reduce) {
+  .cinema-on .vx-wheel-spin, .cinema-on .vx-sheen, .cinema-on .vx-turntable::after, .cinema-on .vx-road-lines, .cinema-on .vx-lane-lines, .cinema-on .vx-streak, .cinema-on .vx-cone, .cinema-on .vx-lamp i, .cinema-on .vx-bokeh, .cinema-on .vx-swatch, .cinema-on .vx-frame, .cinema-on .vx-post, .cinema-on .vx-arch { animation: none !important; }
+  .cinema-on .vx-arch { opacity: calc(.55 - var(--k) * .07); transform: translateZ(calc(var(--k) * -190px)); }
+  .cinema-on .vx-streak { opacity: .35; }
+}
+.cinema-on[data-motion="still"] .vx-streak { opacity: .35; }
+
+/* ───────── Keyframes ───────── */
+@keyframes vx-spin { to { transform: rotateZ(360deg); } }
+@keyframes vx-rotate { to { transform: rotate(360deg); } }
+@keyframes vx-sheen { from { background-position: 125% 0; } to { background-position: -25% 0; } }
+@keyframes vx-road { to { transform: translateY(260px); } }
+@keyframes vx-streak { 0% { transform: translateX(125cqw); opacity: 0; } 12% { opacity: .9; } 88% { opacity: .9; } 100% { transform: translateX(-70cqw); opacity: 0; } }
+@keyframes vx-cone { from { opacity: .5; } to { opacity: .85; } }
+@keyframes vx-lamp { from { transform: scale(.94); filter: brightness(.92); } to { transform: scale(1.08); filter: brightness(1.18); } }
+@keyframes vx-drift { from { translate: 0 10px; scale: .96; } to { translate: 8px -22px; scale: 1.06; } }

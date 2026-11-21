@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const runtime = "edge";
+// Use default Node.js runtime so @opennextjs/cloudflare bundles ImageResponse cleanly.
 
 export const alt =
   "AI prompts for SEO and content writing from Do It With AI Tools";

@@ -2,14 +2,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from 'next-sanity';
 
-// Initialize Sanity client for write operations
-const client = createClient({
-  projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID,
-  dataset: process.env.NEXT_PUBLIC_SANITY_DATASET,
-  token: process.env.SANITY_API_WRITE_TOKEN, // You'll need a write token
-  apiVersion: '2024-01-01',
-  useCdn: false, // Don't use CDN for write operations
-});
+let cachedSanityClient = null;
+
+function getCommentsSanityClient() {
+  if (!cachedSanityClient) {
+    cachedSanityClient = createClient({
+      projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || 'qyshio4a',
+      dataset: process.env.NEXT_PUBLIC_SANITY_DATASET || 'production',
+      token: process.env.SANITY_API_WRITE_TOKEN,
+      apiVersion: '2024-01-01',
+      useCdn: false, // Don't use CDN for write operations
+    });
+  }
+  return cachedSanityClient;
+}
 
 // Validation helper
 const validateCommentData = (data) => {
@@ -85,8 +91,10 @@ export async function POST(request) {
     // Basic spam detection
     const isSpam = detectSpam(body);
 
+    const sanityClient = getCommentsSanityClient();
+
     // First, verify the article exists
-    const articleExists = await client.fetch(
+    const articleExists = await sanityClient.fetch(
       `*[_id == $articleId][0]`,
       { articleId }
     );
@@ -117,7 +125,7 @@ export async function POST(request) {
     };
 
     // Submit to Sanity
-    const result = await client.create(commentDoc);
+    const result = await sanityClient.create(commentDoc);
 
     return NextResponse.json({
       success: true,
@@ -152,7 +160,7 @@ export async function GET(request) {
     }
 
     // Fetch comments for the article
-    const comments = await client.fetch(
+    const comments = await getCommentsSanityClient().fetch(
       `*[_type == "comment" && references($articleId) && status == $status] | order(submittedAt desc) [0...$limit] {
         _id,
         name,
@@ -163,11 +171,18 @@ export async function GET(request) {
       { articleId, status, limit }
     );
 
-    return NextResponse.json({
-      success: true,
-      comments,
-      count: comments.length
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        comments,
+        count: comments.length
+      },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
+        },
+      }
+    );
 
   } catch (error) {
     console.error('Error fetching comments:', error);

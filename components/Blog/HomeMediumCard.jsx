@@ -40,7 +40,7 @@ export default function MediumCard({
       className="group cursor-pointer shadow-md hover:shadow-xl dark:bg-gradient-to-br dark:from-gray-800 dark:to-gray-900 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700"
     >
       {/* The Link container uses the same responsive flex direction */}
-      <Link href={slug} className="h-full flex flex-col">
+      <Link href={slug} prefetch={false} className="h-full flex flex-col">
         {/* Image Section */}
         <Box
           position="relative"

@@ -48,7 +48,7 @@ export interface ZipArchiveEntry {
 
 export interface MasterZipExportOptions {
   /**
-   * When true (default in browser), also renders 1200x675 high-DPI PNG files for each H2 section infographic
+   * When true (default in browser), also renders full-resolution PNG files for each H2 section infographic
    * alongside the crisp vector SVG files inside `/visuals/`.
    */
   includeRenderedPngs?: boolean;
@@ -232,13 +232,13 @@ function buildPublishingManifestMarkdown(
     `## 📂 Bundle Directory & File Guide`,
     ``,
     `### 1. \`/article/\` — Multi-Format Article Deliverables`,
-    `- **\`article/article-cwv-optimized.html\`**: Clean semantic \`<article>\` HTML with explicit \`width="1200" height="675"\` zero-CLS image boxes, hero LCP \`fetchpriority="high"\`, Table of Contents jump links, 50-word AEO Direct Answer box, and native zero-JS \`<details>\` FAQ accordion.`,
+    `- **\`article/article-cwv-optimized.html\`**: Clean semantic \`<article>\` HTML with explicit image dimensions matching the selected infographic format, hero LCP \`fetchpriority="high"\`, Table of Contents jump links, 50-word AEO Direct Answer box, and native zero-JS \`<details>\` FAQ accordion.`,
     `- **\`article/article-standalone-inline-visuals.html\`**: Complete standalone \`<!DOCTYPE html>\` document with all 25-template vector SVG diagrams embedded inline as Data URIs, plus \`<head>\` meta tags and the 7-entity JSON-LD \`@graph\`. Double-click this file to preview the full article offline in any browser.`,
     `- **\`article/article.md\`**: Clean Markdown with YAML frontmatter for Next.js MDX, Astro, Ghost, Hugo, or Notion.`,
     `- **\`article/article-wordpress-gutenberg.html\`**: Native WordPress Gutenberg block markup (\`<!-- wp:heading -->\`, \`<!-- wp:image -->\`, \`<!-- wp:table -->\`). Paste directly into the WordPress Code Editor.`,
     ``,
     `### 2. \`/visuals/\` — 25-Template Canva / Napkin.ai Section Infographics`,
-    `- Contains \`section-1-infographic.svg\` through \`section-${project.sections.length}-infographic.svg\` (plus high-resolution \`1200x675\` PNG renders when exported from a browser).`,
+    `- Contains \`section-1-infographic.svg\` through \`section-${project.sections.length}-infographic.svg\` (plus high-resolution PNG renders when exported from a browser).`,
     ``,
     `### 3. \`/seo-technical/\` — Schema \`@graph\`, Head Meta & Indexing Rules`,
     `- **\`seo-technical/schema-graph.json\`**: Unified 7-entity Schema.org \`@graph\` (\`Organization\`, \`Person\`, \`WebPage\`, \`BlogPosting\`, \`BreadcrumbList\`, \`FAQPage\`, \`HowTo\`).`,
@@ -312,7 +312,6 @@ export async function buildMasterBlogZipBytes(
     if (!sec.infographicConfig) continue;
 
     const svgMarkup =
-      sec.infographicConfig.renderedSvgMarkup ||
       generateBlogInfographicSvg(sec.infographicConfig);
 
     addTextFile(`visuals/section-${i + 1}-infographic.svg`, svgMarkup);
@@ -320,8 +319,7 @@ export async function buildMasterBlogZipBytes(
     if (includePngs && typeof document !== "undefined") {
       try {
         const pngDataUrl =
-          sec.infographicConfig.renderedPngDataUrl ||
-          (await renderBlogInfographicToPngDataUrl(sec.infographicConfig));
+          await renderBlogInfographicToPngDataUrl(sec.infographicConfig);
         if (pngDataUrl) {
           const pngBytes = base64DataUrlToBytes(pngDataUrl);
           if (pngBytes) {

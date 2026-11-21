@@ -9,8 +9,6 @@ import { Providers } from "./providers";
 import { useOnlineStatus } from "./useOnlineStatus";
 import Header from "@/components/Header";
 import WorkspaceProvider from "@/features/tools-workspace/WorkspaceProvider";
-import { SpeedInsights } from "@vercel/speed-insights/next";
-import { Analytics } from "@vercel/analytics/next";
 import { CacheProvider } from "@/React_Query_Caching/CacheProvider";
 
 const ConditionalGlobalHeader = dynamic(
@@ -100,10 +98,21 @@ export default function ClientLayoutShell({ children }) {
   }, [hydrated]);
 
   const isHomePage = pathname === "/";
+  const isStandaloneWebsiteRoute =
+    pathname.startsWith("/p/") ||
+    pathname.startsWith("/s/") ||
+    pathname.startsWith("/ai-website-builder/studio/") ||
+    pathname.startsWith("/do-it-ai/website-studio/");
   const isDoItAiPage =
-    pathname === "/do-it-ai" || pathname.startsWith("/do-it-ai/");
+    (pathname === "/do-it-ai" || pathname.startsWith("/do-it-ai/")) &&
+    !isStandaloneWebsiteRoute;
   const isFounderHubPage =
     pathname === "/founder-hub" || pathname.startsWith("/founder-hub/");
+  const isAgencyOnboardingPage = pathname === "/ai-employee-agency";
+  const isAgencyDashboardPage =
+    pathname === "/ai-employee-agency/dashboard" ||
+    pathname.startsWith("/ai-employee-agency/dashboard/");
+  const isLockedAppShell = isDoItAiPage || isAgencyDashboardPage;
   const [isEmbeddedView, setIsEmbeddedView] = useState(false);
 
   useEffect(() => {
@@ -116,7 +125,7 @@ export default function ClientLayoutShell({ children }) {
 
   useEffect(() => {
     if (typeof document === "undefined") return;
-    if (isDoItAiPage) {
+    if (isLockedAppShell) {
       const prevBodyOverflow = document.body.style.overflow;
       const prevHtmlOverflow = document.documentElement.style.overflow;
       document.body.style.overflow = "hidden";
@@ -126,7 +135,7 @@ export default function ClientLayoutShell({ children }) {
         document.documentElement.style.overflow = prevHtmlOverflow;
       };
     }
-  }, [isDoItAiPage]);
+  }, [isLockedAppShell]);
 
   const isSlugPage =
     pathname.startsWith("/ai-tools/") ||
@@ -179,14 +188,15 @@ export default function ClientLayoutShell({ children }) {
         <WorkspaceProvider>
           {!isEmbeddedView &&
             !isFounderHubPage &&
+            !isStandaloneWebsiteRoute &&
             (isSlugPage ? <ConditionalGlobalHeader /> : <Header />)}
 
           <CacheProvider>
             <main
               className={
-                isEmbeddedView || isFounderHubPage
+                isEmbeddedView || isFounderHubPage || isStandaloneWebsiteRoute
                   ? "min-h-screen"
-                  : isDoItAiPage
+                  : isLockedAppShell
                     ? "h-dvh pt-[80px] overflow-hidden"
                     : isHomePage
                       ? ""
@@ -196,14 +206,12 @@ export default function ClientLayoutShell({ children }) {
               {children}
             </main>
 
-            {!isDoItAiPage && !isEmbeddedView && !isFounderHubPage && <Footer />}
-            {!isDoItAiPage && !isEmbeddedView && !isFounderHubPage && <ScrollToTop />}
-            {!isDoItAiPage && !isEmbeddedView && !isFounderHubPage && <SiteAssistant />}
+            {!isLockedAppShell && !isEmbeddedView && !isFounderHubPage && !isStandaloneWebsiteRoute && <Footer />}
+            {!isLockedAppShell && !isEmbeddedView && !isFounderHubPage && !isStandaloneWebsiteRoute && !isAgencyOnboardingPage && <ScrollToTop />}
+            {!isLockedAppShell && !isEmbeddedView && !isFounderHubPage && !isStandaloneWebsiteRoute && !isAgencyOnboardingPage && <SiteAssistant />}
           </CacheProvider>
 
           <Toaster position="bottom-center" />
-          <SpeedInsights />
-          <Analytics />
         </WorkspaceProvider>
       </Providers>
     </>

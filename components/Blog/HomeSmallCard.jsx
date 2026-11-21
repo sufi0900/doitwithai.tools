@@ -15,6 +15,7 @@ export default function HomeSmallCard({
     <section>
       <Link
         href={slug}
+        prefetch={false}
         className="group lg:h-[156px] transition-all duration-300 ease-out hover:scale-[1.03] hover:shadow-xl hover:shadow-blue-500/10
                    flex flex-col sm:flex-row items-center bg-white border border-gray-200 rounded-xl shadow-md
                    hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:hover:bg-gray-750

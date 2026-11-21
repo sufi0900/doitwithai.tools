@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef } from "react";
+import React, { useEffect, useId, useRef } from "react";
 import { Loader2 } from "lucide-react";
 import styles from "./tool-run-overlay.module.css";
 
