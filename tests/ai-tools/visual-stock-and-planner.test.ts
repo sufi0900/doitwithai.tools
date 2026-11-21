@@ -770,7 +770,36 @@ test("V4 stock & diagram expansion: 80 icons across 8 categories, 18 diagram arc
     routedLayouts.size >= 5,
     `Expected >= 5 distinct routed diagram archetypes across 6 sections, got: ${[...routedLayouts].join(", ")}`,
   );
+
+  // 5. Direct-click Canva-style SVG hit layers (data-layer-id + data-layer-box) & clean studio markup
+  const firstSvg = buildInfographicScene(v4Suite[0]).svg;
+  assert.ok(firstSvg.includes('data-layer-box="headline"'));
+  assert.ok(firstSvg.includes('data-layer-box="node-0"'));
+  assert.ok(firstSvg.includes('data-layer-box="node-icon-0"'));
+  assert.ok(firstSvg.includes('data-layer-box="footer"'));
+
+  const { createRequire } = await import("node:module");
+  const nativeRequire = createRequire(import.meta.url);
+  nativeRequire.extensions[".css"] = (module) => {
+    module.exports = {};
+  };
+  const React = await import("react");
+  const { renderToStaticMarkup } = await import("react-dom/server");
+  const { default: BlogInfographicStudio } = await import(
+    "../../features/blog-infographic-studio/BlogInfographicStudio"
+  );
+  const studioHtml = renderToStaticMarkup(
+    React.createElement(BlogInfographicStudio),
+  );
+  assert.doesNotMatch(
+    studioHtml,
+    /Edit Card 1 &amp; Icon|Direct canvas click-to-edit hotspots/,
+    "Obstructing hover button overlays must be completely removed",
+  );
+  assert.ok(studioHtml.includes("Upload Image"));
+  assert.match(studioHtml, /(?:Choose Icon|Icon: [a-z0-9-]+) \(80\)/);
 });
+
 
 
 

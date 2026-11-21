@@ -142,8 +142,23 @@ export function renderSVG(
 
 type Issue = { field: string; message: string };
 type Icon = NonNullable<BlogInfographicNodeItem["icon"]>;
-const el = (type: string, props: Record<string, unknown>, children?: JSXNode) =>
-  jsx(type as any, { ...props, children } as any);
+const el = (
+  type: string,
+  props: Record<string, unknown>,
+  ...children: JSXNode[]
+) =>
+  jsx(
+    type as any,
+    {
+      ...props,
+      children:
+        children.length === 0
+          ? undefined
+          : children.length === 1
+            ? children[0]
+            : children,
+    } as any,
+  );
 const rect = (
   x: number,
   y: number,
@@ -734,7 +749,12 @@ export function buildPrismScene(
     accentColor = accent,
     layerId?: string,
   ) => {
-    const layerAttr = layerId ? { "data-layer-id": layerId } : {};
+    const layerAttr = layerId
+      ? { "data-layer-id": layerId, style: "cursor:pointer" }
+      : {};
+    const boxAttr = layerId
+      ? { ...layerAttr, "data-layer-box": layerId }
+      : {};
     if (depth.preset === "layered" && strength > 0)
       target.push(
         rect(
@@ -749,7 +769,7 @@ export function buildPrismScene(
     target.push(
       rect(x, y, w, h, surface, cardRadius, {
         ...shadow,
-        ...layerAttr,
+        ...boxAttr,
         stroke:
           cardStyle === "bordered-bento"
             ? mixColor(surface, accentColor, 0.45)
@@ -799,15 +819,10 @@ export function buildPrismScene(
     c: string,
     nodeIndex?: number,
   ) => {
-    const iconLayerAttr =
-      typeof nodeIndex === "number"
-        ? { "data-layer-id": `node-icon-${nodeIndex}` }
-        : {};
-    target.push(
-      circle(x, y, r + 12, c, { opacity: 0.08, ...iconLayerAttr }),
+    const medallionChildren: JSXNode[] = [
+      circle(x, y, r + 12, c, { opacity: 0.08 }),
       circle(x, y, r, surface, {
         ...shadow,
-        ...iconLayerAttr,
         stroke: c,
         strokeOpacity: 0.3,
         strokeWidth: 1.5,
@@ -820,10 +835,24 @@ export function buildPrismScene(
             width: r * 1.3,
             height: r * 1.3,
             preserveAspectRatio: "xMidYMid meet",
-            ...iconLayerAttr,
           })
         : pictogram(iconForNode(n), x - r * 0.55, y - r * 0.55, r * 1.1, c),
-    );
+    ];
+    if (typeof nodeIndex === "number") {
+      target.push(
+        el(
+          "g",
+          {
+            "data-layer-id": `node-icon-${nodeIndex}`,
+            "data-layer-box": `node-icon-${nodeIndex}`,
+            style: "cursor:pointer",
+          },
+          ...medallionChildren,
+        ),
+      );
+    } else {
+      target.push(...medallionChildren);
+    }
   };
   const drawSignature = (y: number) => {
     if (!hasSignature) return;
@@ -1018,7 +1047,19 @@ export function buildPrismScene(
   parts.push(
     el(
       "g",
-      { "data-layer-id": "headline", style: "cursor:pointer" },
+      {
+        "data-layer-id": "headline",
+        "data-layer-box": "headline",
+        style: "cursor:pointer",
+      },
+      rect(
+        M - 6,
+        headerTop + 18,
+        headerTextW + 12,
+        Math.max(48, top - (headerTop + 18)),
+        "transparent",
+        8,
+      ),
       ...headlineChildren,
     ),
   );
@@ -1044,6 +1085,7 @@ export function buildPrismScene(
           height: sceneH,
           preserveAspectRatio: "xMidYMid meet",
           "data-layer-id": "scene-illustration",
+          "data-layer-box": "scene-illustration",
           style: "cursor:pointer",
         }),
       );
@@ -1069,8 +1111,10 @@ export function buildPrismScene(
             opacity: light ? 0.88 : 0.92,
             "data-vector-scene": activeScene.id,
             "data-layer-id": "scene-illustration",
+            "data-layer-box": "scene-illustration",
             style: "cursor:pointer",
           },
+          rect(0, 0, 240, 160, "transparent", 12),
           el("__raw_svg__", { svg: sceneMarkup }),
         ),
       );
@@ -1596,7 +1640,8 @@ export function buildPrismScene(
       false,
       fontStack,
     );
-    if (badgeOffset) bodyParts.push(badge.node);
+    const textNodes: JSXNode[] = [];
+    if (badgeOffset) textNodes.push(badge.node);
     const combinedStatText = `${n.title} ${n.detail}`;
     const pctStatMatch = combinedStatText.match(/\b(\d{1,3})\s*%/);
     const ratioStatMatch = combinedStatText.match(
@@ -1616,12 +1661,19 @@ export function buildPrismScene(
       const barX = x + w - barW;
       const barY = y + 3;
       const fillW = Math.max(10, Math.round((barW * statPct) / 100));
-      bodyParts.push(
+      textNodes.push(
         rect(barX, barY, barW, 8, c, 4, { opacity: 0.18 }),
         rect(barX, barY, fillW, 8, c, 4),
       );
     }
-    bodyParts.push(title.node, detail.node);
+    textNodes.push(title.node, detail.node);
+    bodyParts.push(
+      el(
+        "g",
+        { "data-layer-id": `node-${i}`, style: "cursor:pointer" },
+        ...textNodes,
+      ),
+    );
     return badgeOffset + title.height + titleGap + detail.height;
   };
 
@@ -1711,7 +1763,14 @@ export function buildPrismScene(
         false,
         fontStack,
       );
-      bodyParts.push(titleNode.node, detailNode.node);
+      bodyParts.push(
+        el(
+          "g",
+          { "data-layer-id": `node-${idx}`, style: "cursor:pointer" },
+          titleNode.node,
+          detailNode.node,
+        ),
+      );
       if (idx < cols - 1) {
         const ax = x + colW + 8;
         const ay = startY + Math.round(cardH / 2);
@@ -1809,7 +1868,14 @@ export function buildPrismScene(
         false,
         fontStack,
       );
-      bodyParts.push(titleNode.node, detailNode.node);
+      bodyParts.push(
+        el(
+          "g",
+          { "data-layer-id": `node-${idx}`, style: "cursor:pointer" },
+          titleNode.node,
+          detailNode.node,
+        ),
+      );
     });
     const plusCx = W / 2;
     const plusCy = startY + Math.round(cardH / 2);
@@ -1945,7 +2011,14 @@ export function buildPrismScene(
           true,
           fontStack,
         );
-        bodyParts.push(titleNode.node, detailNode.node);
+        bodyParts.push(
+          el(
+            "g",
+            { "data-layer-id": `node-${idx}`, style: "cursor:pointer" },
+            titleNode.node,
+            detailNode.node,
+          ),
+        );
       });
       y += h + rowGap;
     }
@@ -2226,7 +2299,14 @@ export function buildPrismScene(
         false,
         fontStack,
       );
-      bodyParts.push(heroTitleNode.node, heroDetailNode.node);
+      bodyParts.push(
+        el(
+          "g",
+          { "data-layer-id": "node-0", style: "cursor:pointer" },
+          heroTitleNode.node,
+          heroDetailNode.node,
+        ),
+      );
       // Decorative telemetry sparkline at bottom of hero tile when room allows
       const sparkY = startY + totalH - 36;
       const textBottom =
@@ -2308,7 +2388,14 @@ export function buildPrismScene(
             false,
             fontStack,
           );
-          bodyParts.push(tNode.node, dNode.node);
+          bodyParts.push(
+            el(
+              "g",
+              { "data-layer-id": `node-${idx}`, style: "cursor:pointer" },
+              tNode.node,
+              dNode.node,
+            ),
+          );
         });
         ry += h + rightRowGap;
       }
@@ -2695,7 +2782,14 @@ export function buildPrismScene(
           false,
           fontStack,
         );
-        bodyParts.push(titleNode.node, detailNode.node);
+        bodyParts.push(
+          el(
+            "g",
+            { "data-layer-id": `node-${idx}`, style: "cursor:pointer" },
+            titleNode.node,
+            detailNode.node,
+          ),
+        );
       });
       y += h + rowGap;
     }
@@ -2998,7 +3092,14 @@ export function buildPrismScene(
           false,
           fontStack,
         );
-        bodyParts.push(titleN.node, detailN.node);
+        bodyParts.push(
+          el(
+            "g",
+            { "data-layer-id": `node-${i}`, style: "cursor:pointer" },
+            titleN.node,
+            detailN.node,
+          ),
+        );
       } else if (isPyramid) {
         // Geometric Stacked Pyramid Tiers widening from Apex (Tier 1) down to Base (Tier N)
         const tlX = M + pyrInsetTop;
@@ -3211,40 +3312,47 @@ export function buildPrismScene(
       fontStack,
     );
     bodyParts.push(
-      rect(
-        M,
-        calloutY,
-        contentW,
-        calloutBoxH,
-        bannerBg,
-        ov.calloutStyle === "accent-pill" ? Math.round(calloutBoxH / 2) : 16,
+      el(
+        "g",
         {
           "data-layer-id": "callout",
-          stroke: colors[3],
-          strokeOpacity: 0.65,
-          strokeWidth: 1.5,
+          "data-layer-box": "callout",
+          style: "cursor:pointer",
         },
+        rect(
+          M,
+          calloutY,
+          contentW,
+          calloutBoxH,
+          bannerBg,
+          ov.calloutStyle === "accent-pill" ? Math.round(calloutBoxH / 2) : 16,
+          {
+            stroke: colors[3],
+            strokeOpacity: 0.65,
+            strokeWidth: 1.5,
+          },
+        ),
+        rect(
+          M + 12,
+          calloutY + Math.round((calloutBoxH - 30) / 2),
+          calloutBadgeW,
+          30,
+          badgeFill,
+          8,
+        ),
+        textBlock(
+          calloutBadgeLabel,
+          M + 12,
+          calloutY + Math.round((calloutBoxH - 30) / 2) + 6,
+          calloutBadgeW,
+          14,
+          badgeFg,
+          true,
+          true,
+          fontStack,
+        ).node,
+        calloutTextNode.node,
       ),
-      rect(
-        M + 12,
-        calloutY + Math.round((calloutBoxH - 30) / 2),
-        calloutBadgeW,
-        30,
-        badgeFill,
-        8,
-      ),
-      textBlock(
-        calloutBadgeLabel,
-        M + 12,
-        calloutY + Math.round((calloutBoxH - 30) / 2) + 6,
-        calloutBadgeW,
-        14,
-        badgeFg,
-        true,
-        true,
-        fontStack,
-      ).node,
-      calloutTextNode.node,
     );
     bottom = calloutY + calloutBoxH;
   }
@@ -3258,6 +3366,7 @@ export function buildPrismScene(
     );
 
   const footerStyle = ov.footerBarStyle || "minimal";
+  const footerNodes: JSXNode[] = [];
   if (hasFooterSource || hasFooterSig) {
     if (footerStyle !== "minimal") {
       const dockFill =
@@ -3266,7 +3375,7 @@ export function buildPrismScene(
           : footerStyle === "light-dock"
             ? "#F8FAFC"
             : surface;
-      parts.push(
+      footerNodes.push(
         rect(
           M - 12,
           footerY - 6,
@@ -3275,7 +3384,6 @@ export function buildPrismScene(
           dockFill,
           footerStyle === "pill-banner" ? 28 : 14,
           {
-            "data-layer-id": "footer",
             stroke: accent,
             strokeOpacity: 0.35,
             strokeWidth: 1.5,
@@ -3283,10 +3391,17 @@ export function buildPrismScene(
         ),
       );
     } else {
-      parts.push(
+      footerNodes.push(
+        rect(
+          M - 6,
+          footerY - 8,
+          contentW + 12,
+          Math.max(46, footerBandH + 8),
+          "transparent",
+          8,
+        ),
         path(`M ${M} ${footerY - 8} H ${W - M}`, accent, 1, {
           opacity: 0.25,
-          "data-layer-id": "footer",
         }),
       );
     }
@@ -3324,7 +3439,20 @@ export function buildPrismScene(
         "Source label",
         "Shorten the source label to two lines; keep the full source URL in the project.",
       );
-    parts.push(footer.node);
+    footerNodes.push(footer.node);
+  }
+  if (footerNodes.length > 0) {
+    parts.push(
+      el(
+        "g",
+        {
+          "data-layer-id": "footer",
+          "data-layer-box": "footer",
+          style: "cursor:pointer",
+        },
+        ...footerNodes,
+      ),
+    );
   }
   if (hasFooterSig) {
     const sigY = shareFooterBand

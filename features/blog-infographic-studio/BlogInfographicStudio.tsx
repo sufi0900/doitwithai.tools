@@ -36,6 +36,10 @@ import {
 } from "./InfographicDesignControls";
 import { IconPickerGrid } from "./IconPickerGrid";
 import {
+  InteractiveInfographicCanvas,
+  type CanvasSelection,
+} from "./InteractiveInfographicCanvas";
+import {
   getInfographicDimensions,
   lockInfographicGeometry,
 } from "@/lib/blog-infographic-studio/layout-registry";
@@ -67,7 +71,6 @@ import {
   visualFromWriterSection,
   withPrismLayout,
 } from "@/lib/blog-infographic-studio/visual-brief";
-import { INFOGRAPHIC_TOPIC_ICONS } from "@/lib/blog-infographic-studio/skills/semantic-iconography";
 import {
   classifySectionArchetype,
   synthesizeInfographicHeadlineAndSubheadline,
@@ -313,9 +316,12 @@ export function BlogInfographicStudio({
     [zoom, setZoom] = useState(1);
   const [classicOpen, setClassicOpen] = useState(false);
   const [openNodeIdx, setOpenNodeIdx] = useState<number>(0);
-  const [canvasEditLayer, setCanvasEditLayer] = useState<
-    "none" | "headline" | "scene" | number
-  >("none");
+  const [openIconPickerNodeId, setOpenIconPickerNodeId] = useState<string | null>(
+    null,
+  );
+  const [canvasSelection, setCanvasSelection] = useState<CanvasSelection>({
+    kind: "none",
+  });
   const [extractedArticle, setExtractedArticle] =
     useState<UniversalExtractResponse | null>(null);
   const lastExtractedUrlRef = useRef<string>("");
@@ -1457,66 +1463,135 @@ export function BlogInfographicStudio({
                         </summary>
                         <div className="mt-3 space-y-3">
                           {active.visualEngine && (
-                            <div className="space-y-2">
-                              <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400">
-                                Illustration ({INFOGRAPHIC_TOPIC_ICONS.length}{" "}
-                                SVG icons)
-                                <select
-                                  className={field}
-                                  value={n.icon || "auto"}
-                                  onChange={(e) =>
-                                    updateNode(n.id, {
-                                      icon:
-                                        e.target.value === "auto"
-                                          ? undefined
-                                          : (e.target
-                                              .value as BlogInfographicNodeItem["icon"]),
-                                      customIconDataUrl: undefined,
-                                    })
+                            <div className="space-y-2.5 rounded-xl border border-slate-200 bg-slate-50/70 p-2.5 dark:border-slate-700/80 dark:bg-slate-900/60">
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <button
+                                  type="button"
+                                  aria-pressed={openIconPickerNodeId === n.id}
+                                  onClick={() =>
+                                    setOpenIconPickerNodeId((prev) =>
+                                      prev === n.id ? null : n.id,
+                                    )
                                   }
+                                  className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-bold transition ${
+                                    openIconPickerNodeId === n.id
+                                      ? "border-indigo-600 bg-indigo-600 text-white"
+                                      : "border-slate-300 bg-white text-slate-700 hover:border-indigo-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                                  }`}
                                 >
-                                  <option value="auto">
-                                    Match the topic automatically
-                                  </option>
-                                  {INFOGRAPHIC_TOPIC_ICONS.map((icon) => (
-                                    <option key={icon} value={icon}>
-                                      {icon}
-                                    </option>
-                                  ))}
-                                </select>
-                              </label>
-                              <details className="rounded-lg border border-slate-200 p-2 dark:border-slate-700">
-                                <summary className="cursor-pointer text-[11px] font-bold text-indigo-600 dark:text-indigo-300">
-                                  Browse visual 80-icon grid or upload custom image
-                                </summary>
-                                <div className="mt-2">
-                                  <IconPickerGrid
-                                    value={n.icon}
-                                    customIconDataUrl={n.customIconDataUrl}
-                                    accentColor={
+                                  <Sparkles size={12} />
+                                  {n.icon
+                                    ? `Icon: ${n.icon} (80)`
+                                    : "Choose Icon (80)"}
+                                </button>
+                                <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-indigo-300 bg-indigo-50 px-2.5 py-1.5 text-[11px] font-bold text-indigo-700 transition hover:border-indigo-500 dark:border-indigo-500/40 dark:bg-indigo-950/50 dark:text-indigo-200">
+                                  <Upload size={12} />
+                                  {n.customIconDataUrl
+                                    ? "Replace Image"
+                                    : "Upload Image"}
+                                  <input
+                                    type="file"
+                                    accept="image/png,image/jpeg,image/webp"
+                                    className="sr-only"
+                                    disabled={busy}
+                                    onChange={(e) => {
+                                      void uploadNodeCustomIcon(
+                                        n.id,
+                                        e.target.files?.[0],
+                                      );
+                                      e.target.value = "";
+                                    }}
+                                  />
+                                </label>
+                                <label
+                                  className="ml-auto inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500 dark:text-slate-400"
+                                  title="Custom card accent color"
+                                >
+                                  <input
+                                    type="color"
+                                    aria-label={`Card ${i + 1} accent color`}
+                                    value={
+                                      n.accentHex ||
                                       active.brand?.customColors?.accent ||
                                       active.extractedBrand?.accent ||
                                       BLOG_INFOGRAPHIC_PALETTES[active.paletteId]
                                         .accent
                                     }
-                                    busy={busy}
-                                    onSelectIcon={(icon) =>
+                                    onChange={(e) =>
                                       updateNode(n.id, {
-                                        icon,
-                                        customIconDataUrl: undefined,
+                                        accentHex: e.target.value,
                                       })
                                     }
-                                    onUploadCustomIcon={(file) =>
-                                      void uploadNodeCustomIcon(n.id, file)
-                                    }
-                                    onRemoveCustomIcon={() =>
-                                      updateNode(n.id, {
-                                        customIconDataUrl: undefined,
-                                      })
-                                    }
+                                    className="h-7 w-7 cursor-pointer rounded border-0 bg-transparent"
                                   />
+                                </label>
+                                {n.accentHex && (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      updateNode(n.id, { accentHex: undefined })
+                                    }
+                                    className="text-[10px] font-bold text-indigo-600 hover:underline dark:text-indigo-400"
+                                  >
+                                    Reset
+                                  </button>
+                                )}
+                              </div>
+                              {n.customIconDataUrl && (
+                                <div className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-2 py-1.5 dark:border-slate-700 dark:bg-slate-950">
+                                  <div className="flex items-center gap-2">
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img
+                                      src={n.customIconDataUrl}
+                                      alt={`Custom icon for ${n.title}`}
+                                      className="h-7 w-7 rounded object-contain"
+                                    />
+                                    <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">
+                                      Custom card image active
+                                    </span>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    aria-label={`Remove custom image for point ${i + 1}`}
+                                    onClick={() =>
+                                      updateNode(n.id, {
+                                        customIconDataUrl: undefined,
+                                      })
+                                    }
+                                    className="rounded p-1 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40"
+                                  >
+                                    <Trash2 size={12} />
+                                  </button>
                                 </div>
-                              </details>
+                              )}
+                              {openIconPickerNodeId === n.id && (
+                                <IconPickerGrid
+                                  value={n.icon}
+                                  customIconDataUrl={n.customIconDataUrl}
+                                  accentColor={
+                                    n.accentHex ||
+                                    active.brand?.customColors?.accent ||
+                                    active.extractedBrand?.accent ||
+                                    BLOG_INFOGRAPHIC_PALETTES[active.paletteId]
+                                      .accent
+                                  }
+                                  busy={busy}
+                                  onSelectIcon={(icon) =>
+                                    updateNode(n.id, {
+                                      icon,
+                                      customIconDataUrl: undefined,
+                                    })
+                                  }
+                                  onUploadCustomIcon={(file) =>
+                                    void uploadNodeCustomIcon(n.id, file)
+                                  }
+                                  onRemoveCustomIcon={() =>
+                                    updateNode(n.id, {
+                                      customIconDataUrl: undefined,
+                                    })
+                                  }
+                                />
+                              )}
                             </div>
                           )}
                           <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400">
@@ -2156,7 +2231,10 @@ export function BlogInfographicStudio({
                     type="button"
                     aria-pressed={activeIdx === i}
                     key={c.id}
-                    onClick={() => setActiveIdx(i)}
+                    onClick={() => {
+                      setActiveIdx(i);
+                      setCanvasSelection({ kind: "none" });
+                    }}
                     className={
                       (activeIdx === i ? primary : button) + " shrink-0"
                     }
@@ -2343,240 +2421,35 @@ export function BlogInfographicStudio({
                 All sections ZIP
               </button>
             </div>
-            {canvasEditLayer !== "none" && (
-              <div
-                className="border-t border-b border-indigo-200 bg-indigo-50/80 p-3.5 text-xs dark:border-indigo-500/30 dark:bg-indigo-950/40"
-                aria-label="On-canvas quick editor"
-              >
-                <div className="mb-2.5 flex items-center justify-between gap-2">
-                  <span className="font-extrabold uppercase tracking-wider text-indigo-700 dark:text-indigo-300">
-                    {canvasEditLayer === "headline"
-                      ? "Editing Canvas Headline & Subtitle"
-                      : canvasEditLayer === "scene"
-                        ? "Editing Top-Right Illustration Object"
-                        : `Editing Card ${Number(canvasEditLayer) + 1}: ${active.nodes[Number(canvasEditLayer)]?.title || ""}`}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setCanvasEditLayer("none")}
-                    className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-[11px] font-bold text-slate-600 hover:border-indigo-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-                  >
-                    Done
-                  </button>
-                </div>
-                {canvasEditLayer === "headline" && (
-                  <div className="grid gap-2.5 sm:grid-cols-2">
-                    <label className="block font-semibold text-slate-700 dark:text-slate-200">
-                      Headline
-                      <input
-                        className={field}
-                        value={active.headline}
-                        maxLength={180}
-                        onChange={(e) => update({ headline: e.target.value })}
-                      />
-                    </label>
-                    <label className="block font-semibold text-slate-700 dark:text-slate-200">
-                      Subtitle
-                      <input
-                        className={field}
-                        value={active.subheadline}
-                        maxLength={240}
-                        onChange={(e) =>
-                          update({ subheadline: e.target.value })
-                        }
-                      />
-                    </label>
-                  </div>
-                )}
-                {canvasEditLayer === "scene" && (
-                  <div className="flex flex-wrap items-center gap-2.5">
-                    <label className={primary + " cursor-pointer"}>
-                      <Upload size={13} />
-                      {active.customSceneImageUrl
-                        ? "Replace custom illustration / object"
-                        : "Upload custom illustration / object (PNG, JPG, WebP)"}
-                      <input
-                        type="file"
-                        accept="image/png,image/jpeg,image/webp"
-                        className="sr-only"
-                        disabled={busy}
-                        onChange={(e) => {
-                          void uploadCustomSceneObject(e.target.files?.[0]);
-                          e.target.value = "";
-                        }}
-                      />
-                    </label>
-                    {active.customSceneImageUrl && (
-                      <button
-                        type="button"
-                        className={button}
-                        onClick={() =>
-                          update({ customSceneImageUrl: undefined })
-                        }
-                      >
-                        <Trash2 size={13} />
-                        Restore vector scene
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      className={button}
-                      onClick={() => setPanel("design")}
-                    >
-                      Browse 32 Vector Scenes in Design Tab
-                    </button>
-                  </div>
-                )}
-                {typeof canvasEditLayer === "number" &&
-                  active.nodes[canvasEditLayer] && (
-                    <div className="space-y-2.5">
-                      <div className="grid gap-2.5 sm:grid-cols-[1fr_1.4fr]">
-                        <label className="block font-semibold text-slate-700 dark:text-slate-200">
-                          Card Title
-                          <input
-                            className={field}
-                            value={active.nodes[canvasEditLayer].title}
-                            maxLength={120}
-                            onChange={(e) =>
-                              updateNode(active.nodes[canvasEditLayer].id, {
-                                title: e.target.value,
-                              })
-                            }
-                          />
-                        </label>
-                        <label className="block font-semibold text-slate-700 dark:text-slate-200">
-                          Card Explanation
-                          <input
-                            className={field}
-                            value={active.nodes[canvasEditLayer].detail}
-                            maxLength={360}
-                            onChange={(e) =>
-                              updateNode(active.nodes[canvasEditLayer].id, {
-                                detail: e.target.value,
-                              })
-                            }
-                          />
-                        </label>
-                      </div>
-                      <IconPickerGrid
-                        value={active.nodes[canvasEditLayer].icon}
-                        customIconDataUrl={
-                          active.nodes[canvasEditLayer].customIconDataUrl
-                        }
-                        accentColor={
-                          active.brand?.customColors?.accent ||
-                          active.extractedBrand?.accent ||
-                          BLOG_INFOGRAPHIC_PALETTES[active.paletteId].accent
-                        }
-                        busy={busy}
-                        onSelectIcon={(icon) =>
-                          updateNode(active.nodes[canvasEditLayer].id, {
-                            icon,
-                            customIconDataUrl: undefined,
-                          })
-                        }
-                        onUploadCustomIcon={(file) =>
-                          void uploadNodeCustomIcon(
-                            active.nodes[canvasEditLayer].id,
-                            file,
-                          )
-                        }
-                        onRemoveCustomIcon={() =>
-                          updateNode(active.nodes[canvasEditLayer].id, {
-                            customIconDataUrl: undefined,
-                          })
-                        }
-                      />
-                    </div>
-                  )}
-              </div>
-            )}
-            <div
-              className="overflow-auto bg-slate-200/70 px-4 py-8 dark:bg-[#080E1B] sm:px-8"
-              style={{
-                backgroundImage:
-                  "radial-gradient(circle, #94a3b825 1px, transparent 1px)",
-                backgroundSize: "16px 16px",
+            <InteractiveInfographicCanvas
+              svg={scene.svg}
+              config={active}
+              width={dimensions.width}
+              height={dimensions.height}
+              zoom={zoom}
+              busy={busy}
+              selection={canvasSelection}
+              onSelect={(nextSel) => {
+                setCanvasSelection(nextSel);
+                if (nextSel.kind === "card" || nextSel.kind === "icon") {
+                  setOpenNodeIdx(nextSel.index);
+                }
               }}
-            >
-              <div
-                className="mx-auto flex min-h-[300px] justify-center"
-                style={{
-                  width: `${zoom * 100}%`,
-                  maxWidth: zoom === 1 ? "100%" : "none",
-                }}
-              >
-                <div className="group relative inline-block">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={svgSource(scene.svg)}
-                    alt={active.altText || active.headline}
-                    width={dimensions.width}
-                    height={dimensions.height}
-                    className="h-auto max-h-[680px] max-w-full object-contain drop-shadow-xl"
-                    style={{ maxHeight: 680 * zoom }}
-                  />
-                  {/* Interactive Click-to-Edit Hotspots directly over the infographic canvas */}
-                  <div
-                    className="pointer-events-none absolute inset-0 flex flex-col justify-between p-3 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100"
-                    aria-label="Direct canvas click-to-edit hotspots"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setCanvasEditLayer("headline");
-                          setPanel("content");
-                        }}
-                        className="pointer-events-auto rounded-lg bg-slate-950/80 px-2.5 py-1.5 text-[11px] font-bold text-white shadow-md ring-1 ring-white/25 backdrop-blur-xs hover:bg-indigo-600"
-                      >
-                        Edit Headline &amp; Subtitle
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setCanvasEditLayer("scene");
-                        }}
-                        className="pointer-events-auto rounded-lg bg-slate-950/80 px-2.5 py-1.5 text-[11px] font-bold text-white shadow-md ring-1 ring-white/25 backdrop-blur-xs hover:bg-indigo-600"
-                      >
-                        Replace / Upload Illustration Object
-                      </button>
-                    </div>
-                    <div className="my-auto flex flex-wrap items-center justify-center gap-1.5 px-2">
-                      {active.nodes.map((node, ni) => (
-                        <button
-                          type="button"
-                          key={node.id}
-                          onClick={() => {
-                            setCanvasEditLayer(ni);
-                            setOpenNodeIdx(ni);
-                            setPanel("content");
-                          }}
-                          className="pointer-events-auto rounded-lg bg-slate-950/80 px-2.5 py-1.5 text-[11px] font-bold text-white shadow-md ring-1 ring-white/25 backdrop-blur-xs hover:bg-indigo-600"
-                        >
-                          Edit Card {ni + 1} &amp; Icon
-                        </button>
-                      ))}
-                    </div>
-                    <div className="flex items-center justify-between gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setPanel("design")}
-                        className="pointer-events-auto rounded-lg bg-slate-950/80 px-2.5 py-1.5 text-[11px] font-bold text-white shadow-md ring-1 ring-white/25 backdrop-blur-xs hover:bg-indigo-600"
-                      >
-                        Edit Brand Colors &amp; Layout Spacing
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+              onUpdateConfig={update}
+              onUpdateNode={updateNode}
+              onUploadNodeIcon={(nodeId, file) =>
+                void uploadNodeCustomIcon(nodeId, file)
+              }
+              onUploadSceneImage={(file) =>
+                void uploadCustomSceneObject(file)
+              }
+            />
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 px-4 py-3 dark:border-slate-800">
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 {dimensions.width} × {dimensions.height} · {active.aspectRatio}{" "}
                 <span className="ml-2 text-indigo-500">
-                  Hover or click any element on the infographic to edit text,
-                  icons, or upload custom objects
+                  Click any headline, card, icon, illustration, or footer
+                  directly on the canvas to edit inline
                 </span>
               </p>
               <div className="flex items-center gap-2">
@@ -2603,62 +2476,6 @@ export function BlogInfographicStudio({
                   aria-label="Zoom in"
                 >
                   <ZoomIn size={14} />
-                </button>
-              </div>
-            </div>
-            <div
-              className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 bg-slate-50/80 px-4 py-2.5 text-xs dark:border-slate-800 dark:bg-slate-900/70"
-              aria-label="Interactive canvas layer inspector"
-            >
-              <div className="flex flex-wrap items-center gap-1.5">
-                <span className="font-bold text-slate-600 dark:text-slate-300">
-                  Click to edit:
-                </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setCanvasEditLayer("headline");
-                    setPanel("content");
-                  }}
-                  className="rounded-full border border-slate-300 bg-white px-2.5 py-1 font-semibold text-slate-700 hover:border-indigo-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-                >
-                  Headline
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCanvasEditLayer("scene")}
-                  className="rounded-full border border-indigo-300 bg-indigo-50 px-2.5 py-1 font-semibold text-indigo-700 hover:border-indigo-500 dark:border-indigo-500/40 dark:bg-indigo-950/40 dark:text-indigo-200"
-                >
-                  Illustration Object (Upload / Change)
-                </button>
-                {active.nodes.map((node, ni) => (
-                  <button
-                    type="button"
-                    key={node.id}
-                    onClick={() => {
-                      setCanvasEditLayer(ni);
-                      setOpenNodeIdx(ni);
-                      setPanel("content");
-                    }}
-                    className="rounded-full border border-slate-300 bg-white px-2.5 py-1 font-semibold text-slate-700 hover:border-indigo-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-                    title={node.title}
-                  >
-                    Point {ni + 1}: {node.title.slice(0, 18)}
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => setPanel("design")}
-                  className="rounded-full border border-indigo-300 bg-indigo-50 px-2.5 py-1 font-semibold text-indigo-700 hover:border-indigo-500 dark:border-indigo-500/40 dark:bg-indigo-950/40 dark:text-indigo-200"
-                >
-                  Brand &amp; Background
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPanel("design")}
-                  className="rounded-full border border-indigo-300 bg-indigo-50 px-2.5 py-1 font-semibold text-indigo-700 hover:border-indigo-500 dark:border-indigo-500/40 dark:bg-indigo-950/40 dark:text-indigo-200"
-                >
-                  Spacing &amp; Banner
                 </button>
               </div>
             </div>
