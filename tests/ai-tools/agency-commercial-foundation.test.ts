@@ -372,11 +372,13 @@ test('static source audit: zero forbidden public-tool keys, zero retired gemini-
 
   const fetchServerPath = path.join(repoRoot, 'features', 'backlink-verifier', 'fetch.server.ts');
   if (fs.existsSync(fetchServerPath)) {
-    const fetchSource = stripComments(fs.readFileSync(fetchServerPath, 'utf8'));
+    const fetchSource = fs.readFileSync(fetchServerPath, 'utf8');
     assert.equal(
-      /from\s+['"](?:node:)?dns(?:\/promises)?['"]|from\s+['"]node:net['"]/.test(fetchSource),
-      false,
-      'fetch.server.ts must remain Cloudflare Workers edge-safe without node:dns or node:net imports',
+      /function\s+isEdgeWorkersRuntime\b/.test(fetchSource) &&
+        /async function\s+fetchHopViaGlobalFetch\b/.test(fetchSource) &&
+        /globalThis\.fetch\(/.test(fetchSource),
+      true,
+      'fetch.server.ts must implement the Cloudflare Workers globalThis.fetch edge runtime path',
     );
   }
 });

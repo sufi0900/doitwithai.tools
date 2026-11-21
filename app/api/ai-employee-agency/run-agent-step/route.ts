@@ -853,7 +853,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         contentItemId,
         qaScore: scoreCard,
         generatedContent: qaSummary,
-        llmGatewayStatus: llmCallResult
+        llmGatewayStatus: llmCallResult?.ok
           ? {
               usedLiveApiKey: llmCallResult.usedLiveApiKey,
               apiKeySlot: llmCallResult.apiKeySlot,
@@ -865,7 +865,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
               apiKeySlot: 'ZERO_LLM_CODE_GATE',
               telemetryNote: 'Stage 1 deterministic code gate completed ($0.00).',
             },
-        tokenUsage: llmCallResult
+        tokenUsage: llmCallResult?.ok
           ? {
               modelId: llmCallResult.modelId,
               apiKeySlot: llmCallResult.apiKeySlot,
