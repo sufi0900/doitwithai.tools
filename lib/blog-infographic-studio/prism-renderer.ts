@@ -962,11 +962,15 @@ export function buildPrismScene(
       color: idx === 0 ? accent : idx === 1 ? colors[3] : colors[1],
     }));
 
+  const hasHeaderScene =
+    config.sceneIllustration !== "none" && !isSyntheticOverflow && W >= 1000;
+  const headerTextW = hasHeaderScene ? contentW - 208 : contentW;
+
   const headline = textBlock(
     config.headline,
     M,
     headerTop + 26,
-    contentW,
+    headerTextW,
     headlineSize,
     ink,
     true,
@@ -982,7 +986,7 @@ export function buildPrismScene(
       config.subheadline,
       M,
       top,
-      contentW,
+      headerTextW,
       subSize,
       muted,
       false,
@@ -992,7 +996,42 @@ export function buildPrismScene(
     parts.push(sub.node);
     top += sub.height + 16;
   }
-  top += H <= 960 ? 22 : 28;
+  if (hasHeaderScene) {
+    const activeScene =
+      getVectorSceneById(config.sceneIllustration) ||
+      matchVectorSceneForTopic(
+        `${config.headline} ${config.subheadline}`,
+        layout,
+      );
+    const sceneMarkup = activeScene.renderSvgNodes({
+      primary: accent,
+      secondary: colors[1] || accent,
+      surface,
+      ink,
+      muted,
+    });
+    const headerBlockH = Math.max(118, top - (headerTop + 26));
+    const sceneScale = 0.74;
+    const sceneH = Math.round(160 * sceneScale);
+    const sceneW = Math.round(240 * sceneScale);
+    const sceneX = Math.round(W - M - sceneW);
+    const sceneY = Math.round(
+      headerTop + 26 + Math.max(0, (headerBlockH - sceneH) / 2),
+    );
+    parts.push(
+      el(
+        "g",
+        {
+          transform: `translate(${sceneX}, ${sceneY}) scale(${sceneScale})`,
+          opacity: light ? 0.88 : 0.92,
+          "data-vector-scene": activeScene.id,
+        },
+        el("__raw_svg__", { svg: sceneMarkup }),
+      ),
+    );
+    top = Math.max(top, sceneY + sceneH + 14);
+  }
+  top += H <= 960 ? 20 : 24;
   parts.push(
     rect(M, top - 16, 92, 5, accent, 2.5),
     rect(M + 102, top - 16, 34, 5, colors[3], 2.5),
@@ -1546,17 +1585,17 @@ export function buildPrismScene(
       isRibbon = layout === "ribbon";
     const textW = contentW - (isChecklist ? 228 : isTimeline ? 250 : 196);
     const extraGap = Math.min(
-      44,
-      Math.round((slack * 0.3) / Math.max(1, nodes.length - 1)),
+      48,
+      Math.round((slack * 0.34) / Math.max(1, nodes.length - 1)),
     );
     const rowGap = minGap + extraGap;
     const slackAfterGaps = Math.max(
       0,
       slack - extraGap * Math.max(0, nodes.length - 1),
     );
-    const cardShareRatio = nodes.length <= 3 ? 0.66 : 0.78;
+    const cardShareRatio = nodes.length <= 3 ? 0.56 : 0.72;
     const extraCardH = Math.min(
-      145,
+      110,
       Math.round((slackAfterGaps * cardShareRatio) / Math.max(1, nodes.length)),
     );
     const remainingSlack = Math.max(
@@ -1564,10 +1603,10 @@ export function buildPrismScene(
       slackAfterGaps - extraCardH * nodes.length,
     );
     const topLead = Math.min(
-      68,
+      76,
       Math.max(
-        Math.min(16, remainingSlack),
-        Math.round(remainingSlack * 0.42),
+        Math.min(18, remainingSlack),
+        Math.round(remainingSlack * 0.45),
       ),
     );
     let y = top + topLead;

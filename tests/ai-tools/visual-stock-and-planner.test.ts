@@ -213,3 +213,83 @@ test("Pinterest 2:3 Pins and LinkedIn 4:5 Carousel slides render distinct visual
   assert.ok(deckHtml.includes('data-slide-archetype="vs-comparison"'));
   assert.ok(deckHtml.includes("data-vector-scene="));
 });
+
+test("regression: nested lists, tool directories, FAQs, sequential badges, callouts & brand logos are clean and standalone", async () => {
+  const { parseHTML } = await import("linkedom");
+  const { extractArticleSource } = await import(
+    "../../lib/blog-infographic-studio/article-source"
+  );
+  const { extractWebsiteBrand } = await import(
+    "../../lib/blog-infographic-studio/brand-source"
+  );
+
+  const html = `<!doctype html>
+  <html>
+    <head>
+      <link rel="apple-touch-icon" href="/images/logo-icon.png" />
+    </head>
+    <body>
+      <header><a class="bg-indigo-600 text-white" href="/">Home</a></header>
+      <article>
+        <h2>AI SEO Tools and Resources for 2026</h2>
+        <h3>Core AI Tools for AI SEO</h3>
+        <ul>
+          <li><strong>ChatGPT</strong><br/>A complete AI SEO assistant for research, content creation, and technical tasks.</li>
+          <li><strong>Gemini</strong><br/>Strong for content generation, image creation, and alt text optimization.</li>
+          <li><strong>Claude AI</strong><br/>Great for generating full-length, high-quality AI SEO articles with detailed prompts.</li>
+          <li><strong>Perplexity AI</strong><br/>Best for real-time research and discovering AI SEO topics with citations.</li>
+        </ul>
+        <h3>Technical AI SEO Tool</h3>
+        <ul>
+          <li><strong>Adamigo A</strong><br/>It helps you:<ul><li>Check your robots.txt file</li><li>Detect blocked AI crawlers like GPTBot</li><li>Identify technical issues affecting AI visibility</li></ul></li>
+        </ul>
+        <h2>Frequently Asked Questions</h2>
+        <h3>Does first-person writing prove experience?</h3>
+        <p>No. Describe genuine work and evidence. Do not invent testing or success stories.</p>
+        <h3>Does Google automatically penalize AI-written content?</h3>
+        <p>AI use alone does not establish a violation. Content must meet Search requirements and policies, including rules about scaled content abuse.</p>
+      </article>
+    </body>
+  </html>`;
+
+  const doc = parseHTML(html).document as unknown as Document;
+  const brand = extractWebsiteBrand(doc, "doitwithai.tools", "https://doitwithai.tools/ai-seo/what-is-ai-seo");
+  assert.equal(brand.accent, "#4F46E5");
+  assert.equal(brand.logoUrl, "https://doitwithai.tools/images/logo-icon.png");
+
+  const extracted = extractArticleSource(doc, "What Is AI SEO?");
+  const suite = buildAllArticleSectionVisuals(extracted.sections, {
+    domain: "doitwithai.tools",
+    brandTheme: brand,
+  });
+
+  const toolsCard = suite.find((c) => /tools and resources/i.test(c.headline));
+  assert.ok(toolsCard);
+  assert.equal(toolsCard.nodes[0].badge, "01");
+  assert.equal(toolsCard.nodes[1].badge, "02");
+  // Category rollup names multiple real tools rather than one random bullet
+  assert.match(toolsCard.nodes[0].detail, /ChatGPT.*Gemini.*Claude AI/i);
+  // Nested list items have clean separators, zero glued words like "fileDetect"
+  assert.doesNotMatch(toolsCard.nodes[1].detail, /fileDetect|GPTBotIdentify/);
+
+  const faqCard = suite.find((c) => /frequently asked/i.test(c.headline));
+  assert.ok(faqCard);
+  assert.equal(faqCard.nodes[0].badge, "Q1");
+  assert.equal(faqCard.nodes[1].badge, "Q2");
+  // FAQ polarity "No — ..." and second sentence are preserved
+  assert.match(faqCard.nodes[0].detail, /^No\s+—/i);
+  assert.match(faqCard.nodes[0].detail, /genuine work and evidence/i);
+  assert.match(faqCard.nodes[1].detail, /scaled content abuse/i);
+
+  // Callout bar never duplicates subheadline verbatim or joins card titles with middots
+  for (const card of suite) {
+    if (card.calloutText) {
+      assert.notEqual(
+        card.calloutText.trim().toLowerCase(),
+        card.subheadline.trim().toLowerCase(),
+      );
+      assert.doesNotMatch(card.calloutText, /\s·\s.*\s·\s/);
+    }
+  }
+});
+

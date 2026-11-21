@@ -104,12 +104,82 @@ export function extractArticleSource(document: Document, title: string) {
     if (el.closest(excluded)) continue;
     if (el.parentElement?.closest("table, li") && !/^H[234]$/.test(el.tagName))
       continue;
-    const copy = el.querySelector("br") ? (el.cloneNode(true) as Element) : el;
+    const needsClone = Boolean(
+      el.querySelector("br, ul, ol, p, div, strong, b"),
+    );
+    const copy = needsClone ? (el.cloneNode(true) as Element) : el;
     if (copy !== el) {
-      for (const br of Array.from(copy.querySelectorAll("br")))
-        br.replaceWith(" ");
+      // Separate nested list items so `<li>Check robots.txt</li><li>Detect GPTBot</li>` never glues words
+      for (const nestedLi of Array.from(copy.querySelectorAll("li"))) {
+        const liTxt = tidy(nestedLi.textContent);
+        if (!liTxt) continue;
+        const hasTrailPunct = /[.!?;:]$/.test(liTxt);
+        nestedLi.textContent = hasTrailPunct ? ` ${liTxt} ` : ` ${liTxt}; `;
+      }
+      // Ensure block children inside <li> (e.g., <li><p>Tool</p><p>Desc</p></li>) stay separated
+      if (copy.tagName === "LI") {
+        const blocks = Array.from(copy.querySelectorAll("p, div"));
+        for (let bi = 0; bi < blocks.length; bi++) {
+          const blk = blocks[bi];
+          const bTxt = tidy(blk.textContent);
+          if (!bTxt) continue;
+          if (bi === 0 && blocks.length > 1 && bTxt.length <= 56 && !/[.!?;:]$/.test(bTxt)) {
+            blk.textContent = `${bTxt} — `;
+          } else if (bi < blocks.length - 1 && !/[.!?;:]$/.test(bTxt)) {
+            blk.textContent = `${bTxt}. `;
+          } else {
+            blk.textContent = `${bTxt} `;
+          }
+        }
+      }
+      // Replace <br> with " — " when preceded by a short label without sentence punctuation, else " "
+      for (const br of Array.from(copy.querySelectorAll("br"))) {
+        const prevText = tidy(br.previousSibling?.textContent || "");
+        const prevIsShortLabel =
+          prevText.length >= 2 &&
+          prevText.length <= 56 &&
+          !/[.!?;:]$/.test(prevText) &&
+          (copy.tagName === "LI" ||
+            (br.previousSibling?.nodeType === 1 &&
+              /^(?:STRONG|B|A|SPAN)$/i.test(
+                (br.previousSibling as Element).tagName || "",
+              )));
+        br.replaceWith(prevIsShortLabel ? " — " : " ");
+      }
+      // If a list item starts with <strong>Tool Name</strong> followed directly by text without punctuation
+      if (copy.tagName === "LI") {
+        const firstEl = copy.firstElementChild;
+        if (
+          firstEl &&
+          /^(?:STRONG|B|A)$/i.test(firstEl.tagName || "") &&
+          firstEl.nextSibling
+        ) {
+          const lead = tidy(firstEl.textContent);
+          const next = tidy(firstEl.nextSibling.textContent || "");
+          if (
+            lead.length >= 2 &&
+            lead.length <= 56 &&
+            next.length >= 12 &&
+            !/[.!?;:—–-]$/.test(lead) &&
+            !/^[:—–-]/.test(next)
+          ) {
+            firstEl.textContent = `${lead} — `;
+          }
+        }
+      }
     }
-    let text = tidy(copy.textContent);
+    let rawContent = copy.textContent || "";
+    if (el.tagName === "LI") {
+      rawContent = rawContent.replace(
+        /^\s*([A-Za-z0-9.+#&/\-\s]{2,48}?)\s*\n+\s*([A-Z][^\n]{12,})/,
+        "$1 — $2",
+      );
+    }
+    let text = tidy(rawContent)
+      .replace(/:\s*([A-Z])/g, ": $1")
+      .replace(/;\s*$/g, "")
+      .replace(/\s+;/g, ";")
+      .replace(/\s+—\s+—\s+/g, " — ");
     if (!text) continue;
     if (el.tagName === "H2") {
       begin(text, false);

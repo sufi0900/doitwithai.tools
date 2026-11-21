@@ -118,14 +118,21 @@ export function buildUniversalArticleOverview(
       }
     }
     const shortTitle =
-      card.headline.length <= 42
-        ? card.headline
-        : leadNode.title.slice(0, 42);
+      leadNode.title.length <= 42
+        ? leadNode.title
+        : card.headline.split(":")[0].trim().slice(0, 42);
+    const cleanDetail =
+      card.subheadline &&
+      card.subheadline.length >= 28 &&
+      card.subheadline.length <= 130 &&
+      !/^key takeaways synthesized/i.test(card.subheadline)
+        ? card.subheadline
+        : leadNode.detail;
     overviewNodes.push({
       id: `overview-node-${i + 1}`,
       badge: `0${i + 1}`,
       title: shortTitle,
-      detail: leadNode.detail,
+      detail: cleanDetail,
       metricValue: "",
       icon: leadNode.icon,
       sourceBlockIds: blockIds.length ? blockIds : undefined,
@@ -134,10 +141,12 @@ export function buildUniversalArticleOverview(
 
   if (overviewNodes.length < 3 || citedBlocks.length < 2) return undefined;
 
-  const firstHeadline = pickedCards[0]?.headline || "Executive Overview";
+  const baseTopic = (pickedCards[0]?.headline || "Executive Overview")
+    .split(":")[0]
+    .trim();
   const overviewHeadline =
-    firstHeadline.length <= 44
-      ? `${firstHeadline}: Core Playbook`
+    baseTopic.length >= 4 && baseTopic.length <= 36
+      ? `${baseTopic}: Complete Visual Playbook`
       : "Executive Summary: Core Pillars";
 
   const nodesWithIcons = assignDistinctSectionIcons(

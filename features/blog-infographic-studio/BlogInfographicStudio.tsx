@@ -729,41 +729,8 @@ export function BlogInfographicStudio({
                     commit(allVisuals);
                     setActiveIdx(allVisuals[0]?.id === "ai-seo-overview" ? 0 : recIdx);
                     notify(
-                      `Generated ${allVisuals.length} unique section infographics across the article with distinct layouts and shaders. Click any section tab to edit.`,
+                      `Generated ${allVisuals.length} unique section infographics across the article with distinct layouts and shaders. Click any section tab to edit, or use "AI Re-Synthesize Visuals" for an AI editorial pass.`,
                     );
-                    void (async () => {
-                      try {
-                        const res = await fetch("/api/ai-tools/infographic-plan", {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({
-                            sections: data.sections,
-                            sourceUrl: data.url,
-                            domain: data.domain,
-                            baseConfig: active,
-                          }),
-                        });
-                        if (!res.ok) return;
-                        const planned = (await res.json()) as {
-                          visuals?: BlogInfographicConfig[];
-                          providerUsed?: string;
-                        };
-                        if (
-                          Array.isArray(planned.visuals) &&
-                          planned.visuals.length > 0 &&
-                          planned.providerUsed &&
-                          planned.providerUsed !== "deterministic-baseline" &&
-                          planned.providerUsed !== "deterministic-fallback"
-                        ) {
-                          setCards(planned.visuals.map(lockInfographicGeometry));
-                          notify(
-                            `AI Visual Director (${planned.providerUsed}) refined ${planned.visuals.length} section infographics with source-verified concepts & vector scenes.`,
-                          );
-                        }
-                      } catch {
-                        // Keep deterministic visuals on network/offline error
-                      }
-                    })();
                     return;
                   }
                   setError(
@@ -934,6 +901,7 @@ export function BlogInfographicStudio({
                                 sourceUrl: extractedArticle.url,
                                 domain: extractedArticle.domain,
                                 baseConfig: active,
+                                brandTheme: extractedArticle.brandTheme,
                               }),
                             },
                           );

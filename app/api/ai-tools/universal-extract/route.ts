@@ -1661,6 +1661,33 @@ export async function POST(request: NextRequest) {
     const sourceParagraphs = exposedSections?.flatMap((s) =>
       s.blocks.filter((b) => b.kind !== "heading").map((b) => b.text),
     );
+    let brandTheme = sourceTree
+      ? extractWebsiteBrand(document as unknown as Document, domain, finalUrl)
+      : undefined;
+    if (brandTheme?.logoUrl) {
+      try {
+        const logoRes = await fetch(brandTheme.logoUrl, {
+          signal: AbortSignal.timeout(2500),
+          headers: { Accept: "image/png,image/jpeg,image/webp" },
+        });
+        const ct = (logoRes.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
+        if (
+          logoRes.ok &&
+          ["image/png", "image/jpeg", "image/webp"].includes(ct)
+        ) {
+          const buf = await logoRes.arrayBuffer();
+          if (buf.byteLength > 0 && buf.byteLength <= 220_000) {
+            const b64 = Buffer.from(buf).toString("base64");
+            brandTheme = {
+              ...brandTheme,
+              logoDataUrl: `data:${ct};base64,${b64}`,
+            };
+          }
+        }
+      } catch {
+        // Non-blocking: fall back to text domain signature when logo fetch fails
+      }
+    }
     const resPayload: UniversalExtractResponse = {
       isYoutube: false,
       url: finalUrl,
@@ -1698,10 +1725,7 @@ export async function POST(request: NextRequest) {
         ? {
             ...sourceTree,
             sections: exposedSections,
-            brandTheme: extractWebsiteBrand(
-              document as unknown as Document,
-              domain,
-            ),
+            brandTheme,
           }
         : {}),
       images: images.slice(0, 25),

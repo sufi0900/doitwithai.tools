@@ -15,6 +15,7 @@ import type { PrismLayout } from "./layout-registry";
 import {
   BACKGROUND_PATTERNS,
   CARD_STYLES,
+  brandColors,
   extractHeadlineHighlightPhrases,
   normalizeSignature,
 } from "./appearance";
@@ -152,6 +153,11 @@ export function buildSectionVisual(
 ): { nodes: BlogInfographicNodeItem[]; brief: VisualBrief } {
   const isFaq = isFaqHeadingOrSection(section.title, section.blocks);
   let excluded = 0;
+  const nonTableH3Headings = new Set(
+    section.blocks
+      .filter((x) => x.kind !== "table" && x.kind !== "heading" && x.heading)
+      .map((x) => x.heading!),
+  );
   const eligible: ArticleSourceBlock[] = [];
   for (const b of section.blocks) {
     if (b.kind === "heading" || b.kind === "caption") {
@@ -162,6 +168,23 @@ export function buildSectionVisual(
       const [headers, ...rows] = b.text
         .split("\n")
         .map((row) => row.split(" | ").map(clean));
+      // If this table sits under one H3 inside a multi-H3 section (e.g. Myths / Mistakes / Best Practices),
+      // summarize its key practices under the parent H3 instead of mixing table rows with top-level H3s.
+      if (b.heading && nonTableH3Headings.size >= 2) {
+        const practiceLabels = rows
+          .map((cells) => clean(cells[0] || ""))
+          .filter((l) => l.length >= 3 && l.length <= 54)
+          .slice(0, 4);
+        if (practiceLabels.length >= 2) {
+          eligible.push({
+            ...b,
+            kind: "paragraph",
+            heading: b.heading,
+            text: `Prioritize ${practiceLabels.join(", ").toLowerCase()} to maintain editorial trust and search visibility.`,
+          });
+        }
+        continue;
+      }
       for (const cells of rows) {
         const [label, ...values] = cells;
         if (
@@ -171,12 +194,11 @@ export function buildSectionVisual(
           cells.length !== headers.length
         )
           continue;
-        const detail = values
-          .map((value, idx) =>
-            value && headers[idx + 1] ? `${headers[idx + 1]}: ${value}` : value,
-          )
-          .filter(Boolean)
-          .join(". ");
+        const cleanValues = values.map((v) => clean(v)).filter(Boolean);
+        const detail =
+          cleanValues.length >= 2
+            ? `${cleanValues[0].replace(/\.$/, "")} — ${cleanValues[1].replace(/^\p{Lu}/u, (c) => c.toLowerCase())}.`
+            : cleanValues.join(". ");
         if (detail.length >= 12 && detail.length <= 260) {
           eligible.push({ ...b, kind: "list", heading: label, text: detail });
         }
@@ -185,7 +207,7 @@ export function buildSectionVisual(
     }
     const rawText = decontextualizeProse(clean(b.text));
     if (
-      rawText.length < 24 ||
+      rawText.length < (isFaq ? 12 : 24) ||
       personal.test(rawText) ||
       norm(rawText) === norm(section.title)
     ) {
@@ -193,20 +215,38 @@ export function buildSectionVisual(
       continue;
     }
     if (b.kind === "paragraph") {
-      const keptSentences = sentences(rawText).filter(
-        (s) =>
-          !personal.test(s) &&
-          !conversationalFiller.test(s) &&
-          clean(s).length >= 24,
-      );
-      if (!keptSentences.length) {
-        excluded++;
-        continue;
+      if (isFaq) {
+        // Preserve direct Yes/No polarity leads in FAQ answers and combine 1-2 crisp sentences
+        const rawSents = sentences(rawText).filter(
+          (s) => !personal.test(s) && !conversationalFiller.test(s),
+        );
+        if (!rawSents.length) {
+          excluded++;
+          continue;
+        }
+        const mergedFaq = rawSents
+          .join(" ")
+          .replace(/^(Yes|No|Not necessarily)\.\s+([A-Z])/i, (_, lead, nextChar) => `${lead} — ${nextChar.toLowerCase()}`);
+        eligible.push({
+          ...b,
+          text: mergedFaq,
+        });
+      } else {
+        const keptSentences = sentences(rawText).filter(
+          (s) =>
+            !personal.test(s) &&
+            !conversationalFiller.test(s) &&
+            clean(s).length >= 24,
+        );
+        if (!keptSentences.length) {
+          excluded++;
+          continue;
+        }
+        eligible.push({
+          ...b,
+          text: keptSentences.join(" "),
+        });
       }
-      eligible.push({
-        ...b,
-        text: keptSentences.join(" "),
-      });
     } else {
       eligible.push({ ...b, text: rawText });
     }
@@ -311,10 +351,91 @@ export function buildSectionVisual(
     }));
   }
 
-  const points = groups
+  // Helper to synthesize a complete category summary when an H3 contains 3+ named tool/resource bullets
+  const buildNamedListRollup = (
+    groupTitle: string | undefined,
+    blocks: ArticleSourceBlock[],
+  ): { detail: string; blockIds: string[] } | null => {
+    if (!groupTitle || isFaq) return null;
+    const listBlocks = blocks.filter((b) => b.kind === "list");
+    if (listBlocks.length < 3) return null;
+    const parsedItems: Array<{ name: string; desc: string; id: string }> = [];
+    for (const lb of listBlocks) {
+      const m = lb.text.match(/^([A-Za-z0-9.+#&/\-\s]{2,34}?)\s*(?:—|–|:|\n)\s*(.{14,})$/);
+      if (m) {
+        const name = clean(m[1]);
+        const desc = clean(m[2]);
+        if (name.split(/\s+/).length <= 5 && !/^how to /i.test(name)) {
+          parsedItems.push({ name, desc, id: lb.id });
+        }
+      }
+    }
+    if (parsedItems.length < 3) return null;
+    const uniqueNames: string[] = [];
+    const citedIds: string[] = [];
+    for (const item of parsedItems) {
+      if (!uniqueNames.some((n) => n.toLowerCase() === item.name.toLowerCase())) {
+        uniqueNames.push(item.name);
+        citedIds.push(item.id);
+      }
+      if (uniqueNames.length >= 4) break;
+    }
+    if (uniqueNames.length < 3) return null;
+    const last = uniqueNames[uniqueNames.length - 1];
+    const head = uniqueNames.slice(0, -1).join(", ");
+    const samplePurpose = parsedItems[0].desc
+      .replace(/^(?:a|an|the)\s+/i, "")
+      .replace(/\.$/, "")
+      .slice(0, 72);
+    return {
+      detail: `Includes ${head}, and ${last} — covering ${samplePurpose.charAt(0).toLowerCase() + samplePurpose.slice(1)}.`,
+      blockIds: citedIds,
+    };
+  };
+
+  const rawPoints = groups
     .map((group, i) => {
       const first = group.blocks[0];
       const text = clean(group.blocks.map((b) => b.text).join(" "));
+
+      // Category rollup for multi-tool / multi-resource H3 lists
+      const rollup = buildNamedListRollup(group.title, group.blocks);
+      if (rollup && group.title) {
+        const titleClean = stripTrailingCliffhangers(clean(group.title));
+        return {
+          id: `point-${sourceId(`${section.id}:${i}:${titleClean}`)}`,
+          badge: "",
+          title: titleClean,
+          detail: rollup.detail,
+          metricValue: "",
+          sourceBlockIds: rollup.blockIds,
+        };
+      }
+
+      // Self-contained FAQ answer synthesis (preserve Yes/No + up to 2 concise sentences)
+      if (isFaq && group.title) {
+        const faqParagraph = group.blocks
+          .map((b) => clean(b.text))
+          .filter(Boolean)
+          .join(" ");
+        if (!faqParagraph) return null;
+        const faqSents = sentences(faqParagraph).filter(
+          (s) => !personal.test(s) && !conversationalFiller.test(s),
+        );
+        let faqAnswer = faqSents[0] || faqParagraph;
+        if (faqSents.length >= 2 && faqAnswer.length < 115 && (faqAnswer.length + faqSents[1].length + 1) <= 185) {
+          faqAnswer = `${faqAnswer} ${faqSents[1]}`;
+        }
+        return {
+          id: `point-${sourceId(`${section.id}:${i}:${group.title}`)}`,
+          badge: "",
+          title: clean(group.title),
+          detail: faqAnswer.replace(/^\p{Ll}/u, (c) => c.toUpperCase()),
+          metricValue: "",
+          sourceBlockIds: [first.id],
+        };
+      }
+
       const allCandidates = group.blocks
         .flatMap((b) =>
           sentences(b.text).map((sentence) => ({ sentence, block: b })),
@@ -384,17 +505,16 @@ export function buildSectionVisual(
         isFaq || rawTitle.endsWith("?")
           ? rawTitle
           : stripTrailingCliffhangers(
-              rawTitle.replace(/\s+and (?:why|how)\b.*$/i, ""),
-            );
+              rawTitle
+                .replace(/\s+and (?:why|how)\b.*$/i, "")
+                .replace(/:\s+(?:best|longer|more|top|key)$/i, ""),
+            ).replace(/[\s,&:–—-]+$/, "");
 
       const detail = (derived.detailOverride || primarySentence).trim();
 
       return {
         id: `point-${sourceId(`${section.id}:${i}:${title}`)}`,
-        badge: isFaq
-          ? `Q${i + 1}`
-          : title.match(/^([A-Z]{2,5})\b/)?.[1] ||
-            String(i + 1).padStart(2, "0"),
+        badge: "",
         title: clean(title),
         detail: detail.replace(/^\p{Ll}/u, (c) => c.toUpperCase()),
         metricValue: "",
@@ -404,6 +524,15 @@ export function buildSectionVisual(
     .filter((n): n is NonNullable<typeof n> =>
       Boolean(n && n.title && n.detail && norm(n.title) !== norm(n.detail)),
     );
+
+  // Assign sequential badges AFTER filtering so badge numbering can never skip (e.g. 01, 02, 04)
+  const points = rawPoints.map((pt, idx) => ({
+    ...pt,
+    badge: isFaq
+      ? `Q${idx + 1}`
+      : pt.title.match(/^(AEO|GEO|SEO|AI|ROI|KPI|CTA|URL|FAQ)\b/)?.[1] ||
+        String(idx + 1).padStart(2, "0"),
+  }));
   const nodes = assignDistinctSectionIcons(points.slice(0, 6), section.title);
   const omittedPoints = Math.max(0, points.length - nodes.length);
   const warnings: string[] = [];
@@ -654,7 +783,8 @@ export function buildAllArticleSectionVisuals(
           backgroundPattern: patternCycle[idx % patternCycle.length],
           cardStyle,
           fontFamily: base.fontFamily || "inter-jakarta",
-          secondaryAccent: hint?.secondaryAccent || base.secondaryAccent,
+          secondaryAccent:
+            hint?.secondaryAccent || hint?.accent || base.secondaryAccent,
           depth: {
             preset: depthCycle[idx % depthCycle.length],
             strength: 65,
@@ -672,12 +802,22 @@ export function buildAllArticleSectionVisuals(
           signature: {
             ...normalizeSignature(base.signature),
             name: base.signature?.name || hint?.siteName || options.domain || "",
+            showLogo: Boolean(
+              base.brand?.logoDataUrl ||
+                hint?.logoDataUrl ||
+                base.signature?.showLogo,
+            ),
           },
           brand: {
             ...base.brand,
+            ...(base.brand?.logoDataUrl || hint?.logoDataUrl
+              ? { logoDataUrl: base.brand?.logoDataUrl || hint?.logoDataUrl }
+              : {}),
             ...(base.brand?.customColors
               ? { customColors: base.brand.customColors }
-              : { customColors: undefined }),
+              : hint?.accent && idx === 0
+                ? { customColors: brandColors(hint.accent, Boolean(hint.isDark ?? true)) }
+                : { customColors: undefined }),
           },
         },
         layout,

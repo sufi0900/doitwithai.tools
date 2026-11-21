@@ -21,26 +21,21 @@ function synthesizeCalloutText(
   config: BlogInfographicConfig,
   isFaq = false,
 ): string {
-  const sub = config.subheadline?.trim();
-  if (sub && sub.length >= 16 && sub.length <= 68) {
-    return decontextualizeProse(sub);
-  }
   if (isFaq) {
     return `Review all ${config.nodes.length} verified answers before applying changes.`;
   }
-  const titles = config.nodes
-    .slice(0, 3)
-    .map((n) => n.title.replace(/[?.!]+$/, "").trim())
-    .filter(Boolean);
-  if (titles.length >= 2) {
-    const three = titles.join(" · ");
-    if (three.length <= 68) return three;
-    const two = titles.slice(0, 2).join(" · ");
-    if (two.length <= 68) return two;
-    return `${titles[0].slice(0, 62)}`;
+  const headlineCore = decontextualizeProse(config.headline)
+    .split(":")[0]
+    .replace(/[?.!]+$/, "")
+    .trim()
+    .slice(0, 44);
+  if (config.prismLayout === "comparison") {
+    return `Balance both sides of ${headlineCore} for durable search visibility.`;
   }
-  const headline = decontextualizeProse(config.headline);
-  return `Apply ${headline.slice(0, 52)} consistently.`;
+  if (config.prismLayout === "timeline") {
+    return `Follow each phase of ${headlineCore} in sequence for reliable execution.`;
+  }
+  return `Apply these ${config.nodes.length} pillars of ${headlineCore} together with verified evidence.`;
 }
 
 /**

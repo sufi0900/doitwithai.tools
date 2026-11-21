@@ -39,6 +39,8 @@ declare module "@/lib/blog-writer/canonical-state" {
       accent?: string;
       secondaryAccent?: string;
       isDark?: boolean;
+      logoUrl?: string;
+      logoDataUrl?: string;
       siteName: string;
       source: "theme-color" | "css-variable" | "site-name";
     };

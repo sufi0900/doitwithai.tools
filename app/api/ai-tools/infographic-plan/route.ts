@@ -8,19 +8,25 @@
  * Cerebras -> OpenRouter -> Mistral -> deterministic fallback).
  *
  * Enforces:
- *  1. Every synthesized node cites valid `sourceBlockIds[]` from the section.
- *  2. `reviewCardPercentages` verifies that no percentage is invented or stripped of qualifiers.
- *  3. Each section receives a reframed thesis headline, non-overlapping 2-5 word Concept Kernels,
- *     a matched commercial-safe vector scene (`sceneIllustration`), and varied Prism layouts.
+ *  1. Stratified heading-aware block sampling across the ENTIRE section (so multi-phase
+ *     sections never cut off after Phase 1).
+ *  2. Every synthesized node cites valid `sourceBlockIds[]` from the section.
+ *  3. `reviewCardPercentages` verifies that no percentage is invented or stripped of qualifiers.
+ *  4. Each section receives a reframed thesis headline, complete story arc across all pillars,
+ *     genuine actionable takeaway (never repeating the H2 subtitle), and website brand theme.
  */
 
 import { NextResponse } from "next/server";
-import type { ArticleSourceSection } from "@/lib/blog-infographic-studio/article-source";
+import type {
+  ArticleSourceBlock,
+  ArticleSourceSection,
+} from "@/lib/blog-infographic-studio/article-source";
 import {
   buildAllArticleSectionVisuals,
   withPrismLayout,
   type PrismLayout,
 } from "@/lib/blog-infographic-studio/visual-brief";
+import type { WebsiteBrandHint } from "@/lib/blog-infographic-studio/brand-source";
 import { PRISM_LAYOUTS } from "@/lib/blog-infographic-studio/layout-registry";
 import { reviewCardPercentages } from "@/lib/blog-infographic-studio/percentage-review";
 import { assignDistinctSectionIcons } from "@/lib/blog-infographic-studio/skills/semantic-iconography";
@@ -61,12 +67,59 @@ const VALID_LAYOUTS = new Set<PrismLayout>(
   PRISM_LAYOUTS.map((l) => l.id),
 );
 
+/**
+ * Stratified heading-aware sampler so the LLM sees the ENTIRE section arc
+ * (every H3/H4 phase, category, or FAQ question) instead of only the first 10 blocks.
+ */
+function sampleBlocksAcrossSection(
+  blocks: ArticleSourceBlock[],
+  maxBlocks = 18,
+): Array<{ id: string; kind: string; heading?: string; text: string }> {
+  const nonHeading = blocks.filter((b) => b.kind !== "heading");
+  if (nonHeading.length <= maxBlocks) {
+    return nonHeading.map((b) => ({
+      id: b.id,
+      kind: b.kind,
+      heading: b.heading,
+      text: b.text.slice(0, 320),
+    }));
+  }
+  const byHeading = new Map<string, ArticleSourceBlock[]>();
+  for (const b of nonHeading) {
+    const key = b.heading || "__root__";
+    const list = byHeading.get(key) || [];
+    list.push(b);
+    byHeading.set(key, list);
+  }
+  const picked: ArticleSourceBlock[] = [];
+  const groups = Array.from(byHeading.values());
+  let round = 0;
+  while (picked.length < maxBlocks) {
+    let added = false;
+    for (const grp of groups) {
+      if (round < grp.length && picked.length < maxBlocks) {
+        picked.push(grp[round]);
+        added = true;
+      }
+    }
+    if (!added) break;
+    round++;
+  }
+  return picked.map((b) => ({
+    id: b.id,
+    kind: b.kind,
+    heading: b.heading,
+    text: b.text.slice(0, 300),
+  }));
+}
+
 export async function POST(request: Request) {
   let body: {
     sections?: ArticleSourceSection[];
     sourceUrl?: string;
     domain?: string;
     baseConfig?: BlogInfographicConfig;
+    brandTheme?: WebsiteBrandHint;
     providerKeys?: Record<string, string>;
   };
 
@@ -87,12 +140,13 @@ export async function POST(request: Request) {
     );
   }
 
-  // Always build the deterministic baseline first so every section is guaranteed valid.
+  // Build deterministic baseline preserving brand theme (no synthetic double-colon overview card).
   const deterministicVisuals = buildAllArticleSectionVisuals(sections, {
     sourceUrl: body.sourceUrl,
     domain: body.domain,
     baseConfig: body.baseConfig,
-    includeUniversalOverview: true,
+    brandTheme: body.brandTheme,
+    includeUniversalOverview: false,
   }).map((card, index) => {
     const resolved = resolveSectionVisualStock({
       tenant: body.domain || "shared",
@@ -109,19 +163,14 @@ export async function POST(request: Request) {
     };
   });
 
-  // Prepare compact section digest for the LLM visual planner
+  // Prepare stratified section digest covering the entire arc of up to 10 content sections
   const compactSections = sections
     .filter((s) => s.role === "content" && s.blocks.length > 0)
-    .slice(0, 8)
+    .slice(0, 10)
     .map((sec) => ({
       sectionId: sec.id,
       rawHeading: sec.title,
-      blocks: sec.blocks.slice(0, 10).map((b) => ({
-        id: b.id,
-        kind: b.kind,
-        heading: b.heading,
-        text: b.text.slice(0, 340),
-      })),
+      blocks: sampleBlocksAcrossSection(sec.blocks, 18),
     }));
 
   if (!compactSections.length) {
@@ -132,17 +181,24 @@ export async function POST(request: Request) {
   }
 
   const systemPrompt = `You are a Principal Editorial Visual Director & Infographic Architect.
-Transform each extracted article section into a standalone, high-impact visual infographic plan.
-Rules:
-1. NEVER copy generic question headings like "What Is X?" verbatim as the headline. Reframe into an authoritative thesis headline (4-8 words, max 54 chars) + a 1-sentence explanatory subheadline (max 95 chars).
-2. Distill 2 to 5 standalone nodes per section:
-   - "title": Crisp 2-5 word Concept Kernel (e.g. "Answer Engine Citations", NOT a truncated sentence).
-   - "detail": 1 concise, self-contained explanation sentence (55-150 chars) that does NOT repeat the title verbatim.
-   - "sourceBlockIds": Array of 1-2 exact block "id" strings from that section's "blocks" that prove the claim.
-3. NEVER invent statistics or percentages. If you include a percentage from a source block, preserve any qualifier ("up to", "about", "nearly").
-4. Choose the best "prismLayout" for each section from: "editorial", "timeline", "comparison", "ribbon", "constellation", "checklist", "process-flow", "bento-grid", "hub-spoke", "funnel", "kpi-metrics", "quadrant", "anatomy-diagram", "quote-spotlight". Vary layouts across sections.
-5. Choose "sceneIllustration" from: "ai-search-intelligence", "editorial-workflow-pipeline", "side-by-side-comparison-scale", "analytics-benchmark-telemetry", "verification-trust-shield", "knowledge-hub-architecture", "autonomous-agent-orchestrator", "conversion-funnel-velocity", "editorial-publishing-studio", "social-carousel-distribution", "lifestyle-home-companion", "technical-code-schema", "quadrant-priority-matrix", "executive-roadmap-milestone", "audience-persona-collaboration", "roi-value-calculator".
-Return strict JSON: { "sections": [ { "sectionId": "...", "headline": "...", "subheadline": "...", "eyebrowLabel": "...", "prismLayout": "...", "sceneIllustration": "...", "comparisonLabels": ["Left", "Right"], "nodes": [ { "badge": "01", "title": "...", "detail": "...", "sourceBlockIds": ["..."] } ] } ] }`;
+Transform each extracted article section into a standalone, social-shareable visual infographic plan so a reader on Facebook, LinkedIn, or Pinterest understands the COMPLETE topic without reading the article.
+
+Strict Editorial & Storytelling Rules:
+1. COMPLETE SECTION ARC: Cover EVERY major subheading/phase/category in the section (e.g., if a timeline has 4 phases from Keyword Era to AI Search, cover all 4 phases in order—never stop at Phase 1).
+2. HEADLINE & SUBHEADLINE: Never copy bare questions like "What Is X?" verbatim. Write a sharp editorial thesis headline (4–8 words, max 52 chars) and a clear 1-sentence subheadline (max 92 chars).
+3. STANDALONE NODES (2 to 6 nodes per section):
+   - "badge": Sequential "01", "02", "03"... (or "Q1", "Q2"... for FAQs, or "AEO"/"GEO"/"AI" when appropriate). NEVER skip numbers.
+   - "title": Crisp 2–5 word Concept Kernel (or complete FAQ question ending in "?").
+   - "detail": Self-contained 1–2 sentence explanation (70–155 chars) that makes complete sense on its own, NEVER repeats the title, and NEVER leaves out Yes/No polarity on FAQ answers.
+   - For tool/resource directory categories, name the actual top 3–4 tools from that category and explain what they do together (do NOT pick 1 random bullet).
+   - "sourceBlockIds": 1–3 exact block "id" strings from that section's "blocks" that prove the claim.
+4. GENUINE CALLOUT ("calloutText"): Write 1 concise actionable takeaway sentence (40–78 chars) ONLY when it adds a real concluding insight. NEVER copy the subheadline or join card titles with middots.
+5. ZERO HALLUCINATIONS: Never invent statistics or percentages. Preserve qualifiers ("up to", "about", "nearly") if present in source blocks.
+6. LAYOUTS & SCENES:
+   - "prismLayout": one of "editorial", "timeline", "comparison", "ribbon", "constellation", "checklist". (Use "comparison" ONLY with an even number of nodes and paired "comparisonLabels": ["Left", "Right"].)
+   - "sceneIllustration": one of "ai-search-intelligence", "editorial-workflow-pipeline", "side-by-side-comparison-scale", "analytics-benchmark-telemetry", "verification-trust-shield", "knowledge-hub-architecture", "autonomous-agent-orchestrator", "conversion-funnel-velocity", "editorial-publishing-studio", "social-carousel-distribution", "lifestyle-home-companion", "technical-code-schema", "quadrant-priority-matrix", "executive-roadmap-milestone", "audience-persona-collaboration", "roi-value-calculator".
+
+Return strict JSON: { "sections": [ { "sectionId": "...", "headline": "...", "subheadline": "...", "eyebrowLabel": "...", "prismLayout": "...", "sceneIllustration": "...", "comparisonLabels": ["Left", "Right"], "calloutText": "...", "nodes": [ { "badge": "01", "title": "...", "detail": "...", "sourceBlockIds": ["..."] } ] } ] }`;
 
   const userPrompt = JSON.stringify({
     sourceUrl: body.sourceUrl || "",
@@ -155,7 +211,7 @@ Return strict JSON: { "sections": [ { "sectionId": "...", "headline": "...", "su
     userPrompt,
     keyOverrides: body.providerKeys,
     temperature: 0.25,
-    maxOutputTokens: 3200,
+    maxOutputTokens: 4200,
     deterministicFallback: () => ({ sections: [] }),
   });
 
@@ -173,8 +229,6 @@ Return strict JSON: { "sections": [ { "sectionId": "...", "headline": "...", "su
     });
   }
 
-  // Merge verified AI plans into the deterministic visuals while strictly enforcing
-  // sourceBlockIds and percentage qualifier verification.
   const upgradedVisuals = deterministicVisuals.map((card, idx) => {
     const plan = plannedBySectionId.get(card.sectionId);
     if (!plan || !Array.isArray(plan.nodes) || plan.nodes.length < 2) {
@@ -183,13 +237,16 @@ Return strict JSON: { "sections": [ { "sectionId": "...", "headline": "...", "su
 
     const sectionBlocks = card.visualBrief?.sourceBlocks || [];
     const blockById = new Map(sectionBlocks.map((b) => [b.id, b]));
+    const isFaqSection =
+      /faq|frequently asked/i.test(card.headline) ||
+      card.nodes.every((n) => n.title.trim().endsWith("?"));
 
     const verifiedNodes: BlogInfographicNodeItem[] = [];
     for (let ni = 0; ni < Math.min(6, plan.nodes.length); ni++) {
       const rawNode = plan.nodes[ni];
       const title = String(rawNode?.title || "").trim();
       const detail = String(rawNode?.detail || "").trim();
-      if (!title || !detail || title.length > 90 || detail.length > 280) {
+      if (!title || !detail || title.length > 90 || detail.length > 260) {
         continue;
       }
 
@@ -211,17 +268,17 @@ Return strict JSON: { "sections": [ { "sectionId": "...", "headline": "...", "su
 
       const pctCheck = reviewCardPercentages(`${title}. ${detail}`, citedTexts);
       if (!pctCheck.valid) {
-        // Reject hallucinated or stripped-qualifier percentage nodes; fall back to deterministic node
         const fallbackNode = card.nodes[ni];
         if (fallbackNode) verifiedNodes.push(fallbackNode);
         continue;
       }
 
       verifiedNodes.push({
-        id: `ai-node-${card.sectionId}-${ni + 1}`,
-        badge:
-          String(rawNode?.badge || "").trim().slice(0, 6) ||
-          String(ni + 1).padStart(2, "0"),
+        id: `ai-node-${card.sectionId}-${verifiedNodes.length + 1}`,
+        badge: isFaqSection
+          ? `Q${verifiedNodes.length + 1}`
+          : String(rawNode?.badge || "").trim().slice(0, 6) ||
+            String(verifiedNodes.length + 1).padStart(2, "0"),
         title,
         detail,
         metricValue: "",
@@ -232,6 +289,16 @@ Return strict JSON: { "sections": [ { "sectionId": "...", "headline": "...", "su
     if (verifiedNodes.length < 2) {
       return card;
     }
+
+    // Enforce strictly sequential numbering when numeric badges are used
+    const reindexedNodes = verifiedNodes.map((n, ni) => ({
+      ...n,
+      badge: isFaqSection
+        ? `Q${ni + 1}`
+        : /^\d+$/.test(n.badge)
+          ? String(ni + 1).padStart(2, "0")
+          : n.badge,
+    }));
 
     const headline =
       typeof plan.headline === "string" &&
@@ -250,11 +317,11 @@ Return strict JSON: { "sections": [ { "sectionId": "...", "headline": "...", "su
     const layout: PrismLayout =
       requestedLayout &&
       VALID_LAYOUTS.has(requestedLayout) &&
-      (requestedLayout !== "comparison" || verifiedNodes.length % 2 === 0)
+      (requestedLayout !== "comparison" || reindexedNodes.length % 2 === 0)
         ? requestedLayout
         : card.prismLayout || "editorial";
 
-    const nodesWithIcons = assignDistinctSectionIcons(verifiedNodes, headline);
+    const nodesWithIcons = assignDistinctSectionIcons(reindexedNodes, headline);
     const resolvedStock = resolveSectionVisualStock({
       tenant: body.domain || "shared",
       destination: "blog",
@@ -264,6 +331,14 @@ Return strict JSON: { "sections": [ { "sectionId": "...", "headline": "...", "su
       sectionIndex: idx,
       preferredSceneId: plan.sceneIllustration || card.sceneIllustration,
     });
+
+    const aiCallout =
+      typeof plan.calloutText === "string" &&
+      plan.calloutText.trim().length >= 18 &&
+      plan.calloutText.trim().length <= 84 &&
+      plan.calloutText.trim().toLowerCase() !== subheadline.trim().toLowerCase()
+        ? plan.calloutText.trim()
+        : undefined;
 
     return runInfographicQaCritic(
       withPrismLayout(
@@ -276,6 +351,7 @@ Return strict JSON: { "sections": [ { "sectionId": "...", "headline": "...", "su
             typeof plan.eyebrowLabel === "string" && plan.eyebrowLabel.trim()
               ? plan.eyebrowLabel.trim().slice(0, 64)
               : card.eyebrowLabel,
+          calloutText: aiCallout,
           sceneIllustration: resolvedStock.scene.id,
           comparisonLabels:
             layout === "comparison" &&
