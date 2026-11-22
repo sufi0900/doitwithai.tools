@@ -405,6 +405,22 @@ export default function OnPageWritingPromptLibrary() {
                   );
                 })}
               </div>
+
+              {c.id === "internal-links-media" && (
+                <p className="mt-5 text-base leading-8 text-slate-600 dark:text-slate-300">
+                  Once your internal links are mapped, Spike AI&apos;s guide to{" "}
+                  <a
+                    href="https://getspike.ai/blog/chatgpt-prompts-for-seo/"
+                    target="_blank"
+                    rel="noopener"
+                    className="font-semibold text-blue-700 underline hover:text-blue-800 dark:text-blue-200 dark:hover:text-blue-100"
+                  >
+                    ChatGPT prompts for SEO
+                  </a>{" "}
+                  shows how to chain this step into the rest of your workflow,
+                  from keyword research to technical fixes.
+                </p>
+              )}
             </section>
 
             {category === "all" && !query.trim() && c.id === "snippets-tables" && (
