@@ -51,5 +51,5 @@
     "app/ai-seo/categories/[category]/page.jsx",
     "app/ai-seo/categories/[category]/code.jsx"
   ],
-  "exclude": ["node_modules", "updated-source", "chrome-extension"]
+  "exclude": ["node_modules", "updated-source", "chrome-extension", ".open-next", ".portable-build", "public/portable-tools", "sanitystudio", "tests"]
 }
