@@ -415,14 +415,14 @@ export default function OnPageWritingPromptLibrary() {
 
               {c.id === "internal-links-media" && (
                 <p className="mt-5 text-base leading-8 text-slate-600 dark:text-slate-300">
-                  Once your internal links are mapped, Spike AI&apos;s guide to{" "}
+                  Once your internal links are mapped,{" "}
                   <a
                     href="https://getspike.ai/blog/chatgpt-prompts-for-seo/"
                     target="_blank"
                     rel="noopener"
                     className={PROMPT_INLINE_LINK_CLASS}
                   >
-                    ChatGPT prompts for SEO
+                    Spike AI&apos;s guide to ChatGPT prompts for SEO
                   </a>{" "}
                   shows how to chain this step into the rest of your workflow,
                   from keyword research to technical fixes.
