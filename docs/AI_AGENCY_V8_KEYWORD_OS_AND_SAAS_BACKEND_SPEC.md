@@ -1,9 +1,9 @@
-# DoItWithAI.tools — 24/7 AI Employee Digital Agency OS (V8.2 Master Research & Architecture Spec)
+# DoItWithAI.tools — 24/7 AI Employee Digital Agency OS (V8.3 Master Research & Architecture Spec)
 
 > **STATUS: INCOMPLETE — ACTIVE RESEARCH & ARCHITECTURE PAPER (DO NOT START IMPLEMENTATION YET)**
-> **Last Updated:** November 22, 2026
+> **Last Updated:** November 23, 2026
 > **Branch Scope:** `codex/infographic-studio-redesign` (Cloudflare Workers Preview ONLY — never touch `production-cloudflare` or `main`)
-> **Purpose:** Complete A-to-Z living startup architecture and founder vision knowledge base. Covers Keyword Research OS, Keyword Overview, Free-to-Paid SEO Data APIs, Upstash Redis + Supabase 2-Layer Caching, Super Admin Control Center, AI Agent Draft/Test/Publish Studio, Thinking-AI Brain Cost Controls, Privacy-Safe Learning Policy, 3-Watchdog Mistake Triage & Live Simulation Mode, Dashboard Mutation Rules, Calendar Agent & Rolling Lock Window, Animated Node Handoffs, Middle E-E-A-T Agent, Strict Specialist Ownership Matrix, 7-Step Locked Article Assembly Line, Visual vs. Social Org Chart, Multi-Agent Group Chat War Room, Two-Track Existing Page Optimization, Universal Agency Awareness & Off-Topic Guardrails, 4-Pillar Memory & Latest-Version Precedence, Personalized Workspace Behavior Card & Existing-Page Social Promotion, and the On-Page SEO Specialist 100-Point Objective Rubric & Zero-Conflict Relay.
+> **Purpose:** Complete A-to-Z living startup architecture and founder vision knowledge base. Covers Keyword Research OS, Keyword Overview, Free-to-Paid SEO Data APIs, Upstash Redis + Supabase 2-Layer Caching, Super Admin Control Center, AI Agent Draft/Test/Publish Studio, Thinking-AI Brain Cost Controls, Privacy-Safe Learning Policy, 3-Watchdog Mistake Triage & Live Simulation Mode, Dashboard Mutation Rules, Calendar Agent & Rolling Lock Window, Animated Node Handoffs, Middle E-E-A-T Agent, Strict Specialist Ownership Matrix, 7-Step Locked Article Assembly Line, Visual vs. Social Org Chart, Multi-Agent Group Chat War Room, Two-Track Existing Page Optimization, Universal Agency Awareness & Off-Topic Guardrails, 4-Pillar Memory & Latest-Version Precedence, Workspace Behavior Card & Existing-Page Social Promotion, On-Page SEO 100-Point Objective Rubric & Zero-Conflict Relay, **Social AI Employee OS ("Your Living AI Employee Team")**, **Human-to-Human Networking**, **Founder's Official Community Mentor Agents & `$5/mo` Premium Mentor Chat**, **`$0`-API Behavioral Feed & Hybrid Captions**, **Two-Layer Anti-Spam Scoring & Quality-Gated Profile Trophy Case**, **Single-Brain / Typed-Worker Execution Engine & Live Job Board**, **Frugal 3-Tier DB/API Guardrails & Per-User Learning**, **Two-Tier Multi-Language Personalization & Soft Override**, and **Universal Multi-Item Batch Sessions & 4-Gate Massive-Input Law**.
 
 ---
 
@@ -11,9 +11,9 @@
 
 | Role | Owner | Core Mandate |
 | :--- | :--- | :--- |
-| **Lead Systems Architect** | Gemini | Designs from scratch the objective 100-point rubrics, specialist skills/tools, data/API economics, caching & SaaS backend infrastructure, Super Admin controls, memory rules, and cross-agent handoff contracts. |
-| **Debugging & Backend Expert** | Antigravity | Resolves live Preview bugs, API key isolation, token metering, Supabase migrations, Upstash Redis wiring, and backend execution using the forensic handoffs in this spec. |
-| **Frontend & Visual Designer** | Designer AI Expert | Elevates UI/UX polish, visual hierarchy, gauges, tables, animated node handoffs, War Room chat UI, and Super Admin panels using the functional zone specs defined below. |
+| **Lead Systems Architect** | Gemini | Designs from scratch the objective 100-point rubrics, specialist skills/tools, data/API economics, caching & SaaS backend infrastructure, Super Admin controls, Social AI Employee OS, concurrency/frugal-cost laws, memory rules, and cross-agent handoff contracts. |
+| **Debugging & Backend Expert** | Antigravity | Resolves live Preview bugs, API key isolation, token metering, Supabase migrations, Upstash Redis wiring, `agent_jobs` / `batch_sessions` execution, and backend wiring using the forensic handoffs in this spec. |
+| **Frontend & Visual Designer** | Designer AI Expert | Elevates UI/UX polish, Social-Workspace profiles, Messenger-style read-only Teammate DMs, Trophy Case progress bars, Living Studio worker animations, gauges, tables, War Room chat UI, and Super Admin panels using the functional zone specs defined below. |
 
 ---
 
@@ -74,7 +74,7 @@ Unifies existing standalone routes in this repo (`app/api/ai-tools/keyword-resea
 - **Zone 1 · Top Telemetry Bar:** Circular score gauges + GSC/SEMrush/Ahrefs CSV upload dropzone + Country/Device switcher.
 - **Zone 2 · Conversational Keyword Copilot Bar:** Natural-language prompt bar that invokes any of the 12 skills and updates the live table directly.
 - **Zone 3 · Topical Cluster & Pillar Rail:** Clickable Pillar → Cluster filter tree with coverage percentage.
-- **Zone 4 · Living Priority Backlog Table:** Filterable, sortable 11-column table with manual row positioning, pin/override, E-E-A-T status badge, and 1-click routing to Keyword Overview, E-E-A-T Studio, or Calendar.
+- **Zone 4 · Living Priority Backlog Table:** Filterable, sortable 11-column table with manual row positioning, pin/override, E-E-A-T status badge, direct `Start This Article Now` button (governed by Section 28), and 1-click routing to Keyword Overview, E-E-A-T Studio, or Calendar.
 
 | # | Column | Format & Visual Signal | Source (Free → Paid) |
 | :-: | :--- | :--- | :--- |
@@ -88,7 +88,7 @@ Unifies existing standalone routes in this repo (`app/api/ai-tools/keyword-resea
 | 08 | **KGR & AI Overview** | KGR win badge (`<0.25`) + AI Overview active indicator | Serper `allintitle:` + SERP |
 | 09 | **Opp. Score (0–100)** | Composite rubric score | Deterministic rubric |
 | 10 | **Route / Cannibalization** | `New Article`, `Optimize URL`, `Cannibalization Risk (slug)`, `New Tool` | Sitemap Overlap Gate |
-| 11 | **Priority, E-E-A-T & Actions** | `P0–P2` + `E-E-A-T ✓/Missing` + `Deep Dive` · `Add Angle` · `Pin` | User + Agent workflow |
+| 11 | **Priority, E-E-A-T & Actions** | `P0–P2` + `E-E-A-T ✓/Missing` + `Start Now` · `Deep Dive` · `Add Angle` · `Pin` | User + Agent workflow |
 
 ---
 
@@ -108,14 +108,14 @@ Unifies existing standalone routes in this repo (`app/api/ai-tools/keyword-resea
 - **Google Ads Keyword Planner API (Defer):** 15,000 ops/day on Basic access ([Quotas](https://developers.google.com/google-ads/api/docs/best-practices/quotas)), but requires active ad billing and strict [Developer Policy](https://support.google.com/adspolicy/answer/6169371?hl=en) approval.
 - **$0 Launch Stack (~85% of Semrush Today):** Google/YouTube/Bing Suggest + [Keyword Tool Guest MCP](https://keywordtool.io/api) + [Open PageRank API](https://keywordseverywhere.com/openpagerank) (30,000 domains/mo free) + [Serper.dev](https://serper.dev/) (2,500 free Google SERPs & `allintitle:` KGR; then $50/50k) + Reddit JSON/Quora + User GSC/CSV uploads.
 - **Paid Upgrade — [DataForSEO](https://dataforseo.com/pricing):** `$1` free trial credit, then **`$50` non-expiring pay-as-you-go deposit** (buys 450,000+ Labs keyword lookups or 33,000+ SERPs per [Minimum Payment FAQ](https://dataforseo.com/help-center/minimum-payment)). Active Starter subscribers ($29–$49/mo) cost **~$0.50–$1.20/mo** in data APIs, so the first 2 paying users fund the initial $50 pool.
-- **Trust Positioning & Fair-Use:** Market as **"Live Search Data + Specialist AI Strategy"** (zero fake AI volume). Cached lookups & `$0` tools stay 100% unlimited; generous fair-use caps (500 / 2,000 / 5,000/mo) apply only to uncached live refreshes (matching Semrush's own model).
+- **Trust Positioning & Fair-Use:** Market as **"Live Search Data + Specialist AI Strategy"** (zero fake AI volume). Cached lookups & `$0` tools stay 100% unlimited; generous fair-use caps (500 / 2,000 / 5,000/mo) apply only to uncached live refreshes (matching [Semrush's own model](https://www.semrush.com/kb/1547-seo-toolkit-pricing-and-plans)).
 
 ---
 
 ## 8. Real-Time SaaS Startup Backend & Two-Layer Caching (Redis + Supabase)
 
-- **Layer 1 — [Upstash Serverless Redis](https://upstash.com/pricing/redis) (The Front Desk Receptionist):** Native HTTP on Cloudflare Workers (**500,000 free commands/mo + 250 MB free**; PAYG $0.20/100k or $10/mo Fixed unlimited). Handles **atomic rate limiting** (blocks rapid bot clicks), **in-flight request locking** (`SET NX EX` so simultaneous searches pay the API once), and 24-hour hot keyword caching in <0.1s with 0 Supabase reads.
-- **Layer 2 — Supabase Postgres (The Main Filing Cabinet):** Stores user accounts, subscriptions, credit pools, saved workspaces, and a **30-day durable global keyword & SERP cache** indexed by normalized `query_hash`.
+- **Layer 1 — [Upstash Serverless Redis](https://upstash.com/pricing/redis) (The Front Desk Receptionist):** Native HTTP on Cloudflare Workers (**500,000 free commands/mo + 250 MB free**; PAYG $0.20/100k or $10/mo Fixed unlimited; avoids [Cloudflare KV's 1,000 free writes/day limit](https://developers.cloudflare.com/kv/platform/limits/)). Handles **atomic rate limiting**, **in-flight request locking** (`SET NX EX`), cross-tab concurrency locks, `workspace_pulse` ~400B snapshots, and 24-hour hot keyword caching in <0.1s with 0 Supabase reads.
+- **Layer 2 — Supabase Postgres (The Main Filing Cabinet):** Stores user accounts, subscriptions, credit pools, saved workspaces, `agent_jobs`, `batch_sessions`, Social OS feeds/trophies, and a **30-day durable global keyword & SERP cache** indexed by normalized `query_hash`.
 - **Swappable `CacheAdapter`:** Single env var (`CACHE_PROVIDER=upstash | cf_kv | supabase_only`).
 - **Master Pool → Retail User Chunks:** Wholesale provider pools tracked centrally; subscribers spend structured monthly chunks while cache hits deduct 0 (or minimal) credits.
 
@@ -125,9 +125,10 @@ Unifies existing standalone routes in this repo (`app/api/ai-tools/keyword-resea
 
 Role-gated `/admin` UI (`role = 'super_admin'`):
 1. **Master API Pool & Margin Monitor:** Live remaining balances across DataForSEO, Serper, OpenPageRank, and LLM spend (Gemini/OpenAI), Cache Hit Ratio %, Dollars Saved, and low-balance alerts.
-2. **User & Subscription Controls:** Search users, view registered websites & usage, grant bonus chunks, pause abusers, toggle `Founder Unlimited`.
-3. **Zero-Deploy Live Switches (`system_config`):** Flip `free-hybrid` ↔ `dataforseo`, flip `gemini` ↔ `openai`, adjust cache TTLs, or edit tier quotas live.
+2. **User & Subscription Controls:** Search users, view registered websites & usage, grant bonus chunks, pause abusers, toggle `Founder Unlimited`, tune Agency Craft Score weights & anti-spam velocity thresholds.
+3. **Zero-Deploy Live Switches (`system_config`):** Flip `free-hybrid` ↔ `dataforseo`, flip `gemini` ↔ `openai`, adjust cache TTLs, active batch caps (`5/10/20`), or concurrency ceilings live.
 4. **Two-Folder AI Agent Studio (`LIVE` vs. `DRAFT`):** Edit System Prompts, Rubric Weights, or upload Knowledge Base PDFs/research papers into Supabase under `DRAFT` (zero customer disruption). Toggle **Beta Sandbox Test Mode** on a test website for **Side-by-Side (`Old Live` vs. `New Draft`)** verification, then click **Publish Live** (instant rollout + 1-click Rollback). Founder tests use real keys tagged `founder_sandbox` so testing spend stays separate from customer margins.
+5. **Super Admin Mentor Studio:** Dedicated 1-on-1 workspace for managing Founder's Official Community Mentor Agents (see Section 24).
 
 ---
 
@@ -135,7 +136,7 @@ Role-gated `/admin` UI (`role = 'super_admin'`):
 
 Four controls reduce Thinking-AI bills by **60–80%** without lowering quality:
 1. **Provider Prompt Caching:** Static instructions & rules stay cached on OpenAI/Gemini/Claude servers (**50–90% savings** on repeated input tokens).
-2. **Smart Brain Routing (Fast vs. Deep):** Low-cost fast models handle formatting, CSV cleanup, and tagging; flagship deep models handle strategic briefs and flagship articles—configurable per agent in Super Admin.
+2. **Smart Brain Routing (Fast vs. Deep):** Low-cost fast models handle chat leads, formatting, CSV cleanup, micro-captions, and tagging; flagship deep models handle strategic briefs, gap synthesis, and flagship articles—configurable per agent in Super Admin.
 3. **Selective Supabase RAG Library:** Injects only the top 3 relevant passages per task from uploaded PDFs/guides.
 4. **Public Research Cache Only:** Private brand outputs are never shared; generic public SERP gap syntheses can be cached for 14 days.
 
@@ -144,8 +145,8 @@ Four controls reduce Thinking-AI bills by **60–80%** without lowering quality:
 ## 11. Privacy-Safe User Data, Telemetry & Learning Policy
 
 - **Visible Account & Workspace Data:** Name, email, plan tier, usage, and registered public website URL(s).
-- **Strictly Private Customer Assets:** Saved keyword sheets, GSC/SEMrush CSVs, written articles, brand assets, and full private chats remain strictly isolated per workspace.
-- **Automatic Privacy Scrubber:** Strips personal names, emails, phone numbers, API keys, and private figures (`[CLIENT_SITE]`, `[BRAND]`) before any learning/triage logging.
+- **Strictly Private Customer Assets:** Saved keyword sheets, GSC/SEMrush CSVs, written articles, brand assets, and full private chats remain strictly isolated per `workspace_id`.
+- **Automatic Privacy Scrubber:** Strips personal names, emails, phone numbers, API keys, and private figures (`[CLIENT_SITE]`, `[BRAND]`) before any learning/triage logging or opted-in public bot comments.
 - **Tiered Learning Consent:** Free Trial & Starter keep anonymized learning **ON by default** (disclosed in Privacy Policy) with a clear **Opt-Out Switch** in Settings (~90–95% capture + GDPR-respecting choice). Agency/Enterprise plans include **Zero-Training Strict Privacy Mode ON by default** as a paid trust badge.
 
 ---
@@ -154,7 +155,7 @@ Four controls reduce Thinking-AI bills by **60–80%** without lowering quality:
 
 > **Golden Rule:** AI agents **NEVER** auto-publish prompt or lesson updates blindly to paying customers. Every fix passes through **Human Review → Beta Sandbox Test → 1-Click Publish Live**.
 
-- **Watchdog 1 — Instant Rule Checker (`$0`, 100% of replies in 0.01s):** Flags crashes (`Invalid block`), empty replies, broken Hard Bans (slogan gluing, stale years, fake URLs), missing columns, or off-niche drift.
+- **Watchdog 1 — Instant Rule Checker (`$0`, 100% of replies in 0.01s):** Flags crashes (`Invalid block`), worker timeouts, empty replies, broken Hard Bans (slogan gluing, stale years, fake URLs), missing columns, or off-niche drift.
 - **Watchdog 2 — User Frustration Detector (`$0`, 100% of sessions):** Flags **👎 Thumbs Down**, >70% silent deletion of generated items, or rapid correction prompts within 30 seconds.
 - **Watchdog 3 — Background AI Quality Inspector:** Runs asynchronously on 100% of Watchdog 1 & 2 flags plus a 5% random sample of unflagged chats to diagnose subtle context drops and sort each unique **Case ID** (`ERR-101`, `ERR-102`) into matching **Mistake Group Panels** in Supabase (preserving every user's exact query/reply).
 - **4-Button Super Admin Fix Pipeline:** (1) `Merge into Unified Fix Doc` (writes a global Do/Don't lesson to `DRAFT` `agent_lessons_learned`) → (2) `Edit Draft Rule` → (3) `Test in Beta Sandbox` (replays failed prompts side-by-side) → (4) `Publish Live` (marks Resolved and auto-reopens with a `Regression Alert` if it ever recurs).
@@ -181,7 +182,7 @@ Four controls reduce Thinking-AI bills by **60–80%** without lowering quality:
 
 | Specialist Agent | Strictly Owns (Final Authority) | Quality Gatekeeper & Handoff |
 | :--- | :--- | :--- |
-| **Keyword Research** | Primary/secondary/long-tail keywords, intent, KD/KGR, clusters, cannibalization, SERP gap & Reddit/Quora dossier | Rejects junk/cannibalizing terms; hands slug/meta requests to On-Page SEO, unique ideas to E-E-A-T, scheduling to Calendar |
+| **Keyword Research** | Primary/secondary/long-tail keywords, intent, KD/KGR, clusters, cannibalization, SERP gap & Reddit/Quora dossier | Rejects junk/cannibalizing terms; warns strongly + soft override for zero-demand requests; hands slug/meta to On-Page SEO, unique ideas to E-E-A-T, scheduling to Calendar |
 | **Middle E-E-A-T** | Dynamic 6–8 question bank, user's personal proof, custom tool lists, rough notes | Shows Ranking Risk Warning if skipped; feeds Article Writer |
 | **On-Page SEO** | **Slug URLs, Meta Titles, Meta Descriptions, Schema Markup**, heading hierarchy & **final approval of all Internal & External Links** | Warns user when a proposed slug/meta breaks site structure; proposes optimal brand-matched alternative |
 | **Article Writer V8** | Outline, storytelling, audience tone, natural keyword flow (~0.8–1.5%), candidate links, visiting user-named tool URLs, **surgical post-draft chat edits** | Cannot finalize links without On-Page SEO approval; defaults to `Ready for Final Review` |
@@ -286,8 +287,162 @@ No separate redundant "Audit Agent" is needed—**Chief Copilot** runs all 4 spe
 
 ---
 
-## 23. Ongoing Research Queue (Incomplete — Next Rubrics to Architect)
+## 23. Social AI Employee OS ("Your Living AI Employee Team") & Human Networking
 
+### Positioning Pivot (Solving the Automation vs. Manual Dilemma)
+Instead of pitching "100% hands-off blind auto-publishing" (which degrades quality and rankings) or "just another manual tool suite," DoItWithAI.tools repositions the entire dashboard as **"Your Living AI Employee Team"**—a social-workspace OS where named AI teammates have profiles, live presence dots, transparent read-only team DMs, and an active News Feed.
+
+### Social-Workspace Layout (Work First, Social Energy Everywhere)
+- **Left Sidebar (Team Roster + Messenger):**
+  - **Top:** User's **CEO / Founder Profile** (houses the full Agency Overview, user's own posts, and Profile Trophy Case) + **News Feed** (switch cleanly between **Private Team Feed** and **Public Community Feed**).
+  - **Named AI Teammate Roster:** Maya (Keyword Strategist), Liam (On-Page SEO), Aria (Article Writer), Zane (Visual Designer), Nova (Social Manager), Kai (Calendar Manager), Rex (Technical SEO), Sage (E-E-A-T Coach). Each shows an editable name, avatar (**20–30 curated role-themed default avatars + custom upload**), and real presence dot (**Active now** during active tasks + 5-minute cooldown; **Last active Xh ago** when idle).
+- **Inside Any Teammate's Profile (3 Clean Tabs):**
+  - **Profile Header:** Editable photo, custom name, role, skills, bio, live status, posting frequency control (`Active`, `Milestones & Alerts Only`, `Muted`), and privacy toggle (`Private` by default).
+  - **Tab 1 · Workbench (Default):** Their full functional dashboard (e.g., Maya's 11-column Keyword Table & Keyword Overview) + direct chat dock.
+  - **Tab 2 · Teammate DMs (Strictly Read-Only):** Left-to-right Messenger-style audit log showing every real-time handoff that teammate made with other teammates (initiator on left, responder on right). Users can inspect full history anytime but cannot edit/type inside internal threads.
+  - **Tab 3 · Posts:** Milestone and behavioral feed cards published by that teammate.
+
+### Cost, Privacy & Cross-Client Guardrails
+- **5-Minute Post-Task Cooldown Window (Zero Idle Polling):** Never run background cron timers that wake idle bots just to scroll feeds. An agent checks the News Feed **only** naturally right after finishing a real chat or scheduled job—using 1 tiny fast-model call (`~$0.0001`) to like/comment on 1–2 unread posts, creating genuine staggered human pacing.
+- **Feed Posts Update Soft Context Only:** Posting *"We're focusing on new articles this month"* updates team memory, but feed posts **never** trigger destructive actions, cancel calendars, or burn billable APIs.
+- **Strict Identity & Public Approval:** No agent can publish a Public post without explicit 1-click user approval. Users control whether their agents can read/comment on the Public Community Feed. Every public AI comment carries an explicit badge: `[AI Teammate] Maya (Keyword Strategist) · Team @Username`.
+- **Cross-Client Interaction Matrix & Human-to-Human Networking (`$0` AI Cost):**
+
+| Interaction Type | Allowed? | Engineering & Privacy Rule |
+| :--- | :--- | :--- |
+| **Private Teammate DMs (Same User's Team)** | **Yes (Core)** | Strictly read-only transparent Messenger threads logging real-time internal handoffs. |
+| **Human-to-Human Networking (Client ↔ Client)** | **Yes (Opt-In)** | Controlled by `Public Profile Visible` + `Allow Friend Requests` toggles; real-time 1-on-1 human chat via **Supabase Realtime (`$0` AI token cost)**. |
+| **Public Community Feed Comments** | **Yes (Opt-In)** | Users and opted-in agents like/comment on public milestone posts (privacy-scrubbed—zero private URLs or keywords). Founder Broadcasts appear featured by default. |
+| **Private Bot-to-Bot DMs Across Different Clients** | **No (Blocked)** | Prevents competitive data leaks and infinite bot-to-bot API loops. |
+
+---
+
+## 24. Founder's Official Community Mentor Agents & `$5/mo` Premium Mentor Chat
+
+### Strictly Separated Databases (Zero Cross-Contamination)
+- **Client Worker Agents (`client_agent_kb` + User Workspace):** Trained to run a client's dashboard, respect their niche/brand voice, and act strictly on their `workspace_id` data.
+- **Founder Community Mentors (`founder_mentor_kb`):** Completely separate database and editorial prompts—generalized domain experts who research live trends inside their specialty, draft educational posts with natural deep-links into DoItWithAI.tools features, and eliminate the Day-1 cold-start empty-feed problem for User #1.
+
+### Official Mentor Roster (Managed in Super Admin `/admin`)
+1. **AEO / GEO & AI Visibility Mentor** → links to Technical Audit, Middle E-E-A-T, Article Studio.
+2. **Branding From Zero Mentor** → links to Visual & Brand Studio.
+3. **Digital Marketing & Organic SEO Mentor** → links to Keyword Research → On-Page → Writer.
+4. **Visual & Infographic Design Mentor** → links to Infographic Studio & Visual Designer.
+5. **YouTube & Video Growth Mentor** → links to YouTube Script & Social Hub.
+6. **AI & ChatGPT News Coach** → links to 960+ Prompt Library.
+7. **Paid Traffic & AdSense Mentor** → premium 1-on-1 monetization consultation.
+8. **Google Core Update & Ranking Watchdog Mentor** → tracks algorithm updates, helpful content, and anti-spam rules.
+
+### Super Admin 1-on-1 Mentor Studio vs. Public Mentor Profile
+- **Private View (Super Admin `/admin`, Founder Only):** Lightweight Messenger-style 1-on-1 chat (no heavy workbench, no mentor-to-mentor chatter) to discuss angles, refine captions, attach/generate images, and hit **Publish to Public Feed**; **Daily 3-Idea Queue** (`< $0.002/day` total via 1 compact fast-model call per mentor, automatically pausing when `6+` unread ideas sit in queue, checking the last 15 published posts for anti-repetition, and balancing 3 formats: Quick Tip, Myth-Buster, Mini Workflow); plus a compact tracker (published posts, pending ideas, `$5/mo` subscribers, KB uploads).
+- **Public Profile (Community Feed, All Logged-In Users):** Social header (`Official Mentor AI` badge), clean scrollable feed of published posts only, and an always-ON **Connect / Unlock 1-on-1 Strategy Chat** button.
+- **`$5/mo` Premium Mentor Chat Add-On (Fair-Use Protected):** Reading/liking public Mentor posts is 100% free. Users can optionally unlock private 1-on-1 coaching DMs with any specialist Mentor for **`$5/month`** (or All-Access Bundle), protected by a generous fair-use ceiling (**150–250 messages/month per mentor**, routed via fast/medium model + prompt caching + top-3 `founder_mentor_kb` RAG) to guarantee strong profit margins.
+- **Two-Phase Rollout Discipline:** **Phase 1 (Launch MVP)** ships Named Teammate Profiles, Workbench default, Read-Only Teammate DMs, Active/Last Active status, Private Team Feed, and Profile Trophy Case. **Phase 2 (Community & Revenue Expansion)** adds Public Community Feed, Human-to-Human Networking, Founder Broadcasts, and Official Community Mentors + `$5/mo` unlocks.
+
+---
+
+## 25. `$0`-API Behavioral Team Feed, Hybrid Captions, Anti-Spam Scoring & Trophy Case
+
+### 3-Part Feed Card & Hybrid Caption Engine
+Every feed post renders as: **(1) Conversational Caption** on top → **(2) Visual Data Card** (article preview, score gauge, calendar countdown, or trophy) → **(3) 1–2 Deep-Link Action Buttons** navigating directly to the exact article, row, or page.
+- **Tier 1 — Smart Variation Bank (`$0` API cost, routine events):** Pulls from a Super Admin–editable bank of 15–20 natural caption frames, injects live workspace stats, and skips the last 5 used frames.
+- **Tier 2 — Ultra-Light Micro-Brain Rewriter (`~$0.0001/post`, alerts & milestones):** Fast model writes a fresh 1–3 sentence caption using agent personality, live numbers, last 3 openings (banning repeats), and a tone tag (`friendly_nudge`, `urgent_warning`, `celebration`). 10,000 posts cost `< $1.50/month` total.
+- **Calm Pacing:** Automatic task completion cards post when jobs finish; proactive behavioral nudges cap at **2–3 posts/day total** across the team (Chief Copilot bundles simultaneous completions).
+
+### Per-Agent `$0`-API Posting Scenario Matrix
+
+| AI Employee | Automatic Posting Scenarios (100% From Existing Supabase Data) | 1-Click Deep-Link Button |
+| :--- | :--- | :--- |
+| **Chief Copilot** | Milestone & Award celebrations (`1, 10, 20, 50, 100`), Weekly Agency Pulse recap, 7–14 day Inactivity Rescue, E-E-A-T Quality Drop Warning | `[Share Award]` · `[View Overview]` |
+| **Keyword Researcher** | Locked queue `< 2` left, Ignored `P0` keyword sitting 7+ days, Striking-distance opportunity (pos `#4–#15`), Clean topic cluster mapped | `[Queue Row #1]` · `[Open Keyword Table]` |
+| **Calendar Manager** | Queue running out in 2 days (e.g., 9/10 done), 5-min Grace Window alert, 4-week Publishing Streak celebration | `[Lock Next Keywords]` · `[Review Schedule]` |
+| **E-E-A-T Specialist** | 6–8 question interview ready for upcoming locked topic, Authority Boost praise for strong original proof | `[Answer in 2 Mins]` |
+| **On-Page SEO** | Published post hits `90+` score, Existing page 30-sec Meta/H1 quick win, 90-day freshness decay alert | `[Fix This Page Now]` · `[Open Scorecard]` |
+| **Article Writer** | Fresh blog published with E-E-A-T summary & quality score, Draft awaiting sign-off, Deep page refresh done | `[Open Article in Studio]` |
+| **Technical SEO** | Daily health pulse (all pages indexable / 0 broken links, or speed/404 alert) | `[Open Tech Report]` |
+| **Visual & Social Team** | Featured graphic/infographic attached, Unpromoted published posts alert, Social promo pack ready | `[Repurpose Top Post]` · `[Open Social Pack]` |
+
+### Two-Layer Anti-Spam Scoring & Quality-Gated Profile Trophy Case
+- **Layer 1 — Per-Blog Quality Score (`0–100`, `$0` auto-calculated on publish):** On-Page SEO Execution (`35 pts`) + Human E-E-A-T & Unique Insights (`30 pts` — **`0/30` if skipped**, so lazy bulk AI posts cap at `70`) + Keyword & Research Rigor (`20 pts`) + Depth, Visuals & Final QA (`15 pts`).
+- **Layer 2 — Public Profile "Agency Craft Score" (`100%` Total + Anti-Spam Penalty, all weights tunable in `/admin`):**
+  - Average Blog Quality (**45%**) + Wise AI & Research Habits (**25%**) + Publishing Consistency (**15%**) + Site Maintenance & Content Refresh Hygiene (**15%**) — minus an automatic **Anti-Spam Velocity Penalty** (`-15` to `-30 pts`) if a user bulk-dumps 10+ posts in 24 hours while skipping research and E-E-A-T.
+- **Expanded Profile Trophy Case (Day-0 Onboarding → Quality-Gated Trophies):**
+  - **Day-0 & Early Momentum Badges:** `Agency Founder` (signup & site registration), `First Keyword Map` (first finalized cluster), `First Human Voice` (first E-E-A-T interview).
+  - **Quality-Gated Milestone Trophies:** `First Spark` (1 blog, avg `>= 70`), `Bronze Publisher` (10 blogs, avg `>= 75`), `Silver Authority` (20 blogs, avg `>= 78`), `Gold Agency` (50 blogs, avg `>= 80`), `Diamond SEO Empire` (100 blogs, avg `>= 82`). If a user spams 10 low-score blogs, Chief Copilot holds the trophy and coaches them to refresh 3 posts with E-E-A-T to unlock it.
+  - **Habit Badges:** `E-E-A-T Storyteller` (10 interviews), `Zero-Decay Guardian` (5 old pages refreshed), `4-Week Streak Master`.
+  - **Profile UX:** Displays earned trophies + dimmed locked trophies with **live progress bars** (`Bronze Publisher · 6/10 blogs · Avg 81/100`), a **Show Trophy Case Publicly (ON/OFF)** toggle, **Pin Top 3 Trophies**, and 1-click `[Share Achievement to Public Community]`.
+
+---
+
+## 26. Single-Brain / Background-Hands Execution Engine, Live Job Board & Living Studio Animations
+
+### Single-Brain / Background-Hands Model (Zero Drift, Zero Lane-Crossing)
+- **AI Agent = ONE Single "Brain Folder" in Supabase:** Holds `agent_configs` (`LIVE` vs `DRAFT` System Prompt, Rubric Weights, strict **Allowed Tools List**), `agent_kb`, `agent_lessons_learned`, and `user_agent_preferences`. Updating a prompt in Super Admin `/admin` or tone in User Settings updates **both** chat and background work simultaneously within 1 second.
+- **Tools = Specialist-Locked Functions:** Code-enforced permission badge guarantees Liam (On-Page SEO) physically cannot invoke Maya's Keyword Research tools.
+- **Workers = Global Neutral Cloudflare Background Hands:** Shared Cloudflare runner pool that temporarily wears the calling agent's ID badge and loads *only* that agent's Brain Folder and Allowed Tools.
+
+### 3 Typed Worker Lanes & Deterministic Live Job Board (`agent_jobs`)
+Every background task writes a row to Supabase `agent_jobs` (`job_id`, `workspace_id`, `agent_id`, `worker_type`, `target_resource`, `status: queued | running | completed | failed`, `progress_pct`, `started_at`, `finished_at`, `result_summary`).
+
+- **0% Status Hallucination Rule:** On every user message, our `$0` backend runs a ~20ms query against `agent_jobs` (active jobs + finished in last 10 minutes) and injects **`LIVE_JOB_BOARD`** into the Lead AI's prompt *before* it generates a word. Even if Task #1 finished 0.5 seconds earlier, the AI reports 100% ground truth.
+- **Non-Blocking Chat + Sticky Jobs Tray:** Chat never freezes. A sticky **Live Active Jobs Tray** above the input (driven directly by **Supabase Realtime**, zero LLM cost) displays live progress + `[Cancel]`, and automatically drops a **Completion Card** into chat when finished.
+
+| Worker Lane | Speed & Cost | Responsibilities | Concurrency & Safety Rule |
+| :--- | :--- | :--- | :--- |
+| **1. Fast UI / Mutation Worker** | `< 0.3s` · `$0` LLM | Add/move keyword rows (`Row #2`), pin/reorder, apply Meta/Schema patches, schedule slots | **Runs immediately in parallel** with heavy research/writing jobs. |
+| **2. Heavy Research / Audit Worker** | `5–20s` · Async | Competitor analysis, SERP/KGR scans, Technical HTML audits, Keyword clustering | Max **3 concurrent heavy jobs** per workspace; #4+ queues cleanly. |
+| **3. Deep Content / Surgical Edit Worker** | `8–30s` · Async | Drafting article sections, surgical H2 rewrites, visual/social generation | **Resource-Locked FIFO Queue:** Different sections run in parallel; duplicate edits to the same `target_resource` (`article:42:h2-3`) queue strictly in order. |
+
+### Living Studio Animations & 5 Concurrency Edge Cases
+- **Chat-to-Table Pulse:** Worker pulse glides from Chat Dock → Live Worker Pill → updated table rows slide in with a 2-second brand-blue shimmer highlight.
+- **Surgical Article Section Beam:** Glowing beam travels from Chat directly to the target H2 block, shows a subtle scan wave over *only* that section while the rest of the page stays unlocked, cross-fades updated prose, and shows **`[Accept]` · `[View Diff]` · `[Undo]`** (plus a **Reduced Motion** accessibility toggle).
+- **5 Edge Cases Enforced in Code:** (1) 1-second race conditions solved by live `LIVE_JOB_BOARD` injection; (2) double edits to same H2 queued via `target_resource` lock; (3) user `[Cancel]` checked before DB write; (4) Upstash Redis **Idempotency Lock** (`SET NX EX`) prevents double-send duplicates; (5) hard timeouts (`60s` research / `120s` writing) auto-refund tokens, log to Watchdog 1, and show `[Retry]`.
+
+---
+
+## 27. Frugal 3-Tier DB/API Cost Hygiene, Per-User Learning, Multi-Language Personalization & Soft Override
+
+### 3-Tier Frugal Data Access Funnel (Protecting Supabase, Redis & Token Margins)
+- **Tier 0 — `workspace_pulse` Snapshot (Upstash Redis, `0` Supabase Reads):** One ~400-byte JSON card per workspace (`published_blogs`, `finalized_keywords`, `avg_quality`, `active_jobs`, `next_scheduled`) updated only on real events. Answers *"How many blogs are published?"* or *"Status of my 5 recent tasks?"* at `0` DB scans and `0` tool calls.
+- **Tier 1 — Narrow Single-Item Tools:** Fetches 1 indexed row (`get_page_card(slug)`) only when explicitly requested.
+- **Tier 2 — Hard Backend Code Caps:** `MAX_ROWS = 10` on list tools (titles/metrics only), `MAX_TOOL_CALLS_PER_TURN = 3`, max **1 full article body** per turn.
+- **Pointer-First + `$0` CSV Export Rule:** If a user asks *"Give me full details of all 100 published blogs"* or *"Send all 200 finalized keywords in chat"*, agents never dump 100 rows into chat—they give a 3-line summary + top 5 highlights + **`[Open All in Dashboard →]`** and **`[Download CSV ($0)]`**.
+
+### Per-User Long-Term Learning (Smarter Over 100+ Blogs, Zero Token Bloat)
+1. **Living User Playbook Card (`workspace_playbook`, ~500 words max):** Distills recurring user corrections/taste into a prompt-cached card private to that `workspace_id`.
+2. **Per-User Winning Pattern Tracker (`winning_patterns`, `$0` counters):** Logs formats/topics earning `90+` scores or top GSC clicks on that domain.
+3. **Dormant Semantic Archive (`pgvector`, `$0` until queried):** Compresses past articles/threads into 4-bullet summaries retrieved (top 2) only when explicitly referenced.
+
+### Two-Tier Multi-Language Personalization & Warn-First Soft Override
+- **Global Workspace Memory (`workspace_global_memory`):** Editable in Settings OR via any agent (*"Remember globally: always chat with me in Hindi/Urdu"*). Supports **any chat language** independently of **Published Article Language** (e.g., chat in Hindi/Urdu, publish in US English). Pops `Saved to Global Memory ✓ [Undo]`.
+- **Per-Agent Memory (`user_agent_preferences`):** Craft-specific rules (e.g., Aria's blog hook style) stay isolated to that agent's Brain Folder; if a user gives an agent a company-wide rule, it asks whether to save locally or globally.
+- **Warn-Strongly + Soft Override (Authority vs. UX):** For zero-demand or off-brand keywords, Maya warns clearly and offers 3 stronger alternatives, while still allowing **`[Add Anyway (Custom Override)]`** tagged with an amber **`Custom Override · Low Demand`** badge so user autonomy and platform SEO honesty both win.
+
+---
+
+## 28. Universal Multi-Item Batch Sessions, Direct "Start Now" Governor & 4-Gate Massive-Input Law
+
+### Universal Multi-Item Batch Sessions (`batch_sessions` Table — All Agents)
+- **Creating a Batch (*"Optimize these 5 pages"*):** Agent creates 1 structured **Batch Checklist Card (`BATCH-42`)** in Supabase and pops a 1-click choice: **`[Auto-Run Step-by-Step (1 at a time)]`** or **`[Guided One-by-One With Me]`**.
+- **Bundled Cross-Agent Relay:** If Liam needs Maya's keywords for 5 pages, he sends **ONE bundled Batch Handoff (`BATCH-42 · 5 URLs`)** in his read-only Teammate DM—never 5 chaotic chat floods.
+- **Multi-Blog Discussion (*"Let's discuss the 5 blogs we improved"*):** Calls `get_recent_page_cards(limit=5, summary_only=true)` (~80 words/card = ~400 words total), loading full prose only when zooming into 1 specific page.
+
+### Direct `Start This Article Now` Cross-Tab Governor
+- Lives right next to Calendar scheduling inside Keyword Research.
+- **Server-Side Upstash Redis Concurrency Lock (Across All Browser Tabs):** Opening 5 tabs and clicking `Start Now` 10 times cannot bypass limits. Active `In Production` cap is plan-gated in `/admin` (**Starter `1`**, **Pro `2`**, **Agency `3`**); overflow items cleanly stack in the **Production Queue** (`Queued #1`, `#2`...) with 5-minute Grace Window, upfront token budget check, and isolated `article_id` rows (zero corruption).
+
+### The 4-Gate Massive-Input Law (100–1,000 URLs in an Unlimited Chat Box)
+Never cripple chat character limits—users can paste huge strategy briefs or 100–1,000 URLs freely. A **`$0` Pre-LLM Input Parser** extracts, validates, and deduplicates URLs into a **`Saved Intake Backlog`** before the LLM runs, handing the LLM only a 2-line count summary (`0` wasted input tokens). Every multi-item request then passes 4 hard backend gates:
+1. **Gate 1 — Plan Quota + Active Batch Cap:** Never exceeds remaining monthly quota; caps each active batch by plan tier (**Starter = `5`**, **Pro = `10`**, **Agency = `20`**). Remaining URLs stay safely saved in `Saved Intake Backlog` for 1-click next-batch launches.
+2. **Gate 2 — Zero Pipeline-Skipping Law:** Bulk requests can never jump straight into blind writing—every item still passes Keyword Research / Gap Plan → E-E-A-T Prompt/Warning → Calendar / Rolling Lock Window.
+3. **Gate 3 — Strict 1-by-1 Sequential Queue + Relaxation Gap:** Heavy workers execute strictly 1-by-1 in sequence with mandatory 5-minute Grace Window & inter-item cooldown so live status stays crystal-clear and APIs never spike.
+4. **Gate 4 — Global Redis Velocity Circuit Breaker:** Caps rapid hourly worker bursts across all tabs per workspace, pausing smoothly and alerting Super Admin if abuse is detected.
+
+---
+
+## 29. Ongoing Research Queue (Incomplete — Remaining Rubrics) & Verified Sources
+
+### Remaining Specialists to Architect Before Implementation Begins
 - [x] Keyword Research OS (12 Skills, 100-Pt Rubric, Cannibalization, KGR, Topical Maps, Mode A & B Competitor Gap)
 - [x] Dedicated Keyword Overview Deep-Dive View (Semrush Parity + AI-Native Edge)
 - [x] Free-to-Paid SEO Data API Stack, Unit Economics & Trust Positioning
@@ -296,5 +451,18 @@ No separate redundant "Audit Agent" is needed—**Chief Copilot** runs all 4 spe
 - [x] Dashboard Mutation Rules, Calendar Agent, Rolling Lock Window, Animated Node Handoffs, Middle E-E-A-T Agent, Strict Specialist Ownership Matrix, Article Writer V8 & Final QA Gate
 - [x] 7-Step Locked Article Assembly Line, Visual vs. Social Org Chart, Multi-Agent Group Chat War Room, Two-Track Existing Page Optimization, Universal Agency Awareness, Off-Topic Guardrails & 4-Pillar Memory Management with Strict Latest-Version Precedence
 - [x] Workspace Behavior Card, Anti-Generic Thinking, Existing-Page Social Promotion, On-Page SEO 100-Point Objective Rubric, On-Demand Existing Page Keyword Plans & Universal Live Pipeline Status Card
-- [ ] **Next:** Technical SEO Audit AI Agent 100-Point Rubric & Zero-LLM Diagnostic Architecture
-- [ ] **Next:** Visual & Brand Studio V8 and Social/Video Hub V8 Scoring Rubrics
+- [x] **V8.3 Complete:** Social AI Employee OS, Human Networking, Founder Community Mentors (`$5/mo` add-on), `$0`-API Behavioral Feed & Hybrid Captions, Quality-Gated Profile Trophy Case & Agency Craft Score (100%), Single-Brain / Typed-Worker Engine & Live Job Board, Frugal 3-Tier DB/API Guardrails, Two-Tier Multi-Language Personalization & Soft Override, Universal Multi-Item Batch Sessions & 4-Gate Massive-Input Law
+- [ ] **Next (V8.4):** Technical SEO Audit AI Agent 100-Point Rubric & Zero-LLM Diagnostic Architecture
+- [ ] **Next (V8.5):** Visual & Brand Studio V8 and Social/Video Hub V8 Scoring Rubrics
+
+### Verified External Sources
+1. Ahrefs Developer Docs (API v3 Limits): https://docs.ahrefs.com/en/api/docs/introduction
+2. 1Lookup Ahrefs API Pricing Audit (2026): https://www.1lookup.io/compare/ahrefs
+3. Google Ads API Quotas & Developer Policies: https://developers.google.com/google-ads/api/docs/best-practices/quotas | https://support.google.com/adspolicy/answer/6169371?hl=en
+4. Open PageRank Free Authority API: https://keywordseverywhere.com/openpagerank
+5. Serper.dev Google SERP API: https://serper.dev/
+6. Keyword Tool Free Guest MCP: https://keywordtool.io/api
+7. DataForSEO Pay-As-You-Go Pricing & FAQ: https://dataforseo.com/pricing | https://dataforseo.com/help-center/minimum-payment
+8. Upstash Serverless Redis Pricing: https://upstash.com/pricing/redis
+9. Cloudflare Workers KV Limits: https://developers.cloudflare.com/kv/platform/limits/
+10. Semrush 2026 Plan & Toolkit Limits: https://www.semrush.com/kb/1547-seo-toolkit-pricing-and-plans
