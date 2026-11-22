@@ -25,7 +25,7 @@ import {
 } from "@/features/prompts/details";
 import styles from "@/features/prompts/prompts.module.css";
 const origin = "https://doitwithai.tools";
-export const dynamicParams = false;
+export const dynamicParams = true;
 export function generateStaticParams() {
   return publishedPrompts.map((prompt) => ({
     slug: promptDetails[prompt.id].slug,
