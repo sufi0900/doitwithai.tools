@@ -1,21 +1,4 @@
 import React from 'react';
-import { Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google';
-
-const plusJakartaSans = Plus_Jakarta_Sans({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800'],
-  display: 'swap',
-  fallback: ['system-ui', 'arial'],
-  variable: '--font-jakarta',
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  display: 'swap',
-  fallback: ['ui-monospace', 'SFMono-Regular', 'monospace'],
-  variable: '--font-jetbrains-mono',
-});
 
 export default function AiAgencyV5Layout({
   children,
@@ -24,11 +7,17 @@ export default function AiAgencyV5Layout({
 }) {
   return (
     <div
-      className={`${plusJakartaSans.variable} ${jetbrainsMono.variable} agency-v5-font-root h-full min-h-0`}
-      style={{
-        fontFamily:
-          'var(--font-jakarta), var(--font-inter), system-ui, -apple-system, sans-serif',
-      }}
+      className="agency-v5-font-root h-full min-h-0"
+      style={
+        {
+          '--font-jakarta':
+            'var(--font-inter), system-ui, -apple-system, sans-serif',
+          '--font-jetbrains-mono':
+            'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+          fontFamily:
+            'var(--font-jakarta), var(--font-inter), system-ui, -apple-system, sans-serif',
+        } as React.CSSProperties
+      }
     >
       {children}
     </div>
