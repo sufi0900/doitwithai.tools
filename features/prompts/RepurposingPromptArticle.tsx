@@ -4,6 +4,7 @@ import Link from "next/link";
 import RepurposingPromptLibrary from "./RepurposingPromptLibrary";
 import { repurposingPromoGuides } from "./RepurposingPromoGuides";
 import KeywordGuideCard from "./KeywordGuideCard";
+import { PROMPT_INLINE_LINK_CLASS } from "./promptLinkStyles";
 
 const body = "mt-4 text-lg leading-9 text-slate-600 dark:text-slate-300";
 const button =
@@ -168,23 +169,23 @@ export default function RepurposingPromptArticle({
           </p>
           <p className={body}>
             <strong>Quick-Start Sequence:</strong> Start with{" "}
-            <a href="#repurposing-prompt-001" className="underline font-semibold">
+            <a href="#repurposing-prompt-001" className={PROMPT_INLINE_LINK_CLASS}>
               Prompt 1 (12-Spoke Atomization Map)
             </a>
             , run{" "}
-            <a href="#repurposing-prompt-011" className="underline font-semibold">
+            <a href="#repurposing-prompt-011" className={PROMPT_INLINE_LINK_CLASS}>
               Prompt 11 (LinkedIn 140c Fold Hooks)
             </a>
             , build your visual deck with{" "}
-            <a href="#repurposing-prompt-021" className="underline font-semibold">
+            <a href="#repurposing-prompt-021" className={PROMPT_INLINE_LINK_CLASS}>
               Prompt 21 (7-Slide Carousel)
             </a>{" "}
             and{" "}
-            <a href="#repurposing-prompt-041" className="underline font-semibold">
+            <a href="#repurposing-prompt-041" className={PROMPT_INLINE_LINK_CLASS}>
               Prompt 41 (8-Node Infographic)
             </a>
             , then map your month with{" "}
-            <a href="#repurposing-prompt-080" className="underline font-semibold">
+            <a href="#repurposing-prompt-080" className={PROMPT_INLINE_LINK_CLASS}>
               Prompt 80 (30-Day Distribution Calendar)
             </a>
             .

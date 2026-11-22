@@ -6,6 +6,10 @@ import categories from "./keyword-categories.json";
 import { fillPreview } from "./catalog";
 import { chatGPTLink } from "./meta-workflow";
 import KeywordGuideCard, { keywordGuides } from "./KeywordGuideCard";
+import {
+  PROMPT_COMPANION_LINK_CLASS,
+  PROMPT_COMPANION_LINK_TEXT_CLASS,
+} from "./promptLinkStyles";
 const button =
   "inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold transition hover:border-[#5271FF] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5271FF] dark:border-slate-600";
 const field =
@@ -281,10 +285,12 @@ export default function KeywordPromptLibrary() {
                 </p>
                 {c.showToolLink && (
                   <Link
-                    className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-blue-700 underline dark:text-blue-200"
+                    className={PROMPT_COMPANION_LINK_CLASS}
                     href={`/tools/${c.tool}`}
                   >
-                    Use {c.toolName}
+                    <span className={PROMPT_COMPANION_LINK_TEXT_CLASS}>
+                      Use {c.toolName}
+                    </span>
                   </Link>
                 )}
               </div>

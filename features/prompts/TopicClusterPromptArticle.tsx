@@ -4,6 +4,7 @@ import Link from "next/link";
 import TopicClusterPromptLibrary from "./TopicClusterPromptLibrary";
 import { topicClusterPromoGuides } from "./TopicClusterPromoGuides";
 import KeywordGuideCard from "./KeywordGuideCard";
+import { PROMPT_INLINE_LINK_CLASS } from "./promptLinkStyles";
 
 const body = "mt-4 text-lg leading-9 text-slate-600 dark:text-slate-300";
 const button =
@@ -164,23 +165,23 @@ export default function TopicClusterPromptArticle({
           <p className={body}>
             <strong>Fast Topical Authority Path:</strong> Start by mapping your
             domain with{" "}
-            <a href="#cluster-prompt-001" className="underline font-semibold">
+            <a href="#cluster-prompt-001" className={PROMPT_INLINE_LINK_CLASS}>
               Prompt 1 (3-Tier Topical Map)
             </a>
             , group your keyword list with{" "}
-            <a href="#cluster-prompt-012" className="underline font-semibold">
+            <a href="#cluster-prompt-012" className={PROMPT_INLINE_LINK_CLASS}>
               Prompt 12 (Single-URL Keyword Clustering)
             </a>
             , design your hub with{" "}
-            <a href="#cluster-prompt-023" className="underline font-semibold">
+            <a href="#cluster-prompt-023" className={PROMPT_INLINE_LINK_CLASS}>
               Prompt 23 (Pillar Page Blueprint)
             </a>
             , wire your internal links with{" "}
-            <a href="#cluster-prompt-045" className="underline font-semibold">
+            <a href="#cluster-prompt-045" className={PROMPT_INLINE_LINK_CLASS}>
               Prompt 45 (Hub &amp; Spoke Link Matrix)
             </a>
             , and resolve overlapping URLs with{" "}
-            <a href="#cluster-prompt-066" className="underline font-semibold">
+            <a href="#cluster-prompt-066" className={PROMPT_INLINE_LINK_CLASS}>
               Prompt 66 (GSC Cannibalization Audit)
             </a>
             .

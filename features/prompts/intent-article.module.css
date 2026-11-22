@@ -76,6 +76,7 @@ a.readingCard {
   background: var(--paper);
   color: var(--ink) !important;
   text-decoration: none !important;
+  background-image: none !important;
 }
 a.readingCard:hover {
   border-color: #5271ff;

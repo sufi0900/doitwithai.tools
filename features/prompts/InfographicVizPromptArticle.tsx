@@ -4,6 +4,7 @@ import Link from "next/link";
 import InfographicVizPromptLibrary from "./InfographicVizPromptLibrary";
 import { infographicVizPromoGuides } from "./InfographicVizPromoGuides";
 import KeywordGuideCard from "./KeywordGuideCard";
+import { PROMPT_INLINE_LINK_CLASS } from "./promptLinkStyles";
 
 const body = "mt-4 text-lg leading-9 text-slate-600 dark:text-slate-300";
 const button =
@@ -162,23 +163,23 @@ export default function InfographicVizPromptArticle({
           </p>
           <p className={body}>
             <strong>Fast Visual Creation Path:</strong> Start with{" "}
-            <a href="#infoviz-prompt-001" className="underline font-semibold">
+            <a href="#infoviz-prompt-001" className={PROMPT_INLINE_LINK_CLASS}>
               Prompt 1 (8-Node Blog Infographic)
             </a>
             , select the right chart geometry with{" "}
-            <a href="#infoviz-prompt-011" className="underline font-semibold">
+            <a href="#infoviz-prompt-011" className={PROMPT_INLINE_LINK_CLASS}>
               Prompt 11 (Chart Type Selector)
             </a>
             , map strategic trade-offs with{" "}
-            <a href="#infoviz-prompt-021" className="underline font-semibold">
+            <a href="#infoviz-prompt-021" className={PROMPT_INLINE_LINK_CLASS}>
               Prompt 21 (2×2 Impact vs. Effort Matrix)
             </a>{" "}
             and{" "}
-            <a href="#infoviz-prompt-031" className="underline font-semibold">
+            <a href="#infoviz-prompt-031" className={PROMPT_INLINE_LINK_CLASS}>
               Prompt 31 (Circular Growth Flywheel)
             </a>
             , and package vertical pins with{" "}
-            <a href="#infoviz-prompt-041" className="underline font-semibold">
+            <a href="#infoviz-prompt-041" className={PROMPT_INLINE_LINK_CLASS}>
               Prompt 41 (1000×1500 Tall Pinterest Pin)
             </a>
             .

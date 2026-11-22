@@ -187,10 +187,30 @@
   color: var(--muted);
   margin: 16px 0;
 }
-.section a:not(.use):not(.copy) {
-  color: var(--accent);
-  text-decoration: underline;
-  text-underline-offset: 3px;
+.section a:where(:not(.use):not(.copy):not(.guideImage):not(.guideButton):not(.resourcePrimary):not(.customizeLink):not(.browsePrompts)) {
+  color: #2563eb;
+  font-weight: 600;
+  text-decoration: none;
+  background-image: linear-gradient(to right, currentColor, currentColor);
+  background-size: 100% 1.5px;
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  padding-bottom: 2px;
+  transition:
+    color 0.3s ease-in-out,
+    background-size 0.3s ease-in-out;
+  overflow-wrap: break-word;
+}
+.section a:where(:not(.use):not(.copy):not(.guideImage):not(.guideButton):not(.resourcePrimary):not(.customizeLink):not(.browsePrompts)):hover {
+  color: #1d4ed8;
+  background-size: 0 1.5px;
+}
+:global(.dark) .section a:where(:not(.use):not(.copy):not(.guideImage):not(.guideButton):not(.resourcePrimary):not(.customizeLink):not(.browsePrompts)) {
+  color: #60a5fa;
+}
+:global(.dark) .section a:where(:not(.use):not(.copy):not(.guideImage):not(.guideButton):not(.resourcePrimary):not(.customizeLink):not(.browsePrompts)):hover {
+  color: #93c5fd;
+  background-size: 0 1.5px;
 }
 .definitionGrid {
   display: grid;
@@ -537,6 +557,10 @@
   font-weight: 700;
   margin-top: 15px;
 }
+.resourceGrid a:not(.resourcePrimary) {
+  display: inline-flex;
+  width: fit-content;
+}
 .toolBand {
   display: flex;
   align-items: center;
@@ -621,9 +645,29 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  color: var(--accent);
+  color: #2563eb;
   font-size: 16px;
   font-weight: 750;
+  text-decoration: none;
+  background-image: linear-gradient(to right, currentColor, currentColor);
+  background-size: 100% 1.5px;
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  padding-bottom: 2px;
+  transition:
+    color 0.3s ease-in-out,
+    background-size 0.3s ease-in-out;
+}
+.closing a:hover {
+  color: #1d4ed8;
+  background-size: 0 1.5px;
+}
+:global(.dark) .closing a {
+  color: #60a5fa;
+}
+:global(.dark) .closing a:hover {
+  color: #93c5fd;
+  background-size: 0 1.5px;
 }
 .longNote {
   font-size: 14px;
@@ -961,6 +1005,7 @@
   padding: 8px 11px;
   min-height: 40px;
   background: var(--soft);
+  background-image: none;
 }
 .article .section .browsePrompts {
   display: inline-flex;
@@ -1148,6 +1193,7 @@
   min-height: 44px;
   padding: 8px 12px;
   background: #405fdd;
+  background-image: none;
   border-radius: 8px;
   text-decoration: none;
 }
