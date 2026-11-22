@@ -4,6 +4,7 @@ import Link from "next/link";
 import LocalSeoPromptLibrary from "./LocalSeoPromptLibrary";
 import { localSeoPromoGuides } from "./LocalSeoPromoGuides";
 import KeywordGuideCard from "./KeywordGuideCard";
+import { PROMPT_INLINE_LINK_CLASS } from "./promptLinkStyles";
 
 const body = "mt-4 text-lg leading-9 text-slate-600 dark:text-slate-300";
 const button =
@@ -162,23 +163,23 @@ export default function LocalSeoPromptArticle({
           </p>
           <p className={body}>
             <strong>Fast Local SEO Path:</strong> Start with{" "}
-            <a href="#localseo-prompt-001" className="underline font-semibold">
+            <a href="#localseo-prompt-001" className={PROMPT_INLINE_LINK_CLASS}>
               Prompt 1 (750c GBP Description)
             </a>{" "}
             and{" "}
-            <a href="#localseo-prompt-002" className="underline font-semibold">
+            <a href="#localseo-prompt-002" className={PROMPT_INLINE_LINK_CLASS}>
               Prompt 2 (Primary &amp; Secondary Categories)
             </a>
             , plan your website pages with{" "}
-            <a href="#localseo-prompt-021" className="underline font-semibold">
+            <a href="#localseo-prompt-021" className={PROMPT_INLINE_LINK_CLASS}>
               Prompt 21 (Anti-Doorway City Blueprint)
             </a>
             , set up your review workflow with{" "}
-            <a href="#localseo-prompt-031" className="underline font-semibold">
+            <a href="#localseo-prompt-031" className={PROMPT_INLINE_LINK_CLASS}>
               Prompt 31 (SMS Review Request)
             </a>
             , and validate your markup with{" "}
-            <a href="#localseo-prompt-061" className="underline font-semibold">
+            <a href="#localseo-prompt-061" className={PROMPT_INLINE_LINK_CLASS}>
               Prompt 61 (LocalBusiness JSON-LD)
             </a>
             .

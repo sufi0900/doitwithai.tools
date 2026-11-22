@@ -4,6 +4,7 @@ import Link from "next/link";
 import VideoScriptPromptLibrary from "./VideoScriptPromptLibrary";
 import { videoScriptPromoGuides } from "./VideoScriptPromoGuides";
 import KeywordGuideCard from "./KeywordGuideCard";
+import { PROMPT_INLINE_LINK_CLASS } from "./promptLinkStyles";
 
 const body = "mt-4 text-lg leading-9 text-slate-600 dark:text-slate-300";
 const button =
@@ -166,23 +167,23 @@ export default function VideoScriptPromptArticle({
           </p>
           <p className={body}>
             <strong>Recommended Recording Sequence:</strong> Start with{" "}
-            <a href="#video-prompt-001" className="underline font-semibold">
+            <a href="#video-prompt-001" className={PROMPT_INLINE_LINK_CLASS}>
               Prompt 1 (Title + Thumbnail Packaging Matrix)
             </a>
             , draft your opener with{" "}
-            <a href="#video-prompt-012" className="underline font-semibold">
+            <a href="#video-prompt-012" className={PROMPT_INLINE_LINK_CLASS}>
               Prompt 12 (3 Interchangeable 0–3s Hooks)
             </a>
             , generate your voiceover in{" "}
-            <a href="#video-prompt-023" className="underline font-semibold">
+            <a href="#video-prompt-023" className={PROMPT_INLINE_LINK_CLASS}>
               Prompt 23 (45s Connected Teleprompter Script)
             </a>{" "}
             or{" "}
-            <a href="#video-prompt-045" className="underline font-semibold">
+            <a href="#video-prompt-045" className={PROMPT_INLINE_LINK_CLASS}>
               Prompt 45 (10-Minute YouTube Outline)
             </a>
             , and turn the finished transcript into a blog post with{" "}
-            <a href="#video-prompt-076" className="underline font-semibold">
+            <a href="#video-prompt-076" className={PROMPT_INLINE_LINK_CLASS}>
               Prompt 76 (Transcript to SEO Blog)
             </a>
             .

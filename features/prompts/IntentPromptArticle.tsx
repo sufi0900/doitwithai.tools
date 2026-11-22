@@ -4,6 +4,7 @@ import Link from "next/link";
 import PromptBuilder from "./PromptBuilder";
 import { intentExample, intentPrompts } from "./intent-workflow";
 import styles from "./editorial.module.css";
+import { PROMPT_INLINE_LINK_CLASS } from "./promptLinkStyles";
 export default function IntentPromptArticle({
   schema,
 }: {
@@ -365,7 +366,7 @@ export default function IntentPromptArticle({
               Use our{" "}
               <Link
                 href="/tools/search-intent-checker"
-                className="font-bold underline"
+                className={PROMPT_INLINE_LINK_CLASS}
               >
                 Search Intent Checker
               </Link>{" "}
@@ -375,7 +376,7 @@ export default function IntentPromptArticle({
               Then use the{" "}
               <Link
                 href="/tools/article-outline-generator"
-                className="font-bold underline"
+                className={PROMPT_INLINE_LINK_CLASS}
               >
                 Article Outline Generator
               </Link>{" "}
@@ -385,7 +386,7 @@ export default function IntentPromptArticle({
               When the page purpose is clear, try our{" "}
               <Link
                 href="/prompts/chatgpt-prompts-for-meta-title-and-meta-description"
-                className="font-bold underline"
+                className={PROMPT_INLINE_LINK_CLASS}
               >
                 meta title and description prompts
               </Link>
@@ -497,7 +498,7 @@ export default function IntentPromptArticle({
               <li>
                 <a
                   href="https://www.semrush.com/blog/keyword-intent/"
-                  className="underline"
+                  className={PROMPT_INLINE_LINK_CLASS}
                 >
                   Semrush’s keyword intent guide
                 </a>{" "}
@@ -506,7 +507,7 @@ export default function IntentPromptArticle({
               <li>
                 <a
                   href="https://developers.google.com/search/docs/fundamentals/creating-helpful-content"
-                  className="underline"
+                  className={PROMPT_INLINE_LINK_CLASS}
                 >
                   Google’s people-first content guidance
                 </a>{" "}

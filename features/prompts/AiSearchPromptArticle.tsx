@@ -4,6 +4,7 @@ import Link from "next/link";
 import AiSearchPromptLibrary from "./AiSearchPromptLibrary";
 import { aiSearchPromoGuides } from "./AiSearchPromoGuides";
 import KeywordGuideCard from "./KeywordGuideCard";
+import { PROMPT_INLINE_LINK_CLASS } from "./promptLinkStyles";
 
 const body = "mt-4 text-lg leading-9 text-slate-600 dark:text-slate-300";
 const button =
@@ -165,23 +166,23 @@ export default function AiSearchPromptArticle({
           </p>
           <p className={body}>
             <strong>Fast AEO / GEO Path:</strong> Start with{" "}
-            <a href="#aisearch-prompt-001" className="underline font-semibold">
+            <a href="#aisearch-prompt-001" className={PROMPT_INLINE_LINK_CLASS}>
               Prompt 1 (50-Word Self-Contained Citation Passage)
             </a>
             , clarify your brand entity with{" "}
-            <a href="#aisearch-prompt-012" className="underline font-semibold">
+            <a href="#aisearch-prompt-012" className={PROMPT_INLINE_LINK_CLASS}>
               Prompt 12 (Canonical Entity Home Statement)
             </a>
             , structure your data with{" "}
-            <a href="#aisearch-prompt-022" className="underline font-semibold">
+            <a href="#aisearch-prompt-022" className={PROMPT_INLINE_LINK_CLASS}>
               Prompt 22 (GEO Quantitative Proof)
             </a>{" "}
             and{" "}
-            <a href="#aisearch-prompt-033" className="underline font-semibold">
+            <a href="#aisearch-prompt-033" className={PROMPT_INLINE_LINK_CLASS}>
               Prompt 33 (Best For / Skip If Matrix)
             </a>
             , and publish your AI index with{" "}
-            <a href="#aisearch-prompt-053" className="underline font-semibold">
+            <a href="#aisearch-prompt-053" className={PROMPT_INLINE_LINK_CLASS}>
               Prompt 53 (/llms.txt Generator)
             </a>
             .

@@ -1203,11 +1203,29 @@
   overflow-wrap: anywhere;
 }
 .detailSection p > a {
-  text-decoration: underline;
-  color: #405acb;
+  color: #2563eb;
+  font-weight: 600;
+  text-decoration: none;
+  background-image: linear-gradient(to right, currentColor, currentColor);
+  background-size: 100% 1.5px;
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  padding-bottom: 2px;
+  transition:
+    color 0.3s ease-in-out,
+    background-size 0.3s ease-in-out;
+  overflow-wrap: break-word;
+}
+.detailSection p > a:hover {
+  color: #1d4ed8;
+  background-size: 0 1.5px;
 }
 :global(.dark) .detailSection p > a {
-  color: #aabaff;
+  color: #60a5fa;
+}
+:global(.dark) .detailSection p > a:hover {
+  color: #93c5fd;
+  background-size: 0 1.5px;
 }
 .cardGrid .card {
   padding: 0;
