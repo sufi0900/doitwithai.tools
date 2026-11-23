@@ -2,9 +2,7 @@
 /* eslint-disable react/no-unescaped-entities */
 import Image from "next/image";
 import React from "react";
-import { NextSeo } from "next-seo";
 import Script from "next/script";
-import Head from 'next/head';
 import Link from "next/link";
 
 function getBaseUrl() {
@@ -214,35 +212,6 @@ function breadcrumbSchema() {
 const AuthorPage = () => {
     return (
       <>
-        <Head>
-          <NextSeo
-            title={metadata.title}
-            description={metadata.description}
-            canonical={metadata.alternates.canonical}
-            openGraph={{
-              title: metadata.openGraph.title,
-              description: metadata.openGraph.description,
-              url: metadata.openGraph.url,
-              type: metadata.openGraph.type,
-              images: metadata.openGraph.images,
-              siteName: metadata.openGraph.siteName,
-              locale: metadata.openGraph.locale,
-            }}
-            twitter={{
-              card: metadata.twitter.card,
-              site: metadata.twitter.site,
-              handle: metadata.twitter.creator,
-              title: metadata.twitter.title,
-              description: metadata.twitter.description,
-              image: metadata.twitter.image,
-            }}
-            additionalMetaTags={[
-              { name: 'author', content: metadata.author },
-              { name: 'keywords', content: metadata.keywords },
-              { name: 'robots', content: 'index, follow' },
-            ]}
-          />
-        </Head>
        <Script
   id="AuthorSchema"
   type="application/ld+json"

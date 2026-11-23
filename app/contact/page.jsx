@@ -1,8 +1,6 @@
 import React from 'react';
 import Script from "next/script";
-import { NextSeo } from "next-seo";
 import Contact from "@/components/Contact";
-import Head from 'next/head';
 
 function getBaseUrl() {
   // For production, always use your custom domain
@@ -135,43 +133,6 @@ function jsonLdMarkup() {
 const ContactPage = () => {
   return (
     <>
-    <Head>
-      <NextSeo
-        title={metadata.title}
-        description={metadata.description}
-        canonical={metadata.alternates.canonical}
-        openGraph={{
-          title: metadata.openGraph.title,
-          description: metadata.openGraph.description,
-          url: metadata.openGraph.url,
-          type: 'website',
-          siteName: metadata.openGraph.siteName,
-          locale: metadata.openGraph.locale,
-          images: metadata.openGraph.images,
-        }}
-        twitter={{
-          card: metadata.twitter.card,
-          title: metadata.twitter.title,
-          description: metadata.twitter.description,
-          image: metadata.twitter.images[0].url,
-          creator: metadata.twitter.creator,
-        }}
-        additionalMetaTags={[
-          {
-            name: 'keywords',
-            content: metadata.keywords
-          },
-          {
-            name: 'author',
-            content: metadata.author
-          },
-          {
-            name: 'robots',
-            content: 'index, follow'
-          }
-        ]}
-      />
-         </Head>
       {/* JSON-LD structured data */}
       <Script
         id="contact-page-schema"

@@ -149,7 +149,7 @@ export async function GET(request) {
       }}
     >
         <img
-  src={`${process.env.NEXT_PUBLIC_SITE_URL || 'https://doitwithai.tools'}/D2.png`}
+  src={`${process.env.NEXT_PUBLIC_SITE_URL || 'https://doitwithai.tools'}/doitwithai-logo-square.png`}
   width={142}
   height={142}
   style={{

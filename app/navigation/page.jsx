@@ -1,9 +1,7 @@
 // app/navigation/page.js (Server Component)
 import React from 'react';
 import Script from "next/script";
-import { NextSeo } from "next-seo";
 import NavigationClient from './NavigationClient';
-import Head from 'next/head';
 
 // Enhanced utility functions
 function getBaseUrl() {
@@ -121,37 +119,6 @@ export default function NavigationPage() {
 
   return (
     <>
-    <Head>
-      <NextSeo
-        title={metadata.title}
-        description={metadata.description}
-        canonical={metadata.alternates.canonical}
-        openGraph={{
-          title: metadata.openGraph.title,
-          description: metadata.openGraph.description,
-          url: metadata.openGraph.url,
-          siteName: metadata.openGraph.siteName,
-          locale: metadata.openGraph.locale,
-          type: metadata.openGraph.type,
-          images: metadata.openGraph.images,
-        }}
-        twitter={{
-          card: metadata.twitter.card,
-          title: metadata.twitter.title,
-          description: metadata.twitter.description,
-          creator: metadata.twitter.creator,
-          site: metadata.twitter.site,
-          image: metadata.twitter.images[0].url,
-        }}
-        additionalMetaTags={[
-          { name: 'keywords', content: metadata.keywords },
-          { name: 'author', content: metadata.author },
-          { name: 'robots', content: 'index, follow' },
-          { name: 'googlebot', content: 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1' },
-          // Add other meta tags if needed from your root page
-        ]}
-      />
-         </Head>
       <Script
         id="navigation-schema"
         type="application/ld+json"

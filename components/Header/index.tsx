@@ -579,14 +579,14 @@ const Header = () => {
                                       {currentSuite.summary}
                                     </p>
                                     <div className="mt-4 flex flex-wrap gap-2">
-                                      <Link
+                                      <Link prefetch={false}
                                         href="/tools"
                                         className="inline-flex items-center gap-1.5 rounded-xl bg-[#5271FF] px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-[#4361EE]"
                                       >
                                         <span>Browse All 90+ Tools</span>
                                         <ArrowRight size={13} />
                                       </Link>
-                                      <Link
+                                      <Link prefetch={false}
                                         href="/tools/categories"
                                         className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 transition hover:border-[#5271FF] hover:text-[#5271FF] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
                                       >
@@ -596,7 +596,7 @@ const Header = () => {
                                   </div>
 
                                   <div className="mt-5 space-y-2.5 border-t border-slate-200/80 pt-4 dark:border-slate-700/80">
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/do-it-ai"
                                       className="flex items-center justify-between rounded-xl border border-slate-200/90 bg-white px-3.5 py-2.5 text-xs font-bold text-slate-900 transition hover:border-[#5271FF] hover:text-[#5271FF] dark:border-slate-700 dark:bg-slate-900/90 dark:text-white"
                                     >
@@ -609,7 +609,7 @@ const Header = () => {
                                       </span>
                                       <ArrowRight size={13} />
                                     </Link>
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/tools/downloadable-ai-tools"
                                       className="flex items-center justify-between rounded-xl border border-slate-200/90 bg-white px-3.5 py-2.5 text-xs font-bold text-slate-900 transition hover:border-[#5271FF] hover:text-[#5271FF] dark:border-slate-700 dark:bg-slate-900/90 dark:text-white"
                                     >
@@ -630,7 +630,7 @@ const Header = () => {
                                 {/* Right 2 Columns: 6 Verified Tools for Active Suite */}
                                 <div className="col-span-8 grid grid-cols-2 gap-3 content-start">
                                   {currentSuite.items.map((toolItem) => (
-                                    <Link
+                                    <Link prefetch={false}
                                       key={toolItem.href}
                                       href={toolItem.href}
                                       className="group/item flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-slate-50/70 p-3.5 transition-all hover:border-[#5271FF]/50 hover:bg-white hover:shadow-md dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-[#5271FF]/60 dark:hover:bg-slate-900"
@@ -676,14 +676,14 @@ const Header = () => {
                                       Our flagship conversational AI agent wired directly to 90+ specialized SEO engines. Audit live URLs, verify SERP pixel limits, and execute complex workflows inside one unified chat workspace.
                                     </p>
                                     <div className="mt-4 flex flex-wrap gap-2">
-                                      <Link
+                                      <Link prefetch={false}
                                         href="/do-it-ai"
                                         className="inline-flex items-center gap-1.5 rounded-xl bg-[#5271FF] px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-[#4361EE]"
                                       >
                                         <span>Launch Do It AI Workspace</span>
                                         <ArrowRight size={13} />
                                       </Link>
-                                      <Link
+                                      <Link prefetch={false}
                                         href="/what-our-ai-tool-can-do"
                                         className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 transition hover:border-[#5271FF] hover:text-[#5271FF] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
                                       >
@@ -693,7 +693,7 @@ const Header = () => {
                                   </div>
 
                                   <div className="mt-5 border-t border-slate-200/80 pt-3.5 dark:border-slate-700/80">
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/agents"
                                       className="flex items-center justify-between rounded-xl border border-slate-200/90 bg-white px-3.5 py-2 text-xs font-bold text-slate-900 transition hover:border-[#5271FF] hover:text-[#5271FF] dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                                     >
@@ -715,7 +715,7 @@ const Header = () => {
                                     <p className="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                                       Autonomous Task Agents
                                     </p>
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/agents"
                                       className="text-xs font-bold text-[#5271FF] hover:underline"
                                     >
@@ -724,7 +724,7 @@ const Header = () => {
                                   </div>
 
                                   <div className="mt-3 grid grid-cols-2 gap-3">
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/agents/seo-optimizer-ai-agent"
                                       className="group/item flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-slate-50/70 p-3.5 transition hover:border-[#5271FF]/50 hover:bg-white hover:shadow-md dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-[#5271FF]/60 dark:hover:bg-slate-900"
                                     >
@@ -747,7 +747,7 @@ const Header = () => {
                                       </div>
                                     </Link>
 
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/agents/on-page-ai-seo-repair-agent"
                                       className="group/item flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-slate-50/70 p-3.5 transition hover:border-[#5271FF]/50 hover:bg-white hover:shadow-md dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-[#5271FF]/60 dark:hover:bg-slate-900"
                                     >
@@ -770,7 +770,7 @@ const Header = () => {
                                       </div>
                                     </Link>
 
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/agents/ai-citation-geo-agent"
                                       className="group/item flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-slate-50/70 p-3.5 transition hover:border-[#5271FF]/50 hover:bg-white hover:shadow-md dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-[#5271FF]/60 dark:hover:bg-slate-900"
                                     >
@@ -793,7 +793,7 @@ const Header = () => {
                                       </div>
                                     </Link>
 
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/agents/serp-content-gap-agent"
                                       className="group/item flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-slate-50/70 p-3.5 transition hover:border-[#5271FF]/50 hover:bg-white hover:shadow-md dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-[#5271FF]/60 dark:hover:bg-slate-900"
                                     >
@@ -816,7 +816,7 @@ const Header = () => {
                                       </div>
                                     </Link>
 
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/agents/omnichannel-marketing-agent"
                                       className="group/item flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-slate-50/70 p-3.5 transition hover:border-[#5271FF]/50 hover:bg-white hover:shadow-md dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-[#5271FF]/60 dark:hover:bg-slate-900"
                                     >
@@ -839,7 +839,7 @@ const Header = () => {
                                       </div>
                                     </Link>
 
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/agents/ai-support-agent-builder"
                                       className="group/item flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-slate-50/70 p-3.5 transition hover:border-[#5271FF]/50 hover:bg-white hover:shadow-md dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-[#5271FF]/60 dark:hover:bg-slate-900"
                                     >
@@ -881,61 +881,61 @@ const Header = () => {
                                     </p>
                                   </div>
                                   <div className="mt-3 grid grid-cols-2 gap-x-2 gap-y-1.5">
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/ai-seo"
                                       className="rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
                                     >
                                       › AI SEO Strategy Hub
                                     </Link>
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/ai-seo/what-is-ai-seo"
                                       className="rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
                                     >
                                       › AEO &amp; GEO Guide
                                     </Link>
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/ai-seo/check-google-keyword-rankings"
                                       className="rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
                                     >
                                       › Keyword Rankings
                                     </Link>
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/ai-seo/what-to-do-after-keyword-research"
                                       className="rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
                                     >
                                       › Post-Research Plan
                                     </Link>
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/ai-seo/chatgpt-keyword-research"
                                       className="rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
                                     >
                                       › ChatGPT Keyword SEO
                                     </Link>
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/ai-seo/meta-title"
                                       className="rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
                                     >
                                       › Meta Title Guide
                                     </Link>
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/ai-seo/meta-description"
                                       className="rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
                                     >
                                       › Meta Descriptions
                                     </Link>
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/ai-seo/h1-heading"
                                       className="rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
                                     >
                                       › H1 Heading Rules
                                     </Link>
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/ai-tools/ai-keyword-research-tools"
                                       className="rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
                                     >
                                       › Keyword Tools Review
                                     </Link>
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/blogs"
                                       className="rounded-xl px-3 py-2 text-xs font-bold text-[#5271FF] transition hover:bg-[#5271FF]/10 dark:text-[#9aabff] dark:hover:bg-slate-800"
                                     >
@@ -950,7 +950,7 @@ const Header = () => {
                                     <p className="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                                       Featured Content &amp; Practical Playbooks
                                     </p>
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/blogs"
                                       className="text-xs font-bold text-[#5271FF] hover:underline"
                                     >
@@ -959,7 +959,7 @@ const Header = () => {
                                   </div>
                                   <div className="mt-3 space-y-2.5">
                                     {FEATURED_SEO_ARTICLES.map((article) => (
-                                      <Link
+                                      <Link prefetch={false}
                                         key={article.href}
                                         href={article.href}
                                         className="group/card flex items-center gap-3.5 rounded-2xl border border-slate-200/80 bg-slate-50/70 p-2.5 transition hover:border-[#5271FF]/50 hover:bg-white hover:shadow-md dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-[#5271FF]/60 dark:hover:bg-slate-900"
@@ -1006,7 +1006,7 @@ const Header = () => {
                                     </p>
                                   </div>
                                   <div className="mt-3 space-y-1">
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/prompts/ai-search-aeo-geo-visibility-prompts"
                                       className="flex items-center justify-between rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
                                     >
@@ -1015,7 +1015,7 @@ const Header = () => {
                                         91 Prompts
                                       </span>
                                     </Link>
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/prompts/keyword-research-prompts"
                                       className="flex items-center justify-between rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
                                     >
@@ -1024,7 +1024,7 @@ const Header = () => {
                                         100 Prompts
                                       </span>
                                     </Link>
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/prompts/on-page-seo-content-writing-prompts"
                                       className="flex items-center justify-between rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
                                     >
@@ -1033,7 +1033,7 @@ const Header = () => {
                                         84 Prompts
                                       </span>
                                     </Link>
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/prompts/topic-clustering-topical-authority-prompts"
                                       className="flex items-center justify-between rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
                                     >
@@ -1042,7 +1042,7 @@ const Header = () => {
                                         62 Prompts
                                       </span>
                                     </Link>
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/prompts/technical-seo-audit-schema-prompts"
                                       className="flex items-center justify-between rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
                                     >
@@ -1051,7 +1051,7 @@ const Header = () => {
                                         72 Prompts
                                       </span>
                                     </Link>
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/prompts/local-seo-google-business-profile-prompts"
                                       className="flex items-center justify-between rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
                                     >
@@ -1060,7 +1060,7 @@ const Header = () => {
                                         64 Prompts
                                       </span>
                                     </Link>
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/prompts/infographic-data-visualization-prompts"
                                       className="flex items-center justify-between rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
                                     >
@@ -1078,7 +1078,7 @@ const Header = () => {
                                     <p className="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                                       Featured Prompt Libraries
                                     </p>
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/prompts"
                                       className="text-xs font-bold text-[#5271FF] hover:underline"
                                     >
@@ -1087,7 +1087,7 @@ const Header = () => {
                                   </div>
                                   <div className="mt-3 space-y-2.5">
                                     {FEATURED_PROMPT_PACKS.map((pack) => (
-                                      <Link
+                                      <Link prefetch={false}
                                         key={pack.href}
                                         href={pack.href}
                                         className="group/card flex items-center gap-3.5 rounded-2xl border border-slate-200/80 bg-slate-50/70 p-2.5 transition hover:border-[#5271FF]/50 hover:bg-white hover:shadow-md dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-[#5271FF]/60 dark:hover:bg-slate-900"
@@ -1132,7 +1132,7 @@ const Header = () => {
                                     Platform Architecture &amp; Apps
                                   </p>
                                   <div className="mt-3 space-y-2.5">
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/what-our-ai-tool-can-do"
                                       className="block rounded-xl border border-slate-200/80 bg-white p-3 transition hover:border-[#5271FF]/50 hover:shadow-sm dark:border-slate-700/80 dark:bg-slate-900"
                                     >
@@ -1148,7 +1148,7 @@ const Header = () => {
                                       </p>
                                     </Link>
 
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/tools/downloadable-ai-tools"
                                       className="block rounded-xl border border-emerald-500/30 bg-emerald-500/[0.06] p-3 transition hover:border-emerald-500 hover:shadow-sm dark:border-emerald-500/40 dark:bg-emerald-950/20"
                                     >
@@ -1161,7 +1161,7 @@ const Header = () => {
                                       </p>
                                     </Link>
 
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/chrome-extension"
                                       className="block rounded-xl border border-slate-200/80 bg-white p-3 transition hover:border-[#5271FF]/50 hover:shadow-sm dark:border-slate-700/80 dark:bg-slate-900"
                                     >
@@ -1185,7 +1185,7 @@ const Header = () => {
                                     AI Ecosystem &amp; Learning
                                   </p>
                                   <div className="mt-2.5 space-y-1">
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/tools/categories"
                                       className="block rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
                                     >
@@ -1196,7 +1196,7 @@ const Header = () => {
                                         </span>
                                       </div>
                                     </Link>
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/ai-tools"
                                       className="block rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
                                     >
@@ -1207,7 +1207,7 @@ const Header = () => {
                                         </span>
                                       </div>
                                     </Link>
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/free-ai-resources"
                                       className="block rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
                                     >
@@ -1218,7 +1218,7 @@ const Header = () => {
                                         </span>
                                       </div>
                                     </Link>
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/ai-learn-earn"
                                       className="block rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
                                     >
@@ -1229,7 +1229,7 @@ const Header = () => {
                                         </span>
                                       </div>
                                     </Link>
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/blogs"
                                       className="block rounded-xl px-3 py-2 text-xs font-bold text-[#5271FF] transition hover:bg-[#5271FF]/10 dark:text-[#9aabff] dark:hover:bg-slate-800"
                                     >
@@ -1249,7 +1249,7 @@ const Header = () => {
                                     Company &amp; Trust
                                   </p>
                                   <div className="mt-2.5 space-y-1">
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/author/sufian-mustafa"
                                       className="block rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
                                     >
@@ -1260,7 +1260,7 @@ const Header = () => {
                                         </span>
                                       </div>
                                     </Link>
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/about"
                                       className="block rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
                                     >
@@ -1271,7 +1271,7 @@ const Header = () => {
                                         </span>
                                       </div>
                                     </Link>
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/faq"
                                       className="block rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
                                     >
@@ -1282,7 +1282,7 @@ const Header = () => {
                                         </span>
                                       </div>
                                     </Link>
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/contact"
                                       className="block rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
                                     >

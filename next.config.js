@@ -95,7 +95,6 @@ const nextConfig = {
         '*.workers.dev',
       ],
     },
-    optimizeCss: true,
   },
 
   trailingSlash: false,

@@ -1,8 +1,6 @@
 // app/learn-earn/page.jsx
 import React from 'react';
 import Script from "next/script";
-import { NextSeo } from "next-seo";
-import Head from 'next/head';
 
 // Import the new reusable component
 import BlogListingPageContent from "@/features/content-listing/LegacyContentListing";
@@ -199,35 +197,6 @@ export default async function Page() { // Make this an async component to await 
 
   return (
     <>
-        <Head>
-      <NextSeo
-        title={metadata.title}
-        description={metadata.description}
-        canonical={metadata.alternates.canonical}
-        openGraph={{
-          title: metadata.openGraph.title,
-          description: metadata.openGraph.description,
-          url: metadata.openGraph.url,
-          type: "ItemList",
-          images: metadata.openGraph.images,
-          siteName: metadata.openGraph.siteName,
-          locale: metadata.openGraph.locale,
-        }}
-        twitter={{
-          card: metadata.twitter.card,
-          site: metadata.twitter.site,
-          handle: metadata.twitter.creator,
-          title: metadata.twitter.title,
-          description: metadata.twitter.description,
-          image: metadata.twitter.image,
-        }}
-        additionalMetaTags={[
-          { name: 'author', content: metadata.author },
-          { name: 'keywords', content: metadata.keywords },
-          { name: 'robots', content: 'index, follow' },
-        ]}
-      />
-         </Head>
       <Script
         id="BreadcrumbListSchema"
         type="application/ld+json"

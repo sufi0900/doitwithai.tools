@@ -5,8 +5,6 @@ import AllBlogsAggregated from '@/features/blogs/BlogIndexClient';
 import Script from "next/script";
 import { client } from "@/sanity/lib/client";
 import { redisHelpers } from '@/app/lib/redis';
-import { NextSeo } from "next-seo";
-import Head from 'next/head';
 
 export const revalidate = 3600;
 
@@ -369,35 +367,6 @@ function websiteSchema() {
 
   return (
     <>
-    <Head>
-      <NextSeo
-        title={metadata.title}
-        description={metadata.description}
-        canonical={metadata.alternates.canonical}
-        openGraph={{
-          title: metadata.openGraph.title,
-          description: metadata.openGraph.description,
-          url: metadata.openGraph.url,
-          type: "website",
-          images: metadata.openGraph.images,
-          siteName: metadata.openGraph.siteName,
-          locale: metadata.openGraph.locale,
-        }}
-        twitter={{
-          card: metadata.twitter.card,
-          site: metadata.twitter.creator,
-          handle: metadata.twitter.creator,
-          title: metadata.twitter.title,
-          description: metadata.twitter.description,
-          image: metadata.twitter.image,
-        }}
-        additionalMetaTags={[
-          { name: 'author', content: metadata.author },
-          { name: 'keywords', content: metadata.keywords },
-          { name: 'robots', content: metadata.robots.index && metadata.robots.follow ? 'index, follow' : 'noindex, nofollow' },
-        ]}
-      />
-      </Head>
       {/* Structured Data Scripts */}
       <Script
         id="blog-collection-schema"

@@ -1,10 +1,22 @@
-// lib/redis.js
-// Import the Upstash Redis SDK
+// app/lib/redis.js
+// External Upstash Redis REST SDK uses HTTP POST with `cache: "no-store"` and
+// 5 exponential retries (~4.2s per call). On Next.js 14 App Router ISR routes
+// deployed to Cloudflare Workers, calling `fetch(..., { cache: "no-store" })`
+// during static/ISR renders triggers `app-static-to-dynamic-error` (HTTP 500)
+// and stalls SSR when Upstash is paused or slow.
+//
+// Caching is now handled natively on Cloudflare via OpenNext KV + Regional
+// Incremental Cache (`NEXT_INC_CACHE_KV`). Only activate Upstash Redis if
+// explicitly opted in via `ENABLE_UPSTASH_REDIS=true`.
 import { Redis } from '@upstash/redis';
 
 let redisClient;
 
 function getRedisClient() {
+  if (process.env.ENABLE_UPSTASH_REDIS !== 'true') {
+    return null;
+  }
+
   if (redisClient) {
     return redisClient;
   }
@@ -16,11 +28,17 @@ function getRedisClient() {
     return null;
   }
 
+  const config = {
+    url,
+    token,
+    retry: false,
+  };
+
   if (process.env.NODE_ENV === 'production') {
-    redisClient = new Redis({ url, token });
+    redisClient = new Redis(config);
   } else {
     if (!global.redisClient) {
-      global.redisClient = new Redis({ url, token });
+      global.redisClient = new Redis(config);
     }
     redisClient = global.redisClient;
   }
@@ -35,12 +53,10 @@ export const redisHelpers = {
       return null;
     }
     try {
-      const data = await client.get(key);
-      console.log(`[Redis Cache Hit] for ${key}`);
-      return data; // This is already parsed by Upstash
+      return await client.get(key);
     } catch (error) {
       console.error(`Error getting Redis key ${key}:`, error);
-      throw error;
+      return null;
     }
   },
 
@@ -50,16 +66,13 @@ export const redisHelpers = {
       return;
     }
     try {
-      // Upstash Redis automatically handles JSON stringification
       if (options.ex) {
         await client.set(key, value, { ex: options.ex });
       } else {
         await client.set(key, value);
       }
-      console.log(`[Redis Cache Set] for ${key}`);
     } catch (error) {
       console.error(`Error setting Redis key ${key}:`, error);
-      throw error;
     }
   },
 
@@ -70,10 +83,8 @@ export const redisHelpers = {
     }
     try {
       await client.del(key);
-      console.log(`[Redis Cache Deleted] for ${key}`);
     } catch (error) {
       console.error(`Error deleting Redis key ${key}:`, error);
-      throw error;
     }
   }
 };

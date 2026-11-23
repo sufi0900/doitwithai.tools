@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from 'next-sanity';
 
 let cachedSanityClient = null;
+let cachedPublicSanityClient = null;
 
 function getCommentsSanityClient() {
   if (!cachedSanityClient) {
@@ -15,6 +16,18 @@ function getCommentsSanityClient() {
     });
   }
   return cachedSanityClient;
+}
+
+function getPublicCommentsSanityClient() {
+  if (!cachedPublicSanityClient) {
+    cachedPublicSanityClient = createClient({
+      projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || 'qyshio4a',
+      dataset: process.env.NEXT_PUBLIC_SANITY_DATASET || 'production',
+      apiVersion: '2024-01-01',
+      useCdn: true,
+    });
+  }
+  return cachedPublicSanityClient;
 }
 
 // Validation helper
@@ -159,8 +172,24 @@ export async function GET(request) {
       );
     }
 
-    // Fetch comments for the article
-    const comments = await getCommentsSanityClient().fetch(
+    // Code-managed static articles do not have a Sanity document reference
+    if (articleId.startsWith('static-')) {
+      return NextResponse.json(
+        {
+          success: true,
+          comments: [],
+          count: 0,
+        },
+        {
+          headers: {
+            'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
+          },
+        }
+      );
+    }
+
+    // Fetch approved comments via public read-only CDN client (no write token needed)
+    const comments = await getPublicCommentsSanityClient().fetch(
       `*[_type == "comment" && references($articleId) && status == $status] | order(submittedAt desc) [0...$limit] {
         _id,
         name,
@@ -171,17 +200,33 @@ export async function GET(request) {
       { articleId, status, limit }
     );
 
-    return NextResponse.json({
-      success: true,
-      comments,
-      count: comments.length
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        comments: Array.isArray(comments) ? comments : [],
+        count: Array.isArray(comments) ? comments.length : 0,
+      },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
+        },
+      }
+    );
 
   } catch (error) {
     console.error('Error fetching comments:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch comments' },
-      { status: 500 }
+      {
+        success: true,
+        comments: [],
+        count: 0,
+        degraded: true,
+      },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=60',
+        },
+      }
     );
   }
 }
