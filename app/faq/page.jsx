@@ -1,9 +1,7 @@
 import React from 'react';
 import Script from 'next/script';
-import { NextSeo } from "next-seo";
 import FAQComponent from './FAQClient';
 import { faqsData } from './faqs'; // Import the centralized data
-import Head from 'next/head';
 
 // Enhanced utility functions
 function getBaseUrl() {
@@ -115,33 +113,6 @@ function breadcrumbSchema() {
 export default function FAQPage() {
   return (
     <>
-    <Head>
-      <NextSeo
-        title={metadata.title}
-        description={metadata.description}
-        canonical={metadata.alternates.canonical}
-        openGraph={{
-          title: metadata.openGraph.title,
-          description: metadata.openGraph.description,
-          url: metadata.openGraph.url,
-          type: metadata.openGraph.type,
-          siteName: metadata.openGraph.siteName,
-          locale: metadata.openGraph.locale,
-          images: metadata.openGraph.images,
-        }}
-        twitter={{
-          card: metadata.twitter.card,
-          title: metadata.twitter.title,
-          description: metadata.twitter.description,
-          image: metadata.twitter.image,
-        }}
-        additionalMetaTags={[
-          { name: 'keywords', content: metadata.keywords },
-          { name: 'author', content: metadata.author },
-          { name: 'robots', content: metadata.robots },
-        ]}
-      />
-</Head>
       {/* JSON-LD Schema */}
       <Script
         id="faq-schema"

@@ -1,8 +1,6 @@
 import React from 'react'
 import CategoriesPageCode from "./CategoriesPageCode"
 import Script from "next/script";
-import { NextSeo } from "next-seo";
-import Head from 'next/head';
 
 function getBaseUrl() {
   // For production, always use your custom domain
@@ -187,44 +185,6 @@ export default function CategoriesPage() {
 
   return (
     <>
-    <Head>
-      <NextSeo
-        title={metadata.title}
-        description={metadata.description}
-        canonical={metadata.canonical}
-        openGraph={{
-          title: metadata.openGraph.title,
-          description: metadata.openGraph.description,
-          url: metadata.openGraph.url,
-          images: metadata.openGraph.images,
-          type: 'website',
-          siteName: metadata.openGraph.siteName,
-          locale: metadata.openGraph.locale,
-        }}
-        twitter={{
-          card: metadata.twitter.card,
-          site: metadata.twitter.site,
-          creator: metadata.twitter.creator,
-          title: metadata.twitter.title,
-          description: metadata.twitter.description,
-          image: metadata.twitter.image,
-        }}
-        additionalMetaTags={[
-          {
-            name: 'keywords',
-            content: metadata.keywords
-          },
-          {
-            name: 'author',
-            content: metadata.author
-          },
-          {
-            name: 'robots',
-            content: 'index, follow'
-          },
-        ]}
-      />
-         </Head>
       <CategoriesPageCode />
       
       {/* Schema Markup */}
