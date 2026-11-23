@@ -1,0 +1,163 @@
+import type { GenerationParams } from "./gemini";
+import { readBoundedJson } from "./request-body";
+
+export function getGroqModel(image = false) {
+  return image
+    ? process.env.GROQ_VISION_MODEL?.trim() || "qwen/qwen3.8-27b"
+    : process.env.GROQ_MODEL?.trim() || "openai/gpt-oss-120b";
+}
+export function getGroqApiKeys(): string[] {
+  const keys: string[] = [];
+  const primary = process.env.GROQ_API_KEY?.trim();
+  if (primary) keys.push(primary);
+  const rawList = process.env.GROQ_API_KEYS?.trim();
+  if (rawList) {
+    for (const k of rawList.split(",")) {
+      const clean = k.trim();
+      if (clean && !keys.includes(clean)) keys.push(clean);
+    }
+  }
+  for (let i = 2; i <= 5; i++) {
+    const k = process.env[`GROQ_API_KEY_${i}`]?.trim();
+    if (k && !keys.includes(k)) keys.push(k);
+  }
+  return keys;
+}
+
+export function isGroqConfigured(image = false) {
+  return Boolean(
+    getGroqApiKeys().length > 0 &&
+    /^[a-zA-Z0-9][a-zA-Z0-9._/-]{1,119}$/.test(getGroqModel(image)),
+  );
+}
+export class GroqError extends Error {
+  constructor(
+    public status: number,
+    public code: string,
+  ) {
+    super(code);
+  }
+}
+export async function generateGroq<T>(
+  params: GenerationParams<T>,
+  timeout: number,
+  image: boolean,
+) {
+  const keys = getGroqApiKeys();
+  let lastError: unknown = null;
+
+  for (let keyIdx = 0; keyIdx < keys.length; keyIdx++) {
+    const activeKey = keys[keyIdx];
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), Math.max(1, timeout));
+    try {
+    const messages = params.input.map((item) => ({
+      role: item.role,
+      content:
+        typeof item.content === "string"
+          ? item.content
+          : item.content.map((part) =>
+              part.type === "input_text"
+                ? { type: "text", text: part.text }
+                : { type: "image_url", image_url: { url: part.image_url } },
+            ),
+    }));
+    messages.unshift({
+      role: "system",
+      content: `Return only a complete JSON object matching this contract. Do not include markdown or reasoning. ${JSON.stringify(params.text.format.schema)}`,
+    });
+    const response = await fetch(
+      "https://api.groq.com/openai/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${activeKey}`,
+        },
+        signal: controller.signal,
+        cache: "no-store",
+        body: JSON.stringify({
+          model: getGroqModel(image),
+          ...(getGroqModel(image).startsWith("openai/gpt-oss-")
+            ? { reasoning_effort: "low" }
+            : getGroqModel(image) === "qwen/qwen3.8-27b"
+              ? { reasoning_effort: "none" }
+              : {}),
+          messages,
+          response_format: { type: "json_object" },
+          max_completion_tokens: params.max_output_tokens,
+          stream: false,
+        }),
+      },
+    );
+    if (!response.ok) {
+      // Classify a bounded error locally. Never log provider text or failed output.
+      let providerCode = "";
+      try {
+        const error = (await readBoundedJson(response, 16_000)) as {
+          error?: { code?: unknown };
+        };
+        if (typeof error.error?.code === "string") providerCode = error.error.code;
+      } catch { /* HTTP status still identifies the failure. */ }
+      if (providerCode === "json_validate_failed")
+        throw new GroqError(502, "MODEL_OUTPUT_INVALID");
+      if (providerCode === "model_not_found" || providerCode === "model_decommissioned")
+        throw new GroqError(503, "PROVIDER_MODEL_UNAVAILABLE");
+      if (response.status === 400 || response.status === 422)
+        throw new GroqError(502, "PROVIDER_BAD_REQUEST");
+      if (response.status === 429)
+        throw new GroqError(429, "PROVIDER_RATE_LIMITED");
+      if (response.status === 401 || response.status === 403)
+        throw new GroqError(503, "PROVIDER_AUTH_FAILED");
+      if (response.status === 404)
+        throw new GroqError(503, "PROVIDER_MODEL_UNAVAILABLE");
+      throw new GroqError(502, "PROVIDER_FAILED");
+    }
+    const data = (await readBoundedJson(response, 500_000)) as {
+      choices?: {
+        finish_reason?: string;
+        message?: { content?: string; refusal?: unknown };
+      }[];
+    };
+    const choice = data.choices?.[0];
+    if (choice?.message?.refusal || choice?.finish_reason === "content_filter")
+      throw new GroqError(422, "OUTPUT_BLOCKED");
+    if (choice?.finish_reason === "length")
+      throw new GroqError(502, "OUTPUT_LIMIT_REACHED");
+    if (choice?.finish_reason !== "stop")
+      throw new GroqError(502, "INCOMPLETE_OUTPUT");
+    try {
+      return {
+        output_parsed: params.text.format.parse(
+          JSON.parse(choice.message?.content || ""),
+        ),
+      };
+    } catch {
+      throw new GroqError(502, "MODEL_OUTPUT_INVALID");
+    }
+    } catch (cause) {
+      if (cause instanceof GroqError) {
+        if (cause.status === 429 && keyIdx + 1 < keys.length) {
+          lastError = cause;
+          continue;
+        }
+        throw cause;
+      }
+      const err = new GroqError(
+        controller.signal.aborted ? 504 : 502,
+        controller.signal.aborted
+          ? "PROVIDER_TIMEOUT"
+          : "PROVIDER_CONNECTION_FAILED",
+      );
+      if (keyIdx + 1 < keys.length) {
+        lastError = err;
+        continue;
+      }
+      throw err;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+  if (lastError instanceof GroqError) throw lastError;
+  throw new GroqError(502, "PROVIDER_FAILED");
+}

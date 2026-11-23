@@ -1,8 +1,9 @@
+import { rateLimitFailure } from "@/lib/ai-tools/rate-limit";
 import { NextResponse, type NextRequest } from "next/server";
 import {
   getGeminiClient,
   getGeminiModel,
-  isGeminiConfigured,
+  isAiConfigured,
   geminiTextFormat,
   geminiFailure,
 } from "@/lib/ai-tools/gemini";
@@ -43,9 +44,8 @@ export async function POST(request: NextRequest) {
     const failure = geminiFailure(error);
     if (failure)
       return errorResponse(failure.message, failure.status, failure.code);
-    console.error("Schema analyzer rate limiter failed", error);
     return errorResponse(
-      "The analyzer is temporarily unavailable.",
+      rateLimitFailure(error).message,
       503,
       "RATE_LIMIT_UNAVAILABLE",
     );
@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (!isGeminiConfigured(getGeminiModel("SCHEMA_ANALYZER"))) {
+  if (!isAiConfigured(getGeminiModel("SCHEMA_ANALYZER"))) {
     return errorResponse(
       "The optional AI analyzer has not been connected yet. You can still complete the form and generate JSON-LD locally.",
       503,

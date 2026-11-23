@@ -10,10 +10,13 @@ import {
   FileCode2,
   Globe2,
   Info,
+  PencilLine,
+  RotateCcw,
   ShieldCheck,
   Sparkles,
+  ZoomIn,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import ScoreRing from "@/components/ai-tools/ScoreRing";
 import {
   schemaDownloadName,
@@ -53,17 +56,28 @@ const issueStyles = {
 
 export default function SchemaCodePanel({ state, evaluation }: Props) {
   const [format, setFormat] = useState<"script" | "json">("script");
+  const [editMode, setEditMode] = useState(false);
+  const [customCode, setCustomCode] = useState("");
+  const [codeZoom, setCodeZoom] = useState<100 | 115 | 130>(100);
   const [notice, setNotice] = useState("");
   const jsonCode = useMemo(() => serializeJsonLd(state), [state]);
   const scriptCode = useMemo(() => serializeSchemaScript(state), [state]);
-  const code = format === "script" ? scriptCode : jsonCode;
+  const compiledCode = format === "script" ? scriptCode : jsonCode;
+
+  useEffect(() => {
+    if (!editMode) {
+      setCustomCode(compiledCode);
+    }
+  }, [compiledCode, editMode]);
+
+  const activeCode = editMode ? customCode : compiledCode;
   const definition = getSchemaDefinition(state.schemaType);
   const canGoogleTest =
     definition.support === "google" || definition.support === "limited";
 
   async function copyCode(message = "Code copied to your clipboard.") {
     try {
-      await navigator.clipboard.writeText(scriptCode);
+      await navigator.clipboard.writeText(activeCode);
       setNotice(message);
       window.setTimeout(() => setNotice(""), 3_200);
     } catch {
@@ -182,65 +196,144 @@ export default function SchemaCodePanel({ state, evaluation }: Props) {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-4 py-3 sm:px-5">
-          <div className="flex rounded-lg bg-white/[0.06] p-1">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 px-4 py-3 sm:px-5">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex rounded-lg bg-white/[0.06] p-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setFormat("script");
+                  setEditMode(false);
+                }}
+                className={`rounded-md px-3 py-1.5 text-[11px] font-bold transition ${
+                  format === "script"
+                    ? "bg-white text-slate-950"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                Script tag
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setFormat("json");
+                  setEditMode(false);
+                }}
+                className={`rounded-md px-3 py-1.5 text-[11px] font-bold transition ${
+                  format === "json"
+                    ? "bg-white text-slate-950"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                Raw JSON-LD
+              </button>
+            </div>
             <button
               type="button"
-              onClick={() => setFormat("script")}
-              className={`rounded-md px-3 py-1.5 text-[11px] font-bold transition ${
-                format === "script"
-                  ? "bg-white text-slate-950"
-                  : "text-slate-400 hover:text-white"
+              onClick={() => {
+                if (!editMode) setCustomCode(compiledCode);
+                setEditMode((v) => !v);
+              }}
+              className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[11px] font-bold transition ${
+                editMode
+                  ? "border-emerald-400/40 bg-emerald-500/20 text-emerald-200"
+                  : "border-white/15 bg-white/[0.04] text-slate-300 hover:text-white"
               }`}
             >
-              Script tag
+              <PencilLine className="h-3 w-3" />
+              {editMode ? "Editing Code" : "Edit Code"}
             </button>
+            {editMode && (
+              <button
+                type="button"
+                onClick={() => {
+                  setCustomCode(compiledCode);
+                  setEditMode(false);
+                }}
+                title="Reset to form-compiled output"
+                className="inline-flex items-center gap-1 rounded-lg border border-white/15 px-2 py-1.5 text-[11px] font-bold text-slate-300 hover:text-white"
+              >
+                <RotateCcw className="h-3 w-3" />
+                Reset
+              </button>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="hidden items-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] p-0.5 sm:flex">
+              <ZoomIn className="ml-1 h-3 w-3 text-slate-400" />
+              {([100, 115, 130] as const).map((z) => (
+                <button
+                  key={z}
+                  type="button"
+                  onClick={() => setCodeZoom(z)}
+                  className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${
+                    codeZoom === z
+                      ? "bg-[#3452d1] text-white"
+                      : "text-slate-400 hover:text-white"
+                  }`}
+                >
+                  {z}%
+                </button>
+              ))}
+            </div>
             <button
               type="button"
-              onClick={() => setFormat("json")}
-              className={`rounded-md px-3 py-1.5 text-[11px] font-bold transition ${
-                format === "json"
-                  ? "bg-white text-slate-950"
-                  : "text-slate-400 hover:text-white"
-              }`}
+              onClick={() => void copyCode()}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-[#3452d1] px-3 py-2 text-xs font-extrabold text-white transition hover:bg-[#4058D0]"
             >
-              Raw JSON-LD
+              <ClipboardCheck className="h-3.5 w-3.5" /> Copy code
             </button>
           </div>
-          <button
-            type="button"
-            onClick={() => void copyCode()}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-[#5271ff] px-3 py-2 text-xs font-extrabold text-white transition hover:bg-[#6682ff]"
-          >
-            <ClipboardCheck className="h-3.5 w-3.5" /> Copy code
-          </button>
         </div>
 
-        <div className="max-h-[560px] overflow-auto bg-[#07101f] py-4 font-mono text-[11px] leading-5 sm:text-xs">
-          {code.split("\n").map((line, index) => (
-            <div
-              key={`${index}-${line}`}
-              className="grid min-w-max grid-cols-[46px_minmax(0,1fr)] px-3 hover:bg-white/[0.035]"
-            >
-              <span className="select-none pr-3 text-right text-slate-600">
-                {index + 1}
-              </span>
-              <span className="whitespace-pre pr-5 text-blue-100">{line}</span>
-            </div>
-          ))}
-        </div>
+        {editMode ? (
+          <div className="bg-[#07101f] p-3">
+            <textarea
+              value={customCode}
+              onChange={(e) => setCustomCode(e.target.value)}
+              rows={18}
+              spellCheck={false}
+              aria-label="Editable JSON-LD code"
+              style={{ fontSize: `${Math.round(12 * (codeZoom / 100))}px` }}
+              className="w-full rounded-xl border border-blue-400/30 bg-slate-950 p-3 font-mono leading-5 text-emerald-200 focus:border-[#5271ff] focus:outline-none"
+            />
+          </div>
+        ) : (
+          <div
+            className="max-h-[560px] overflow-auto bg-[#07101f] py-4 font-mono leading-5"
+            style={{ fontSize: `${Math.round(12 * (codeZoom / 100))}px` }}
+          >
+            {activeCode.split("\n").map((line, index) => (
+              <div
+                key={`${index}-${line}`}
+                className="grid min-w-max grid-cols-[46px_minmax(0,1fr)] px-3 hover:bg-white/[0.035]"
+              >
+                <span className="select-none pr-3 text-right text-slate-600">
+                  {index + 1}
+                </span>
+                <span className="whitespace-pre pr-5 text-blue-100">
+                  {line}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
 
         <div className="grid gap-2 border-t border-white/10 p-4 sm:grid-cols-2 sm:p-5">
           <button
             type="button"
-            onClick={() => download(jsonCode, "jsonld")}
+            onClick={() =>
+              download(editMode ? activeCode : jsonCode, "jsonld")
+            }
             className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2.5 text-xs font-bold text-slate-200 transition hover:bg-white/10"
           >
             <Download className="h-4 w-4" /> Download .jsonld
           </button>
           <button
             type="button"
-            onClick={() => download(scriptCode, "html")}
+            onClick={() =>
+              download(editMode ? activeCode : scriptCode, "html")
+            }
             className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2.5 text-xs font-bold text-slate-200 transition hover:bg-white/10"
           >
             <FileCode2 className="h-4 w-4" /> Download .html
@@ -301,16 +394,11 @@ export default function SchemaCodePanel({ state, evaluation }: Props) {
             type="button"
             onClick={() => openLiveTest("google")}
             disabled={!canGoogleTest}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#5271ff] px-3 py-2.5 text-xs font-bold text-white transition hover:bg-[#4662df] disabled:cursor-not-allowed disabled:opacity-40"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#3452d1] px-3 py-2.5 text-xs font-bold text-white transition hover:bg-[#2943b5] disabled:cursor-not-allowed disabled:opacity-40"
           >
             <ExternalLink className="h-3.5 w-3.5" /> Test live rich results
           </button>
         </div>
-        <p className="mt-3 text-[11px] leading-4 text-slate-400">
-          Modern Google tools do not document a stable cross-site code-prefill
-          interface. The code action therefore copies the snippet and opens the
-          official Code tab workflow safely.
-        </p>
       </section>
 
       <section className="rounded-[24px] border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">

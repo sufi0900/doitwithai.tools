@@ -1,0 +1,74 @@
+[
+  {
+    "id": "blog-infographics",
+    "name": "Blog-to-infographic node extraction & 8-step visual storyboarding",
+    "intro": "Distill 2,000-word articles into 6-to-8 scannable infographic nodes with 4-word titles, 12-word descriptions, KPI badges, and icon cues.",
+    "tool": "blog-to-infographic-generator",
+    "toolName": "AI Blog to Visual Infographic Studio",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 1\u201310"
+  },
+  {
+    "id": "data-charts",
+    "name": "Quantitative data-to-chart selection (Bar, Line, Donut & KPI cards)",
+    "intro": "Choose the right chart geometry for your dataset, write insight-led chart titles, and format clean CSV/JSON rows for high-resolution SVG/PNG chart cards.",
+    "tool": "data-to-chart-visual-card-maker",
+    "toolName": "AI Data & Stat to Visual Chart Card Maker",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 11\u201320"
+  },
+  {
+    "id": "matrices-swot",
+    "name": "2\u00d72 Strategy Matrices, SWOT grids & quadrant positioning diagrams",
+    "intro": "Map complex trade-offs (Impact vs. Effort, Cost vs. Speed, SWOT, and market positioning) into balanced 4-quadrant visual frameworks.",
+    "tool": "framework-matrix-diagram-builder",
+    "toolName": "AI 2\u00d72 Matrix, SWOT & Diagram Builder",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 21\u201330"
+  },
+  {
+    "id": "flywheels-architecture",
+    "name": "Circular flywheels, 3-pillar architectures, hub-and-spoke & process flows",
+    "intro": "Visualize compounding growth loops, 3-pillar foundations, topical hub-and-spoke graphs, and sequential step-by-step workflows.",
+    "tool": "framework-matrix-diagram-builder",
+    "toolName": "AI 2\u00d72 Matrix, SWOT & Diagram Builder",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 31\u201340"
+  },
+  {
+    "id": "pinterest-tall-pins",
+    "name": "Tall Pinterest 2:3 infographic pins (1000\u00d71500) & 5-slide Idea Pins",
+    "intro": "Design scroll-stopping 1000\u00d71500 vertical checklist pins, step-by-step recipe/how-to pins, and Pinterest SEO Title/Description/Board packs.",
+    "tool": "pinterest-pin-visual-generator",
+    "toolName": "AI Blog to Pinterest Tall Pin Studio (1000\u00d71500)",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 41\u201350"
+  },
+  {
+    "id": "quote-stat-cards",
+    "name": "Viral quote cards, stat callouts, founder memos & testimonial visuals",
+    "intro": "Extract punchy pull-quotes, big-number KPI cards, Apple-Notes style founder memos, and customer review highlight graphics.",
+    "tool": "quote-stat-testimonial-card-studio",
+    "toolName": "AI Quote, Founder Memo & Testimonial Card Studio",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 51\u201359"
+  },
+  {
+    "id": "html-cheatsheets",
+    "name": "1-Page HTML executive cheat sheets & visual comparison tables",
+    "intro": "Summarize dense technical guides or multi-option comparisons into printable, bookmark-worthy 1-page cheat sheets and side-by-side cards.",
+    "tool": "article-to-html-cheatsheet",
+    "toolName": "Article to HTML Infographic & Cheatsheet Studio",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 60\u201368"
+  },
+  {
+    "id": "accessibility-embeds",
+    "name": "Visual hierarchy, color-blind accessibility, alt text & embed codes",
+    "intro": "Audit typography contrast, Okabe-Ito color-blind-safe palettes, WCAG screen-reader alt text, and HTML embed attribution snippets.",
+    "tool": "image-alt-text-generator",
+    "toolName": "Image Alt Text & Accessibility Studio",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 69\u201377"
+  }
+]

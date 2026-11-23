@@ -1,0 +1,82 @@
+[
+  {
+    "id": "foundations",
+    "name": "Audience, seeds, and research direction",
+    "intro": "Build a useful research brief before expanding a keyword list.",
+    "tool": "target-audience-research-tool",
+    "toolName": "Target Audience Research Tool",
+    "showToolLink": true
+  },
+  {
+    "id": "discovery",
+    "name": "Keyword expansion and related language",
+    "intro": "Generate candidates, then validate relevance and demand separately.",
+    "tool": "keyword-research-tool",
+    "toolName": "Keyword Research Tool",
+    "showToolLink": true
+  },
+  {
+    "id": "intent",
+    "name": "Search intent and customer journeys",
+    "intro": "Keep wording-based interpretations separate from observed search results.",
+    "tool": "search-intent-checker",
+    "toolName": "Search Intent Checker",
+    "showToolLink": true
+  },
+  {
+    "id": "competitors",
+    "name": "Competitors, existing pages, and content gaps",
+    "intro": "Competitor wording is observable; rankings and traffic require identified data.",
+    "tool": "keyword-research-tool",
+    "toolName": "Keyword Research Tool",
+    "showToolLink": false
+  },
+  {
+    "id": "architecture",
+    "name": "Clustering, pillar pages, and site architecture",
+    "intro": "Propose page boundaries around reader tasks, then confirm them with evidence.",
+    "tool": "keyword-clustering-tool",
+    "toolName": "Keyword Clustering Tool",
+    "showToolLink": true
+  },
+  {
+    "id": "metrics",
+    "name": "Volume, difficulty, prioritization, and measurement",
+    "intro": "Interpret supplied measurements without manufacturing new ones.",
+    "tool": "keyword-research-tool",
+    "toolName": "Keyword Research Tool",
+    "showToolLink": false
+  },
+  {
+    "id": "questions",
+    "name": "FAQs, answer structure, and conversational queries",
+    "intro": "Answer useful questions without claiming guaranteed snippets or AI citations.",
+    "tool": "ai-faq-generator",
+    "toolName": "AI FAQ Generator",
+    "showToolLink": true
+  },
+  {
+    "id": "youtube",
+    "name": "YouTube and video topic research",
+    "intro": "Use platform-specific observations instead of substituting Google keyword volume.",
+    "tool": "keyword-research-tool",
+    "toolName": "Keyword Research Tool",
+    "showToolLink": false
+  },
+  {
+    "id": "business",
+    "name": "Local, ecommerce, service, and multilingual research",
+    "intro": "Respect real products, service areas, and language differences.",
+    "tool": "keyword-research-tool",
+    "toolName": "Keyword Research Tool",
+    "showToolLink": false
+  },
+  {
+    "id": "agency",
+    "name": "Agency delivery, maintenance, and quality control",
+    "intro": "Create auditable deliverables and keep research decisions accountable.",
+    "tool": "seo-content-brief-generator",
+    "toolName": "SEO Content Brief Generator",
+    "showToolLink": true
+  }
+]

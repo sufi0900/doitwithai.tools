@@ -1,0 +1,74 @@
+[
+  {
+    "id": "gbp-setup",
+    "name": "Google Business Profile (GBP) categories, description & services",
+    "intro": "Align your primary and secondary GBP categories, 750-character business description, service catalog, and attributes with what your business legitimately offers at your location.",
+    "tool": "google-business-profile-auditor",
+    "toolName": "Google Business Profile Completeness Auditor",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 1\u201310"
+  },
+  {
+    "id": "gbp-posts-qa",
+    "name": "Google Business Profile Updates, Offers, Events & Q&A seeding",
+    "intro": "Keep your profile active with high-converting GBP Update posts, seasonal offer announcements, and owner-seeded Questions & Answers that address buyer objections.",
+    "tool": "google-business-profile-auditor",
+    "toolName": "Google Business Profile Completeness Auditor",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 11\u201320"
+  },
+  {
+    "id": "service-city-pages",
+    "name": "Local service pages & multi-city landing page architecture",
+    "intro": "Plan genuinely helpful city and service-area landing pages with real neighborhood context, local project proof, and service pricing notes\u2014never thin doorway pages.",
+    "tool": "local-seo-service-page-planner",
+    "toolName": "Local SEO Service & City Page Planner",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 21\u201330"
+  },
+  {
+    "id": "reviews-reputation",
+    "name": "Google review generation requests & owner response templates",
+    "intro": "Ask happy customers for specific, detailed reviews via SMS/email and reply professionally to 5-star, neutral, and unfair 1-star reviews.",
+    "tool": "google-review-response-generator",
+    "toolName": "Google Review Response & Link Studio",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 31\u201340"
+  },
+  {
+    "id": "nap-citations",
+    "name": "NAP consistency, local directory citations & duplicate cleanup",
+    "intro": "Standardize your Name, Address, and Phone (NAP) formatting across directories, audit legacy address mismatches, and write consistent 150-to-500 character directory bios.",
+    "tool": "nap-consistency-checker",
+    "toolName": "NAP Consistency & Citation Formatter",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 41\u201350"
+  },
+  {
+    "id": "local-content-faqs",
+    "name": "Hyper-local content topics, cost guides & regional FAQ silos",
+    "intro": "Answer the exact local cost, permit, climate, and 'near me' comparison questions residents and commercial buyers ask in your city before hiring a provider.",
+    "tool": "ai-faq-generator",
+    "toolName": "AI FAQ & Schema Generator",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 51\u201360"
+  },
+  {
+    "id": "local-schema",
+    "name": "LocalBusiness JSON-LD schema, multi-location markup & Maps embeds",
+    "intro": "Generate valid LocalBusiness, GeoCoordinates, OpeningHoursSpecification, and Department JSON-LD markup that mirrors your visible footer and GBP profile.",
+    "tool": "local-business-schema-generator",
+    "toolName": "LocalBusiness JSON-LD Schema Generator",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 61\u201370"
+  },
+  {
+    "id": "local-pr-links",
+    "name": "Local link building, community sponsorships & Map Pack audits",
+    "intro": "Earn relevant local backlinks from chambers of commerce, neighborhood partners, local press, and charities, and diagnose why a competitor outranks you in the 3-Pack.",
+    "tool": "google-review-link-generator",
+    "toolName": "Google Review Direct Link & QR Studio",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 71\u201379"
+  }
+]

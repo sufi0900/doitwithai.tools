@@ -1,3 +1,4 @@
+import ArticleTools from "@/features/tool-catalog/ArticleTools";
 // app/ai-tools/[slug]/page.jsx
 
 import { PageCacheProvider } from '@/React_Query_Caching/CacheProvider';
@@ -66,6 +67,7 @@ export default async function ParentPage({ params }) {
           {/* The actual client component that renders the article content */}
           {/* Ensure this component can handle data specific to 'aitool' */}
           <ArticleChildComp serverData={data} params={params} schemaType="aitool" />
+          <ArticleTools slugs={data?.relatedToolSlugs} />
         </main>
       </PageCacheProvider>
     </>

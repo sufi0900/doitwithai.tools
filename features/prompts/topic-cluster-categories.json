@@ -1,0 +1,83 @@
+[
+  {
+    "id": "topical-map-design",
+    "name": "Core topical map architecture: Hubs, sub-pillars & supporting spokes",
+    "intro": "Map an entire domain into logical Pillar Hubs, Sub-Pillars, and atomic Spoke articles so search engines recognize your depth across every subtopic.",
+    "tool": "topical-map-generator",
+    "toolName": "AI Topical Map & Silo Generator",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 1\u201311"
+  },
+  {
+    "id": "serp-clustering",
+    "name": "SERP overlap clustering: Single-page vs. separate-URL decisions",
+    "intro": "Decide whether two close keyword variations belong as H2 sections on the same URL or require two separate canonical pages based on reader task and SERP overlap.",
+    "tool": "keyword-clustering-tool",
+    "toolName": "Keyword Clustering & Intent Grouping Studio",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 12\u201322"
+  },
+  {
+    "id": "pillar-blueprints",
+    "name": "Pillar page blueprints & comprehensive hub-page design",
+    "intro": "Structure definitive Pillar Pages that answer the core topic clearly while acting as an organized launchpad linking out to every deep spoke article.",
+    "tool": "seo-content-brief-generator",
+    "toolName": "SEO Content Brief & Pillar Planner",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 23\u201333"
+  },
+  {
+    "id": "entity-coverage",
+    "name": "Semantic entity coverage, Knowledge Graph attributes & gap analysis",
+    "intro": "Identify the missing entities, technical attributes, standards, and adjacent concepts your cluster needs to match comprehensive domain expertise.",
+    "tool": "semantic-entity-gap-analyzer",
+    "toolName": "Semantic Entity & Content Gap Analyzer",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 34\u201344"
+  },
+  {
+    "id": "internal-link-matrix",
+    "name": "Hub-and-spoke internal linking matrices & contextual anchor rules",
+    "intro": "Build bidirectional internal linking rules (Hub -> All Spokes, Every Spoke -> Hub, and Spoke A <-> Spoke B) with natural, non-cannibalized anchor text.",
+    "tool": "internal-link-opportunity-finder",
+    "toolName": "Internal Link Opportunity Finder",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 45\u201355"
+  },
+  {
+    "id": "commercial-tool-spokes",
+    "name": "Buyer-journey spokes: 'X vs. Y' comparisons, alternatives & free tools",
+    "intro": "Connect your informational guides to high-intent commercial spokes\u2014including 'X vs. Y' matrices, pricing breakdowns, and interactive browser tools.",
+    "tool": "comparison-page-generator",
+    "toolName": "X vs. Y Comparison Page & Matrix Builder",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 56\u201365"
+  },
+  {
+    "id": "cannibalization-pruning",
+    "name": "Keyword cannibalization audits, URL consolidation & cluster pruning",
+    "intro": "Spot overlapping articles competing for the same query in Google Search Console and decide whether to merge + 301 redirect or differentiate their scope.",
+    "tool": "keyword-cannibalization-finder",
+    "toolName": "Keyword Cannibalization Finder",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 66\u201375"
+  },
+  {
+    "id": "programmatic-glossary",
+    "name": "Programmatic SEO, template hubs & glossary silos without thin bloat",
+    "intro": "Design scalable template libraries, prompt hubs, and technical glossaries where every generated page provides unique data, examples, and utility.",
+    "tool": "information-gain-auditor",
+    "toolName": "Information Gain & Originality Scorer",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 76\u201385"
+  },
+  {
+    "id": "publishing-velocity",
+    "name": "90-day topical authority publishing sequence & GSC cluster tracking",
+    "intro": "Sequence your cluster rollout (Bottom-Up Spoke-First vs. Hub-First) and track cluster-wide impressions and striking-distance keywords in GSC.",
+    "tool": "gsc-striking-distance-finder",
+    "toolName": "GSC Striking Distance Keyword Finder",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 86\u201394"
+  }
+]

@@ -28,6 +28,7 @@ import {
   strategies,
   strategyHints,
 } from "./config";
+
 export default function WritingResults({
   kind,
   output,
@@ -47,7 +48,7 @@ export default function WritingResults({
   const [copyStatus, setCopyStatus] = useState("");
   const [pageTitle, setPageTitle] = useState(input.pageTitle);
   const [outline, setOutline] = useState("");
-  const [compare, setCompare] = useState(false);
+  const [compare, setCompare] = useState(true);
   const description = kind === "meta-description";
   const text = drafts[selected];
   const candidate = output.candidates[selected];
@@ -163,14 +164,14 @@ export default function WritingResults({
                     <article
                       key={index}
                       data-writing-option={index}
-                      className={`rounded-2xl border bg-white p-5 transition dark:bg-slate-900 ${selected === index ? "border-[#5271ff] ring-2 ring-[#5271ff]/30" : "border-slate-200 dark:border-slate-700"}`}
+                      className={`rounded-2xl border bg-white p-5 transition dark:bg-slate-900 ${selected === index ? "border-[#4058D0] ring-2 ring-[#4058D0]/30" : "border-slate-200 dark:border-slate-700"}`}
                     >
                       <div className="flex items-center justify-between gap-2">
                         <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-500 dark:text-slate-400">
                           Option {index + 1}
                         </p>
                         {selected === index && (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-[#5271ff]/10 px-2 py-1 text-[10px] font-bold text-[#4662df] dark:text-blue-300">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-[#4058D0]/10 px-2 py-1 text-[10px] font-bold text-[#4058D0] dark:text-blue-300">
                             <Check className="h-3 w-3" aria-hidden /> In your
                             lab
                           </span>
@@ -219,7 +220,7 @@ export default function WritingResults({
           <div className="min-w-0 p-5 sm:p-7 lg:p-9">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <p className="inline-flex items-center gap-2 rounded-full bg-[#5271ff]/10 px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#4662df] dark:text-blue-300">
+                <p className="inline-flex items-center gap-2 rounded-full bg-[#4058D0]/10 px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#4058D0] dark:text-blue-300">
                   <PencilLine className="h-3.5 w-3.5" aria-hidden /> Step 03 ·
                   Live {description ? "snippet" : "heading"} lab
                 </p>
@@ -262,7 +263,7 @@ export default function WritingResults({
                 type="button"
                 disabled={!edited}
                 onClick={() => edit(candidate.text)}
-                className="inline-flex min-h-10 items-center gap-1.5 text-xs font-semibold text-[#4662df] disabled:opacity-40 dark:text-blue-300"
+                className="inline-flex min-h-10 items-center gap-1.5 text-xs font-semibold text-[#4058D0] disabled:opacity-40 dark:text-blue-300"
               >
                 <RotateCcw className="h-3.5 w-3.5" aria-hidden /> Restore
                 original option
@@ -316,7 +317,7 @@ export default function WritingResults({
                     type="button"
                     aria-pressed={device === value}
                     onClick={() => setDevice(value)}
-                    className={`inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold capitalize ${device === value ? "bg-white text-[#4662df] shadow-sm dark:bg-slate-800 dark:text-blue-300" : "text-slate-500"}`}
+                    className={`inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold capitalize ${device === value ? "bg-white text-[#4058D0] shadow-sm dark:bg-slate-800 dark:text-blue-300" : "text-slate-500"}`}
                   >
                     {value === "mobile" ? (
                       <Smartphone className="h-3.5 w-3.5" aria-hidden />
@@ -357,7 +358,7 @@ export default function WritingResults({
                     <div className="flex items-center gap-2">
                       <span
                         aria-hidden
-                        className="grid h-7 w-7 place-items-center rounded-full bg-blue-50 text-xs font-black text-[#4662df] dark:bg-blue-950"
+                        className="grid h-7 w-7 place-items-center rounded-full bg-blue-50 text-xs font-black text-[#4058D0] dark:bg-blue-950"
                       >
                         {(input.brand || "W").charAt(0)}
                       </span>
@@ -387,7 +388,7 @@ export default function WritingResults({
                   </>
                 ) : (
                   <>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#4662df]">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#4058D0]">
                       {input.pageType} · main heading
                     </p>
                     <p
@@ -495,7 +496,7 @@ export default function WritingResults({
                       </p>
                     </div>
                     <div className="rounded-xl bg-blue-50 p-4 dark:bg-blue-950/30">
-                      <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#4662df]">
+                      <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#4058D0]">
                         Your draft · {checks.count} characters
                       </p>
                       <p className="mt-2 break-words text-sm leading-6">
@@ -506,7 +507,10 @@ export default function WritingResults({
                 )}
               </div>
             )}
-            <details className="mt-5 rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+            <details
+              open
+              className="mt-5 rounded-xl border border-slate-200 p-4 dark:border-slate-700"
+            >
               <summary className="cursor-pointer text-xs font-bold text-slate-600 dark:text-slate-300">
                 HTML for your selected draft
               </summary>
@@ -533,7 +537,7 @@ export default function WritingResults({
                       <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
                     ) : (
                       <Info
-                        className="h-4 w-4 shrink-0 text-[#4662df] dark:text-blue-300"
+                        className="h-4 w-4 shrink-0 text-[#4058D0] dark:text-blue-300"
                         aria-hidden
                       />
                     )}
@@ -543,14 +547,14 @@ export default function WritingResults({
                 </div>
               ))}
             </div>
-            <div className="mt-6 rounded-2xl border border-[#5271ff]/20 bg-[#5271ff]/5 p-4">
-              <p className="text-xs font-extrabold text-[#4662df] dark:text-blue-300">
+            <div className="mt-6 rounded-2xl border border-[#4058D0]/20 bg-[#4058D0]/5 p-4">
+              <p className="text-xs font-extrabold text-[#4058D0] dark:text-blue-300">
                 Your final editorial check
               </p>
               <ul className="mt-3 space-y-2 text-xs leading-6 text-slate-600 dark:text-slate-400">
                 <li>Does the page support every claim?</li>
                 <li>Will the wording make sense to your reader?</li>
-                <li>Does it match the page's actual purpose?</li>
+                <li>Does it match the page&apos;s actual purpose?</li>
               </ul>
             </div>
           </aside>

@@ -1,0 +1,83 @@
+[
+  {
+    "id": "atomization",
+    "name": "Pillar-to-spoke atomization and angle extraction",
+    "intro": "Audit a pillar article, report, or video transcript and slice it into standalone sub-topics, contrarian hooks, and audience-specific angles before drafting a single post.",
+    "tool": "blog-to-social-posts",
+    "toolName": "Blog to Social Media Campaign Studio",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 1\u201310"
+  },
+  {
+    "id": "linkedin",
+    "name": "LinkedIn posts, '...see more' hooks, and founder narratives",
+    "intro": "Engineer the first 140 mobile characters before the LinkedIn fold, structure dwell-time lists, and turn technical sections into peer-to-peer operator posts.",
+    "tool": "linkedin-post-formatter",
+    "toolName": "LinkedIn Post Formatter & Fold Previewer",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 11\u201320"
+  },
+  {
+    "id": "carousels",
+    "name": "LinkedIn PDF and Instagram 5-to-10 slide carousel blueprints",
+    "intro": "Break dense tutorials, comparisons, and checklists into swipeable slide-by-slide decks with high-contrast cover hooks and save-worthy final summary cards.",
+    "tool": "instagram-caption-generator",
+    "toolName": "Instagram Caption & 5-Slide Carousel Studio",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 21\u201330"
+  },
+  {
+    "id": "threads",
+    "name": "X (Twitter) and Meta Threads multi-post story chains",
+    "intro": "Split multi-step guides into character-safe 280c/500c numbered threads where every post earns the next scroll and the final post bridges back to your pillar URL.",
+    "tool": "social-thread-generator",
+    "toolName": "X & Threads Viral Thread Splitter",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 31\u201340"
+  },
+  {
+    "id": "infographics",
+    "name": "Visual infographics, 2x2 matrices, and KPI data chart cards",
+    "intro": "Compress long explanations and raw statistics into 6-word card titles, 15-word node descriptions, 2x2 prioritization quadrants, and benchmark bar-chart copy.",
+    "tool": "blog-to-infographic-generator",
+    "toolName": "AI Blog & Idea to Visual Infographic Studio",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 41\u201350"
+  },
+  {
+    "id": "pinterest",
+    "name": "Pinterest 2:3 tall pins, idea pins, and visual search SEO",
+    "intro": "Write 1000x1500 vertical Pin overlay headlines, 100-character Pin titles, 500-character keyword-indexed descriptions, and custom image Alt Text for evergreen blog traffic.",
+    "tool": "pinterest-pin-visual-generator",
+    "toolName": "AI Blog to Pinterest Tall Pin Visual Studio",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 51\u201360"
+  },
+  {
+    "id": "facebook-community",
+    "name": "Facebook zero-click stories, First-Comment links, and quotes",
+    "intro": "Protect organic feed reach by delivering complete value inside the post body, pairing it with a verified quote or founder memo card, and placing links in the First Comment.",
+    "tool": "facebook-post-generator",
+    "toolName": "Facebook Post & First-Comment Studio",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 61\u201370"
+  },
+  {
+    "id": "newsletter-audio",
+    "name": "Email newsletter editions, audio scripts, and HTML cheatsheets",
+    "intro": "Repurpose your article into a high-open-rate newsletter issue, a natural spoken audio narration script, and a 1-page printable HTML executive cheatsheet.",
+    "tool": "article-to-html-cheatsheet",
+    "toolName": "Article to HTML Infographic & Summary Cheatsheet",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 71\u201379"
+  },
+  {
+    "id": "calendar-engagement",
+    "name": "30-day distribution calendars, comment replies, and QA audits",
+    "intro": "Sequence repurposed assets across a 30-day calendar without audience fatigue, draft context-aware replies to post comments, and audit every draft against source facts.",
+    "tool": "linkedin-comment-generator",
+    "toolName": "LinkedIn Comment & Batch Reply Studio",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 80\u201387"
+  }
+]

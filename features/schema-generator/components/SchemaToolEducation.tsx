@@ -70,7 +70,7 @@ const safeguards = [
 
 export default function SchemaToolEducation() {
   return (
-    <div className="mx-auto mt-24 max-w-7xl space-y-24 px-4 pb-24 sm:px-6 lg:px-8">
+    <div className="mx-auto mt-24 max-w-6xl space-y-24 px-4 pb-24 sm:px-6 lg:px-8">
       <section aria-labelledby="schema-engine-heading">
         <div className="max-w-3xl">
           <p className="text-xs font-extrabold uppercase tracking-[0.17em] text-[#5271ff]">

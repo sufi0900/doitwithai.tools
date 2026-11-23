@@ -15,6 +15,38 @@ export async function GET(request) {
     
     const ctaText = searchParams.get('ctaText') || 'Start Your AI Journey';
 
+    if (searchParams.get("variant") === "homepage") {
+      return new ImageResponse(
+        <div
+          style={{
+            width: "100%",
+            height: "100%",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            padding: "80px",
+            background: "#5271FF",
+            color: "#fff",
+          }}
+        >
+          <div style={{ fontSize: 28, marginBottom: 40 }}>
+            Do It With AI Tools
+          </div>
+          <div
+            style={{
+              fontSize: 76,
+              fontWeight: 700,
+              lineHeight: 1.1,
+              maxWidth: 1000,
+            }}
+          >
+            {title}
+          </div>
+        </div>,
+        { width: 1200, height: 630 },
+      );
+    }
+
     // Streamlined color schemes for better performance
     const colorSchemes = {
       blue: {

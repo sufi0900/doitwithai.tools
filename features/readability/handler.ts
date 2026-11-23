@@ -1,8 +1,9 @@
+import { rateLimitFailure } from "@/lib/ai-tools/rate-limit";
 import { NextResponse, type NextRequest } from "next/server";
 import {
   getGeminiClient,
   getGeminiModel,
-  isGeminiConfigured,
+  isAiConfigured,
   geminiTextFormat,
   geminiFailure,
 } from "@/lib/ai-tools/gemini";
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest) {
       "VALIDATION_ERROR",
     );
   const model = getGeminiModel("READABILITY");
-  if (!isGeminiConfigured(model))
+  if (!isAiConfigured(model))
     return error(
       "The generator has not been connected to its AI provider yet.",
       503,
@@ -52,9 +53,9 @@ export async function POST(request: NextRequest) {
   let limit;
   try {
     limit = await checkAiToolRateLimit(request, "readability");
-  } catch {
+  } catch (cause) {
     return error(
-      "The generator is temporarily unavailable.",
+      rateLimitFailure(cause).message,
       503,
       "RATE_LIMIT_UNAVAILABLE",
     );

@@ -213,7 +213,7 @@ const BlogSidebar = ({
         <div className="bg-gradient-to-r from-[#2563eb] to-[#1d4ed8] p-4">
           <div className="flex items-center gap-2">
             <SearchIcon className="w-5 h-5 text-white" />
-            <h3 className="text-white font-semibold text-sm">Search Articles</h3>
+            <p className="m-0 text-white font-semibold text-sm">Search Articles</p>
           </div>
         </div>
         <div className="p-4">
@@ -280,7 +280,7 @@ const BlogSidebar = ({
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#2563eb] shadow-sm">
                 <LinkIcon className="h-4 w-4 text-white" />
               </div>
-              <h3 className="text-base font-semibold text-gray-800 dark:text-white">Related Posts</h3>
+              <p className="m-0 text-base font-semibold text-gray-800 dark:text-white">Related Posts</p>
             </div>
           </div>
           {(relatedPostsLoading || internalRelatedPostsLoading) ? (
@@ -294,7 +294,7 @@ const BlogSidebar = ({
                     <div className="pl-3 group-hover/item:pl-4 transition-all duration-300">
                       <RelatedPost
                         title={post.title}
-                        image={urlForImage(post.mainImage).url()}
+                        image={post.mainImage?.localUrl || (post.mainImage?.asset ? urlForImage(post.mainImage).url() : "/images/blog/blog-01.jpg")}
                         slug={`/${schemaSlugMap[post._type]}/${post.slug.current}`}
                         date={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
                       />
@@ -332,7 +332,7 @@ const BlogSidebar = ({
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 shadow-sm">
                 <GiftIcon className="h-4 w-4 text-white" />
               </div>
-              <h3 className="text-base font-semibold text-gray-800 dark:text-white">Related Resources</h3>
+              <p className="m-0 text-base font-semibold text-gray-800 dark:text-white">Related Resources</p>
             </div>
           </div>
           {(resourcesLoading || internalResourcesLoading) ? (
@@ -350,7 +350,7 @@ const BlogSidebar = ({
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 shadow-sm">
                 <ClockIcon className="h-4 w-4 text-white" />
               </div>
-              <h3 className="text-base font-semibold text-gray-800 dark:text-white">Recent Posts</h3>
+              <p className="m-0 text-base font-semibold text-gray-800 dark:text-white">Recent Posts</p>
             </div>
           </div>
 
@@ -365,7 +365,7 @@ const BlogSidebar = ({
                     <div className="pl-3 group-hover/item:pl-4 transition-all duration-300">
                       <RelatedPost
                         title={post.title}
-                        image={post.mainImage ? urlForImage(post.mainImage).url() : "/path-to-placeholder-image.jpg"}
+                        image={post.mainImage?.localUrl || (post.mainImage?.asset ? urlForImage(post.mainImage).url() : "/images/blog/blog-01.jpg")}
                         slug={`/${schemaSlugMap[post._type]}/${post.slug?.current || ""}`}
                         date={post.publishedAt ? new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : "Unknown Date"}
                       />
@@ -402,7 +402,7 @@ const BlogSidebar = ({
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 shadow-sm">
                 <GridIcon className="h-4 w-4 text-white" />
               </div>
-              <h3 className="text-base font-semibold text-gray-800 dark:text-white">Popular Categories</h3>
+              <p className="m-0 text-base font-semibold text-gray-800 dark:text-white">Popular Categories</p>
             </div>
           </div>
           <ul className="p-4 space-y-3">

@@ -8,11 +8,11 @@ import Head from 'next/head';
 import BlogListingPageContent from "@/features/content-listing/LegacyContentListing";
 
 // --- NEW IMPORT for StaticPageShell ---
-import StaticPageShell from "@/features/content-listing/ContentListingShell"; // <--- ADD THIS IMPORT
+import StaticPageShell from "@/features/content-listing/ContentListingShell";
 
 // --- NEW IMPORTS ---
-import { client } from "@/sanity/lib/client"; // Import Sanity client
-import { redisHelpers } from '@/app/lib/redis'; // Import Redis helpers
+import { client } from "@/sanity/lib/client";
+import { redisHelpers } from '@/app/lib/redis';
 // --- END NEW IMPORTS ---
 
 // --- Next.js Server-Side Configuration ---
@@ -95,7 +95,7 @@ export const metadata = {
 
 
 async function getData(schemaType, pageSlugPrefix) {
-  const cacheKey = `blogList:${schemaType}:main`;
+  const cacheKey = `blogList:${schemaType}:main:cwv3`;
   const startTime = Date.now();
 
   try {
@@ -111,8 +111,8 @@ async function getData(schemaType, pageSlugPrefix) {
   console.log(`[Sanity Fetch] for ${cacheKey} starting...`);
 
   // Fetch initial data for the page
-  const featuresQuery = `*[_type=="${schemaType}" && displaySettings.isOwnPageFeature==true][0]`;
-  const firstPageBlogsQuery = `*[_type=="${schemaType}"] | order(publishedAt desc)[0...6]`; // 6 items (5 + 1 for hasMore check)
+  const featuresQuery = `*[_type=="${schemaType}" && displaySettings.isOwnPageFeature==true][0]{ _id, _type, title, slug, mainImage, overview, publishedAt, readTime, tags, resourceType, resourceFormat, aiToolDetails, seoTitle, seoDescription }`;
+  const firstPageBlogsQuery = `*[_type=="${schemaType}"] | order(publishedAt desc)[0...6]{ _id, _type, title, slug, mainImage, overview, publishedAt, readTime, tags, resourceType, resourceFormat, aiToolDetails, seoTitle, seoDescription }`; // 6 items (5 + 1 for hasMore check)
   const totalCountQuery = `count(*[_type=="${schemaType}"])`;
 
   try {
@@ -154,10 +154,6 @@ export default async function Page() { // Make this an async component to await 
   const pageTitleHighlight = "Learn & Earn With AI";
   const pageDescription = "Discover AI tools, guides, and strategies to grow your skills and income together.";
   const serverData = await getData(schemaType, pageSlugPrefix);
-  const mockParams = {
-    slug: `${schemaType}-listing`,
-    pageType: 'listing'
-  };
 
   const breadcrumbProps = {
     pageName: "Learn and Earn",
@@ -185,18 +181,16 @@ export default async function Page() { // Make this an async component to await 
               "@type": "ListItem",
               "position": 1,
               "name": "Home",
-  "item": `${getBaseUrl()}/`,
-               "id": `${getBaseUrl()}/` // Add the id property here
-
+              "item": `${getBaseUrl()}/`,
+              "id": `${getBaseUrl()}/`
             },
             {
               "@type": "ListItem",
               "position": 2,
               "name": breadcrumbProps.pageName,
-               "item": `${getBaseUrl()}${breadcrumbProps.link}`,
-               "id": `${getBaseUrl()}${breadcrumbProps.link}`
-              
-              }
+              "item": `${getBaseUrl()}${breadcrumbProps.link}`,
+              "id": `${getBaseUrl()}${breadcrumbProps.link}`
+            }
           ]
         }
       })
@@ -206,8 +200,6 @@ export default async function Page() { // Make this an async component to await 
   return (
     <>
         <Head>
-
-     
       <NextSeo
         title={metadata.title}
         description={metadata.description}
@@ -249,7 +241,7 @@ export default async function Page() { // Make this an async component to await 
           pageTitle={pageTitle}
           pageTitleHighlight={pageTitleHighlight}
           pageDescription={pageDescription}
-          serverData={serverData} // Still pass server data to BlogListingPageContent
+          serverData={serverData}
         />
       </StaticPageShell>
     </>

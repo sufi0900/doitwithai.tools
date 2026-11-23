@@ -1,4 +1,5 @@
 "use client";
+import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 
 import {
   AlertTriangle,
@@ -125,7 +126,7 @@ export default function SchemaDynamicForm({
               </label>
               <div className="relative">
                 <Link2 className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
-                <input
+                <ToolUrlInput
                   id="pageUrl"
                   type="url"
                   value={state.pageUrl}

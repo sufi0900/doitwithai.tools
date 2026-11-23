@@ -203,6 +203,9 @@ export async function POST(req) {
         });
     }
 
+    revalidationTags.push("homepage");
+    revalidationPaths.push("/");
+
     // 7. Invalidate Redis Cache (for individual document page if applicable)
     if (["seo", "aitool", "coding", "makemoney", "blogPost", "blogCategory", "blogTag"].includes(_type)) {
       revalidationPaths.push("/", "/blogs", "/sitemap.xml");

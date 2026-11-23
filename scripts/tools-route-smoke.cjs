@@ -28,6 +28,7 @@ async function run() {
       "/tools/image-alt-text-generator",
       "/tools/keyword-clustering-tool",
       "/tools/topical-map-generator",
+      "/tools/internal-link-opportunity-finder",
       "/tools/categories/ai-seo",
       "/tools/categories/content-writing",
       "/tools/categories/productivity",
@@ -40,7 +41,7 @@ async function run() {
         html.includes(`href="https://doitwithai.tools${path}"`),
         `Missing canonical for ${path}`,
       );
-      if (path.endsWith("productivity") || path === "/guides")
+      if (path === "/guides")
         assert.ok(html.includes("noindex"), `Empty index policy for ${path}`);
     }
     const redirects = [
@@ -75,10 +76,11 @@ async function run() {
       "image-alt-text-generator",
       "keyword-clustering-tool",
       "topical-map-generator",
+      "internal-link-opportunity-finder",
     ])
       assert.ok(sitemap.includes(`/tools/${slug}`));
     assert.ok(!sitemap.includes("/ai-seo-tools"));
-    assert.ok(!sitemap.includes("/tools/categories/productivity"));
+    assert.ok(sitemap.includes("/tools/categories/productivity"));
     assert.ok(!sitemap.includes("/news/"));
     assert.ok(!sitemap.includes("/freeResources/"));
     if (process.env.SMOKE_BROWSER) {

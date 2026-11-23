@@ -1,0 +1,83 @@
+[
+  {
+    "id": "answer-passages",
+    "name": "Answer-first passages & 50-word AI citation blocks",
+    "intro": "Write self-contained 45-to-60 word answer blocks with explicit noun-verb-object framing that Google AI Overviews, ChatGPT, and Perplexity can extract without losing context.",
+    "tool": "ai-citation-readiness-checker",
+    "toolName": "AI Citation & Featured Snippet Optimizer",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 1\u201311"
+  },
+  {
+    "id": "entity-clarity",
+    "name": "Entity disambiguation, Knowledge Graph triples & sameAs links",
+    "intro": "Define your brand, product, and authors with unambiguous subject-predicate-object triples, consistent category naming, and authoritative sameAs references.",
+    "tool": "ai-brand-visibility-prompt-generator",
+    "toolName": "AI Brand Visibility & Entity Prompt Studio",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 12\u201321"
+  },
+  {
+    "id": "geo-stats-proof",
+    "name": "GEO quantitative proof, original benchmarks & source attribution",
+    "intro": "Structure original numbers, sample sizes, dates, and primary citations in the exact format Generative Engine Optimization (GEO) research shows increases AI citation rates.",
+    "tool": "data-to-chart-visual-card-maker",
+    "toolName": "AI Data & Stat to Visual Chart Card Maker",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 22\u201332"
+  },
+  {
+    "id": "comparison-matrices",
+    "name": "Structured comparison tables, decision matrices & trade-offs",
+    "intro": "Help AI engines recommend your offer accurately for specific buyer constraints by publishing transparent 'Best for X / Skip if Y' matrices and attribute tables.",
+    "tool": "framework-matrix-diagram-builder",
+    "toolName": "AI 2x2 Matrix & Strategy Diagram Builder",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 33\u201342"
+  },
+  {
+    "id": "conversational-faqs",
+    "name": "Conversational multi-turn queries, fan-out prompts & FAQ silos",
+    "intro": "Anticipate the 2nd, 3rd, and 4th follow-up questions users ask inside ChatGPT, Claude, and Google AI Mode ('Query Fan-Out') and answer them on a single page.",
+    "tool": "ai-faq-generator",
+    "toolName": "AI FAQ & Schema Generator",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 43\u201352"
+  },
+  {
+    "id": "llmstxt-crawl",
+    "name": "llms.txt, llms-full.txt, AI crawler robots.txt & clean Markdown",
+    "intro": "Publish clean `/llms.txt` documentation indexes, audit `robots.txt` rules for `OAI-SearchBot`, `ClaudeBot`, and `Google-Extended`, and verify server-rendered HTML parity.",
+    "tool": "llms-txt-generator",
+    "toolName": "LLMs.txt & AI Documentation Generator",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 53\u201362"
+  },
+  {
+    "id": "schema-graph",
+    "name": "Connected @graph JSON-LD schema for AI entity extraction",
+    "intro": "Link Organization, Person, Product/SoftwareApplication, Article, and FAQPage entities in a unified JSON-LD `@graph` with persistent `@id` URIs.",
+    "tool": "structured-data-validator",
+    "toolName": "Structured Data & Schema Validator",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 63\u201372"
+  },
+  {
+    "id": "brand-visibility-audit",
+    "name": "AI brand visibility testing, prompt fan-out & citation audits",
+    "intro": "Generate neutral, non-leading buyer prompts to test how AI assistants describe, compare, or omit your brand across awareness, evaluation, and troubleshooting tasks.",
+    "tool": "ai-brand-visibility-prompt-generator",
+    "toolName": "AI Brand Visibility & Entity Prompt Studio",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 73\u201382"
+  },
+  {
+    "id": "offsite-corroboration",
+    "name": "Third-party corroboration, Reddit/YouTube presence & PR citations",
+    "intro": "Strengthen the off-site sources AI engines cross-check\u2014such as YouTube transcripts, Reddit discussions, documentation wikis, and independent comparison roundups.",
+    "tool": "digital-pr-linkable-asset-planner",
+    "toolName": "Digital PR & Linkable Asset Planner",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 83\u201391"
+  }
+]

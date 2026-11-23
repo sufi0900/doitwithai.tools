@@ -11,6 +11,31 @@ import { getFileUrl } from "./sanityFileUrl"; // path as you saved it
 import Link from 'next/link';
 // import Image from 'next/image';
 
+
+function generateHeadingAnchor(text) {
+  return String(text || "")
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
+}
+
+function extractHeadingText(value, children) {
+  if (Array.isArray(value?.children)) {
+    const raw = value.children.map((c) => c?.text || "").join("").trim();
+    if (raw) return raw;
+  }
+  if (typeof children === "string") return children;
+  if (Array.isArray(children)) {
+    return children
+      .map((c) => (typeof c === "string" ? c : c?.props?.children || ""))
+      .join("")
+      .trim();
+  }
+  return "";
+}
+
 const PortableTextComponents = () => {
   // Add this before the PortableTextComponents function
   const CodeBlockComponent = ({ code, language }) => {
@@ -71,9 +96,9 @@ const PortableTextComponents = () => {
   };
 
 const RichTableComponent = ({ value }) => {
-  const caption = value?.caption;
-  const rows = value?.rows || [];
-    const headerRows = Number(value?.headerRows ?? 0);
+  const caption = value?.caption || value?.title;
+  const rows = value?.rows || value?.table?.rows || [];
+  const headerRows = Number(value?.headerRows ?? 1);
 
 
   return (
@@ -107,7 +132,52 @@ const RichTableComponent = ({ value }) => {
                       }`}
                       scope={isHeader ? 'row' : undefined}
                     >
-                      {cell.content ? (
+                      {typeof cell === "string" ? (
+                        <span>{cell}</span>
+                      ) : typeof cell?.text === "string" ? (
+                        <span>{cell.text}</span>
+                      ) : cell?._type === "block" ? (
+                        <PortableText
+                          value={[cell]}
+                          components={{
+                            block: {
+                              normal: ({ children }) => <span>{children}</span>,
+                            },
+                            marks: {
+                              strong: ({ children }) => (
+                                <strong className="font-bold text-gray-900 dark:text-white">
+                                  {children}
+                                </strong>
+                              ),
+                              em: ({ children }) => (
+                                <em className="italic">{children}</em>
+                              ),
+                              code: ({ children }) => (
+                                <code className="bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-xs font-mono text-blue-600 dark:text-blue-400">
+                                  {children}
+                                </code>
+                              ),
+                              link: ({ value, children }) => {
+                                const href = value?.href || "#";
+                                const isInternal = href.startsWith("/") || href.startsWith("https://doitwithai.tools");
+                                const normalizedHref = href.startsWith("https://doitwithai.tools")
+                                  ? href.replace("https://doitwithai.tools", "") || "/"
+                                  : href;
+                                return (
+                                  <Link
+                                    href={normalizedHref}
+                                    target={isInternal ? undefined : "_blank"}
+                                    rel={isInternal ? undefined : "noopener noreferrer"}
+                                    className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline hover:no-underline transition-colors duration-200 font-semibold"
+                                  >
+                                    {children}
+                                  </Link>
+                                );
+                              },
+                            },
+                          }}
+                        />
+                      ) : cell?.content ? (
                         <PortableText
                           value={cell.content}
                           components={{
@@ -345,9 +415,9 @@ const RichTableComponent = ({ value }) => {
       video: VideoComponent,
 
 image: ({ value, index }) => {
-  const imageUrl = value?.asset ? urlForImage(value.asset).url() : "/fallback-image-url.png";
-  const isPriority = index < 3;
-  const blurDataURL = value?.asset ? urlForImage(value.asset).width(20).height(20).blur(10).url() : undefined;
+  const imageUrl = value?.localUrl || (value?.asset ? urlForImage(value.asset).url() : "/fallback-image-url.png");
+  const isPriority = false; // Keep priority strictly on BlogHeader hero image so body images never compete with LCP
+  const blurDataURL = !value?.localUrl && value?.asset ? urlForImage(value.asset).width(20).height(20).blur(10).url() : undefined;
 
   return (
     <div className="relative w-full my-8 sm:my-10 md:my-12">
@@ -371,10 +441,10 @@ image: ({ value, index }) => {
                     className="w-full h-auto object-cover rounded-lg shadow-lg"
                     priority={isPriority}
                     blurDataURL={blurDataURL}
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 80vw, 70vw"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 768px, 800px"
                     width={800}
                     height={600}
-                    quality={85}
+                    quality={80}
                     enableModal={true}
                   />
                   
@@ -432,6 +502,50 @@ image: ({ value, index }) => {
   );
 },
         richTable: RichTableComponent,
+        table: RichTableComponent,
+        complexTable: RichTableComponent,
+        customTable: RichTableComponent,
+        toolPromoCard: ({ value }) => {
+          if (!value) return null;
+          return (
+            <div className="my-7 rounded-2xl border border-blue-200/80 bg-gradient-to-br from-blue-50/90 via-white to-indigo-50/80 p-5 sm:p-6 shadow-md dark:border-blue-900/60 dark:from-slate-900 dark:via-slate-900/95 dark:to-blue-950/40">
+              {value.badge && (
+                <p className="m-0 mb-2 inline-flex items-center rounded-full bg-blue-600/10 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-blue-700 dark:bg-blue-400/15 dark:text-blue-300">
+                  {value.badge}
+                </p>
+              )}
+              {value.title && (
+                <p className="m-0 text-lg sm:text-xl font-extrabold text-gray-900 dark:text-white leading-snug">
+                  {value.title}
+                </p>
+              )}
+              {value.description && (
+                <p className="mt-2 mb-4 text-sm sm:text-base leading-relaxed text-gray-700 dark:text-gray-300">
+                  {value.description}
+                </p>
+              )}
+              <div className="flex flex-wrap items-center gap-3">
+                {value.link && (
+                  <Link
+                    href={value.link}
+                    className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs sm:text-sm font-bold text-white shadow-sm transition hover:bg-blue-700"
+                  >
+                    <span>{value.ctaText || "Open Free Tool"}</span>
+                    <Rocket className="h-4 w-4" />
+                  </Link>
+                )}
+                {value.secondaryLink && value.secondaryText && (
+                  <Link
+                    href={value.secondaryLink}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-blue-300 bg-white px-4 py-2.5 text-xs sm:text-sm font-semibold text-blue-700 transition hover:bg-blue-50 dark:border-blue-800 dark:bg-slate-800 dark:text-blue-200 dark:hover:bg-slate-700"
+                  >
+                    <span>{value.secondaryText}</span>
+                  </Link>
+                )}
+              </div>
+            </div>
+          );
+        },
 
     },
 
@@ -442,45 +556,64 @@ image: ({ value, index }) => {
         </p>
       ),
 
-      h1: ({ children }) => (
-        <h1 className="mb-3 sm:mb-4 text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-extrabold leading-tight sm:leading-none tracking-tight text-gray-900 dark:text-white transition-colors duration-300 hover:text-blue-600 dark:hover:text-blue-400 px-2 sm:px-0">
+      h1: ({ children, value }) => (
+        <h1
+          id={generateHeadingAnchor(extractHeadingText(value, children))}
+          className="scroll-mt-24 mb-3 sm:mb-4 text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-extrabold leading-tight sm:leading-none tracking-tight text-gray-900 dark:text-white transition-colors duration-300 hover:text-blue-600 dark:hover:text-blue-400 px-2 sm:px-0"
+        >
           {children}
         </h1>
       ),
 
       // H2 - Primary section headings
-      h2: ({ children }) => (
-        <h2 className="mb-3 sm:mb-4 md:mb-5 text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-3xl font-bold text-gray-800 dark:text-white px-2 sm:px-0">
+      h2: ({ children, value }) => (
+        <h2
+          id={generateHeadingAnchor(extractHeadingText(value, children))}
+          className="scroll-mt-24 mb-3 sm:mb-4 md:mb-5 text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-3xl font-bold text-gray-800 dark:text-white px-2 sm:px-0"
+        >
           {children}
         </h2>
       ),
 
       // H3 - Subsection headings
-      h3: ({ children }) => (
-        <h3 className="mb-3 sm:mb-4 text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-semibold text-gray-700 dark:text-gray-200 px-2 sm:px-0">
+      h3: ({ children, value }) => (
+        <h3
+          id={generateHeadingAnchor(extractHeadingText(value, children))}
+          className="scroll-mt-24 mb-3 sm:mb-4 text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-semibold text-gray-700 dark:text-gray-200 px-2 sm:px-0"
+        >
           {children}
         </h3>
       ),
 
       // H4 - Sub-subsection headings
-      h4: ({ children }) => (
-        <h4 className="hover:text-gray-800 dark:hover:text-gray-200 transition-all duration-300 ease-in-out mb-3 sm:mb-4 text-sm sm:text-base md:text-lg lg:text-xl xl:text-xl font-bold leading-tight text-gray-700 dark:text-gray-300 px-2 sm:px-0">
+      h4: ({ children, value }) => (
+        <h4
+          id={generateHeadingAnchor(extractHeadingText(value, children))}
+          className="scroll-mt-24 hover:text-gray-800 dark:hover:text-gray-200 transition-all duration-300 ease-in-out mb-3 sm:mb-4 text-sm sm:text-base md:text-lg lg:text-xl xl:text-xl font-bold leading-tight text-gray-700 dark:text-gray-300 px-2 sm:px-0"
+        >
           {children}
         </h4>
       ),
 
       // H5 - Minor headings
-      h5: ({ children }) => (
-        <h5 className="mb-3 sm:mb-4 text-xs sm:text-sm md:text-base lg:text-lg xl:text-lg font-semibold leading-tight text-gray-600 dark:text-gray-400 px-2 sm:px-0">
+      h5: ({ children, value }) => (
+        <h5
+          id={generateHeadingAnchor(extractHeadingText(value, children))}
+          className="scroll-mt-24 mb-3 sm:mb-4 text-xs sm:text-sm md:text-base lg:text-lg xl:text-lg font-semibold leading-tight text-gray-600 dark:text-gray-400 px-2 sm:px-0"
+        >
           {children}
         </h5>
       ),
+
       // H6 - Small heading
-h6: ({ children }) => (
-  <h6 className="mb-3 sm:mb-4 text-xs sm:text-sm md:text-base lg:text-base font-semibold leading-tight text-gray-600 dark:text-gray-400 px-2 sm:px-0">
-    {children}
-  </h6>
-),
+      h6: ({ children, value }) => (
+        <h6
+          id={generateHeadingAnchor(extractHeadingText(value, children))}
+          className="scroll-mt-24 mb-3 sm:mb-4 text-xs sm:text-sm md:text-base lg:text-base font-semibold leading-tight text-gray-600 dark:text-gray-400 px-2 sm:px-0"
+        >
+          {children}
+        </h6>
+      ),
         blockquote: ({ children }) => (
          <div className="relative z-10 mb-6 sm:mb-8 overflow-hidden rounded-md bg-primary bg-opacity-10 px-5 py-6 sm:px-7 sm:py-7 md:px-8 md:py-8">
     <blockquote className="text-center text-sm sm:text-base md:text-lg lg:text-xl italic font-medium leading-relaxed sm:leading-relaxed text-gray-700 dark:text-gray-300 px-2 sm:px-4">

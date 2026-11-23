@@ -1,3 +1,9 @@
+import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
+import {
+  ToolHeroBackground,
+  toolHeroSurface,
+  toolHeroHeading,
+} from "@/features/tool-ui/ToolHero";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ImagePlus, ScanEye, FileCheck2 } from "lucide-react";
@@ -91,11 +97,11 @@ const faqs = [
   ],
   [
     "Does the tool guarantee accessibility or search rankings?",
-    "No. It helps draft and review text alternatives. Human review and correct page implementation remain necessary. The local checks do not certify accessibility or verify facts.",
+    "No. It helps draft and review text alternatives. Human review and correct page implementation remain necessary. Check the final wording for accuracy and suitability on your page.",
   ],
   [
     "What happens to my uploaded image?",
-    "Selecting a file prepares it locally. Generating sends that prepared image and brief through our API to the AI provider. Drafts are not saved between visits.",
+    "Select an image, add page context, and review the generated wording. Download or copy drafts you want to keep before leaving.",
   ],
 ];
 const prose = "mt-4 text-sm leading-8 text-slate-600 dark:text-slate-300";
@@ -130,65 +136,73 @@ export default function Page() {
           __html: JSON.stringify(schema).replace(/</g, "\\u003c"),
         }}
       />
-      <div className="relative overflow-hidden bg-slate-950 pb-20 pt-10 sm:pt-16">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.08)_1px,transparent_0)] bg-[size:28px_28px]"
-        />
-        <div
-          aria-hidden
-          className="absolute -left-32 top-10 h-96 w-96 rounded-full bg-[#5271ff]/25 blur-3xl"
-        />
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className={`relative overflow-hidden ${toolHeroSurface} text-white`}
+      >
+        <ToolHeroBackground />
+        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
           <nav
             aria-label="Breadcrumb"
-            className="flex flex-wrap gap-2 text-xs text-slate-400"
+            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
           >
             <Link href="/">Home</Link>
             <span>/</span>
             <Link href="/tools">Tools</Link>
             <span>/</span>
-            <span aria-current="page" className="text-blue-200">
-              Image Alt Text Generator
-            </span>
+            <span aria-current="page">Image Alt Text Generator</span>
           </nav>
-          <header className="mx-auto mb-14 mt-12 max-w-5xl text-center text-white">
-            <p className="inline-flex rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-widest text-blue-100">
-              AI SEO · Content Writing
-            </p>
-            <h1 className="mt-7 text-balance text-4xl font-black tracking-tight sm:text-6xl lg:text-7xl">
-              AI Image Alt Text Generator
-              <span className="mt-3 block text-balance bg-gradient-to-r from-blue-300 via-cyan-300 to-violet-300 bg-clip-text text-transparent">
-                Describe the Meaning That Matters
-              </span>
-            </h1>
-            <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-slate-300 sm:text-lg">
-              Give your image a purpose, compare useful alternatives, and refine
-              the wording before it reaches your readers.
-            </p>
-            <div className="mt-7 flex flex-wrap justify-center gap-3 text-xs font-bold text-slate-300">
-              {[
-                [ImagePlus, "Upload or describe"],
-                [ScanEye, "Purpose-aware drafts"],
-                [FileCheck2, "Human accuracy review"],
-              ].map(([Icon, label]) => {
-                const I = Icon as typeof ImagePlus;
-                return (
-                  <span
-                    key={label as string}
-                    className="inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-2"
-                  >
-                    <I aria-hidden className="h-4 w-4 text-blue-300" />
-                    {label as string}
-                  </span>
-                );
-              })}
+
+          <div className="mb-8 grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
+                On-Page SEO & Accessibility · Descriptive Alt Text Studio
+              </p>
+              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
+                AI Image Alt Text 
+                <span className={toolHeroHeading}>
+                  & Accessibility Generator
+                </span>
+              </h1>
+              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
+                Upload an image or describe its visual role on your page to generate clear, screen-reader-friendly alt text variations aligned with WCAG guidelines and page context.
+              </p>
+              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  Image upload or text brief
+                </span>
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  Role-aware alt variations
+                </span>
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  Character & keyword checks
+                </span>
+              </div>
+              <PortableToolHeroBar />
             </div>
-          </header>
+
+            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
+              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
+                4 Accessibility & SEO Checks
+              </p>
+              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
+                <li>
+                  <strong className="text-emerald-300">Image Role:</strong> Adapts copy for informative, functional, chart, or product images.
+                </li>
+                <li>
+                  <strong className="text-indigo-300">Context Alignment:</strong> Connects visual details naturally to the surrounding topic.
+                </li>
+                <li>
+                  <strong className="text-sky-300">Anti-Stuffing:</strong> Avoids robotic keyword lists and redundant &apos;image of&apos; prefixes.
+                </li>
+                <li>
+                  <strong className="text-amber-300">Ready to Copy:</strong> Provides concise, medium, and detailed options with HTML code.
+                </li>
+              </ul>
+            </div>
+          </div>
           <AltTextClient />
         </div>
       </div>
-      <div className="mx-auto max-w-7xl space-y-20 px-4 py-20 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-6xl space-y-20 px-4 py-20 sm:px-6 lg:px-8">
         <section className="grid gap-8 lg:grid-cols-2">
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-[#4662df] dark:text-blue-300">
@@ -295,7 +309,7 @@ export default function Page() {
               ],
               [
                 "Check the source again",
-                "Review names, numbers, visible text, and uncertain details. Local checks identify certain wording patterns, but cannot confirm image accuracy or reader comprehension.",
+                "Review names, numbers, visible text, and uncertain details. Check the suggested wording against the image and the surrounding page content.",
               ],
               [
                 "Use the right output",

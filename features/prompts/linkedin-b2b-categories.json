@@ -1,0 +1,74 @@
+[
+  {
+    "id": "profile-positioning",
+    "name": "LinkedIn Headline, About section, Featured shelf & positioning",
+    "intro": "Turn your profile from a static resume into a high-converting B2B landing page with a clear outcome headline, proof-backed About narrative, and 3-slot Featured shelf.",
+    "tool": "linkedin-post-formatter",
+    "toolName": "LinkedIn Post Formatter & Fold Previewer",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 1\u201310"
+  },
+  {
+    "id": "fold-hooks",
+    "name": "140-character mobile fold hooks & pattern-interrupt openers",
+    "intro": "Write 2-line opening hooks under 140 characters that earn the '...see more' click on mobile without relying on cheap clickbait or 'broetry' spacing.",
+    "tool": "linkedin-post-formatter",
+    "toolName": "LinkedIn Post Formatter & Fold Previewer",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 11\u201321"
+  },
+  {
+    "id": "founder-stories-teardowns",
+    "name": "Founder lessons, teardown posts, contrarian takes & case studies",
+    "intro": "Share behind-the-scenes operational lessons, step-by-step client audits, and contrarian industry observations that build senior practitioner trust.",
+    "tool": "blog-to-social-posts",
+    "toolName": "Blog to Social Posts Studio",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 22\u201332"
+  },
+  {
+    "id": "pdf-carousels",
+    "name": "5-to-10 slide PDF document carousels & swipeable cheat sheets",
+    "intro": "Storyboard 1080\u00d71350 portrait PDF carousels with under-25-word slides, visual contrast, and save-worthy summary checklists.",
+    "tool": "blog-to-linkedin-carousel",
+    "toolName": "Blog to LinkedIn Carousel Studio",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 33\u201343"
+  },
+  {
+    "id": "visual-cards-matrices",
+    "name": "Founder memos, stat callout cards, 2\u00d72 matrices & infographics",
+    "intro": "Pair your written LinkedIn post with a custom founder memo graphic, big-number KPI card, 2\u00d72 strategy grid, or 8-node visual infographic.",
+    "tool": "quote-stat-testimonial-card-studio",
+    "toolName": "Quote, Founder Memo & Testimonial Card Studio",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 44\u201353"
+  },
+  {
+    "id": "strategic-comments",
+    "name": "Strategic commenting, authority replies & peer engagement",
+    "intro": "Write substantive 3-sentence comments on ICP and industry leader posts that add a new angle, example, or nuance\u2014never generic 'Great post!' spam.",
+    "tool": "linkedin-comment-generator",
+    "toolName": "LinkedIn Comment & Engagement Studio",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 54\u201363"
+  },
+  {
+    "id": "inbound-leads-dms",
+    "name": "Zero-pitch lead magnets, resource posts & warm inbound DMs",
+    "intro": "Turn post engagement, profile views, and comment threads into natural, zero-pressure DM conversations and newsletter/demo signups.",
+    "tool": "outreach-email-builder",
+    "toolName": "Personalized Outreach & DM Studio",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 64\u201373"
+  },
+  {
+    "id": "b2b-content-system",
+    "name": "30-day B2B content pillar matrices, analytics & repurposing",
+    "intro": "Balance TOFU reach, MOFU frameworks, and BOFU proof across a sustainable 4-post-per-week founder or team advocacy calendar.",
+    "tool": "blog-to-newsletter",
+    "toolName": "Blog to Newsletter & Content Studio",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 74\u201383"
+  }
+]

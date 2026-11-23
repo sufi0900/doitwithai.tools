@@ -36,7 +36,7 @@ function generateOGImageURL(params) {
 }
 
 async function getData(schemaType, pageSlugPrefix) {
-  const cacheKey = `blogList:${schemaType}:main`;
+  const cacheKey = `blogList:${schemaType}:main:cwv3`;
   const startTime = Date.now();
 
   try {
@@ -51,8 +51,8 @@ async function getData(schemaType, pageSlugPrefix) {
 
   console.log(`[Sanity Fetch] for ${cacheKey} starting...`);
 
-  const featuresQuery = `*[_type=="${schemaType}" && displaySettings.isOwnPageFeature==true][0]`;
-  const firstPageBlogsQuery = `*[_type=="${schemaType}"] | order(publishedAt desc)[0...6]`;
+  const featuresQuery = `*[_type=="${schemaType}" && displaySettings.isOwnPageFeature==true][0]{ _id, _type, title, slug, mainImage, overview, publishedAt, readTime, tags, resourceType, resourceFormat, aiToolDetails, seoTitle, seoDescription }`;
+  const firstPageBlogsQuery = `*[_type=="${schemaType}"] | order(publishedAt desc)[0...6]{ _id, _type, title, slug, mainImage, overview, publishedAt, readTime, tags, resourceType, resourceFormat, aiToolDetails, seoTitle, seoDescription }`;
   const totalCountQuery = `count(*[_type=="${schemaType}"])`;
 
   try {
@@ -87,57 +87,55 @@ async function getData(schemaType, pageSlugPrefix) {
 
 // --- SEO Metadata (Next.js App Router Standard) ---
 export const metadata = {
-  title: "Best AI Tools for SEO, Productivity & Scaling | Do It With AI Tools",
-  description: "Explore curated blogs on the best AI tools, featuring reviews of freemium software to boost content creation, enhance SEO, and scale your business effectively.",
-  author: "Sufian Mustafa",
-  openGraph: {
-    title: "Best AI Tools for SEO, Productivity & Scaling | Do It With AI Tools",
-    description: "Explore curated list of blogs on the best AI tools, with detailed reviews of freemium AI software designed to boost your productivity & enhance your SEO.",
-    url: `${getBaseUrl()}/ai-tools`,
-    type: "website",
-    images: [{
-      url: generateOGImageURL({
-      title: 'Find the best AI tools to supercharge your content creation, SEO, and business scale.',
-        // description field is removed
-        category: 'AI Tools',
-        ctaText: 'Explore AI Tools',
-        features: 'Automate Tasks,Enhance Creativity,Save Time and Effort',
-      }),
-      width: 1200,
-      height: 630,
-      alt: 'Best AI Tools for Productivity',
-    }],
-    siteName: "doitwithai.tools",
-    locale: 'en_US',
-  },
-  twitter: {
-    card: "summary_large_image",
-    domain: "doitwithai.tools",
-    url: `${getBaseUrl()}/ai-tools`,
-    title: "Best AI Tools for SEO, Productivity & Scaling | Do It With AI Tools",
-  description: "Explore curated blogs on the best AI tools, featuring reviews of freemium software to boost content creation, enhance SEO, and scale your business effectively.",
-    image: generateOGImageURL({
-      title: 'Find the best AI tools to supercharge your content creation, SEO, and business scale.',
-      // description field is removed
-      category: 'AI Tools',
-      ctaText: 'Explore AI Tools',
-      features: 'Automate Tasks,Enhance Creativity,Save Time and Effort',
-    }),
-  },
-  alternates: {
-    canonical: `${getBaseUrl()}/ai-tools`,
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
-    },
-  },
+  title: "Best AI Tools for SEO, Productivity & Scaling | Do It With AI Tools",
+  description: "Explore curated blogs on the best AI tools, featuring reviews of freemium software to boost content creation, enhance SEO, and scale your business effectively.",
+  author: "Sufian Mustafa",
+  openGraph: {
+    title: "Best AI Tools for SEO, Productivity & Scaling | Do It With AI Tools",
+    description: "Explore curated list of blogs on the best AI tools, with detailed reviews of freemium AI software designed to boost your productivity & enhance your SEO.",
+    url: `${getBaseUrl()}/ai-tools`,
+    type: "website",
+    images: [{
+      url: generateOGImageURL({
+      title: 'Find the best AI tools to supercharge your content creation, SEO, and business scale.',
+        category: 'AI Tools',
+        ctaText: 'Explore AI Tools',
+        features: 'Automate Tasks,Enhance Creativity,Save Time and Effort',
+      }),
+      width: 1200,
+      height: 630,
+      alt: 'Best AI Tools for Productivity',
+    }],
+    siteName: "doitwithai.tools",
+    locale: 'en_US',
+  },
+  twitter: {
+    card: "summary_large_image",
+    domain: "doitwithai.tools",
+    url: `${getBaseUrl()}/ai-tools`,
+    title: "Best AI Tools for SEO, Productivity & Scaling | Do It With AI Tools",
+    description: "Explore curated blogs on the best AI tools, featuring reviews of freemium software to boost content creation, enhance SEO, and scale your business effectively.",
+    image: generateOGImageURL({
+      title: 'Find the best AI tools to supercharge your content creation, SEO, and business scale.',
+      category: 'AI Tools',
+      ctaText: 'Explore AI Tools',
+      features: 'Automate Tasks,Enhance Creativity,Save Time and Effort',
+    }),
+  },
+  alternates: {
+    canonical: `${getBaseUrl()}/ai-tools`,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
 };
 
 export default async function Page() {

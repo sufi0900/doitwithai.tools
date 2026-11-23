@@ -4,6 +4,7 @@ import {
   Bot,
   BrainCircuit,
   CheckCircle2,
+  Download,
   Lightbulb,
   RotateCw,
 } from "lucide-react";
@@ -87,12 +88,78 @@ export default function MetaTitleResults({ data, input, onRegenerate }: Props) {
     );
   }
 
+  function exportAllCandidates(format: "csv" | "md") {
+    if (format === "csv") {
+      const rows = [
+        [
+          "Lens",
+          "Title",
+          "Characters",
+          "Estimated Pixels",
+          "Score",
+          "Angle",
+          "Rationale",
+        ],
+        ...evaluated.map((c) => [
+          c.lens,
+          c.title,
+          String(c.evaluation.characters),
+          String(c.evaluation.pixels),
+          String(c.evaluation.overallScore),
+          c.angle,
+          c.rationale,
+        ]),
+      ];
+      const csv = rows
+        .map((r) =>
+          r.map((cell) => `"${cell.replace(/"/g, '""')}"`).join(","),
+        )
+        .join("\r\n");
+      const url = URL.createObjectURL(
+        new Blob([csv], { type: "text/csv;charset=utf-8" }),
+      );
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "meta-title-candidates.csv";
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } else {
+      const md = [
+        `# Meta Title Optimization Pack: ${input.primaryKeyword}`,
+        `Selected & Refined Title: **${editedTitle}**`,
+        "",
+        ...data.result.groups.map(
+          (g) =>
+            `## ${g.heading}\n_${g.explanation}_\n\n` +
+            g.candidates
+              .map(
+                (c, i) =>
+                  `${i + 1}. **${c.title}** (${c.angle}) — ${c.rationale}`,
+              )
+              .join("\n"),
+        ),
+      ].join("\n\n");
+      const url = URL.createObjectURL(
+        new Blob([md], { type: "text/markdown;charset=utf-8" }),
+      );
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "meta-title-candidates.md";
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+  }
+
   return (
     <div className="mt-14 space-y-14" id="generator-results" aria-live="polite">
-      <p className="text-sm text-slate-600 dark:text-slate-300">Scores are local editorial heuristics. They do not measure Google rankings, clicks, or AI citation probability. Pixel previews are estimates.</p>
+      <p className="text-sm text-slate-600 dark:text-slate-300">
+        Scores are local editorial heuristics. They do not measure Google
+        rankings, clicks, or AI citation probability. Pixel previews are
+        estimates.
+      </p>
       <section className="overflow-hidden rounded-[28px] border border-[#5271ff]/20 bg-gradient-to-br from-[#5271ff]/10 via-white to-cyan-50 p-5 dark:via-slate-900 dark:to-slate-900 sm:p-7 lg:p-9">
         <div className="grid gap-6 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:items-start">
-          <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[#5271ff] text-white shadow-lg shadow-[#5271ff]/25">
+          <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[#3452d1] text-white shadow-lg shadow-[#3452d1]/25">
             <Bot className="h-6 w-6" />
           </div>
           <div>
@@ -125,13 +192,29 @@ export default function MetaTitleResults({ data, input, onRegenerate }: Props) {
               ))}
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onRegenerate}
-            className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#5271ff]/25 bg-white px-3.5 py-2.5 text-xs font-extrabold text-[#5271ff] transition hover:bg-[#5271ff] hover:text-white dark:bg-slate-900"
-          >
-            <RotateCw className="h-3.5 w-3.5" /> Regenerate
-          </button>
+          <div className="flex flex-wrap gap-2 lg:flex-col">
+            <button
+              type="button"
+              onClick={() => exportAllCandidates("csv")}
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#3452d1] px-3.5 py-2.5 text-xs font-extrabold text-white transition hover:bg-[#2943b5]"
+            >
+              <Download className="h-3.5 w-3.5" /> Export 25 Titles (.CSV)
+            </button>
+            <button
+              type="button"
+              onClick={() => exportAllCandidates("md")}
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs font-extrabold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+            >
+              <Download className="h-3.5 w-3.5" /> Export Pack (.MD)
+            </button>
+            <button
+              type="button"
+              onClick={onRegenerate}
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#5271ff]/25 bg-white px-3.5 py-2.5 text-xs font-extrabold text-[#5271ff] transition hover:bg-[#5271ff] hover:text-white dark:bg-slate-900"
+            >
+              <RotateCw className="h-3.5 w-3.5" /> Regenerate
+            </button>
+          </div>
         </div>
       </section>
 

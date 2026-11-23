@@ -1,4 +1,5 @@
 "use client";
+import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 
 import { RotateCcw, Sparkles, WandSparkles } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -19,7 +20,7 @@ const emptyForm: SlugInput = {
   timeSensitive: false,
 };
 
-const sampleForm: SlugInput = {
+export const sampleForm: SlugInput = {
   pageContext:
     "A detailed review blog about the Merlin AI Chrome extension. The page explains its core features, real use cases, free and paid plans, strengths, limitations, and whether it is useful for writers, researchers, and marketers.",
   primaryKeyword: "Merlin AI review",
@@ -34,7 +35,7 @@ type Props = {
 };
 
 export default function SlugGeneratorForm({ busy, onSubmit }: Props) {
-  const [form, setForm] = useState<SlugInput>(emptyForm);
+  const [form, setForm] = useState<SlugInput>(sampleForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const readiness = useMemo(() => {
@@ -155,7 +156,7 @@ export default function SlugGeneratorForm({ busy, onSubmit }: Props) {
               error={errors.baseUrl}
               hint="Used only to build the live URL preview; the tool does not fetch it."
             >
-              <input
+              <ToolUrlInput
                 id="baseUrl"
                 value={form.baseUrl}
                 onChange={(event) => update("baseUrl", event.target.value)}

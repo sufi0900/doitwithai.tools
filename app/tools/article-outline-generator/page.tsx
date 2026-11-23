@@ -1,3 +1,8 @@
+import {
+  ToolHeroBackground,
+  toolHeroSurface,
+  toolHeroHeading,
+} from "@/features/tool-ui/ToolHero";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BookOpen, Layers3, ListChecks, PencilLine } from "lucide-react";
@@ -8,8 +13,15 @@ const description =
   "Plan an article around your reader's intent. Compare H1, H2, and H3 alternatives, edit section notes, and export a structured writing outline.";
 const image = `https://doitwithai.tools/api/og?${new URLSearchParams({ title: "Article Outline Generator", category: "AI SEO · Content Writing", ctaText: "Plan. Compare. Refine.", features: "Heading Alternatives,Writing Notes,Markdown Export" })}`;
 export const metadata: Metadata = {
-  title: "AI Article Outline Generator",
+  title: "AI Article Outline Generator: Plan H1–H3 Heading Structure",
   description,
+  keywords: [
+    "ai article outline generator",
+    "h1 h2 h3 outline generator",
+    "blog post outline generator",
+    "seo heading hierarchy planner",
+    "content brief and outline tool",
+  ],
   alternates: { canonical: pageUrl },
   openGraph: {
     title: "AI Article Outline Generator",
@@ -56,15 +68,10 @@ export default function Page() {
           __html: JSON.stringify(schema).replace(/</g, "\\u003c"),
         }}
       />
-      <div className="relative overflow-hidden bg-slate-950 pb-20 pt-10 sm:pt-16">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.08)_1px,transparent_0)] bg-[size:28px_28px]"
-        />
-        <div
-          aria-hidden
-          className="absolute -left-32 top-10 h-96 w-96 rounded-full bg-[#5271ff]/25 blur-3xl"
-        />
+      <div
+        className={`relative overflow-hidden ${toolHeroSurface} pb-20 pt-10 sm:pt-16`}
+      >
+        <ToolHeroBackground />
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <nav
             aria-label="Breadcrumb"
@@ -84,7 +91,7 @@ export default function Page() {
             </p>
             <h1 className="mt-7 text-4xl font-black tracking-tight sm:text-6xl lg:text-7xl">
               AI Article Outline Generator
-              <span className="mt-3 block text-balance bg-gradient-to-r from-blue-300 via-cyan-300 to-violet-300 bg-clip-text text-transparent">
+              <span className={`mt-3 block text-balance ${toolHeroHeading}`}>
                 Give Every Section a Purpose
               </span>
             </h1>
@@ -349,7 +356,28 @@ export default function Page() {
           >
             W3C&apos;s heading guidance
           </a>
-          . For a stronger brief, explore our{" "}
+          . For a stronger brief and heading hierarchy, explore our{" "}
+          <Link
+            className="font-semibold text-[#4662df] underline dark:text-blue-300"
+            href="/ai-seo/h1-heading"
+          >
+            H1 tag SEO best practices &amp; length guide
+          </Link>
+          , test your main headline in the{" "}
+          <Link
+            className="font-semibold text-[#4662df] underline dark:text-blue-300"
+            href="/tools/h1-heading-generator"
+          >
+            AI H1 Heading Generator
+          </Link>
+          , audit published pages in the{" "}
+          <Link
+            className="font-semibold text-[#4662df] underline dark:text-blue-300"
+            href="/tools/heading-structure-analyzer"
+          >
+            Heading Structure Analyzer
+          </Link>
+          , and read our{" "}
           <Link
             className="text-[#4662df] underline dark:text-blue-300"
             href="/ai-seo/chatgpt-target-audience-research"

@@ -241,7 +241,7 @@ test("Gemini API uses bounded structured output without grounding and rejects pr
       assert.equal(options.cache, "no-store");
       assert.ok(options.signal);
       const body = JSON.parse(options.body);
-      assert.equal(body.store, false);
+      assert.equal(body.store, undefined);
       assert.equal(body.tools, undefined);
       assert.equal(body.generationConfig.responseMimeType, "application/json");
       assert.equal(body.generationConfig.maxOutputTokens, 7000);

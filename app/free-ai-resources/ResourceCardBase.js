@@ -1,7 +1,8 @@
 // components/ResourceCardBase.js
 import React, { useState } from 'react';
-import { getFileUrl, renderPreviewContent } from "./resourceUtils";
-import ResourceModal from './ResourceModal';
+import { getFileUrl, getFileExtension, renderPreviewContent } from "./resourceUtils";
+import dynamic from 'next/dynamic';
+const ResourceModal = dynamic(() => import('./ResourceModal'), { ssr: false });
 import ResourceSchema from './ResourceSchema';
 
 const ResourceCardBase = ({ resource, renderUI }) => {
@@ -34,12 +35,13 @@ const ResourceCardBase = ({ resource, renderUI }) => {
       a.href = fileUrl;
       a.download = fileName;
       a.target = '_blank';
+      a.rel = 'noopener noreferrer';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
     } else if (resource.resourceLink) {
       // For external links
-      window.open(resource.resourceLink, '_blank');
+      window.open(resource.resourceLink, '_blank', 'noopener,noreferrer');
     }
   };
 
@@ -54,11 +56,11 @@ const ResourceCardBase = ({ resource, renderUI }) => {
         openModal: () => setIsModalOpen(true)
       })}
       
-      <ResourceModal
+      {isModalOpen && <ResourceModal
         resource={resource}
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-      />
+      />}
     </>
   );
 };

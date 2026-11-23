@@ -1,5 +1,7 @@
 "use client";
 
+import ToolRunOverlay, { paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
+
 import { Braces, BrainCircuit, Download, Layers3 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { analyzeSchemaPage } from "../api";
@@ -20,7 +22,7 @@ import SchemaDynamicForm from "./SchemaDynamicForm";
 
 export default function SchemaGeneratorClient() {
   const [state, setState] = useState<SchemaFormState>(() =>
-    createSchemaState("article"),
+    createSchemaState("article", true),
   );
   const [analysis, setAnalysis] = useState<SchemaAnalysisResponse | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
@@ -28,11 +30,11 @@ export default function SchemaGeneratorClient() {
   const evaluation = useMemo(() => evaluateSchema(state), [state]);
 
   function changeType(type: SchemaTypeId) {
-    const next = createSchemaState(type);
+    const next = createSchemaState(type, true);
     setState({
       ...next,
-      pageUrl: state.pageUrl,
-      pageContext: state.pageContext,
+      pageUrl: state.pageUrl || next.pageUrl,
+      pageContext: state.pageContext || next.pageContext,
     });
     setAnalysis(null);
     setAnalysisError("");
@@ -119,7 +121,12 @@ export default function SchemaGeneratorClient() {
 
   return (
     <section id="schema-markup-generator" className="scroll-mt-24">
-      <div className="mb-7 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <ToolRunOverlay
+        active={analyzing}
+        title="Generating & validating JSON-LD schema markup"
+        description="Building structured data fields and checking required Google rich result properties."
+      />
+      <div className="mb-4 grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
         {[
           [
             String(SCHEMA_DEFINITIONS.length),
@@ -134,7 +141,7 @@ export default function SchemaGeneratorClient() {
           return (
             <div
               key={label as string}
-              className="rounded-2xl border border-white/15 bg-white/10 p-4 text-white backdrop-blur-md"
+              className="rounded-xl border border-white/15 bg-white/10 px-3.5 py-2.5 text-white backdrop-blur-md"
             >
               <div className="flex items-center justify-between gap-3">
                 <p className="text-2xl font-black">{value as string}</p>

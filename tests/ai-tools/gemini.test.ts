@@ -201,7 +201,7 @@ test("native Gemini transport validates JSON, sends images inline, and does not 
       assert.equal(options.headers["x-goog-api-key"], "test-key");
       assert.equal(options.headers.Authorization, undefined);
       const body = JSON.parse(options.body);
-      assert.equal(body.store, false);
+      assert.equal(body.store, undefined);
       assert.equal(body.tools, undefined);
       assert.equal(body.generationConfig.responseMimeType, "application/json");
       assert.equal(body.generationConfig.maxOutputTokens, 1000);
@@ -331,7 +331,9 @@ test("provider diagnostics retain upstream status without logging submitted or p
             geminiFailure(error)!.message,
             /Reference: [a-f0-9-]{36}/,
           );
-          const diagnostic = JSON.parse(logs.at(-1)!);
+          const diagnostic = logs
+            .map((line) => JSON.parse(line))
+            .findLast((entry) => entry.event === "ai_provider_failure");
           assert.equal(diagnostic.upstreamStatus, status);
           assert.equal(diagnostic.inputMode, "image");
           assert.equal(diagnostic.requestId, error.requestId);

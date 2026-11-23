@@ -7,6 +7,7 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import CardComponent from "@/components/Card/Page";
 import SkelCard from "@/components/Blog/Skeleton/Card";
 import { urlForImage } from "@/sanity/lib/image";
+import { getStaticArticlesByType } from "@/features/articles/legacy/staticArticles";
 import { CACHE_KEYS } from '@/React_Query_Caching/cacheKeys';
 import { usePageCache } from '@/React_Query_Caching/usePageCache'; 
 import { cacheSystem } from '@/React_Query_Caching/cacheSystem';
@@ -148,7 +149,25 @@ const ReusableCachedMixedBlogs = ({
   usePageCache(pageCacheKey, refreshPosts, pageQuery, `MixedBlogsPage${currentPage}(${selectedCategory},${sortBy})`);
   usePageCache(totalCountCacheKey, refreshTotal, totalCountQuery, `MixedBlogsTotalCount(${selectedCategory},${sortBy})`);
 
-  const postsToDisplay = postsData || [];
+  const postsToDisplay = useMemo(() => {
+    const raw = Array.isArray(postsData) ? postsData : [];
+    const targetTypes = selectedCategory === "all"
+      ? ["makemoney", "aitool", "coding", "seo", "blogPost"]
+      : selectedCategory.startsWith("blogCategory:")
+        ? ["blogPost"]
+        : [selectedCategory];
+    const staticMatches = getStaticArticlesByType(targetTypes);
+    const seen = new Set();
+    const merged = [...staticMatches, ...raw].filter((p) => {
+      const slugVal = p?.slug?.current || p?.slug;
+      if (!slugVal) return false;
+      const key = `${p._type || "post"}:${slugVal}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    return currentPage === 1 ? merged.slice(0, Math.max(limit, merged.length)) : raw;
+  }, [postsData, selectedCategory, currentPage, limit]);
   const isLoading = isPostsLoading || isTotalLoading;
   const hasExistingData = postsToDisplay.length > 0;
 

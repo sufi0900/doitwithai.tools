@@ -24,7 +24,7 @@ export const openModalById = (id) => {
   }
 };
 
-const UnifiedResourceCard = ({ resource, wrapperClassName = "", variant = "grid", cardHeight = "auto" }) => {
+const UnifiedResourceCard = ({ resource, wrapperClassName = "", variant = "grid", cardHeight = "auto", onOpen, previewRenderer }) => {
 
       const videoRef = useRef(null);
 
@@ -135,7 +135,7 @@ const getCardHeight = () => {
     Preview
   </button>
   <button 
-    onClick={() => handleResourceAccess(resource)} 
+    onClick={(event) => { event.stopPropagation(); handleResourceAccess(resource); }}
     className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2.5 rounded-lg transition-all duration-200 shadow-lg"
   >
     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -257,7 +257,7 @@ const VideoCardLayout = ({ resource, renderPreviewContent, openModal, handleReso
           Preview
         </button>
         <button
-          onClick={() => handleResourceAccess(resource)}
+          onClick={(event) => { event.stopPropagation(); handleResourceAccess(resource); }}
           className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold px-4 py-2.5 rounded-lg transition-all duration-200 shadow-lg"
         >
           <PlayArrow sx={{ fontSize: 16 }} />
@@ -406,7 +406,7 @@ const VideoCardLayout = ({ resource, renderPreviewContent, openModal, handleReso
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" /></svg>
                   Quick View
                 </button>
-               <button onClick={() => handleResourceAccess(resource)} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2.5 rounded-lg transition-colors shadow-lg">
+               <button onClick={(event) => { event.stopPropagation(); handleResourceAccess(resource); }} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2.5 rounded-lg transition-colors shadow-lg">
         <Description sx={{ fontSize: 16 }} />
         Open
       </button>
@@ -522,9 +522,11 @@ const VideoCardLayout = ({ resource, renderPreviewContent, openModal, handleReso
   const memoizedCardBase = useMemo(() => (
     <ResourceCardBase
       resource={resource}
-      renderUI={({ resource, renderPreviewContent, handleResourceAccess, openModal }) => {
+      renderUI={({ resource, renderPreviewContent: defaultPreview, handleResourceAccess, openModal }) => {
+        const renderPreviewContent = previewRenderer || defaultPreview;
         // 👇 FIX: Create a new handler that uses the correct modal logic based on variant.
         const handleOpenModal = () => {
+          if (onOpen) { onOpen(resource); return; }
           if (variant === 'carousel') {
             // For carousel, fire a global event to be caught by a top-level modal.
             openModalById(resource._id);
@@ -608,7 +610,7 @@ const VideoCardLayout = ({ resource, renderPreviewContent, openModal, handleReso
  );
       }}
     />
-), [resource._id, variant, wrapperClassName]);
+), [resource, variant, wrapperClassName, cardHeight, onOpen, previewRenderer]);
 
 // Replace the final return with the memoized version
 return memoizedCardBase;

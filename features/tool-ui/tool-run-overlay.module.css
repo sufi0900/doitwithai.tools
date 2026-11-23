@@ -1,0 +1,85 @@
+.dialog {
+  width: min(440px, calc(100vw - 32px));
+  max-height: calc(100dvh - 40px);
+  margin: auto;
+  padding: 0;
+  border: 1px solid #d7dfef;
+  border-radius: 24px;
+  background: #fff;
+  color: #182441;
+  box-shadow: 0 30px 100px #07112755;
+}
+.dialog::backdrop {
+  background: #07112799;
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+}
+:global(.dark) .dialog {
+  border-color: #33415e;
+  background: #142038;
+  color: #eef3ff;
+}
+.content {
+  padding: 32px 28px;
+  text-align: center;
+}
+.spinner {
+  display: grid;
+  place-items: center;
+  width: 68px;
+  height: 68px;
+  margin: 0 auto 21px;
+  border-radius: 20px;
+  background: #5271ff15;
+  color: #5271ff;
+}
+.wheel {
+  display: grid;
+  place-items: center;
+  animation: rotate 1s linear infinite;
+}
+.content h2 {
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.4;
+}
+.content p {
+  font-size: 14px;
+  line-height: 1.8;
+  margin-top: 12px;
+}
+.content .count {
+  font-weight: 700;
+  color: #4058d0;
+}
+:global(.dark) .count {
+  color: #b4c3ff;
+}
+.content .hint {
+  font-size: 12px;
+  opacity: 0.75;
+}
+.content button {
+  width: 100%;
+  min-height: 44px;
+  padding: 11px;
+  margin-top: 22px;
+  border: 1px solid #5271ff55;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.content button:focus-visible {
+  outline: 2px solid #5271ff;
+  outline-offset: 3px;
+}
+@keyframes rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wheel {
+    animation: none;
+  }
+}

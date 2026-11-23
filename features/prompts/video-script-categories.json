@@ -1,0 +1,83 @@
+[
+  {
+    "id": "packaging",
+    "name": "YouTube packaging: Title + Thumbnail + Idea validation",
+    "intro": "Design the click before writing a single word of dialogue. Pair 55-character titles with 3-word complementary thumbnail text that creates a curiosity gap without repeating the title.",
+    "tool": "youtube-title-thumbnail-optimizer",
+    "toolName": "YouTube Title & Thumbnail CTR Optimizer",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 1\u201311"
+  },
+  {
+    "id": "hooks",
+    "name": "0\u20133s vertical hooks & 0\u201330s long-form retention intros",
+    "intro": "Eliminate 'Hey guys, welcome back' intros. Pair spoken first-3-second scroll-stoppers with on-screen text captions and immediate visual proof of the thumbnail promise.",
+    "tool": "short-form-video-script-generator",
+    "toolName": "Short-Form Video Hook & Script Builder",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 12\u201322"
+  },
+  {
+    "id": "shorts-reels",
+    "name": "YouTube Shorts & Instagram Reels 30s\u201360s retention scripts",
+    "intro": "Write word-boundary-safe 150-WPM vertical voiceover scripts with 7-second visual pattern interrupts, on-screen captions, and seamless loop endings.",
+    "tool": "short-form-video-script-generator",
+    "toolName": "Short-Form Video Hook & Script Builder",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 23\u201333"
+  },
+  {
+    "id": "tiktok-seo",
+    "name": "TikTok search SEO scripts, green-screen breakdowns & captions",
+    "intro": "Index your vertical videos in TikTok Search by placing target keywords in spoken audio (0\u20133s), on-screen text overlays, and searchable captions.",
+    "tool": "tiktok-script-caption-generator",
+    "toolName": "TikTok Script, Hook & Search SEO Studio",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 34\u201344"
+  },
+  {
+    "id": "longform-scripts",
+    "name": "Long-form YouTube scripts, open loops & chapter architecture",
+    "intro": "Structure 8-to-20 minute educational tutorials, case studies, and comparisons with mid-video re-hooks every 90 seconds so viewers watch to the final chapter.",
+    "tool": "blog-to-video-script",
+    "toolName": "Blog to Video Script Studio",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 45\u201355"
+  },
+  {
+    "id": "broll-visuals",
+    "name": "B-roll cues, screen-share storyboards & visual graphics",
+    "intro": "Turn talking-head monologues into visually dynamic videos with timestamped B-roll directions, 1080p data chart callouts, and 2x2 framework overlays.",
+    "tool": "data-to-chart-visual-card-maker",
+    "toolName": "AI Data & Stat to Visual Chart Card Maker",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 56\u201365"
+  },
+  {
+    "id": "video-seo",
+    "name": "YouTube SEO descriptions, chapters, tags & .SRT subtitles",
+    "intro": "Write above-the-fold description hooks, Google Key Moments timestamped chapters, semantic tags, and clean .SRT subtitle blocks.",
+    "tool": "youtube-transcript-generator",
+    "toolName": "YouTube Transcript, Chapters & .SRT Studio",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 66\u201375"
+  },
+  {
+    "id": "video-repurposing",
+    "name": "Transcript-to-Blog, Video-to-Infographic & Shorts slicing",
+    "intro": "Extract high-retention 45-second Shorts clips from long-form transcripts and convert spoken dialogue into structured SEO blog posts and infographics.",
+    "tool": "video-transcript-to-blog",
+    "toolName": "YouTube Video Transcript to SEO Blog Studio",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 76\u201384"
+  },
+  {
+    "id": "analytics-community",
+    "name": "Retention drop-off audits, pinned comments & end-screen bridges",
+    "intro": "Diagnose audience retention graphs, write high-converting pinned comments, and script 10-second end-screen bridges that chain viewers into a 2nd video.",
+    "tool": "social-media-video-thumbnail-grabber",
+    "toolName": "4K Video Thumbnail & Storyboard Grabber",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 85\u201393"
+  }
+]

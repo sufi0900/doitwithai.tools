@@ -81,7 +81,7 @@ export const metadata = {
 
 
 async function getData(schemaType, pageSlugPrefix) {
-  const cacheKey = `blogList:${schemaType}:main`;
+  const cacheKey = `blogList:${schemaType}:main:cwv3`;
   const startTime = Date.now();
 
   try {
@@ -97,8 +97,8 @@ async function getData(schemaType, pageSlugPrefix) {
   console.log(`[Sanity Fetch] for ${cacheKey} starting...`);
 
   // Fetch initial data for the page
-  const featuresQuery = `*[_type=="${schemaType}" && displaySettings.isOwnPageFeature==true][0]`;
-  const firstPageBlogsQuery = `*[_type=="${schemaType}"] | order(publishedAt desc)[0...6]`; // 6 items (5 + 1 for hasMore check)
+  const featuresQuery = `*[_type=="${schemaType}" && displaySettings.isOwnPageFeature==true][0]{ _id, _type, title, slug, mainImage, overview, publishedAt, readTime, tags, resourceType, resourceFormat, aiToolDetails, seoTitle, seoDescription }`;
+  const firstPageBlogsQuery = `*[_type=="${schemaType}"] | order(publishedAt desc)[0...6]{ _id, _type, title, slug, mainImage, overview, publishedAt, readTime, tags, resourceType, resourceFormat, aiToolDetails, seoTitle, seoDescription }`; // 6 items (5 + 1 for hasMore check)
   const totalCountQuery = `count(*[_type=="${schemaType}"])`;
 
   try {
@@ -166,16 +166,14 @@ export default async function Page() {
               "position": 1,
               "name": "Home",
               "item": `${getBaseUrl()}/`,
-               "id": `${getBaseUrl()}/` // Add the id property here
-
-
+              "id": `${getBaseUrl()}/`
             },
             {
               "@type": "ListItem",
               "position": 2,
               "name": breadcrumbProps.pageName,
-               "item": `${getBaseUrl()}${breadcrumbProps.link}`,
-               "id": `${getBaseUrl()}${breadcrumbProps.link}`
+              "item": `${getBaseUrl()}${breadcrumbProps.link}`,
+              "id": `${getBaseUrl()}${breadcrumbProps.link}`
             }
           ]
         }

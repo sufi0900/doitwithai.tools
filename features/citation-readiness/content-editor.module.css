@@ -1,0 +1,32 @@
+.container { min-width: 0; scroll-margin-top: 110px; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 7px; margin: 20px 0 0; padding: 12px; border: 1px solid var(--line); border-radius: 12px 12px 0 0; background: var(--soft); }
+.toolbar button { border: 1px solid var(--line); border-radius: 7px; padding: 7px 10px; min-height: 40px; background: var(--paper); color: var(--ink); font-size: 13px; font-weight: 650; }
+.toolbar button:hover { border-color: #5271ff; }
+.editor { border: 1px solid var(--line); border-top: 0; border-radius: 0 0 12px 12px; background: var(--paper); }
+.editor :global(.tiptap) { min-height: 280px; max-height: 650px; overflow-y: auto; padding: 24px; font-size: 17px; line-height: 1.9; color: var(--ink); overflow-wrap: anywhere; }
+.editor :global(.tiptap) p { margin: 0 0 18px; }
+.editor :global(.tiptap) :is(h1,h2,h3,h4,h5,h6) { font-weight: 750; line-height: 1.4; margin: 26px 0 14px; }
+.editor :global(.tiptap) h1 { font-size: 30px; }
+.editor :global(.tiptap) h2 { font-size: 26px; }
+.editor :global(.tiptap) :is(h3,h4,h5,h6) { font-size: 21px; }
+.editor :global(.tiptap) :is(ul,ol) { padding-left: 28px; margin-bottom: 20px; }
+.editor :global(.tiptap) ul { list-style: disc; }
+.editor :global(.tiptap) ol { list-style: decimal; }
+.editor :global(.tiptap) li p { margin-bottom: 6px; }
+.editor :global(.tiptap) blockquote { border-left: 3px solid #5271ff; padding-left: 18px; }
+.editor :global(.tiptap) a { color: #4058d0; text-decoration: underline; }
+.editor :global(.tiptap):focus-visible { outline: 3px solid #5271ff; outline-offset: -3px; }
+:global(.dark) .editor :global(.tiptap) a { color: #aebeff; }
+@media (max-width: 540px) { .editor :global(.tiptap) { padding: 16px; font-size: 16px; max-height: 500px; } }
+.editor :global(.tiptap) pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+.editor :global([data-review-tone]) { border-left: 3px solid #c18a22; background: #fff4d5; padding-left: 12px; border-radius: 4px; }
+.editor :global([data-review-tone="recorded"]) { border-color: #18825a; background: #e7f6ef; }
+.editor :global([data-review-tone="revision"]) { border-color: #bf4059; background: #fff0f3; }
+.editor :global([data-review-tone="dismissed"]) { border-color: #5271ff; background: #eef1ff; }
+:global(.dark) .editor :global([data-review-tone]) { background: #493819; border-color: #e2b45e; }
+:global(.dark) .editor :global([data-review-tone="recorded"]) { background: #173b30; border-color: #83d4b2; }
+:global(.dark) .editor :global([data-review-tone="revision"]) { background: #482333; border-color: #f0a0b2; }
+:global(.dark) .editor :global([data-review-tone="dismissed"]) { background: #26385d; border-color: #aebeff; }
+.editor :global([data-review-tone="selected"]) { border-color: #5271ff; background: #eef1ff; }
+.editor :global([data-citation-selected="true"]) { outline: 2px solid #5271ff; outline-offset: 2px; }
+:global(.dark) .editor :global([data-review-tone="selected"]) { border-color: #aebeff; background: #26385d; }

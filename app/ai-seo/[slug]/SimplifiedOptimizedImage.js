@@ -11,12 +11,12 @@ const SimplifiedOptimizedImage = ({
   // NEW PROPS for enhanced performance
   eager = false,
   blurDataURL,
-  sizes = "(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+  sizes = "(max-width: 768px) 100vw, (max-width: 1200px) 768px, 800px"
 }) => {
-  const [isLoading, setIsLoading] = useState(!eager);
+  const [isLoading, setIsLoading] = useState(!(eager || priority));
   const [error, setError] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
-  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(Boolean(priority));
   const [shouldLoad, setShouldLoad] = useState(eager || priority);
   
   // Enhanced intersection observer with better thresholds
@@ -129,7 +129,7 @@ const SimplifiedOptimizedImage = ({
                 className={`${className} transition-opacity duration-500 ease-out ${isLoading ? 'opacity-0' : 'opacity-100'}`}
                 width={800}
                 height={600}
-                quality={90}
+                quality={80}
                 priority={priority}
                 onLoad={handleImageLoad}
                 onError={handleError}

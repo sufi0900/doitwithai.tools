@@ -65,7 +65,7 @@ export default async function ParentPage({ params }) {
 
           {/* The actual client component that renders the article content */}
           <ArticleChildComp serverData={data} params={params} schemaType="seo" />
-          <ArticleTools slugs={data.relatedToolSlugs} />
+          <ArticleTools slugs={data?.relatedToolSlugs} />
       </main>
       </PageCacheProvider>
     </>

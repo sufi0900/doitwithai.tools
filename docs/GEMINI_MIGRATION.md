@@ -34,7 +34,7 @@ References checked October 4, 2026:
 
 All tool routes, UI, input limits, validation, result editing, and exports remain in place. The adapter converts uploaded images to inline Gemini image parts. Provider responses must finish successfully and pass local schema and tool-specific validation. Timeouts stay below Vercel's 60-second function limit.
 
-The title tool now uses the supplied brief without live search grounding. Its prompt and progress text reflect that behavior. The separate site assistant still relies on OpenAI vector stores and file search. That integration requires its own retrieval migration and is outside this executable-tool change.
+The title tool now uses the supplied brief without live search grounding. Its prompt and progress text reflect that behavior. The site assistant now uses Gemini with live published Sanity retrieval and the deployed tools registry. See GEMINI_SITE_ASSISTANT.md for automatic updates and configuration.
 
 ## Troubleshooting
 
