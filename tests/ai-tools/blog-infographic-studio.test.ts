@@ -290,6 +290,8 @@ test("server-rendered editor and hero expose real infographic previews without p
   assert.ok(hero.includes("data:image/svg+xml"));
   assert.ok(hero.includes("Show Editorial atlas"));
   assert.ok(hero.includes("aspect-[4/5]"));
+  assert.ok(hero.includes("w-full max-w-full"));
+  assert.ok(!hero.includes("w-fit items-center gap-1 rounded-full"));
   assert.doesNotMatch(hero, /male-avatars|executive portrait/);
 });
 

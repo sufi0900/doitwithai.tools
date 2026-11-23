@@ -427,8 +427,9 @@ export default function BlogSectionInfographicGeneratorPage() {
                 Turn a blog section into a clear visual story. Choose a section
                 from an article URL or paste its text, review the key
                 explanations, then make it yours with editable text, topic icons
-                and your brand. Start with six original editorial compositions,
-                or explore the classic collection.
+                and your brand. Start with 21 smart-matched editorial, chart,
+                roadmap, and diagram compositions, or explore the classic
+                collection.
               </p>
 
               <PortableToolHeroBar
@@ -440,7 +441,7 @@ export default function BlogSectionInfographicGeneratorPage() {
               />
             </div>
 
-            <div>
+            <div className="min-w-0">
               <HeroAnimatedInfographicShowcase />
             </div>
           </div>

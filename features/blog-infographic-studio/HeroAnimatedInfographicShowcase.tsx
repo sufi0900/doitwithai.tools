@@ -72,52 +72,66 @@ export default function HeroAnimatedInfographicShowcase() {
           />
         ))}
       </div>
-      <div className="relative mx-auto mt-3 flex w-fit items-center gap-1 rounded-full border border-slate-200 bg-white/95 p-1 shadow-lg dark:border-slate-700 dark:bg-slate-900/95">
+      <div className="relative mx-auto mt-3 flex w-full max-w-full items-center justify-between gap-2 rounded-2xl border border-slate-200 bg-white/95 px-2 py-1.5 shadow-lg dark:border-slate-700 dark:bg-slate-900/95">
         <button
           type="button"
           aria-label="Previous infographic"
           onClick={() => select(index - 1)}
-          className="flex h-10 w-10 items-center justify-center rounded-full text-indigo-600 dark:text-indigo-300"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-indigo-600 transition hover:bg-indigo-50 dark:text-indigo-300 dark:hover:bg-slate-800"
         >
-          <ArrowLeft size={14} />
+          <ArrowLeft size={15} />
         </button>
-        {PRISM_LAYOUTS.map((l, i) => (
+        <div className="flex min-w-0 flex-1 flex-col items-center gap-1 overflow-hidden">
+          <div className="flex max-w-full items-center gap-1.5">
+            <span className="truncate text-[11px] font-bold text-slate-700 dark:text-slate-200">
+              {PRISM_LAYOUTS[index]?.name}
+            </span>
+            <span className="shrink-0 rounded-full bg-indigo-50 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-indigo-700 dark:bg-indigo-950/70 dark:text-indigo-200">
+              {index + 1}/{PRISM_LAYOUTS.length}
+            </span>
+          </div>
+          <div className="flex max-w-full flex-wrap items-center justify-center">
+            {PRISM_LAYOUTS.map((l, i) => (
+              <button
+                key={l.id}
+                type="button"
+                aria-label={`Show ${l.name}`}
+                aria-pressed={i === index}
+                onClick={() => select(i)}
+                className="flex h-5 w-3.5 items-center justify-center rounded-full transition hover:scale-125"
+              >
+                <span
+                  className={`h-1.5 rounded-full transition-all ${index === i ? "w-3 bg-indigo-600 dark:bg-indigo-400" : "w-1.5 bg-slate-300 dark:bg-slate-600"}`}
+                />
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="flex shrink-0 items-center gap-0.5">
           <button
-            key={l.id}
             type="button"
-            aria-label={`Show ${l.name}`}
-            aria-pressed={i === index}
-            onClick={() => select(i)}
-            className="flex h-10 w-6 items-center justify-center"
+            disabled={reduced}
+            aria-label={
+              reduced
+                ? "Rotation disabled for reduced motion"
+                : paused
+                  ? "Play infographic showcase"
+                  : "Pause infographic showcase"
+            }
+            onClick={() => setPaused((p) => !p)}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-indigo-600 transition hover:bg-indigo-50 disabled:opacity-40 dark:text-indigo-300 dark:hover:bg-slate-800"
           >
-            <span
-              className={`h-2 rounded-full ${index === i ? "w-4 bg-indigo-600" : "w-2 bg-slate-300"}`}
-            />
+            {paused || reduced ? <Play size={14} /> : <Pause size={14} />}
           </button>
-        ))}
-        <button
-          type="button"
-          disabled={reduced}
-          aria-label={
-            reduced
-              ? "Rotation disabled for reduced motion"
-              : paused
-                ? "Play infographic showcase"
-                : "Pause infographic showcase"
-          }
-          onClick={() => setPaused((p) => !p)}
-          className="flex h-10 w-10 items-center justify-center rounded-full text-indigo-600 disabled:opacity-40 dark:text-indigo-300"
-        >
-          {paused || reduced ? <Play size={14} /> : <Pause size={14} />}
-        </button>
-        <button
-          type="button"
-          aria-label="Next infographic"
-          onClick={() => select(index + 1)}
-          className="flex h-10 w-10 items-center justify-center rounded-full text-indigo-600 dark:text-indigo-300"
-        >
-          <ArrowRight size={14} />
-        </button>
+          <button
+            type="button"
+            aria-label="Next infographic"
+            onClick={() => select(index + 1)}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-indigo-600 transition hover:bg-indigo-50 dark:text-indigo-300 dark:hover:bg-slate-800"
+          >
+            <ArrowRight size={15} />
+          </button>
+        </div>
       </div>
     </div>
   );
