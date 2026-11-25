@@ -36,7 +36,7 @@ import { runInfographicQaCritic } from "@/lib/blog-infographic-studio/skills/vis
 import { extractHeadlineHighlightPhrases } from "@/lib/blog-infographic-studio/appearance";
 import { resolveSectionVisualStock } from "@/lib/visual-stock/stock-resolver";
 import { VECTOR_SCENE_CATALOG } from "@/lib/visual-stock/vector-scenes";
-import { runAutomationJsonPrompt } from "@/lib/autonomous-agents/automation-ai-router";
+import { runAutomationJsonPrompt } from "@/lib/shared/automation-ai-router";
 import type {
   BlogInfographicConfig,
   BlogInfographicNodeItem,

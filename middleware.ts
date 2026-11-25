@@ -20,6 +20,21 @@ const NOINDEX_HEADERS: Record<string, string> = {
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Clean up malformed relative links indexed as /https:... or /http:... in GSC
+  if (/^\/https?:/i.test(pathname)) {
+    const rawTarget = pathname.replace(/^\/+/, "");
+    const fixedScheme = rawTarget.replace(/^(https?):\/?(?!\/)/i, "$1://");
+    let destination = "/";
+    if (/^https?:\/\/(?:www\.)?doitwithai\.tools(?=[/?#]|$)/i.test(fixedScheme)) {
+      destination =
+        fixedScheme.replace(/^https?:\/\/(?:www\.)?doitwithai\.tools/i, "") || "/";
+    }
+    const redirectUrl = new URL(destination, request.url);
+    const res = NextResponse.redirect(redirectUrl, 301);
+    res.headers.set("X-Robots-Tag", "noindex, nofollow");
+    return res;
+  }
+
   if (pathname.startsWith("/founder-hub") || pathname.startsWith("/api/founder-hub")) {
     const response = NextResponse.next();
     for (const [key, value] of Object.entries(NOINDEX_HEADERS)) {
@@ -40,6 +55,8 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    "/https\\::path*",
+    "/http\\::path*",
     "/founder-hub",
     "/founder-hub/:path*",
     "/api/founder-hub/:path*",

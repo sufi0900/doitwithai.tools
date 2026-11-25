@@ -26,7 +26,7 @@ import {
   clearWriterAutomationBatchManifest,
   loadWriterAutomationBatchManifest,
   type WriterAutomationBatchManifest,
-} from "@/lib/autonomous-agents/writer-studio-bridge";
+} from "@/lib/shared/writer-batch-manifest";
 import { useWorkspace } from "./useWorkspace";
 import { useGeneration } from "./useGeneration";
 import {

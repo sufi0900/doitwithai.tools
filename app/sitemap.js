@@ -15,7 +15,6 @@ const staticPaths = [
   "/prompts",
   "/tools",
   "/tools/categories",
-  "/chrome-extension",
   "/ai-tools",
   "/ai-seo",
   "/ai-code",

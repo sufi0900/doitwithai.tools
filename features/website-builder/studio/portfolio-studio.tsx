@@ -355,7 +355,7 @@ export function PortfolioStudio({ initialDocument, projectName = "Demo portfolio
           )}
           {persistence === "server" && <button type="button" onClick={() => setHistoryOpen(true)}><Clock3 size={16} />History</button>}
           {!canPublishInStudio && <Link className="publish-button top-link" href={guestClaimPath(authenticated)}><Save size={15} />Save & publish</Link>}
-          <Link className="top-link" href={`/tools/ai-content-writer?websiteId=${encodeURIComponent(state.present.projectId)}&siteSlug=${encodeURIComponent(publication?.slug || slug)}`}>Write Blog Post</Link>
+          <Link className="top-link" href={`/ai-content-writer?websiteId=${encodeURIComponent(state.present.projectId)}&siteSlug=${encodeURIComponent(publication?.slug || slug)}`}>Write Blog Post</Link>
           <Link className="top-link" href={authenticated || isLocalPreviewAuthBypassEnabled() ? "/do-it-ai" : "/do-it-ai?signin=1"}>{authenticated || isLocalPreviewAuthBypassEnabled() ? "My Websites" : "Sign in"}</Link>
           {authenticated && userEmail && <span className="account-pill" title={userEmail} aria-label={`Signed in as ${userEmail}`}>{userEmail.slice(0, 1).toUpperCase()}</span>}
         </div>

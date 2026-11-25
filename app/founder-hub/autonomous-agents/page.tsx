@@ -1,8 +1,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import Link from 'next/link';
-import { AUTONOMOUS_AGENT_ROLES } from '@/lib/autonomous-agents/agent-roles';
-import { SIX_IMPLEMENTATION_PHASES } from '@/lib/autonomous-agents/phases-roadmap';
+import {
+  AUTONOMOUS_AGENT_ROLES,
+  SIX_IMPLEMENTATION_PHASES,
+} from '@/lib/founder-hub/archived-cauthra-reference';
 
 export const dynamic = 'force-static';
 
@@ -49,10 +51,10 @@ export default function FounderHubAutonomousAgentsPage() {
                 ← Founder Hub
               </Link>
               <Link
-                href="/ai-content-writer/automation"
+                href="/studio"
                 className="rounded-xl bg-sky-500 px-4 py-2 text-xs font-bold text-slate-950 hover:bg-sky-400 transition"
               >
-                Open Live 6-Phase Automation Studio →
+                Open Brand 1 DIY Studio (/studio) →
               </Link>
             </div>
           </div>

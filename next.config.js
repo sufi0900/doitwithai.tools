@@ -33,7 +33,7 @@ const nextConfig = {
     };
     if (!isServer) {
       config.module.rules.push({
-        test: /[\\/]app[\\/](?:tools|agents)[\\/].+[\\/]page\.tsx$/,
+        test: /[\\/]app[\\/]tools[\\/].+[\\/]page\.tsx$/,
         enforce: "pre",
         use: [
           {
@@ -76,6 +76,67 @@ const nextConfig = {
         source: '/download-and-embed',
         destination: '/tools/downloadable-ai-tools',
         permanent: true,
+      },
+      // Two-Brand Clean Split & Duplicate Writer/Builder Route Consolidation (HTTP 301)
+      {
+        source: '/tools/ai-content-writer',
+        destination: '/ai-content-writer',
+        statusCode: 301,
+      },
+      {
+        source: '/tools/ai-article-writer',
+        destination: '/ai-content-writer',
+        statusCode: 301,
+      },
+      {
+        source: '/tools/ai-blog-writer',
+        destination: '/ai-content-writer',
+        statusCode: 301,
+      },
+      {
+        source: '/tools/ai-blog-article-writer',
+        destination: '/ai-content-writer',
+        statusCode: 301,
+      },
+      {
+        source: '/ai-content-writer/automation',
+        destination: '/ai-content-writer',
+        statusCode: 301,
+      },
+      {
+        source: '/tools/ai-website-builder',
+        destination: '/ai-website-builder',
+        statusCode: 301,
+      },
+      {
+        source: '/tools/ai-website-builder/:path*',
+        destination: '/ai-website-builder',
+        statusCode: 301,
+      },
+      {
+        source: '/ai-employee-agency',
+        destination: '/do-it-ai',
+        statusCode: 301,
+      },
+      {
+        source: '/ai-employee-agency/:path*',
+        destination: '/do-it-ai',
+        statusCode: 301,
+      },
+      {
+        source: '/agents',
+        destination: '/tools',
+        statusCode: 301,
+      },
+      {
+        source: '/agents/:path*',
+        destination: '/tools',
+        statusCode: 301,
+      },
+      {
+        source: '/chrome-extension',
+        destination: '/tools',
+        statusCode: 301,
       },
     ];
   },

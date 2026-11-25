@@ -445,13 +445,12 @@ const Header = () => {
                     const isToolsItem = menuItem.id === 100;
                     const isWriterItem = menuItem.id === 108;
                     const isWebsiteBuilderItem = menuItem.id === 112;
-                    const isAgentsItem = menuItem.id === 107;
                     const isSeoHubItem = menuItem.id === 2;
                     const isPromptsItem = menuItem.id === 102;
                     const isDownloadToolsItem = menuItem.id === 106;
                     const isResourcesItem = menuItem.id === 6;
                     const hasMegaMenu =
-                      isToolsItem || isWriterItem || isAgentsItem || isSeoHubItem || isPromptsItem || isResourcesItem;
+                      isToolsItem || isWriterItem || isSeoHubItem || isPromptsItem || isResourcesItem;
                     const hasDropdown =
                       hasMegaMenu || Boolean(menuItem.submenu);
 
@@ -465,7 +464,7 @@ const Header = () => {
                         {menuItem.path ? (
                           <Link
                             href={menuItem.path}
-                            prefetch={true}
+                            prefetch={false}
                             className={`
                               relative mb-5 mt-5 flex items-center justify-center whitespace-nowrap rounded-xl border border-transparent px-3 py-2 text-[13px] backdrop-blur-sm transition-all duration-300 ease-in-out lg:mr-0 lg:inline-flex xl:px-3.5 xl:text-sm
                               ${
@@ -497,17 +496,6 @@ const Header = () => {
                                   }`}
                                 >
                                   New
-                                </span>
-                              )}
-                              {isAgentsItem && (
-                                <span
-                                  className={`rounded-full px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider ${
-                                    active
-                                      ? "bg-white/20 text-white"
-                                      : "border border-[#5271FF]/30 bg-[#5271FF]/10 text-[#5271FF] dark:border-[#5271FF]/40 dark:bg-[#5271FF]/20 dark:text-[#b4c2ff]"
-                                  }`}
-                                >
-                                  AI
                                 </span>
                               )}
                               {isDownloadToolsItem && (
@@ -685,279 +673,68 @@ const Header = () => {
                           </div>
                         )}
 
-                        {/* MEGA-MENU 2B: AI Content Writer Studio + Autonomous Agents OS */}
+                        {/* MEGA-MENU 2B: Flagship DIY AI Content Writer Studio */}
                         {isWriterItem && (
                           <div className="invisible absolute left-4 right-4 top-full z-50 mx-auto max-w-[920px] pt-2 opacity-0 transition-all duration-200 group-hover:visible group-hover:opacity-100">
                             <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-[0_28px_70px_-15px_rgba(15,23,42,0.28)] dark:border-slate-700/90 dark:bg-[#0D1527] dark:shadow-[0_28px_70px_-15px_rgba(0,0,0,0.75)]">
                               <div className="grid grid-cols-12 gap-5">
                                 <Link prefetch={false}
-                                  href="/ai-content-writer/automation"
-                                  className="col-span-6 flex flex-col justify-between rounded-2xl border border-emerald-500/35 bg-gradient-to-br from-emerald-500/10 via-sky-500/10 to-transparent p-5 transition hover:border-emerald-400 hover:shadow-md dark:border-emerald-500/35 dark:from-emerald-950/40 dark:to-slate-900"
+                                  href="/ai-content-writer"
+                                  className="col-span-6 flex flex-col justify-between rounded-2xl border border-[#5271FF]/35 bg-gradient-to-br from-[#5271FF]/10 via-sky-500/10 to-transparent p-5 transition hover:border-[#5271FF] hover:shadow-md dark:border-[#5271FF]/40 dark:from-[#5271FF]/20 dark:to-slate-900"
                                 >
                                   <div>
-                                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
-                                      ⚡ Phases 1–6 Live · 0-Auth LocalStorage
+                                    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#5271FF]/15 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-[#4361EE] dark:text-[#b4c2ff]">
+                                      ✦ Flagship Manual SEO Writer · Infographic V5
                                     </span>
                                     <p className="mt-3 text-base font-extrabold text-slate-900 dark:text-white">
-                                      Autonomous Agent &amp; Social OS
+                                      AI SEO Content Writer Studio
                                     </p>
                                     <p className="mt-1.5 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
-                                      12 AI Agents: Sitemap &amp; Trends Scout, BYOK Gemini/Groq Article + 6-Layer Visual Runner, Arcads 5-Hook Social Matrix, Pinterest 2:3 &amp; LinkedIn 8-Slide Deck Exporter, Dual Publisher &amp; Winner-Clone Loop.
+                                      Draft article-by-article with full editorial control, real internal &amp; external links, pixel-checked meta tags, Infographic Studio V5 visuals, and a 1-Click Social Repurposing Pack.
                                     </p>
                                   </div>
-                                  <span className="mt-4 inline-flex items-center gap-1.5 text-xs font-extrabold text-emerald-700 dark:text-emerald-300">
-                                    Open Automation Dashboard (/ai-content-writer/automation)
+                                  <span className="mt-4 inline-flex items-center gap-1.5 text-xs font-extrabold text-[#5271FF] dark:text-[#9aabff]">
+                                    Open AI Content Writer (/ai-content-writer)
                                     <ArrowRight size={13} />
                                   </span>
                                 </Link>
 
                                 <div className="col-span-6 flex flex-col justify-between space-y-2.5">
                                   <Link prefetch={false}
-                                    href="/ai-content-writer"
+                                    href="/ai-website-builder"
                                     className="block rounded-2xl border border-slate-200/80 bg-slate-50/70 p-3.5 transition hover:border-[#5271FF]/50 hover:bg-white dark:border-slate-800 dark:bg-slate-900/60 dark:hover:bg-slate-900"
                                   >
                                     <div className="flex items-center justify-between text-xs font-extrabold text-slate-900 dark:text-white">
-                                      <span>AI Content Writer Studio</span>
+                                      <span>AI Tool &amp; Blog Website Builder</span>
                                       <ArrowRight size={13} className="text-[#5271FF]" />
                                     </div>
                                     <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
-                                      Guided article drafting, rich-text editor, inline infographics, SERP simulator &amp; Publishing Kit.
+                                      Launch a fast niche blog or interactive tool website on an isolated subdomain + custom CNAME.
                                     </p>
                                   </Link>
 
                                   <Link prefetch={false}
-                                    href="/agents"
+                                    href="/tools/blog-to-infographic-generator"
                                     className="block rounded-2xl border border-slate-200/80 bg-slate-50/70 p-3.5 transition hover:border-[#5271FF]/50 hover:bg-white dark:border-slate-800 dark:bg-slate-900/60 dark:hover:bg-slate-900"
                                   >
                                     <div className="flex items-center justify-between text-xs font-extrabold text-slate-900 dark:text-white">
-                                      <span>10 Specialized AI Agents &amp; Do It AI</span>
+                                      <span>Infographic Studio V5 &amp; Carousel Decks</span>
                                       <ArrowRight size={13} className="text-[#5271FF]" />
                                     </div>
                                     <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
-                                      Multi-step SEO repair, GEO citation auditing, SERP gap &amp; omni-channel distribution agents.
+                                      Turn H2 sections into branded SVG/PNG infographics and multi-slide LinkedIn carousels.
                                     </p>
                                   </Link>
 
                                   <Link prefetch={false}
-                                    href="/founder-hub/autonomous-agents"
+                                    href="/prompts/on-page-seo-content-writing-prompts"
                                     className="block rounded-2xl border border-slate-200/80 bg-slate-50/70 p-3.5 transition hover:border-[#5271FF]/50 hover:bg-white dark:border-slate-800 dark:bg-slate-900/60 dark:hover:bg-slate-900"
                                   >
                                     <div className="flex items-center justify-between text-xs font-extrabold text-slate-900 dark:text-white">
-                                      <span>6-Phase Blueprint &amp; Specs Tracker</span>
+                                      <span>84 On-Page SEO &amp; E-E-A-T Writing Prompts</span>
                                       <ArrowRight size={13} className="text-[#5271FF]" />
                                     </div>
                                   </Link>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* MEGA-MENU 2: AI Agents (Do It AI Workspace + 10 Autonomous Task Agents) */}
-                        {isAgentsItem && (
-                          <div className="invisible absolute left-4 right-4 top-full z-50 mx-auto max-w-[1040px] pt-2 opacity-0 transition-all duration-200 group-hover:visible group-hover:opacity-100">
-                            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-[0_28px_70px_-15px_rgba(15,23,42,0.28)] dark:border-slate-700/90 dark:bg-[#0D1527] dark:shadow-[0_28px_70px_-15px_rgba(0,0,0,0.75)]">
-                              <div className="grid grid-cols-12 gap-6">
-                                {/* Left Column: Do It AI Flagship Conversational Agent Workspace */}
-                                <div className="col-span-5 flex flex-col justify-between rounded-2xl border border-[#5271FF]/25 bg-gradient-to-b from-[#5271FF]/10 to-slate-50 p-5 dark:border-[#5271FF]/35 dark:from-[#5271FF]/15 dark:to-[#111C33]">
-                                  <div>
-                                    <div className="inline-flex items-center gap-1.5 rounded-full bg-[#5271FF]/15 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-[#4361EE] dark:text-[#b4c2ff]">
-                                      <Bot size={12} className="text-[#5271FF]" />
-                                      <span>Flagship Conversational Agent</span>
-                                    </div>
-                                    <p className="mt-3 text-lg font-extrabold text-slate-900 dark:text-white">
-                                      Do It AI Workspace
-                                    </p>
-                                    <p className="mt-1.5 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
-                                      Our flagship conversational AI agent wired directly to 90+ specialized SEO engines. Audit live URLs, verify SERP pixel limits, and execute complex workflows inside one unified chat workspace.
-                                    </p>
-                                    <div className="mt-4 flex flex-wrap gap-2">
-                                      <Link prefetch={false}
-                                        href="/do-it-ai"
-                                        className="inline-flex items-center gap-1.5 rounded-xl bg-[#5271FF] px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-[#4361EE]"
-                                      >
-                                        <span>Launch Do It AI Workspace</span>
-                                        <ArrowRight size={13} />
-                                      </Link>
-                                      <Link prefetch={false}
-                                        href="/what-our-ai-tool-can-do"
-                                        className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 transition hover:border-[#5271FF] hover:text-[#5271FF] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
-                                      >
-                                        Capabilities
-                                      </Link>
-                                    </div>
-                                  </div>
-
-                                  <div className="mt-5 border-t border-slate-200/80 pt-3.5 dark:border-slate-700/80">
-                                    <Link prefetch={false}
-                                      href="/agents"
-                                      className="flex items-center justify-between rounded-xl border border-slate-200/90 bg-white px-3.5 py-2 text-xs font-bold text-slate-900 transition hover:border-[#5271FF] hover:text-[#5271FF] dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-                                    >
-                                      <span className="flex items-center gap-2">
-                                        <Sparkles
-                                          size={14}
-                                          className="text-[#5271FF]"
-                                        />
-                                        <span>Browse All 10 AI Agents Hub</span>
-                                      </span>
-                                      <ArrowRight size={13} />
-                                    </Link>
-                                  </div>
-                                </div>
-
-                                {/* Right Column: Autonomous Task Agents */}
-                                <div className="col-span-7">
-                                  <div className="flex items-center justify-between border-b border-slate-200/80 pb-2.5 dark:border-slate-800">
-                                    <p className="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                                      Autonomous Task Agents
-                                    </p>
-                                    <Link prefetch={false}
-                                      href="/agents"
-                                      className="text-xs font-bold text-[#5271FF] hover:underline"
-                                    >
-                                      View All 10 Agents →
-                                    </Link>
-                                  </div>
-
-                                  <div className="mt-3 grid grid-cols-2 gap-3">
-                                    <Link prefetch={false}
-                                      href="/agents/seo-optimizer-ai-agent"
-                                      className="group/item flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-slate-50/70 p-3.5 transition hover:border-[#5271FF]/50 hover:bg-white hover:shadow-md dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-[#5271FF]/60 dark:hover:bg-slate-900"
-                                    >
-                                      <div>
-                                        <div className="flex items-center justify-between gap-1.5">
-                                          <span className="rounded bg-blue-500/10 px-2 py-0.5 text-[9px] font-bold text-blue-600 dark:text-blue-400">
-                                            5-Step Chain
-                                          </span>
-                                          <ArrowRight
-                                            size={12}
-                                            className="text-slate-400 opacity-0 transition group-hover/item:opacity-100 group-hover/item:text-[#5271FF]"
-                                          />
-                                        </div>
-                                        <span className="mt-2 text-xs font-extrabold text-slate-900 group-hover/item:text-[#5271FF] dark:text-white dark:group-hover/item:text-[#9aabff]">
-                                          SEO &amp; AEO Page Optimizer Agent
-                                        </span>
-                                        <p className="mt-1 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
-                                          Intent classification, &lt;580px titles, AI Overview power answers, entity audits &amp; JSON-LD.
-                                        </p>
-                                      </div>
-                                    </Link>
-
-                                    <Link prefetch={false}
-                                      href="/agents/on-page-ai-seo-repair-agent"
-                                      className="group/item flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-slate-50/70 p-3.5 transition hover:border-[#5271FF]/50 hover:bg-white hover:shadow-md dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-[#5271FF]/60 dark:hover:bg-slate-900"
-                                    >
-                                      <div>
-                                        <div className="flex items-center justify-between gap-1.5">
-                                          <span className="rounded bg-indigo-500/10 px-2 py-0.5 text-[9px] font-bold text-indigo-600 dark:text-indigo-400">
-                                            On-Page Technical
-                                          </span>
-                                          <ArrowRight
-                                            size={12}
-                                            className="text-slate-400 opacity-0 transition group-hover/item:opacity-100 group-hover/item:text-[#5271FF]"
-                                          />
-                                        </div>
-                                        <span className="mt-2 text-xs font-extrabold text-slate-900 group-hover/item:text-[#5271FF] dark:text-white dark:group-hover/item:text-[#9aabff]">
-                                          On-Page SEO Repair Agent
-                                        </span>
-                                        <p className="mt-1 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
-                                          Diagnoses pixel truncation, heading hierarchy, and compiles drop-in HTML &amp; JSON-LD patches.
-                                        </p>
-                                      </div>
-                                    </Link>
-
-                                    <Link prefetch={false}
-                                      href="/agents/ai-citation-geo-agent"
-                                      className="group/item flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-slate-50/70 p-3.5 transition hover:border-[#5271FF]/50 hover:bg-white hover:shadow-md dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-[#5271FF]/60 dark:hover:bg-slate-900"
-                                    >
-                                      <div>
-                                        <div className="flex items-center justify-between gap-1.5">
-                                          <span className="rounded bg-purple-500/10 px-2 py-0.5 text-[9px] font-bold text-purple-600 dark:text-purple-400">
-                                            GEO &amp; AEO
-                                          </span>
-                                          <ArrowRight
-                                            size={12}
-                                            className="text-slate-400 opacity-0 transition group-hover/item:opacity-100 group-hover/item:text-[#5271FF]"
-                                          />
-                                        </div>
-                                        <span className="mt-2 text-xs font-extrabold text-slate-900 group-hover/item:text-[#5271FF] dark:text-white dark:group-hover/item:text-[#9aabff]">
-                                          AI Citation &amp; GEO Agent
-                                        </span>
-                                        <p className="mt-1 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
-                                          Structures 50-word RAG definition leads and fact comparison matrices for Perplexity citations.
-                                        </p>
-                                      </div>
-                                    </Link>
-
-                                    <Link prefetch={false}
-                                      href="/agents/serp-content-gap-agent"
-                                      className="group/item flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-slate-50/70 p-3.5 transition hover:border-[#5271FF]/50 hover:bg-white hover:shadow-md dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-[#5271FF]/60 dark:hover:bg-slate-900"
-                                    >
-                                      <div>
-                                        <div className="flex items-center justify-between gap-1.5">
-                                          <span className="rounded bg-amber-500/10 px-2 py-0.5 text-[9px] font-bold text-amber-600 dark:text-amber-400">
-                                            Content Outranker
-                                          </span>
-                                          <ArrowRight
-                                            size={12}
-                                            className="text-slate-400 opacity-0 transition group-hover/item:opacity-100 group-hover/item:text-[#5271FF]"
-                                          />
-                                        </div>
-                                        <span className="mt-2 text-xs font-extrabold text-slate-900 group-hover/item:text-[#5271FF] dark:text-white dark:group-hover/item:text-[#9aabff]">
-                                          SERP Content Gap Agent
-                                        </span>
-                                        <p className="mt-1 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
-                                          Compares outlines against SERP rivals, extracts Information Gain gaps, and drafts H2/H3 sections.
-                                        </p>
-                                      </div>
-                                    </Link>
-
-                                    <Link prefetch={false}
-                                      href="/agents/omnichannel-marketing-agent"
-                                      className="group/item flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-slate-50/70 p-3.5 transition hover:border-[#5271FF]/50 hover:bg-white hover:shadow-md dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-[#5271FF]/60 dark:hover:bg-slate-900"
-                                    >
-                                      <div>
-                                        <div className="flex items-center justify-between gap-1.5">
-                                          <span className="rounded bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold text-emerald-600 dark:text-emerald-400">
-                                            Safe Distribution
-                                          </span>
-                                          <ArrowRight
-                                            size={12}
-                                            className="text-slate-400 opacity-0 transition group-hover/item:opacity-100 group-hover/item:text-[#5271FF]"
-                                          />
-                                        </div>
-                                        <span className="mt-2 text-xs font-extrabold text-slate-900 group-hover/item:text-[#5271FF] dark:text-white dark:group-hover/item:text-[#9aabff]">
-                                          Omni-Channel Marketing Agent
-                                        </span>
-                                        <p className="mt-1 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
-                                          Repurposes any guide or tool into a LinkedIn carousel, 5-post X thread, Reddit reply &amp; newsletter.
-                                        </p>
-                                      </div>
-                                    </Link>
-
-                                    <Link prefetch={false}
-                                      href="/agents/ai-support-agent-builder"
-                                      className="group/item flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-slate-50/70 p-3.5 transition hover:border-[#5271FF]/50 hover:bg-white hover:shadow-md dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-[#5271FF]/60 dark:hover:bg-slate-900"
-                                    >
-                                      <div>
-                                        <div className="flex items-center justify-between gap-1.5">
-                                          <span className="rounded bg-sky-500/10 px-2 py-0.5 text-[9px] font-bold text-sky-600 dark:text-sky-400">
-                                            Support Builder
-                                          </span>
-                                          <ArrowRight
-                                            size={12}
-                                            className="text-slate-400 opacity-0 transition group-hover/item:opacity-100 group-hover/item:text-[#5271FF]"
-                                          />
-                                        </div>
-                                        <span className="mt-2 text-xs font-extrabold text-slate-900 group-hover/item:text-[#5271FF] dark:text-white dark:group-hover/item:text-[#9aabff]">
-                                          AI Support Agent Builder
-                                        </span>
-                                        <p className="mt-1 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
-                                          Generates system prompts, fallback routing, and embeddable FAQ chat widget code.
-                                        </p>
-                                      </div>
-                                    </Link>
-                                  </div>
                                 </div>
                               </div>
                             </div>
@@ -1231,35 +1008,35 @@ const Header = () => {
                                 {/* Col 1: Platform Architecture & Portable Apps */}
                                 <div className="col-span-4 rounded-2xl border border-[#5271FF]/20 bg-gradient-to-b from-[#5271FF]/[0.08] to-slate-50 p-4.5 dark:border-[#5271FF]/30 dark:from-[#5271FF]/[0.12] dark:to-[#111C33]">
                                   <p className="text-[10px] font-black uppercase tracking-wider text-[#5271FF] dark:text-[#b4c2ff]">
-                                    Platform Architecture &amp; Apps
+                                    DIY Toolkit &amp; Flagship Studios
                                   </p>
                                   <div className="mt-3 space-y-2.5">
                                     <Link prefetch={false}
-                                      href="/ai-content-writer/automation"
+                                      href="/ai-content-writer"
                                       className="block rounded-xl border border-sky-500/35 bg-sky-500/[0.08] p-3 transition hover:border-sky-400 hover:shadow-sm dark:border-sky-500/40 dark:bg-sky-950/25"
                                     >
                                       <div className="flex items-center justify-between text-xs font-bold text-sky-700 dark:text-sky-300">
-                                        <span>Autonomous Agents &amp; Social OS</span>
+                                        <span>Flagship AI Content Writer</span>
                                         <ArrowRight size={13} />
                                       </div>
                                       <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
-                                        All 6 Phases: Sitemap Scout, BYOK Batch Writer, Pinterest 2:3 Pins &amp; Winner Loop.
+                                        Manual E-E-A-T articles, Infographic Studio V5 &amp; 1-Click Social Pack.
                                       </p>
                                     </Link>
 
                                     <Link prefetch={false}
-                                      href="/agents"
+                                      href="/ai-website-builder"
                                       className="block rounded-xl border border-slate-200/80 bg-white p-3 transition hover:border-[#5271FF]/50 hover:shadow-sm dark:border-slate-700/80 dark:bg-slate-900"
                                     >
                                       <div className="flex items-center justify-between text-xs font-bold text-slate-900 dark:text-white">
-                                        <span>10 Specialized AI Agents &amp; Workspace</span>
+                                        <span>AI Tool &amp; Blog Website Builder</span>
                                         <ArrowRight
                                           size={13}
                                           className="text-[#5271FF]"
                                         />
                                       </div>
                                       <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
-                                        Autonomous SEO, AEO, GEO &amp; Content Gap Agents + Do It AI chat.
+                                        Pre-built tool widgets + isolated subdomain &amp; custom CNAME hosting.
                                       </p>
                                     </Link>
 
@@ -1290,18 +1067,18 @@ const Header = () => {
                                     </Link>
 
                                     <Link prefetch={false}
-                                      href="/chrome-extension"
+                                      href="/do-it-ai"
                                       className="block rounded-xl border border-slate-200/80 bg-white p-3 transition hover:border-[#5271FF]/50 hover:shadow-sm dark:border-slate-700/80 dark:bg-slate-900"
                                     >
                                       <div className="flex items-center justify-between text-xs font-bold text-slate-900 dark:text-white">
-                                        <span>Chrome Extension</span>
+                                        <span>Do It AI Command Workspace</span>
                                         <ArrowRight
                                           size={13}
                                           className="text-[#5271FF]"
                                         />
                                       </div>
                                       <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
-                                        Audit on-page SEO, headings, and schema directly in your browser.
+                                        Unified manual tool launcher &amp; SEO workflow workspace.
                                       </p>
                                     </Link>
                                   </div>
@@ -1714,7 +1491,7 @@ const Header = () => {
                         {menuItem.path ? (
                           <Link
                             href={menuItem.path}
-                            prefetch={true}
+                            prefetch={false}
                             onClick={() => setNavbarOpen(false)}
                             className={`
                               relative flex items-center justify-between rounded-xl border border-transparent px-3.5 py-2.5 text-sm transition-all duration-300 ease-in-out
@@ -1778,7 +1555,7 @@ const Header = () => {
                                   <Link
                                     href={submenuItem.path}
                                     key={submenuIndex}
-                                    prefetch={true}
+                                    prefetch={false}
                                     onClick={() => setNavbarOpen(false)}
                                     className="block border-l-2 border-transparent py-2 pl-5 pr-4 text-xs font-semibold text-gray-700 transition-all duration-200 ease-in-out hover:border-[#5271FF] hover:text-[#5271FF] dark:text-gray-300 dark:hover:text-[#9aabff]"
                                   >

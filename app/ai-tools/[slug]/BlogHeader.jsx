@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import Image from "next/image";
 import { urlForImage } from "@/sanity/lib/image";
 import { PortableText } from "@portabletext/react";
+import { normalizeSafeHref, isExternalSafeHref } from "@/lib/shared/safe-href";
 
 const ImgDescPortableText = React.memo(({ value }) => {
   const components = useMemo(
@@ -21,11 +22,12 @@ const ImgDescPortableText = React.memo(({ value }) => {
       },
       marks: {
         link: ({ children, value }) => {
-          const isExternal = value.href && !value.href.startsWith("/");
+          const safeHref = normalizeSafeHref(value?.href, "#");
+          const isExternal = isExternalSafeHref(safeHref);
           return (
             <a
               className="text-blue-600 dark:text-blue-400 font-medium transition-all duration-300 ease-in-out hover:text-blue-700 dark:hover:text-blue-300 bg-gradient-to-r from-current to-current bg-[length:100%_1.5px] bg-no-repeat bg-[position:0_100%] hover:bg-[length:0_1.5px] break-words"
-              href={value.href}
+              href={safeHref}
               rel={isExternal ? "noreferrer noopener" : undefined}
               target={isExternal ? "_blank" : undefined}
             >

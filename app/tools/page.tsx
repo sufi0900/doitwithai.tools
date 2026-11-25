@@ -90,10 +90,10 @@ export default function ToolsPage() {
               {tools.length} Live Tools
             </span>
             <Link
-              href="/chrome-extension"
+              href="/ai-content-writer"
               className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-[11px] font-extrabold text-emerald-700 transition hover:bg-emerald-500/20 dark:text-emerald-300"
             >
-              ★ Free Chrome Extension
+              ✦ Flagship AI Content Writer
             </Link>
             <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-600 dark:border-slate-800 dark:bg-[#161F30] dark:text-slate-300">
               {topics.length} Marketing Disciplines

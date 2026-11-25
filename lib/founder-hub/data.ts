@@ -561,9 +561,9 @@ export const MASTER_VISION_PHASES: MasterVisionPhase[] = [
 ];
 
 export const VOXFOLIO_ECOSYSTEM_BLUEPRINT = {
-  title: "VoxFolio × DoItWithAI.tools × /do-it-ai — Unified 'Build, Equip, Rank & Auto-Distribute' Ecosystem",
+  title: "Two-Brand Split (DoItWithAI.tools DIY Toolkit × Cauthra Living AI Agency OS)",
   subtitle:
-    "Deep technical audit of github.com/sufi0900/voice-directed-3d-portfolio-builder (VoxFolio V27.12) and the 6-Phase Master Blueprint connecting Website Creation, 1-Click AI Tool Injection, AI Blog Publishing, SEO, and Buffer-Style Social Media Automation.",
+    "Brand 1 (doitwithai.tools): Manual DIY AI SEO, Flagship Content Writer, Pro Prompts & AI Tool/Blog Website Builder (/studio) · Brand 2 (Cauthra / cauthra.com): Living AI Employee Team + CA/PCA Proof-of-Human Network (Built From Scratch in Separate Repo)",
   repoAudit: {
     repoUrl: "https://github.com/sufi0900/voice-directed-3d-portfolio-builder",
     liveUrl: "https://voice-directed-3d-portfolio-builder.vercel.app/",
@@ -1106,6 +1106,68 @@ export interface ChangelogEntry {
 }
 
 export const FOUNDER_AI_CHANGELOG: ChangelogEntry[] = [
+  {
+    id: "doitwithai-clean-split-5-phase-prototype-implementation-plan-2026-11-26",
+    sprintNumber: 19,
+    date: "2026-11-26",
+    title: "DoItWithAI.tools Clean-Split & 5-Phase Prototype Implementation (Archive Cauthra Code -> Ship Unified /studio DIY Toolkit + AI Website Builder)",
+    category: "Founder Command Center",
+    founderRequestSummary:
+      "Finalize the clean Two-Brand separation between doitwithai.tools (Brand 1: Manual DIY AI SEO, Flagship Content Writer, Pro Prompts & AI Tool/Blog Website Builder) and Cauthra / cauthra.com (Brand 2: Living AI Employee Agency OS + CA/PCA Proof-of-Human Network, built from scratch in its own repo). Execute the 5-phase engineering roadmap strictly on codex/infographic-studio-redesign without touching production-cloudflare or main.",
+    aiStrategicBlueprint:
+      "Archived all Second-Brand (Cauthra) agency folders into non-routable _archive/cauthra-reference/ excluded from tsconfig.json and .eslintignore (0 public routes, 0 bundle bloat, 100% preserved), consolidated duplicate AI writer and website-builder routes via HTTP 301 redirects, sanitized /https: and /http: malformed links, and built the unified 5-tab /studio DIY Toolkit with 60-second 2-path onboarding, /pricing tiers, quota guardrails, and Nov 26 GSC CTR quick-win upgrades.",
+    aiImplementationDetails: [
+      "Clean Archive Without Code Loss: Moved all Second-Brand agency folders (app/ai-employee-agency, app/api/ai-employee-agency, lib/ai-employee-agency, lib/ai-agency, app/agents, app/api/autonomous-agents, lib/autonomous-agents, app/chrome-extension, features/ai-employee-agency, features/chrome-extension, features/autonomous-campaign-studio, inngest) into _archive/cauthra-reference/ tagged archive/pre-cauthra-split-2026-11-26.",
+      "Clean URL & Redirect Architecture: Canonical public SEO pages (/ai-content-writer, /ai-website-builder, /pricing, /prompts/*) + 301 consolidation of 4 duplicate /tools/ai-*-writer routes + /tools/ai-website-builder + archived agency routes + normalizeSafeHref() + middleware fix for /https: and /http: broken links.",
+      "Unified 5-Tab /studio Workspace (Manual DIY, Zero Autonomous Bots): /studio (Combined 1-Click Site Audit Snapshot), /studio/keywords (Saved Keyword Backlog), /studio/writer (Flagship AI Content Writer + Infographic V5 + Social Pack), /studio/website-builder (AI Tool & Blog Website Builder w/ pre-built widgets & isolated subdomain hosting), and /studio/planner (Manual Editorial Planner + Pro Prompt Vault).",
+      "60-Second 2-Path Onboarding & 5 Verified Bug Fixes: Path A connects an existing site & runs a combined audit snapshot -> /studio/writer; Path B launches a new Tool/Blog site via /studio/website-builder; fixed slogan-glued keywords, Stage 2 Invalid block crash, #bdbdbd gray brand fallback, blocking Saving CTA, and hardcoded 2025 year / 3-page crawl limit.",
+      "Monetization & Top 6 GSC Quick-Win CTR Polish: Shipped /pricing (Free $0 / Pro Creator $12/mo or $79/yr / Pro Plus $29/mo) with server-side quota guardrails and upgraded top Nov 26 GSC striking-distance pages.",
+    ],
+    blogPostDraftMarkdown: `# Why We Split DoItWithAI.tools and Cauthra Into Two Focused Products
+
+1. **Brand 1 (\`doitwithai.tools\`)**: Fast, hands-on Manual DIY AI SEO, Flagship AI Content Writer (Infographic Studio V5 + 1-Click Social Pack), 650+ Pro Prompts, and AI Tool/Blog Website Builder inside \`/studio\`.
+2. **Brand 2 (\`Cauthra\` / \`cauthra.com\`)**: Dedicated "GitHub for Content & Growth Teams" platform housing the Living AI Employee Team, \`Content Authority (CA 0-100)\`, \`Personal CA (PCA 0-100)\`, and Chrome \`CA Research Session\` Tab-Group Extension.`,
+    filesTouched: [
+      "docs/DOITWITHAI_PROTOTYPE_IMPLEMENTATION_PLAN.md",
+      "tsconfig.json",
+      ".eslintignore",
+      "next.config.js",
+      "middleware.ts",
+      "components/Header/index.tsx",
+      "components/Header/menuData.tsx",
+      "app/studio/layout.tsx",
+      "app/pricing/page.tsx",
+    ],
+    commits: ["5a4e2a0"],
+    status: "In Progress",
+  },
+  {
+    id: "v8-4-cauthra-brand-lock-ca-pca-chrome-tabgroup-3tier-packaging-2026-11-26",
+    sprintNumber: 18,
+    date: "2026-11-26",
+    title: "Second Brand Finalized: Cauthra (cauthra.com) + V8.4 Complete Prototype Architecture (CA, PCA, Chrome Tab-Group Research Sessions & Zero-Burn 3-Tier Packaging)",
+    category: "Flagship Content & Keyword Strategy",
+    founderRequestSummary:
+      "Lock the dedicated Second Brand name Cauthra (cauthra.com) and codify the V8.4 First Verified Prototype Architecture covering Content Authority (CA 0-100), Personal CA (PCA 0-100), Official AI Share-Link Verification, CA Proof Companion Chrome Extension with native chrome.tabGroups privacy boundaries, unified ca_receipts, and Zero-Burn 3-Tier Packaging.",
+    aiStrategicBlueprint:
+      "Documented in docs/AI_AGENCY_V8_4_CONTENT_AUTHORITY_AND_STRATEGIC_ADDENDUM.md as the First Verified Prototype Architecture (incomplete until built from scratch in its dedicated repository, with Technical SEO V8.5 and Visual/Social V8.6 queued next).",
+    aiImplementationDetails: [
+      "Locked Second Brand Cauthra (cauthra.com — Content + Authra, zero active SaaS/Chrome Store collisions).",
+      "Defined 3-Layer Content Authority (CA 0-100) Detector + confidence-weighted Personal CA (PCA 0-100) + Official ChatGPT/Gemini Share-Link Transcript Verification.",
+      "Specified CA Proof Companion Chrome Extension using native chrome.tabGroups ('CA Research Session') hard privacy boundaries, Topic Relevance Gate, and unified ca_receipts table.",
+      "Locked Zero-Burn 3-Tier Subscription Matrix (Free $0 / CA Verify $9-$12 / AI Agency OS $29-$79) and Worst-Case Scale & Abuse Defense.",
+    ],
+    blogPostDraftMarkdown: `# Introducing Cauthra (cauthra.com): Content Authority (CA) & Proof-of-Human Growth OS
+
+Cauthra pairs a Living AI Research Team with verifiable human craft via \`CA (0-100)\`, \`PCA (0-100)\`, and privacy-safe Chrome \`CA Research Session\` tab groups.`,
+    filesTouched: [
+      "docs/AI_AGENCY_V8_4_CONTENT_AUTHORITY_AND_STRATEGIC_ADDENDUM.md",
+      "docs/FOUNDER_HUB_V8_RESEARCH_LOG_ENTRY.md",
+      "lib/founder-hub/data.ts",
+    ],
+    commits: ["5a4e2a0"],
+    status: "In Progress",
+  },
   {
     id: "log-sprint-17-cloudflare-api-isolation-and-agency-v4-blueprint",
     sprintNumber: 17,

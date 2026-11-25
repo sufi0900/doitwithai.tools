@@ -174,11 +174,11 @@ export default function AiContentWriterPage() {
               IndexedDB Multi-Project Studio
             </span>
             <Link
-              href="/ai-content-writer/automation"
+              href="/ai-website-builder"
               className="inline-flex items-center gap-1.5 rounded-xl border border-sky-400/50 bg-sky-500/20 px-3 py-1 text-sky-200 hover:bg-sky-500/30 transition"
             >
               <Sparkles className="h-3.5 w-3.5 text-amber-300" />
-              Autonomous Agents &amp; Social OS (6 Phases) →
+              AI Tool &amp; Blog Website Builder →
             </Link>
             <Link
               href="/do-it-ai"

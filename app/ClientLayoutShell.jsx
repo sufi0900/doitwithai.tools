@@ -108,11 +108,9 @@ export default function ClientLayoutShell({ children }) {
     !isStandaloneWebsiteRoute;
   const isFounderHubPage =
     pathname === "/founder-hub" || pathname.startsWith("/founder-hub/");
-  const isAgencyOnboardingPage = pathname === "/ai-employee-agency";
-  const isAgencyDashboardPage =
-    pathname === "/ai-employee-agency/dashboard" ||
-    pathname.startsWith("/ai-employee-agency/dashboard/");
-  const isLockedAppShell = isDoItAiPage || isAgencyDashboardPage;
+  const isStudioPage =
+    pathname === "/studio" || pathname.startsWith("/studio/");
+  const isLockedAppShell = isDoItAiPage;
   const [isEmbeddedView, setIsEmbeddedView] = useState(false);
 
   useEffect(() => {
