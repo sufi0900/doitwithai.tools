@@ -22,6 +22,7 @@ import {
   classifyManualKeyword,
   seedKeywordIntoWriterStudio,
 } from "@/lib/studio/writer-bridge";
+import QuotaUpgradeModal from "./QuotaUpgradeModal";
 import type { SavedKeywordItem, StudioWorkspaceState } from "@/lib/studio/types";
 
 export default function StudioKeywordsClient() {
@@ -32,6 +33,7 @@ export default function StudioKeywordsClient() {
   const [bulkInput, setBulkInput] = useState("");
   const [activeCluster, setActiveCluster] = useState("all");
   const [launchingId, setLaunchingId] = useState<string | null>(null);
+  const [upgradeReason, setUpgradeReason] = useState("");
 
   useEffect(() => {
     setStudio(loadStudioState());
@@ -110,8 +112,38 @@ export default function StudioKeywordsClient() {
   };
 
   const handleSendToWriter = async (item: SavedKeywordItem) => {
+    const maxArticles =
+      studio.planTier === "pro_plus"
+        ? 50
+        : studio.planTier === "pro_creator"
+          ? 20
+          : 1;
+    if (studio.usage.articlesGenerated >= maxArticles) {
+      setUpgradeReason(
+        `You have used ${studio.usage.articlesGenerated}/${maxArticles} monthly Studio article(s) on your current plan. Upgrade to Pro Creator ($12/mo or $79/yr Founding Pass) to unlock 20 complete articles/month.`,
+      );
+      return;
+    }
+
     setLaunchingId(item.id);
     try {
+      const quotaRes = await fetch("/api/billing/quota", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "article",
+          planTier: studio.planTier,
+        }),
+      });
+      if (quotaRes.status === 429) {
+        const qData = (await quotaRes.json()) as { message?: string };
+        setUpgradeReason(
+          qData.message ||
+            "Monthly Studio article limit reached. Upgrade to unlock full Studio quotas.",
+        );
+        return;
+      }
+
       await seedKeywordIntoWriterStudio({
         keyword: item.keyword,
         suggestedTitle: item.suggestedTitle,
@@ -120,6 +152,10 @@ export default function StudioKeywordsClient() {
       });
       saveStudioStateOptimistic((prev) => ({
         ...prev,
+        usage: {
+          ...prev.usage,
+          articlesGenerated: prev.usage.articlesGenerated + 1,
+        },
         keywords: prev.keywords.map((k) =>
           k.id === item.id ? { ...k, status: "drafting" } : k,
         ),
@@ -314,6 +350,11 @@ export default function StudioKeywordsClient() {
           ))}
         </div>
       )}
+      <QuotaUpgradeModal
+        open={Boolean(upgradeReason)}
+        reason={upgradeReason}
+        onClose={() => setUpgradeReason("")}
+      />
     </div>
   );
 }

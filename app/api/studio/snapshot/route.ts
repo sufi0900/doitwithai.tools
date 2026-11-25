@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 import { runCombinedSiteSnapshot } from "@/lib/studio/site-snapshot.server";
+import {
+  enforceStudioQuota,
+  normalizePlanTier,
+} from "@/lib/studio/quotas.server";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 25;
@@ -11,12 +15,34 @@ export async function POST(request: Request) {
       niche?: string;
       audience?: string;
       primaryGoal?: string;
+      planTier?: string;
+      userId?: string;
     };
 
     if (!body?.url || typeof body.url !== "string" || !body.url.trim()) {
       return NextResponse.json(
         { error: "Please enter a valid website URL (e.g. https://example.com)." },
         { status: 400 },
+      );
+    }
+
+    const quota = await enforceStudioQuota({
+      request,
+      action: "snapshot",
+      planTier: normalizePlanTier(body.planTier),
+      userId: body.userId,
+    });
+
+    if (!quota.allowed) {
+      return NextResponse.json(
+        {
+          error: quota.message,
+          quotaExceeded: true,
+          upgradeRequired: quota.upgradeRequired,
+          used: quota.used,
+          limit: quota.limit,
+        },
+        { status: 429 },
       );
     }
 
