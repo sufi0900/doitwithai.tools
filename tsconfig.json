@@ -53,6 +53,7 @@
     "app/faq/page.jsx",
     "app/faq/FAQClient.jsx",
     "app/layout.jsx",
+    "app/ClientLayoutShell.jsx",
     "app/DeferredResources.js",
     "app/contact/page.jsx",
     "components/Blog/HomeMediumCard.jsx",

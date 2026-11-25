@@ -204,9 +204,9 @@ export default function ClientLayoutShell({ children }) {
               {children}
             </main>
 
-            {!isLockedAppShell && !isEmbeddedView && !isFounderHubPage && !isStandaloneWebsiteRoute && <Footer />}
-            {!isLockedAppShell && !isEmbeddedView && !isFounderHubPage && !isStandaloneWebsiteRoute && !isAgencyOnboardingPage && <ScrollToTop />}
-            {!isLockedAppShell && !isEmbeddedView && !isFounderHubPage && !isStandaloneWebsiteRoute && !isAgencyOnboardingPage && <SiteAssistant />}
+            {!isLockedAppShell && !isEmbeddedView && !isFounderHubPage && !isStandaloneWebsiteRoute && !isStudioPage && <Footer />}
+            {!isLockedAppShell && !isEmbeddedView && !isFounderHubPage && !isStandaloneWebsiteRoute && !isStudioPage && <ScrollToTop />}
+            {!isLockedAppShell && !isEmbeddedView && !isFounderHubPage && !isStandaloneWebsiteRoute && !isStudioPage && <SiteAssistant />}
           </CacheProvider>
 
           <Toaster position="bottom-center" />
