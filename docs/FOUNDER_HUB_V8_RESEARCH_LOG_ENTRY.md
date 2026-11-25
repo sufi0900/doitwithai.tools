@@ -1,32 +1,32 @@
-# Founder Hub Dashboard Update Entry — V8.4 Active Research & Startup Architecture
+# Founder Hub Dashboard Update Entry — V8.4 Complete Prototype Architecture & Research Log
 
-> **STATUS: INCOMPLETE — ACTIVE RESEARCH IN PROGRESS (DO NOT START IMPLEMENTATION YET)**
+> **STATUS: FIRST VERIFIED PROTOTYPE ARCHITECTURE — STILL INCOMPLETE (NOT 100% VERIFIED UNTIL PRACTICAL IMPLEMENTATION)**
 > **Note for Antigravity / Maintainer:** `lib/founder-hub/data.ts` is ~130 KB (~3,000+ lines). Paste the structured entries below into `FOUNDER_AI_CHANGELOG`, **Founder Vision**, and **Active Research Discussions** inside `lib/founder-hub/data.ts` when syncing the Founder Hub UI.
 
 ---
 
-## 1. Ready-to-Paste `FOUNDER_AI_CHANGELOG` Entry (NEW — V8.4)
+## 1. Ready-to-Paste `FOUNDER_AI_CHANGELOG` Entry (NEW — V8.4 Complete Prototype)
 
 ```ts
 {
-  id: 'v8-4-content-authority-ca-detector-north-star-worst-case-defense-2026-11-25',
+  id: 'v8-4-complete-ca-pca-chrome-tabgroup-3tier-packaging-2026-11-25',
   date: '2026-11-25',
-  version: 'V8.4-RESEARCH-INCOMPLETE',
+  version: 'V8.4-PROTOTYPE-INCOMPLETE',
   status: 'incomplete-research-in-progress',
-  title: 'V8.4 Strategic Addendum: Content Authority (CA 0–100) Detector, "GitHub for Content & Growth Teams" Hybrid North Star, Worst-Case Scale Defense & Two-Brand Funding Plan',
+  title: 'V8.4 Complete Prototype Architecture: Content Authority (CA), Personal CA (PCA), Native Chrome Tab-Group Research Sessions, Unified ca_receipts & Zero-Burn 3-Tier Packaging',
   author: 'Gemini (Lead Systems Architect) + Founder',
   summary:
-    'Locked V8.4 strategic & technical addendum (still INCOMPLETE — Technical SEO V8.5 & Visual/Social V8.6 rubrics remain before implementation). Defines the flagship Content Authority (CA 0–100) detector positioned as the sibling metric to DA and PA, locks the 2027 Hybrid North Star ("GitHub for Content & Growth Teams": AI Does the Research, Humans Write the Truth), establishes worst-case scale/abuse defenses for 1,000-page sites, 1,000 competitor URLs, and marathon strategic chats, and locks the Two-Brand solo-founder non-dilutive launch architecture grounded in 28-day Google Search Console data.',
+    'Locked V8.4 First Verified Prototype Architecture (STILL INCOMPLETE — not 100% verified until practical implementation; Technical SEO V8.5 & Visual/Social V8.6 rubrics remain). Combines the Content Authority (CA 0–100) Detector (DA -> PA -> CA), Personal CA (PCA 0–100) anti-spam creator profile score, Official AI Share-Link Verification for deep human prompts, the CA Proof Companion Chrome Extension with native chrome.tabGroups "CA Research Session" privacy boundaries & Topic Relevance Gate, tamper-proof ca_receipts public portfolios, Hub-and-Spoke zero-burn 3-Tier Subscription Packaging (Free $0 / CA Verify $9–$12 / AI Agency OS $29–$79), Worst-Case Scale Defense, and the "GitHub for Content & Growth Teams" 2027 Hybrid North Star.',
   highlights: [
-    'Flagship Content Authority (CA 0–100) Detector (DA -> PA -> CA): Measures verifiable human value, first-hand proof, and real authority across Single Blog URLs (Article CA) and Writer Profiles (rolling Writer CA) with a Clickable Evidence Receipt instead of black-box "% AI" guessing.',
-    '3-Layer Zero-ML CA Engine (~$0.002–$0.004/audit): Layer 1 $0 Cloudflare Worker forensics (real screenshots/tables/videos vs. stock/C2PA AI tags, live HEAD 404 citation checks, specificity & burstiness math, AI cliché density) + Layer 2 Claim-vs-Evidence LLM Judge (Hollow "I" = 0 pts unless backed by >=2 of 4 friction signals; optional Vision check; Top-3 SERP Information Gain) + Layer 3 $0 Live Studio Telemetry (Mode B Process + Evidence Verified).',
-    'Fair AI-Polish Rule, Cached Author Footprint & Golden Benchmark Set: Real human research grammar-polished by AI receives only a minor -5 to -10 deduction (still scoring 80–88/100); Author digital footprint verified via 30–90 day cached Supabase entity check (15 pts max); DR-style hard-to-reach logarithmic curve calibrated against a curated 200–500 article Golden Benchmark Set; 1 free public CA check/day lead magnet.',
-    'Locked 2027 Hybrid North Star ("GitHub for Content & Growth Teams"): Room 1 Private AI Agency Office (external websites + quiet beginner blog launcher on isolated subdomain, full SEO agents, Private Team Feed, Trophies) + Room 2 Public Proof-of-Human Network (strictly 100% human-verified growth case studies, Verified GSC Result Cards, 3-Tier Authority Feeds [Beginner noindex -> Rising/Expert index], and B2B agency hiring of CA 80+ writers). Rejects keyword-based Medium clones and parks general consumer reels in Year 2–3 Vault.',
-    'Worst-Case Scale & Margin Defense: 100-article structural pipeline locks; 1,000-page site $0 sitemap/GSC 2-Phase Triage Funnel; 1,000 competitor URL $0 Intake Parser + Domain-Level Gap shortcut; Marathon Strategic Chat fixed-ceiling context (~4k–6k tokens) + Two-Speed Brain (85–90% Fast-Smart cached; 10–15% Deep Thinking on 5-Hr Rolling Window) + Eco-Fast soft margin step-down.',
-    'Two-Brand Solo-Founder Strategy & 28-Day GSC Baseline: Keep doitwithai.tools as the evergreen SEO traffic magnet (16,635 impressions in 28d, 43% US, 87% Desktop, 5 Page-1/Page-2 CTR rescue targets) + launch unified SaaS on a dedicated brand (shortlist: AMSO, AMSON, AEMON, MARCO) backed by 0%-equity credits (Microsoft Founders Hub, Cloudflare for Startups, AWS Activate) while retaining 100% founder ownership.',
+    'Two-Level Authority Metrics — Article CA & Personal CA (PCA): CA (0–100) scores individual blogs/Quora/Reddit/LinkedIn posts; PCA (0–100) tracks a creator\'s overall reputation using confidence-weighted quality + volume + verified hours (NOT simple plus+plus, blocking spammer inflation) with a Provisional tag until 5 verified works.',
+    '3-Layer Zero-ML CA Engine (~$0.002–$0.004/deep audit) & Official Share-Link Verifier: Layer 1 $0 Cloudflare Worker forensics + Layer 2 Claim-vs-Evidence LLM Judge (Hollow "I" = 0 pts unless >=2 of 4 friction signals) + Layer 3 $0 Studio/Extension telemetry. Solves deep 3,000–4,000 word human ChatGPT prompts via official read-only chatgpt.com/share & gemini.google.com/share transcript verification instead of fakeable screenshots. Fair -5 to -10 AI-Polish minor deduction, 30–90d cached Author Digital Footprint check, DR-style logarithmic curve & 200–500 curated Golden Benchmark Set.',
+    'CA Proof Companion Chrome Extension & Native Tab-Group Privacy: Grammarly-style direct typing inside Quora/Reddit/LinkedIn/Substack native text boxes. Clicking Start CA Research Session creates a color-coded native Chrome Tab Group (chrome.tabGroups) labeled "CA Research Session"—strictly ignoring all external personal tabs (Gmail/WhatsApp/banking). Topic Relevance Gate excludes off-topic tabs (0 mins) and pauses on >30s idle; Linked AI Tab tracks human prompt effort; 5-second Pre-Publish Review & Redact gate.',
+    'Tamper-Proof CA Receipts, 2-Layer Global Visibility & Unified ca_receipts Table: Single Supabase table (ca_receipts) powers all channels and PCA math. Extension users see an automatic native CA Score Bar on Quora/Reddit/LinkedIn; non-extension visitors globally see a 1-click Verified Signature Tag linking to a hash-verified public CA Proof Receipt driving viral installs.',
+    'Hub-and-Spoke Modular Packaging & Zero-Burn 3-Tier Subscription Matrix: Follows Ahrefs\' DR model (one umbrella brand, separate focused landing pages /content-authority vs /). Free Tier ($0) allows full manual PCA profile building, unlimited $0 Chrome Tab-Group Research Sessions, 1–3 deep CA URL audits/day, 1 read-only site teaser, and Read/Like/Comment-only public feed (no posting = zero spam; AI Agents & Private Team Feed locked). CA Verify ($9–$12/mo) unlocks unlimited CA audits/receipts/badges; AI Agency OS ($29–$79/mo) unlocks the full Living AI Marketing Team.',
+    'Worst-Case Scale Defense, 2027 Hybrid North Star & 28-Day GSC Baseline: Locks 100-article pipeline gates, 1,000-page $0 sitemap/GSC triage, 1,000 competitor URL parser + domain-gap shortcut, and Two-Speed cached marathon chat; grounds Two-Brand solo-founder 0%-equity launch (Microsoft Founders Hub, Cloudflare, AWS Activate) in 28d GSC data (16,635 impr, 43% US, 87% Desktop).',
   ],
   specPath: 'docs/AI_AGENCY_V8_4_CONTENT_AUTHORITY_AND_STRATEGIC_ADDENDUM.md',
-  implementationStatus: 'INCOMPLETE — RESEARCH IN PROGRESS. Next up: Technical SEO Audit AI Agent 100-Point Rubric (V8.5) & Visual/Social Rubrics + CA Golden Calibration (V8.6).',
+  implementationStatus: 'FIRST VERIFIED PROTOTYPE ARCHITECTURE — STILL INCOMPLETE until practical implementation & real-world testing. Next up: Technical SEO Audit AI Agent 100-Point Rubric (V8.5).',
 }
 ```
 
@@ -45,14 +45,14 @@
   summary:
     'Locked V8.3 living research paper covering the Social AI Employee OS ("Your Living AI Employee Team"), named teammate profiles, read-only Teammate DMs, Human-to-Human networking, Founder Community Mentors ($5/mo unlock), $0-API behavioral feed + hybrid captions, Quality-Gated Profile Trophy Case, Single-Brain/Typed-Worker execution with deterministic Live Job Board, 3-tier frugal DB/API protection, two-tier multi-language personalization, universal multi-item batch sessions, and the 4-gate massive-input law.',
   specPath: 'docs/AI_AGENCY_V8_KEYWORD_OS_AND_SAAS_BACKEND_SPEC.md',
-  implementationStatus: 'Superseded in active research log by V8.4 Strategic Addendum (all V8.1–V8.3 rules remain active).',
+  implementationStatus: 'Extended by V8.4 Complete Prototype Architecture Addendum (all V8.1–V8.3 rules remain active).',
 }
 ```
 
 ---
 
-## 3. Founder Vision & Active Research Summary (Plain-English — Updated V8.4)
+## 3. Founder Vision & Active Research Summary (Plain-English — Updated V8.4 Complete)
 
-- **Flagship Trust Metric — `Content Authority (CA 0–100)`:** Positioned directly beside Domain Authority (`DA`) and Page Authority (`PA`), `CA` grades *verifiable human substance* (real screenshots, concrete experience with friction signals, live non-404 citations, cached author digital footprint, and Studio Process Telemetry) with an explainable Evidence Receipt—fairly scoring AI-grammar-polished experts at `80–88/100` while exposing hollow AI slop.
-- **Unified 2027 North Star ("GitHub for Content & Growth Teams"):** Combines **Room 1 (Private AI Agency Office)** for high-speed SEO research, auditing, and external site growth with **Room 2 (Public Proof-of-Human Network)** where marketers share verified-human case studies and agencies discover and hire `CA 80+` writers—eliminating both Google keyword cannibalization and consumer-social scope creep.
-- **Worst-Case Margin Immunity & 100% Ownership:** Every agent enforces structural pipeline locks, `$0` triage funnels, and Two-Speed cached chat ceilings so 1,000-page sites, 1,000 competitor URLs, and marathon strategy chats never erode margins—enabling a solo founder to launch lean with 0%-equity startup credits (Microsoft Founders Hub, Cloudflare, AWS) and zero debt.
+- **Web-Wide Trust Standard (`CA` + `PCA` + Chrome Tab Groups):** Positions **`Content Authority (CA)`** beside `DA`/`PA` and introduces **`Personal CA (PCA)`** so writers, bloggers, and marketers can prove real human research effort across Blogs, Quora, Reddit, LinkedIn, and Substack using a privacy-first native Chrome **`CA Research Session`** Tab Group and tamper-proof public **`CA Receipts`**.
+- **Zero-Burn Viral Growth Funnel:** Free users can genuinely build their `PCA` portfolio for `$0` through honest manual effort (with AI Agents, AI Polishing, and Public Feed posting locked to prevent API bleed and spam), turning every shared `CA Receipt` into organic global distribution for **`CA Verify` (`$9–$12/mo`)** and **`AI Agency OS` (`$29–$79/mo`)**.
+- **Honest Engineering Discipline:** Treated as our **First Verified Prototype Architecture**—fully documented and internally consistent, yet explicitly marked **Incomplete** until Technical SEO (V8.5), Visual/Social rubrics (V8.6), and live code/user testing validate every assumption in production.
