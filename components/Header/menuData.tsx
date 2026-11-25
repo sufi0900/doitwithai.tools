@@ -43,6 +43,18 @@ const menuData: Menu[] = [
     newTab: false,
     submenu: [
       {
+        id: 120,
+        title: "✦ My DIY Studio (/studio)",
+        path: "/studio",
+        newTab: false,
+      },
+      {
+        id: 121,
+        title: "Plans & Pricing",
+        path: "/pricing",
+        newTab: false,
+      },
+      {
         id: 114,
         title: "Do It AI Command Workspace",
         path: "/do-it-ai",

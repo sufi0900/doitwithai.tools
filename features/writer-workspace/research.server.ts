@@ -316,7 +316,10 @@ function cleanSearchQuery(rawTopic: string, rawKeyword: string): string {
   const stripped = source
     .replace(/\bhttps?:\/\/[^\s)>"']+/gi, " ")
     .replace(
-      /\b(?:i|want|to|write|an|article|blog|post|guide|for|my|website|site|on|the|topic|of|about|how|your|you|can|should|best|way|ways|in|2025|2026)\b/gi,
+      new RegExp(
+        `\\b(?:i|want|to|write|an|article|blog|post|guide|for|my|website|site|on|the|topic|of|about|how|your|you|can|should|best|way|ways|in|${new Date().getUTCFullYear() - 1}|${new Date().getUTCFullYear()}|${new Date().getUTCFullYear() + 1})\\b`,
+        "gi",
+      ),
       " ",
     )
     .replace(/[^a-zA-Z0-9\p{L}\s-]+/gu, " ")

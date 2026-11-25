@@ -23,9 +23,9 @@ export function browserAccounts() {
 }
 export function safeReturnPath(value: string | null) {
   const allowedPattern =
-    /^\/(?:tools|do-it-ai|ai-website-builder|ai-content-writer|ai-employee-agency|p|s)(?:\/|\?|#|$)/;
+    /^\/(?:tools|studio|pricing|do-it-ai|ai-website-builder|ai-content-writer|p|s)(?:\/|\?|#|$)/;
   const pathnamePattern =
-    /^\/(?:tools|do-it-ai|ai-website-builder|ai-content-writer|ai-employee-agency|p|s)(?:\/|$)/;
+    /^\/(?:tools|studio|pricing|do-it-ai|ai-website-builder|ai-content-writer|p|s)(?:\/|$)/;
   if (
     !value ||
     value.length > 4096 ||

@@ -217,9 +217,14 @@ export function buildDeterministicBrandAndKeywords(params: {
     inferBusinessModel(`${name} ${industry} ${desc} ${headingSeed}`, params.knowledge.pages);
   const maturity = classifySiteMaturity(params.knowledge.pages);
 
+  const cleanHeadingTopic = headingSeed
+    .split(/[:|–—-]/)[0]
+    ?.replace(/^(?:don['’]?t\s+just|put\s+\w+\s+to\s+work|welcome\s+to|empowering|transforming|unlock\s+your|grow\s+faster|less\s+busywork)\b[^,]*/i, '')
+    .trim();
   const coreTopic = (
-    headingSeed.split(/[:|–—-]/)[0]?.trim() ||
+    (cleanHeadingTopic && cleanHeadingTopic.length >= 4 && cleanHeadingTopic.split(/\s+/).length <= 6 ? cleanHeadingTopic : '') ||
     industry.split(/[:|–—-]/)[0]?.trim() ||
+    navClean[0] ||
     name
   )
     .replace(/\s+/g, ' ')
@@ -588,7 +593,13 @@ export async function discoverKnowledge(
     if (page.status === 200) {
       const $ = load(page.html);
       const css = $('style').text().slice(0, 100000);
-      result.colors = Array.from(new Set(css.match(/#[a-f0-9]{6}\b/gi) || [])).slice(0, 5);
+      const rawColors = Array.from(new Set(css.match(/#[a-f0-9]{6}\b/gi) || [])).filter((hex) => {
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        return Math.max(r, g, b) - Math.min(r, g, b) >= 32;
+      });
+      result.colors = rawColors.length > 0 ? rawColors.slice(0, 5) : ['#5271FF'];
       result.fonts = Array.from(
         new Set(Array.from(css.matchAll(/font-family:\s*([^;}]+)/gi), (m) => m[1].slice(0, 80))),
       ).slice(0, 3);

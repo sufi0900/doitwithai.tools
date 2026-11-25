@@ -35,7 +35,15 @@ export function middleware(request: NextRequest) {
     return res;
   }
 
-  if (pathname.startsWith("/founder-hub") || pathname.startsWith("/api/founder-hub")) {
+  if (
+    pathname.startsWith("/founder-hub") ||
+    pathname.startsWith("/api/founder-hub") ||
+    pathname === "/studio" ||
+    pathname.startsWith("/studio/") ||
+    pathname.startsWith("/api/studio") ||
+    pathname === "/auth" ||
+    pathname.startsWith("/auth/")
+  ) {
     const response = NextResponse.next();
     for (const [key, value] of Object.entries(NOINDEX_HEADERS)) {
       response.headers.set(key, value);
@@ -57,6 +65,11 @@ export const config = {
   matcher: [
     "/https\\::path*",
     "/http\\::path*",
+    "/studio",
+    "/studio/:path*",
+    "/api/studio/:path*",
+    "/auth",
+    "/auth/:path*",
     "/founder-hub",
     "/founder-hub/:path*",
     "/api/founder-hub/:path*",

@@ -191,20 +191,19 @@ export function verifiedReply(
   }
 
   return parsed.blocks
+    .filter((rawBlock: unknown) => {
+      const b = rawBlock as { text?: unknown };
+      return typeof b?.text === 'string' && b.text.trim().length > 0;
+    })
     .map((rawBlock: unknown) => {
       const block = rawBlock as { text?: unknown; url?: unknown; quote?: unknown };
-      if (typeof block?.text !== 'string' || !block.text.trim()) {
-        throw new Error('Invalid block');
-      }
-
-      const text = block.text.trim();
-      const inlineUrls = text.match(/https?:\/\/[^\s)>\]"']+/gi) || [];
-      for (const url of inlineUrls) {
+      let text = String(block.text || '').trim();
+      text = text.replace(/https?:\/\/[^\s)>\]"']+/gi, (url) => {
         const normalized = url.replace(/[.,;:!?]+$/, '');
         const known =
           evidence.some((e) => e.url === normalized) || allowedSet.has(normalized);
-        if (!known) throw new Error('Invalid block');
-      }
+        return known ? url : '';
+      }).replace(/\s{2,}/g, ' ').trim();
 
       const citedUrl = typeof block.url === 'string' ? block.url.trim() : '';
       const citedQuote = typeof block.quote === 'string' ? block.quote.trim() : '';

@@ -115,12 +115,12 @@ const nextConfig = {
       },
       {
         source: '/ai-employee-agency',
-        destination: '/do-it-ai',
+        destination: '/studio',
         statusCode: 301,
       },
       {
         source: '/ai-employee-agency/:path*',
-        destination: '/do-it-ai',
+        destination: '/studio',
         statusCode: 301,
       },
       {

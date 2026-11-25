@@ -2038,7 +2038,9 @@ export function auditContentFreshnessAndDecay(p: Project): {
 
   const staleMatches = combinedMetaAndBody.match(/\b(2019|2020|2021|2022|2023|2024)\b/g) || [];
   const staleYearsFound = [...new Set(staleMatches)];
-  const hasCurrentYearSignal = /\b(2025|2026)\b/.test(combinedMetaAndBody);
+  const currentUtcYear = new Date().getUTCFullYear();
+  const yearRegex = new RegExp(`\\b(${currentUtcYear}|${currentUtcYear + 1})\\b`);
+  const hasCurrentYearSignal = yearRegex.test(combinedMetaAndBody);
 
   const hasComparisonTable = /^\s*\|.+\|\s*$/m.test(fullMd);
   const hasMethodologyDisclosure =
@@ -2107,7 +2109,9 @@ export function applyContentRefreshUpgrade(p: Project): {
   const nextMetaDesc = refreshYears(p.metaPack?.metaDescription || "");
   const nextIntro = refreshYears(p.metaPack?.aeoDirectAnswer50Words || "");
 
-  if (!/\b(2025|2026)\b/.test(`${nextH1} ${nextMetaTitle}`)) {
+  const currentUtcYearForMeta = new Date().getUTCFullYear();
+  const metaYearRegex = new RegExp(`\\b(${currentUtcYearForMeta}|${currentUtcYearForMeta + 1})\\b`);
+  if (!metaYearRegex.test(`${nextH1} ${nextMetaTitle}`)) {
     if (nextMetaTitle && nextMetaTitle.length <= 52) {
       nextMetaTitle = `${nextMetaTitle} (2026)`;
       changesApplied += 1;
