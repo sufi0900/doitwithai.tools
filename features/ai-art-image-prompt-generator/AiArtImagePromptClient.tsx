@@ -31,6 +31,17 @@ export type ArtPreset = {
 
 export const ART_PRESETS: ArtPreset[] = [
   {
+    id: "8k-photo-prompt-generator",
+    label: "8K Photo Prompt Generator (Photorealistic)",
+    subject: "Ultra-detailed editorial portrait and natural environment captured in native 8K UHD with authentic skin micro-textures, subtle film grain, and razor-sharp eye catchlights",
+    mediumStyle: "8K Raw Full-Frame DSLR Editorial Photography (Zero AI Gloss)",
+    lighting: "Golden hour directional window light with soft bounce fill and full shadow dynamic range",
+    cameraLens: "85mm f/1.4 Sony GM prime lens, ISO 100, 1/500s, natural bokeh",
+    colorPalette: "True-to-life neutral skin tones, warm sunlit highlights, and deep organic shadows",
+    aspectRatio: "4:5",
+    exactTextOverlay: "",
+  },
+  {
     id: "grok-blog-hero",
     label: "Grok & Flux Blog Hero Visual",
     subject: "Futuristic isometric AI command center connecting search intent nodes and glowing content clusters above a sleek glass desk",

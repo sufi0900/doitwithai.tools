@@ -13,6 +13,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { upsertConnectedSite } from "@/lib/studio/store";
+import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 import { buildCleanStarterKeywords } from "@/lib/studio/site-snapshot.server";
 import type {
   ConnectedStudioSite,
@@ -319,8 +320,8 @@ export default function StudioOnboardingClient() {
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">
                 1. Your Website URL *
               </label>
-              <input
-                type="text"
+              <ToolUrlInput
+                type="url"
                 required
                 value={siteUrl}
                 onChange={(e) => setSiteUrl(e.target.value)}

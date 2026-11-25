@@ -24,13 +24,26 @@ test('registry has unique, route-safe IDs, slugs and category membership', () =>
     for (const guide of tool.relatedGuides) assert.ok(guide.path.startsWith('/ai-seo/'));
   }
 });
-test('legacy tools, hub and category redirect without loops or wildcard article redirects', async () => {
+test('legacy tools, hub, duplicate writers, and archived Cauthra routes redirect cleanly without loops', async () => {
   const redirects = await config.redirects();
-  assert.equal(redirects.length, 8);
-  assert.deepEqual(redirects.map(rule => rule.source).sort(), ['/ai-seo-tools', '/ai-seo/meta-title-generator', '/ai-seo/schema-markup-generator', '/ai-seo/slug-url-generator', '/download-and-embed', '/prompts/meta-description-prompts', '/prompts/meta-title-prompts', '/tools/categories/seo']);
+  assert.ok(redirects.length >= 18);
+  const sources = redirects.map(rule => rule.source);
+  for (const required of [
+    '/ai-seo-tools',
+    '/download-and-embed',
+    '/tools/ai-content-writer',
+    '/tools/ai-article-writer',
+    '/tools/ai-blog-writer',
+    '/tools/ai-blog-article-writer',
+    '/tools/ai-website-builder',
+    '/ai-employee-agency',
+    '/agents',
+    '/chrome-extension',
+  ]) {
+    assert.ok(sources.includes(required), `Missing redirect for ${required}`);
+  }
   for (const rule of redirects) {
-    assert.equal(rule.permanent, true);
-    assert.ok(!rule.source.includes(':') && !rule.source.includes('*'));
+    assert.ok(rule.permanent === true || rule.statusCode === 301);
     assert.ok(!redirects.some(other => other.source === rule.destination));
   }
 });

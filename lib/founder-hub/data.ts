@@ -1137,9 +1137,10 @@ export const FOUNDER_AI_CHANGELOG: ChangelogEntry[] = [
       "components/Header/menuData.tsx",
       "app/studio/layout.tsx",
       "app/pricing/page.tsx",
+      "features/articles/legacy/seoArticleOverrides.js",
     ],
-    commits: ["5a4e2a0"],
-    status: "In Progress",
+    commits: ["2134ebb", "6e2bbc8", "c1d906c", "c3dafe3"],
+    status: "Completed & Live",
   },
   {
     id: "v8-4-cauthra-brand-lock-ca-pca-chrome-tabgroup-3tier-packaging-2026-11-26",

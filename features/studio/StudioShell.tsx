@@ -15,6 +15,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useWorkspace } from "@/features/tools-workspace/WorkspaceProvider";
+import RecentUrlsProvider from "@/features/tool-ui/recent-urls/RecentUrlsProvider";
 import {
   createDefaultStudioState,
   loadStudioState,
@@ -278,7 +279,7 @@ export default function StudioShell({ children }: { children: ReactNode }) {
 
       {/* Main Tab Body */}
       <main className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6">
-        {children}
+        <RecentUrlsProvider>{children}</RecentUrlsProvider>
       </main>
     </div>
   );

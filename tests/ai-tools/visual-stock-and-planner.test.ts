@@ -21,9 +21,9 @@ import {
   sectionFromText,
 } from "../../lib/blog-infographic-studio/visual-brief";
 import { generateBlogInfographicSvg } from "../../lib/blog-infographic-studio/canvas-renderer";
-import { renderPinterestPinPreviewSvg } from "../../lib/autonomous-agents/pin-svg-preview";
-import { buildLinkedinCarouselHtmlDeck } from "../../lib/autonomous-agents/pinterest-carousel-exporter";
-import { createDefaultAutonomousStudioState } from "../../lib/autonomous-agents/local-storage-store";
+import { renderPinterestPinPreviewSvg } from "../../_archive/cauthra-reference/lib/autonomous-agents/pin-svg-preview";
+import { buildLinkedinCarouselHtmlDeck } from "../../_archive/cauthra-reference/lib/autonomous-agents/pinterest-carousel-exporter";
+import { createDefaultAutonomousStudioState } from "../../_archive/cauthra-reference/lib/autonomous-agents/local-storage-store";
 
 test("vector scene stock library provides 32 recolorable MIT/CC0 scenes without script or foreignObject tags", () => {
   assert.equal(VECTOR_SCENE_CATALOG.length, 32);

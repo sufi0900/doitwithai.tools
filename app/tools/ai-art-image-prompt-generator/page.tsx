@@ -11,20 +11,20 @@ import ToolResources from "@/features/tool-catalog/ToolResources";
 
 const pageUrl = "https://doitwithai.tools/tools/ai-art-image-prompt-generator";
 const description =
-  "Generate detailed AI art prompts, 8K photo restoration and upscaling instructions, and Grok/Midjourney/Flux image prompts with one-click randomizers.";
+  "Free AI Art & 8K Photo Prompt Generator: build photorealistic 8K camera prompts, photo restoration upscaling prompts, and Midjourney/Grok/Flux art prompts.";
 const image = `https://doitwithai.tools/api/og?${new URLSearchParams({
-  title: "AI Art, Grok & 8K Image Prompt Generator",
+  title: "AI Art & 8K Photo Prompt Generator",
   category: "Content Writing · Visual & Image Prompts",
-  ctaText: "Imagine. Restore. Upscale.",
-  features: "Random Art Generator,Grok & Midjourney v6.1,8K Photo Restoration",
+  ctaText: "Imagine. Shoot in 8K. Upscale.",
+  features: "8K Photo Prompt Generator,Grok & Midjourney v6.1,8K Photo Restoration",
 })}`;
 
 export const metadata: Metadata = {
-  title: "Free AI Art, Grok & 8K Image Upscaling Prompt Generator",
+  title: "Free AI Art & 8K Photo Prompt Generator (Midjourney, Grok)",
   description,
   alternates: { canonical: pageUrl },
   openGraph: {
-    title: "Free AI Art, Grok & 8K Image Upscaling Prompt Generator",
+    title: "Free AI Art & 8K Photo Prompt Generator (Midjourney, Grok)",
     description,
     url: pageUrl,
     type: "website",
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Free AI Art, Grok & 8K Image Upscaling Prompt Generator",
+    title: "Free AI Art & 8K Photo Prompt Generator (Midjourney, Grok)",
     description,
     images: [image],
   },
@@ -88,6 +88,7 @@ export default function AiArtImagePromptGeneratorPage() {
         "@type": "WebApplication",
         name: "AI Art, Grok & 8K Image Upscaling Prompt Generator",
         alternateName: [
+          "8K Photo Prompt Generator",
           "Prompt Generator Art",
           "Random Art Prompt Generator",
           "Grok Prompt Generator",
@@ -337,6 +338,41 @@ export default function AiArtImagePromptGeneratorPage() {
               className="font-semibold text-[#4662df] underline dark:text-blue-300"
             >
               UGC Ad &amp; Sora Video Prompt Studio
+            </Link>
+            .
+          </p>
+        </section>
+
+        {/* DEDICATED 8K PHOTO PROMPT GENERATOR H2 */}
+        <section className="rounded-3xl border border-indigo-500/25 bg-white p-7 shadow-sm dark:border-slate-800 dark:bg-slate-900/90">
+          <p className="text-xs font-bold uppercase tracking-widest text-[#4662df] dark:text-blue-300">
+            Photorealistic Camera &amp; Lens Preset
+          </p>
+          <h2 className="mt-2 text-2xl font-black sm:text-3xl">
+            8K Photo Prompt Generator: Camera, Lens &amp; Lighting Formula
+          </h2>
+          <p className={prose}>
+            To generate authentic <strong>8K photorealistic images</strong>{" "}
+            without plastic AI skin or oversaturated lighting, click the{" "}
+            <strong>8K Photo Prompt Generator (Photorealistic)</strong> preset
+            above. It pairs a real full-frame camera body and prime focal length
+            (<code>85mm f/1.4</code> for portraits, <code>35mm f/2</code> for
+            editorial street scenes, <code>90mm macro</code> for product shots)
+            with natural directional lighting, ISO 100 micro-texture retention,
+            and anti-airbrush negative guardrails. Need structured blog visuals
+            next? Pair your hero photo with our{" "}
+            <Link
+              href="/ai-content-writer"
+              className="font-semibold text-[#4662df] underline dark:text-blue-300"
+            >
+              AI Content Writer &amp; Infographic Studio V5
+            </Link>{" "}
+            or explore{" "}
+            <Link
+              href="/prompts/infographic-data-visualization-prompts"
+              className="font-semibold text-[#4662df] underline dark:text-blue-300"
+            >
+              77 Infographic &amp; Visual AI Prompts
             </Link>
             .
           </p>
