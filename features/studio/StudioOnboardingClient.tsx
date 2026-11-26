@@ -1,70 +1,42 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  ArrowLeft,
   ArrowRight,
+  ArrowUpRight,
   CheckCircle2,
   Globe,
+  Layers,
   Loader2,
-  Rocket,
-  SearchCheck,
-  Sparkles,
-  Wrench,
 } from "lucide-react";
 import { upsertConnectedSite } from "@/lib/studio/store";
 import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
-import { buildCleanStarterKeywords } from "@/lib/studio/site-snapshot.server";
 import type {
   ConnectedStudioSite,
   SavedKeywordItem,
   SiteAuditSnapshot,
 } from "@/lib/studio/types";
 
-const PREBUILT_TOOL_WIDGETS = [
-  { slug: "meta-title-generator", label: "Meta Title & Pixel Width Checker" },
-  { slug: "keyword-clustering-tool", label: "AI Keyword Clustering Widget" },
-  { slug: "schema-markup-generator", label: "@graph JSON-LD Schema Builder" },
-  { slug: "readability-checker", label: "Readability & Flesch Scorer" },
-  { slug: "on-page-ai-seo-analyzer", label: "On-Page SEO Audit Checklist" },
-  { slug: "seo-roi-calculator", label: "SEO Content ROI Calculator" },
-];
-
 export default function StudioOnboardingClient() {
   const router = useRouter();
-  const [selectedPath, setSelectedPath] = useState<"path-a" | "path-b">("path-a");
 
-  // Path A state ("I Already Have a Website")
   const [siteUrl, setSiteUrl] = useState("");
   const [niche, setNiche] = useState("");
   const [audience, setAudience] = useState("");
   const [primaryGoal, setPrimaryGoal] = useState(
-    "Rank informational & commercial blog posts with DIY SEO tools",
+    "Publish high-ranking informational & commercial articles and strengthen site-wide SEO",
   );
   const [runningSnapshot, setRunningSnapshot] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
-
-  // Path B state ("I Want to Build a Tool or Blog Website")
-  const [builderSiteName, setBuilderSiteName] = useState("");
-  const [builderSubdomainSlug, setBuilderSubdomainSlug] = useState("");
-  const [builderNiche, setBuilderNiche] = useState("");
-  const [selectedWidgets, setSelectedWidgets] = useState<string[]>([
-    "meta-title-generator",
-    "keyword-clustering-tool",
-    "schema-markup-generator",
-  ]);
-
-  const toggleWidget = (slug: string) => {
-    setSelectedWidgets((prev) =>
-      prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug],
-    );
-  };
 
   const handleConnectExistingSite = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
     if (!siteUrl.trim()) {
-      setErrorMsg("Please enter your website URL (e.g. https://yourdomain.com).");
+      setErrorMsg("Enter your website URL (for example, https://yourdomain.com).");
       return;
     }
 
@@ -86,6 +58,12 @@ export default function StudioOnboardingClient() {
         normalizedUrl?: string;
         brandColorHex?: string;
         topicSeed?: string;
+        coreOfferSummary?: string;
+        businessModel?: string;
+        detectedAudience?: string;
+        detectedContentPillars?: string[];
+        robotsTxtPreview?: string;
+        hasLlmsTxt?: boolean;
         sitemapUrls?: Array<{ url: string; title: string }>;
         snapshot?: SiteAuditSnapshot;
         seedKeywords?: SavedKeywordItem[];
@@ -93,7 +71,7 @@ export default function StudioOnboardingClient() {
 
       if (!res.ok || payload.error || !payload.snapshot || !payload.normalizedUrl) {
         throw new Error(
-          payload.error || "Unable to complete snapshot. Please verify your URL.",
+          payload.error || "Unable to complete website analysis. Verify the URL and try again.",
         );
       }
 
@@ -103,19 +81,25 @@ export default function StudioOnboardingClient() {
         id: siteId,
         name: payload.siteName || new URL(payload.normalizedUrl).hostname,
         url: payload.normalizedUrl,
-        niche: niche.trim() || payload.topicSeed || "SEO & Digital Marketing",
+        niche: niche.trim() || payload.topicSeed || "Digital Business",
         audience:
-          audience.trim() || "Founders, marketers, and search-driven buyers",
+          audience.trim() ||
+          payload.detectedAudience ||
+          "Search-driven buyers, readers, and practitioners",
         primaryGoal: primaryGoal.trim(),
         brandColorHex: payload.brandColorHex || "#5271FF",
         sourceType: "external-url",
+        coreOfferSummary: payload.coreOfferSummary,
+        businessModel: payload.businessModel,
+        detectedContentPillars: payload.detectedContentPillars,
+        robotsTxtPreview: payload.robotsTxtPreview,
+        hasLlmsTxt: payload.hasLlmsTxt,
         sitemapUrls: payload.sitemapUrls || [],
         auditSnapshot: payload.snapshot,
         createdAtIso: nowIso,
         updatedAtIso: nowIso,
       };
 
-      // Bug #4 Fix: Optimistic <2ms local persistence — zero 5-6s "Saving..." wait!
       upsertConnectedSite(newSite, payload.seedKeywords || []);
       router.push("/studio/writer");
     } catch (err) {
@@ -127,390 +111,150 @@ export default function StudioOnboardingClient() {
     }
   };
 
-  const handleLaunchNewBuilderSite = (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorMsg("");
-    const cleanName = builderSiteName.trim() || "My Niche AI Tool & Blog Hub";
-    const rawSlug = (builderSubdomainSlug.trim() || cleanName)
-      .toLowerCase()
-      .replace(/[^a-z0-9-]/g, "-")
-      .replace(/-+/g, "-")
-      .replace(/^-|-$/g, "")
-      .slice(0, 36) || "creator-hub";
-
-    const isolatedHost = `${rawSlug}.doitwithai.site`;
-    const fullUrl = `https://${isolatedHost}`;
-    const nowIso = new Date().toISOString();
-    const siteId = `builder-${Date.now()}`;
-    const topicSeed = (builderNiche.trim() || cleanName).toLowerCase();
-
-    const starterKeywords = buildCleanStarterKeywords({
-      siteId,
-      topicSeed,
-    });
-
-    const newBuilderSite: ConnectedStudioSite = {
-      id: siteId,
-      name: cleanName,
-      url: fullUrl,
-      niche: builderNiche.trim() || "Niche SEO Tools & Editorial Guides",
-      audience: "Search visitors using free calculators, checklists & guides",
-      primaryGoal:
-        "Grow organic traffic with interactive tool widgets + E-E-A-T blog posts",
-      brandColorHex: "#5271FF",
-      sourceType: "website-builder",
-      isolatedSubdomain: isolatedHost,
-      customCname: null,
-      installedToolSlugs: selectedWidgets,
-      sitemapUrls: [
-        { url: fullUrl, title: `${cleanName} — Home` },
-        { url: `${fullUrl}/blog`, title: `${cleanName} — Blog` },
-        ...selectedWidgets.map((slug) => ({
-          url: `${fullUrl}/tools/${slug}`,
-          title: slug.replace(/-/g, " "),
-        })),
-      ],
-      auditSnapshot: {
-        auditedUrl: fullUrl,
-        auditedAtIso: nowIso,
-        overallScore: 94,
-        title: `${cleanName} — Free Tools & Practical Guides`,
-        titleLength: Math.min(58, `${cleanName} — Free Tools & Practical Guides`.length),
-        titlePixelEstimate: 490,
-        metaDescription: `Explore ${cleanName} for interactive ${builderNiche || "SEO"} tools, calculators, and step-by-step guides.`,
-        metaDescriptionLength: 108,
-        h1Count: 1,
-        h1Text: cleanName,
-        h2Count: 4,
-        wordCount: 640,
-        internalLinkCount: selectedWidgets.length + 2,
-        externalLinkCount: 1,
-        imagesMissingAlt: 0,
-        totalImages: 2,
-        schemaTypes: ["WebSite", "WebApplication", "BreadcrumbList"],
-        hasCanonical: true,
-        canonicalUrl: fullUrl,
-        hasRobotsTxt: true,
-        sitemapPageCount: selectedWidgets.length + 2,
-        brandColors: ["#5271FF", "#10B981"],
-        checks: [
-          {
-            id: "isolated-subdomain",
-            category: "technical",
-            label: "Isolated Neutral Subdomain Provisioned",
-            status: "pass",
-            value: isolatedHost,
-            recommendation:
-              "Hosted on an isolated neutral subdomain (Pro Plus unlocks custom CNAME).",
-            fixToolHref: "/studio/website-builder",
-            fixToolLabel: "Manage Domain & Widgets",
-          },
-          {
-            id: "schema-graph",
-            category: "schema",
-            label: "Pre-Wired @graph JSON-LD & Sitemap",
-            status: "pass",
-            value: "WebSite + WebApplication + BreadcrumbList",
-            recommendation: "Clean structured data pre-installed automatically.",
-            fixToolHref: "/tools/schema-markup-generator",
-            fixToolLabel: "Customize Schema",
-          },
-        ],
-      },
-      createdAtIso: nowIso,
-      updatedAtIso: nowIso,
-    };
-
-    // Instant optimistic connection back into /studio -> routes straight to /studio/website-builder
-    upsertConnectedSite(newBuilderSite, starterKeywords);
-    router.push("/studio/website-builder");
-  };
-
   return (
-    <div className="mx-auto max-w-4xl py-4">
-      <div className="rounded-3xl border border-slate-800 bg-[#0F172A] p-6 shadow-2xl sm:p-8">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:py-12">
+      <Link
+        href="/studio"
+        className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 transition hover:text-[#5271FF] dark:text-slate-400 dark:hover:text-[#9aabff]"
+      >
+        <ArrowLeft size={14} />
+        <span>Back to Workspace Hub</span>
+      </Link>
+
+      <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-xs sm:p-8 dark:border-slate-800 dark:bg-[#0D1526]">
+        <p className="text-xs font-semibold uppercase tracking-wider text-[#5271FF] dark:text-[#9aabff]">
+          Real-Time Website Onboarding
+        </p>
+        <h1 className="mt-1.5 text-2xl font-bold text-slate-900 sm:text-3xl dark:text-white">
+          Connect Your Website to Studio
+        </h1>
+        <p className="mt-1.5 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+          We crawl your homepage HTML, metadata, JSON-LD entities, brand colors,
+          and XML sitemap in real time, then synthesize tailored keyword clusters
+          and ready-to-write article ideas for your exact niche.
+        </p>
+
+        <form onSubmit={handleConnectExistingSite} className="mt-6 space-y-5">
           <div>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-[#5271FF]/40 bg-[#5271FF]/15 px-3 py-1 text-xs font-bold text-[#b4c2ff]">
-              <Sparkles size={13} />
-              60-Second 2-Path Studio Setup
+            <label className="mb-1.5 block text-xs font-bold text-slate-700 dark:text-slate-200">
+              Website URL
+            </label>
+            <ToolUrlInput
+              value={siteUrl}
+              onChange={(e) => setSiteUrl(e.target.value)}
+              urlKind="domain"
+              placeholder="https://yourdomain.com"
+              className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:border-[#5271FF] focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+            />
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="mb-1.5 block text-xs font-bold text-slate-700 dark:text-slate-200">
+                Core Niche / Offer{" "}
+                <span className="font-normal text-slate-400">(optional — auto-detected)</span>
+              </label>
+              <input
+                type="text"
+                value={niche}
+                onChange={(e) => setNiche(e.target.value)}
+                placeholder="e.g., B2B SaaS analytics, Dental clinic, AI SEO tools"
+                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:border-[#5271FF] focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-xs font-bold text-slate-700 dark:text-slate-200">
+                Ideal Customer / Reader{" "}
+                <span className="font-normal text-slate-400">(optional — auto-detected)</span>
+              </label>
+              <input
+                type="text"
+                value={audience}
+                onChange={(e) => setAudience(e.target.value)}
+                placeholder="e.g., Founders, marketing leaders, local patients"
+                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:border-[#5271FF] focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-xs font-bold text-slate-700 dark:text-slate-200">
+              Primary 90-Day Organic Goal
+            </label>
+            <input
+              type="text"
+              value={primaryGoal}
+              onChange={(e) => setPrimaryGoal(e.target.value)}
+              className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:border-[#5271FF] focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+            />
+          </div>
+
+          {errorMsg && (
+            <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-xs font-medium text-rose-600 dark:text-rose-300">
+              {errorMsg}
+            </div>
+          )}
+
+          <div className="grid gap-2.5 rounded-xl border border-slate-200 bg-slate-50/80 p-4 text-xs text-slate-600 sm:grid-cols-3 dark:border-slate-800 dark:bg-slate-900/50 dark:text-slate-300">
+            <span className="flex items-center gap-2">
+              <CheckCircle2 size={14} className="shrink-0 text-emerald-500" />
+              Up to 400 XML sitemap URLs
             </span>
-            <h1 className="mt-3 text-2xl font-extrabold text-white sm:text-3xl">
-              How would you like to start in DoItWithAI Studio?
-            </h1>
-            <p className="mt-1.5 text-sm text-slate-300">
-              Choose Path A if you already own a site, or Path B to launch a new
-              AI Tool or Blog site on an isolated subdomain.
+            <span className="flex items-center gap-2">
+              <CheckCircle2 size={14} className="shrink-0 text-emerald-500" />
+              Brand DNA &amp; schema check
+            </span>
+            <span className="flex items-center gap-2">
+              <CheckCircle2 size={14} className="shrink-0 text-emerald-500" />
+              12–15 AI niche article ideas
+            </span>
+          </div>
+
+          <button
+            type="submit"
+            disabled={runningSnapshot}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#5271FF] px-6 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-[#4361EE] disabled:opacity-60"
+          >
+            {runningSnapshot ? (
+              <>
+                <Loader2 size={16} className="animate-spin" />
+                <span>Crawling Site, Sitemap &amp; Generating Niche Ideas...</span>
+              </>
+            ) : (
+              <>
+                <span>Connect Website &amp; Open Studio</span>
+                <ArrowRight size={16} />
+              </>
+            )}
+          </button>
+        </form>
+      </div>
+
+      {/* Separate Standalone Builder Callout */}
+      <div className="mt-6 flex flex-col items-start justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-5 sm:flex-row sm:items-center dark:border-slate-800 dark:bg-[#0D1526]">
+        <div className="flex items-start gap-3">
+          <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-[#5271FF] dark:bg-slate-800">
+            <Layers size={17} />
+          </span>
+          <div>
+            <h2 className="text-sm font-bold text-slate-900 dark:text-white">
+              Don&apos;t have a website yet?
+            </h2>
+            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+              Build a new blog, SaaS landing page, or portfolio in our separate
+              AI Website Builder Studio first.
             </p>
           </div>
         </div>
-
-        {/* 2-Path Selector Cards */}
-        <div className="mt-6 grid gap-4 sm:grid-cols-2">
-          <button
-            type="button"
-            onClick={() => {
-              setSelectedPath("path-a");
-              setErrorMsg("");
-            }}
-            className={`flex flex-col items-start rounded-2xl border p-5 text-left transition ${
-              selectedPath === "path-a"
-                ? "border-[#5271FF] bg-[#5271FF]/15 shadow-lg shadow-[#5271FF]/15"
-                : "border-slate-800 bg-slate-900/70 hover:border-slate-700"
-            }`}
-          >
-            <div className="flex w-full items-center justify-between">
-              <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[#5271FF]/20 text-[#9aabff]">
-                <SearchCheck size={20} />
-              </span>
-              <span className="rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-[11px] font-bold text-emerald-300">
-                Path A · ~30s
-              </span>
-            </div>
-            <h2 className="mt-3.5 text-base font-extrabold text-white">
-              I Already Have a Website
-            </h2>
-            <p className="mt-1 text-xs leading-relaxed text-slate-300">
-              Import your sitemap, run the Combined 1-Click Site Snapshot
-              (On-Page + Meta + Schema), generate clean Brand Keyword Ideas, and
-              jump straight into the AI Content Writer.
-            </p>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setSelectedPath("path-b");
-              setErrorMsg("");
-            }}
-            className={`flex flex-col items-start rounded-2xl border p-5 text-left transition ${
-              selectedPath === "path-b"
-                ? "border-cyan-400 bg-cyan-500/15 shadow-lg shadow-cyan-500/15"
-                : "border-slate-800 bg-slate-900/70 hover:border-slate-700"
-            }`}
-          >
-            <div className="flex w-full items-center justify-between">
-              <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500/20 text-cyan-300">
-                <Globe size={20} />
-              </span>
-              <span className="rounded-full bg-cyan-500/15 px-2.5 py-0.5 text-[11px] font-bold text-cyan-300">
-                Path B · Beginner Ready
-              </span>
-            </div>
-            <h2 className="mt-3.5 text-base font-extrabold text-white">
-              I Want to Build a Tool or Blog Website
-            </h2>
-            <p className="mt-1 text-xs leading-relaxed text-slate-300">
-              Launch a fast niche Tool or Blog site with pre-built interactive
-              tool widgets on an isolated neutral subdomain (e.g.{" "}
-              <code>user.doitwithai.site</code>), auto-wired into Studio.
-            </p>
-          </button>
-        </div>
-
-        {errorMsg && (
-          <div className="mt-5 rounded-2xl border border-rose-500/40 bg-rose-500/10 px-4 py-3 text-xs font-semibold text-rose-200">
-            {errorMsg}
-          </div>
-        )}
-
-        {selectedPath === "path-a" ? (
-          <form onSubmit={handleConnectExistingSite} className="mt-6 space-y-4">
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">
-                1. Your Website URL *
-              </label>
-              <ToolUrlInput
-                type="url"
-                required
-                value={siteUrl}
-                onChange={(e) => setSiteUrl(e.target.value)}
-                placeholder="https://yourdomain.com"
-                className="mt-1.5 w-full rounded-xl border border-slate-700 bg-[#091020] px-4 py-3 text-sm text-white placeholder-slate-500 focus:border-[#5271FF] focus:outline-none"
-              />
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">
-                  2. Core Niche / Topic (Prevents Generic Keywords)
-                </label>
-                <input
-                  type="text"
-                  value={niche}
-                  onChange={(e) => setNiche(e.target.value)}
-                  placeholder="e.g. Technical SEO Audits, B2B SaaS CRM, Home Espresso"
-                  className="mt-1.5 w-full rounded-xl border border-slate-700 bg-[#091020] px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:border-[#5271FF] focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">
-                  3. Target Reader / Buyer Persona
-                </label>
-                <input
-                  type="text"
-                  value={audience}
-                  onChange={(e) => setAudience(e.target.value)}
-                  placeholder="e.g. Solo founders, e-commerce managers, beginners"
-                  className="mt-1.5 w-full rounded-xl border border-slate-700 bg-[#091020] px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:border-[#5271FF] focus:outline-none"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">
-                4. Primary Content Goal
-              </label>
-              <input
-                type="text"
-                value={primaryGoal}
-                onChange={(e) => setPrimaryGoal(e.target.value)}
-                className="mt-1.5 w-full rounded-xl border border-slate-700 bg-[#091020] px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:border-[#5271FF] focus:outline-none"
-              />
-            </div>
-
-            <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-              <p className="text-xs text-slate-400">
-                Runs sitemap discovery + On-Page/Meta/Schema snapshot + 8
-                starter keywords.
-              </p>
-              <button
-                type="submit"
-                disabled={runningSnapshot}
-                className="inline-flex items-center gap-2 rounded-2xl bg-[#5271FF] px-6 py-3.5 text-sm font-extrabold text-white shadow-lg shadow-[#5271FF]/30 transition hover:bg-[#4361EE] disabled:opacity-60"
-              >
-                {runningSnapshot ? (
-                  <>
-                    <Loader2 size={16} className="animate-spin" />
-                    <span>Running 1-Click Site Snapshot…</span>
-                  </>
-                ) : (
-                  <>
-                    <Rocket size={16} />
-                    <span>Run Snapshot &amp; Open Writer</span>
-                    <ArrowRight size={15} />
-                  </>
-                )}
-              </button>
-            </div>
-          </form>
-        ) : (
-          <form onSubmit={handleLaunchNewBuilderSite} className="mt-6 space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">
-                  1. Website / Brand Name *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={builderSiteName}
-                  onChange={(e) => {
-                    setBuilderSiteName(e.target.value);
-                    if (!builderSubdomainSlug) {
-                      setBuilderSubdomainSlug(
-                        e.target.value
-                          .toLowerCase()
-                          .replace(/[^a-z0-9-]/g, "-")
-                          .replace(/-+/g, "-")
-                          .replace(/^-|-$/g, "")
-                          .slice(0, 28),
-                      );
-                    }
-                  }}
-                  placeholder="e.g. RankCraft SEO Toolkit"
-                  className="mt-1.5 w-full rounded-xl border border-slate-700 bg-[#091020] px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:border-cyan-400 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">
-                  2. Isolated Neutral Subdomain *
-                </label>
-                <div className="mt-1.5 flex items-center overflow-hidden rounded-xl border border-slate-700 bg-[#091020]">
-                  <input
-                    type="text"
-                    required
-                    value={builderSubdomainSlug}
-                    onChange={(e) =>
-                      setBuilderSubdomainSlug(
-                        e.target.value
-                          .toLowerCase()
-                          .replace(/[^a-z0-9-]/g, "-"),
-                      )
-                    }
-                    placeholder="rankcraft"
-                    className="w-full bg-transparent px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none"
-                  />
-                  <span className="border-l border-slate-800 bg-slate-900 px-3 py-2.5 text-xs font-mono text-cyan-300">
-                    .doitwithai.site
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">
-                3. Primary Niche Topic *
-              </label>
-              <input
-                type="text"
-                required
-                value={builderNiche}
-                onChange={(e) => setBuilderNiche(e.target.value)}
-                placeholder="e.g. Local SEO Calculators, SaaS Copywriting, Personal Finance Tools"
-                className="mt-1.5 w-full rounded-xl border border-slate-700 bg-[#091020] px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:border-cyan-400 focus:outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">
-                4. Pre-Install Interactive Tool Widgets (1-Click Embed)
-              </label>
-              <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                {PREBUILT_TOOL_WIDGETS.map((widget) => {
-                  const checked = selectedWidgets.includes(widget.slug);
-                  return (
-                    <button
-                      key={widget.slug}
-                      type="button"
-                      onClick={() => toggleWidget(widget.slug)}
-                      className={`flex items-center justify-between rounded-xl border px-3.5 py-2.5 text-left text-xs font-semibold transition ${
-                        checked
-                          ? "border-cyan-400/60 bg-cyan-500/15 text-cyan-200"
-                          : "border-slate-800 bg-[#091020] text-slate-400 hover:border-slate-700"
-                      }`}
-                    >
-                      <span className="flex items-center gap-2">
-                        <Wrench size={13} className="text-cyan-400" />
-                        <span>{widget.label}</span>
-                      </span>
-                      {checked && (
-                        <CheckCircle2 size={14} className="text-emerald-400" />
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-              <p className="text-xs text-slate-400">
-                Zero subfolders on <code>doitwithai.tools/</code> — isolated
-                subdomain + Pro CNAME ready.
-              </p>
-              <button
-                type="submit"
-                className="inline-flex items-center gap-2 rounded-2xl bg-cyan-500 px-6 py-3.5 text-sm font-extrabold text-slate-950 shadow-lg shadow-cyan-500/25 transition hover:bg-cyan-400"
-              >
-                <Globe size={16} />
-                <span>Create Tool/Blog Site &amp; Open Builder</span>
-                <ArrowRight size={15} />
-              </button>
-            </div>
-          </form>
-        )}
+        <Link
+          href="/ai-website-builder"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-slate-300 px-4 py-2 text-xs font-bold text-slate-800 transition hover:border-[#5271FF] hover:text-[#5271FF] dark:border-slate-700 dark:text-slate-200 dark:hover:text-[#9aabff]"
+        >
+          <Globe size={14} />
+          <span>Open Website Builder</span>
+          <ArrowUpRight size={13} />
+        </Link>
       </div>
     </div>
   );

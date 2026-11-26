@@ -1,5 +1,5 @@
-import StudioWebsiteBuilderClient from "@/features/studio/StudioWebsiteBuilderClient";
+import { redirect } from "next/navigation";
 
-export default function StudioWebsiteBuilderPage() {
-  return <StudioWebsiteBuilderClient />;
+export default function StudioWebsiteBuilderRedirectPage() {
+  redirect("/ai-website-builder");
 }

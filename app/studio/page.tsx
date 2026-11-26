@@ -1,5 +1,5 @@
-import StudioOverviewClient from "@/features/studio/StudioOverviewClient";
+import StudioWorkspaceHubClient from "@/features/studio/StudioWorkspaceHubClient";
 
-export default function StudioHomePage() {
-  return <StudioOverviewClient />;
+export default function StudioHubPage() {
+  return <StudioWorkspaceHubClient />;
 }

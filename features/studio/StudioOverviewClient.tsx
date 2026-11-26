@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -9,46 +9,40 @@ import {
   CheckCircle2,
   ExternalLink,
   FilePenLine,
+  FileSearch,
   Globe,
   Loader2,
   Plus,
   RefreshCw,
-  SearchCheck,
+  Search,
+  ShieldCheck,
   XCircle,
 } from "lucide-react";
 import {
   createDefaultStudioState,
   loadStudioState,
-  saveStudioStateOptimistic,
   subscribeStudioState,
+  upsertConnectedSite,
 } from "@/lib/studio/store";
-import { seedKeywordIntoWriterStudio } from "@/lib/studio/writer-bridge";
-import type { SiteAuditSnapshot, StudioWorkspaceState } from "@/lib/studio/types";
+import type {
+  ConnectedStudioSite,
+  SavedKeywordItem,
+  SiteAuditSnapshot,
+  StudioWorkspaceState,
+} from "@/lib/studio/types";
 
 export default function StudioOverviewClient() {
   const router = useRouter();
   const [studio, setStudio] = useState<StudioWorkspaceState>(
     createDefaultStudioState,
   );
-  const [selectedUrl, setSelectedUrl] = useState("");
-  const [auditing, setAuditing] = useState(false);
-  const [auditError, setAuditError] = useState("");
+  const [resyncing, setResyncing] = useState(false);
+  const [syncError, setSyncError] = useState("");
+  const [sitemapFilter, setSitemapFilter] = useState("");
 
   useEffect(() => {
-    const initial = loadStudioState();
-    setStudio(initial);
-    const active =
-      initial.sites.find((s) => s.id === initial.activeSiteId) ||
-      initial.sites[0];
-    if (active) setSelectedUrl(active.url);
-
-    return subscribeStudioState(() => {
-      const next = loadStudioState();
-      setStudio(next);
-      const nextSite =
-        next.sites.find((s) => s.id === next.activeSiteId) || next.sites[0];
-      if (nextSite && !selectedUrl) setSelectedUrl(nextSite.url);
-    });
+    setStudio(loadStudioState());
+    return subscribeStudioState(() => setStudio(loadStudioState()));
   }, []);
 
   const activeSite =
@@ -56,335 +50,403 @@ export default function StudioOverviewClient() {
     studio.sites[0] ||
     null;
 
+  const filteredSitemap = useMemo(() => {
+    if (!activeSite) return [];
+    const q = sitemapFilter.trim().toLowerCase();
+    if (!q) return activeSite.sitemapUrls.slice(0, 60);
+    return activeSite.sitemapUrls
+      .filter(
+        (u) =>
+          u.url.toLowerCase().includes(q) || u.title.toLowerCase().includes(q),
+      )
+      .slice(0, 60);
+  }, [activeSite, sitemapFilter]);
+
   if (!activeSite) {
     return (
-      <div className="rounded-3xl border border-slate-800 bg-[#0F172A] p-8 text-center shadow-xl sm:p-12">
-        <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[#5271FF]/20 text-[#9aabff]">
-          <SearchCheck size={24} />
-        </span>
-        <h1 className="mt-4 text-2xl font-extrabold text-white sm:text-3xl">
-          Run Your First Combined 1-Click Site Snapshot
+      <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center dark:border-slate-800 dark:bg-[#0D1526]">
+        <Globe size={28} className="mx-auto text-[#5271FF]" />
+        <h1 className="mt-3 text-xl font-bold text-slate-900 dark:text-white">
+          No Website Connected Yet
         </h1>
-        <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-slate-300">
-          Connect your existing website (Path A) to unify On-Page, Meta Pixel,
-          and @graph Schema checks into a single view—or launch a new AI Tool or
-          Blog website on an isolated subdomain (Path B).
+        <p className="mx-auto mt-1.5 max-w-md text-sm text-slate-600 dark:text-slate-400">
+          Connect your website in the Workspace Hub to inspect Brand DNA, XML
+          sitemap URLs, and live SEO health.
         </p>
-        <div className="mt-6 flex flex-wrap justify-center gap-3">
-          <Link
-            href="/studio/onboarding"
-            className="inline-flex items-center gap-2 rounded-2xl bg-[#5271FF] px-6 py-3.5 text-sm font-extrabold text-white shadow-lg shadow-[#5271FF]/25 transition hover:bg-[#4361EE]"
-          >
-            <Plus size={16} />
-            <span>Start 60-Second Onboarding</span>
-            <ArrowRight size={15} />
-          </Link>
-          <Link
-            href="/tools/on-page-ai-seo-analyzer"
-            className="inline-flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-900 px-5 py-3.5 text-sm font-bold text-slate-200 hover:border-[#5271FF]"
-          >
-            Stateless On-Page Analyzer
-          </Link>
-        </div>
+        <Link
+          href="/studio"
+          className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#5271FF] px-5 py-2.5 text-xs font-bold text-white transition hover:bg-[#4361EE]"
+        >
+          <Plus size={14} />
+          <span>Connect Website in Hub</span>
+        </Link>
       </div>
     );
   }
 
-  const snapshot = activeSite.auditSnapshot;
-  const siteKeywords = studio.keywords.filter((k) => k.siteId === activeSite.id);
-
-  const handleRunLiveAudit = async (targetUrl?: string) => {
-    const urlToScan = (targetUrl || selectedUrl || activeSite.url).trim();
-    if (!urlToScan) return;
-    setAuditing(true);
-    setAuditError("");
+  const handleResyncSite = async () => {
+    setSyncError("");
+    setResyncing(true);
     try {
       const res = await fetch("/api/studio/snapshot", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          url: urlToScan,
+          url: activeSite.url,
           niche: activeSite.niche,
           audience: activeSite.audience,
+          primaryGoal: activeSite.primaryGoal,
+          planTier: studio.planTier,
         }),
       });
-      const data = (await res.json()) as {
+      const payload = (await res.json()) as {
         error?: string;
-        snapshot?: SiteAuditSnapshot;
-        sitemapUrls?: Array<{ url: string; title: string }>;
+        siteName?: string;
+        normalizedUrl?: string;
         brandColorHex?: string;
+        topicSeed?: string;
+        coreOfferSummary?: string;
+        businessModel?: string;
+        detectedAudience?: string;
+        detectedContentPillars?: string[];
+        robotsTxtPreview?: string;
+        hasLlmsTxt?: boolean;
+        sitemapUrls?: Array<{ url: string; title: string }>;
+        snapshot?: SiteAuditSnapshot;
+        seedKeywords?: SavedKeywordItem[];
       };
-      if (!res.ok || data.error || !data.snapshot) {
-        throw new Error(data.error || "Could not refresh snapshot.");
+
+      if (!res.ok || payload.error || !payload.snapshot) {
+        throw new Error(payload.error || "Unable to refresh website snapshot.");
       }
 
-      saveStudioStateOptimistic((prev) => ({
-        ...prev,
-        usage: {
-          ...prev.usage,
-          auditsRun: prev.usage.auditsRun + 1,
-        },
-        sites: prev.sites.map((s) =>
-          s.id === activeSite.id
-            ? {
-                ...s,
-                auditSnapshot: data.snapshot!,
-                brandColorHex: data.brandColorHex || s.brandColorHex,
-                sitemapUrls:
-                  data.sitemapUrls && data.sitemapUrls.length > s.sitemapUrls.length
-                    ? data.sitemapUrls
-                    : s.sitemapUrls,
-                updatedAtIso: new Date().toISOString(),
-              }
-            : s,
-        ),
-      }));
+      const updated: ConnectedStudioSite = {
+        ...activeSite,
+        name: payload.siteName || activeSite.name,
+        niche: payload.topicSeed || activeSite.niche,
+        audience: payload.detectedAudience || activeSite.audience,
+        brandColorHex: payload.brandColorHex || activeSite.brandColorHex,
+        coreOfferSummary: payload.coreOfferSummary || activeSite.coreOfferSummary,
+        businessModel: payload.businessModel || activeSite.businessModel,
+        detectedContentPillars:
+          payload.detectedContentPillars || activeSite.detectedContentPillars,
+        robotsTxtPreview: payload.robotsTxtPreview || activeSite.robotsTxtPreview,
+        hasLlmsTxt: payload.hasLlmsTxt ?? activeSite.hasLlmsTxt,
+        sitemapUrls: payload.sitemapUrls || activeSite.sitemapUrls,
+        auditSnapshot: payload.snapshot,
+        updatedAtIso: new Date().toISOString(),
+      };
+      upsertConnectedSite(updated, payload.seedKeywords || []);
     } catch (err) {
-      setAuditError(
-        err instanceof Error ? err.message : "Live snapshot failed.",
-      );
+      setSyncError(err instanceof Error ? err.message : "Refresh failed.");
     } finally {
-      setAuditing(false);
+      setResyncing(false);
     }
   };
 
-  const handleWriteAboutPage = async (pageTitle: string, pageUrl: string) => {
-    await seedKeywordIntoWriterStudio({
-      keyword: pageTitle.toLowerCase(),
-      suggestedTitle: `${pageTitle} — Updated Guide`,
-      customBrief: `Refresh or expand upon existing URL: ${pageUrl}`,
-      site: activeSite,
-    });
-    router.push("/studio/writer");
-  };
+  const snap = activeSite.auditSnapshot;
+  const siteKeywordsCount = studio.keywords.filter(
+    (k) => k.siteId === activeSite.id,
+  ).length;
 
   return (
     <div className="space-y-6">
-      {/* Top Snapshot Header Card */}
-      <div className="rounded-3xl border border-slate-800 bg-[#0F172A] p-6 shadow-xl">
-        <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-center">
-          <div className="flex items-start gap-4">
-            <div className="flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-2xl border border-emerald-500/35 bg-emerald-500/10 text-emerald-300">
-              <span className="text-xl font-black">
-                {snapshot?.overallScore ?? 0}
-              </span>
-              <span className="text-[9px] font-bold uppercase tracking-wider">
-                / 100
-              </span>
-            </div>
-
+      {/* Top Executive Brand DNA & Site Identity Card */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-[#0D1526]">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex items-start gap-3.5">
+            <span
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-base font-bold text-white shadow-xs"
+              style={{ backgroundColor: activeSite.brandColorHex || "#5271FF" }}
+            >
+              {activeSite.name.slice(0, 2).toUpperCase()}
+            </span>
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-xl font-extrabold text-white sm:text-2xl">
+                <h1 className="text-xl font-bold text-slate-900 dark:text-white">
                   {activeSite.name}
                 </h1>
-                <span className="rounded-full border border-slate-700 bg-slate-800 px-2.5 py-0.5 text-[11px] font-semibold text-slate-300">
-                  {activeSite.sourceType === "website-builder"
-                    ? "Isolated Builder Subdomain"
-                    : "Connected Website"}
-                </span>
-              </div>
-              <p className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-400">
-                <Globe size={13} />
-                <a
-                  href={activeSite.url}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="underline hover:text-white"
-                >
-                  {activeSite.url}
-                </a>
-                <span>·</span>
-                <span>{activeSite.sitemapUrls.length} URLs discovered</span>
-                <span>·</span>
-                <span>{siteKeywords.length} saved keywords</span>
-              </p>
-
-              {/* Brand DNA Swatches */}
-              <div className="mt-2.5 flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
-                <span>Brand DNA:</span>
-                {(snapshot?.brandColors || [activeSite.brandColorHex]).map(
-                  (hex) => (
-                    <span
-                      key={hex}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-900 px-2 py-0.5 font-mono text-[10px] text-slate-200"
-                    >
-                      <span
-                        className="h-2.5 w-2.5 rounded-full"
-                        style={{ backgroundColor: hex }}
-                      />
-                      {hex}
-                    </span>
-                  ),
+                {activeSite.businessModel && (
+                  <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-semibold text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                    {activeSite.businessModel}
+                  </span>
                 )}
               </div>
+              <a
+                href={activeSite.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-0.5 inline-flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-[#5271FF] dark:text-slate-400"
+              >
+                {activeSite.url}
+                <ExternalLink size={12} />
+              </a>
+              <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                {activeSite.coreOfferSummary || activeSite.niche}
+              </p>
             </div>
           </div>
 
-          {/* 1-Click URL Selector + Rescan */}
           <div className="flex flex-wrap items-center gap-2">
-            {activeSite.sitemapUrls.length > 0 && (
-              <select
-                aria-label="Select sitemap URL to inspect"
-                value={selectedUrl || activeSite.url}
-                onChange={(e) => {
-                  setSelectedUrl(e.target.value);
-                  void handleRunLiveAudit(e.target.value);
-                }}
-                className="max-w-[260px] truncate rounded-xl border border-slate-700 bg-[#091020] px-3 py-2.5 text-xs text-slate-200 focus:border-[#5271FF] focus:outline-none"
-              >
-                {activeSite.sitemapUrls.slice(0, 60).map((p) => (
-                  <option key={p.url} value={p.url}>
-                    {p.url.replace(/^https?:\/\/[^/]+/, "") || "/"}
-                  </option>
-                ))}
-              </select>
-            )}
             <button
               type="button"
-              disabled={auditing}
-              onClick={() => void handleRunLiveAudit()}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-xs font-bold text-white transition hover:border-[#5271FF] disabled:opacity-60"
+              onClick={handleResyncSite}
+              disabled={resyncing}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 transition hover:border-[#5271FF] hover:text-[#5271FF] disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
             >
-              {auditing ? (
+              {resyncing ? (
                 <Loader2 size={14} className="animate-spin" />
               ) : (
                 <RefreshCw size={14} />
               )}
-              <span>{auditing ? "Scanning…" : "Re-Run Snapshot"}</span>
+              <span>{resyncing ? "Re-crawling..." : "Re-Sync Site & Ideas"}</span>
             </button>
             <Link
-              href="/studio/keywords"
-              className="inline-flex items-center gap-1.5 rounded-xl bg-[#5271FF] px-4 py-2.5 text-xs font-bold text-white shadow transition hover:bg-[#4361EE]"
+              href="/studio/writer"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-[#5271FF] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#4361EE]"
             >
-              <span>Review {siteKeywords.length} Keywords</span>
-              <ArrowRight size={14} />
+              <FilePenLine size={14} />
+              <span>Open Content Writer</span>
             </Link>
           </div>
         </div>
 
-        {auditError && (
-          <div className="mt-4 rounded-xl border border-rose-500/40 bg-rose-500/10 px-4 py-2.5 text-xs text-rose-200">
-            {auditError}
-          </div>
+        {syncError && (
+          <p className="mt-3 rounded-xl border border-rose-500/30 bg-rose-500/10 px-3.5 py-2 text-xs text-rose-600 dark:text-rose-300">
+            {syncError}
+          </p>
         )}
+
+        {/* Brand DNA Metadata Strip */}
+        <div className="mt-5 grid gap-3 border-t border-slate-200/80 pt-5 sm:grid-cols-2 lg:grid-cols-4 dark:border-slate-800/80">
+          <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-3.5 dark:border-slate-800 dark:bg-slate-900/50">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+              SEO Health Pulse
+            </p>
+            <p className="mt-1 text-xl font-bold text-slate-900 dark:text-white">
+              {snap ? `${snap.overallScore}/100` : "Pending"}
+            </p>
+            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+              Homepage metadata &amp; technical baseline
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-3.5 dark:border-slate-800 dark:bg-slate-900/50">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+              XML Sitemap Inventory
+            </p>
+            <p className="mt-1 text-xl font-bold text-slate-900 dark:text-white">
+              {activeSite.sitemapUrls.length} URLs
+            </p>
+            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+              Synced for internal linking &amp; page audits
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-3.5 dark:border-slate-800 dark:bg-slate-900/50">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+              Tailored Blog Ideas
+            </p>
+            <p className="mt-1 text-xl font-bold text-slate-900 dark:text-white">
+              {siteKeywordsCount} topics
+            </p>
+            <Link
+              href="/studio/keywords"
+              className="mt-0.5 inline-flex items-center gap-1 text-xs font-semibold text-[#5271FF] hover:underline dark:text-[#9aabff]"
+            >
+              Explore keyword clusters <ArrowRight size={11} />
+            </Link>
+          </div>
+
+          <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-3.5 dark:border-slate-800 dark:bg-slate-900/50">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+              Brand Palette &amp; Schema
+            </p>
+            <div className="mt-1.5 flex items-center gap-1.5">
+              {(snap?.brandColors?.length
+                ? snap.brandColors
+                : [activeSite.brandColorHex || "#5271FF"]
+              ).map((hex) => (
+                <span
+                  key={hex}
+                  title={hex}
+                  className="h-5 w-5 rounded-md border border-slate-300/60 dark:border-slate-700"
+                  style={{ backgroundColor: hex }}
+                />
+              ))}
+            </div>
+            <p className="mt-1 truncate text-xs text-slate-500 dark:text-slate-400">
+              {snap?.schemaTypes?.length
+                ? `Schema: ${snap.schemaTypes.join(", ")}`
+                : "No @graph schema detected yet"}
+            </p>
+          </div>
+        </div>
+
+        {/* Detected Content Pillars */}
+        {activeSite.detectedContentPillars &&
+          activeSite.detectedContentPillars.length > 0 && (
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                Topical Pillars:
+              </span>
+              {activeSite.detectedContentPillars.map((pillar) => (
+                <span
+                  key={pillar}
+                  className="rounded-lg border border-[#5271FF]/25 bg-[#5271FF]/[0.07] px-2.5 py-1 text-xs font-semibold text-[#4361EE] dark:text-[#b4c2ff]"
+                >
+                  {pillar}
+                </span>
+              ))}
+            </div>
+          )}
       </div>
 
-      {/* Combined On-Page / Meta / Schema Checks Grid */}
-      {snapshot && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {snapshot.checks.map((check) => {
-            const StatusIcon =
-              check.status === "pass"
-                ? CheckCircle2
-                : check.status === "warn"
-                  ? AlertTriangle
-                  : XCircle;
-            const badgeStyle =
-              check.status === "pass"
-                ? "border-emerald-500/35 bg-emerald-500/10 text-emerald-300"
-                : check.status === "warn"
-                  ? "border-amber-500/35 bg-amber-500/10 text-amber-300"
-                  : "border-rose-500/35 bg-rose-500/10 text-rose-300";
-
-            return (
-              <div
-                key={check.id}
-                className="flex flex-col justify-between rounded-2xl border border-slate-800 bg-[#0F172A] p-5"
+      {/* Baseline Diagnostic Checks (Routes Directly Inside Studio Sidebar!) */}
+      {snap && (
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-[#0D1526]">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                Homepage Baseline Diagnostics
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Quick checks from your latest crawl. Click any item to open its
+                in-dashboard SEO workbench.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/studio/on-page"
+                className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-[#5271FF] hover:text-[#5271FF] dark:border-slate-700 dark:text-slate-200"
               >
-                <div>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
-                      {check.category}
-                    </span>
-                    <span
-                      className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase ${badgeStyle}`}
-                    >
-                      <StatusIcon size={11} />
-                      {check.status}
-                    </span>
-                  </div>
-                  <h2 className="mt-2.5 text-sm font-extrabold text-white">
-                    {check.label}
-                  </h2>
-                  <p className="mt-1 font-mono text-xs text-[#9aabff]">
-                    {check.value}
-                  </p>
-                  <p className="mt-2 text-xs leading-relaxed text-slate-300">
-                    {check.recommendation}
-                  </p>
-                </div>
+                <FileSearch size={13} /> On-Page Audit
+              </Link>
+              <Link
+                href="/studio/technical"
+                className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-[#5271FF] hover:text-[#5271FF] dark:border-slate-700 dark:text-slate-200"
+              >
+                <ShieldCheck size={13} /> Technical SEO
+              </Link>
+            </div>
+          </div>
 
-                <div className="mt-4 border-t border-slate-800/80 pt-3">
-                  <Link
-                    href={check.fixToolHref}
-                    className="inline-flex items-center gap-1.5 text-xs font-bold text-[#9aabff] hover:text-white"
-                  >
-                    <span>{check.fixToolLabel}</span>
-                    <ExternalLink size={12} />
-                  </Link>
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            {snap.checks.map((check) => {
+              const Icon =
+                check.status === "pass"
+                  ? CheckCircle2
+                  : check.status === "warn"
+                    ? AlertTriangle
+                    : XCircle;
+              const iconColor =
+                check.status === "pass"
+                  ? "text-emerald-500"
+                  : check.status === "warn"
+                    ? "text-amber-500"
+                    : "text-rose-500";
+              const targetHref = check.fixToolHref.startsWith("/studio/")
+                ? check.fixToolHref
+                : check.category === "schema" || check.category === "technical"
+                  ? "/studio/technical"
+                  : "/studio/on-page";
+
+              return (
+                <div
+                  key={check.id}
+                  className="flex flex-col justify-between rounded-xl border border-slate-200/90 p-4 dark:border-slate-800"
+                >
+                  <div>
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="flex items-center gap-2 text-xs font-bold text-slate-900 dark:text-white">
+                        <Icon size={15} className={`shrink-0 ${iconColor}`} />
+                        {check.label}
+                      </span>
+                      <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                        {check.value}
+                      </span>
+                    </div>
+                    <p className="mt-2 text-xs leading-relaxed text-slate-600 dark:text-slate-400">
+                      {check.recommendation}
+                    </p>
+                  </div>
+                  <div className="mt-3 pt-1">
+                    <Link
+                      href={targetHref}
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-[#5271FF] hover:underline dark:text-[#9aabff]"
+                    >
+                      <span>{check.fixToolLabel}</span>
+                      <ArrowRight size={12} />
+                    </Link>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       )}
 
-      {/* Discovered Sitemap Pages Table */}
-      <div className="rounded-3xl border border-slate-800 bg-[#0F172A] p-6">
-        <div className="flex flex-wrap items-center justify-between gap-2">
+      {/* Discovered XML Sitemap Inventory */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-[#0D1526]">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-base font-extrabold text-white">
-              Imported Sitemap &amp; Internal Link Pool ({activeSite.sitemapUrls.length})
+            <h2 className="text-base font-bold text-slate-900 dark:text-white">
+              Synced Sitemap Pages ({activeSite.sitemapUrls.length})
             </h2>
-            <p className="text-xs text-slate-400">
-              Automatically fed as real internal link candidates when you draft
-              in <code>/studio/writer</code>.
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Used automatically by the Content Writer for verified internal
+              linking and by On-Page SEO for 1-click page audits.
             </p>
           </div>
-          <Link
-            href="/tools/content-decay-refresh-analyzer"
-            className="text-xs font-bold text-[#9aabff] hover:underline"
-          >
-            Open Content Decay Planner →
-          </Link>
+          <div className="relative w-full sm:w-64">
+            <Search
+              size={14}
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+            />
+            <input
+              type="search"
+              value={sitemapFilter}
+              onChange={(e) => setSitemapFilter(e.target.value)}
+              placeholder="Filter sitemap URLs..."
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 py-1.5 pl-8 pr-3 text-xs text-slate-900 focus:border-[#5271FF] focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+            />
+          </div>
         </div>
 
-        <div className="mt-4 divide-y divide-slate-800/80">
-          {activeSite.sitemapUrls.slice(0, 10).map((page) => (
-            <div
-              key={page.url}
-              className="flex flex-wrap items-center justify-between gap-3 py-3 text-xs"
-            >
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-semibold text-slate-200">
-                  {page.title}
-                </p>
-                <p className="truncate text-[11px] text-slate-400">{page.url}</p>
-              </div>
-              <div className="flex items-center gap-2">
+        {filteredSitemap.length === 0 ? (
+          <p className="mt-4 text-xs text-slate-500 dark:text-slate-400">
+            No matching sitemap URLs found.
+          </p>
+        ) : (
+          <div className="mt-4 max-h-80 overflow-y-auto divide-y divide-slate-100 rounded-xl border border-slate-200/80 dark:divide-slate-800/80 dark:border-slate-800">
+            {filteredSitemap.map((entry) => (
+              <div
+                key={entry.url}
+                className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 text-xs hover:bg-slate-50/80 dark:hover:bg-slate-900/50"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-semibold capitalize text-slate-800 dark:text-slate-200">
+                    {entry.title}
+                  </p>
+                  <p className="truncate text-[11px] text-slate-500 dark:text-slate-400">
+                    {entry.url}
+                  </p>
+                </div>
                 <button
                   type="button"
-                  onClick={() => {
-                    setSelectedUrl(page.url);
-                    void handleRunLiveAudit(page.url);
-                  }}
-                  className="rounded-lg border border-slate-700 bg-slate-800/80 px-2.5 py-1.5 font-semibold text-slate-200 hover:border-[#5271FF]"
+                  onClick={() =>
+                    router.push(
+                      `/studio/on-page?url=${encodeURIComponent(entry.url)}`,
+                    )
+                  }
+                  className="shrink-0 rounded-lg border border-slate-200 px-2.5 py-1 text-[11px] font-semibold text-slate-700 transition hover:border-[#5271FF] hover:text-[#5271FF] dark:border-slate-700 dark:text-slate-300 dark:hover:text-[#9aabff]"
                 >
-                  Audit URL
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void handleWriteAboutPage(page.title, page.url)}
-                  className="inline-flex items-center gap-1 rounded-lg bg-[#5271FF]/20 px-2.5 py-1.5 font-bold text-[#b4c2ff] hover:bg-[#5271FF]/30"
-                >
-                  <FilePenLine size={12} />
-                  <span>Refresh in Writer</span>
+                  Audit Page
                 </button>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,18 +1,24 @@
 import { NextResponse } from "next/server";
 import {
   PLAN_ENTITLEMENTS,
+  UNLIMITED_TESTING_ENTITLEMENTS,
   enforceStudioQuota,
   normalizePlanTier,
 } from "@/lib/studio/quotas.server";
+import { isStudioUnlimitedTesting } from "@/lib/studio/studio-llm-gateway.server";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const tier = normalizePlanTier(url.searchParams.get("tier"));
+  const unlimitedTesting = isStudioUnlimitedTesting();
   return NextResponse.json({
     tier,
-    entitlements: PLAN_ENTITLEMENTS[tier],
+    unlimitedTesting,
+    entitlements: unlimitedTesting
+      ? UNLIMITED_TESTING_ENTITLEMENTS
+      : PLAN_ENTITLEMENTS[tier],
   });
 }
 

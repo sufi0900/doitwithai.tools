@@ -6,10 +6,41 @@ import { blankProject, patchWorkspace } from "@/features/writer-workspace/model"
 import { WRITER_ACTIVE_PROJECT_STORAGE_KEY } from "@/lib/shared/writer-batch-manifest";
 import type { ConnectedStudioSite, SavedKeywordItem } from "./types";
 
+function pickRelevantInternalLinks(
+  keyword: string,
+  site: ConnectedStudioSite | null,
+  explicitTargets?: Array<{ url: string; title: string }>,
+): Array<{ url: string; title: string }> {
+  if (explicitTargets && explicitTargets.length > 0) {
+    return explicitTargets.slice(0, 8);
+  }
+  const all = site?.sitemapUrls || [];
+  if (all.length === 0) return [];
+  const terms = keyword
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((t) => t.length > 3);
+
+  return [...all]
+    .map((entry) => {
+      const hay = `${entry.title} ${entry.url}`.toLowerCase();
+      let score = 0;
+      for (const term of terms) {
+        if (hay.includes(term)) score += 2;
+      }
+      return { entry, score };
+    })
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 8)
+    .map((x) => x.entry);
+}
+
 export async function seedKeywordIntoWriterStudio(params: {
   keyword: string;
   suggestedTitle?: string;
   suggestedSlug?: string;
+  articleAngle?: string;
+  internalLinkTargets?: Array<{ url: string; title: string }>;
   customBrief?: string;
   site?: ConnectedStudioSite | null;
 }): Promise<string> {
@@ -22,7 +53,13 @@ export async function seedKeywordIntoWriterStudio(params: {
     params.suggestedSlug?.trim() || normalizeSeoSlug(title, cleanKw);
   const site = params.site || null;
 
-  const internalLinks = (site?.sitemapUrls || []).slice(0, 8).map((u, idx) => ({
+  const matchedSitemapPages = pickRelevantInternalLinks(
+    cleanKw,
+    site,
+    params.internalLinkTargets,
+  );
+
+  const internalLinks = matchedSitemapPages.map((u, idx) => ({
     id: `studio-ilink-${idx + 1}`,
     anchorText: u.title || cleanKw,
     targetTitle: u.title || site?.name || "Related Page",
@@ -31,11 +68,18 @@ export async function seedKeywordIntoWriterStudio(params: {
   }));
 
   const briefLines = [
-    `Primary Keyword: ${cleanKw}`,
-    `Working H1 Title: ${title}`,
-    ...(site ? [`Target Website: ${site.url} (${site.niche})`] : []),
-    ...(site?.audience ? [`Target Audience: ${site.audience}`] : []),
-    ...(params.customBrief ? [`Editorial Notes:\n${params.customBrief}`] : []),
+    `Write a comprehensive, helpful, search-optimized article on "${title}".`,
+    `Primary Focus Keyword: ${cleanKw}`,
+    ...(site
+      ? [
+          `Target Website: ${site.url} (${site.coreOfferSummary || site.niche})`,
+        ]
+      : []),
+    ...(site?.audience ? [`Target Reader / ICP: ${site.audience}`] : []),
+    ...(params.articleAngle
+      ? [`Strategic Angle & Value Add: ${params.articleAngle}`]
+      : []),
+    ...(params.customBrief ? [`Additional Instructions:\n${params.customBrief}`] : []),
   ];
 
   const configured = patchWorkspace(
@@ -68,11 +112,11 @@ export async function seedKeywordIntoWriterStudio(params: {
         name: site?.name || "DoItWithAI Studio",
         color: site?.brandColorHex || "#5271FF",
       },
-      references: (site?.sitemapUrls || []).slice(0, 5).map((u, idx) => ({
+      references: matchedSitemapPages.slice(0, 5).map((u, idx) => ({
         id: `ref-site-${idx + 1}`,
         url: u.url,
         title: u.title || site?.name || "Connected Site Page",
-        text: `Internal page on ${site?.name || "connected site"}: ${u.title}`,
+        text: `Verified internal URL on ${site?.name || "connected site"}: ${u.title} (${u.url})`,
         importedAt: new Date().toISOString(),
       })),
     },
@@ -85,6 +129,7 @@ export async function seedKeywordIntoWriterStudio(params: {
         WRITER_ACTIVE_PROJECT_STORAGE_KEY,
         saved.projectId,
       );
+      window.localStorage.setItem("prism-writer-active-v1", saved.projectId);
     } catch {
       // Ignore storage mode restrictions
     }
@@ -102,13 +147,21 @@ export function classifyManualKeyword(rawKeyword: string): Pick<
 
   let intent: SavedKeywordItem["intent"] = "informational";
   let clusterName = "Core Pillar & Tutorials";
-  if (/\b(vs|versus|compare|comparison|alternative|alternatives)\b/.test(clean)) {
+  if (
+    /\b(vs|versus|compare|comparison|alternative|alternatives)\b/.test(clean)
+  ) {
     intent = "comparison";
     clusterName = "Vs & ROI Comparisons";
-  } else if (/\b(best|top|review|reviews|software|platform|pricing|cost)\b/.test(clean)) {
+  } else if (
+    /\b(best|top|review|reviews|software|platform|pricing|cost)\b/.test(clean)
+  ) {
     intent = "commercial";
     clusterName = "Commercial Evaluations";
-  } else if (/\b(template|templates|calculator|generator|tool|free|download|checklist)\b/.test(clean)) {
+  } else if (
+    /\b(template|templates|calculator|generator|tool|free|download|checklist)\b/.test(
+      clean,
+    )
+  ) {
     intent = "transactional";
     clusterName = "Templates & Interactive Tools";
   }
@@ -123,8 +176,8 @@ export function classifyManualKeyword(rawKeyword: string): Pick<
     intent === "comparison"
       ? `${titleCased}: Side-by-Side Breakdown (${year})`
       : intent === "commercial"
-        ? `${titleCased} — Honest Buyer's Guide (${year})`
-        : `${titleCased}: Practical Step-by-Step Guide (${year})`;
+        ? `${titleCased} — Practical Buyer's Guide (${year})`
+        : `${titleCased}: Step-by-Step Implementation Guide (${year})`;
 
   const suggestedSlug = normalizeSeoSlug(clean, clean).slice(0, 60);
 

@@ -21,7 +21,7 @@
  */
 
 import { NextResponse } from "next/server";
-import { runMultiModelFailover } from "@/lib/ai/multi-model-router";
+import { runStudioModelFailover as runMultiModelFailover } from "@/lib/studio/studio-llm-gateway.server";
 import {
   DEFAULT_FLAGSHIP_BLOG_PROJECT,
   type BlogFaqPair,

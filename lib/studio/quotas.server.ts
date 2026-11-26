@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { Redis } from "@upstash/redis";
+import { isStudioUnlimitedTesting } from "./studio-llm-gateway.server";
 import type { PlanTierId } from "./types";
 
 export interface PlanEntitlements {
@@ -10,6 +11,15 @@ export interface PlanEntitlements {
   dailySnapshots: number;
   customCnameAllowed: boolean;
 }
+
+export const UNLIMITED_TESTING_ENTITLEMENTS: PlanEntitlements = {
+  tier: "pro_plus",
+  label: "Preview Unlimited Testing",
+  maxSites: 25,
+  monthlyArticles: 9999,
+  dailySnapshots: 9999,
+  customCnameAllowed: true,
+};
 
 export const PLAN_ENTITLEMENTS: Record<PlanTierId, PlanEntitlements> = {
   free: {
@@ -107,10 +117,21 @@ export async function enforceStudioQuota(params: {
   allowed: boolean;
   used: number;
   limit: number;
+  unlimitedTesting?: boolean;
   entitlements: PlanEntitlements;
   upgradeRequired?: PlanTierId;
   message?: string;
 }> {
+  if (isStudioUnlimitedTesting()) {
+    return {
+      allowed: true,
+      used: 0,
+      limit: UNLIMITED_TESTING_ENTITLEMENTS.monthlyArticles,
+      unlimitedTesting: true,
+      entitlements: UNLIMITED_TESTING_ENTITLEMENTS,
+    };
+  }
+
   const entitlements = PLAN_ENTITLEMENTS[params.planTier];
   const subject = resolveRequestSubjectKey(params.request, params.userId);
   const now = new Date();

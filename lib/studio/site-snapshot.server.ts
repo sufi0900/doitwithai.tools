@@ -1,4 +1,9 @@
 import { load } from "cheerio";
+import { z } from "zod";
+import {
+  generateStudioStructured,
+  isStudioAiConfigured,
+} from "./studio-llm-gateway.server";
 import type {
   SavedKeywordItem,
   SiteAuditCheckItem,
@@ -7,9 +12,10 @@ import type {
 
 const DEFAULT_BRAND_HEX = "#5271FF";
 
-const SLOGAN_PREFIX_PATTERNS = [
+const SLOGAN_OR_UI_HEADING_PATTERNS = [
   /^(?:don['’]?t\s+just|put\s+\w+\s+to\s+work|welcome\s+to|empowering|transforming|supercharge\s+your|unlock\s+your|the\s+#?1|build\s+better|grow\s+faster|get\s+started|work\s+smarter|less\s+busywork|meet\s+your)\b/i,
-  /^(?:home|homepage|official\s+site|index|main\s+page|untitled|sign\s+in|login)\b/i,
+  /^(?:learn\s+the|explore\s+our|discover\s+how|read\s+more|see\s+how|why\s+choose|ready\s+to|start\s+your|join\s+\d+|trusted\s+by|frequently\s+asked|what\s+people\s+say)\b/i,
+  /^(?:home|homepage|official\s+site|index|main\s+page|untitled|sign\s+in|login|menu|navigation)\b/i,
 ];
 
 function hexToHsl(hex: string): { h: number; s: number; l: number } | null {
@@ -38,17 +44,15 @@ function hexToHsl(hex: string): { h: number; s: number; l: number } | null {
   return { h: h / 6, s, l };
 }
 
-/**
- * Bug #3 Fix: Eliminates flat gray (#bdbdbd / #cccccc / #e5e7eb) CSS reset colors.
- * Prioritizes <meta name="theme-color"> and --primary/--brand CSS variables, then filters
- * for genuinely saturated brand colors (S >= 0.25, 0.14 <= L <= 0.86).
- */
 export function extractSaturatedBrandColors(
   themeColorMeta: string,
   cssText: string,
 ): string[] {
   const candidates: string[] = [];
-  if (themeColorMeta && /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(themeColorMeta.trim())) {
+  if (
+    themeColorMeta &&
+    /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(themeColorMeta.trim())
+  ) {
     candidates.push(themeColorMeta.trim());
   }
   const varMatches = cssText.matchAll(
@@ -75,7 +79,6 @@ export function extractSaturatedBrandColors(
     if (vibrant.includes(normalized)) continue;
     const hsl = hexToHsl(normalized);
     if (!hsl) continue;
-    // Reject grays (#BDBDBD has s=0), near-white, and near-black UI tokens
     if (hsl.s < 0.25 || hsl.l < 0.14 || hsl.l > 0.86) continue;
     vibrant.push(normalized);
     if (vibrant.length >= 5) break;
@@ -84,12 +87,9 @@ export function extractSaturatedBrandColors(
   return vibrant.length > 0 ? vibrant : [DEFAULT_BRAND_HEX];
 }
 
-/**
- * Bug #1 Fix: Prevents slogan-glued keywords (e.g. "Don't Just Chat With AI step by step checklist").
- * Extracts clean, search-worthy topic nouns from explicit user niche, nav labels, or meta description.
- */
 export function extractCleanTopicSeed(params: {
   explicitNiche?: string;
+  title?: string;
   headings: string[];
   metaDescription: string;
   navLabels: string[];
@@ -101,8 +101,40 @@ export function extractCleanTopicSeed(params: {
       .replace(/[^\w\s&-]/g, " ")
       .replace(/\s+/g, " ")
       .trim()
-      .slice(0, 42)
+      .slice(0, 48)
       .toLowerCase();
+  }
+
+  // Prefer Title tag segment after brand separator (e.g. "Brand — AI SEO & Content Tools")
+  if (params.title) {
+    const titleParts = params.title
+      .split(/[|–—•:]/)
+      .map((s) => s.trim())
+      .filter((s) => s.length >= 5 && s.split(/\s+/).length <= 7);
+    const descriptivePart = titleParts.find(
+      (part) =>
+        part.toLowerCase() !== params.siteName.toLowerCase() &&
+        !SLOGAN_OR_UI_HEADING_PATTERNS.some((re) => re.test(part)),
+    );
+    if (descriptivePart) {
+      return descriptivePart
+        .replace(/[^\w\s&-]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase();
+    }
+  }
+
+  const meaningfulNav = params.navLabels.find(
+    (label) =>
+      label.length >= 4 &&
+      label.length <= 28 &&
+      !/^(?:home|about|contact|pricing|login|sign\s*in|sign\s*up|blog|resources|faq|support|terms|privacy|dashboard|studio)$/i.test(
+        label.trim(),
+      ),
+  );
+  if (meaningfulNav) {
+    return meaningfulNav.toLowerCase();
   }
 
   const nonSloganHeading = params.headings
@@ -110,8 +142,9 @@ export function extractCleanTopicSeed(params: {
     .find(
       (h) =>
         h.length >= 5 &&
-        h.split(/\s+/).length <= 6 &&
-        !SLOGAN_PREFIX_PATTERNS.some((re) => re.test(h)) &&
+        h.split(/\s+/).length >= 2 &&
+        h.split(/\s+/).length <= 5 &&
+        !SLOGAN_OR_UI_HEADING_PATTERNS.some((re) => re.test(h)) &&
         !/[!?.]$/.test(h),
     );
 
@@ -123,33 +156,6 @@ export function extractCleanTopicSeed(params: {
       .toLowerCase();
   }
 
-  const meaningfulNav = params.navLabels.find(
-    (label) =>
-      label.length >= 4 &&
-      label.length <= 28 &&
-      !/^(?:home|about|contact|pricing|login|sign\s*in|sign\s*up|blog|resources|faq|support|terms|privacy)$/i.test(
-        label.trim(),
-      ),
-  );
-  if (meaningfulNav) {
-    return meaningfulNav.toLowerCase();
-  }
-
-  const descWords = params.metaDescription
-    .replace(/[^\w\s-]/g, " ")
-    .split(/\s+/)
-    .filter(
-      (w) =>
-        w.length > 3 &&
-        !/^(?:with|your|from|that|this|have|more|free|best|into|over|fast|easy|help|helps|make|build|plan|find)$/i.test(
-          w,
-        ),
-    )
-    .slice(0, 3);
-  if (descWords.length >= 2) {
-    return descWords.join(" ").toLowerCase();
-  }
-
   return (
     params.siteName
       .replace(/\.(?:com|io|ai|tools|org|net|co|site)$/i, "")
@@ -159,10 +165,6 @@ export function extractCleanTopicSeed(params: {
   );
 }
 
-/**
- * Bug #2 Fix: Safe Stage-2 block compiler that gracefully skips empty blocks and strips
- * unverified URLs instead of throwing a fatal `Invalid block` runtime crash.
- */
 export function sanitizeVerifiedBlocks(
   blocks: Array<{ text?: unknown; url?: unknown }>,
   allowedUrls: string[] = [],
@@ -186,7 +188,7 @@ export function sanitizeVerifiedBlocks(
   return validParagraphs.join("\n\n");
 }
 
-function slugifyTopic(input: string): string {
+export function slugifyTopic(input: string): string {
   return input
     .toLowerCase()
     .replace(/[^a-z0-9\s-]/g, "")
@@ -196,101 +198,455 @@ function slugifyTopic(input: string): string {
     .slice(0, 60);
 }
 
+/**
+ * Matches 2-3 relevant internal sitemap URLs for a given keyword/topic.
+ */
+export function matchInternalLinksFromSitemap(
+  keyword: string,
+  sitemapUrls: Array<{ url: string; title: string }>,
+  limit = 3,
+): Array<{ url: string; title: string }> {
+  if (!sitemapUrls.length) return [];
+  const terms = keyword
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((w) => w.length > 3);
+
+  const scored = sitemapUrls
+    .map((entry) => {
+      const hay = `${entry.title} ${entry.url}`.toLowerCase();
+      let score = 0;
+      for (const term of terms) {
+        if (hay.includes(term)) score += 2;
+      }
+      if (/\/(?:blog|ai-seo|guides|tools|prompts)\//i.test(entry.url)) {
+        score += 1;
+      }
+      return { entry, score };
+    })
+    .sort((a, b) => b.score - a.score);
+
+  return scored.slice(0, limit).map((s) => s.entry);
+}
+
+/**
+ * Checks whether a candidate keyword/slug overlaps an already-published sitemap URL.
+ */
+export function detectSitemapCannibalization(
+  keyword: string,
+  suggestedSlug: string,
+  sitemapUrls: Array<{ url: string; title: string }>,
+): {
+  status: "clear" | "overlap-review" | "optimize-existing";
+  overlapUrl?: string;
+} {
+  const cleanSlug = slugifyTopic(suggestedSlug || keyword);
+  const kwTokens = keyword
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((w) => w.length > 3);
+
+  for (const page of sitemapUrls) {
+    try {
+      const pathSlug =
+        new URL(page.url).pathname.split("/").filter(Boolean).pop() || "";
+      if (!pathSlug) continue;
+      if (pathSlug.toLowerCase() === cleanSlug) {
+        return { status: "optimize-existing", overlapUrl: page.url };
+      }
+      if (kwTokens.length >= 3) {
+        const matched = kwTokens.filter((t) =>
+          pathSlug.toLowerCase().includes(t),
+        );
+        if (matched.length === kwTokens.length) {
+          return { status: "overlap-review", overlapUrl: page.url };
+        }
+      }
+    } catch {
+      // ignore invalid URL
+    }
+  }
+  return { status: "clear" };
+}
+
 export function buildCleanStarterKeywords(params: {
   siteId: string;
   topicSeed: string;
   existingSlugs?: string[];
+  sitemapUrls?: Array<{ url: string; title: string }>;
 }): SavedKeywordItem[] {
-  // Bug #5 Fix: Always inject dynamic UTC year (never hardcoded 2025)
   const currentYear = new Date().getUTCFullYear();
-  const seed = params.topicSeed.trim() || "seo workflow";
+  const seed = params.topicSeed.trim() || "seo content strategy";
+  const titleSeed = seed.replace(/\b\w/g, (c) => c.toUpperCase());
   const nowIso = new Date().toISOString();
   const existingSet = new Set(
     (params.existingSlugs || []).map((s) => s.toLowerCase()),
   );
+  const sitemapUrls = params.sitemapUrls || [];
 
   const templates: Array<{
     keyword: string;
     clusterName: string;
     intent: SavedKeywordItem["intent"];
+    funnelStage: NonNullable<SavedKeywordItem["funnelStage"]>;
     kdEstimate: number;
     suggestedTitle: string;
+    articleAngle: string;
   }> = [
     {
-      keyword: `how to start ${seed} step by step`,
-      clusterName: "Core Pillar & Tutorials",
+      keyword: `${seed} complete guide`,
+      clusterName: "Core Pillar Guides",
       intent: "informational",
-      kdEstimate: 14,
-      suggestedTitle: `How to Master ${seed.replace(/\b\w/g, (c) => c.toUpperCase())}: Step-by-Step Guide (${currentYear})`,
+      funnelStage: "tofu",
+      kdEstimate: 18,
+      suggestedTitle: `${titleSeed}: The Practical Implementation Guide (${currentYear})`,
+      articleAngle:
+        "Comprehensive pillar guide with workflow architecture, benchmarks, and decision checklists.",
     },
     {
-      keyword: `best ${seed} tools compared`,
+      keyword: `best ${seed} tools`,
       clusterName: "Commercial Comparisons",
       intent: "commercial",
-      kdEstimate: 22,
-      suggestedTitle: `7 Best ${seed.replace(/\b\w/g, (c) => c.toUpperCase())} Tools Compared (${currentYear} Review)`,
+      funnelStage: "mofu",
+      kdEstimate: 24,
+      suggestedTitle: `Best ${titleSeed} Tools & Platforms Compared (${currentYear})`,
+      articleAngle:
+        "Side-by-side evaluation matrix covering pricing, strengths, limitations, and ideal team size.",
     },
     {
       keyword: `${seed} audit checklist`,
-      clusterName: "Actionable Checklists",
+      clusterName: "Tactical Playbooks",
       intent: "informational",
-      kdEstimate: 12,
-      suggestedTitle: `The Complete ${seed.replace(/\b\w/g, (c) => c.toUpperCase())} Audit Checklist (${currentYear})`,
+      funnelStage: "mofu",
+      kdEstimate: 14,
+      suggestedTitle: `15-Point ${titleSeed} Audit Checklist for Faster Results`,
+      articleAngle:
+        "Step-by-step diagnostic checklist practitioners can run in under 30 minutes.",
     },
     {
       keyword: `${seed} mistakes to avoid`,
-      clusterName: "Troubleshooting & Fixes",
+      clusterName: "Troubleshooting & QA",
       intent: "informational",
-      kdEstimate: 11,
-      suggestedTitle: `9 Common ${seed.replace(/\b\w/g, (c) => c.toUpperCase())} Mistakes (And How to Fix Them)`,
+      funnelStage: "tofu",
+      kdEstimate: 12,
+      suggestedTitle: `9 Costly ${titleSeed} Mistakes (And How to Fix Each One)`,
+      articleAngle:
+        "Real failure modes, root causes, and concrete before-and-after fixes.",
     },
     {
-      keyword: `${seed} vs manual workflow`,
-      clusterName: "Vs & ROI Matrix",
+      keyword: `how to automate ${seed}`,
+      clusterName: "Workflows & Scaling",
+      intent: "commercial",
+      funnelStage: "mofu",
+      kdEstimate: 19,
+      suggestedTitle: `How to Streamline ${titleSeed} Without Losing Quality`,
+      articleAngle:
+        "Balances AI speed with human editorial QA and measurable KPIs.",
+    },
+    {
+      keyword: `${seed} vs traditional methods`,
+      clusterName: "Comparisons & ROI",
       intent: "comparison",
+      funnelStage: "bofu",
       kdEstimate: 16,
-      suggestedTitle: `${seed.replace(/\b\w/g, (c) => c.toUpperCase())} vs. Manual Workflows: Cost & Speed Breakdown`,
+      suggestedTitle: `Modern ${titleSeed} vs. Legacy Workflows: ROI & Time Breakdown`,
+      articleAngle:
+        "Cost, turnaround time, and output quality comparison for decision-makers.",
     },
     {
-      keyword: `free ${seed} templates and examples`,
-      clusterName: "Templates & Lead Magnets",
+      keyword: `${seed} templates and examples`,
+      clusterName: "Templates & Frameworks",
       intent: "transactional",
+      funnelStage: "bofu",
       kdEstimate: 15,
-      suggestedTitle: `Free ${seed.replace(/\b\w/g, (c) => c.toUpperCase())} Templates & Real Examples (${currentYear})`,
+      suggestedTitle: `Ready-to-Use ${titleSeed} Templates & Real-World Examples (${currentYear})`,
+      articleAngle:
+        "Copy-paste frameworks and annotated real examples readers can apply immediately.",
     },
     {
       keyword: `how to measure ${seed} roi`,
-      clusterName: "Analytics & Benchmarks",
+      clusterName: "Analytics & Attribution",
       intent: "commercial",
-      kdEstimate: 18,
-      suggestedTitle: `How to Measure ${seed.replace(/\b\w/g, (c) => c.toUpperCase())} ROI: Key Metrics & Benchmarks`,
-    },
-    {
-      keyword: `${seed} strategy for beginners`,
-      clusterName: "Core Pillar & Tutorials",
-      intent: "informational",
-      kdEstimate: 13,
-      suggestedTitle: `${seed.replace(/\b\w/g, (c) => c.toUpperCase())} Strategy for Beginners: Quick-Start Playbook`,
+      funnelStage: "bofu",
+      kdEstimate: 17,
+      suggestedTitle: `How to Measure ${titleSeed} ROI: Metrics That Actually Matter`,
+      articleAngle:
+        "KPI scorecard connecting organic visibility, conversions, and pipeline impact.",
     },
   ];
 
   return templates
     .filter((item) => !existingSet.has(slugifyTopic(item.keyword)))
-    .map((item, idx) => ({
-      id: `kw-${Date.now()}-${idx + 1}`,
-      siteId: params.siteId,
-      keyword: item.keyword,
-      clusterName: item.clusterName,
-      intent: item.intent,
-      kdEstimate: item.kdEstimate,
-      suggestedTitle: item.suggestedTitle,
-      suggestedSlug: slugifyTopic(item.keyword),
-      status: "backlog",
-      createdAtIso: nowIso,
-    }));
+    .map((item, idx) => {
+      const slug = slugifyTopic(item.keyword);
+      const overlap = detectSitemapCannibalization(
+        item.keyword,
+        slug,
+        sitemapUrls,
+      );
+      return {
+        id: `kw-${Date.now()}-${idx + 1}`,
+        siteId: params.siteId,
+        keyword: item.keyword,
+        clusterName: item.clusterName,
+        intent: item.intent,
+        funnelStage: item.funnelStage,
+        kdEstimate: item.kdEstimate,
+        suggestedTitle: item.suggestedTitle,
+        suggestedSlug: slug,
+        articleAngle: item.articleAngle,
+        internalLinkTargets: matchInternalLinksFromSitemap(
+          item.keyword,
+          sitemapUrls,
+        ),
+        cannibalizationStatus: overlap.status,
+        existingOverlapUrl: overlap.overlapUrl,
+        status: "backlog",
+        createdAtIso: nowIso,
+      };
+    });
 }
 
-function normalizeSiteUrl(rawUrl: string): URL {
+/**
+ * Fetches live Google Suggest / Autocomplete expansions ($0 public endpoint)
+ * to ground LLM keyword synthesis in real user search queries.
+ */
+export async function fetchGoogleAutocompleteSuggestions(
+  seeds: string[],
+): Promise<string[]> {
+  const uniqueSeeds = Array.from(
+    new Set(
+      seeds
+        .map((s) => s.trim())
+        .filter((s) => s.length >= 3 && s.length <= 60),
+    ),
+  ).slice(0, 4);
+
+  if (uniqueSeeds.length === 0) return [];
+
+  const results = await Promise.all(
+    uniqueSeeds.map(async (query) => {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 2400);
+      try {
+        const res = await fetch(
+          `https://suggestqueries.google.com/complete/search?client=firefox&hl=en&q=${encodeURIComponent(
+            query,
+          )}`,
+          {
+            signal: controller.signal,
+            headers: { "User-Agent": "Mozilla/5.0" },
+          },
+        );
+        if (!res.ok) return [];
+        const json = (await res.json()) as unknown;
+        if (Array.isArray(json) && Array.isArray(json[1])) {
+          return (json[1] as unknown[])
+            .filter((item): item is string => typeof item === "string")
+            .slice(0, 8);
+        }
+        return [];
+      } catch {
+        return [];
+      } finally {
+        clearTimeout(timer);
+      }
+    }),
+  );
+
+  return Array.from(new Set(results.flat())).slice(0, 24);
+}
+
+const aiSiteDiscoverySchema = z.object({
+  coreOfferSummary: z.string().min(15).max(320),
+  businessModel: z.string().min(3).max(80),
+  detectedNiche: z.string().min(3).max(80),
+  detectedAudience: z.string().min(5).max(160),
+  contentPillars: z.array(z.string().min(3).max(60)).min(3).max(5),
+  ideas: z
+    .array(
+      z.object({
+        keyword: z.string().min(4).max(90),
+        clusterName: z.string().min(3).max(60),
+        intent: z.enum([
+          "informational",
+          "commercial",
+          "transactional",
+          "comparison",
+        ]),
+        funnelStage: z.enum(["tofu", "mofu", "bofu"]),
+        kdEstimate: z.number().int().min(5).max(75),
+        suggestedTitle: z.string().min(15).max(120),
+        suggestedSlug: z.string().min(4).max(70),
+        articleAngle: z.string().min(15).max(240),
+      }),
+    )
+    .min(10)
+    .max(16),
+});
+
+/**
+ * Synthesizes niche-accurate, non-cannibalizing Keyword & Blog Article Ideas
+ * via the isolated Studio LLM Gateway (`AUTONOMOUS_AUTOMATION_GEMINI_KEY`).
+ */
+export async function synthesizeAiSiteKeywordsAndIdeas(params: {
+  siteId: string;
+  siteUrl: string;
+  siteName: string;
+  title: string;
+  metaDescription: string;
+  h1Text: string;
+  headings: string[];
+  navLabels: string[];
+  bodyExcerpt: string;
+  explicitNiche?: string;
+  explicitAudience?: string;
+  primaryGoal?: string;
+  focusTopic?: string;
+  sitemapUrls: Array<{ url: string; title: string }>;
+}): Promise<{
+  coreOfferSummary?: string;
+  businessModel?: string;
+  detectedNiche?: string;
+  detectedAudience?: string;
+  contentPillars?: string[];
+  keywords: SavedKeywordItem[];
+  usedAi: boolean;
+}> {
+  const currentYear = new Date().getUTCFullYear();
+  const fallbackSeed = extractCleanTopicSeed({
+    explicitNiche: params.focusTopic || params.explicitNiche,
+    title: params.title,
+    headings: params.headings,
+    metaDescription: params.metaDescription,
+    navLabels: params.navLabels,
+    siteName: params.siteName,
+  });
+
+  if (!isStudioAiConfigured()) {
+    return {
+      keywords: buildCleanStarterKeywords({
+        siteId: params.siteId,
+        topicSeed: fallbackSeed,
+        sitemapUrls: params.sitemapUrls,
+      }),
+      usedAi: false,
+    };
+  }
+
+  const autocompleteSeeds = [
+    params.focusTopic || "",
+    params.explicitNiche || "",
+    fallbackSeed,
+    `${fallbackSeed} how to`,
+    `best ${fallbackSeed}`,
+  ].filter(Boolean);
+
+  const autocompleteQueries =
+    await fetchGoogleAutocompleteSuggestions(autocompleteSeeds);
+
+  const existingSampleSlugs = params.sitemapUrls
+    .slice(0, 80)
+    .map((u) => {
+      try {
+        return new URL(u.url).pathname;
+      } catch {
+        return u.url;
+      }
+    });
+
+  try {
+    const { data } = await generateStudioStructured({
+      schema: aiSiteDiscoverySchema,
+      schemaName: "studio_site_keyword_discovery",
+      maxOutputTokens: 3600,
+      timeoutMs: 28_000,
+      temperature: 0.35,
+      systemPrompt: `You are a Principal SEO & Content Strategist. Analyze the connected website's real product/service, audience, navigation, and existing sitemap URLs to generate 12 to 15 high-intent, realistic Google & AI-Search keyword and blog article ideas for ${currentYear}.
+STRICT QUALITY RULES:
+1. NEVER quote UI button text, marketing slogans, or generic page section labels (e.g., never produce phrases like "learn the reasoning behind the work").
+2. Every \`keyword\` MUST be a natural 2 to 6 word lowercase search query real buyers or practitioners actually type into Google or ChatGPT.
+3. Mix search intents strategically across Informational (tutorials, checklists, frameworks), Commercial ("best...", software/service evaluations), Comparison ("X vs Y", alternatives), and Transactional/BOFU (templates, calculators, ROI).
+4. Check \`existingSitemapPaths\` and propose fresh net-new topics that complement—rather than duplicate—already published slugs.
+5. Make \`suggestedTitle\` crisp, human, specific, and <= 65 characters where possible. Return valid JSON only.`,
+      userPrompt: JSON.stringify({
+        siteUrl: params.siteUrl,
+        siteName: params.siteName,
+        explicitNiche: params.explicitNiche || null,
+        explicitAudience: params.explicitAudience || null,
+        focusTopic: params.focusTopic || null,
+        primaryGoal: params.primaryGoal || null,
+        homepageTitle: params.title,
+        metaDescription: params.metaDescription,
+        h1: params.h1Text,
+        topHeadings: params.headings.slice(0, 12),
+        navItems: params.navLabels.slice(0, 15),
+        bodyExcerpt: params.bodyExcerpt.slice(0, 1200),
+        googleAutocompleteSignals: autocompleteQueries,
+        existingSitemapPaths: existingSampleSlugs,
+      }),
+    });
+
+    const nowIso = new Date().toISOString();
+    const seen = new Set<string>();
+    const keywords: SavedKeywordItem[] = [];
+
+    data.ideas.forEach((idea, idx) => {
+      const cleanKw = idea.keyword.replace(/\s+/g, " ").trim().toLowerCase();
+      if (!cleanKw || seen.has(cleanKw)) return;
+      seen.add(cleanKw);
+
+      const cleanSlug = slugifyTopic(idea.suggestedSlug || cleanKw);
+      const overlap = detectSitemapCannibalization(
+        cleanKw,
+        cleanSlug,
+        params.sitemapUrls,
+      );
+
+      keywords.push({
+        id: `kw-${Date.now()}-${idx + 1}`,
+        siteId: params.siteId,
+        keyword: cleanKw,
+        clusterName: idea.clusterName.trim(),
+        intent: idea.intent,
+        funnelStage: idea.funnelStage,
+        kdEstimate: idea.kdEstimate,
+        suggestedTitle: idea.suggestedTitle.trim(),
+        suggestedSlug: cleanSlug,
+        articleAngle: idea.articleAngle.trim(),
+        internalLinkTargets: matchInternalLinksFromSitemap(
+          cleanKw,
+          params.sitemapUrls,
+        ),
+        cannibalizationStatus: overlap.status,
+        existingOverlapUrl: overlap.overlapUrl,
+        status: "backlog",
+        createdAtIso: nowIso,
+      });
+    });
+
+    return {
+      coreOfferSummary: data.coreOfferSummary,
+      businessModel: data.businessModel,
+      detectedNiche: data.detectedNiche,
+      detectedAudience: data.detectedAudience,
+      contentPillars: data.contentPillars,
+      keywords,
+      usedAi: true,
+    };
+  } catch {
+    return {
+      keywords: buildCleanStarterKeywords({
+        siteId: params.siteId,
+        topicSeed: fallbackSeed,
+        sitemapUrls: params.sitemapUrls,
+      }),
+      usedAi: false,
+    };
+  }
+}
+
+export function normalizeSiteUrl(rawUrl: string): URL {
   let cleaned = rawUrl.trim();
   if (!/^https?:\/\//i.test(cleaned)) {
     cleaned = `https://${cleaned}`;
@@ -302,7 +658,7 @@ function normalizeSiteUrl(rawUrl: string): URL {
   return parsed;
 }
 
-async function fetchEdgeSafeText(
+export async function fetchEdgeSafeText(
   url: string,
   timeoutMs = 8000,
 ): Promise<{ status: number; text: string; finalUrl: string }> {
@@ -315,8 +671,9 @@ async function fetchEdgeSafeText(
       signal: controller.signal,
       headers: {
         "User-Agent":
-          "Mozilla/5.0 (compatible; DoItWithAIStudioAudit/1.0; +https://doitwithai.tools)",
-        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          "Mozilla/5.0 (compatible; DoItWithAIStudioAudit/2.0; +https://doitwithai.tools)",
+        Accept:
+          "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
       },
     });
     const text = (await res.text()).slice(0, 512_000);
@@ -338,6 +695,12 @@ export async function runCombinedSiteSnapshot(input: {
   normalizedUrl: string;
   brandColorHex: string;
   topicSeed: string;
+  coreOfferSummary?: string;
+  businessModel?: string;
+  detectedAudience?: string;
+  detectedContentPillars?: string[];
+  robotsTxtPreview?: string;
+  hasLlmsTxt?: boolean;
   sitemapUrls: Array<{ url: string; title: string }>;
   snapshot: SiteAuditSnapshot;
   seedKeywords: SavedKeywordItem[];
@@ -345,18 +708,26 @@ export async function runCombinedSiteSnapshot(input: {
   const target = normalizeSiteUrl(input.url);
   const nowIso = new Date().toISOString();
 
-  const [homeRes, robotsRes] = await Promise.all([
+  const [homeRes, robotsRes, llmsRes] = await Promise.all([
     fetchEdgeSafeText(target.href, 9000),
-    fetchEdgeSafeText(`${target.origin}/robots.txt`, 5000),
+    fetchEdgeSafeText(`${target.origin}/robots.txt`, 4500),
+    fetchEdgeSafeText(`${target.origin}/llms.txt`, 3500),
   ]);
 
-  const hasRobotsTxt = robotsRes.status === 200 && robotsRes.text.trim().length > 0;
+  const hasRobotsTxt =
+    robotsRes.status === 200 && robotsRes.text.trim().length > 0;
+  const hasLlmsTxt =
+    llmsRes.status === 200 &&
+    llmsRes.text.trim().length > 20 &&
+    !/<!doctype html/i.test(llmsRes.text.slice(0, 120));
+
   let title = "";
   let metaDescription = "";
   let h1Count = 0;
   let h1Text = "";
   let h2Count = 0;
   let wordCount = 0;
+  let bodyExcerpt = "";
   let internalLinkCount = 0;
   let externalLinkCount = 0;
   let imagesMissingAlt = 0;
@@ -388,8 +759,8 @@ export async function runCombinedSiteSnapshot(input: {
     h1Text = h1Nodes.first().text().replace(/\s+/g, " ").trim();
     h2Count = $("h2").length;
 
-    headings = $("h1, h2, h3")
-      .slice(0, 20)
+    headings = $("h1, h2")
+      .slice(0, 18)
       .map((_, el) => $(el).text().replace(/\s+/g, " ").trim())
       .get()
       .filter(Boolean);
@@ -408,11 +779,17 @@ export async function runCombinedSiteSnapshot(input: {
 
     $("a[href]").each((_, a) => {
       const rawHref = ($(a).attr("href") || "").trim();
-      if (!rawHref || rawHref.startsWith("#") || rawHref.startsWith("javascript:")) return;
+      if (
+        !rawHref ||
+        rawHref.startsWith("#") ||
+        rawHref.startsWith("javascript:")
+      )
+        return;
       try {
         const resolved = new URL(rawHref, target.origin);
         if (resolved.hostname === target.hostname) internalLinkCount += 1;
-        else if (["http:", "https:"].includes(resolved.protocol)) externalLinkCount += 1;
+        else if (["http:", "https:"].includes(resolved.protocol))
+          externalLinkCount += 1;
       } catch {
         // Ignore malformed hrefs
       }
@@ -432,7 +809,9 @@ export async function runCombinedSiteSnapshot(input: {
           const rec = node as Record<string, unknown>;
           if (typeof rec["@type"] === "string") schemaTypes.add(rec["@type"]);
           else if (Array.isArray(rec["@type"])) {
-            rec["@type"].forEach((t) => typeof t === "string" && schemaTypes.add(t));
+            rec["@type"].forEach(
+              (t) => typeof t === "string" && schemaTypes.add(t),
+            );
           }
           if (Array.isArray(rec["@graph"])) rec["@graph"].forEach(collectTypes);
         };
@@ -442,20 +821,18 @@ export async function runCombinedSiteSnapshot(input: {
       }
     });
 
-    const themeColorMeta = $('meta[name="theme-color"]').attr("content")?.trim() || "";
+    const themeColorMeta =
+      $('meta[name="theme-color"]').attr("content")?.trim() || "";
     const cssText = $("style").text().slice(0, 100_000);
     brandColors = extractSaturatedBrandColors(themeColorMeta, cssText);
 
-    $("script, style, noscript").remove();
-    wordCount = $("body")
-      .text()
-      .replace(/\s+/g, " ")
-      .trim()
-      .split(" ")
-      .filter(Boolean).length;
+    $("script, style, noscript, svg").remove();
+    const cleanBodyText = $("body").text().replace(/\s+/g, " ").trim();
+    bodyExcerpt = cleanBodyText.slice(0, 1500);
+    wordCount = cleanBodyText.split(" ").filter(Boolean).length;
   }
 
-  // Bug #5 Fix: Crawl up to 12 sitemap files and up to 500 discovered URLs (lifted 3-page limit)
+  // Crawl up to 10 sitemap files and up to 500 discovered URLs
   const sitemapQueue: string[] = [];
   if (hasRobotsTxt) {
     for (const match of robotsRes.text.matchAll(/^sitemap:\s*(\S+)/gim)) {
@@ -477,19 +854,19 @@ export async function runCombinedSiteSnapshot(input: {
   const visitedSitemaps = new Set<string>();
   while (
     sitemapQueue.length > 0 &&
-    visitedSitemaps.size < 12 &&
+    visitedSitemaps.size < 10 &&
     discoveredPages.size < 500
   ) {
     const nextSitemapUrl = sitemapQueue.shift()!;
     if (visitedSitemaps.has(nextSitemapUrl)) continue;
     visitedSitemaps.add(nextSitemapUrl);
 
-    const xmlRes = await fetchEdgeSafeText(nextSitemapUrl, 6000);
+    const xmlRes = await fetchEdgeSafeText(nextSitemapUrl, 5000);
     if (xmlRes.status !== 200 || !xmlRes.text) continue;
     const xml = load(xmlRes.text, { xmlMode: true });
     xml("sitemap > loc").each((_, el) => {
       const loc = xml(el).text().trim();
-      if (loc && !visitedSitemaps.has(loc) && sitemapQueue.length < 20) {
+      if (loc && !visitedSitemaps.has(loc) && sitemapQueue.length < 16) {
         sitemapQueue.push(loc);
       }
     });
@@ -512,7 +889,9 @@ export async function runCombinedSiteSnapshot(input: {
     });
   }
 
+  const sitemapUrls = Array.from(discoveredPages.values()).slice(0, 400);
   const titlePixelEstimate = Math.round(title.length * 9.4);
+
   const checks: SiteAuditCheckItem[] = [
     {
       id: "meta-title",
@@ -533,8 +912,8 @@ export async function runCombinedSiteSnapshot(input: {
           : titlePixelEstimate > 580
             ? "Shorten your title below ~60 chars (580px) to prevent Google SERP truncation."
             : "Pixel width is clean and SERP-safe.",
-      fixToolHref: "/tools/meta-title-generator",
-      fixToolLabel: "Fix in Meta Title Generator",
+      fixToolHref: "/studio/on-page",
+      fixToolLabel: "Open On-Page SEO Workbench",
     },
     {
       id: "meta-description",
@@ -553,21 +932,24 @@ export async function runCombinedSiteSnapshot(input: {
         metaDescription.length === 0
           ? "Write a clear 140–158 character meta description summarizing page value."
           : "Keep meta descriptions between 120–160 characters for clean snippet display.",
-      fixToolHref: "/tools/meta-description-generator",
-      fixToolLabel: "Fix in Meta Description Tool",
+      fixToolHref: "/studio/on-page",
+      fixToolLabel: "Optimize in On-Page SEO",
     },
     {
       id: "h1-heading",
       category: "on-page",
       label: "Single Primary H1 Heading",
       status: h1Count === 1 ? "pass" : h1Count > 1 ? "warn" : "fail",
-      value: h1Count === 1 ? `1 H1 ("${h1Text.slice(0, 52)}")` : `${h1Count} H1 tags found`,
+      value:
+        h1Count === 1
+          ? `1 H1 ("${h1Text.slice(0, 52)}")`
+          : `${h1Count} H1 tags found`,
       recommendation:
         h1Count === 1
           ? "Exactly one clear H1 heading detected."
           : "Ensure each page uses one primary H1 aligned with search intent.",
-      fixToolHref: "/tools/h1-heading-generator",
-      fixToolLabel: "Open H1 Heading Generator",
+      fixToolHref: "/studio/on-page",
+      fixToolLabel: "Inspect Headings",
     },
     {
       id: "json-ld-schema",
@@ -582,8 +964,8 @@ export async function runCombinedSiteSnapshot(input: {
         schemaTypes.size > 0
           ? "JSON-LD structured data is active on the page."
           : "Add Organization, WebSite, or Article JSON-LD schema for richer search & AI citations.",
-      fixToolHref: "/tools/schema-markup-generator",
-      fixToolLabel: "Build JSON-LD Schema",
+      fixToolHref: "/studio/technical",
+      fixToolLabel: "Open Technical SEO Schema",
     },
     {
       id: "canonical-sitemap",
@@ -600,8 +982,8 @@ export async function runCombinedSiteSnapshot(input: {
         hasCanonical && discoveredPages.size > 1
           ? "Canonical tag and XML sitemap discovery are healthy."
           : "Verify self-referencing canonical tags and expose /sitemap.xml in robots.txt.",
-      fixToolHref: "/tools/on-page-ai-seo-analyzer",
-      fixToolLabel: "Run Deep On-Page Analyzer",
+      fixToolHref: "/studio/technical",
+      fixToolLabel: "Open Technical SEO",
     },
     {
       id: "images-links",
@@ -618,13 +1000,14 @@ export async function runCombinedSiteSnapshot(input: {
         imagesMissingAlt > 0
           ? `Add descriptive alt text to ${imagesMissingAlt} image(s) for accessibility & image SEO.`
           : "Internal linking and image alt attributes look clean.",
-      fixToolHref: "/tools/image-alt-text-generator",
-      fixToolLabel: "Generate Image Alt Text",
+      fixToolHref: "/studio/on-page",
+      fixToolLabel: "Audit Images & Links",
     },
   ];
 
   const passPoints = checks.reduce(
-    (sum, c) => sum + (c.status === "pass" ? 100 : c.status === "warn" ? 60 : 20),
+    (sum, c) =>
+      sum + (c.status === "pass" ? 100 : c.status === "warn" ? 60 : 20),
     0,
   );
   const overallScore = Math.round(passPoints / checks.length);
@@ -650,40 +1033,53 @@ export async function runCombinedSiteSnapshot(input: {
     hasCanonical,
     canonicalUrl,
     hasRobotsTxt,
+    hasLlmsTxt,
     sitemapPageCount: discoveredPages.size,
     brandColors,
     checks,
   };
 
-  const topicSeed = extractCleanTopicSeed({
-    explicitNiche: input.niche,
-    headings,
-    metaDescription,
-    navLabels,
-    siteName,
-  });
-
-  const existingSlugs = Array.from(discoveredPages.values()).map((p) => {
-    try {
-      return new URL(p.url).pathname.split("/").filter(Boolean).pop() || "";
-    } catch {
-      return "";
-    }
-  });
-
-  const seedKeywords = buildCleanStarterKeywords({
+  // Real-Time AI Niche, Offer & Non-Cannibalizing Keyword/Blog Idea Synthesis
+  const aiSynthesis = await synthesizeAiSiteKeywordsAndIdeas({
     siteId: "pending",
-    topicSeed,
-    existingSlugs,
+    siteUrl: target.href,
+    siteName,
+    title,
+    metaDescription,
+    h1Text,
+    headings,
+    navLabels,
+    bodyExcerpt,
+    explicitNiche: input.niche,
+    explicitAudience: input.audience,
+    primaryGoal: input.primaryGoal,
+    sitemapUrls,
   });
+
+  const topicSeed =
+    aiSynthesis.detectedNiche ||
+    extractCleanTopicSeed({
+      explicitNiche: input.niche,
+      title,
+      headings,
+      metaDescription,
+      navLabels,
+      siteName,
+    });
 
   return {
     siteName,
     normalizedUrl: target.href,
     brandColorHex: brandColors[0] || DEFAULT_BRAND_HEX,
     topicSeed,
-    sitemapUrls: Array.from(discoveredPages.values()).slice(0, 250),
+    coreOfferSummary: aiSynthesis.coreOfferSummary,
+    businessModel: aiSynthesis.businessModel,
+    detectedAudience: aiSynthesis.detectedAudience,
+    detectedContentPillars: aiSynthesis.contentPillars,
+    robotsTxtPreview: hasRobotsTxt ? robotsRes.text.slice(0, 2000) : undefined,
+    hasLlmsTxt,
+    sitemapUrls,
     snapshot,
-    seedKeywords,
+    seedKeywords: aiSynthesis.keywords,
   };
 }
