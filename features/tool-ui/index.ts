@@ -14,6 +14,16 @@ export {
 } from "./ToolHero";
 
 export {
+  default as ToolLandingHero,
+  type ToolLandingHeroProps,
+} from "./ToolLandingHero";
+
+export {
+  default as ToolUtilityMenu,
+  type ToolUtilityMenuProps,
+} from "./ToolUtilityMenu";
+
+export {
   default as ToolRunOverlay,
   ToolRunOverlay as ToolRunOverlayComponent,
   focusToolSection,
