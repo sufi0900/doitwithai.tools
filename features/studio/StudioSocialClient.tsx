@@ -5,19 +5,19 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import JSZip from "jszip";
 import {
+  ArrowLeft,
+  ArrowRight,
   Check,
-  CheckCircle2,
   ChevronDown,
   Copy,
   Download,
   FileText,
-  Film,
   Globe,
   Layers,
   Loader2,
   Palette,
   Plus,
-  Share2,
+  Search,
   Sparkles,
   Trash2,
 } from "lucide-react";
@@ -26,7 +26,10 @@ import { saveBlogProject } from "@/lib/blog-writer/project-storage-db";
 import { buildInfographicScene } from "@/lib/blog-infographic-studio/canvas-renderer";
 import { BLOG_INFOGRAPHIC_PALETTES } from "@/lib/blog-infographic-studio/palettes";
 import { BLOG_INFOGRAPHIC_25_TEMPLATES } from "@/lib/blog-infographic-studio/templates";
-import { buildChannelCarouselSlides, getSocialChannelSpec } from "@/features/writer-workspace/adapters/socialVisualRegistry";
+import {
+  buildChannelCarouselSlides,
+  getSocialChannelSpec,
+} from "@/features/writer-workspace/adapters/socialVisualRegistry";
 import {
   carousel,
   saveBlob,
@@ -60,6 +63,7 @@ import {
   subscribeStudioState,
 } from "@/lib/studio/store";
 import type { StudioWorkspaceState } from "@/lib/studio/types";
+import { getSocialBrandMeta, SocialBrandIcon } from "./SocialBrandIcon";
 
 const POST_STATUS_STYLES: Record<ChannelAssetStatus, string> = {
   ready:
@@ -91,17 +95,31 @@ function renderInfographicDataUri(config: BlogInfographicConfig): {
   }
 }
 
+function getSourceStatusLabel(source: StudioSocialCampaignSource): string {
+  if (source.kind === "standalone") return "Standalone Post";
+  return (
+    ARTICLE_STATUS_LABELS[
+      source.articleStatus as Exclude<
+        StudioSocialCampaignSource["articleStatus"],
+        "standalone"
+      >
+    ] || "Draft"
+  );
+}
+
 export default function StudioSocialClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const channelParam = searchParams.get("channel");
   const articleIdParam = searchParams.get("articleId");
+  const modeParam = searchParams.get("mode");
 
   const channelMeta = useMemo(
     () => getStudioSocialChannelMeta(channelParam),
     [channelParam],
   );
   const channel = channelMeta.id;
+  const brandMeta = useMemo(() => getSocialBrandMeta(channel), [channel]);
   const channelSpec = useMemo(() => getSocialChannelSpec(channel), [channel]);
 
   const [studio, setStudio] = useState<StudioWorkspaceState>(
@@ -109,12 +127,21 @@ export default function StudioSocialClient() {
   );
   const [sources, setSources] = useState<StudioSocialCampaignSource[]>([]);
   const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<"listing" | "workbench">(() =>
+    modeParam === "workbench" ? "workbench" : "listing",
+  );
   const [selectedSourceId, setSelectedSourceId] = useState<string>("");
   const [statusMap, setStatusMap] = useState<Record<string, ChannelAssetStatus>>(
     {},
   );
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const switcherRef = useRef<HTMLDivElement>(null);
+
+  // Listing filter state
+  const [listingSearch, setListingSearch] = useState("");
+  const [listingStatusFilter, setListingStatusFilter] = useState<
+    "all" | ChannelAssetStatus
+  >("all");
 
   // Standalone Keyword/Prompt Creator state
   const [creatorOpen, setCreatorOpen] = useState(false);
@@ -141,6 +168,31 @@ export default function StudioSocialClient() {
     setStudio(loadStudioState());
     setStatusMap(getChannelStatusMap());
     return subscribeStudioState(() => setStudio(loadStudioState()));
+  }, []);
+
+  // Sync URL mode parameter & reset to clean listing when sidebar distribution link is clicked
+  useEffect(() => {
+    if (modeParam === "workbench") {
+      setViewMode("workbench");
+    } else {
+      setViewMode("listing");
+    }
+  }, [channelParam, modeParam]);
+
+  useEffect(() => {
+    const onReset = (e: Event) => {
+      const target = (e as CustomEvent<string>).detail || "";
+      if (target.startsWith("/studio/social")) {
+        setViewMode("listing");
+        setSwitcherOpen(false);
+      }
+    };
+    window.addEventListener("doitwithai:studio-distribution-reset", onReset);
+    return () =>
+      window.removeEventListener(
+        "doitwithai:studio-distribution-reset",
+        onReset,
+      );
   }, []);
 
   useEffect(() => {
@@ -225,18 +277,23 @@ export default function StudioSocialClient() {
     return drafts.find((d) => d.channel === channel) || null;
   }, [selectedSource, channel]);
 
-  // Sync workbench fields when switching article/channel
   useEffect(() => {
     if (!selectedSource) return;
     const overrides = workspace(selectedSource.project).social[channel];
-    setVisualHeadline(overrides?.headline || selectedDraft?.headline || selectedSource.title);
+    setVisualHeadline(
+      overrides?.headline || selectedDraft?.headline || selectedSource.title,
+    );
     setVisualSubheadline(
       overrides?.body ||
         selectedDraft?.body ||
         selectedSource.project.metaPack?.aeoDirectAnswer50Words ||
         "",
     );
-    setCaptionText(overrides?.caption || selectedDraft?.caption || "");
+    setCaptionText(
+      overrides?.caption ||
+        selectedDraft?.caption ||
+        `${selectedSource.title}${selectedSource.primaryKeyword ? `\n\nKey focus: ${selectedSource.primaryKeyword}` : ""}`,
+    );
   }, [selectedSource?.id, channel, selectedSource, selectedDraft]);
 
   const siteKeywords = useMemo(() => {
@@ -268,7 +325,10 @@ export default function StudioSocialClient() {
   ]);
 
   const activePreview = useMemo(
-    () => (activeConfig ? renderInfographicDataUri(activeConfig) : { svg: "", dataUri: "" }),
+    () =>
+      activeConfig
+        ? renderInfographicDataUri(activeConfig)
+        : { svg: "", dataUri: "" },
     [activeConfig],
   );
 
@@ -307,20 +367,94 @@ export default function StudioSocialClient() {
     activeSite,
   ]);
 
-  const handleSelectChannel = (nextChannel: string) => {
+  const featuredCards = useMemo(() => {
+    const isPortrait = ["Instagram", "LinkedIn", "Pinterest", "Threads"].includes(
+      channel,
+    );
+    return sources.slice(0, 3).map((src, idx) => {
+      const stylePreset =
+        SOCIAL_INFOGRAPHIC_STYLES[idx % SOCIAL_INFOGRAPHIC_STYLES.length]!;
+      const tplId =
+        idx === 0
+          ? channelMeta.defaultTemplateId
+          : isPortrait
+            ? stylePreset.portraitTemplateId
+            : stylePreset.landscapeTemplateId;
+      const palId =
+        idx === 0 ? channelMeta.defaultPaletteId : stylePreset.defaultPaletteId;
+      const cfg = buildSocialInfographicConfigFromProject(src.project, {
+        channel,
+        templateId: tplId,
+        paletteId: palId,
+        brandName: activeSite?.name,
+        brandColor: activeSite?.brandColorHex,
+      });
+      return {
+        source: src,
+        styleLabel: idx === 0 ? channelMeta.shortLabel + " Hero" : stylePreset.label,
+        config: cfg,
+        preview: renderInfographicDataUri(cfg),
+        postStatus:
+          statusMap[channelStatusKey(src.id, channel)] || ("ready" as const),
+      };
+    });
+  }, [sources, channel, channelMeta, activeSite, statusMap]);
+
+  const listingStatusCounts = useMemo(() => {
+    const counts = { all: sources.length, ready: 0, customized: 0, posted: 0 };
+    for (const src of sources) {
+      const st = statusMap[channelStatusKey(src.id, channel)] || "ready";
+      counts[st] += 1;
+    }
+    return counts;
+  }, [sources, statusMap, channel]);
+
+  const filteredListingSources = useMemo(() => {
+    const q = listingSearch.trim().toLowerCase();
+    return sources.filter((src) => {
+      const st = statusMap[channelStatusKey(src.id, channel)] || "ready";
+      if (listingStatusFilter !== "all" && st !== listingStatusFilter) {
+        return false;
+      }
+      if (!q) return true;
+      return (
+        src.title.toLowerCase().includes(q) ||
+        src.primaryKeyword.toLowerCase().includes(q)
+      );
+    });
+  }, [sources, statusMap, channel, listingStatusFilter, listingSearch]);
+
+  const handleSelectChannelListing = (nextChannel: string) => {
+    setViewMode("listing");
+    setSwitcherOpen(false);
+    router.replace(
+      `/studio/social?channel=${encodeURIComponent(nextChannel)}`,
+    );
+  };
+
+  const handleSwitchChannelInWorkbench = (nextChannel: string) => {
     const params = new URLSearchParams();
     params.set("channel", nextChannel);
-    if (selectedSourceId) params.set("articleId", selectedSourceId);
+    if (selectedSource?.id) params.set("articleId", selectedSource.id);
+    params.set("mode", "workbench");
     router.replace(`/studio/social?${params.toString()}`);
   };
 
-  const handleSelectSource = (sourceId: string) => {
+  const handleOpenPostInWorkbench = (sourceId: string) => {
     setSelectedSourceId(sourceId);
     setSwitcherOpen(false);
+    setViewMode("workbench");
     const params = new URLSearchParams();
     params.set("channel", channel);
     params.set("articleId", sourceId);
+    params.set("mode", "workbench");
     router.replace(`/studio/social?${params.toString()}`);
+  };
+
+  const handleBackToListing = () => {
+    setViewMode("listing");
+    setSwitcherOpen(false);
+    router.replace(`/studio/social?channel=${encodeURIComponent(channel)}`);
   };
 
   const handleCreateStandalone = (e: React.FormEvent) => {
@@ -371,8 +505,10 @@ export default function StudioSocialClient() {
     setNewKeyword("");
     setNewHeadline("");
     setNewAngle("");
-    handleSelectSource(id);
-    setNotice(`Generated new ${channelMeta.shortLabel} post & 4 infographic styles for "${kw}".`);
+    handleOpenPostInWorkbench(id);
+    setNotice(
+      `Generated new ${channelMeta.shortLabel} post & 4 infographic styles for "${kw}".`,
+    );
   };
 
   const handleSaveCustomization = async () => {
@@ -422,16 +558,15 @@ export default function StudioSocialClient() {
         "customized",
       );
       setStatusMap(nextMap);
-      setNotice(`Saved ${channelMeta.shortLabel} post & infographic customization.`);
+      setNotice(
+        `Saved ${channelMeta.shortLabel} post & infographic customization.`,
+      );
     } finally {
       setSaving(false);
     }
   };
 
-  const handleTogglePosted = (sourceId: string) => {
-    const key = channelStatusKey(sourceId, channel);
-    const nextStatus: ChannelAssetStatus =
-      statusMap[key] === "posted" ? "ready" : "posted";
+  const handleSetStatus = (sourceId: string, nextStatus: ChannelAssetStatus) => {
     setStatusMap(setChannelAssetStatus(sourceId, channel, nextStatus));
   };
 
@@ -445,7 +580,11 @@ export default function StudioSocialClient() {
       if (!svg) return;
       const pngDataUrl = await svgRaster(svg, "png");
       const blob = await (await fetch(pngDataUrl)).blob();
-      saveBlob(blob, `${filePrefix}-${channel.toLowerCase()}.png`, "image/png");
+      saveBlob(
+        blob,
+        `${filePrefix}-${channel.toLowerCase()}.png`,
+        "image/png",
+      );
     } finally {
       setExportBusy("");
     }
@@ -492,388 +631,687 @@ export default function StudioSocialClient() {
     }
   };
 
-  const recentCards = useMemo(() => {
-    return sources.slice(0, 4).map((src) => {
-      const cfg = buildSocialInfographicConfigFromProject(src.project, {
-        channel,
-        templateId: channelMeta.defaultTemplateId,
-        paletteId: channelMeta.defaultPaletteId,
-        brandName: activeSite?.name,
-        brandColor: activeSite?.brandColorHex,
-      });
-      return {
-        source: src,
-        config: cfg,
-        preview: renderInfographicDataUri(cfg),
-        postStatus:
-          statusMap[channelStatusKey(src.id, channel)] || ("ready" as const),
-      };
-    });
-  }, [sources, channel, channelMeta, activeSite, statusMap]);
+  const renderStandaloneCreator = () => {
+    if (!creatorOpen) return null;
+    return (
+      <form
+        onSubmit={handleCreateStandalone}
+        className="mt-4 rounded-xl border border-[#5271FF]/30 bg-[#5271FF]/[0.05] p-4 dark:bg-[#5271FF]/[0.08]"
+      >
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs font-bold text-slate-900 dark:text-white">
+            Generate Standalone {channelMeta.shortLabel} Post + 4 Infographic
+            Styles (No Article Required)
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            {siteKeywords.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1">
+                <span className="text-[11px] text-slate-500">
+                  Quick keywords:
+                </span>
+                {siteKeywords.slice(0, 4).map((kw) => (
+                  <button
+                    key={kw.id}
+                    type="button"
+                    onClick={() => {
+                      setNewKeyword(kw.keyword);
+                      setNewHeadline(kw.suggestedTitle);
+                    }}
+                    className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-slate-700 hover:border-[#5271FF] hover:text-[#5271FF] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                  >
+                    {kw.keyword}
+                  </button>
+                ))}
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() => setCreatorOpen(false)}
+              className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-500 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:text-white"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-3 grid gap-2.5 sm:grid-cols-12">
+          <input
+            type="text"
+            required
+            value={newKeyword}
+            onChange={(e) => setNewKeyword(e.target.value)}
+            placeholder="Topic, keyword, or prompt (e.g. technical seo checklist 2026)..."
+            className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 focus:border-[#5271FF] focus:outline-none sm:col-span-4 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+          />
+          <input
+            type="text"
+            value={newHeadline}
+            onChange={(e) => setNewHeadline(e.target.value)}
+            placeholder="Optional visual headline..."
+            className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 focus:border-[#5271FF] focus:outline-none sm:col-span-4 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+          />
+          <input
+            type="text"
+            value={newAngle}
+            onChange={(e) => setNewAngle(e.target.value)}
+            placeholder="Optional angle or hook..."
+            className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 focus:border-[#5271FF] focus:outline-none sm:col-span-2 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+          />
+          <button
+            type="submit"
+            className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#5271FF] px-3 py-2 text-xs font-bold text-white transition hover:bg-[#4361EE] sm:col-span-2"
+          >
+            <Sparkles size={13} />
+            <span>Generate Pack</span>
+          </button>
+        </div>
+      </form>
+    );
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <div className="h-24 animate-pulse rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-[#0D1526]" />
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="h-64 animate-pulse rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-[#0D1526]" />
+          <div className="h-64 animate-pulse rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-[#0D1526]" />
+          <div className="h-64 animate-pulse rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-[#0D1526]" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* 1. Platform Header Bar + Channel Switcher + Simple Post Switcher + Standalone Generator */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs sm:p-6 dark:border-slate-800 dark:bg-[#0D1526]">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <div className="flex flex-wrap items-center gap-2.5">
-              <h1 className="text-xl font-bold text-slate-900 dark:text-white">
-                {channelMeta.studioTitle}
-              </h1>
-              <span className="rounded-md border border-[#5271FF]/30 bg-[#5271FF]/10 px-2 py-0.5 text-[11px] font-bold text-[#4361EE] dark:text-[#b4c2ff]">
-                {channelMeta.aspectLabel}
-              </span>
-              {activeSite && (
-                <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-xs font-medium text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
-                  <Globe size={11} />
-                  <span>{activeSite.name}</span>
-                </span>
-              )}
-            </div>
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-              {channelMeta.subtitle}
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Simple Clean Source Switcher Dropdown */}
-            {sources.length > 0 && (
-              <div ref={switcherRef} className="relative">
-                <button
-                  type="button"
-                  onClick={() => setSwitcherOpen((prev) => !prev)}
-                  aria-expanded={switcherOpen}
-                  aria-haspopup="listbox"
-                  className="inline-flex max-w-[280px] items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-800 transition hover:border-[#5271FF]/60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-                >
-                  <FileText size={13} className="shrink-0 text-[#5271FF]" />
-                  <span className="truncate">
-                    {selectedSource?.title || "Select Post"}
-                  </span>
-                  <ChevronDown size={13} className="shrink-0 text-slate-400" />
-                </button>
-
-                {switcherOpen && (
-                  <div
-                    role="listbox"
-                    aria-label="Select article or post"
-                    className="absolute right-0 top-full z-50 mt-1.5 w-80 max-w-[calc(100vw-2rem)] rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl dark:border-slate-700 dark:bg-[#0D1526]"
-                  >
-                    <div className="max-h-72 space-y-0.5 overflow-y-auto">
-                      {sources.map((src) => {
-                        const isCurrent = src.id === selectedSource?.id;
-                        const st = statusMap[channelStatusKey(src.id, channel)] || "ready";
-                        return (
-                          <button
-                            key={src.id}
-                            type="button"
-                            role="option"
-                            aria-selected={isCurrent}
-                            onClick={() => handleSelectSource(src.id)}
-                            className={`flex w-full items-center justify-between gap-2.5 rounded-lg px-2.5 py-2 text-left text-xs transition ${
-                              isCurrent
-                                ? "bg-[#5271FF]/12 font-bold text-[#4361EE] dark:text-[#b4c2ff]"
-                                : "text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800/70"
-                            }`}
-                          >
-                            <span className="min-w-0 flex-1 truncate">
-                              {src.title}
-                            </span>
-                            <span
-                              className={`shrink-0 rounded border px-1.5 py-0.5 text-[10px] font-semibold ${POST_STATUS_STYLES[st]}`}
-                            >
-                              {POST_STATUS_LABELS[st]}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            <button
-              type="button"
-              onClick={() => setCreatorOpen((prev) => !prev)}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-[#5271FF] px-3.5 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-[#4361EE]"
-            >
-              <Plus size={14} />
-              <span>Create {channelMeta.shortLabel} Post</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Platform Switcher Pills */}
-        <div className="mt-4 flex items-center gap-1.5 overflow-x-auto border-t border-slate-200/80 pt-4 pb-1 dark:border-slate-800/80">
-          {STUDIO_SOCIAL_CHANNELS.map((c) => {
-            const active = c.id === channel;
-            return (
-              <button
-                key={c.id}
-                type="button"
-                onClick={() => handleSelectChannel(c.id)}
-                className={`inline-flex shrink-0 items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition ${
-                  active
-                    ? "border-[#5271FF] bg-[#5271FF] text-white shadow-xs"
-                    : "border-slate-200 bg-slate-50 text-slate-700 hover:border-[#5271FF]/50 dark:border-slate-700/80 dark:bg-slate-900 dark:text-slate-200"
-                }`}
-              >
-                {c.isVideo ? <Film size={12} /> : <Share2 size={12} />}
-                <span>{c.label}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Standalone Keyword / Prompt Post Creator */}
-        {creatorOpen && (
-          <form
-            onSubmit={handleCreateStandalone}
-            className="mt-4 rounded-xl border border-[#5271FF]/30 bg-[#5271FF]/[0.05] p-4 dark:bg-[#5271FF]/[0.08]"
-          >
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-xs font-bold text-slate-900 dark:text-white">
-                Generate Standalone {channelMeta.shortLabel} Post + 4 Infographic Styles (No Article Required)
-              </p>
-              {siteKeywords.length > 0 && (
-                <div className="flex flex-wrap items-center gap-1">
-                  <span className="text-[11px] text-slate-500">Quick keywords:</span>
-                  {siteKeywords.slice(0, 4).map((kw) => (
-                    <button
-                      key={kw.id}
-                      type="button"
-                      onClick={() => {
-                        setNewKeyword(kw.keyword);
-                        setNewHeadline(kw.suggestedTitle);
-                      }}
-                      className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-slate-700 hover:border-[#5271FF] hover:text-[#5271FF] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
-                    >
-                      {kw.keyword}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="mt-3 grid gap-2.5 sm:grid-cols-12">
-              <input
-                type="text"
-                required
-                value={newKeyword}
-                onChange={(e) => setNewKeyword(e.target.value)}
-                placeholder="Topic, keyword, or prompt (e.g. technical seo checklist 2026)..."
-                className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 focus:border-[#5271FF] focus:outline-none sm:col-span-4 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-              />
-              <input
-                type="text"
-                value={newHeadline}
-                onChange={(e) => setNewHeadline(e.target.value)}
-                placeholder="Optional visual headline..."
-                className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 focus:border-[#5271FF] focus:outline-none sm:col-span-4 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-              />
-              <input
-                type="text"
-                value={newAngle}
-                onChange={(e) => setNewAngle(e.target.value)}
-                placeholder="Optional angle or hook..."
-                className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 focus:border-[#5271FF] focus:outline-none sm:col-span-2 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-              />
-              <button
-                type="submit"
-                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#5271FF] px-3 py-2 text-xs font-bold text-white transition hover:bg-[#4361EE] sm:col-span-2"
-              >
-                <Sparkles size={13} />
-                <span>Generate Pack</span>
-              </button>
-            </div>
-          </form>
-        )}
-
-        {notice && (
-          <p className="mt-3 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-            {notice}
-          </p>
-        )}
-      </div>
-
-      {loading ? (
-        <div className="flex items-center justify-center rounded-2xl border border-slate-200 bg-white py-16 dark:border-slate-800 dark:bg-[#0D1526]">
-          <Loader2 size={22} className="animate-spin text-[#5271FF]" />
-        </div>
-      ) : sources.length === 0 ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center dark:border-slate-800 dark:bg-[#0D1526]">
-          <Share2 size={28} className="mx-auto text-[#5271FF]" />
-          <h2 className="mt-3 text-base font-bold text-slate-900 dark:text-white">
-            No {channelMeta.shortLabel} posts or visuals created yet
-          </h2>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            Write an article in Content Writer or click{" "}
-            <strong>Create {channelMeta.shortLabel} Post</strong> above to
-            generate high-craft infographic visuals &amp; captions from any
-            keyword right away.
-          </p>
-          <div className="mt-4 flex flex-wrap justify-center gap-2.5">
-            <button
-              type="button"
-              onClick={() => setCreatorOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-[#5271FF] px-4 py-2 text-xs font-bold text-white"
-            >
-              <Plus size={14} />
-              <span>Create {channelMeta.shortLabel} Post</span>
-            </button>
-            <Link
-              href="/studio/writer?mode=editor"
-              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:text-slate-200"
-            >
-              <span>Open Content Writer</span>
-            </Link>
-          </div>
-        </div>
-      ) : (
+      {viewMode === "listing" ? (
+        /* =====================================================================
+           MODE 1: CLEAN PLATFORM OVERVIEW (Header + Top 3 Cards + Listing Table)
+           ===================================================================== */
         <>
-          {/* 2. RECENTLY CREATED VISUALS & POSTS STRIP (TOP 4 CARDS) */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-bold text-slate-900 dark:text-white">
-                Recent {channelMeta.shortLabel} Visuals &amp; Posts
-              </h2>
-              <span className="text-xs text-slate-500 dark:text-slate-400">
-                Showing {recentCards.length} of {sources.length}
-              </span>
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs sm:p-6 dark:border-slate-800 dark:bg-[#0D1526]">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="flex items-start gap-3.5">
+                <SocialBrandIcon channel={channel} size={20} withBadge />
+                <div>
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <h1 className="text-xl font-bold text-slate-900 dark:text-white">
+                      {channelMeta.studioTitle}
+                    </h1>
+                    <span
+                      className="rounded-md border px-2 py-0.5 text-[11px] font-bold"
+                      style={{
+                        backgroundColor: brandMeta.tintBg,
+                        borderColor: brandMeta.borderTint,
+                        color: brandMeta.color,
+                      }}
+                    >
+                      {channelMeta.aspectLabel}
+                    </span>
+                    {activeSite && (
+                      <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-xs font-medium text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                        <Globe size={11} />
+                        <span>{activeSite.name}</span>
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                    {channelMeta.subtitle} Click any featured visual or post
+                    row below to open its full infographic studio.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setCreatorOpen((prev) => !prev)}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#5271FF] px-4 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-[#4361EE]"
+              >
+                <Plus size={14} />
+                <span>Create {channelMeta.shortLabel} Post</span>
+              </button>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              {recentCards.map(({ source, config, preview, postStatus }) => {
-                const isSelected = source.id === selectedSource?.id;
+            {/* Platform Switcher Pills with Brand Icons & Official Brand Colors */}
+            <div className="mt-4 flex items-center gap-1.5 overflow-x-auto border-t border-slate-200/80 pt-4 pb-1 dark:border-slate-800/80">
+              {STUDIO_SOCIAL_CHANNELS.map((c) => {
+                const cBrand = getSocialBrandMeta(c.id);
+                const active = c.id === channel;
                 return (
-                  <div
-                    key={source.id}
-                    className={`flex flex-col justify-between overflow-hidden rounded-2xl border bg-white shadow-xs transition dark:bg-[#0D1526] ${
-                      isSelected
-                        ? "border-[#5271FF] ring-2 ring-[#5271FF]/25"
-                        : "border-slate-200 hover:border-[#5271FF]/50 dark:border-slate-800"
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => handleSelectChannelListing(c.id)}
+                    style={
+                      active
+                        ? {
+                            backgroundColor: cBrand.tintBg,
+                            borderColor: cBrand.borderTint,
+                          }
+                        : undefined
+                    }
+                    className={`inline-flex shrink-0 items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition ${
+                      active
+                        ? "text-slate-900 shadow-xs dark:text-white"
+                        : "border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300 dark:border-slate-700/80 dark:bg-slate-900 dark:text-slate-200"
                     }`}
                   >
-                    <div>
-                      <button
-                        type="button"
-                        onClick={() => handleSelectSource(source.id)}
-                        className="block w-full bg-slate-950/90 p-2"
-                      >
-                        {preview.dataUri ? (
-                          <img
-                            src={preview.dataUri}
-                            alt={config.altText}
-                            className="h-44 w-full rounded-lg object-contain"
-                          />
-                        ) : (
-                          <div className="flex h-44 items-center justify-center text-xs text-slate-400">
-                            Preview unavailable
-                          </div>
-                        )}
-                      </button>
-
-                      <div className="p-3.5">
-                        <div className="flex items-center justify-between gap-2 text-[10px]">
-                          <span className="rounded bg-slate-100 px-1.5 py-0.5 font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                            {source.kind === "standalone"
-                              ? "Standalone Post"
-                              : ARTICLE_STATUS_LABELS[
-                                  source.articleStatus as Exclude<
-                                    StudioSocialCampaignSource["articleStatus"],
-                                    "standalone"
-                                  >
-                                ]}
-                          </span>
-                          <span
-                            className={`rounded border px-1.5 py-0.5 font-semibold ${POST_STATUS_STYLES[postStatus]}`}
-                          >
-                            {POST_STATUS_LABELS[postStatus]}
-                          </span>
-                        </div>
-                        <p className="mt-2 line-clamp-2 text-xs font-bold text-slate-900 dark:text-white">
-                          {source.title}
-                        </p>
-                        {source.primaryKeyword && (
-                          <p className="mt-1 truncate text-[11px] text-slate-500 dark:text-slate-400">
-                            {source.primaryKeyword}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-1.5 border-t border-slate-100 px-3.5 py-2.5 dark:border-slate-800">
-                      <button
-                        type="button"
-                        onClick={() => handleSelectSource(source.id)}
-                        className={`flex-1 rounded-lg px-2.5 py-1.5 text-[11px] font-bold transition ${
-                          isSelected
-                            ? "bg-[#5271FF]/15 text-[#4361EE] dark:text-[#b4c2ff]"
-                            : "bg-[#5271FF] text-white hover:bg-[#4361EE]"
-                        }`}
-                      >
-                        {isSelected ? "Active in Studio" : "Load Post"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          void handleDownloadSourcePng(config, source.id)
-                        }
-                        title="Download PNG"
-                        className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 hover:border-[#5271FF] dark:border-slate-700 dark:text-slate-200"
-                      >
-                        <Download size={12} />
-                        <span>PNG</span>
-                      </button>
-                    </div>
-                  </div>
+                    <SocialBrandIcon channel={c.id} size={14} />
+                    <span style={active ? { color: cBrand.color } : undefined}>
+                      {c.label}
+                    </span>
+                  </button>
                 );
               })}
             </div>
+
+            {renderStandaloneCreator()}
+
+            {notice && (
+              <p className="mt-3 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                {notice}
+              </p>
+            )}
           </div>
 
-          {/* 3. HIGH-CRAFT MULTI-STYLE INFOGRAPHIC & POST WORKBENCH */}
+          {sources.length === 0 ? (
+            <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center dark:border-slate-800 dark:bg-[#0D1526]">
+              <div className="mx-auto flex justify-center">
+                <SocialBrandIcon channel={channel} size={24} withBadge />
+              </div>
+              <h2 className="mt-3 text-base font-bold text-slate-900 dark:text-white">
+                No {channelMeta.shortLabel} posts or visuals created yet
+              </h2>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                Write an article in Content Writer or click{" "}
+                <strong>Create {channelMeta.shortLabel} Post</strong> above to
+                generate high-craft infographic visuals &amp; captions from any
+                keyword right away.
+              </p>
+              <div className="mt-4 flex flex-wrap justify-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setCreatorOpen(true)}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#5271FF] px-4 py-2 text-xs font-bold text-white"
+                >
+                  <Plus size={14} />
+                  <span>Create {channelMeta.shortLabel} Post</span>
+                </button>
+                <Link
+                  href="/studio/writer?mode=editor"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:text-slate-200"
+                >
+                  <span>Open Content Writer</span>
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* TOP 3 FEATURED INFOGRAPHIC VISUAL CARDS (Strictly 3, Varied Styles, Full Card Clickable) */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <SocialBrandIcon channel={channel} size={16} />
+                    <h2 className="text-sm font-bold text-slate-900 dark:text-white">
+                      Recent {channelMeta.shortLabel} Visuals
+                    </h2>
+                  </div>
+                  <span className="text-xs text-slate-500 dark:text-slate-400">
+                    Top {featuredCards.length} of {sources.length} posts · Click
+                    any card to open studio
+                  </span>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-3">
+                  {featuredCards.map(
+                    ({ source, styleLabel, config, preview, postStatus }) => (
+                      <div
+                        key={source.id}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => handleOpenPostInWorkbench(source.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            handleOpenPostInWorkbench(source.id);
+                          }
+                        }}
+                        className="group flex cursor-pointer flex-col justify-between overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs transition hover:-translate-y-0.5 hover:border-[#5271FF]/70 hover:shadow-md dark:border-slate-800 dark:bg-[#0D1526] dark:hover:border-[#5271FF]/60"
+                      >
+                        <div>
+                          <div className="relative bg-slate-950/95 p-3">
+                            <div className="mb-2 flex items-center justify-between gap-2">
+                              <span
+                                className="inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[10px] font-bold"
+                                style={{
+                                  backgroundColor: brandMeta.tintBg,
+                                  borderColor: brandMeta.borderTint,
+                                  color: brandMeta.color,
+                                }}
+                              >
+                                <SocialBrandIcon channel={channel} size={11} />
+                                <span>{styleLabel}</span>
+                              </span>
+                              <span
+                                className={`rounded border px-1.5 py-0.5 text-[10px] font-semibold ${POST_STATUS_STYLES[postStatus]}`}
+                              >
+                                {POST_STATUS_LABELS[postStatus]}
+                              </span>
+                            </div>
+
+                            {preview.dataUri ? (
+                              <img
+                                src={preview.dataUri}
+                                alt={`${source.title} — ${channelMeta.shortLabel} infographic`}
+                                className="h-48 w-full rounded-lg object-contain transition duration-200 group-hover:scale-[1.015]"
+                              />
+                            ) : (
+                              <div className="flex h-48 items-center justify-center text-xs text-slate-400">
+                                Preview unavailable
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="p-4">
+                            <p className="line-clamp-2 text-sm font-bold text-slate-900 transition group-hover:text-[#5271FF] dark:text-white dark:group-hover:text-[#9aabff]">
+                              {source.title}
+                            </p>
+                            {source.primaryKeyword && (
+                              <p className="mt-1 truncate text-[11px] text-slate-500 dark:text-slate-400">
+                                Keyword: {source.primaryKeyword}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between border-t border-slate-100 px-4 py-2.5 text-[11px] dark:border-slate-800">
+                          <span className="inline-flex items-center gap-1 font-bold text-[#5271FF] dark:text-[#9aabff]">
+                            <span>Open in {channelMeta.shortLabel} Studio</span>
+                            <ArrowRight size={12} />
+                          </span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              void handleDownloadSourcePng(config, source.id);
+                            }}
+                            title="Quick download PNG"
+                            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-700 hover:border-[#5271FF] dark:border-slate-700 dark:text-slate-200"
+                          >
+                            <Download size={11} />
+                            <span>PNG</span>
+                          </button>
+                        </div>
+                      </div>
+                    ),
+                  )}
+                </div>
+              </div>
+
+              {/* ALL POSTS & ARTICLES CLICKABLE LISTING TABLE */}
+              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs dark:border-slate-800 dark:bg-[#0D1526]">
+                <div className="flex flex-col justify-between gap-3 border-b border-slate-200 px-5 py-4 lg:flex-row lg:items-center dark:border-slate-800">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                      All {channelMeta.shortLabel} Posts &amp; Articles (
+                      {sources.length})
+                    </h3>
+                    <div className="inline-flex flex-wrap items-center gap-1 rounded-xl border border-slate-200 bg-slate-100 p-1 dark:border-slate-800 dark:bg-slate-900">
+                      {(
+                        [
+                          { id: "all", label: `All (${listingStatusCounts.all})` },
+                          {
+                            id: "ready",
+                            label: `Ready (${listingStatusCounts.ready})`,
+                          },
+                          {
+                            id: "customized",
+                            label: `Customized (${listingStatusCounts.customized})`,
+                          },
+                          {
+                            id: "posted",
+                            label: `Posted (${listingStatusCounts.posted})`,
+                          },
+                        ] as const
+                      ).map((tab) => (
+                        <button
+                          key={tab.id}
+                          type="button"
+                          onClick={() => setListingStatusFilter(tab.id)}
+                          className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition ${
+                            listingStatusFilter === tab.id
+                              ? "bg-white text-slate-900 shadow-xs dark:bg-[#0D1526] dark:text-white"
+                              : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                          }`}
+                        >
+                          {tab.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="relative w-full lg:w-72">
+                    <Search
+                      size={13}
+                      className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                    />
+                    <input
+                      type="search"
+                      value={listingSearch}
+                      onChange={(e) => setListingSearch(e.target.value)}
+                      placeholder="Filter posts by title or keyword..."
+                      className="w-full rounded-xl border border-slate-300 bg-white py-1.5 pl-8 pr-3 text-xs text-slate-900 focus:border-[#5271FF] focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[780px] divide-y divide-slate-200 text-left text-xs dark:divide-slate-800">
+                    <thead className="bg-slate-50/90 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:bg-slate-900/70 dark:text-slate-400">
+                      <tr>
+                        <th className="px-4 py-3">Post &amp; Keyword</th>
+                        <th className="px-3 py-3">Source</th>
+                        <th className="px-3 py-3">Status</th>
+                        <th className="px-3 py-3">Updated</th>
+                        <th className="px-4 py-3 text-right">Open</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
+                      {filteredListingSources.map((src) => {
+                        const postStatus =
+                          statusMap[channelStatusKey(src.id, channel)] ||
+                          "ready";
+                        return (
+                          <tr
+                            key={src.id}
+                            onClick={() => handleOpenPostInWorkbench(src.id)}
+                            className="group cursor-pointer transition hover:bg-slate-50 dark:hover:bg-slate-900/60"
+                          >
+                            <td className="max-w-md px-4 py-3.5">
+                              <div className="font-bold text-slate-900 transition group-hover:text-[#5271FF] dark:text-white dark:group-hover:text-[#9aabff]">
+                                {src.title}
+                              </div>
+                              {src.primaryKeyword && (
+                                <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+                                  {src.primaryKeyword}
+                                </p>
+                              )}
+                            </td>
+                            <td className="px-3 py-3.5">
+                              <span className="rounded bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                                {getSourceStatusLabel(src)}
+                              </span>
+                            </td>
+                            <td
+                              className="px-3 py-3.5"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <select
+                                aria-label={`${channelMeta.shortLabel} status for ${src.title}`}
+                                value={postStatus}
+                                onChange={(e) =>
+                                  handleSetStatus(
+                                    src.id,
+                                    e.target.value as ChannelAssetStatus,
+                                  )
+                                }
+                                className={`cursor-pointer rounded-md border px-2 py-1 text-[11px] font-semibold focus:outline-none ${POST_STATUS_STYLES[postStatus]}`}
+                              >
+                                <option value="ready">Ready</option>
+                                <option value="customized">Customized</option>
+                                <option value="posted">Posted</option>
+                              </select>
+                            </td>
+                            <td className="whitespace-nowrap px-3 py-3.5 text-[11px] text-slate-500">
+                              {src.updatedAtIso
+                                ? new Date(
+                                    src.updatedAtIso,
+                                  ).toLocaleDateString()
+                                : "—"}
+                            </td>
+                            <td
+                              className="whitespace-nowrap px-4 py-3.5 text-right"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <div className="inline-flex items-center gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleOpenPostInWorkbench(src.id)
+                                  }
+                                  className="inline-flex items-center gap-1 rounded-lg bg-[#5271FF] px-3 py-1.5 text-xs font-bold text-white hover:bg-[#4361EE]"
+                                >
+                                  <span>Open Studio</span>
+                                  <ArrowRight size={12} />
+                                </button>
+                                {src.kind === "standalone" && (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      deleteStandaloneCampaign(src.id)
+                                    }
+                                    title="Delete standalone campaign"
+                                    className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40"
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          )}
+        </>
+      ) : (
+        /* =====================================================================
+           MODE 2: FOCUSED POST WORKBENCH (Occupied by Selected Post Only)
+           ===================================================================== */
+        <>
+          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3.5 shadow-xs sm:px-5 dark:border-slate-800 dark:bg-[#0D1526]">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex min-w-0 flex-wrap items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={handleBackToListing}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-700 transition hover:border-[#5271FF] hover:text-[#5271FF] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                >
+                  <ArrowLeft size={13} />
+                  <span>
+                    All {channelMeta.shortLabel} Posts ({sources.length})
+                  </span>
+                </button>
+
+                {/* Simple Clean Source Switcher Dropdown */}
+                {sources.length > 0 && (
+                  <div ref={switcherRef} className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setSwitcherOpen((prev) => !prev)}
+                      aria-expanded={switcherOpen}
+                      aria-haspopup="listbox"
+                      className="inline-flex max-w-[280px] items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-800 transition hover:border-[#5271FF]/60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                    >
+                      <FileText size={13} className="shrink-0 text-[#5271FF]" />
+                      <span className="truncate">
+                        {selectedSource?.title || "Select Post"}
+                      </span>
+                      <ChevronDown
+                        size={13}
+                        className="shrink-0 text-slate-400"
+                      />
+                    </button>
+
+                    {switcherOpen && (
+                      <div
+                        role="listbox"
+                        aria-label="Select article or post"
+                        className="absolute left-0 top-full z-50 mt-1.5 w-80 max-w-[calc(100vw-2rem)] rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl dark:border-slate-700 dark:bg-[#0D1526]"
+                      >
+                        <div className="max-h-72 space-y-0.5 overflow-y-auto">
+                          {sources.map((src) => {
+                            const isCurrent = src.id === selectedSource?.id;
+                            const st =
+                              statusMap[channelStatusKey(src.id, channel)] ||
+                              "ready";
+                            return (
+                              <button
+                                key={src.id}
+                                type="button"
+                                role="option"
+                                aria-selected={isCurrent}
+                                onClick={() => handleOpenPostInWorkbench(src.id)}
+                                className={`flex w-full items-center justify-between gap-2.5 rounded-lg px-2.5 py-2 text-left text-xs transition ${
+                                  isCurrent
+                                    ? "bg-[#5271FF]/12 font-bold text-[#4361EE] dark:text-[#b4c2ff]"
+                                    : "text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800/70"
+                                }`}
+                              >
+                                <span className="min-w-0 flex-1 truncate">
+                                  {src.title}
+                                </span>
+                                <span
+                                  className={`shrink-0 rounded border px-1.5 py-0.5 text-[10px] font-semibold ${POST_STATUS_STYLES[st]}`}
+                                >
+                                  {POST_STATUS_LABELS[st]}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <div className="mt-1 border-t border-slate-100 pt-1 dark:border-slate-800">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSwitcherOpen(false);
+                              setCreatorOpen(true);
+                            }}
+                            className="flex w-full items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-bold text-[#5271FF] hover:bg-[#5271FF]/10 dark:text-[#9aabff]"
+                          >
+                            <Plus size={13} />
+                            <span>
+                              Create New {channelMeta.shortLabel} Post
+                            </span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                {selectedSource && (
+                  <select
+                    aria-label="Current post status"
+                    value={
+                      statusMap[
+                        channelStatusKey(selectedSource.id, channel)
+                      ] || "ready"
+                    }
+                    onChange={(e) =>
+                      handleSetStatus(
+                        selectedSource.id,
+                        e.target.value as ChannelAssetStatus,
+                      )
+                    }
+                    className={`cursor-pointer rounded-lg border px-2.5 py-1.5 text-xs font-bold focus:outline-none ${
+                      POST_STATUS_STYLES[
+                        statusMap[
+                          channelStatusKey(selectedSource.id, channel)
+                        ] || "ready"
+                      ]
+                    }`}
+                  >
+                    <option value="ready">Status: Ready</option>
+                    <option value="customized">Status: Customized</option>
+                    <option value="posted">Status: Posted</option>
+                  </select>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setCreatorOpen((prev) => !prev)}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#5271FF] px-3 py-1.5 text-xs font-bold text-white transition hover:bg-[#4361EE]"
+                >
+                  <Plus size={13} />
+                  <span>New {channelMeta.shortLabel} Post</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Channel Switch Pills in Workbench */}
+            <div className="mt-3 flex items-center gap-1.5 overflow-x-auto border-t border-slate-200/80 pt-3 pb-0.5 dark:border-slate-800/80">
+              {STUDIO_SOCIAL_CHANNELS.map((c) => {
+                const cBrand = getSocialBrandMeta(c.id);
+                const active = c.id === channel;
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => handleSwitchChannelInWorkbench(c.id)}
+                    style={
+                      active
+                        ? {
+                            backgroundColor: cBrand.tintBg,
+                            borderColor: cBrand.borderTint,
+                          }
+                        : undefined
+                    }
+                    className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] font-bold transition ${
+                      active
+                        ? "text-slate-900 dark:text-white"
+                        : "border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300 dark:border-slate-700/80 dark:bg-slate-900 dark:text-slate-300"
+                    }`}
+                  >
+                    <SocialBrandIcon channel={c.id} size={13} />
+                    <span style={active ? { color: cBrand.color } : undefined}>
+                      {c.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {renderStandaloneCreator()}
+
+            {notice && (
+              <p className="mt-3 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                {notice}
+              </p>
+            )}
+          </div>
+
           {selectedSource && activeConfig && (
             <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs sm:p-6 dark:border-slate-800 dark:bg-[#0D1526]">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 pb-4 dark:border-slate-800">
-                <div>
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-[#5271FF] dark:text-[#9aabff]">
-                    Active {channelMeta.shortLabel} Workbench ·{" "}
-                    {channelSpec.aspectLabel}
-                  </p>
-                  <h2 className="mt-0.5 text-base font-bold text-slate-900 dark:text-white">
-                    {selectedSource.title}
-                  </h2>
+                <div className="flex items-center gap-3">
+                  <SocialBrandIcon channel={channel} size={18} withBadge />
+                  <div>
+                    <p
+                      className="text-[11px] font-bold uppercase tracking-wider"
+                      style={{ color: brandMeta.color }}
+                    >
+                      {channelMeta.shortLabel} Post Studio ·{" "}
+                      {channelSpec.aspectLabel}
+                    </p>
+                    <h2 className="mt-0.5 text-base font-bold text-slate-900 dark:text-white">
+                      {selectedSource.title}
+                    </h2>
+                  </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2">
-                  {exportBusy && (
-                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#5271FF]">
-                      <Loader2 size={13} className="animate-spin" />
-                      {exportBusy}
-                    </span>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => handleTogglePosted(selectedSource.id)}
-                    className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-bold transition ${
-                      statusMap[channelStatusKey(selectedSource.id, channel)] ===
-                      "posted"
-                        ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
-                        : "border-slate-200 text-slate-700 hover:border-emerald-500/50 hover:text-emerald-600 dark:border-slate-700 dark:text-slate-200"
-                    }`}
-                  >
-                    <CheckCircle2 size={13} />
-                    <span>
-                      {statusMap[channelStatusKey(selectedSource.id, channel)] ===
-                      "posted"
-                        ? "Posted"
-                        : "Mark as Posted"}
-                    </span>
-                  </button>
-                </div>
+                {exportBusy && (
+                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#5271FF]">
+                    <Loader2 size={13} className="animate-spin" />
+                    {exportBusy}
+                  </span>
+                )}
               </div>
 
               {/* 4 Multi-Style Infographic Previews */}
@@ -881,7 +1319,10 @@ export default function StudioSocialClient() {
                 <div className="mb-2.5 flex items-center justify-between">
                   <span className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-200">
                     <Layers size={14} className="text-[#5271FF]" />
-                    <span>Choose Infographic Style (Powered by 25 Blog Visual Templates)</span>
+                    <span>
+                      Choose Infographic Style (Powered by 25 Blog Visual
+                      Templates)
+                    </span>
                   </span>
                   <span className="text-[11px] text-slate-500">
                     Click any style to apply &amp; customize
@@ -1179,112 +1620,6 @@ export default function StudioSocialClient() {
               </div>
             </div>
           )}
-
-          {/* 4. ALL POSTS & ARTICLES TABLE FOR THIS CHANNEL */}
-          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs dark:border-slate-800 dark:bg-[#0D1526]">
-            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-3.5 dark:border-slate-800">
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                All {channelMeta.shortLabel} Posts &amp; Articles ({sources.length})
-              </h3>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[820px] divide-y divide-slate-200 text-left text-xs dark:divide-slate-800">
-                <thead className="bg-slate-50/90 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:bg-slate-900/70 dark:text-slate-400">
-                  <tr>
-                    <th className="px-4 py-3">Title &amp; Keyword</th>
-                    <th className="px-3 py-3">Source Type</th>
-                    <th className="px-3 py-3">{channelMeta.shortLabel} Status</th>
-                    <th className="px-3 py-3">Updated</th>
-                    <th className="px-4 py-3 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
-                  {sources.map((src) => {
-                    const postStatus =
-                      statusMap[channelStatusKey(src.id, channel)] || "ready";
-                    const isSelected = src.id === selectedSource?.id;
-                    return (
-                      <tr
-                        key={src.id}
-                        className={`transition ${
-                          isSelected
-                            ? "bg-[#5271FF]/[0.05]"
-                            : "hover:bg-slate-50/70 dark:hover:bg-slate-900/40"
-                        }`}
-                      >
-                        <td className="max-w-md px-4 py-3">
-                          <button
-                            type="button"
-                            onClick={() => handleSelectSource(src.id)}
-                            className="text-left font-bold text-slate-900 hover:text-[#5271FF] dark:text-white dark:hover:text-[#9aabff]"
-                          >
-                            {src.title}
-                          </button>
-                          {src.primaryKeyword && (
-                            <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
-                              {src.primaryKeyword}
-                            </p>
-                          )}
-                        </td>
-                        <td className="px-3 py-3">
-                          <span className="rounded bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                            {src.kind === "standalone"
-                              ? "Standalone Post"
-                              : ARTICLE_STATUS_LABELS[
-                                  src.articleStatus as Exclude<
-                                    StudioSocialCampaignSource["articleStatus"],
-                                    "standalone"
-                                  >
-                                ]}
-                          </span>
-                        </td>
-                        <td className="px-3 py-3">
-                          <span
-                            className={`inline-flex rounded border px-2 py-0.5 text-[11px] font-semibold ${POST_STATUS_STYLES[postStatus]}`}
-                          >
-                            {POST_STATUS_LABELS[postStatus]}
-                          </span>
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-3 text-[11px] text-slate-500">
-                          {src.updatedAtIso
-                            ? new Date(src.updatedAtIso).toLocaleDateString()
-                            : "—"}
-                        </td>
-                        <td className="whitespace-nowrap px-4 py-3 text-right">
-                          <div className="inline-flex items-center gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => handleSelectSource(src.id)}
-                              className="rounded-lg bg-[#5271FF] px-3 py-1.5 text-xs font-bold text-white hover:bg-[#4361EE]"
-                            >
-                              {isSelected ? "Open" : "Edit Post"}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleTogglePosted(src.id)}
-                              className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[11px] font-semibold text-slate-600 hover:border-emerald-500/50 hover:text-emerald-600 dark:border-slate-700 dark:text-slate-300"
-                            >
-                              {postStatus === "posted" ? "Posted ✓" : "Mark Posted"}
-                            </button>
-                            {src.kind === "standalone" && (
-                              <button
-                                type="button"
-                                onClick={() => deleteStandaloneCampaign(src.id)}
-                                title="Delete standalone campaign"
-                                className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40"
-                              >
-                                <Trash2 size={14} />
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
         </>
       )}
     </div>

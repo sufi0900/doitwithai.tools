@@ -15,6 +15,7 @@ import {
 } from "../lib/studio/social-infographic-bridge";
 import { buildInfographicScene } from "../lib/blog-infographic-studio/canvas-renderer";
 import { blankProject, syncDocument } from "../features/writer-workspace/model";
+import { carouselSlides, newsletter } from "../features/writer-workspace/assets";
 import type { Project } from "../features/writer-workspace/types";
 import type { SavedKeywordItem } from "../lib/studio/types";
 
@@ -243,12 +244,41 @@ test("Studio V2 UI & ToolsShell source guards prevent regressions", () => {
   );
   assert.ok(writerSrc.includes('role="listbox"'));
 
-  // Sidebar dedicated Social & Email studios
+  // Sidebar dedicated Social & Email studios + priority order + no Back-to-Hub collapsed arrow
   assert.ok(shellSrc.includes("/studio/social"));
   assert.ok(shellSrc.includes("/studio/email"));
+  assert.equal(shellSrc.includes('title="Back to Workspace Hub"'), false);
+  assert.ok(shellSrc.includes("SocialBrandIcon"));
+  const overviewPos = shellSrc.indexOf('"/studio/overview"');
+  const writerPos = shellSrc.indexOf('"/studio/writer"');
+  const socialPos = shellSrc.indexOf('"/studio/social"');
+  const emailPos = shellSrc.indexOf('"/studio/email"');
+  assert.ok(overviewPos > 0 && writerPos > overviewPos);
+  assert.ok(socialPos > writerPos && emailPos > socialPos);
   for (const ch of ["Instagram", "Facebook", "LinkedIn", "YouTube"]) {
     assert.ok(shellSrc.includes(ch), `Expected sidebar channel link: ${ch}`);
   }
+
+  // Content Writer clickable rows + single status field
+  assert.ok(writerSrc.includes("cursor-pointer"));
+  assert.equal(writerSrc.includes("Unpublish"), false);
+
+  // Two-mode separation in Social & Email studios
+  const socialClientSrc = fs.readFileSync(
+    path.join(ROOT, "features/studio/StudioSocialClient.tsx"),
+    "utf8",
+  );
+  assert.ok(socialClientSrc.includes('viewMode === "listing"'));
+  assert.ok(socialClientSrc.includes('modeParam === "workbench"'));
+  assert.ok(socialClientSrc.includes("SocialBrandIcon"));
+
+  const emailClientSrc = fs.readFileSync(
+    path.join(ROOT, "features/studio/StudioEmailClient.tsx"),
+    "utf8",
+  );
+  assert.ok(emailClientSrc.includes('viewMode === "listing"'));
+  assert.ok(emailClientSrc.includes('modeParam === "workbench"'));
+  assert.ok(emailClientSrc.includes("SocialBrandIcon"));
 
   const workspaceProviderSrc = fs.readFileSync(
     path.join(ROOT, "features/tools-workspace/WorkspaceProvider.tsx"),
@@ -290,4 +320,26 @@ test("Social & Email Infographic Bridge renders 4 distinct high-craft SVG templa
     );
   }
   assert.equal(usedTemplates.size, 4);
+});
+
+test("newsletter() and carouselSlides() never throw on 0-word empty draft projects", () => {
+  const emptyDraft = blankProject();
+  assert.doesNotThrow(() => {
+    const nl = newsletter(emptyDraft);
+    assert.ok(nl.draft.selectedSubject.length > 0);
+    assert.ok(nl.html.includes("<!doctype html>") || nl.html.includes("<!DOCTYPE html>"));
+    const slides = carouselSlides(emptyDraft);
+    assert.ok(slides.length >= 1);
+  });
+
+  const untitledZeroWord = {
+    ...blankProject(),
+    projectTitle: "Untitled article",
+    sections: [],
+  };
+  assert.doesNotThrow(() => {
+    const nl = newsletter(untitledZeroWord);
+    assert.ok(nl.draft.subjectOptions.length >= 1);
+    assert.ok(nl.text.includes("Subject:"));
+  });
 });

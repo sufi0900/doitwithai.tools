@@ -179,6 +179,21 @@ export default function StudioWriterClient() {
     };
   }, [activeSite?.id, activeSite]);
 
+  useEffect(() => {
+    const onReset = (e: Event) => {
+      if ((e as CustomEvent<string>).detail === "/studio/writer") {
+        setViewMode((prev) => (articles.length > 0 ? "table" : prev));
+        setSwitcherOpen(false);
+      }
+    };
+    window.addEventListener("doitwithai:studio-distribution-reset", onReset);
+    return () =>
+      window.removeEventListener(
+        "doitwithai:studio-distribution-reset",
+        onReset,
+      );
+  }, [articles.length]);
+
   const activeArticle = useMemo(
     () => articles.find((a) => a.projectId === activeProjectId) || null,
     [articles, activeProjectId],
@@ -465,18 +480,13 @@ export default function StudioWriterClient() {
                       return (
                         <tr
                           key={article.projectId}
-                          className="transition hover:bg-slate-50/70 dark:hover:bg-slate-900/40"
+                          onClick={() => handleOpenArticle(article.projectId)}
+                          className="group cursor-pointer transition hover:bg-slate-50 dark:hover:bg-slate-900/60"
                         >
                           <td className="max-w-md px-4 py-3.5">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleOpenArticle(article.projectId)
-                              }
-                              className="text-left font-bold text-slate-900 transition hover:text-[#5271FF] dark:text-white dark:hover:text-[#9aabff]"
-                            >
+                            <div className="font-bold text-slate-900 transition group-hover:text-[#5271FF] dark:text-white dark:group-hover:text-[#9aabff]">
                               {article.title}
-                            </button>
+                            </div>
                             <p className="mt-0.5 truncate text-[11px] text-slate-500 dark:text-slate-400">
                               <span className="font-semibold">Meta:</span>{" "}
                               {article.metaTitle}
@@ -507,8 +517,26 @@ export default function StudioWriterClient() {
                             </span>
                           </td>
 
-                          <td className="whitespace-nowrap px-3 py-3.5">
-                            <div className="flex flex-wrap items-center gap-1.5">
+                          <td
+                            className="whitespace-nowrap px-3 py-3.5"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {canPublishToggle ? (
+                              <select
+                                aria-label={`Article status for ${article.title}`}
+                                value={article.status}
+                                onChange={(e) =>
+                                  toggleArticlePublished(
+                                    article.projectId,
+                                    e.target.value === "published",
+                                  )
+                                }
+                                className={`cursor-pointer rounded-md border px-2 py-1 text-[11px] font-semibold focus:outline-none ${STATUS_BADGE_STYLES[article.status]}`}
+                              >
+                                <option value="written">Written</option>
+                                <option value="published">Published</option>
+                              </select>
+                            ) : (
                               <span
                                 className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[11px] font-semibold ${
                                   STATUS_BADGE_STYLES[article.status]
@@ -516,41 +544,23 @@ export default function StudioWriterClient() {
                               >
                                 {ARTICLE_STATUS_LABELS[article.status]}
                               </span>
-                              {canPublishToggle && (
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    toggleArticlePublished(
-                                      article.projectId,
-                                      article.status !== "published",
-                                    )
-                                  }
-                                  title={
-                                    article.status === "published"
-                                      ? "Unmark as published"
-                                      : "Mark as published"
-                                  }
-                                  className="rounded-md border border-slate-200 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500 hover:border-emerald-500/50 hover:text-emerald-600 dark:border-slate-700 dark:text-slate-400"
-                                >
-                                  {article.status === "published"
-                                    ? "Unpublish"
-                                    : "Publish"}
-                                </button>
-                              )}
-                            </div>
+                            )}
                           </td>
 
-                          <td className="whitespace-nowrap px-3 py-3.5">
+                          <td
+                            className="whitespace-nowrap px-3 py-3.5"
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <div className="flex items-center gap-1.5">
                               <Link
-                                href={`/studio/social?articleId=${encodeURIComponent(article.projectId)}`}
+                                href={`/studio/social?articleId=${encodeURIComponent(article.projectId)}&mode=workbench`}
                                 className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold text-slate-700 hover:border-[#5271FF] hover:text-[#5271FF] dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-200"
                               >
                                 <Share2 size={11} />
                                 <span>Social</span>
                               </Link>
                               <Link
-                                href={`/studio/email?articleId=${encodeURIComponent(article.projectId)}`}
+                                href={`/studio/email?articleId=${encodeURIComponent(article.projectId)}&mode=workbench`}
                                 className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold text-slate-700 hover:border-[#5271FF] hover:text-[#5271FF] dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-200"
                               >
                                 <Mail size={11} />
@@ -563,7 +573,10 @@ export default function StudioWriterClient() {
                             {formattedDate}
                           </td>
 
-                          <td className="whitespace-nowrap px-4 py-3.5 text-right">
+                          <td
+                            className="whitespace-nowrap px-4 py-3.5 text-right"
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <div className="inline-flex items-center gap-1.5">
                               <button
                                 type="button"
@@ -716,7 +729,7 @@ export default function StudioWriterClient() {
                 </button>
 
                 <Link
-                  href={`/studio/social${activeProjectId ? `?articleId=${encodeURIComponent(activeProjectId)}` : ""}`}
+                  href={`/studio/social${activeProjectId ? `?articleId=${encodeURIComponent(activeProjectId)}&mode=workbench` : ""}`}
                   className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-[#5271FF] hover:text-[#5271FF] dark:border-slate-700 dark:text-slate-200"
                 >
                   <Share2 size={13} />
@@ -724,7 +737,7 @@ export default function StudioWriterClient() {
                 </Link>
 
                 <Link
-                  href={`/studio/email${activeProjectId ? `?articleId=${encodeURIComponent(activeProjectId)}` : ""}`}
+                  href={`/studio/email${activeProjectId ? `?articleId=${encodeURIComponent(activeProjectId)}&mode=workbench` : ""}`}
                   className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-[#5271FF] hover:text-[#5271FF] dark:border-slate-700 dark:text-slate-200"
                 >
                   <Mail size={13} />

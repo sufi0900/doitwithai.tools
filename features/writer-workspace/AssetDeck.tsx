@@ -143,7 +143,7 @@ export default function AssetDeck({
         </div>
         <div className={styles.buttonRow}>
           <Link
-            href={`/studio/social?articleId=${encodeURIComponent(p.projectId)}`}
+            href={`/studio/social?articleId=${encodeURIComponent(p.projectId)}&mode=workbench`}
             className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700/80 bg-slate-900/70 px-3.5 py-2 text-xs font-bold text-slate-100 transition hover:border-[#5271FF]"
           >
             <Share2 size={14} className="text-[#9aabff]" />
@@ -151,7 +151,7 @@ export default function AssetDeck({
             <ArrowUpRight size={13} />
           </Link>
           <Link
-            href={`/studio/email?articleId=${encodeURIComponent(p.projectId)}`}
+            href={`/studio/email?articleId=${encodeURIComponent(p.projectId)}&mode=workbench`}
             className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700/80 bg-slate-900/70 px-3.5 py-2 text-xs font-bold text-slate-100 transition hover:border-[#5271FF]"
           >
             <Mail size={14} className="text-[#9aabff]" />

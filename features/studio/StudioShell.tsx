@@ -52,12 +52,13 @@ import StudioGlobalDrawer from "./StudioGlobalDrawer";
 import StudioInlineEmbedPanel, {
   type StudioInlineItem,
 } from "./StudioInlineEmbedPanel";
+import { getSocialBrandMeta, SocialBrandIcon } from "./SocialBrandIcon";
 
 interface SidebarNavItem {
   href: string;
   label: string;
   icon: LucideIcon;
-  group: "primary" | "seo" | "distribution" | "resources";
+  group: "brand" | "primary" | "distribution" | "seo" | "resources";
   badge?: string;
 }
 
@@ -72,16 +73,28 @@ const SOCIAL_PLATFORM_SUBLINKS: Array<{ channel: string; label: string }> = [
 
 const SIDEBAR_ITEMS: SidebarNavItem[] = [
   {
+    href: "/studio/overview",
+    label: "Overview & Brand DNA",
+    icon: LayoutDashboard,
+    group: "brand",
+  },
+  {
     href: "/studio/writer",
     label: "Content Writer",
     icon: FilePenLine,
     group: "primary",
   },
   {
-    href: "/studio/overview",
-    label: "Overview & Brand DNA",
-    icon: LayoutDashboard,
-    group: "seo",
+    href: "/studio/social",
+    label: "Social & Video Studio",
+    icon: Share2,
+    group: "distribution",
+  },
+  {
+    href: "/studio/email",
+    label: "Email Newsletter",
+    icon: Mail,
+    group: "distribution",
   },
   {
     href: "/studio/keywords",
@@ -112,18 +125,6 @@ const SIDEBAR_ITEMS: SidebarNavItem[] = [
     label: "Editorial Planner",
     icon: CalendarCheck2,
     group: "seo",
-  },
-  {
-    href: "/studio/social",
-    label: "Social & Video Studio",
-    icon: Share2,
-    group: "distribution",
-  },
-  {
-    href: "/studio/email",
-    label: "Email Newsletter",
-    icon: Mail,
-    group: "distribution",
   },
   {
     href: "/studio/vault",
@@ -379,7 +380,11 @@ export default function StudioShell({ children }: { children: ReactNode }) {
       <div className="space-y-5 overflow-y-auto px-3 py-4">
         {/* Top Hub Back-Link + Active Website Selector */}
         <div className="space-y-2.5">
-          <div className="flex items-center justify-between px-1">
+          <div
+            className={`flex items-center px-1 ${
+              compact ? "justify-center" : "justify-between"
+            }`}
+          >
             {!compact && (
               <Link
                 href="/studio"
@@ -395,6 +400,7 @@ export default function StudioShell({ children }: { children: ReactNode }) {
               onClick={() => setSidebarCollapsed((prev) => !prev)}
               className="hidden rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 lg:inline-flex dark:hover:bg-slate-800 dark:hover:text-slate-200"
               title={compact ? "Expand sidebar" : "Collapse sidebar"}
+              aria-label={compact ? "Expand sidebar" : "Collapse sidebar"}
             >
               {compact ? (
                 <PanelLeftOpen size={15} />
@@ -404,8 +410,8 @@ export default function StudioShell({ children }: { children: ReactNode }) {
             </button>
           </div>
 
-          {!compact ? (
-            studio.sites.length > 0 ? (
+          {!compact &&
+            (studio.sites.length > 0 ? (
               <div className="rounded-xl border border-slate-200/90 bg-slate-50/80 p-2.5 dark:border-slate-800 dark:bg-slate-900/70">
                 <div className="flex items-center gap-2">
                   <span
@@ -456,21 +462,12 @@ export default function StudioShell({ children }: { children: ReactNode }) {
                 <Plus size={14} />
                 <span>Connect Your Website</span>
               </Link>
-            )
-          ) : (
-            <Link
-              href="/studio"
-              title="Back to Workspace Hub"
-              className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 hover:border-[#5271FF] hover:text-[#5271FF] dark:border-slate-800 dark:text-slate-300"
-            >
-              <ArrowLeft size={15} />
-            </Link>
-          )}
+            ))}
         </div>
 
-        {/* Content Writer */}
-        <div>
-          {SIDEBAR_ITEMS.filter((i) => i.group === "primary").map((item) => {
+        {/* 1. Brand Foundation & Content Workspace (Top Priority) */}
+        <div className="space-y-1.5">
+          {SIDEBAR_ITEMS.filter((i) => i.group === "brand").map((item) => {
             const Icon = item.icon;
             const active =
               pathname === item.href || pathname.startsWith(`${item.href}/`);
@@ -481,7 +478,46 @@ export default function StudioShell({ children }: { children: ReactNode }) {
                 prefetch={false}
                 onClick={() => setInlineWorkspaceItem(null)}
                 title={compact ? item.label : undefined}
-                className={`flex items-center justify-between rounded-xl px-3 py-2.5 text-xs font-bold transition ${
+                className={`flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold transition ${
+                  compact ? "justify-center px-2" : ""
+                } ${
+                  active
+                    ? "bg-slate-900 text-white dark:bg-slate-800 dark:text-white"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800/60 dark:hover:text-white"
+                }`}
+              >
+                <Icon
+                  size={15}
+                  className={`shrink-0 ${
+                    active ? "text-[#9aabff]" : "text-slate-400"
+                  }`}
+                />
+                {!compact && <span className="truncate">{item.label}</span>}
+              </Link>
+            );
+          })}
+
+          {SIDEBAR_ITEMS.filter((i) => i.group === "primary").map((item) => {
+            const Icon = item.icon;
+            const active =
+              pathname === item.href || pathname.startsWith(`${item.href}/`);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                prefetch={false}
+                onClick={() => {
+                  setInlineWorkspaceItem(null);
+                  window.dispatchEvent(
+                    new CustomEvent("doitwithai:studio-distribution-reset", {
+                      detail: "/studio/writer",
+                    }),
+                  );
+                }}
+                title={compact ? item.label : undefined}
+                className={`flex items-center rounded-xl px-3 py-2.5 text-xs font-bold transition ${
+                  compact ? "justify-center px-2" : "justify-between"
+                } ${
                   active
                     ? "bg-[#5271FF] text-white shadow-sm shadow-[#5271FF]/25"
                     : "border border-[#5271FF]/25 bg-[#5271FF]/[0.07] text-[#4361EE] hover:bg-[#5271FF]/[0.14] dark:text-[#b4c2ff]"
@@ -508,7 +544,150 @@ export default function StudioShell({ children }: { children: ReactNode }) {
           })}
         </div>
 
-        {/* SEO & Website Growth Pillars */}
+        {/* 2. Content & Social Distribution Studios (Directly Below Content Writer) */}
+        <div>
+          {!compact && (
+            <p className="mb-1.5 px-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              Social &amp; Distribution
+            </p>
+          )}
+          <nav aria-label="Social and Email studios" className="space-y-1">
+            {SIDEBAR_ITEMS.filter((i) => i.group === "distribution").map(
+              (item) => {
+                const Icon = item.icon;
+                const isEmail = item.href === "/studio/email";
+                const emailBrand = getSocialBrandMeta("Email");
+                const active =
+                  pathname === item.href || pathname.startsWith(`${item.href}/`);
+                return (
+                  <React.Fragment key={item.href}>
+                    <Link
+                      href={item.href}
+                      prefetch={false}
+                      onClick={() => {
+                        setInlineWorkspaceItem(null);
+                        window.dispatchEvent(
+                          new CustomEvent(
+                            "doitwithai:studio-distribution-reset",
+                            { detail: item.href },
+                          ),
+                        );
+                      }}
+                      title={compact ? item.label : undefined}
+                      style={
+                        isEmail && active
+                          ? {
+                              backgroundColor: emailBrand.tintBg,
+                              borderColor: emailBrand.borderTint,
+                            }
+                          : undefined
+                      }
+                      className={`flex items-center gap-2.5 rounded-xl border px-3 py-2 text-xs font-semibold transition ${
+                        compact ? "justify-center px-2" : ""
+                      } ${
+                        active
+                          ? isEmail
+                            ? "text-emerald-700 dark:text-emerald-300"
+                            : "border-transparent bg-slate-900 text-white dark:bg-slate-800 dark:text-white"
+                          : "border-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800/60 dark:hover:text-white"
+                      }`}
+                    >
+                      {isEmail ? (
+                        <SocialBrandIcon channel="Email" size={15} />
+                      ) : (
+                        <Icon
+                          size={15}
+                          className={`shrink-0 ${
+                            active ? "text-[#9aabff]" : "text-slate-400"
+                          }`}
+                        />
+                      )}
+                      {!compact && (
+                        <span className="truncate">{item.label}</span>
+                      )}
+                    </Link>
+
+                    {item.href === "/studio/social" && (
+                      <div
+                        className={
+                          compact
+                            ? "space-y-1 pt-0.5"
+                            : "ml-3 space-y-0.5 border-l border-slate-200/80 pl-2 pt-0.5 pb-1 dark:border-slate-800"
+                        }
+                      >
+                        {SOCIAL_PLATFORM_SUBLINKS.map((sub) => {
+                          const brand = getSocialBrandMeta(sub.channel);
+                          const subActive =
+                            pathname === "/studio/social" &&
+                            activeSocialChannel.toLowerCase() ===
+                              sub.channel.toLowerCase();
+                          return (
+                            <Link
+                              key={sub.channel}
+                              href={`/studio/social?channel=${encodeURIComponent(sub.channel)}`}
+                              prefetch={false}
+                              title={compact ? sub.label : undefined}
+                              onClick={() => {
+                                setInlineWorkspaceItem(null);
+                                setActiveSocialChannel(sub.channel);
+                                window.dispatchEvent(
+                                  new CustomEvent(
+                                    "doitwithai:studio-distribution-reset",
+                                    { detail: `/studio/social?channel=${sub.channel}` },
+                                  ),
+                                );
+                              }}
+                              style={
+                                subActive
+                                  ? {
+                                      backgroundColor: brand.tintBg,
+                                      borderColor: brand.borderTint,
+                                    }
+                                  : undefined
+                              }
+                              className={`flex items-center rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold transition ${
+                                compact ? "justify-center px-1.5" : "justify-between"
+                              } ${
+                                subActive
+                                  ? "text-slate-900 dark:text-white"
+                                  : "border-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800/50 dark:hover:text-white"
+                              }`}
+                            >
+                              <span className="flex min-w-0 items-center gap-2">
+                                <SocialBrandIcon
+                                  channel={sub.channel}
+                                  size={14}
+                                />
+                                {!compact && (
+                                  <span
+                                    className="truncate"
+                                    style={
+                                      subActive ? { color: brand.color } : undefined
+                                    }
+                                  >
+                                    {sub.label}
+                                  </span>
+                                )}
+                              </span>
+                              {!compact && subActive && (
+                                <span
+                                  className="h-1.5 w-1.5 shrink-0 rounded-full"
+                                  style={{ backgroundColor: brand.color }}
+                                />
+                              )}
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </React.Fragment>
+                );
+              },
+            )}
+          </nav>
+        </div>
+
+        {/* 3. SEO & Website Growth Pillars */}
         <div>
           {!compact && (
             <p className="mb-1.5 px-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
@@ -528,6 +707,8 @@ export default function StudioShell({ children }: { children: ReactNode }) {
                   onClick={() => setInlineWorkspaceItem(null)}
                   title={compact ? item.label : undefined}
                   className={`flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold transition ${
+                    compact ? "justify-center px-2" : ""
+                  } ${
                     active
                       ? "bg-slate-900 text-white dark:bg-slate-800 dark:text-white"
                       : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800/60 dark:hover:text-white"
@@ -543,79 +724,6 @@ export default function StudioShell({ children }: { children: ReactNode }) {
                 </Link>
               );
             })}
-          </nav>
-        </div>
-
-        {/* Dedicated Social Platforms & Email Newsletter Section */}
-        <div>
-          {!compact && (
-            <p className="mb-1.5 px-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-              Social &amp; Distribution
-            </p>
-          )}
-          <nav aria-label="Social and Email studios" className="space-y-1">
-            {SIDEBAR_ITEMS.filter((i) => i.group === "distribution").map(
-              (item) => {
-                const Icon = item.icon;
-                const active =
-                  pathname === item.href || pathname.startsWith(`${item.href}/`);
-                return (
-                  <React.Fragment key={item.href}>
-                    <Link
-                      href={item.href}
-                      prefetch={false}
-                      onClick={() => setInlineWorkspaceItem(null)}
-                      title={compact ? item.label : undefined}
-                      className={`flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold transition ${
-                        active
-                          ? "bg-slate-900 text-white dark:bg-slate-800 dark:text-white"
-                          : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800/60 dark:hover:text-white"
-                      }`}
-                    >
-                      <Icon
-                        size={15}
-                        className={`shrink-0 ${
-                          active ? "text-[#9aabff]" : "text-slate-400"
-                        }`}
-                      />
-                      {!compact && <span className="truncate">{item.label}</span>}
-                    </Link>
-
-                    {!compact && item.href === "/studio/social" && (
-                      <div className="ml-3.5 space-y-0.5 border-l border-slate-200/80 pl-2.5 pt-0.5 pb-1 dark:border-slate-800">
-                        {SOCIAL_PLATFORM_SUBLINKS.map((sub) => {
-                          const subActive =
-                            pathname === "/studio/social" &&
-                            activeSocialChannel.toLowerCase() ===
-                              sub.channel.toLowerCase();
-                          return (
-                            <Link
-                              key={sub.channel}
-                              href={`/studio/social?channel=${encodeURIComponent(sub.channel)}`}
-                              prefetch={false}
-                              onClick={() => {
-                                setInlineWorkspaceItem(null);
-                                setActiveSocialChannel(sub.channel);
-                              }}
-                              className={`flex items-center justify-between rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition ${
-                                subActive
-                                  ? "bg-[#5271FF]/15 font-bold text-[#4361EE] dark:text-[#b4c2ff]"
-                                  : "text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800/50 dark:hover:text-white"
-                              }`}
-                            >
-                              <span className="truncate">{sub.label}</span>
-                              {subActive && (
-                                <span className="h-1.5 w-1.5 rounded-full bg-[#5271FF]" />
-                              )}
-                            </Link>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </React.Fragment>
-                );
-              },
-            )}
           </nav>
         </div>
 

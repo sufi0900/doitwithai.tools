@@ -4,8 +4,9 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
+  ArrowLeft,
+  ArrowRight,
   Check,
-  CheckCircle2,
   ChevronDown,
   Copy,
   Download,
@@ -14,10 +15,10 @@ import {
   Globe,
   Layers,
   Loader2,
-  Mail,
   Palette,
   PenTool,
   Plus,
+  Search,
   Sparkles,
   Trash2,
 } from "lucide-react";
@@ -26,7 +27,11 @@ import { saveBlogProject } from "@/lib/blog-writer/project-storage-db";
 import { buildInfographicScene } from "@/lib/blog-infographic-studio/canvas-renderer";
 import { BLOG_INFOGRAPHIC_PALETTES } from "@/lib/blog-infographic-studio/palettes";
 import { BLOG_INFOGRAPHIC_25_TEMPLATES } from "@/lib/blog-infographic-studio/templates";
-import { newsletter, saveBlob, svgRaster } from "@/features/writer-workspace/assets";
+import {
+  newsletter,
+  saveBlob,
+  svgRaster,
+} from "@/features/writer-workspace/assets";
 import {
   articleRevision,
   escapeHtml,
@@ -56,6 +61,7 @@ import {
   subscribeStudioState,
 } from "@/lib/studio/store";
 import type { StudioWorkspaceState } from "@/lib/studio/types";
+import { getSocialBrandMeta, SocialBrandIcon } from "./SocialBrandIcon";
 
 const EMAIL_CHANNEL_KEY = "email";
 
@@ -74,6 +80,16 @@ const EMAIL_STATUS_STYLES: Record<ChannelAssetStatus, string> = {
     "border-emerald-500/35 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
 };
 
+const FEATURED_HEADER_STYLES: Array<{
+  label: string;
+  templateId: number;
+  paletteId: BlogInfographicConfig["paletteId"];
+}> = [
+  { label: "Executive Brief", templateId: 25, paletteId: "indigo-cyber" },
+  { label: "Process Flow", templateId: 1, paletteId: "blue-trust" },
+  { label: "Key Metrics", templateId: 6, paletteId: "emerald-growth" },
+];
+
 function renderInfographicDataUri(config: BlogInfographicConfig): {
   svg: string;
   dataUri: string;
@@ -89,22 +105,74 @@ function renderInfographicDataUri(config: BlogInfographicConfig): {
   }
 }
 
+function safeNewsletter(project: StudioSocialCampaignSource["project"], fallbackTitle: string) {
+  try {
+    return newsletter(project);
+  } catch {
+    return {
+      draft: {
+        style: "executive" as const,
+        subjectOptions: [
+          fallbackTitle || "Weekly Newsletter Briefing",
+          `Key Takeaways: ${fallbackTitle || "SEO & AI Playbook"}`,
+          `Practical Guide: ${fallbackTitle || "Weekly Dispatch"}`,
+        ],
+        selectedSubject: fallbackTitle || "Weekly Newsletter Briefing",
+        preheader: fallbackTitle || "Practical takeaways inside.",
+        greeting: "Hello,",
+        intro: fallbackTitle || "Here is your latest briefing.",
+        whyItMatters: "",
+        takeaways: [],
+        sections: [],
+        checklist: [],
+        ctaLabel: "Read more",
+        ctaUrl: "",
+      },
+      text: `Subject: ${fallbackTitle || "Weekly Newsletter Briefing"}\n\nHello,\n\n`,
+      html: `<!doctype html><html><body><h1>${escapeHtml(fallbackTitle || "Newsletter Briefing")}</h1></body></html>`,
+    };
+  }
+}
+
+function getSourceStatusLabel(source: StudioSocialCampaignSource): string {
+  if (source.kind === "standalone") return "Standalone";
+  return (
+    ARTICLE_STATUS_LABELS[
+      source.articleStatus as Exclude<
+        StudioSocialCampaignSource["articleStatus"],
+        "standalone"
+      >
+    ] || "Draft"
+  );
+}
+
 export default function StudioEmailClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const articleIdParam = searchParams.get("articleId");
+  const modeParam = searchParams.get("mode");
+  const emailBrand = useMemo(() => getSocialBrandMeta("Email"), []);
 
   const [studio, setStudio] = useState<StudioWorkspaceState>(
     createDefaultStudioState,
   );
   const [sources, setSources] = useState<StudioSocialCampaignSource[]>([]);
   const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<"listing" | "workbench">(() =>
+    modeParam === "workbench" ? "workbench" : "listing",
+  );
   const [selectedSourceId, setSelectedSourceId] = useState<string>("");
   const [statusMap, setStatusMap] = useState<Record<string, ChannelAssetStatus>>(
     {},
   );
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const switcherRef = useRef<HTMLDivElement>(null);
+
+  // Listing filter state
+  const [listingSearch, setListingSearch] = useState("");
+  const [listingStatusFilter, setListingStatusFilter] = useState<
+    "all" | ChannelAssetStatus
+  >("all");
 
   // Standalone Creator
   const [creatorOpen, setCreatorOpen] = useState(false);
@@ -128,6 +196,30 @@ export default function StudioEmailClient() {
     setStudio(loadStudioState());
     setStatusMap(getChannelStatusMap());
     return subscribeStudioState(() => setStudio(loadStudioState()));
+  }, []);
+
+  useEffect(() => {
+    if (modeParam === "workbench") {
+      setViewMode("workbench");
+    } else {
+      setViewMode("listing");
+    }
+  }, [modeParam]);
+
+  useEffect(() => {
+    const onReset = (e: Event) => {
+      const target = (e as CustomEvent<string>).detail || "";
+      if (target === "/studio/email") {
+        setViewMode("listing");
+        setSwitcherOpen(false);
+      }
+    };
+    window.addEventListener("doitwithai:studio-distribution-reset", onReset);
+    return () =>
+      window.removeEventListener(
+        "doitwithai:studio-distribution-reset",
+        onReset,
+      );
   }, []);
 
   useEffect(() => {
@@ -195,7 +287,7 @@ export default function StudioEmailClient() {
 
   const selectedNewsletter = useMemo(() => {
     if (!selectedSource) return null;
-    return newsletter(selectedSource.project);
+    return safeNewsletter(selectedSource.project, selectedSource.title);
   }, [selectedSource]);
 
   const subjectOptions = useMemo(() => {
@@ -231,11 +323,16 @@ export default function StudioEmailClient() {
 
   const headerConfig = useMemo(() => {
     if (!selectedSource) return null;
+    const subFallback =
+      selectedSource.primaryKeyword?.trim() ||
+      bodyText.replace(/\s+/g, " ").trim().slice(0, 88) ||
+      "Practical insights & action steps for subscribers.";
     return buildSocialInfographicConfigFromProject(selectedSource.project, {
-      channel: "Facebook", // 16:9 widescreen newsletter header
+      channel: "Facebook", // 16:9 widescreen newsletter header dimensions
       templateId: headerTemplateId,
       paletteId: headerPaletteId,
       customHeadline: subjectText || selectedSource.title,
+      customSubheadline: subFallback,
       brandName: activeSite?.name,
       brandColor: activeSite?.brandColorHex,
     });
@@ -244,18 +341,97 @@ export default function StudioEmailClient() {
     headerTemplateId,
     headerPaletteId,
     subjectText,
+    bodyText,
     activeSite,
   ]);
 
   const headerPreview = useMemo(
-    () => (headerConfig ? renderInfographicDataUri(headerConfig) : { svg: "", dataUri: "" }),
+    () =>
+      headerConfig
+        ? renderInfographicDataUri(headerConfig)
+        : { svg: "", dataUri: "" },
     [headerConfig],
   );
 
-  const handleSelectSource = (sourceId: string) => {
+  const featuredEditions = useMemo(() => {
+    return sources.slice(0, 3).map((src, idx) => {
+      const edition = safeNewsletter(src.project, src.title);
+      const savedEmail = workspace(src.project).email;
+      const subject = savedEmail?.subject ?? edition.draft.selectedSubject;
+      const body =
+        savedEmail?.body ?? edition.text.replace(/^Subject:[^\n]*\n*/i, "");
+      const styleMeta =
+        FEATURED_HEADER_STYLES[idx % FEATURED_HEADER_STYLES.length]!;
+      const cfg = buildSocialInfographicConfigFromProject(src.project, {
+        channel: "Facebook",
+        templateId: styleMeta.templateId,
+        paletteId: styleMeta.paletteId,
+        customHeadline: subject,
+        customSubheadline:
+          src.primaryKeyword?.trim() ||
+          body.replace(/\s+/g, " ").trim().slice(0, 88) ||
+          "Practical insights & action steps for subscribers.",
+        brandName: activeSite?.name,
+        brandColor: activeSite?.brandColorHex,
+      });
+      return {
+        source: src,
+        styleLabel: styleMeta.label,
+        subject,
+        body,
+        words: body.split(/\s+/).filter(Boolean).length,
+        config: cfg,
+        preview: renderInfographicDataUri(cfg),
+        emailStatus:
+          statusMap[channelStatusKey(src.id, EMAIL_CHANNEL_KEY)] ||
+          ("ready" as const),
+      };
+    });
+  }, [sources, activeSite, statusMap]);
+
+  const listingStatusCounts = useMemo(() => {
+    const counts = { all: sources.length, ready: 0, customized: 0, posted: 0 };
+    for (const src of sources) {
+      const st =
+        statusMap[channelStatusKey(src.id, EMAIL_CHANNEL_KEY)] || "ready";
+      counts[st] += 1;
+    }
+    return counts;
+  }, [sources, statusMap]);
+
+  const filteredListingSources = useMemo(() => {
+    const q = listingSearch.trim().toLowerCase();
+    return sources.filter((src) => {
+      const st =
+        statusMap[channelStatusKey(src.id, EMAIL_CHANNEL_KEY)] || "ready";
+      if (listingStatusFilter !== "all" && st !== listingStatusFilter) {
+        return false;
+      }
+      if (!q) return true;
+      const ed = safeNewsletter(src.project, src.title);
+      const subj =
+        workspace(src.project).email?.subject ?? ed.draft.selectedSubject;
+      return (
+        src.title.toLowerCase().includes(q) ||
+        subj.toLowerCase().includes(q) ||
+        src.primaryKeyword.toLowerCase().includes(q)
+      );
+    });
+  }, [sources, statusMap, listingStatusFilter, listingSearch]);
+
+  const handleOpenEditionInWorkbench = (sourceId: string) => {
     setSelectedSourceId(sourceId);
     setSwitcherOpen(false);
-    router.replace(`/studio/email?articleId=${encodeURIComponent(sourceId)}`);
+    setViewMode("workbench");
+    router.replace(
+      `/studio/email?articleId=${encodeURIComponent(sourceId)}&mode=workbench`,
+    );
+  };
+
+  const handleBackToListing = () => {
+    setViewMode("listing");
+    setSwitcherOpen(false);
+    router.replace("/studio/email");
   };
 
   const handleCreateStandalone = (e: React.FormEvent) => {
@@ -284,7 +460,8 @@ export default function StudioEmailClient() {
         },
         {
           title: "Step-by-Step Workflow",
-          detail: "Run a quick baseline review and prioritize high-ROI wins first.",
+          detail:
+            "Run a quick baseline review and prioritize high-ROI wins first.",
           metricValue: "2",
         },
         {
@@ -294,7 +471,8 @@ export default function StudioEmailClient() {
         },
         {
           title: "Next Action for Readers",
-          detail: "Pick one bottleneck today and track the improvement over 14 days.",
+          detail:
+            "Pick one bottleneck today and track the improvement over 14 days.",
           metricValue: "4",
         },
       ],
@@ -306,8 +484,10 @@ export default function StudioEmailClient() {
     setNewKeyword("");
     setNewHeadline("");
     setNewAngle("");
-    handleSelectSource(id);
-    setNotice(`Generated standalone newsletter edition & 16:9 header banner for "${kw}".`);
+    handleOpenEditionInWorkbench(id);
+    setNotice(
+      `Generated standalone newsletter edition & 16:9 header banner for "${kw}".`,
+    );
   };
 
   const handleSaveEdition = async () => {
@@ -353,11 +533,11 @@ export default function StudioEmailClient() {
     }
   };
 
-  const handleToggleSent = (sourceId: string) => {
-    const key = channelStatusKey(sourceId, EMAIL_CHANNEL_KEY);
-    const next: ChannelAssetStatus =
-      statusMap[key] === "posted" ? "ready" : "posted";
-    setStatusMap(setChannelAssetStatus(sourceId, EMAIL_CHANNEL_KEY, next));
+  const handleSetEmailStatus = (
+    sourceId: string,
+    nextStatus: ChannelAssetStatus,
+  ) => {
+    setStatusMap(setChannelAssetStatus(sourceId, EMAIL_CHANNEL_KEY, nextStatus));
   };
 
   const handleDownloadHeaderPng = async (
@@ -394,367 +574,615 @@ export default function StudioEmailClient() {
     }
   };
 
-  const recentEditions = useMemo(() => {
-    return sources.slice(0, 4).map((src) => {
-      const edition = newsletter(src.project);
-      const savedEmail = workspace(src.project).email;
-      const subject = savedEmail?.subject ?? edition.draft.selectedSubject;
-      const body = savedEmail?.body ?? edition.text.replace(/^Subject:[^\n]*\n*/i, "");
-      const cfg = buildSocialInfographicConfigFromProject(src.project, {
-        channel: "Facebook",
-        templateId: 25,
-        paletteId: "indigo-cyber",
-        customHeadline: subject,
-        brandName: activeSite?.name,
-        brandColor: activeSite?.brandColorHex,
-      });
-      return {
-        source: src,
-        subject,
-        body,
-        words: body.split(/\s+/).filter(Boolean).length,
-        config: cfg,
-        preview: renderInfographicDataUri(cfg),
-        emailStatus:
-          statusMap[channelStatusKey(src.id, EMAIL_CHANNEL_KEY)] ||
-          ("ready" as const),
-      };
-    });
-  }, [sources, activeSite, statusMap]);
+  const renderStandaloneCreator = () => {
+    if (!creatorOpen) return null;
+    return (
+      <form
+        onSubmit={handleCreateStandalone}
+        className="mt-4 rounded-xl border border-[#5271FF]/30 bg-[#5271FF]/[0.05] p-4 dark:bg-[#5271FF]/[0.08]"
+      >
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs font-bold text-slate-900 dark:text-white">
+            Generate Standalone Email Newsletter + 16:9 Header Graphic (No
+            Article Required)
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            {siteKeywords.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1">
+                <span className="text-[11px] text-slate-500">
+                  Quick keywords:
+                </span>
+                {siteKeywords.slice(0, 4).map((kw) => (
+                  <button
+                    key={kw.id}
+                    type="button"
+                    onClick={() => {
+                      setNewKeyword(kw.keyword);
+                      setNewHeadline(kw.suggestedTitle);
+                    }}
+                    className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-slate-700 hover:border-[#5271FF] hover:text-[#5271FF] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                  >
+                    {kw.keyword}
+                  </button>
+                ))}
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() => setCreatorOpen(false)}
+              className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-500 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:text-white"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-3 grid gap-2.5 sm:grid-cols-12">
+          <input
+            type="text"
+            required
+            value={newKeyword}
+            onChange={(e) => setNewKeyword(e.target.value)}
+            placeholder="Topic or keyword (e.g. google core update checklist)..."
+            className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 focus:border-[#5271FF] focus:outline-none sm:col-span-4 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+          />
+          <input
+            type="text"
+            value={newHeadline}
+            onChange={(e) => setNewHeadline(e.target.value)}
+            placeholder="Optional newsletter subject line..."
+            className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 focus:border-[#5271FF] focus:outline-none sm:col-span-4 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+          />
+          <input
+            type="text"
+            value={newAngle}
+            onChange={(e) => setNewAngle(e.target.value)}
+            placeholder="Optional key takeaway..."
+            className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 focus:border-[#5271FF] focus:outline-none sm:col-span-2 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+          />
+          <button
+            type="submit"
+            className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#5271FF] px-3 py-2 text-xs font-bold text-white transition hover:bg-[#4361EE] sm:col-span-2"
+          >
+            <Sparkles size={13} />
+            <span>Generate Edition</span>
+          </button>
+        </div>
+      </form>
+    );
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <div className="h-24 animate-pulse rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-[#0D1526]" />
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="h-60 animate-pulse rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-[#0D1526]" />
+          <div className="h-60 animate-pulse rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-[#0D1526]" />
+          <div className="h-60 animate-pulse rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-[#0D1526]" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* 1. Header + Simple Switcher + Standalone Newsletter Creator */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs sm:p-6 dark:border-slate-800 dark:bg-[#0D1526]">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <div className="flex flex-wrap items-center gap-2.5">
-              <h1 className="text-xl font-bold text-slate-900 dark:text-white">
-                Email Newsletter Studio
-              </h1>
-              {activeSite && (
-                <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-xs font-medium text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
-                  <Globe size={11} />
-                  <span>{activeSite.name}</span>
-                </span>
-              )}
+      {viewMode === "listing" ? (
+        /* =====================================================================
+           MODE 1: CLEAN NEWSLETTER OVERVIEW (Header + Top 3 Cards + Listing Table)
+           ===================================================================== */
+        <>
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs sm:p-6 dark:border-slate-800 dark:bg-[#0D1526]">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="flex items-start gap-3.5">
+                <SocialBrandIcon channel="Email" size={20} withBadge />
+                <div>
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <h1 className="text-xl font-bold text-slate-900 dark:text-white">
+                      Email Newsletter Studio
+                    </h1>
+                    <span
+                      className="rounded-md border px-2 py-0.5 text-[11px] font-bold"
+                      style={{
+                        backgroundColor: emailBrand.tintBg,
+                        borderColor: emailBrand.borderTint,
+                        color: emailBrand.color,
+                      }}
+                    >
+                      16:9 Header + HTML Dispatch
+                    </span>
+                    {activeSite && (
+                      <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-xs font-medium text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                        <Globe size={11} />
+                        <span>{activeSite.name}</span>
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                    Every article automatically generates subject line angles,
+                    scannable copy, and a 16:9 header banner. Click any card or
+                    edition row below to open its full newsletter studio.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setCreatorOpen((prev) => !prev)}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#5271FF] px-4 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-[#4361EE]"
+              >
+                <Plus size={14} />
+                <span>Create Standalone Newsletter</span>
+              </button>
             </div>
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-              Turn any written article or keyword into a ready-to-send email
-              newsletter edition with subject line angles and a 16:9 infographic
-              header banner.
-            </p>
+
+            {renderStandaloneCreator()}
+
+            {notice && (
+              <p className="mt-3 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                {notice}
+              </p>
+            )}
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            {sources.length > 0 && (
-              <div ref={switcherRef} className="relative">
+          {sources.length === 0 ? (
+            <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center dark:border-slate-800 dark:bg-[#0D1526]">
+              <div className="mx-auto flex justify-center">
+                <SocialBrandIcon channel="Email" size={24} withBadge />
+              </div>
+              <h2 className="mt-3 text-base font-bold text-slate-900 dark:text-white">
+                No email newsletter editions yet
+              </h2>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                Write an article in Content Writer or click{" "}
+                <strong>Create Standalone Newsletter</strong> above to build a
+                newsletter edition from any topic.
+              </p>
+              <div className="mt-4 flex flex-wrap justify-center gap-2.5">
                 <button
                   type="button"
-                  onClick={() => setSwitcherOpen((prev) => !prev)}
-                  aria-expanded={switcherOpen}
-                  aria-haspopup="listbox"
-                  className="inline-flex max-w-[280px] items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-800 transition hover:border-[#5271FF]/60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                  onClick={() => setCreatorOpen(true)}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#5271FF] px-4 py-2 text-xs font-bold text-white"
                 >
-                  <FileText size={13} className="shrink-0 text-[#5271FF]" />
-                  <span className="truncate">
-                    {selectedSource?.title || "Select Edition"}
-                  </span>
-                  <ChevronDown size={13} className="shrink-0 text-slate-400" />
+                  <Plus size={14} />
+                  <span>Create Standalone Newsletter</span>
                 </button>
+                <Link
+                  href="/studio/writer?mode=editor"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:text-slate-200"
+                >
+                  <span>Open Content Writer</span>
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* TOP 3 FEATURED NEWSLETTER CARDS (Strictly 3, Clickable Cards) */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <SocialBrandIcon channel="Email" size={16} />
+                    <h2 className="text-sm font-bold text-slate-900 dark:text-white">
+                      Recent Newsletter Editions
+                    </h2>
+                  </div>
+                  <span className="text-xs text-slate-500 dark:text-slate-400">
+                    Top {featuredEditions.length} of {sources.length} editions ·
+                    Click any card to edit
+                  </span>
+                </div>
 
-                {switcherOpen && (
-                  <div
-                    role="listbox"
-                    aria-label="Select newsletter edition"
-                    className="absolute right-0 top-full z-50 mt-1.5 w-80 max-w-[calc(100vw-2rem)] rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl dark:border-slate-700 dark:bg-[#0D1526]"
-                  >
-                    <div className="max-h-72 space-y-0.5 overflow-y-auto">
-                      {sources.map((src) => {
-                        const isCurrent = src.id === selectedSource?.id;
-                        const st =
+                <div className="grid gap-4 md:grid-cols-3">
+                  {featuredEditions.map((ed) => (
+                    <div
+                      key={ed.source.id}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => handleOpenEditionInWorkbench(ed.source.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          handleOpenEditionInWorkbench(ed.source.id);
+                        }
+                      }}
+                      className="group flex cursor-pointer flex-col justify-between overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs transition hover:-translate-y-0.5 hover:border-[#5271FF]/70 hover:shadow-md dark:border-slate-800 dark:bg-[#0D1526] dark:hover:border-[#5271FF]/60"
+                    >
+                      <div>
+                        <div className="bg-slate-950/95 p-3">
+                          <div className="mb-2 flex items-center justify-between gap-2">
+                            <span
+                              className="inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[10px] font-bold"
+                              style={{
+                                backgroundColor: emailBrand.tintBg,
+                                borderColor: emailBrand.borderTint,
+                                color: emailBrand.color,
+                              }}
+                            >
+                              <SocialBrandIcon channel="Email" size={11} />
+                              <span>{ed.styleLabel}</span>
+                            </span>
+                            <span
+                              className={`rounded border px-1.5 py-0.5 text-[10px] font-semibold ${EMAIL_STATUS_STYLES[ed.emailStatus]}`}
+                            >
+                              {EMAIL_STATUS_LABELS[ed.emailStatus]}
+                            </span>
+                          </div>
+
+                          {ed.preview.dataUri ? (
+                            <img
+                              src={ed.preview.dataUri}
+                              alt={`${ed.subject} — 16:9 email newsletter header`}
+                              className="h-40 w-full rounded-lg object-contain transition duration-200 group-hover:scale-[1.015]"
+                            />
+                          ) : null}
+                        </div>
+
+                        <div className="p-4">
+                          <p className="line-clamp-2 text-sm font-bold text-slate-900 transition group-hover:text-[#5271FF] dark:text-white dark:group-hover:text-[#9aabff]">
+                            {ed.subject}
+                          </p>
+                          <p className="mt-1 line-clamp-2 text-[11px] text-slate-500 dark:text-slate-400">
+                            {ed.body.slice(0, 140)}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between border-t border-slate-100 px-4 py-2.5 text-[11px] dark:border-slate-800">
+                        <span className="inline-flex items-center gap-1 font-bold text-[#5271FF] dark:text-[#9aabff]">
+                          <span>Open Newsletter Studio</span>
+                          <ArrowRight size={12} />
+                        </span>
+                        <span className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                          {ed.words} words
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* ALL NEWSLETTER EDITIONS CLICKABLE LISTING TABLE */}
+              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs dark:border-slate-800 dark:bg-[#0D1526]">
+                <div className="flex flex-col justify-between gap-3 border-b border-slate-200 px-5 py-4 lg:flex-row lg:items-center dark:border-slate-800">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                      All Newsletter Editions ({sources.length})
+                    </h3>
+                    <div className="inline-flex flex-wrap items-center gap-1 rounded-xl border border-slate-200 bg-slate-100 p-1 dark:border-slate-800 dark:bg-slate-900">
+                      {(
+                        [
+                          { id: "all", label: `All (${listingStatusCounts.all})` },
+                          {
+                            id: "ready",
+                            label: `Ready (${listingStatusCounts.ready})`,
+                          },
+                          {
+                            id: "customized",
+                            label: `Customized (${listingStatusCounts.customized})`,
+                          },
+                          {
+                            id: "posted",
+                            label: `Sent (${listingStatusCounts.posted})`,
+                          },
+                        ] as const
+                      ).map((tab) => (
+                        <button
+                          key={tab.id}
+                          type="button"
+                          onClick={() => setListingStatusFilter(tab.id)}
+                          className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition ${
+                            listingStatusFilter === tab.id
+                              ? "bg-white text-slate-900 shadow-xs dark:bg-[#0D1526] dark:text-white"
+                              : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                          }`}
+                        >
+                          {tab.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="relative w-full lg:w-72">
+                    <Search
+                      size={13}
+                      className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                    />
+                    <input
+                      type="search"
+                      value={listingSearch}
+                      onChange={(e) => setListingSearch(e.target.value)}
+                      placeholder="Filter editions by subject or keyword..."
+                      className="w-full rounded-xl border border-slate-300 bg-white py-1.5 pl-8 pr-3 text-xs text-slate-900 focus:border-[#5271FF] focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[780px] divide-y divide-slate-200 text-left text-xs dark:divide-slate-800">
+                    <thead className="bg-slate-50/90 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:bg-slate-900/70 dark:text-slate-400">
+                      <tr>
+                        <th className="px-4 py-3">Subject &amp; Source</th>
+                        <th className="px-3 py-3">Target Keyword</th>
+                        <th className="px-3 py-3">Origin</th>
+                        <th className="px-3 py-3">Status</th>
+                        <th className="px-4 py-3 text-right">Open</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
+                      {filteredListingSources.map((src) => {
+                        const emailStatus =
                           statusMap[
                             channelStatusKey(src.id, EMAIL_CHANNEL_KEY)
                           ] || "ready";
+                        const ed = safeNewsletter(src.project, src.title);
+                        const subj =
+                          workspace(src.project).email?.subject ??
+                          ed.draft.selectedSubject;
+                        const body =
+                          workspace(src.project).email?.body ??
+                          ed.text.replace(/^Subject:[^\n]*\n*/i, "");
+
                         return (
-                          <button
+                          <tr
                             key={src.id}
-                            type="button"
-                            role="option"
-                            aria-selected={isCurrent}
-                            onClick={() => handleSelectSource(src.id)}
-                            className={`flex w-full items-center justify-between gap-2.5 rounded-lg px-2.5 py-2 text-left text-xs transition ${
-                              isCurrent
-                                ? "bg-[#5271FF]/12 font-bold text-[#4361EE] dark:text-[#b4c2ff]"
-                                : "text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800/70"
-                            }`}
+                            onClick={() => handleOpenEditionInWorkbench(src.id)}
+                            className="group cursor-pointer transition hover:bg-slate-50 dark:hover:bg-slate-900/60"
                           >
-                            <span className="min-w-0 flex-1 truncate">
-                              {src.title}
-                            </span>
-                            <span
-                              className={`shrink-0 rounded border px-1.5 py-0.5 text-[10px] font-semibold ${EMAIL_STATUS_STYLES[st]}`}
+                            <td className="max-w-md px-4 py-3.5">
+                              <div className="font-bold text-slate-900 transition group-hover:text-[#5271FF] dark:text-white dark:group-hover:text-[#9aabff]">
+                                {subj}
+                              </div>
+                              <p className="mt-0.5 truncate text-[11px] text-slate-500 dark:text-slate-400">
+                                {src.title}
+                              </p>
+                            </td>
+                            <td className="px-3 py-3.5 text-slate-600 dark:text-slate-300">
+                              {src.primaryKeyword || "—"}
+                            </td>
+                            <td className="px-3 py-3.5">
+                              <span className="rounded bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                                {getSourceStatusLabel(src)}
+                              </span>
+                            </td>
+                            <td
+                              className="px-3 py-3.5"
+                              onClick={(e) => e.stopPropagation()}
                             >
-                              {EMAIL_STATUS_LABELS[st]}
-                            </span>
-                          </button>
+                              <select
+                                aria-label={`Newsletter status for ${subj}`}
+                                value={emailStatus}
+                                onChange={(e) =>
+                                  handleSetEmailStatus(
+                                    src.id,
+                                    e.target.value as ChannelAssetStatus,
+                                  )
+                                }
+                                className={`cursor-pointer rounded-md border px-2 py-1 text-[11px] font-semibold focus:outline-none ${EMAIL_STATUS_STYLES[emailStatus]}`}
+                              >
+                                <option value="ready">Ready</option>
+                                <option value="customized">Customized</option>
+                                <option value="posted">Sent</option>
+                              </select>
+                            </td>
+                            <td
+                              className="whitespace-nowrap px-4 py-3.5 text-right"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <div className="inline-flex items-center gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleOpenEditionInWorkbench(src.id)
+                                  }
+                                  className="inline-flex items-center gap-1 rounded-lg bg-[#5271FF] px-3 py-1.5 text-xs font-bold text-white hover:bg-[#4361EE]"
+                                >
+                                  <span>Open Studio</span>
+                                  <ArrowRight size={12} />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleDownloadHtml(subj, body, src.id)
+                                  }
+                                  className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[11px] font-semibold text-slate-600 hover:border-[#5271FF] dark:border-slate-700 dark:text-slate-300"
+                                >
+                                  .HTML
+                                </button>
+                                {src.kind === "standalone" && (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      deleteStandaloneCampaign(src.id)
+                                    }
+                                    title="Delete standalone newsletter"
+                                    className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40"
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
                         );
                       })}
-                    </div>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          )}
+        </>
+      ) : (
+        /* =====================================================================
+           MODE 2: FOCUSED NEWSLETTER WORKBENCH (Occupied by Selected Edition)
+           ===================================================================== */
+        <>
+          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3.5 shadow-xs sm:px-5 dark:border-slate-800 dark:bg-[#0D1526]">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex min-w-0 flex-wrap items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={handleBackToListing}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-700 transition hover:border-[#5271FF] hover:text-[#5271FF] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                >
+                  <ArrowLeft size={13} />
+                  <span>All Newsletter Editions ({sources.length})</span>
+                </button>
+
+                {sources.length > 0 && (
+                  <div ref={switcherRef} className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setSwitcherOpen((prev) => !prev)}
+                      aria-expanded={switcherOpen}
+                      aria-haspopup="listbox"
+                      className="inline-flex max-w-[280px] items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-800 transition hover:border-[#5271FF]/60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                    >
+                      <FileText size={13} className="shrink-0 text-[#5271FF]" />
+                      <span className="truncate">
+                        {selectedSource?.title || "Select Edition"}
+                      </span>
+                      <ChevronDown
+                        size={13}
+                        className="shrink-0 text-slate-400"
+                      />
+                    </button>
+
+                    {switcherOpen && (
+                      <div
+                        role="listbox"
+                        aria-label="Select newsletter edition"
+                        className="absolute left-0 top-full z-50 mt-1.5 w-80 max-w-[calc(100vw-2rem)] rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl dark:border-slate-700 dark:bg-[#0D1526]"
+                      >
+                        <div className="max-h-72 space-y-0.5 overflow-y-auto">
+                          {sources.map((src) => {
+                            const isCurrent = src.id === selectedSource?.id;
+                            const st =
+                              statusMap[
+                                channelStatusKey(src.id, EMAIL_CHANNEL_KEY)
+                              ] || "ready";
+                            return (
+                              <button
+                                key={src.id}
+                                type="button"
+                                role="option"
+                                aria-selected={isCurrent}
+                                onClick={() =>
+                                  handleOpenEditionInWorkbench(src.id)
+                                }
+                                className={`flex w-full items-center justify-between gap-2.5 rounded-lg px-2.5 py-2 text-left text-xs transition ${
+                                  isCurrent
+                                    ? "bg-[#5271FF]/12 font-bold text-[#4361EE] dark:text-[#b4c2ff]"
+                                    : "text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800/70"
+                                }`}
+                              >
+                                <span className="min-w-0 flex-1 truncate">
+                                  {src.title}
+                                </span>
+                                <span
+                                  className={`shrink-0 rounded border px-1.5 py-0.5 text-[10px] font-semibold ${EMAIL_STATUS_STYLES[st]}`}
+                                >
+                                  {EMAIL_STATUS_LABELS[st]}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <div className="mt-1 border-t border-slate-100 pt-1 dark:border-slate-800">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSwitcherOpen(false);
+                              setCreatorOpen(true);
+                            }}
+                            className="flex w-full items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-bold text-[#5271FF] hover:bg-[#5271FF]/10 dark:text-[#9aabff]"
+                          >
+                            <Plus size={13} />
+                            <span>Create Standalone Newsletter</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
-            )}
 
-            <button
-              type="button"
-              onClick={() => setCreatorOpen((prev) => !prev)}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-[#5271FF] px-3.5 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-[#4361EE]"
-            >
-              <Plus size={14} />
-              <span>Create Standalone Newsletter</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Standalone Keyword/Prompt Newsletter Creator */}
-        {creatorOpen && (
-          <form
-            onSubmit={handleCreateStandalone}
-            className="mt-4 rounded-xl border border-[#5271FF]/30 bg-[#5271FF]/[0.05] p-4 dark:bg-[#5271FF]/[0.08]"
-          >
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-xs font-bold text-slate-900 dark:text-white">
-                Generate Standalone Email Newsletter + 16:9 Header Graphic (No Article Required)
-              </p>
               <div className="flex flex-wrap items-center gap-2">
-                {siteKeywords.length > 0 && (
-                  <div className="flex flex-wrap items-center gap-1">
-                    <span className="text-[11px] text-slate-500">Quick keywords:</span>
-                    {siteKeywords.slice(0, 4).map((kw) => (
-                      <button
-                        key={kw.id}
-                        type="button"
-                        onClick={() => {
-                          setNewKeyword(kw.keyword);
-                          setNewHeadline(kw.suggestedTitle);
-                        }}
-                        className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-slate-700 hover:border-[#5271FF] hover:text-[#5271FF] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
-                      >
-                        {kw.keyword}
-                      </button>
-                    ))}
-                  </div>
+                {selectedSource && (
+                  <select
+                    aria-label="Current newsletter status"
+                    value={
+                      statusMap[
+                        channelStatusKey(selectedSource.id, EMAIL_CHANNEL_KEY)
+                      ] || "ready"
+                    }
+                    onChange={(e) =>
+                      handleSetEmailStatus(
+                        selectedSource.id,
+                        e.target.value as ChannelAssetStatus,
+                      )
+                    }
+                    className={`cursor-pointer rounded-lg border px-2.5 py-1.5 text-xs font-bold focus:outline-none ${
+                      EMAIL_STATUS_STYLES[
+                        statusMap[
+                          channelStatusKey(
+                            selectedSource.id,
+                            EMAIL_CHANNEL_KEY,
+                          )
+                        ] || "ready"
+                      ]
+                    }`}
+                  >
+                    <option value="ready">Status: Ready</option>
+                    <option value="customized">Status: Customized</option>
+                    <option value="posted">Status: Sent</option>
+                  </select>
                 )}
+
                 <button
                   type="button"
-                  onClick={() => setCreatorOpen(false)}
-                  className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-500 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:text-white"
+                  onClick={() => setCreatorOpen((prev) => !prev)}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#5271FF] px-3 py-1.5 text-xs font-bold text-white transition hover:bg-[#4361EE]"
                 >
-                  Close
+                  <Plus size={13} />
+                  <span>New Newsletter</span>
                 </button>
               </div>
             </div>
 
-            <div className="mt-3 grid gap-2.5 sm:grid-cols-12">
-              <input
-                type="text"
-                required
-                value={newKeyword}
-                onChange={(e) => setNewKeyword(e.target.value)}
-                placeholder="Topic or keyword (e.g. google core update checklist)..."
-                className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 focus:border-[#5271FF] focus:outline-none sm:col-span-4 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-              />
-              <input
-                type="text"
-                value={newHeadline}
-                onChange={(e) => setNewHeadline(e.target.value)}
-                placeholder="Optional newsletter subject line..."
-                className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 focus:border-[#5271FF] focus:outline-none sm:col-span-4 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-              />
-              <input
-                type="text"
-                value={newAngle}
-                onChange={(e) => setNewAngle(e.target.value)}
-                placeholder="Optional key takeaway..."
-                className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 focus:border-[#5271FF] focus:outline-none sm:col-span-2 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-              />
-              <button
-                type="submit"
-                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#5271FF] px-3 py-2 text-xs font-bold text-white transition hover:bg-[#4361EE] sm:col-span-2"
-              >
-                <Sparkles size={13} />
-                <span>Generate Edition</span>
-              </button>
-            </div>
-          </form>
-        )}
+            {renderStandaloneCreator()}
 
-        {notice && (
-          <p className="mt-3 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-            {notice}
-          </p>
-        )}
-      </div>
-
-      {loading ? (
-        <div className="flex items-center justify-center rounded-2xl border border-slate-200 bg-white py-16 dark:border-slate-800 dark:bg-[#0D1526]">
-          <Loader2 size={22} className="animate-spin text-[#5271FF]" />
-        </div>
-      ) : sources.length === 0 ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center dark:border-slate-800 dark:bg-[#0D1526]">
-          <Mail size={28} className="mx-auto text-[#5271FF]" />
-          <h2 className="mt-3 text-base font-bold text-slate-900 dark:text-white">
-            No email newsletter editions yet
-          </h2>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            Write an article in Content Writer or click{" "}
-            <strong>Create Standalone Newsletter</strong> above to build a
-            newsletter edition from any topic.
-          </p>
-          <div className="mt-4 flex flex-wrap justify-center gap-2.5">
-            <button
-              type="button"
-              onClick={() => setCreatorOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-[#5271FF] px-4 py-2 text-xs font-bold text-white"
-            >
-              <Plus size={14} />
-              <span>Create Standalone Newsletter</span>
-            </button>
-            <Link
-              href="/studio/writer?mode=editor"
-              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:text-slate-200"
-            >
-              <span>Open Content Writer</span>
-            </Link>
-          </div>
-        </div>
-      ) : (
-        <>
-          {/* 2. RECENT NEWSLETTER EDITIONS (TOP 4 CARDS) */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-bold text-slate-900 dark:text-white">
-                Recent Created Newsletter Editions
-              </h2>
-              <span className="text-xs text-slate-500 dark:text-slate-400">
-                Showing {recentEditions.length} of {sources.length}
-              </span>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              {recentEditions.map((ed) => {
-                const isSelected = ed.source.id === selectedSource?.id;
-                return (
-                  <div
-                    key={ed.source.id}
-                    className={`flex flex-col justify-between overflow-hidden rounded-2xl border bg-white shadow-xs transition dark:bg-[#0D1526] ${
-                      isSelected
-                        ? "border-[#5271FF] ring-2 ring-[#5271FF]/25"
-                        : "border-slate-200 hover:border-[#5271FF]/50 dark:border-slate-800"
-                    }`}
-                  >
-                    <div>
-                      <button
-                        type="button"
-                        onClick={() => handleSelectSource(ed.source.id)}
-                        className="block w-full bg-slate-950 p-2"
-                      >
-                        {ed.preview.dataUri ? (
-                          <img
-                            src={ed.preview.dataUri}
-                            alt={ed.subject}
-                            className="h-36 w-full rounded-lg object-contain"
-                          />
-                        ) : null}
-                      </button>
-                      <div className="p-3.5">
-                        <div className="flex items-center justify-between gap-2 text-[10px]">
-                          <span className="rounded bg-slate-100 px-1.5 py-0.5 font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                            {ed.words} words
-                          </span>
-                          <span
-                            className={`rounded border px-1.5 py-0.5 font-semibold ${EMAIL_STATUS_STYLES[ed.emailStatus]}`}
-                          >
-                            {EMAIL_STATUS_LABELS[ed.emailStatus]}
-                          </span>
-                        </div>
-                        <p className="mt-2 line-clamp-2 text-xs font-bold text-slate-900 dark:text-white">
-                          {ed.subject}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-1.5 border-t border-slate-100 px-3.5 py-2.5 dark:border-slate-800">
-                      <button
-                        type="button"
-                        onClick={() => handleSelectSource(ed.source.id)}
-                        className={`flex-1 rounded-lg px-2.5 py-1.5 text-[11px] font-bold transition ${
-                          isSelected
-                            ? "bg-[#5271FF]/15 text-[#4361EE] dark:text-[#b4c2ff]"
-                            : "bg-[#5271FF] text-white hover:bg-[#4361EE]"
-                        }`}
-                      >
-                        {isSelected ? "Open Now" : "Load Edition"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          void handleDownloadHeaderPng(ed.config, ed.source.id)
-                        }
-                        className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 hover:border-[#5271FF] dark:border-slate-700 dark:text-slate-200"
-                      >
-                        <Download size={12} />
-                        <span>PNG</span>
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+            {notice && (
+              <p className="mt-3 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                {notice}
+              </p>
+            )}
           </div>
 
-          {/* 3. NEWSLETTER EDITION WORKBENCH */}
           {selectedSource && headerConfig && (
             <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs sm:p-6 dark:border-slate-800 dark:bg-[#0D1526]">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 pb-4 dark:border-slate-800">
-                <div>
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-[#5271FF] dark:text-[#9aabff]">
-                    Active Newsletter Edition
-                  </p>
-                  <h2 className="mt-0.5 text-base font-bold text-slate-900 dark:text-white">
-                    {selectedSource.title}
-                  </h2>
+                <div className="flex items-center gap-3">
+                  <SocialBrandIcon channel="Email" size={18} withBadge />
+                  <div>
+                    <p
+                      className="text-[11px] font-bold uppercase tracking-wider"
+                      style={{ color: emailBrand.color }}
+                    >
+                      Active Newsletter Edition Workbench
+                    </p>
+                    <h2 className="mt-0.5 text-base font-bold text-slate-900 dark:text-white">
+                      {selectedSource.title}
+                    </h2>
+                  </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2">
-                  {exportBusy && (
-                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#5271FF]">
-                      <Loader2 size={13} className="animate-spin" />
-                      {exportBusy}
-                    </span>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => handleToggleSent(selectedSource.id)}
-                    className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-bold transition ${
-                      statusMap[
-                        channelStatusKey(selectedSource.id, EMAIL_CHANNEL_KEY)
-                      ] === "posted"
-                        ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
-                        : "border-slate-200 text-slate-700 hover:border-emerald-500/50 hover:text-emerald-600 dark:border-slate-700 dark:text-slate-200"
-                    }`}
-                  >
-                    <CheckCircle2 size={13} />
-                    <span>
-                      {statusMap[
-                        channelStatusKey(selectedSource.id, EMAIL_CHANNEL_KEY)
-                      ] === "posted"
-                        ? "Sent ✓"
-                        : "Mark as Sent"}
-                    </span>
-                  </button>
-                </div>
+                {exportBusy && (
+                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#5271FF]">
+                    <Loader2 size={13} className="animate-spin" />
+                    {exportBusy}
+                  </span>
+                )}
               </div>
 
               <div className="mt-5 grid gap-6 lg:grid-cols-12">
@@ -994,126 +1422,6 @@ export default function StudioEmailClient() {
               </div>
             </div>
           )}
-
-          {/* 4. ALL NEWSLETTER EDITIONS TABLE */}
-          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs dark:border-slate-800 dark:bg-[#0D1526]">
-            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-3.5 dark:border-slate-800">
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                All Newsletter Editions ({sources.length})
-              </h3>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[820px] divide-y divide-slate-200 text-left text-xs dark:divide-slate-800">
-                <thead className="bg-slate-50/90 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:bg-slate-900/70 dark:text-slate-400">
-                  <tr>
-                    <th className="px-4 py-3">Subject &amp; Source</th>
-                    <th className="px-3 py-3">Target Keyword</th>
-                    <th className="px-3 py-3">Article Status</th>
-                    <th className="px-3 py-3">Newsletter Status</th>
-                    <th className="px-4 py-3 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
-                  {sources.map((src) => {
-                    const emailStatus =
-                      statusMap[channelStatusKey(src.id, EMAIL_CHANNEL_KEY)] ||
-                      "ready";
-                    const ed = newsletter(src.project);
-                    const subj =
-                      workspace(src.project).email?.subject ??
-                      ed.draft.selectedSubject;
-                    const body =
-                      workspace(src.project).email?.body ??
-                      ed.text.replace(/^Subject:[^\n]*\n*/i, "");
-                    const isSelected = src.id === selectedSource?.id;
-
-                    return (
-                      <tr
-                        key={src.id}
-                        className={`transition ${
-                          isSelected
-                            ? "bg-[#5271FF]/[0.05]"
-                            : "hover:bg-slate-50/70 dark:hover:bg-slate-900/40"
-                        }`}
-                      >
-                        <td className="max-w-md px-4 py-3">
-                          <button
-                            type="button"
-                            onClick={() => handleSelectSource(src.id)}
-                            className="text-left font-bold text-slate-900 hover:text-[#5271FF] dark:text-white dark:hover:text-[#9aabff]"
-                          >
-                            {subj}
-                          </button>
-                          <p className="mt-0.5 truncate text-[11px] text-slate-500 dark:text-slate-400">
-                            {src.title}
-                          </p>
-                        </td>
-                        <td className="px-3 py-3 text-slate-600 dark:text-slate-300">
-                          {src.primaryKeyword || "—"}
-                        </td>
-                        <td className="px-3 py-3">
-                          <span className="rounded bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                            {src.kind === "standalone"
-                              ? "Standalone"
-                              : ARTICLE_STATUS_LABELS[
-                                  src.articleStatus as Exclude<
-                                    StudioSocialCampaignSource["articleStatus"],
-                                    "standalone"
-                                  >
-                                ]}
-                          </span>
-                        </td>
-                        <td className="px-3 py-3">
-                          <span
-                            className={`inline-flex rounded border px-2 py-0.5 text-[11px] font-semibold ${EMAIL_STATUS_STYLES[emailStatus]}`}
-                          >
-                            {EMAIL_STATUS_LABELS[emailStatus]}
-                          </span>
-                        </td>
-                        <td className="whitespace-nowrap px-4 py-3 text-right">
-                          <div className="inline-flex items-center gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => handleSelectSource(src.id)}
-                              className="rounded-lg bg-[#5271FF] px-3 py-1.5 text-xs font-bold text-white hover:bg-[#4361EE]"
-                            >
-                              {isSelected ? "Open" : "Edit Edition"}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleDownloadHtml(subj, body, src.id)
-                              }
-                              className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[11px] font-semibold text-slate-600 hover:border-[#5271FF] dark:border-slate-700 dark:text-slate-300"
-                            >
-                              .HTML
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleToggleSent(src.id)}
-                              className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[11px] font-semibold text-slate-600 hover:border-emerald-500/50 hover:text-emerald-600 dark:border-slate-700 dark:text-slate-300"
-                            >
-                              {emailStatus === "posted" ? "Sent ✓" : "Mark Sent"}
-                            </button>
-                            {src.kind === "standalone" && (
-                              <button
-                                type="button"
-                                onClick={() => deleteStandaloneCampaign(src.id)}
-                                title="Delete standalone newsletter"
-                                className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40"
-                              >
-                                <Trash2 size={14} />
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
         </>
       )}
     </div>

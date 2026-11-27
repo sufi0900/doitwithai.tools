@@ -95,6 +95,47 @@ export function storyExcerpts(p: Project) {
     .filter((s) => s.text);
   return { a, lead, points };
 }
+function ensureValidConversionArticle(
+  a: ReturnType<typeof articleModel>,
+  p: Project,
+) {
+  const safeTitle =
+    a.title.trim() ||
+    p.metaPack?.h1Title?.trim() ||
+    p.metaPack?.metaTitle?.trim() ||
+    p.projectTitle?.trim() ||
+    p.keywordCluster?.primaryKeyword?.trim() ||
+    "Untitled Article";
+  const hasText = a.blocks.some(
+    (b) =>
+      b.kind !== "image" &&
+      (b.text.trim() || b.cells?.some((r) => r.some((c) => c.trim()))),
+  );
+  const fallbackBody =
+    plain(p.metaPack?.aeoDirectAnswer50Words || "") ||
+    plain(p.metaPack?.metaDescription || "") ||
+    plain(p.rawUserBriefOrSourceText || "") ||
+    `Key takeaways and implementation guide for ${safeTitle}.`;
+  const normalizedBlocks = (
+    hasText
+      ? a.blocks
+      : [
+          ...a.blocks,
+          { id: "fallback-intro", kind: "paragraph" as const, text: fallbackBody },
+        ]
+  )
+    .slice(0, 280)
+    .map((b) =>
+      b.text.length > 11000 ? { ...b, text: b.text.slice(0, 11000) } : b,
+    );
+  return {
+    ...a,
+    title: safeTitle.slice(0, 280),
+    byline: a.byline.slice(0, 280),
+    published: a.published.slice(0, 90),
+    blocks: normalizedBlocks,
+  };
+}
 export function socialDrafts(p: Project) {
   const { a, lead, points } = storyExcerpts(p),
     revision = articleRevision(p);
@@ -533,19 +574,46 @@ export async function downloadArticle(p: Project, format: string) {
 }
 export function newsletter(p: Project) {
   const { a, lead, points } = storyExcerpts(p),
-    base = buildNewsletter(a),
+    safeA = ensureValidConversionArticle(a, p),
     custom = workspace(p).email;
+  let base: ReturnType<typeof buildNewsletter>;
+  try {
+    base = buildNewsletter(safeA);
+  } catch {
+    base = {
+      style: "executive",
+      subjectOptions: [
+        safeA.title,
+        `Key takeaways: ${safeA.title}`,
+        `A closer look at ${safeA.title}`,
+      ],
+      selectedSubject: safeA.title,
+      preheader: short(lead || safeA.title, 140),
+      greeting: "Hello,",
+      intro: lead || safeA.title,
+      whyItMatters: "",
+      takeaways: points.slice(0, 4).map((s) => s.heading),
+      sections: points.slice(0, 6).map((s) => ({
+        heading: s.heading,
+        summary: short(s.text, 500),
+        actionItem: "",
+      })),
+      checklist: [],
+      ctaLabel: "Read the full article",
+      ctaUrl: safeA.source,
+    };
+  }
   const subjects = [
-    a.title,
-    `${points.length || 1} takeaways: ${a.title}`,
-    `A closer look at ${a.title}`,
+    safeA.title,
+    `${points.length || 1} takeaways: ${safeA.title}`,
+    `A closer look at ${safeA.title}`,
   ];
   const draft = {
     ...base,
     subjectOptions: subjects,
     selectedSubject: subjects[0],
-    preheader: short(lead, 140),
-    intro: lead,
+    preheader: short(lead || safeA.title, 140),
+    intro: lead || safeA.title,
     whyItMatters: "",
     takeaways: points.slice(0, 4).map((s) => s.heading),
     sections: points.slice(0, 6).map((s) => ({
@@ -555,8 +623,16 @@ export function newsletter(p: Project) {
     })),
     checklist: [],
     ctaLabel: "Read the full article",
-    ctaUrl: a.source,
+    ctaUrl: safeA.source,
   };
+  let fallbackHtml = `<!doctype html><html><body><h1>${escapeHtml(draft.selectedSubject)}</h1><p>${escapeHtml(draft.intro)}</p></body></html>`;
+  if (!custom) {
+    try {
+      fallbackHtml = newsletterHtml(safeA, draft);
+    } catch {
+      fallbackHtml = `<!doctype html><html><body><h1>${escapeHtml(draft.selectedSubject)}</h1><p>${escapeHtml(draft.intro)}</p></body></html>`;
+    }
+  }
   return {
     draft,
     text: custom
@@ -566,30 +642,50 @@ export function newsletter(p: Project) {
           "",
           "Hello,",
           "",
-          lead,
+          lead || safeA.title,
           ...points
             .slice(0, 6)
             .flatMap((s) => ["", s.heading, short(s.text, 500)]),
-          ...(a.source ? ["", "Read the full article: " + a.source] : []),
+          ...(safeA.source ? ["", "Read the full article: " + safeA.source] : []),
         ].join("\n"),
     html: custom
       ? `<!doctype html><html><body><h1>${escapeHtml(custom.subject)}</h1>${custom.body
           .split(/\n\s*\n/)
           .map((t) => `<p>${escapeHtml(t).replace(/\n/g, "<br>")}</p>`)
           .join("")}</body></html>`
-      : newsletterHtml(a, draft),
+      : fallbackHtml,
   };
 }
 export function carouselSlides(p: Project) {
   const { a, lead, points } = storyExcerpts(p),
-    base = buildLinkedinCarousel(a);
+    safeA = ensureValidConversionArticle(a, p);
+  let base: ReturnType<typeof buildLinkedinCarousel>;
+  try {
+    base = buildLinkedinCarousel(safeA);
+  } catch {
+    base = [
+      {
+        number: 1,
+        kind: "cover",
+        kicker: "GUIDE",
+        headline: safeA.title,
+        highlightPhrase: safeA.title,
+        body: short(lead || safeA.title, 240),
+        cardLeftTitle: "OVERVIEW",
+        cardLeftBody: short(lead || safeA.title, 120),
+        cardRightTitle: "KEY FOCUS",
+        cardRightBody: short(points[0]?.text || safeA.title, 120),
+        footer: safeA.source || "",
+      },
+    ];
+  }
   const slides = [
     {
       ...base[0],
       number: 1,
       kind: "cover",
-      headline: a.title,
-      body: short(lead, 240),
+      headline: safeA.title,
+      body: short(lead || safeA.title, 240),
     },
     ...points.slice(0, 7).map((s, i) => ({
       ...base[Math.min(i + 1, base.length - 1)],
