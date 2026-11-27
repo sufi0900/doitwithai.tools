@@ -18,10 +18,12 @@ import {
   Link2,
   Lock,
   type LucideIcon,
+  Mail,
   Menu,
   PanelLeftClose,
   PanelLeftOpen,
   Plus,
+  Share2,
   ShieldCheck,
   Sparkles,
   X,
@@ -55,9 +57,18 @@ interface SidebarNavItem {
   href: string;
   label: string;
   icon: LucideIcon;
-  group: "primary" | "seo" | "resources";
+  group: "primary" | "seo" | "distribution" | "resources";
   badge?: string;
 }
+
+const SOCIAL_PLATFORM_SUBLINKS: Array<{ channel: string; label: string }> = [
+  { channel: "Instagram", label: "Instagram" },
+  { channel: "Facebook", label: "Facebook" },
+  { channel: "LinkedIn", label: "LinkedIn" },
+  { channel: "X", label: "X (Twitter)" },
+  { channel: "Pinterest", label: "Pinterest" },
+  { channel: "YouTube", label: "YouTube & Video" },
+];
 
 const SIDEBAR_ITEMS: SidebarNavItem[] = [
   {
@@ -103,6 +114,18 @@ const SIDEBAR_ITEMS: SidebarNavItem[] = [
     group: "seo",
   },
   {
+    href: "/studio/social",
+    label: "Social & Video Studio",
+    icon: Share2,
+    group: "distribution",
+  },
+  {
+    href: "/studio/email",
+    label: "Email Newsletter",
+    icon: Mail,
+    group: "distribution",
+  },
+  {
     href: "/studio/vault",
     label: "Prompts, Tools & Playbooks",
     icon: BookOpen,
@@ -140,6 +163,7 @@ export default function StudioShell({ children }: { children: ReactNode }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [siteArticlesCount, setSiteArticlesCount] = useState(0);
+  const [activeSocialChannel, setActiveSocialChannel] = useState("Instagram");
   const [inlineWorkspaceItem, setInlineWorkspaceItem] =
     useState<StudioInlineItem | null>(null);
 
@@ -186,7 +210,33 @@ export default function StudioShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     setMobileNavOpen(false);
     setInlineWorkspaceItem(null);
+    if (typeof window !== "undefined") {
+      const ch = new URLSearchParams(window.location.search).get("channel");
+      if (ch) setActiveSocialChannel(ch);
+      else if (pathname === "/studio/social") setActiveSocialChannel("Instagram");
+    }
   }, [pathname]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const syncChannel = () => {
+      const ch = new URLSearchParams(window.location.search).get("channel");
+      setActiveSocialChannel(ch || "Instagram");
+    };
+    const onChannelEvent = (e: Event) => {
+      const ch = (e as CustomEvent<string>).detail;
+      if (ch) setActiveSocialChannel(ch);
+    };
+    window.addEventListener("popstate", syncChannel);
+    window.addEventListener("doitwithai:studio-social-channel", onChannelEvent);
+    return () => {
+      window.removeEventListener("popstate", syncChannel);
+      window.removeEventListener(
+        "doitwithai:studio-social-channel",
+        onChannelEvent,
+      );
+    };
+  }, []);
 
   useEffect(() => {
     return subscribeStudioDrawer((action) => {
@@ -493,6 +543,79 @@ export default function StudioShell({ children }: { children: ReactNode }) {
                 </Link>
               );
             })}
+          </nav>
+        </div>
+
+        {/* Dedicated Social Platforms & Email Newsletter Section */}
+        <div>
+          {!compact && (
+            <p className="mb-1.5 px-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              Social &amp; Distribution
+            </p>
+          )}
+          <nav aria-label="Social and Email studios" className="space-y-1">
+            {SIDEBAR_ITEMS.filter((i) => i.group === "distribution").map(
+              (item) => {
+                const Icon = item.icon;
+                const active =
+                  pathname === item.href || pathname.startsWith(`${item.href}/`);
+                return (
+                  <React.Fragment key={item.href}>
+                    <Link
+                      href={item.href}
+                      prefetch={false}
+                      onClick={() => setInlineWorkspaceItem(null)}
+                      title={compact ? item.label : undefined}
+                      className={`flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold transition ${
+                        active
+                          ? "bg-slate-900 text-white dark:bg-slate-800 dark:text-white"
+                          : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800/60 dark:hover:text-white"
+                      }`}
+                    >
+                      <Icon
+                        size={15}
+                        className={`shrink-0 ${
+                          active ? "text-[#9aabff]" : "text-slate-400"
+                        }`}
+                      />
+                      {!compact && <span className="truncate">{item.label}</span>}
+                    </Link>
+
+                    {!compact && item.href === "/studio/social" && (
+                      <div className="ml-3.5 space-y-0.5 border-l border-slate-200/80 pl-2.5 pt-0.5 pb-1 dark:border-slate-800">
+                        {SOCIAL_PLATFORM_SUBLINKS.map((sub) => {
+                          const subActive =
+                            pathname === "/studio/social" &&
+                            activeSocialChannel.toLowerCase() ===
+                              sub.channel.toLowerCase();
+                          return (
+                            <Link
+                              key={sub.channel}
+                              href={`/studio/social?channel=${encodeURIComponent(sub.channel)}`}
+                              prefetch={false}
+                              onClick={() => {
+                                setInlineWorkspaceItem(null);
+                                setActiveSocialChannel(sub.channel);
+                              }}
+                              className={`flex items-center justify-between rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition ${
+                                subActive
+                                  ? "bg-[#5271FF]/15 font-bold text-[#4361EE] dark:text-[#b4c2ff]"
+                                  : "text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800/50 dark:hover:text-white"
+                              }`}
+                            >
+                              <span className="truncate">{sub.label}</span>
+                              {subActive && (
+                                <span className="h-1.5 w-1.5 rounded-full bg-[#5271FF]" />
+                              )}
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </React.Fragment>
+                );
+              },
+            )}
           </nav>
         </div>
 

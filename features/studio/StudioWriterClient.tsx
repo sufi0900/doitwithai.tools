@@ -4,18 +4,20 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  ArrowLeft,
   ArrowRight,
   CalendarPlus,
   CheckCircle2,
   ChevronDown,
-  ChevronUp,
   Crown,
   FilePenLine,
   FileText,
   Globe,
   Link2,
+  Mail,
   Plus,
   Search,
+  Share2,
   Trash2,
 } from "lucide-react";
 import WriterWorkspace from "@/features/writer-workspace/WriterWorkspace";
@@ -77,18 +79,29 @@ export default function StudioWriterClient() {
   );
   const [unlimitedTesting, setUnlimitedTesting] = useState(true);
   const [articles, setArticles] = useState<StudioArticleEntry[]>([]);
+  const [libraryReady, setLibraryReady] = useState(false);
+  const [viewMode, setViewMode] = useState<"table" | "editor">("table");
   const [activeProjectId, setActiveProjectId] = useState<string>("");
-  const [articlesExpanded, setArticlesExpanded] = useState(false);
-  const [dropdownAlign, setDropdownAlign] = useState<"left" | "right">("right");
-  const [articleSearch, setArticleSearch] = useState("");
-  const [articleStatusFilter, setArticleStatusFilter] = useState<
+  const [switcherOpen, setSwitcherOpen] = useState(false);
+  const [tableSearch, setTableSearch] = useState("");
+  const [tableStatusFilter, setTableStatusFilter] = useState<
     "all" | "in-progress" | "written" | "published"
   >("all");
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const switcherRef = useRef<HTMLDivElement>(null);
+  const hasInitializedViewRef = useRef(false);
 
   useEffect(() => {
     setStudio(loadStudioState());
     setActiveProjectId(readActiveProjectIdFromStorage());
+
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("mode") === "editor") {
+        hasInitializedViewRef.current = true;
+        setViewMode("editor");
+      }
+    }
+
     fetch("/api/studio/runtime")
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
@@ -102,27 +115,25 @@ export default function StudioWriterClient() {
   }, []);
 
   useEffect(() => {
-    if (!articlesExpanded) return;
-    const handleMouseDown = (event: MouseEvent) => {
+    if (!switcherOpen) return;
+    const onMouseDown = (event: MouseEvent) => {
       if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
+        switcherRef.current &&
+        !switcherRef.current.contains(event.target as Node)
       ) {
-        setArticlesExpanded(false);
+        setSwitcherOpen(false);
       }
     };
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setArticlesExpanded(false);
-      }
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSwitcherOpen(false);
     };
-    document.addEventListener("mousedown", handleMouseDown);
-    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("mousedown", onMouseDown);
+    document.addEventListener("keydown", onKeyDown);
     return () => {
-      document.removeEventListener("mousedown", handleMouseDown);
-      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("mousedown", onMouseDown);
+      document.removeEventListener("keydown", onKeyDown);
     };
-  }, [articlesExpanded]);
+  }, [switcherOpen]);
 
   const activeSite =
     studio.sites.find((s) => s.id === studio.activeSiteId) ||
@@ -139,6 +150,12 @@ export default function StudioWriterClient() {
           if (cancelled) return;
           const scoped = filterArticlesForSite(all, activeSite);
           setArticles(scoped);
+          setLibraryReady(true);
+
+          if (!hasInitializedViewRef.current) {
+            hasInitializedViewRef.current = true;
+            setViewMode(scoped.length > 0 ? "table" : "editor");
+          }
 
           const latest = loadStudioState();
           const reconciled = reconcileKeywordStatuses(latest.keywords, all);
@@ -149,7 +166,9 @@ export default function StudioWriterClient() {
             }));
           }
         })
-        .catch(() => {});
+        .catch(() => {
+          if (!cancelled) setLibraryReady(true);
+        });
     };
 
     refreshLibrary();
@@ -177,29 +196,30 @@ export default function StudioWriterClient() {
     return { inProgress, written, published, all: articles.length };
   }, [articles]);
 
-  const filteredArticles = useMemo(() => {
-    const q = articleSearch.trim().toLowerCase();
+  const filteredTableArticles = useMemo(() => {
+    const q = tableSearch.trim().toLowerCase();
     return articles.filter((a) => {
       if (
-        articleStatusFilter === "in-progress" &&
+        tableStatusFilter === "in-progress" &&
         a.status !== "in-progress" &&
         a.status !== "brief"
       ) {
         return false;
       }
-      if (articleStatusFilter === "written" && a.status !== "written") {
+      if (tableStatusFilter === "written" && a.status !== "written") {
         return false;
       }
-      if (articleStatusFilter === "published" && a.status !== "published") {
+      if (tableStatusFilter === "published" && a.status !== "published") {
         return false;
       }
       if (!q) return true;
       return (
         a.title.toLowerCase().includes(q) ||
+        a.metaTitle.toLowerCase().includes(q) ||
         a.primaryKeyword.toLowerCase().includes(q)
       );
     });
-  }, [articles, articleSearch, articleStatusFilter]);
+  }, [articles, tableSearch, tableStatusFilter]);
 
   const limit = PLAN_LIMITS[studio.planTier];
   const overFreePreview =
@@ -210,31 +230,15 @@ export default function StudioWriterClient() {
   const handleOpenArticle = (projectId: string) => {
     setActiveProjectId(projectId);
     requestWriterOpenProject(projectId);
-    setArticlesExpanded(false);
-  };
-
-  const toggleArticlesDropdown = () => {
-    setArticlesExpanded((prev) => {
-      const next = !prev;
-      if (next && dropdownRef.current && typeof window !== "undefined") {
-        const rect = dropdownRef.current.getBoundingClientRect();
-        const desiredWidth = Math.min(576, window.innerWidth - 32);
-        const spaceOnLeft = rect.right;
-        const spaceOnRight = window.innerWidth - rect.left;
-        setDropdownAlign(
-          spaceOnLeft < desiredWidth + 16 && spaceOnRight >= spaceOnLeft
-            ? "left"
-            : "right",
-        );
-      }
-      return next;
-    });
+    setSwitcherOpen(false);
+    setViewMode("editor");
   };
 
   const handleStartNewArticle = () => {
     setActiveProjectId("");
     requestWriterNewArticle();
-    setArticlesExpanded(false);
+    setSwitcherOpen(false);
+    setViewMode("editor");
   };
 
   const handleDeleteArticle = async (article: StudioArticleEntry) => {
@@ -283,229 +287,235 @@ export default function StudioWriterClient() {
     router.push("/studio/planner");
   };
 
+  if (!libraryReady && !hasInitializedViewRef.current) {
+    return (
+      <div className="space-y-4">
+        <div className="h-20 animate-pulse rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-[#0D1526]" />
+        <div className="h-72 animate-pulse rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-[#0D1526]" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
-      {/* Compact Workspace Toolbar + Searchable My Articles Dropdown */}
-      <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3.5 shadow-xs sm:px-5 dark:border-slate-800 dark:bg-[#0D1526]">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex min-w-0 flex-wrap items-center gap-2.5">
-            <h1 className="text-base font-bold text-slate-900 sm:text-lg dark:text-white">
-              AI Content Writer
-            </h1>
+      {viewMode === "table" ? (
+        /* MODE 1: PROFESSIONAL ARTICLES TABLE VIEW */
+        <div className="space-y-5">
+          {/* Header Card */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs sm:p-6 dark:border-slate-800 dark:bg-[#0D1526]">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <h1 className="text-xl font-bold text-slate-900 dark:text-white">
+                    Content Writer &amp; Articles
+                  </h1>
+                  {activeSite ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                      <span
+                        className="h-2 w-2 rounded-full"
+                        style={{ backgroundColor: activeSite.brandColorHex }}
+                      />
+                      <Globe size={12} />
+                      <strong>{activeSite.name}</strong>
+                      <span className="text-slate-400">·</span>
+                      <Link2 size={12} className="text-emerald-500" />
+                      <span>{activeSite.sitemapUrls.length} internal links</span>
+                    </span>
+                  ) : (
+                    <Link
+                      href="/studio"
+                      className="inline-flex items-center gap-1 rounded-lg border border-[#5271FF]/30 bg-[#5271FF]/10 px-2.5 py-1 text-xs font-semibold text-[#5271FF] dark:text-[#9aabff]"
+                    >
+                      <Plus size={12} /> Connect Website
+                    </Link>
+                  )}
+                </div>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                  Manage your drafted, completed, and published SEO articles,
+                  track status and metadata, or jump straight into social and
+                  newsletter repurposing.
+                </p>
+              </div>
 
-            {activeSite ? (
-              <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
-                <span
-                  className="h-2 w-2 rounded-full"
-                  style={{ backgroundColor: activeSite.brandColorHex }}
-                />
-                <Globe size={12} />
-                <strong>{activeSite.name}</strong>
-                <span className="text-slate-400">·</span>
-                <Link2 size={12} className="text-emerald-500" />
-                <span>{activeSite.sitemapUrls.length} internal links</span>
-              </span>
-            ) : (
-              <Link
-                href="/studio"
-                className="inline-flex items-center gap-1 rounded-lg border border-[#5271FF]/30 bg-[#5271FF]/10 px-2.5 py-1 text-xs font-semibold text-[#5271FF] dark:text-[#9aabff]"
-              >
-                <Plus size={12} /> Connect Website
-              </Link>
-            )}
-
-            {activeArticle && (
-              <button
-                type="button"
-                onClick={toggleArticlesDropdown}
-                title={activeArticle.title}
-                className="hidden items-center gap-2 rounded-lg border border-slate-200/90 bg-slate-50/80 px-2.5 py-1 text-xs transition hover:border-[#5271FF]/40 md:inline-flex dark:border-slate-700/80 dark:bg-slate-900/70"
-              >
-                <span className="max-w-[240px] truncate font-semibold text-slate-800 dark:text-slate-100">
-                  {activeArticle.title}
-                </span>
-                <span
-                  className={`rounded border px-1.5 py-0.5 text-[10px] font-bold ${
-                    STATUS_BADGE_STYLES[activeArticle.status]
-                  }`}
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleStartNewArticle}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#5271FF] px-4 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-[#4361EE]"
                 >
-                  {ARTICLE_STATUS_LABELS[activeArticle.status]}
-                </span>
-              </button>
-            )}
+                  <Plus size={14} />
+                  <span>Write New Article</span>
+                </button>
+                <Link
+                  href="/studio/keywords"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 transition hover:border-[#5271FF] hover:text-[#5271FF] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                >
+                  <span>Find Keywords</span>
+                  <ArrowRight size={13} />
+                </Link>
+              </div>
+            </div>
+
+            {/* Filter & Search Toolbar */}
+            <div className="mt-5 flex flex-col justify-between gap-3 border-t border-slate-200/80 pt-4 lg:flex-row lg:items-center dark:border-slate-800/80">
+              <div className="inline-flex flex-wrap items-center gap-1 rounded-xl border border-slate-200 bg-slate-100 p-1 dark:border-slate-800 dark:bg-slate-900">
+                {[
+                  {
+                    id: "all" as const,
+                    label: `All Articles (${statusCounts.all})`,
+                  },
+                  {
+                    id: "in-progress" as const,
+                    label: `In Progress (${statusCounts.inProgress})`,
+                  },
+                  {
+                    id: "written" as const,
+                    label: `Written (${statusCounts.written})`,
+                  },
+                  {
+                    id: "published" as const,
+                    label: `Published (${statusCounts.published})`,
+                  },
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setTableStatusFilter(tab.id)}
+                    className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                      tableStatusFilter === tab.id
+                        ? "bg-white text-slate-900 shadow-xs dark:bg-[#0D1526] dark:text-white"
+                        : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="relative w-full lg:w-80">
+                <Search
+                  size={14}
+                  className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                />
+                <input
+                  type="search"
+                  value={tableSearch}
+                  onChange={(e) => setTableSearch(e.target.value)}
+                  placeholder="Search by article title, meta title, or keyword..."
+                  className="w-full rounded-xl border border-slate-300 bg-white py-2 pl-9 pr-3.5 text-xs text-slate-900 focus:border-[#5271FF] focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                />
+              </div>
+            </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={handleStartNewArticle}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-[#5271FF] px-3 py-1.5 text-xs font-bold text-white transition hover:bg-[#4361EE]"
-            >
-              <Plus size={13} />
-              <span>New Article</span>
-            </button>
-
-            {/* Anchored My Articles Dropdown */}
-            <div ref={dropdownRef} className="relative">
+          {/* Articles Data Table */}
+          {filteredTableArticles.length === 0 ? (
+            <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center dark:border-slate-800 dark:bg-[#0D1526]">
+              <FileText size={28} className="mx-auto text-slate-400" />
+              <p className="mt-2.5 text-sm font-bold text-slate-900 dark:text-white">
+                {articles.length === 0
+                  ? "No articles written yet"
+                  : "No matching articles found"}
+              </p>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                {articles.length === 0
+                  ? "Start writing a new article or choose a keyword idea to generate your first SEO draft."
+                  : "Try clearing your search query or switching status filter tabs above."}
+              </p>
               <button
                 type="button"
-                onClick={toggleArticlesDropdown}
-                aria-expanded={articlesExpanded}
-                aria-haspopup="dialog"
-                className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-bold transition ${
-                  articlesExpanded
-                    ? "border-[#5271FF] bg-[#5271FF]/12 text-[#4361EE] dark:text-[#b4c2ff]"
-                    : "border-slate-200 bg-slate-50 text-slate-700 hover:border-[#5271FF]/50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
-                }`}
+                onClick={handleStartNewArticle}
+                className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-[#5271FF] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#4361EE]"
               >
-                <FileText size={13} />
-                <span>My Articles ({articles.length})</span>
-                {articlesExpanded ? (
-                  <ChevronUp size={13} />
-                ) : (
-                  <ChevronDown size={13} />
-                )}
+                <Plus size={13} />
+                <span>Write New Article</span>
               </button>
+            </div>
+          ) : (
+            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs dark:border-slate-800 dark:bg-[#0D1526]">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[960px] divide-y divide-slate-200 text-left text-xs dark:divide-slate-800">
+                  <thead className="bg-slate-50/90 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:bg-slate-900/70 dark:text-slate-400">
+                    <tr>
+                      <th className="px-4 py-3">Article &amp; Meta Title</th>
+                      <th className="px-3 py-3">Target Keyword</th>
+                      <th className="px-3 py-3">Length</th>
+                      <th className="px-3 py-3">Status</th>
+                      <th className="px-3 py-3">Repurpose</th>
+                      <th className="px-3 py-3">Updated</th>
+                      <th className="px-4 py-3 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
+                    {filteredTableArticles.map((article) => {
+                      const canPublishToggle =
+                        article.status === "written" ||
+                        article.status === "published";
+                      const formattedDate = article.updatedAtIso
+                        ? new Date(article.updatedAtIso).toLocaleDateString(
+                            undefined,
+                            {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            },
+                          )
+                        : "—";
 
-              {articlesExpanded && (
-                <div
-                  role="dialog"
-                  aria-label="Saved articles list"
-                  className={`absolute top-full z-50 mt-2 w-[min(36rem,calc(100vw-2rem))] rounded-2xl border border-slate-200 bg-white p-3.5 shadow-2xl dark:border-slate-700 dark:bg-[#0D1526] ${
-                    dropdownAlign === "left" ? "left-0" : "right-0"
-                  }`}
-                >
-                  {/* Search & Status Filters */}
-                  <div className="space-y-2.5 border-b border-slate-200/80 pb-3 dark:border-slate-800">
-                    <div className="relative">
-                      <Search
-                        size={13}
-                        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-                      />
-                      <input
-                        type="search"
-                        value={articleSearch}
-                        onChange={(e) => setArticleSearch(e.target.value)}
-                        placeholder="Search articles by title or keyword..."
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-8 pr-3 text-xs text-slate-900 focus:border-[#5271FF] focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-                      />
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-1">
-                      {[
-                        { id: "all" as const, label: `All (${statusCounts.all})` },
-                        {
-                          id: "in-progress" as const,
-                          label: `In Progress (${statusCounts.inProgress})`,
-                        },
-                        {
-                          id: "written" as const,
-                          label: `Written (${statusCounts.written})`,
-                        },
-                        {
-                          id: "published" as const,
-                          label: `Published (${statusCounts.published})`,
-                        },
-                      ].map((tab) => (
-                        <button
-                          key={tab.id}
-                          type="button"
-                          onClick={() => setArticleStatusFilter(tab.id)}
-                          className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition ${
-                            articleStatusFilter === tab.id
-                              ? "bg-[#5271FF] text-white"
-                              : "bg-slate-100 text-slate-600 hover:bg-slate-200/70 dark:bg-slate-800/80 dark:text-slate-300 dark:hover:bg-slate-800"
-                          }`}
+                      return (
+                        <tr
+                          key={article.projectId}
+                          className="transition hover:bg-slate-50/70 dark:hover:bg-slate-900/40"
                         >
-                          {tab.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Scrollable Compact Article Rows */}
-                  {filteredArticles.length === 0 ? (
-                    <div className="px-3 py-6 text-center text-xs text-slate-500 dark:text-slate-400">
-                      {articles.length === 0
-                        ? `No articles saved yet for ${activeSite?.name || "this workspace"}. Start writing below or pick a topic in Keyword Research.`
-                        : "No matching articles found. Try clearing your search or status filter."}
-                    </div>
-                  ) : (
-                    <div className="mt-2 max-h-[340px] divide-y divide-slate-100 overflow-y-auto pr-1 dark:divide-slate-800/80">
-                      {filteredArticles.map((article) => {
-                        const isCurrent = article.projectId === activeProjectId;
-                        const canPublishToggle =
-                          article.status === "written" ||
-                          article.status === "published";
-                        const formattedDate = article.updatedAtIso
-                          ? new Date(article.updatedAtIso).toLocaleDateString(
-                              undefined,
-                              { month: "short", day: "numeric" },
-                            )
-                          : "";
-
-                        return (
-                          <div
-                            key={article.projectId}
-                            className={`flex items-center justify-between gap-3 py-2.5 px-2 rounded-lg transition ${
-                              isCurrent
-                                ? "bg-[#5271FF]/[0.08]"
-                                : "hover:bg-slate-50 dark:hover:bg-slate-900/60"
-                            }`}
-                          >
-                            <div className="min-w-0 flex-1">
-                              <p className="truncate text-xs font-bold text-slate-900 dark:text-white">
-                                {article.title}
-                              </p>
-                              <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
-                                <span
-                                  className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-semibold ${
-                                    STATUS_BADGE_STYLES[article.status]
-                                  }`}
-                                >
-                                  {ARTICLE_STATUS_LABELS[article.status]}
+                          <td className="max-w-md px-4 py-3.5">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleOpenArticle(article.projectId)
+                              }
+                              className="text-left font-bold text-slate-900 transition hover:text-[#5271FF] dark:text-white dark:hover:text-[#9aabff]"
+                            >
+                              {article.title}
+                            </button>
+                            <p className="mt-0.5 truncate text-[11px] text-slate-500 dark:text-slate-400">
+                              <span className="font-semibold">Meta:</span>{" "}
+                              {article.metaTitle}
+                              {article.urlSlug ? (
+                                <span className="ml-2 text-slate-400">
+                                  · /blog/{article.urlSlug}
                                 </span>
-                                {article.primaryKeyword && (
-                                  <span className="max-w-[180px] truncate font-medium text-slate-600 dark:text-slate-300">
-                                    {article.primaryKeyword}
-                                  </span>
-                                )}
-                                <span>·</span>
-                                <span>
-                                  {article.wordCount.toLocaleString()} words
-                                </span>
-                                {formattedDate && (
-                                  <>
-                                    <span>·</span>
-                                    <span>{formattedDate}</span>
-                                  </>
-                                )}
-                              </div>
-                            </div>
+                              ) : null}
+                            </p>
+                          </td>
 
-                            <div className="flex shrink-0 items-center gap-1.5">
-                              {isCurrent ? (
-                                <span className="inline-flex items-center gap-1 rounded-lg border border-[#5271FF]/35 bg-[#5271FF]/12 px-2.5 py-1 text-[11px] font-bold text-[#4361EE] dark:text-[#b4c2ff]">
-                                  Active
-                                </span>
-                              ) : (
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    handleOpenArticle(article.projectId)
-                                  }
-                                  className="inline-flex items-center gap-1 rounded-lg bg-[#5271FF] px-2.5 py-1 text-[11px] font-bold text-white transition hover:bg-[#4361EE]"
-                                >
-                                  <FilePenLine size={11} />
-                                  <span>
-                                    {article.status === "in-progress" ||
-                                    article.status === "brief"
-                                      ? "Resume"
-                                      : "Open"}
-                                  </span>
-                                </button>
-                              )}
+                          <td className="px-3 py-3.5">
+                            {article.primaryKeyword ? (
+                              <span className="inline-block max-w-[190px] truncate rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-medium text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                                {article.primaryKeyword}
+                              </span>
+                            ) : (
+                              <span className="text-slate-400">—</span>
+                            )}
+                          </td>
 
+                          <td className="whitespace-nowrap px-3 py-3.5 text-slate-600 dark:text-slate-300">
+                            <span className="font-semibold">
+                              {article.wordCount.toLocaleString()} words
+                            </span>
+                            <span className="block text-[11px] text-slate-400">
+                              {article.sectionCount} sections
+                            </span>
+                          </td>
+
+                          <td className="whitespace-nowrap px-3 py-3.5">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <span
+                                className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[11px] font-semibold ${
+                                  STATUS_BADGE_STYLES[article.status]
+                                }`}
+                              >
+                                {ARTICLE_STATUS_LABELS[article.status]}
+                              </span>
                               {canPublishToggle && (
                                 <button
                                   type="button"
@@ -520,21 +530,56 @@ export default function StudioWriterClient() {
                                       ? "Unmark as published"
                                       : "Mark as published"
                                   }
-                                  className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-[11px] font-semibold transition ${
-                                    article.status === "published"
-                                      ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 dark:text-emerald-300"
-                                      : "border-slate-200 text-slate-600 hover:border-emerald-500/50 hover:text-emerald-600 dark:border-slate-700 dark:text-slate-300"
-                                  }`}
+                                  className="rounded-md border border-slate-200 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500 hover:border-emerald-500/50 hover:text-emerald-600 dark:border-slate-700 dark:text-slate-400"
                                 >
-                                  <CheckCircle2 size={11} />
-                                  <span>
-                                    {article.status === "published"
-                                      ? "Published"
-                                      : "Publish"}
-                                  </span>
+                                  {article.status === "published"
+                                    ? "Unpublish"
+                                    : "Publish"}
                                 </button>
                               )}
+                            </div>
+                          </td>
 
+                          <td className="whitespace-nowrap px-3 py-3.5">
+                            <div className="flex items-center gap-1.5">
+                              <Link
+                                href={`/studio/social?articleId=${encodeURIComponent(article.projectId)}`}
+                                className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold text-slate-700 hover:border-[#5271FF] hover:text-[#5271FF] dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-200"
+                              >
+                                <Share2 size={11} />
+                                <span>Social</span>
+                              </Link>
+                              <Link
+                                href={`/studio/email?articleId=${encodeURIComponent(article.projectId)}`}
+                                className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold text-slate-700 hover:border-[#5271FF] hover:text-[#5271FF] dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-200"
+                              >
+                                <Mail size={11} />
+                                <span>Email</span>
+                              </Link>
+                            </div>
+                          </td>
+
+                          <td className="whitespace-nowrap px-3 py-3.5 text-[11px] text-slate-500 dark:text-slate-400">
+                            {formattedDate}
+                          </td>
+
+                          <td className="whitespace-nowrap px-4 py-3.5 text-right">
+                            <div className="inline-flex items-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleOpenArticle(article.projectId)
+                                }
+                                className="inline-flex items-center gap-1.5 rounded-lg bg-[#5271FF] px-3 py-1.5 text-xs font-bold text-white transition hover:bg-[#4361EE]"
+                              >
+                                <FilePenLine size={12} />
+                                <span>
+                                  {article.status === "in-progress" ||
+                                  article.status === "brief"
+                                    ? "Resume Draft"
+                                    : "Open Article"}
+                                </span>
+                              </button>
                               <button
                                 type="button"
                                 onClick={() => void handleDeleteArticle(article)}
@@ -542,80 +587,191 @@ export default function StudioWriterClient() {
                                 aria-label={`Delete ${article.title}`}
                                 className="rounded-lg p-1.5 text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40"
                               >
-                                <Trash2 size={13} />
+                                <Trash2 size={14} />
                               </button>
                             </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        /* MODE 2: FOCUSED ARTICLE EDITOR VIEW + SIMPLE ARTICLE SWITCHER DROPDOWN */
+        <>
+          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-xs sm:px-5 dark:border-slate-800 dark:bg-[#0D1526]">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex min-w-0 flex-wrap items-center gap-2.5">
+                {articles.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setViewMode("table")}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-700 transition hover:border-[#5271FF] hover:text-[#5271FF] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                  >
+                    <ArrowLeft size={13} />
+                    <span>All Articles ({articles.length})</span>
+                  </button>
+                )}
 
-                  {/* Footer */}
-                  <div className="mt-2.5 flex items-center justify-between border-t border-slate-200/80 pt-2.5 text-[11px] text-slate-500 dark:border-slate-800 dark:text-slate-400">
-                    <span>
-                      Showing {filteredArticles.length} of {articles.length}{" "}
-                      articles
-                    </span>
+                {/* Simple, Clean Article Switcher Dropdown */}
+                {articles.length > 0 && (
+                  <div ref={switcherRef} className="relative">
                     <button
                       type="button"
-                      onClick={handleStartNewArticle}
-                      className="inline-flex items-center gap-1 font-bold text-[#5271FF] hover:underline dark:text-[#9aabff]"
+                      onClick={() => setSwitcherOpen((prev) => !prev)}
+                      aria-expanded={switcherOpen}
+                      aria-haspopup="listbox"
+                      className="inline-flex max-w-[300px] items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 transition hover:border-[#5271FF]/60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                     >
-                      <Plus size={12} /> New Article
+                      <FileText size={13} className="shrink-0 text-[#5271FF]" />
+                      <span className="truncate">
+                        {activeArticle ? activeArticle.title : "Select Article"}
+                      </span>
+                      {activeArticle && (
+                        <span
+                          className={`shrink-0 rounded border px-1.5 py-0.5 text-[10px] font-bold ${
+                            STATUS_BADGE_STYLES[activeArticle.status]
+                          }`}
+                        >
+                          {ARTICLE_STATUS_LABELS[activeArticle.status]}
+                        </span>
+                      )}
+                      <ChevronDown size={13} className="shrink-0 text-slate-400" />
                     </button>
+
+                    {switcherOpen && (
+                      <div
+                        role="listbox"
+                        aria-label="Switch article"
+                        className="absolute left-0 top-full z-50 mt-1.5 w-80 max-w-[calc(100vw-2rem)] rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl dark:border-slate-700 dark:bg-[#0D1526]"
+                      >
+                        <div className="max-h-72 space-y-0.5 overflow-y-auto">
+                          {articles.map((article) => {
+                            const isCurrent =
+                              article.projectId === activeProjectId;
+                            return (
+                              <button
+                                key={article.projectId}
+                                type="button"
+                                role="option"
+                                aria-selected={isCurrent}
+                                onClick={() =>
+                                  handleOpenArticle(article.projectId)
+                                }
+                                className={`flex w-full items-center justify-between gap-2.5 rounded-lg px-2.5 py-2 text-left text-xs transition ${
+                                  isCurrent
+                                    ? "bg-[#5271FF]/12 font-bold text-[#4361EE] dark:text-[#b4c2ff]"
+                                    : "text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800/70"
+                                }`}
+                              >
+                                <span className="min-w-0 flex-1 truncate">
+                                  {article.title}
+                                </span>
+                                <span
+                                  className={`shrink-0 rounded border px-1.5 py-0.5 text-[10px] font-semibold ${
+                                    STATUS_BADGE_STYLES[article.status]
+                                  }`}
+                                >
+                                  {ARTICLE_STATUS_LABELS[article.status]}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <div className="mt-1 border-t border-slate-100 pt-1 dark:border-slate-800">
+                          <button
+                            type="button"
+                            onClick={handleStartNewArticle}
+                            className="flex w-full items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold text-[#5271FF] transition hover:bg-[#5271FF]/10 dark:text-[#9aabff]"
+                          >
+                            <Plus size={13} />
+                            <span>Write New Article</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              )}
+                )}
+
+                {activeSite && (
+                  <span className="hidden items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-600 xl:inline-flex dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                    <Globe size={12} />
+                    <span>{activeSite.name}</span>
+                  </span>
+                )}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleStartNewArticle}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-[#5271FF] px-3 py-1.5 text-xs font-bold text-white transition hover:bg-[#4361EE]"
+                >
+                  <Plus size={13} />
+                  <span>New Article</span>
+                </button>
+
+                <Link
+                  href={`/studio/social${activeProjectId ? `?articleId=${encodeURIComponent(activeProjectId)}` : ""}`}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-[#5271FF] hover:text-[#5271FF] dark:border-slate-700 dark:text-slate-200"
+                >
+                  <Share2 size={13} />
+                  <span>Social &amp; Video Studio</span>
+                </Link>
+
+                <Link
+                  href={`/studio/email${activeProjectId ? `?articleId=${encodeURIComponent(activeProjectId)}` : ""}`}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-[#5271FF] hover:text-[#5271FF] dark:border-slate-700 dark:text-slate-200"
+                >
+                  <Mail size={13} />
+                  <span>Email Newsletter</span>
+                </Link>
+
+                <button
+                  type="button"
+                  onClick={handleLogToPlanner}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-[#5271FF] hover:text-[#5271FF] dark:border-slate-700 dark:text-slate-200"
+                >
+                  <CalendarPlus size={13} />
+                  <span>Save to Planner</span>
+                </button>
+              </div>
             </div>
-
-            <button
-              type="button"
-              onClick={handleLogToPlanner}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-[#5271FF] hover:text-[#5271FF] dark:border-slate-700 dark:text-slate-200"
-            >
-              <CalendarPlus size={13} />
-              <span>Save to Planner</span>
-            </button>
-
-            <Link
-              href="/studio/keywords"
-              className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-[#5271FF] hover:text-[#5271FF] dark:border-slate-700 dark:text-slate-300"
-            >
-              <span>Find Keywords</span>
-              <ArrowRight size={12} />
-            </Link>
           </div>
-        </div>
-      </div>
 
-      {/* Only render Free Upgrade Banner when NOT in Unlimited Testing Mode */}
-      {overFreePreview && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-500/40 bg-amber-500/10 px-5 py-3.5 text-xs">
-          <div>
-            <p className="font-bold text-amber-800 dark:text-amber-200">
-              Free Plan Limit Reached ({studio.usage.articlesGenerated}/{limit}{" "}
-              monthly studio article)
-            </p>
-            <p className="mt-0.5 text-amber-700 dark:text-amber-100/80">
-              Upgrade to Pro Creator ($12/mo or $79/yr) to unlock 20 full
-              publish-ready articles/month and Infographic V5 exports.
-            </p>
-          </div>
-          <Link
-            href="/pricing"
-            className="inline-flex items-center gap-1.5 rounded-xl bg-amber-400 px-4 py-2 font-bold text-slate-950 transition hover:bg-amber-300"
-          >
-            <Crown size={14} />
-            <span>Unlock Pro Creator</span>
-          </Link>
-        </div>
+          {/* Only render Free Upgrade Banner when NOT in Unlimited Testing Mode */}
+          {overFreePreview && (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-500/40 bg-amber-500/10 px-5 py-3.5 text-xs">
+              <div>
+                <p className="font-bold text-amber-800 dark:text-amber-200">
+                  Free Plan Limit Reached ({studio.usage.articlesGenerated}/
+                  {limit} monthly studio article)
+                </p>
+                <p className="mt-0.5 text-amber-700 dark:text-amber-100/80">
+                  Upgrade to Pro Creator ($12/mo or $79/yr) to unlock 20 full
+                  publish-ready articles/month and Infographic V5 exports.
+                </p>
+              </div>
+              <Link
+                href="/pricing"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-amber-400 px-4 py-2 font-bold text-slate-950 transition hover:bg-amber-300"
+              >
+                <Crown size={14} />
+                <span>Unlock Pro Creator</span>
+              </Link>
+            </div>
+          )}
+
+          {/* Full Flagship Writer + Web Research + Section Infographics + Export */}
+          <RecentUrlsProvider>
+            <WriterWorkspace />
+          </RecentUrlsProvider>
+        </>
       )}
-
-      {/* Full Flagship Writer + Web Research + Infographic V5 + Omnichannel Pack */}
-      <RecentUrlsProvider>
-        <WriterWorkspace />
-      </RecentUrlsProvider>
     </div>
   );
 }

@@ -348,7 +348,7 @@ export default function StudioKeywordsClient() {
             : k,
         ),
       }));
-      router.push("/studio/writer");
+      router.push("/studio/writer?mode=editor");
     } finally {
       setLaunchingId(null);
     }
@@ -364,7 +364,7 @@ export default function StudioKeywordsClient() {
       )?.projectId;
     if (linkedId) {
       setActiveWriterProject(linkedId);
-      router.push("/studio/writer");
+      router.push("/studio/writer?mode=editor");
       return;
     }
     void handleSendToWriter(item);

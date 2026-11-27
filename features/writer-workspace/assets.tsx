@@ -4,9 +4,11 @@ import { createRoot } from "react-dom/client";
 import { flushSync } from "react-dom";
 import JSZip from "jszip";
 import { serializeBlogProjectToJson } from "@/lib/blog-writer/project-storage-db";
-import { SocialCardArtwork } from "@/features/tool-ui/SocialCardArtwork";
-import { prepareVisualSvg } from "@/features/tool-ui/svgExport";
-import { generateBlogInfographicSvg } from "@/lib/blog-infographic-studio/canvas-renderer";
+import {
+  buildInfographicScene,
+  generateBlogInfographicSvg,
+} from "@/lib/blog-infographic-studio/canvas-renderer";
+import { buildSocialInfographicConfigFromProject } from "@/lib/studio/social-infographic-bridge";
 import {
   buildNewsletter,
   newsletterHtml,
@@ -18,12 +20,9 @@ import {
 } from "@/features/article-conversion/formats";
 import { articlePdf, loadFonts } from "@/features/article-conversion/pdf";
 import { articleDocx, docxMime } from "@/features/article-conversion/docx";
-import { mixColor } from "@/lib/blog-infographic-studio/appearance";
+import { prepareVisualSvg } from "@/features/tool-ui/svgExport";
 import { defaults } from "@/features/article-conversion/model";
-import {
-  getSocialChannelSpec,
-  SOCIAL_VISUAL_REGISTRY,
-} from "./adapters/socialVisualRegistry";
+import { SOCIAL_VISUAL_REGISTRY } from "./adapters/socialVisualRegistry";
 import type { Project, SocialOverride, RichNode } from "./types";
 import {
   buildArticleSchemaJsonLd,
@@ -210,111 +209,46 @@ export function SocialPoster({
   width: number;
   height: number;
 }) {
-  const brand = workspace(p).brand,
-    dark = settings.theme !== "paper",
-    bg = dark ? "#101B37" : "#F1F4FF",
-    ink = dark ? "#FFFFFF" : "#152342",
-    muted = dark ? "#D2DBF0" : "#475569",
-    accent = dark
-      ? mixColor(brand.color, "#FFFFFF", 0.58)
-      : mixColor(brand.color, "#14213D", 0.28),
-    spec = getSocialChannelSpec(channel),
-    gradientId = `writer-poster-${hash(`${channel}|${brand.color}|${settings.theme}`)}`;
+  const isPortrait = height > width;
+  const templateId =
+    settings.variant === "framework-steps"
+      ? isPortrait
+        ? 2
+        : 1
+      : settings.variant === "quote-card"
+        ? isPortrait
+          ? 12
+          : 11
+        : isPortrait
+          ? 21
+          : 25;
+  const paletteId = settings.theme === "paper" ? "blue-trust" : "indigo-cyber";
+  const config = buildSocialInfographicConfigFromProject(p, {
+    channel: String(channel),
+    templateId,
+    paletteId,
+    customHeadline: headline,
+    customSubheadline: body,
+  });
+  const scene = buildInfographicScene(config);
+  const viewBoxMatch = scene.svg.match(/viewBox="([^"]+)"/i);
+  const viewBox = viewBoxMatch?.[1] || `0 0 ${width} ${height}`;
+  const innerSvg = scene.svg
+    .replace(/^<svg[^>]*>/i, "")
+    .replace(/<\/svg>\s*$/i, "");
+
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
+      xmlnsXlink="http://www.w3.org/1999/xlink"
       width={width}
       height={height}
-      viewBox={`0 0 ${width} ${height}`}
+      viewBox={viewBox}
+      preserveAspectRatio="xMidYMid meet"
       role="img"
       aria-label={`${channel}: ${headline}`}
-    >
-      <defs>
-        <linearGradient id={gradientId} x2="1" y2="1">
-          <stop stopColor={bg} />
-          <stop
-            offset="1"
-            stopColor={brand.color}
-            stopOpacity={dark ? 0.34 : 0.1}
-          />
-        </linearGradient>
-      </defs>
-      <rect width={width} height={height} fill={bg} />
-      <rect width={width} height={height} fill={`url(#${gradientId})`} />
-      <circle
-        cx={width}
-        cy={0}
-        r={width * 0.48}
-        fill={brand.color}
-        opacity={0.1}
-      />
-      <rect x={60} y={54} width={48} height={5} rx={2} fill={accent} />
-      <text
-        x={60}
-        y={99}
-        fontFamily="Arial, sans-serif"
-        fontSize={19}
-        fontWeight={700}
-        fill={muted}
-      >
-        {String(channel).toUpperCase()} · {width}×{height}
-      </text>
-      {spec.supportsCarousel ? (
-        <g transform={`translate(${width - 210}, 62)`}>
-          <rect width={150} height={36} rx={18} fill={accent} fillOpacity={0.18} />
-          <text
-            x={75}
-            y={23}
-            textAnchor="middle"
-            fontFamily="Arial, sans-serif"
-            fontSize={14}
-            fontWeight={700}
-            fill={ink}
-          >
-            CAROUSEL 01 →
-          </text>
-        </g>
-      ) : null}
-      {spec.isVideoChannel ? (
-        <g transform={`translate(${width - 170}, 56)`}>
-          <rect width={110} height={46} rx={12} fill="#ef4444" fillOpacity={0.92} />
-          <polygon points="48,14 48,32 68,23" fill="#ffffff" />
-        </g>
-      ) : null}
-      <SocialCardArtwork
-        kind={settings.variant || "executive-minimal"}
-        headline={headline}
-        body={body}
-        width={width}
-        height={height}
-        palette={{
-          textPrimary: ink,
-          textSecondary: muted,
-          accent,
-          accentSecondary: accent,
-          cardSurface: dark ? "#1B2A4A" : "#FFFFFF",
-        }}
-      />
-      {brand.logo && (
-        <image
-          href={brand.logo}
-          x={60}
-          y={height - 74}
-          width={100}
-          height={40}
-          preserveAspectRatio="xMinYMid meet"
-        />
-      )}
-      <text
-        x={brand.logo ? 180 : 60}
-        y={height - 45}
-        fontFamily="Arial, sans-serif"
-        fontSize={19}
-        fill={muted}
-      >
-        {short(brand.name || "", 60)}
-      </text>
-    </svg>
+      dangerouslySetInnerHTML={{ __html: innerSvg }}
+    />
   );
 }
 export async function posterSvg(

@@ -8,6 +8,12 @@ import {
   reconcileKeywordStatuses,
   type StudioArticleEntry,
 } from "../lib/studio/article-library";
+import {
+  buildSocialInfographicConfigFromProject,
+  buildStandaloneCampaignProject,
+  SOCIAL_INFOGRAPHIC_STYLES,
+} from "../lib/studio/social-infographic-bridge";
+import { buildInfographicScene } from "../lib/blog-infographic-studio/canvas-renderer";
 import { blankProject, syncDocument } from "../features/writer-workspace/model";
 import type { Project } from "../features/writer-workspace/types";
 import type { SavedKeywordItem } from "../lib/studio/types";
@@ -231,7 +237,18 @@ test("Studio V2 UI & ToolsShell source guards prevent regressions", () => {
     "utf8",
   );
   assert.equal(writerSrc.includes("Fullscreen"), false);
-  assert.ok(writerSrc.includes("Search articles by title or keyword"));
+  assert.ok(writerSrc.includes('viewMode === "table"'));
+  assert.ok(
+    writerSrc.includes("Search by article title, meta title, or keyword"),
+  );
+  assert.ok(writerSrc.includes('role="listbox"'));
+
+  // Sidebar dedicated Social & Email studios
+  assert.ok(shellSrc.includes("/studio/social"));
+  assert.ok(shellSrc.includes("/studio/email"));
+  for (const ch of ["Instagram", "Facebook", "LinkedIn", "YouTube"]) {
+    assert.ok(shellSrc.includes(ch), `Expected sidebar channel link: ${ch}`);
+  }
 
   const workspaceProviderSrc = fs.readFileSync(
     path.join(ROOT, "features/tools-workspace/WorkspaceProvider.tsx"),
@@ -243,4 +260,34 @@ test("Studio V2 UI & ToolsShell source guards prevent regressions", () => {
     ),
     false,
   );
+});
+
+test("Social & Email Infographic Bridge renders 4 distinct high-craft SVG templates for articles and standalone campaigns", () => {
+  const standalone = buildStandaloneCampaignProject({
+    keyword: "ai seo workflow",
+    title: "AI SEO Workflow Blueprint",
+    angle: "Four steps to build compounding search visibility.",
+  });
+
+  assert.equal(standalone.sections.length, 4);
+  assert.equal(SOCIAL_INFOGRAPHIC_STYLES.length, 4);
+
+  const usedTemplates = new Set<number>();
+  for (const style of SOCIAL_INFOGRAPHIC_STYLES) {
+    const cfg = buildSocialInfographicConfigFromProject(standalone, {
+      channel: "Instagram",
+      templateId: style.portraitTemplateId,
+      paletteId: style.defaultPaletteId,
+    });
+    usedTemplates.add(cfg.templateId);
+    const scene = buildInfographicScene(cfg);
+    assert.ok(scene.svg.startsWith("<svg"), `Expected SVG for ${style.id}`);
+    assert.ok(
+      scene.svg.includes("AI SEO Workflow Blueprint") ||
+        scene.svg.includes("Clarify") ||
+        scene.svg.includes(cfg.headline),
+      `Expected content inside SVG for ${style.id}`,
+    );
+  }
+  assert.equal(usedTemplates.size, 4);
 });

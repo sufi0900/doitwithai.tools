@@ -32,10 +32,14 @@ export type StudioArticleStatus = "brief" | "in-progress" | "written" | "publish
 export interface StudioArticleEntry {
   projectId: string;
   title: string;
+  metaTitle: string;
+  urlSlug: string;
   primaryKeyword: string;
   siteUrl: string;
   updatedAtIso: string;
   wordCount: number;
+  sectionCount: number;
+  overallScore: number;
   status: StudioArticleStatus;
 }
 
@@ -166,13 +170,18 @@ export async function loadStudioArticleLibrary(): Promise<StudioArticleEntry[]> 
         const keyword = project.keywordCluster?.primaryKeyword?.trim() || "";
         const { status, wordCount } = deriveArticleStatus(project, publishedIds);
         if (!isMeaningfulProject(title, keyword) && wordCount === 0) return null;
+        const resolvedTitle = title || keyword || "Untitled article";
         return {
           projectId: project.projectId,
-          title: title || keyword || "Untitled article",
+          title: resolvedTitle,
+          metaTitle: project.metaPack?.metaTitle?.trim() || resolvedTitle,
+          urlSlug: project.metaPack?.urlSlug?.trim() || "",
           primaryKeyword: keyword,
           siteUrl: project.brandSiteUrl || "",
           updatedAtIso: project.updatedAtIso || summary.updatedAtIso,
           wordCount,
+          sectionCount: project.sections?.length || 0,
+          overallScore: project.scorecard?.overallScore ?? summary.overallScore ?? 0,
           status,
         };
       } catch {

@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import {
   Download,
   ImageIcon,
@@ -11,7 +12,6 @@ import {
   Volume2,
   X,
   Check,
-  Sparkles,
 } from "lucide-react";
 import JSZip from "jszip";
 import {
@@ -19,7 +19,7 @@ import {
   generateBlogInfographicSvg,
 } from "@/lib/blog-infographic-studio/canvas-renderer";
 import { serializeBlogProjectToJson } from "@/lib/blog-writer/project-storage-db";
-import type { Project, SocialOverride } from "./types";
+import type { Project } from "./types";
 import {
   articleRevision,
   bodyOf,
@@ -31,24 +31,13 @@ import {
   wordCount,
 } from "./model";
 import {
-  buildChannelCarouselSlides,
-  getSocialChannelSpec,
-} from "./adapters/socialVisualRegistry";
-import {
-  CHANNELS,
-  sizes,
   socialDrafts,
-  SocialPoster,
-  posterSvg,
-  svgRaster,
   saveBlob,
-  newsletter,
+  svgRaster,
   downloadArticle,
   narration,
-  carousel,
   downloadBundle,
 } from "./assets";
-import type { Channel } from "./assets";
 import styles from "./workspace.module.css";
 
 export default function AssetDeck({
@@ -63,7 +52,6 @@ export default function AssetDeck({
   onInsertVisual: (id: string) => void;
 }) {
   const [tab, setTab] = useState("images"),
-    [channel, setChannel] = useState<Channel>("Facebook"),
     [busy, setBusy] = useState(""),
     [message, setMessage] = useState(""),
     [audio, setAudio] = useState<
@@ -72,12 +60,7 @@ export default function AssetDeck({
   const abort = useRef<AbortController | null>(null),
     revision = articleRevision(p),
     w = workspace(p),
-    posts = useMemo(() => socialDrafts(p), [p]),
-    post = posts.find((x) => x.channel === channel),
-    email = useMemo(
-      () => (posts.length ? newsletter(p) : null),
-      [p, posts.length],
-    );
+    posts = useMemo(() => socialDrafts(p), [p]);
 
   useEffect(() => () => abort.current?.abort(), []);
 
@@ -103,21 +86,6 @@ export default function AssetDeck({
     }
   };
 
-  const social = (patch: SocialOverride) =>
-    onChange((now) => {
-      const nw = workspace(now);
-      return patchWorkspace(now, {
-        social: {
-          ...nw.social,
-          [channel]: {
-            ...nw.social[channel],
-            ...patch,
-            sourceRevision: articleRevision(now),
-          },
-        },
-      });
-    });
-
   const refresh = (sid: string) =>
     onChange((now) => {
       const s = now.sections.find((s) => s.id === sid);
@@ -138,33 +106,19 @@ export default function AssetDeck({
       );
     });
 
-  const downloadPost = async () => {
-    if (!post) return;
-    const svg = await posterSvg(
-        p,
-        channel,
-        post.headline,
-        post.body,
-        post.settings,
-      ),
-      zip = new JSZip();
-    zip.file("caption.txt", post.caption);
-    zip.file("image.svg", svg);
-    zip.file("image.png", (await fetch(await svgRaster(svg))).blob());
-    saveBlob(
-      await zip.generateAsync({ type: "blob" }),
-      `${channel.toLowerCase()}-post.zip`,
-    );
-  };
-
   const audioZip = async () => {
-    if (!audio) return;
+    if (!audio?.files.length) return [];
     const zip = new JSZip();
-    audio.files.forEach((blob, i) => zip.file(`chapter-${i + 1}.mp3`, blob));
-    saveBlob(
-      await zip.generateAsync({ type: "blob" }),
-      "article-narration.zip",
-    );
+    audio.files.forEach((file, i) => {
+      zip.file(`chapter-${i + 1}.mp3`, file);
+    });
+    const blob = await zip.generateAsync({
+      type: "blob",
+      compression: "DEFLATE",
+      compressionOptions: { level: 3 },
+    });
+    saveBlob(blob, `${p.metaPack.urlSlug || "article"}-narration.zip`);
+    return [];
   };
 
   const hasContent = posts.length > 0;
@@ -178,29 +132,46 @@ export default function AssetDeck({
       <div className={styles.assetHeader}>
         <div>
           <p className={styles.eyebrow}>
-            Beyond the article · Omnichannel Visuals, Social Studio &amp;
-            Conversions
+            Section Visuals &amp; Publishing Downloads
           </p>
-          <h2>Your publishing &amp; social distribution kit</h2>
+          <h2>Section Infographics &amp; Article Exports</h2>
           <p>
-            Customize section infographics, preview and edit social media cards
-            with multiple caption angles, export carousels and newsletters, or
-            download the complete publishing ZIP.
+            Customize inline H2 infographic illustrations, WCAG alt text, and
+            article exports — or open this article directly in your dedicated
+            Social &amp; Email Studios.
           </p>
         </div>
-        <button
-          type="button"
-          className={styles.primary}
-          disabled={!hasContent || Boolean(busy)}
-          onClick={() =>
-            void run("Preparing your kit", () =>
-              downloadBundle(p, setBusy, audio),
-            )
-          }
-        >
-          <Download size={16} />
-          Download everything (.ZIP)
-        </button>
+        <div className={styles.buttonRow}>
+          <Link
+            href={`/studio/social?articleId=${encodeURIComponent(p.projectId)}`}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700/80 bg-slate-900/70 px-3.5 py-2 text-xs font-bold text-slate-100 transition hover:border-[#5271FF]"
+          >
+            <Share2 size={14} className="text-[#9aabff]" />
+            <span>Open in Social &amp; Video Studio</span>
+            <ArrowUpRight size={13} />
+          </Link>
+          <Link
+            href={`/studio/email?articleId=${encodeURIComponent(p.projectId)}`}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700/80 bg-slate-900/70 px-3.5 py-2 text-xs font-bold text-slate-100 transition hover:border-[#5271FF]"
+          >
+            <Mail size={14} className="text-[#9aabff]" />
+            <span>Open in Email Newsletter Studio</span>
+            <ArrowUpRight size={13} />
+          </Link>
+          <button
+            type="button"
+            className={styles.primary}
+            disabled={!hasContent || Boolean(busy)}
+            onClick={() =>
+              void run("Preparing your kit", () =>
+                downloadBundle(p, setBusy, audio),
+              )
+            }
+          >
+            <Download size={16} />
+            Download everything (.ZIP)
+          </button>
+        </div>
       </div>
 
       <div
@@ -210,8 +181,6 @@ export default function AssetDeck({
       >
         {[
           ["images", "Section images", ImageIcon],
-          ["social", "Social & video", Share2],
-          ["email", "Email newsletter", Mail],
           ["downloads", "Downloads & audio", FileDown],
         ].map(([key, label, Icon]: any) => (
           <button
@@ -419,398 +388,6 @@ export default function AssetDeck({
                   </p>
                 )}
               </>
-            )}
-
-            {tab === "social" && post && (
-              <>
-                <div
-                  className={styles.channelTabs}
-                  aria-label="Social platform"
-                >
-                  {CHANNELS.map((c) => (
-                    <button
-                      type="button"
-                      aria-pressed={channel === c}
-                      key={c}
-                      onClick={() => setChannel(c)}
-                    >
-                      {c}
-                    </button>
-                  ))}
-                </div>
-                <div className={styles.socialGrid}>
-                  <div className={styles.formStack}>
-                    <div>
-                      <p className={styles.eyebrow}>
-                        {getSocialChannelSpec(channel).aspectLabel}
-                      </p>
-                      <h3>
-                        A starting point for {channel} ({post.caption.length}/{getSocialChannelSpec(channel).safeCharLimit} chars)
-                      </h3>
-                      <p className={styles.muted}>
-                        {channel === "YouTube"
-                          ? "Choose a short script or longer video outline, plus customize your 1280×720 thumbnail poster."
-                          : getSocialChannelSpec(channel).ctaLabel}
-                      </p>
-                    </div>
-                    {post.stale && (
-                      <p className={styles.notice}>
-                        The article changed after this post was customized.
-                        Review it or reset to the current draft.
-                      </p>
-                    )}
-
-                    {/* Visible 1-Click Caption / Script Option Pills */}
-                    <div className={styles.variantPillsBlock}>
-                      <span className={styles.eyebrow}>
-                        <Sparkles size={11} /> Click an Option to Switch{" "}
-                        {channel === "YouTube" ? "Script" : "Caption"} Angle:
-                      </span>
-                      <div className={styles.variantPillsRow}>
-                        {post.variants.map((v, i) => {
-                          const isCurrent = post.caption === v.content;
-                          return (
-                            <button
-                              type="button"
-                              key={i}
-                              aria-pressed={isCurrent}
-                              className={styles.variantPill}
-                              onClick={() => social({ caption: v.content })}
-                            >
-                              {isCurrent && <Check size={12} />}
-                              {i === 0 ? `★ ${v.label}` : v.label}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    <label>
-                      Suggested angle
-                      <select
-                        value=""
-                        onChange={(e) => {
-                          if (e.target.value !== "")
-                            social({
-                              caption:
-                                post.variants[Number(e.target.value)].content,
-                            });
-                        }}
-                      >
-                        <option value="" disabled>
-                          Choose an alternative…
-                        </option>
-                        {post.variants.map((v, i) => (
-                          <option value={i} key={i}>
-                            {v.label}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label>
-                      {channel === "YouTube" ? "Script" : "Caption"}
-                      <textarea
-                        rows={10}
-                        maxLength={18000}
-                        value={post.caption}
-                        onChange={(e) => social({ caption: e.target.value })}
-                      />
-                    </label>
-                    <label>
-                      Image headline
-                      <input
-                        maxLength={100}
-                        value={post.headline}
-                        onChange={(e) => social({ headline: e.target.value })}
-                      />
-                    </label>
-                    <label>
-                      Image summary
-                      <textarea
-                        rows={3}
-                        maxLength={240}
-                        value={post.body}
-                        onChange={(e) => social({ body: e.target.value })}
-                      />
-                    </label>
-                    <div className={styles.twoCols}>
-                      <label>
-                        Visual style
-                        <select
-                          value={post.settings.variant || "executive-minimal"}
-                          onChange={(e) => social({ variant: e.target.value })}
-                        >
-                          <option value="executive-minimal">Editorial</option>
-                          <option value="framework-steps">Key takeaways</option>
-                          <option value="quote-card">Statement</option>
-                        </select>
-                      </label>
-                      <label>
-                        Color theme
-                        <select
-                          value={post.settings.theme || "brand"}
-                          onChange={(e) => social({ theme: e.target.value })}
-                        >
-                          <option value="brand">Brand midnight</option>
-                          <option value="paper">Brand daylight</option>
-                        </select>
-                      </label>
-                    </div>
-                    <div className={styles.buttonRow}>
-                      <button
-                        type="button"
-                        className={styles.primary}
-                        disabled={Boolean(busy)}
-                        onClick={() => void run("Preparing post", downloadPost)}
-                      >
-                        <Download size={14} />
-                        Download {channel} post ZIP
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          saveBlob(
-                            post.caption,
-                            `${channel.toLowerCase()}-${channel === "YouTube" ? "script" : "caption"}.txt`,
-                          )
-                        }
-                      >
-                        Text only
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          onChange((now) => {
-                            const nw = workspace(now),
-                              next = { ...nw.social };
-                            delete next[channel];
-                            return patchWorkspace(now, { social: next });
-                          })
-                        }
-                      >
-                        Reset to article
-                      </button>
-                    </div>
-                  </div>
-                  <div className={styles.socialPreview}>
-                    <div className={styles.previewChrome}>
-                      <span>{channel} visual card preview</span>
-                      <span>{sizes[channel].join(" × ")} px</span>
-                    </div>
-                    <SocialPoster
-                      p={p}
-                      channel={channel}
-                      headline={post.headline}
-                      body={post.body}
-                      settings={post.settings}
-                      width={sizes[channel][0]}
-                      height={sizes[channel][1]}
-                    />
-                    <button
-                      type="button"
-                      disabled={Boolean(busy)}
-                      onClick={() =>
-                        void run("Rendering image", async () => {
-                          const svg = await posterSvg(
-                            p,
-                            channel,
-                            post.headline,
-                            post.body,
-                            post.settings,
-                          );
-                          saveBlob(
-                            await (await fetch(await svgRaster(svg))).blob(),
-                            `${channel.toLowerCase()}.png`,
-                          );
-                        })
-                      }
-                    >
-                      <Download size={15} />
-                      Download {channel} image (PNG)
-                    </button>
-                  </div>
-                </div>
-                {getSocialChannelSpec(channel).supportsCarousel ? (
-                  <div className={styles.slideDeckStrip}>
-                    <div className={styles.slideDeckHeader}>
-                      <strong>{channel} Multi-Slide Deck Preview</strong>
-                      <span>{getSocialChannelSpec(channel).aspectLabel}</span>
-                    </div>
-                    <div className={styles.slideDeckCards}>
-                      {buildChannelCarouselSlides(
-                        post.headline,
-                        p.sections.map((sec) => `${sec.h2Text}: ${bodyOf(sec)}`),
-                        5,
-                      ).map((slide) => (
-                        <div key={slide.index} className={styles.slideCardMini}>
-                          <span className={styles.slideBadge}>{slide.badge}</span>
-                          <strong>{slide.headline}</strong>
-                          <p>{slide.body}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-                <div className={styles.carouselRow}>
-                  <div>
-                    <h3>LinkedIn &amp; Instagram Carousel Slider Deck</h3>
-                    <p className={styles.muted}>
-                      A multi-slide portrait carousel deck built automatically
-                      from this article’s H1 and H2 takeaways.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    className={styles.primary}
-                    disabled={Boolean(busy)}
-                    onClick={() =>
-                      void run("Rendering carousel", async () => {
-                        const out = await carousel(p);
-                        saveBlob(
-                          out.pdf,
-                          "article-carousel.pdf",
-                          "application/pdf",
-                        );
-                      })
-                    }
-                  >
-                    Download carousel PDF
-                    <Download size={15} />
-                  </button>
-                </div>
-              </>
-            )}
-
-            {tab === "email" && email && (
-              <div className={styles.emailGrid}>
-                <div className={styles.formStack}>
-                  <h3>Your email newsletter edition</h3>
-                  <p className={styles.muted}>
-                    Select a recommended subject line below, then edit the
-                    newsletter body. Your changes are saved with this project.
-                  </p>
-                  <label>
-                    Subject line (Selected)
-                    <input
-                      value={w.email?.subject ?? email.draft.selectedSubject}
-                      maxLength={180}
-                      onChange={(e) =>
-                        onChange((now) =>
-                          patchWorkspace(now, {
-                            email: {
-                              subject: e.target.value,
-                              body:
-                                workspace(now).email?.body ??
-                                newsletter(now).text.replace(
-                                  /^Subject:[^\n]*\n*/i,
-                                  "",
-                                ),
-                              sourceRevision: articleRevision(now),
-                            },
-                          }),
-                        )
-                      }
-                    />
-                  </label>
-                  <details className={styles.details} open>
-                    <summary>Try another subject line option</summary>
-                    {email.draft.subjectOptions.map((subject, i) => {
-                      const activeSubj =
-                        (w.email?.subject ?? email.draft.selectedSubject) ===
-                        subject;
-                      return (
-                        <button
-                          type="button"
-                          className={styles.option}
-                          aria-pressed={activeSubj}
-                          key={i}
-                          onClick={() =>
-                            onChange((now) =>
-                              patchWorkspace(now, {
-                                email: {
-                                  subject,
-                                  body:
-                                    workspace(now).email?.body ??
-                                    newsletter(now).text.replace(
-                                      /^Subject:[^\n]*\n*/i,
-                                      "",
-                                    ),
-                                  sourceRevision: articleRevision(now),
-                                },
-                              }),
-                            )
-                          }
-                        >
-                          {activeSubj && <Check size={14} />}
-                          <span>
-                            {i === 0 ? "★ Recommended: " : `Option ${i + 1}: `}
-                            {subject}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </details>
-                  {w.email && w.email.sourceRevision !== revision && (
-                    <p className={styles.notice}>
-                      Review this newsletter against the latest article
-                      revision.
-                    </p>
-                  )}
-                  <div className={styles.buttonRow}>
-                    <button
-                      type="button"
-                      className={styles.primary}
-                      onClick={() => saveBlob(email.text, "newsletter.txt")}
-                    >
-                      Text
-                      <Download size={14} />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        saveBlob(email.html, "newsletter.html", "text/html")
-                      }
-                    >
-                      HTML
-                      <Download size={14} />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        onChange((now) =>
-                          patchWorkspace(now, { email: undefined }),
-                        )
-                      }
-                    >
-                      Reset to article
-                    </button>
-                  </div>
-                </div>
-                <label>
-                  Newsletter body
-                  <textarea
-                    rows={20}
-                    className={styles.newsletter}
-                    value={
-                      w.email?.body ??
-                      email.text.replace(/^Subject:[^\n]*\n*/i, "")
-                    }
-                    onChange={(e) =>
-                      onChange((now) =>
-                        patchWorkspace(now, {
-                          email: {
-                            subject:
-                              workspace(now).email?.subject ??
-                              email.draft.selectedSubject,
-                            body: e.target.value,
-                            sourceRevision: articleRevision(now),
-                          },
-                        }),
-                      )
-                    }
-                  />
-                </label>
-              </div>
             )}
 
             {tab === "downloads" && (
