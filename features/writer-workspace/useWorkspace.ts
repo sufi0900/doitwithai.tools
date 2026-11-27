@@ -73,15 +73,29 @@ export function useWorkspace() {
     (async () => {
       try {
         const list = await listSavedBlogProjects();
+        let pendingNew = false;
+        try {
+          pendingNew =
+            typeof window !== "undefined" &&
+            window.sessionStorage.getItem("prism-writer-pending-new") === "1";
+        } catch {}
         let active = "";
         try {
           active = localStorage.getItem(ACTIVE) || "";
         } catch {}
-        const selected = list.find((p) => p.projectId === active) || list[0];
+        const selected = pendingNew
+          ? undefined
+          : list.find((p) => p.projectId === active) || list[0];
         const p = selected
           ? await loadBlogProjectById(selected.projectId)
           : blankProject();
         if (ticket !== request.current || !mounted.current) return;
+        if (pendingNew) {
+          try {
+            window.sessionStorage.removeItem("prism-writer-pending-new");
+            localStorage.setItem(ACTIVE, p.projectId);
+          } catch {}
+        }
         const w = workspace(p);
         if (["planning", "drafting"].includes(w.run.status))
           p.writerWorkspace = {

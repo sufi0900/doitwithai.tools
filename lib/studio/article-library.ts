@@ -228,6 +228,11 @@ export function setActiveWriterProject(projectId: string): void {
 export function requestWriterOpenProject(projectId: string): void {
   setActiveWriterProject(projectId);
   if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.removeItem("prism-writer-pending-new");
+  } catch {
+    /* ignore */
+  }
   window.dispatchEvent(
     new CustomEvent(WRITER_OPEN_PROJECT_EVENT, { detail: { projectId } }),
   );
@@ -236,6 +241,11 @@ export function requestWriterOpenProject(projectId: string): void {
 /** Asks a mounted writer to start a fresh blank article. */
 export function requestWriterNewArticle(): void {
   if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem("prism-writer-pending-new", "1");
+  } catch {
+    /* ignore */
+  }
   window.dispatchEvent(
     new CustomEvent(WRITER_OPEN_PROJECT_EVENT, { detail: { create: true } }),
   );

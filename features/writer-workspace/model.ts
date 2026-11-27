@@ -100,10 +100,57 @@ export function workspace(p: Project): WriterWorkspaceState {
     featuredBanner: raw?.featuredBanner,
     sectionAltTexts: raw?.sectionAltTexts,
     research: raw?.research,
+    brandVoiceOverride: raw?.brandVoiceOverride,
+    customImages: raw?.customImages || {},
+    sectionVisualOverrides: raw?.sectionVisualOverrides || {},
     visualRevisions: raw?.visualRevisions || {},
     email: raw?.email,
     document: raw?.document,
   };
+}
+export function safeImageSrc(raw: unknown): string {
+  const s = String(raw || "").trim();
+  if (!s) return "";
+  if (s.startsWith("writer-image:") || s.startsWith("writer-override:")) {
+    return s;
+  }
+  if (/^data:image\/(?:png|jpeg|jpg|webp);base64,[A-Za-z0-9+/=]+$/.test(s)) {
+    return s.length < 3_500_000 ? s : "";
+  }
+  return safeUrl(s);
+}
+export async function compressUploadedImageFile(file: File): Promise<{
+  dataUrl: string;
+  width: number;
+  height: number;
+}> {
+  if (!/^image\/(?:png|jpeg|jpg|webp)$/.test(file.type) || file.size > 8_000_000) {
+    throw new Error("Upload a PNG, JPEG, or WebP image under 8 MB.");
+  }
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    const img = new Image();
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject(new Error("Could not decode the selected image."));
+      img.src = objectUrl;
+    });
+    const maxDim = 1400;
+    const scale = Math.min(1, maxDim / Math.max(img.width || 1, img.height || 1));
+    const width = Math.max(1, Math.round((img.width || 800) * scale));
+    const height = Math.max(1, Math.round((img.height || 600) * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Canvas image processor is unavailable.");
+    ctx.drawImage(img, 0, 0, width, height);
+    const mime = file.type === "image/png" ? "image/png" : "image/jpeg";
+    const dataUrl = canvas.toDataURL(mime, 0.86);
+    return { dataUrl, width, height };
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
 }
 export function blankProject(): Project {
   const p = createNewBlogProjectState({ template: "blank" });
@@ -485,6 +532,26 @@ export function markdownNodes(md: string): RichNode[] {
       out.push({ type: "table", content: rows });
       continue;
     }
+    const imgMatch = trimmed.match(/^!\[([^\]]*)\]\(([^)\s]+)\)$/);
+    if (imgMatch) {
+      const resolvedSrc = safeImageSrc(imgMatch[2]);
+      if (resolvedSrc) {
+        const imageId = resolvedSrc.startsWith("writer-image:")
+          ? resolvedSrc.slice("writer-image:".length)
+          : "";
+        out.push({
+          type: "articleImage",
+          attrs: {
+            imageId,
+            src: resolvedSrc,
+            alt: (imgMatch[1] || "Article image").trim(),
+            caption: "",
+          },
+        });
+        i++;
+        continue;
+      }
+    }
     const h = trimmed.match(/^(#{1,6})\s+(.+)/);
     if (h) {
       out.push({
@@ -531,7 +598,7 @@ export function markdownNodes(md: string): RichNode[] {
     while (
       i < lines.length &&
       lines[i].trim() &&
-      !/^\s*(?:#{1,6}\s|[-*+]\s|\d+[.)]\s|```|\||>)/.test(lines[i])
+      !/^\s*(?:#{1,6}\s|[-*+]\s|\d+[.)]\s|```|\||>|!\[[^\]]*\]\()/.test(lines[i])
     )
       para.push(lines[i++].trim());
     out.push({ type: "paragraph", content: inline(para.join(" ")) });
@@ -557,7 +624,10 @@ export function projectDocument(p: Project): RichNode {
       },
       ...markdownNodes(bodyOf(s)),
     );
-    if (s.infographicConfig.nodes.length)
+    if (
+      s.infographicConfig.nodes.length ||
+      workspace(p).sectionVisualOverrides?.[s.id]?.dataUrl
+    )
       content.push({ type: "sectionVisual", attrs: { sectionId: s.id } });
   }
   return {
@@ -597,6 +667,13 @@ export function nodeMarkdown(node: RichNode): string {
   }
   if (node.type === "hardBreak") return "\n";
   if (node.type === "sectionVisual") return "";
+  if (node.type === "articleImage") {
+    const alt = String(node.attrs?.alt || "Article illustration").replace(/[\[\]\r\n]/g, " ").trim();
+    const ref = node.attrs?.imageId
+      ? `writer-image:${node.attrs.imageId}`
+      : safeImageSrc(node.attrs?.src);
+    return ref ? `![${alt}](${ref})` : "";
+  }
   if (node.type === "bulletList" || node.type === "orderedList")
     return (node.content || [])
       .map(
@@ -688,10 +765,21 @@ export const articleRevision = (p: Project) =>
 export function articleModel(p: Project): Article {
   const blocks: Block[] = [];
   let i = 0;
+  const w = workspace(p);
   const walk = (n: RichNode) => {
     if (n.type === "sectionVisual") {
       const section = p.sections.find((s) => s.id === n.attrs?.sectionId);
-      if (section?.infographicConfig.nodes.length)
+      const customVisual = section ? w.sectionVisualOverrides?.[section.id] : undefined;
+      if (section && customVisual?.dataUrl) {
+        blocks.push({
+          id: `visual-${section.id}`,
+          kind: "image",
+          included: true,
+          text: "",
+          src: `writer-override:${section.id}`,
+          alt: customVisual.altText || section.h2Text,
+        });
+      } else if (section?.infographicConfig.nodes.length)
         blocks.push({
           id: `visual-${section.id}`,
           kind: "image",
@@ -700,6 +788,22 @@ export function articleModel(p: Project): Article {
           src: `writer-visual:${section.id}`,
           alt: section.infographicConfig.altText || section.h2Text,
         });
+      return;
+    }
+    if (n.type === "articleImage") {
+      const imageId = String(n.attrs?.imageId || "");
+      const stored = imageId ? w.customImages?.[imageId] : undefined;
+      const src = stored?.src || safeImageSrc(n.attrs?.src);
+      if (src) {
+        blocks.push({
+          id: imageId ? `custom-${imageId}` : `img-${i++}`,
+          kind: "image",
+          included: true,
+          text: "",
+          src: imageId ? `writer-image:${imageId}` : src,
+          alt: stored?.alt || String(n.attrs?.alt || "Article image"),
+        });
+      }
       return;
     }
     if (n.type === "heading" && n.attrs?.level === 1) return;
@@ -2130,4 +2234,284 @@ export function runMasterAeoAndReadinessPolish(p: Project) {
   const answer = optimizeQuickAnswerBox50Words(meta.project);
   const alt = optimizeVisualAltTexts(answer.project);
   return { project: alt.project, totalUpgrades: meta.changesApplied + answer.changesApplied + alt.optimizedCount };
+}
+
+export type ContentScoreTermItem = {
+  term: string;
+  category: "primary" | "secondary" | "entity";
+  actual: number;
+  min: number;
+  max: number;
+  status: "optimal" | "low" | "stuffed";
+};
+
+export type ContentScoreIssue = {
+  id: string;
+  severity: "ok" | "warn" | "error";
+  label: string;
+  detail: string;
+  searchTerm?: string;
+};
+
+export type ContentScorecardResult = {
+  overallScore: number;
+  targetBenchmark: number;
+  researchMode: NonNullable<Project["writerWorkspace"]>["research"] extends infer R
+    ? R extends { researchMode?: infer M }
+      ? NonNullable<M>
+      : "brief-only"
+    : "brief-only";
+  structure: {
+    words: { actual: number; min: number; max: number };
+    headings: { actual: number; min: number; max: number };
+    paragraphs: { actual: number; min: number; max: number };
+    images: { actual: number; min: number; max: number };
+  };
+  terms: ContentScoreTermItem[];
+  issues: ContentScoreIssue[];
+  stuffedPrimary: boolean;
+  repeatedOpeners: string[];
+  minutes: number;
+};
+
+function countSubstringOccurrences(haystackLower: string, needleLower: string): number {
+  const clean = needleLower.trim();
+  if (!clean || clean.length < 2) return 0;
+  let count = 0;
+  let pos = 0;
+  while ((pos = haystackLower.indexOf(clean, pos)) !== -1) {
+    count += 1;
+    pos += clean.length;
+  }
+  return count;
+}
+
+/**
+ * Computes an honest, live SEO & Editorial Content Score (0–100) using competitor
+ * benchmarks when available, scaled draft targets otherwise, semantic term budgets
+ * (penalizing keyword stuffing!), and opening-repetition / readability heuristics.
+ */
+export function computeContentScorecard(p: Project): ContentScorecardResult {
+  const w = workspace(p);
+  const article = articleModel(p);
+  const r = readiness(p);
+  const md = articleMarkdown(p);
+  const lowerAll = `${p.metaPack.h1Title}\n${md}`.toLowerCase();
+
+  const bench = w.research?.competitorBenchmarks;
+  const targetWords = w.targetWords || 1600;
+  const wordsMin = bench?.targetWordsMin ?? Math.round(targetWords * 0.8);
+  const wordsMax = bench?.targetWordsMax ?? Math.round(targetWords * 1.25);
+  const h2Min = bench?.targetH2Min ?? 4;
+  const h2Max = bench?.targetH2Max ?? 9;
+  const paraMin = bench?.targetParagraphsMin ?? Math.max(10, Math.round(targetWords / 70));
+  const paraMax = bench?.targetParagraphsMax ?? Math.max(24, Math.round(targetWords / 32));
+  const imgMin = bench?.targetImagesMin ?? 2;
+  const imgMax = bench?.targetImagesMax ?? Math.max(6, p.sections.length);
+
+  const actualH2 = article.blocks.filter(
+    (b) => b.kind === "heading" && (b.level === 2 || !b.level),
+  ).length || p.sections.length;
+  const actualPara = article.blocks.filter((b) => b.kind === "paragraph").length;
+  const actualImages = article.blocks.filter((b) => b.kind === "image" && b.included !== false).length;
+
+  // Build weighted term list from research semanticTerms OR keywordCluster fallback
+  const sourceTerms =
+    w.research?.semanticTerms && w.research.semanticTerms.length > 0
+      ? w.research.semanticTerms
+      : [
+          ...(p.keywordCluster.primaryKeyword.trim()
+            ? [
+                {
+                  term: p.keywordCluster.primaryKeyword.trim(),
+                  minCount: 1,
+                  maxCount: 3,
+                  category: "primary" as const,
+                },
+              ]
+            : []),
+          ...(p.keywordCluster.secondaryKeywords || []).slice(0, 6).map((t) => ({
+            term: t.trim(),
+            minCount: 1,
+            maxCount: 4,
+            category: "secondary" as const,
+          })),
+          ...(p.keywordCluster.lsiEntities || []).slice(0, 6).map((t) => ({
+            term: t.trim(),
+            minCount: 1,
+            maxCount: 3,
+            category: "entity" as const,
+          })),
+        ].filter((t) => Boolean(t.term));
+
+  const terms: ContentScoreTermItem[] = sourceTerms.slice(0, 16).map((t) => {
+    const actual = countSubstringOccurrences(lowerAll, t.term.toLowerCase());
+    const status: ContentScoreTermItem["status"] =
+      actual > t.maxCount ? "stuffed" : actual >= t.minCount ? "optimal" : "low";
+    return {
+      term: t.term,
+      category: t.category,
+      actual,
+      min: t.minCount,
+      max: t.maxCount,
+      status,
+    };
+  });
+
+  // Detect repetitive H2 first-3-word openings OR repeated robotic gerund/cliché lead words
+  const openerCounts = new Map<string, number>();
+  const leadWordCounts = new Map<string, number>();
+  const repeatedOpeners: string[] = [];
+  const ROBOTIC_LEAD_WORDS = new Set([
+    "mastering",
+    "understanding",
+    "exploring",
+    "leveraging",
+    "unlocking",
+    "navigating",
+    "delving",
+    "implementing",
+  ]);
+  for (const sec of p.sections) {
+    const cleanedWords = bodyOf(sec)
+      .replace(/^###\s+[^\n]+\n*/gm, "")
+      .replace(/[#>*_`]/g, "")
+      .trim()
+      .split(/\s+/);
+    const firstSentence = cleanedWords.slice(0, 3).join(" ").toLowerCase();
+    const leadWord = (cleanedWords[0] || "").replace(/[^a-z]/gi, "").toLowerCase();
+    if (cleanedWords.length >= 2 && firstSentence) {
+      const next = (openerCounts.get(firstSentence) || 0) + 1;
+      openerCounts.set(firstSentence, next);
+      if (next === 2 && !repeatedOpeners.includes(firstSentence)) {
+        repeatedOpeners.push(firstSentence);
+      }
+    }
+    if (leadWord && ROBOTIC_LEAD_WORDS.has(leadWord)) {
+      const nextLead = (leadWordCounts.get(leadWord) || 0) + 1;
+      leadWordCounts.set(leadWord, nextLead);
+      if (nextLead === 2 && !repeatedOpeners.includes(leadWord)) {
+        repeatedOpeners.push(leadWord);
+      }
+    }
+  }
+
+  const primaryItem = terms.find((t) => t.category === "primary");
+  const stuffedPrimary = primaryItem?.status === "stuffed";
+
+  // 100-point transparent scorecard
+  let score = 0;
+  const issues: ContentScoreIssue[] = [];
+
+  if (r.words > 0) {
+    // 1. Structure (25 pts)
+    const wordScore =
+      r.words >= wordsMin && r.words <= wordsMax
+        ? 10
+        : r.words >= wordsMin * 0.65
+          ? 6
+          : 2;
+    const h2Score =
+      actualH2 >= h2Min && actualH2 <= h2Max ? 7 : actualH2 >= 2 ? 4 : 1;
+    const paraScore = actualPara >= Math.min(8, paraMin) ? 4 : 2;
+    const imgScore =
+      actualImages >= imgMin ? 4 : actualImages >= 1 ? 2 : 0;
+    score += wordScore + h2Score + paraScore + imgScore;
+
+    // 2. Semantic terms & anti-stuffing (25 pts)
+    if (terms.length > 0) {
+      const optimalCount = terms.filter((t) => t.status === "optimal").length;
+      const coverage = Math.round((optimalCount / terms.length) * 25);
+      const stuffingPenalty = stuffedPrimary ? 8 : 0;
+      score += Math.max(0, coverage - stuffingPenalty);
+    } else {
+      score += 14;
+    }
+
+    // 3. Readability, cliché-free prose & varied H2 openings (20 pts)
+    const cleanSentences = r.readability.longSentences.length <= Math.max(3, Math.round(r.readability.sentences.length * 0.25));
+    score += cleanSentences ? 10 : 5;
+    score += repeatedOpeners.length === 0 ? 10 : Math.max(0, 10 - repeatedOpeners.length * 5);
+
+    // 4. Meta title, description & slug (15 pts)
+    const serp = auditSerpPixelAndCtrReadiness(p);
+    score += Math.round((serp.serpScore / 100) * 12);
+    score += p.metaPack.urlSlug.trim() ? 3 : 0;
+
+    // 5. Contextual links & grounded evidence (15 pts)
+    const hasMdLink = /\[[^\]]{2,}\]\(https?:\/\/[^)]+\)/.test(md);
+    const hasCustomOrInternal = p.internalLinks.some((l) => md.includes(l.targetUrl)) || hasMdLink;
+    score += hasCustomOrInternal ? 10 : 3;
+    score += w.references.length > 0 || (w.research?.externalLinks?.length || 0) > 0 ? 5 : 0;
+  }
+
+  // Diagnostic actionable issues for the inspector
+  if (stuffedPrimary && primaryItem) {
+    issues.push({
+      id: "stuffed-primary",
+      severity: "error",
+      label: `Primary keyword stuffed (${primaryItem.actual}x vs max ${primaryItem.max}x)`,
+      detail: `Replace excess uses of "${primaryItem.term}" with natural pronouns or related terms.`,
+      searchTerm: primaryItem.term,
+    });
+  }
+  if (repeatedOpeners.length > 0) {
+    issues.push({
+      id: "repeated-openers",
+      severity: "warn",
+      label: `${repeatedOpeners.length} repeated section opening pattern${repeatedOpeners.length === 1 ? "" : "s"}`,
+      detail: `Multiple sections open with "${repeatedOpeners[0]}…". Vary your H2 opening hooks.`,
+      searchTerm: repeatedOpeners[0],
+    });
+  }
+  if (r.words > 0 && r.words < wordsMin) {
+    issues.push({
+      id: "word-count-low",
+      severity: "warn",
+      label: `Word count below target (${r.words} / ${wordsMin}+ words)`,
+      detail: "Expand thin sections with concrete examples, mechanisms, or tradeoffs.",
+    });
+  }
+  if (actualImages < imgMin && r.words > 0) {
+    issues.push({
+      id: "images-low",
+      severity: "warn",
+      label: `Add ${imgMin - actualImages} more visual${imgMin - actualImages === 1 ? "" : "s"} (${actualImages}/${imgMin})`,
+      detail: "Insert custom images from your computer or keep section infographics.",
+    });
+  }
+  if (r.readability.longSentences.length > 0) {
+    issues.push({
+      id: "long-sentences",
+      severity: "warn",
+      label: `${r.readability.longSentences.length} dense sentence${r.readability.longSentences.length === 1 ? "" : "s"}`,
+      detail: "Click to inspect and simplify long multi-clause sentences.",
+      searchTerm: r.readability.longSentences[0]?.text.slice(0, 32),
+    });
+  }
+  if (!/\[[^\]]{2,}\]\(https?:\/\/[^)]+\)/.test(md) && r.words > 200) {
+    issues.push({
+      id: "no-links",
+      severity: "warn",
+      label: "No contextual inline links detected",
+      detail: "Weave descriptive anchor text links to relevant pages inside existing sentences.",
+    });
+  }
+
+  return {
+    overallScore: r.words > 0 ? Math.max(5, Math.min(100, score)) : 0,
+    targetBenchmark: w.research?.competitorBenchmarks?.analyzedPages.length ? 78 : 75,
+    researchMode: w.research?.researchMode || "brief-only",
+    structure: {
+      words: { actual: r.words, min: wordsMin, max: wordsMax },
+      headings: { actual: actualH2, min: h2Min, max: h2Max },
+      paragraphs: { actual: actualPara, min: paraMin, max: paraMax },
+      images: { actual: actualImages, min: imgMin, max: imgMax },
+    },
+    terms,
+    issues,
+    stuffedPrimary: Boolean(stuffedPrimary),
+    repeatedOpeners,
+    minutes: r.minutes,
+  };
 }

@@ -1,23 +1,18 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Link from "next/link";
 import {
-  Globe,
+  ArrowRight,
+  PenLine,
+  SlidersHorizontal,
   Sparkles,
   Wand2,
-  ArrowRight,
-  SlidersHorizontal,
-  PenLine,
-  Layers,
-  Plus,
 } from "lucide-react";
-import { workspace } from "./model";
+import { patchWorkspace, workspace } from "./model";
 import type { Project } from "./types";
 import { authorizedWebsiteFetch } from "@/features/website-builder/lib/supabase/browser";
 import type { ConnectedWebsiteSummary } from "@/features/website-builder/ecosystem-bridge";
 import {
-  getSelectedWriterTargetSiteId,
   listLocalWebsiteInternalLinks,
   listLocalWebsitesAsConnectedSummaries,
   setSelectedWriterTargetSiteId,
@@ -26,7 +21,6 @@ import s from "./workspace.module.css";
 
 const SAMPLE_BRIEF = `Topic: AI SEO vs Traditional SEO: Which Strategy Wins in 2026?
 Keyword: AI SEO vs Traditional SEO
-Website: https://doitwithai.tools
 
 Write a detailed, practical comparison guide for marketing founders and content leads.
 H2: What Actually Separates AI SEO From Traditional SEO
@@ -59,7 +53,9 @@ export function OnboardingGate({
 }) {
   const w = workspace(project);
   const canLaunch =
-    !busy && project.rawUserBriefOrSourceText.trim().length >= 3;
+    !busy &&
+    (project.keywordCluster.primaryKeyword.trim().length >= 2 ||
+      project.rawUserBriefOrSourceText.trim().length >= 3);
 
   const [detectedWebsites, setDetectedWebsites] = useState<
     ConnectedWebsiteSummary[]
@@ -85,6 +81,7 @@ export function OnboardingGate({
       setSelectedSiteId(siteId);
       if (siteId === "__external__" || !siteId) {
         setSelectedWriterTargetSiteId("");
+        onPatchProject({ brandSiteUrl: "" });
         return;
       }
       setSelectedWriterTargetSiteId(siteId);
@@ -129,7 +126,14 @@ export function OnboardingGate({
         },
       });
     },
-    [detectedLinks, detectedWebsites, onPatchProject, onPatchWorkspace, project.internalLinks, w.brand],
+    [
+      detectedLinks,
+      detectedWebsites,
+      onPatchProject,
+      onPatchWorkspace,
+      project.internalLinks,
+      w.brand,
+    ],
   );
 
   useEffect(() => {
@@ -168,28 +172,15 @@ export function OnboardingGate({
       setDetectedWebsites(mergedSites);
       setDetectedLinks(mergedLinks);
 
-      const preferred =
-        getSelectedWriterTargetSiteId() || mergedSites[0]?.projectId || "";
-      if (
-        preferred &&
-        mergedSites.some((item) => item.projectId === preferred)
-      ) {
-        setSelectedSiteId(preferred);
-        setSelectedWriterTargetSiteId(preferred);
-        const chosen = mergedSites.find((item) => item.projectId === preferred)!;
-        const origin =
-          typeof window !== "undefined"
-            ? window.location.origin
-            : "https://doitwithai.tools";
-        const siteUrl = chosen.publicSlug
-          ? `${origin}/p/${chosen.publicSlug}`
-          : `${origin}/ai-website-builder/studio/${chosen.projectId}`;
-        if (!project.brandSiteUrl) {
-          onPatchProject({ brandSiteUrl: siteUrl });
-        }
-        if (!w.brand.name) {
-          onPatchWorkspace({ brand: { ...w.brand, name: chosen.name } });
-        }
+      // Stay neutral when no site is configured on this project
+      const currentSite = project.brandSiteUrl.trim();
+      if (currentSite) {
+        const matched = mergedSites.find(
+          (item) =>
+            (item.publicSlug && currentSite.includes(`/p/${item.publicSlug}`)) ||
+            currentSite.includes(item.projectId),
+        );
+        if (matched) setSelectedSiteId(matched.projectId);
       }
     }
 
@@ -208,6 +199,19 @@ export function OnboardingGate({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const ensureBriefBeforeLaunch = (thenRun: () => void) => {
+    if (
+      !project.rawUserBriefOrSourceText.trim() &&
+      project.keywordCluster.primaryKeyword.trim()
+    ) {
+      const kw = project.keywordCluster.primaryKeyword.trim();
+      onPatchProject({
+        rawUserBriefOrSourceText: `Topic: ${kw}\nKeyword: ${kw}`,
+      });
+    }
+    thenRun();
+  };
+
   return (
     <section
       className={s.onboardingCard}
@@ -216,17 +220,15 @@ export function OnboardingGate({
       <div className={s.onboardingHero}>
         <div className={s.heroBadgeRow}>
           <span className={s.badge}>
-            <Sparkles className="w-3.5 h-3.5" aria-hidden /> 11-Agent AI Content Engine
+            <Sparkles className="w-3.5 h-3.5" aria-hidden /> Editorial Brief
           </span>
           <span className={s.heroSubBadge}>
-            Research + Internal Links + SERP + H1–H6 Draft + Featured 16:9 + Alt Text + Social/Video
+            Web Grounded · Competitor SERP Analysis · Custom Infographics &amp; Rich Editor
           </span>
         </div>
-        <h2>Brief your AI editorial team before opening the studio</h2>
+        <h2>Start a new article brief</h2>
         <p>
-          Describe your article in natural human language — include custom H2/H3 headings, visual
-          placement notes, conclusion style, or select one of your created websites below for
-          automatic internal link discovery and 1-click publishing.
+          Enter your target keyword and instructions. Optionally connect a site to match its brand voice and pull verified internal links.
         </p>
       </div>
 
@@ -236,183 +238,172 @@ export function OnboardingGate({
         </div>
       ) : null}
 
-      {/* AUTO-DETECTED USER WEBSITES SELECTOR */}
-      <div
-        style={{
-          marginBottom: "16px",
-          padding: "14px 16px",
-          borderRadius: "14px",
-          border: "1px solid rgba(99, 102, 241, 0.38)",
-          background:
-            "linear-gradient(135deg, rgba(12, 19, 44, 0.94), rgba(15, 23, 42, 0.92))",
-          display: "grid",
-          gap: "10px",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: "8px",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <Layers className="w-4 h-4 text-indigo-400" aria-hidden />
-            <strong style={{ fontSize: "13px", color: "#f8fafc" }}>
-              {detectedWebsites.length > 0
-                ? `Connected Website Auto-Detected (${detectedWebsites.length} Website${detectedWebsites.length === 1 ? "" : "s"} Found)`
-                : "Write for a DoItWithAI Website or Any External Domain"}
-            </strong>
-          </div>
-          <Link
-            href="/ai-website-builder/start"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "5px",
-              fontSize: "11.5px",
-              fontWeight: 700,
-              color: "#818cf8",
-              textDecoration: "none",
-            }}
-          >
-            <Plus className="w-3.5 h-3.5" aria-hidden /> Create Another Website
-          </Link>
+      <div className={s.formStack}>
+        <div>
+          <label className={s.label} htmlFor="onboarding-keyword">
+            Primary SEO Keyword or Core Topic
+          </label>
+          <input
+            id="onboarding-keyword"
+            className={s.input}
+            value={project.keywordCluster.primaryKeyword}
+            onChange={(e) =>
+              onPatchProject({
+                keywordCluster: {
+                  ...project.keywordCluster,
+                  primaryKeyword: e.target.value,
+                },
+              })
+            }
+            placeholder="e.g. indoor herb gardening for beginners, or AI workflow automation"
+          />
         </div>
 
-        {detectedWebsites.length > 0 ? (
-          <div style={{ display: "grid", gap: "8px" }}>
-            <label
-              htmlFor="onboarding-detected-site"
-              style={{ fontSize: "12px", color: "#cbd5e1" }}
+        <div>
+          <div className={s.briefLabelRow}>
+            <label className={s.label} htmlFor="onboarding-brief">
+              Article Brief &amp; Editorial Angle
+            </label>
+            <button
+              type="button"
+              className={s.samplePromptBtn}
+              onClick={() => {
+                onPatchProject({
+                  rawUserBriefOrSourceText: SAMPLE_BRIEF,
+                  keywordCluster: {
+                    ...project.keywordCluster,
+                    primaryKeyword:
+                      project.keywordCluster.primaryKeyword ||
+                      "AI SEO vs Traditional SEO",
+                    targetAudience:
+                      project.keywordCluster.targetAudience ||
+                      "Marketing leads and SaaS founders",
+                  },
+                });
+              }}
             >
-              Which website are you writing this blog post for?
+              <Wand2 className="w-3.5 h-3.5" aria-hidden /> Load sample brief
+            </button>
+          </div>
+          <textarea
+            id="onboarding-brief"
+            className={`${s.area} ${s.onboardingBriefArea}`}
+            value={project.rawUserBriefOrSourceText}
+            onChange={(e) =>
+              onPatchProject({ rawUserBriefOrSourceText: e.target.value })
+            }
+            placeholder="Describe who this is for, specific angles or custom H2 headings to cover, comparison tables to include, and any real-world context you want grounded."
+          />
+        </div>
+
+        {/* Clean 1-row configuration strip */}
+        <div className={s.onboardingCompactRow}>
+          <div>
+            <label className={s.label} htmlFor="onboarding-detected-site">
+              Connected Website
             </label>
             <select
               id="onboarding-detected-site"
+              className={s.input}
               value={selectedSiteId}
               onChange={(e) => applyDetectedWebsite(e.target.value)}
-              style={{
-                padding: "9px 12px",
-                borderRadius: "10px",
-                border: "1px solid rgba(99, 102, 241, 0.45)",
-                background: "#060b18",
-                color: "#f8fafc",
-                fontSize: "13px",
-              }}
             >
+              <option value="__external__">
+                No website (neutral brand voice)
+              </option>
               {detectedWebsites.map((site) => (
                 <option key={site.projectId} value={site.projectId}>
-                  🌐 {site.name} ({site.templateName || site.templateId} ·{" "}
-                  {site.publicSlug ? `/p/${site.publicSlug}` : "Local Draft"} ·{" "}
-                  {site.publishedPostCount} posts)
+                  {site.name} ({site.publishedPostCount} posts)
                 </option>
               ))}
-              <option value="__external__">
-                ✍️ Write for another / external website (enter custom URL below)
-              </option>
             </select>
-            {selectedSiteId !== "__external__" && (
-              <small style={{ color: "#6ee7b7", fontSize: "11.5px" }}>
-                ✓ Brand name, website URL, and existing blog/tool internal links are synced for 1-click publishing.
-              </small>
-            )}
           </div>
-        ) : (
-          <p style={{ margin: 0, fontSize: "12px", color: "#94a3b8" }}>
-            No created websites detected in this browser yet. You can write for any external URL below, or{" "}
-            <Link
-              href="/ai-website-builder/start"
-              style={{ color: "#38bdf8", textDecoration: "underline" }}
+
+          <div>
+            <label className={s.label} htmlFor="onboarding-words">
+              Target Length
+            </label>
+            <select
+              id="onboarding-words"
+              className={s.input}
+              value={w.targetWords}
+              onChange={(e) =>
+                onPatchWorkspace({ targetWords: Number(e.target.value) || 1600 })
+              }
             >
-              launch an AI Website or Blog in 60 seconds
-            </Link>{" "}
-            and publish articles to it in 1 click.
-          </p>
-        )}
-      </div>
-
-      <div className={s.formStack}>
-        <div className={s.briefLabelRow}>
-          <label className={s.label} htmlFor="onboarding-brief">
-            Article brief, human prompt, or outline instructions
-          </label>
-          <button
-            type="button"
-            className={s.samplePromptBtn}
-            onClick={() => {
-              onPatchProject({
-                rawUserBriefOrSourceText: SAMPLE_BRIEF,
-                brandSiteUrl: project.brandSiteUrl || "https://doitwithai.tools",
-                keywordCluster: {
-                  ...project.keywordCluster,
-                  primaryKeyword:
-                    project.keywordCluster.primaryKeyword || "AI SEO vs Traditional SEO",
-                  targetAudience:
-                    project.keywordCluster.targetAudience ||
-                    "Marketing leads and SaaS founders",
-                },
-              });
-            }}
-          >
-            <Wand2 className="w-3.5 h-3.5" aria-hidden /> Load sample brief
-          </button>
-        </div>
-
-        <textarea
-          id="onboarding-brief"
-          className={`${s.area} ${s.onboardingBriefArea}`}
-          value={project.rawUserBriefOrSourceText}
-          onChange={(e) =>
-            onPatchProject({ rawUserBriefOrSourceText: e.target.value })
-          }
-          placeholder={`Example:\nTopic: Technical SEO Audit Checklist for SaaS Sites\nKeyword: technical SEO checklist\nWebsite: https://yourdomain.com\n\nExplain each step clearly, include a comparison table in Section 2, add an infographic after Core Web Vitals, and close with an actionable checklist conclusion.`}
-        />
-
-        <div className={s.onboardingGrid2}>
-          <div>
-            <label className={s.label} htmlFor="onboarding-website">
-              <Globe className="w-3.5 h-3.5 inline mr-1" aria-hidden /> Target Website URL (for Internal Links)
-            </label>
-            <input
-              id="onboarding-website"
-              type="url"
-              className={s.input}
-              value={project.brandSiteUrl}
-              onChange={(e) => onPatchProject({ brandSiteUrl: e.target.value })}
-              placeholder="https://yoursite.com (optional — scans real pages)"
-            />
+              <option value={900}>Short (~900 words)</option>
+              <option value={1400}>Standard (~1,400 words)</option>
+              <option value={1800}>Deep guide (~1,800 words)</option>
+              <option value={2600}>Pillar (~2,600 words)</option>
+            </select>
           </div>
 
           <div>
-            <label className={s.label} htmlFor="onboarding-keyword">
-              Focus SEO Keyword
+            <label className={s.label} htmlFor="onboarding-tone">
+              Editorial Tone
             </label>
-            <input
-              id="onboarding-keyword"
+            <select
+              id="onboarding-tone"
               className={s.input}
-              value={project.keywordCluster.primaryKeyword}
+              value={project.keywordCluster.toneOfVoice}
               onChange={(e) =>
                 onPatchProject({
                   keywordCluster: {
                     ...project.keywordCluster,
-                    primaryKeyword: e.target.value,
+                    toneOfVoice: e.target
+                      .value as Project["keywordCluster"]["toneOfVoice"],
                   },
                 })
               }
-              placeholder="e.g. AI content marketing workflow"
+            >
+              <option value="Authoritative & Human">Authoritative &amp; Human</option>
+              <option value="Conversational First-Person">
+                Conversational First-Person
+              </option>
+              <option value="Technical & Data-Driven">
+                Technical &amp; Data-Driven
+              </option>
+              <option value="Executive B2B">Executive B2B</option>
+            </select>
+          </div>
+
+          <div>
+            <label className={s.label} htmlFor="onboarding-lang">
+              Language
+            </label>
+            <input
+              id="onboarding-lang"
+              className={s.input}
+              value={w.language}
+              onChange={(e) => onPatchWorkspace({ language: e.target.value })}
+              placeholder="English"
             />
           </div>
         </div>
 
         <details className={s.onboardingAdvanced}>
           <summary>
-            <SlidersHorizontal className="w-3.5 h-3.5 inline mr-1.5" aria-hidden />
-            Audience, Tone, Word Count, Language &amp; Brand Styling
+            <SlidersHorizontal
+              className="w-3.5 h-3.5 inline mr-1.5"
+              aria-hidden
+            />
+            Advanced Website URL, Audience &amp; Brand Voice Options
           </summary>
           <div className={s.onboardingAdvancedGrid}>
+            <div>
+              <label className={s.label} htmlFor="onboarding-website">
+                External Website URL (optional — samples voice &amp; links)
+              </label>
+              <input
+                id="onboarding-website"
+                type="text"
+                className={s.input}
+                value={project.brandSiteUrl}
+                onChange={(e) => onPatchProject({ brandSiteUrl: e.target.value })}
+                placeholder="https://yoursite.com"
+              />
+            </div>
+
             <div>
               <label className={s.label} htmlFor="onboarding-audience">
                 Target Audience
@@ -429,63 +420,30 @@ export function OnboardingGate({
                     },
                   })
                 }
-                placeholder="Founders, marketers, practitioners"
+                placeholder="Founders, practitioners, beginners..."
               />
             </div>
 
             <div>
-              <label className={s.label} htmlFor="onboarding-tone">
-                Tone of Voice
+              <label className={s.label} htmlFor="onboarding-secondary">
+                Secondary Keywords (comma separated)
               </label>
-              <select
-                id="onboarding-tone"
+              <input
+                id="onboarding-secondary"
                 className={s.input}
-                value={project.keywordCluster.toneOfVoice}
+                value={project.keywordCluster.secondaryKeywords.join(", ")}
                 onChange={(e) =>
                   onPatchProject({
                     keywordCluster: {
                       ...project.keywordCluster,
-                      toneOfVoice: e.target.value as Project["keywordCluster"]["toneOfVoice"],
+                      secondaryKeywords: e.target.value
+                        .split(",")
+                        .map((item) => item.trim())
+                        .filter(Boolean),
                     },
                   })
                 }
-              >
-                <option value="Authoritative & Human">Authoritative &amp; Human</option>
-                <option value="Conversational First-Person">Conversational First-Person</option>
-                <option value="Technical & Data-Driven">Technical &amp; Data-Driven</option>
-                <option value="Executive B2B">Executive B2B</option>
-              </select>
-            </div>
-
-            <div>
-              <label className={s.label} htmlFor="onboarding-words">
-                Target Length (words)
-              </label>
-              <select
-                id="onboarding-words"
-                className={s.input}
-                value={w.targetWords}
-                onChange={(e) =>
-                  onPatchWorkspace({ targetWords: Number(e.target.value) || 1600 })
-                }
-              >
-                <option value={900}>Short guide (~900 words)</option>
-                <option value={1400}>Standard article (~1,400 words)</option>
-                <option value={1800}>Deep guide (~1,800 words)</option>
-                <option value={2600}>Comprehensive pillar (~2,600 words)</option>
-              </select>
-            </div>
-
-            <div>
-              <label className={s.label} htmlFor="onboarding-lang">
-                Article Language
-              </label>
-              <input
-                id="onboarding-lang"
-                className={s.input}
-                value={w.language}
-                onChange={(e) => onPatchWorkspace({ language: e.target.value })}
-                placeholder="English"
+                placeholder="term one, term two, term three"
               />
             </div>
 
@@ -500,7 +458,28 @@ export function OnboardingGate({
                 onChange={(e) =>
                   onPatchWorkspace({ brand: { ...w.brand, name: e.target.value } })
                 }
-                placeholder="e.g. Acme Studio"
+                placeholder="Neutral editorial author if blank"
+              />
+            </div>
+
+            <div>
+              <label className={s.label} htmlFor="onboarding-voice-notes">
+                Custom Brand Voice Notes (optional)
+              </label>
+              <input
+                id="onboarding-voice-notes"
+                className={s.input}
+                value={w.brandVoiceOverride?.voiceSummary || ""}
+                onChange={(e) => {
+                  const nextVal = e.target.value;
+                  onPatchWorkspace({
+                    brandVoiceOverride: {
+                      ...(w.brandVoiceOverride || {}),
+                      voiceSummary: nextVal,
+                    },
+                  });
+                }}
+                placeholder="e.g. Concise, practitioner-first, zero buzzwords"
               />
             </div>
 
@@ -531,10 +510,10 @@ export function OnboardingGate({
             type="button"
             className={`${s.btn} ${s.primary}`}
             disabled={!canLaunch}
-            onClick={onGenerateAll}
+            onClick={() => ensureBriefBeforeLaunch(onGenerateAll)}
           >
             <Sparkles className="w-4 h-4" aria-hidden />
-            Research, Plan &amp; Write Complete Article
+            Generate Full Article
             <ArrowRight className="w-4 h-4" aria-hidden />
           </button>
 
@@ -542,18 +521,23 @@ export function OnboardingGate({
             type="button"
             className={s.btn}
             disabled={!canLaunch}
-            onClick={onPlanFirst}
+            onClick={() => ensureBriefBeforeLaunch(onPlanFirst)}
           >
-            Research &amp; Outline First
+            Build Outline First
           </button>
 
           <button
             type="button"
             className={s.onboardingSkipBtn}
             disabled={busy}
-            onClick={onOpenStudioManually}
+            onClick={() => {
+              if (!w.brand.name && !project.brandSiteUrl) {
+                patchWorkspace(project, {});
+              }
+              onOpenStudioManually();
+            }}
           >
-            <PenLine className="w-3.5 h-3.5" aria-hidden /> Open Blank Studio Manually
+            <PenLine className="w-3.5 h-3.5" aria-hidden /> Open Blank Editor
           </button>
         </div>
       </div>

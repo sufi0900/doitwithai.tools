@@ -42,6 +42,40 @@ export type ResearchLinkItem = {
   relevanceScore?: number;
 };
 
+export type BrandVoiceProfile = {
+  sourceDomain: string;
+  voiceSummary: string;
+  pointOfView: string;
+  sentenceRhythm: string;
+  vocabularyNotes: string[];
+  avoidPhrases: string[];
+  sampledPages: string[];
+};
+
+export type ResearchCompetitorBenchmarks = {
+  targetWordsMin: number;
+  targetWordsMax: number;
+  targetH2Min: number;
+  targetH2Max: number;
+  targetParagraphsMin: number;
+  targetParagraphsMax: number;
+  targetImagesMin: number;
+  targetImagesMax: number;
+  analyzedPages: Array<{
+    url: string;
+    title: string;
+    wordCount: number;
+    h2Headings: string[];
+  }>;
+};
+
+export type SemanticTermTarget = {
+  term: string;
+  minCount: number;
+  maxCount: number;
+  category: "primary" | "secondary" | "entity";
+};
+
 export type ResearchPacket = {
   analyzedIntent: string;
   searchIntent: "informational" | "commercial" | "transactional" | "navigational" | "mixed";
@@ -60,6 +94,21 @@ export type ResearchPacket = {
   fetchedAt?: string;
   siteScanned?: string;
   warnings?: string[];
+  researchMode?:
+    | "live-google-grounding"
+    | "live-serp-api"
+    | "public-reference"
+    | "brief-only";
+  searchQueriesUsed?: string[];
+  groundedSummary?: string;
+  competitorBenchmarks?: ResearchCompetitorBenchmarks;
+  semanticTerms?: SemanticTermTarget[];
+  evidencePassages?: Array<{
+    claimOrFact: string;
+    sourceTitle: string;
+    sourceUrl: string;
+  }>;
+  brandVoice?: BrandVoiceProfile;
 };
 
 export type FeaturedBannerState = {
@@ -131,6 +180,15 @@ export interface WriterWorkspaceState {
   featuredBanner?: FeaturedBannerState;
   sectionAltTexts?: Record<string, { altText: string; score?: number; verdict?: string }>;
   research?: ResearchPacket;
+  brandVoiceOverride?: Partial<BrandVoiceProfile>;
+  customImages?: Record<
+    string,
+    { id: string; src: string; alt: string; caption?: string }
+  >;
+  sectionVisualOverrides?: Record<
+    string,
+    { dataUrl: string; altText: string; caption?: string }
+  >;
   visualRevisions?: Record<string, string>;
   email?: { subject: string; body: string; sourceRevision: string };
   quizQuestions?: ComprehensionQuizQuestion[];

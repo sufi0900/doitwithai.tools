@@ -25,6 +25,7 @@ import {
   blankProject,
   bodyOf,
   buildArticleSchemaJsonLd,
+  computeContentScorecard,
   defaultFeaturedBanner,
   evaluateAltText,
   inputRevision,
@@ -990,4 +991,217 @@ test("internal linking skips unrelated destinations rather than appending promot
   const result = autoWeaveContextualInternalLinks(p);
   assert.equal(result.linkedCount, 0);
   assert.equal(articleMarkdown(result.project), before);
+});
+
+
+test("computeContentScorecard scores 3 unrelated topics fairly, flags keyword stuffing and repeated H2 openings", () => {
+  // 1. Indoor herb gardening — verify zero SEO jargon leaks into terms or issues
+  let garden = blankProject();
+  garden.projectTitle = "Indoor Herb Gardening for Sunny Windowsills";
+  garden.keywordCluster.primaryKeyword = "indoor herb gardening";
+  garden.keywordCluster.secondaryKeywords = ["drainage holes", "terracotta pots", "basil pruning"];
+  garden.metaPack.h1Title = "Indoor Herb Gardening for Sunny Windowsills";
+  garden.metaPack.metaTitle = "Indoor Herb Gardening: Light, Soil, and Water Guide";
+  garden.metaPack.metaDescription =
+    "Grow resilient culinary herbs indoors using terracotta pots with proper drainage holes and practical pruning routines.";
+  garden.metaPack.urlSlug = "indoor-herb-gardening-windowsills";
+  garden.sections = [
+    setSectionBody(
+      makeSection({ heading: "Choosing the Right Soil and Containers", subheadings: [] }, 0),
+      "Teracotta vessels breathe cleanly when drainage holes keep soggy soil away from tender roots. indoor herb gardening thrives when morning light hits kitchen sills directly for five hours.",
+    ),
+    setSectionBody(
+      makeSection({ heading: "Pruning Basil for Bushy Stems", subheadings: [] }, 1),
+      "Pinch right above a leaf node once plants show three true sets of foliage. Sharp kitchen shears prevent bruised stems and encourage dense basil pruning harvests all summer.",
+    ),
+  ];
+  const gardenCard = computeContentScorecard(garden);
+  assert.ok(gardenCard.overallScore > 25);
+  assert.equal(gardenCard.stuffedPrimary, false);
+  for (const t of gardenCard.terms) {
+    assert.doesNotMatch(t.term.toLowerCase(), /\b(?:canonical|serp|schema markup|ai overviews)\b/);
+  }
+
+  // 2. B2B SaaS accounting automation — verify primary keyword stuffing + repeated H2 openers are penalized
+  let saas = blankProject();
+  saas.projectTitle = "Automated Revenue Recognition Playbook";
+  saas.keywordCluster.primaryKeyword = "SaaS accounting automation";
+  saas.keywordCluster.secondaryKeywords = ["ASC 606", "deferred revenue"];
+  saas.metaPack.h1Title = "SaaS Accounting Automation Guide";
+  saas.sections = [
+    setSectionBody(
+      makeSection({ heading: "Mastering Month-End Close", subheadings: [] }, 0),
+      "Mastering reconciliation starts early. SaaS accounting automation speeds SaaS accounting automation across SaaS accounting automation workflows, so SaaS accounting automation eliminates SaaS accounting automation spreadsheet delays and SaaS accounting automation errors every quarter.",
+    ),
+    setSectionBody(
+      makeSection({ heading: "Mastering ASC 606 Schedules", subheadings: [] }, 1),
+      "Mastering contract modifications requires immutable audit trails for deferred revenue and ASC 606 compliance under SaaS accounting automation controls and SaaS accounting automation checks.",
+    ),
+  ];
+  const saasCard = computeContentScorecard(saas);
+  assert.equal(saasCard.stuffedPrimary, true);
+  assert.ok(saasCard.issues.some((i) => i.id === "stuffed-primary" && i.severity === "error"));
+  assert.ok(saasCard.repeatedOpeners.length >= 1);
+  assert.ok(saasCard.issues.some((i) => i.id === "repeated-openers"));
+
+  // 3. Technical SEO guide — clean balanced copy scores higher than stuffed draft
+  let seo = draft();
+  seo.keywordCluster.primaryKeyword = "technical SEO audit";
+  seo.keywordCluster.secondaryKeywords = ["crawl budget", "canonical tags"];
+  const seoCard = computeContentScorecard(seo);
+  assert.equal(seoCard.stuffedPrimary, false);
+  assert.ok(seoCard.overallScore >= 40);
+});
+
+test("articleImage and sectionVisualOverrides round-trip through document, articleModel, HTML, and EPUB", async () => {
+  const { htmlArticle, epubBytes } = await import("../../features/writer-workspace/assets");
+  const tinyPngBase64 =
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
+
+  let proj = draft();
+  const secId = proj.sections[0].id;
+  proj = patchWorkspace(proj, {
+    customImages: {
+      "img-custom-1": {
+        id: "img-custom-1",
+        src: tinyPngBase64,
+        alt: "Custom basil pruning diagram",
+        caption: "Figure 1: Clean pruning node",
+      },
+    },
+    sectionVisualOverrides: {
+      [secId]: {
+        dataUrl: tinyPngBase64,
+        altText: "Uploaded section replacement diagram",
+        caption: "Replaced infographic slot",
+      },
+    },
+  });
+
+  const baseDoc = projectDocument(proj);
+  const docWithCustomImg = {
+    ...baseDoc,
+    content: [
+      ...(baseDoc.content || []),
+      {
+        type: "articleImage",
+        attrs: {
+          imageId: "img-custom-1",
+          src: "",
+          alt: "Custom basil pruning diagram",
+          caption: "Figure 1: Clean pruning node",
+        },
+      },
+    ],
+  };
+
+  proj = syncDocument(proj, docWithCustomImg);
+  const model = articleModel(proj);
+  const imgBlocks = model.blocks.filter((b) => b.kind === "image");
+  assert.ok(imgBlocks.some((b) => b.src === `writer-override:${secId}`));
+  assert.ok(imgBlocks.some((b) => b.src === "writer-image:img-custom-1"));
+
+  const html = htmlArticle(proj);
+  assert.ok(html.includes(tinyPngBase64));
+  assert.ok(html.includes("Custom basil pruning diagram"));
+  assert.ok(html.includes("Uploaded section replacement diagram"));
+
+  const epub = await epubBytes(proj);
+  const zip = await JSZip.loadAsync(epub.bytes);
+  const fileNames = Object.keys(zip.files);
+  assert.ok(fileNames.some((name) => /^OEBPS\/images\/image-\d+\.png$/i.test(name)));
+});
+
+test("research handler uses grounded search + competitor crawl and keeps brandVoice undefined without websiteUrl", async () => {
+  const fakeCompetitorHtml = `<!doctype html><html><head><title>Hydroponic Basil Guide</title></head><body><main><h1>Grow Hydroponic Basil Indoors</h1><h2>Nutrient Solution EC and pH Targets</h2><p>${"Hydroponic basil grows fastest when electrical conductivity stays near 1.2 and pH remains between 5.5 and 6.2 inside shaded reservoirs. ".repeat(6)}</p><h2>Preventing Root Rot in Warm Kitchens</h2><p>${"Oxygenated water stones keep roots crisp white and prevent pythium buildup even under grow lights. ".repeat(5)}</p><img src="https://example.org/chart.png" alt="EC guide"/></main></body></html>`;
+
+  const handler = createResearchHandler({
+    configured: () => false,
+    limit: async () => ({
+      allowed: true,
+      remaining: 99,
+      retryAfterSeconds: 0,
+      release: async () => {},
+    }),
+    groundedSearch: async ({ query }) => ({
+      provider: "gemini-google-search",
+      groundedSummary: "Hydroponic basil relies on balanced pH (5.5–6.2), aeration, and pruning above true leaf nodes.",
+      searchQueries: [query],
+      groundedSources: [
+        {
+          url: "https://example.org/hydroponic-basil-guide",
+          title: "Hydroponic Basil Care Guide",
+          snippet: "Practical pH and pruning walkthrough for indoor herbs.",
+        },
+      ],
+    }),
+    fetchPage: async (targetUrl: string) => ({
+      status: 200,
+      url: targetUrl,
+      html: targetUrl.includes("example.org") ? fakeCompetitorHtml : "",
+      headers: { "content-type": "text/html" },
+      redirects: [],
+    }),
+  });
+
+  const r = await handler(
+    new NextRequest("http://localhost/api/writer-workspace/research", {
+      method: "POST",
+      body: JSON.stringify({
+        requestId: "req-ground-1234",
+        brief: "Topic: Growing Hydroponic Basil\nKeyword: hydroponic basil care",
+        websiteUrl: "",
+        includeWebResearch: true,
+      }),
+    }),
+  );
+  assert.equal(r.status, 200);
+  const json = await r.json();
+  assert.equal(json.ok, true);
+  assert.equal(json.packet.researchMode, "live-google-grounding");
+  assert.equal(json.packet.brandVoice, undefined);
+  assert.ok(json.packet.competitorBenchmarks?.analyzedPages?.length >= 1);
+  assert.ok(json.packet.semanticTerms?.length >= 1);
+});
+
+test("generation handler forwards running section memory, openingStyle, and anti-stuffing cap into prompt", async () => {
+  let capturedPrompt = "";
+  const response = await createGenerationHandler({
+    configured: () => true,
+    limit: allowed as any,
+    generate: () =>
+      ({
+        generate: async (opts: { input: Array<{ content: string }> }) => {
+          capturedPrompt = JSON.stringify(opts.input);
+          return {
+            provider: "gemini",
+            model: "gemini-2.5-flash",
+            output_parsed: { bodyMarkdown: paragraphs[0] },
+          };
+        },
+      }) as any,
+  })(
+    req({
+      ...brief,
+      keyword: "raised garden beds",
+      priorSections: [
+        {
+          heading: "Soil Drainage",
+          openingSentence: "Waterlogged roots starve quickly.",
+          summary: "Explains pot drainage basics.",
+        },
+      ],
+      openingStyle: "contrarian observation",
+      primaryKeywordUsesSoFar: 3,
+      semanticTerms: ["permaculture mulch"],
+      brandVoiceSummary: "Direct practitioner voice with zero hype.",
+    }),
+  );
+
+  assert.equal(response.status, 200);
+  assert.match(capturedPrompt, /CRITICAL ANTI-STUFFING CONSTRAINT/);
+  assert.match(capturedPrompt, /contrarian observation/);
+  assert.match(capturedPrompt, /Waterlogged roots starve quickly/);
+  assert.match(capturedPrompt, /Direct practitioner voice with zero hype/);
+  assert.match(capturedPrompt, /permaculture mulch/);
 });

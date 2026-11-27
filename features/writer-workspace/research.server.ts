@@ -8,10 +8,18 @@ import {
   geminiTextFormat,
   isAiConfigured,
 } from "@/lib/ai-tools/gemini";
+import type { StudioGroundedSearchResult } from "@/lib/studio/studio-llm-gateway.server";
 import { checkAiToolRateLimit } from "@/lib/ai-tools/rate-limit";
 import { readBoundedJson, BodyError } from "@/lib/ai-tools/request-body";
 import { parseBrief, parseBriefDirectives } from "./model";
-import type { OutlineItem, ResearchLinkItem, ResearchPacket } from "./types";
+import type {
+  BrandVoiceProfile,
+  OutlineItem,
+  ResearchCompetitorBenchmarks,
+  ResearchLinkItem,
+  ResearchPacket,
+  SemanticTermTarget,
+} from "./types";
 
 export const researchRequestSchema = z.object({
   requestId: z.string().min(6).max(100),
@@ -21,6 +29,7 @@ export const researchRequestSchema = z.object({
   audience: z.string().max(500).default(""),
   tone: z.string().max(100).default("Clear and helpful"),
   language: z.string().max(60).default("English"),
+  targetWords: z.number().min(500).max(4000).default(1600),
   includeWebResearch: z.boolean().default(true),
 });
 
@@ -47,6 +56,13 @@ type ResearchDeps = {
   configured?: (model: string) => boolean;
   limit?: typeof checkAiToolRateLimit;
   fetchPage?: typeof fetchPublic;
+  groundedSearch?: (params: {
+    query: string;
+    brief: string;
+    language?: string;
+    timeoutMs?: number;
+    signal?: AbortSignal;
+  }) => Promise<StudioGroundedSearchResult>;
 };
 
 const DOITWITHAI_INTERNAL_CATALOG: Array<{
@@ -638,6 +654,7 @@ export async function discoverPublicAuthorityLinks(
 
   for (const ref of rankedCatalog) {
     if (links.length >= 6) break;
+    if (ref.score <= 1) continue; // Only include catalog docs genuinely relevant to topic tokens
     if (!links.some((l) => l.url === ref.url)) {
       links.push({
         url: ref.url,
@@ -653,6 +670,306 @@ export async function discoverPublicAuthorityLinks(
   }
 
   return { links: links.slice(0, 6), snippets: snippets.slice(0, 6), warnings };
+}
+
+function defaultCompetitorBenchmarks(targetWords: number): ResearchCompetitorBenchmarks {
+  const baseWords = Math.max(800, Math.min(3600, targetWords || 1600));
+  const targetH2Min = baseWords <= 1100 ? 4 : baseWords >= 2400 ? 7 : 5;
+  const targetH2Max = targetH2Min + 3;
+  return {
+    targetWordsMin: Math.round(baseWords * 0.85),
+    targetWordsMax: Math.round(baseWords * 1.25),
+    targetH2Min,
+    targetH2Max,
+    targetParagraphsMin: Math.max(12, Math.round(baseWords / 65)),
+    targetParagraphsMax: Math.max(22, Math.round(baseWords / 36)),
+    targetImagesMin: Math.max(2, Math.round(targetH2Min * 0.4)),
+    targetImagesMax: targetH2Max,
+    analyzedPages: [],
+  };
+}
+
+/**
+ * Fetches up to 3 public grounded source/competitor URLs using SSRF-hardened `fetchPublic`
+ * to compute real competitor word counts, H2 structures, paragraph density, and media targets.
+ */
+async function analyzeCompetitorUrls(
+  candidateUrls: string[],
+  targetWords: number,
+  signal?: AbortSignal,
+  fetcher: typeof fetchPublic = fetchPublic,
+): Promise<ResearchCompetitorBenchmarks> {
+  const baseline = defaultCompetitorBenchmarks(targetWords);
+  const directCandidates = candidateUrls
+    .filter(
+      (u) =>
+        /^https?:\/\//i.test(u) &&
+        !/vertexaisearch\.cloud\.google\.com\/grounding-api-redirect/i.test(u) &&
+        !/\.(pdf|png|jpg|jpeg|webp|svg)$/i.test(u) &&
+        !/(youtube\.com|twitter\.com|x\.com|facebook\.com|instagram\.com|linkedin\.com)/i.test(
+          u,
+        ),
+    )
+    .slice(0, 3);
+
+  if (!directCandidates.length) return baseline;
+
+  const settled = await Promise.allSettled(
+    directCandidates.map(async (url) => {
+      const res = await fetcher(url, { signal, html: true, timeout: 4500 });
+      if (!res || res.status < 200 || res.status >= 400 || !res.html) {
+        return null;
+      }
+      const $ = cheerio.load(res.html);
+      $("script,style,noscript,nav,footer,header,aside,form").remove();
+      const root = $("main, article, [role='main']").first();
+      const scope = root.length ? root : $("body");
+      const title =
+        $("title").first().text().trim() ||
+        $("h1").first().text().trim() ||
+        titleFromUrlPath(url);
+      const h2Headings = scope
+        .find("h2")
+        .map((_, el) => $(el).text().replace(/\s+/g, " ").trim())
+        .get()
+        .filter((h) => h.length >= 4 && h.length <= 120)
+        .slice(0, 14);
+      const paragraphs = scope.find("p").length;
+      const images = scope.find("img").length;
+      const text = scope.text().replace(/\s+/g, " ").trim();
+      const words = text ? text.split(" ").filter(Boolean).length : 0;
+      if (words < 180) return null;
+      return {
+        url: res.url || url,
+        title: title.slice(0, 160),
+        wordCount: words,
+        h2Count: h2Headings.length,
+        paragraphs,
+        images,
+        h2Headings,
+      };
+    }),
+  );
+
+  const analyzed = settled
+    .map((s) => (s.status === "fulfilled" ? s.value : null))
+    .filter((v): v is NonNullable<typeof v> => Boolean(v));
+
+  if (!analyzed.length) return baseline;
+
+  const wordsArr = analyzed.map((p) => p.wordCount);
+  const h2Arr = analyzed.map((p) => p.h2Count).filter((n) => n > 0);
+  const paraArr = analyzed.map((p) => p.paragraphs).filter((n) => n > 0);
+  const imgArr = analyzed.map((p) => p.images);
+
+  const minW = Math.min(...wordsArr);
+  const maxW = Math.max(...wordsArr);
+  return {
+    targetWordsMin: Math.max(800, Math.min(3600, Math.round(minW * 0.9))),
+    targetWordsMax: Math.max(1200, Math.min(4500, Math.round(maxW * 1.15))),
+    targetH2Min: h2Arr.length ? Math.max(3, Math.min(...h2Arr)) : baseline.targetH2Min,
+    targetH2Max: h2Arr.length
+      ? Math.min(12, Math.max(...h2Arr) + 1)
+      : baseline.targetH2Max,
+    targetParagraphsMin: paraArr.length
+      ? Math.max(10, Math.min(...paraArr))
+      : baseline.targetParagraphsMin,
+    targetParagraphsMax: paraArr.length
+      ? Math.min(140, Math.max(paraArr.reduce((a, b) => a + b, 0) / paraArr.length + 12, ...paraArr))
+      : baseline.targetParagraphsMax,
+    targetImagesMin: Math.max(
+      2,
+      imgArr.length ? Math.min(6, Math.max(2, Math.min(...imgArr))) : baseline.targetImagesMin,
+    ),
+    targetImagesMax: Math.min(
+      12,
+      Math.max(4, ...(imgArr.length ? imgArr : [baseline.targetImagesMax])),
+    ),
+    analyzedPages: analyzed.map(({ url, title, wordCount: wc, h2Headings }) => ({
+      url,
+      title,
+      wordCount: wc,
+      h2Headings,
+    })),
+  };
+}
+
+/**
+ * Samples up to 2 editorial pages ONLY on an explicitly connected website URL
+ * to derive a concise, factual Brand Voice profile (tone, POV, sentence rhythm).
+ */
+async function extractWebsiteBrandVoice(
+  siteOrigin: string | undefined,
+  internalLinks: ResearchLinkItem[],
+  signal?: AbortSignal,
+  fetcher: typeof fetchPublic = fetchPublic,
+): Promise<BrandVoiceProfile | undefined> {
+  if (!siteOrigin) return undefined;
+  let cleanDomain = siteOrigin;
+  try {
+    cleanDomain = new URL(siteOrigin).hostname.replace(/^www\./i, "");
+  } catch {
+    return undefined;
+  }
+
+  const pageCandidates = [
+    ...internalLinks
+      .filter(
+        (l) =>
+          /^https?:\/\//i.test(l.url) &&
+          l.url.includes(cleanDomain) &&
+          !/\/(?:pricing|login|signup|contact|privacy|terms)/i.test(l.url),
+      )
+      .slice(0, 2)
+      .map((l) => l.url),
+  ];
+  if (!pageCandidates.length) pageCandidates.push(siteOrigin);
+
+  const sampledText: string[] = [];
+  const sampledPages: string[] = [];
+  for (const pageUrl of pageCandidates.slice(0, 2)) {
+    try {
+      const res = await fetcher(pageUrl, { signal, html: true, timeout: 4000 });
+      if (res.status >= 200 && res.status < 400 && res.html) {
+        const $ = cheerio.load(res.html);
+        $("script,style,noscript,nav,footer,header").remove();
+        const paragraphs = $("p")
+          .map((_, el) => $(el).text().replace(/\s+/g, " ").trim())
+          .get()
+          .filter((p) => p.length >= 60 && p.length <= 500)
+          .slice(0, 6);
+        if (paragraphs.length > 0) {
+          sampledPages.push(res.url || pageUrl);
+          sampledText.push(paragraphs.join(" "));
+          const metaDesc = $('meta[name="description"]').attr("content")?.trim();
+          const matchingLink = internalLinks.find((l) => l.url === pageUrl);
+          if (matchingLink && metaDesc && !matchingLink.snippet) {
+            matchingLink.snippet = metaDesc.slice(0, 180);
+          }
+        }
+      }
+    } catch {
+      // Optional enrichment; skip unreachable pages
+    }
+  }
+
+  const combined = sampledText.join(" ");
+  if (!combined) {
+    return {
+      sourceDomain: cleanDomain,
+      voiceSummary: `Direct, clear, practical editorial voice aligned with ${cleanDomain}.`,
+      pointOfView: "Second-person (you/your) with clear, concrete recommendations",
+      sentenceRhythm: "Clear medium sentences mixed with concise takeaways (10–20 words avg)",
+      vocabularyNotes: [],
+      avoidPhrases: ["hype claims", "hollow AI clichés", "repetitive keyword openers"],
+      sampledPages: [],
+    };
+  }
+
+  const youHits = (combined.match(/\b(?:you|your|yours)\b/gi) || []).length;
+  const weHits = (combined.match(/\b(?:we|our|us)\b/gi) || []).length;
+  const pointOfView =
+    weHits > youHits * 1.4
+      ? "First-person plural practitioner (we/our)"
+      : "Direct second-person guide (you/your)";
+
+  const sentences = combined
+    .split(/(?<=[.!?])\s+/)
+    .map((s) => s.trim().split(/\s+/).length)
+    .filter((n) => n >= 4 && n <= 60);
+  const avgLen = sentences.length
+    ? Math.round(sentences.reduce((a, b) => a + b, 0) / sentences.length)
+    : 16;
+
+  return {
+    sourceDomain: cleanDomain,
+    voiceSummary: `Practical, reader-first voice sampled from ${cleanDomain} (${avgLen}w avg sentences, concrete explanations over filler).`,
+    pointOfView,
+    sentenceRhythm: `Average ~${avgLen} words per sentence with varied short/medium pacing.`,
+    vocabularyNotes: [],
+    avoidPhrases: [
+      "in today's fast-paced digital landscape",
+      "delve into",
+      "game-changer",
+      "mechanical keyword repetition",
+    ],
+    sampledPages,
+  };
+}
+
+function buildWeightedSemanticTerms(
+  primaryKeyword: string,
+  secondaryKeywords: string[],
+  lsiEntities: string[],
+): SemanticTermTarget[] {
+  const seen = new Set<string>();
+  const terms: SemanticTermTarget[] = [];
+  const pushTerm = (
+    raw: string,
+    minCount: number,
+    maxCount: number,
+    category: SemanticTermTarget["category"],
+  ) => {
+    const clean = raw.trim();
+    const key = clean.toLowerCase();
+    if (!clean || clean.length < 2 || seen.has(key)) return;
+    seen.add(key);
+    terms.push({ term: clean, minCount, maxCount, category });
+  };
+
+  if (primaryKeyword.trim()) {
+    pushTerm(primaryKeyword, 1, 3, "primary");
+  }
+  for (const s of secondaryKeywords.slice(0, 8)) {
+    pushTerm(s, 1, 4, "secondary");
+  }
+  for (const e of lsiEntities.slice(0, 8)) {
+    pushTerm(e, 1, 3, "entity");
+  }
+  return terms.slice(0, 16);
+}
+
+function buildNeutralTopicEntities(
+  topic: string,
+  focusKw: string,
+  outline: OutlineItem[],
+): string[] {
+  const stopWords = new Set([
+    "what",
+    "how",
+    "why",
+    "when",
+    "which",
+    "with",
+    "from",
+    "your",
+    "this",
+    "that",
+    "guide",
+    "best",
+    "practical",
+    "steps",
+    "complete",
+  ]);
+  const seeds: string[] = [];
+  for (const o of outline.slice(0, 4)) {
+    const clean = o.heading.replace(/[:?]+$/, "").trim();
+    if (clean && !seeds.includes(clean)) seeds.push(clean);
+  }
+  const tokens = `${topic} ${focusKw}`
+    .split(/[^a-zA-Z0-9\p{L}-]+/u)
+    .map((t) => t.trim())
+    .filter((t) => t.length >= 4 && !stopWords.has(t.toLowerCase()));
+  for (const t of tokens) {
+    if (seeds.length >= 6) break;
+    if (!seeds.some((s) => s.toLowerCase() === t.toLowerCase())) {
+      seeds.push(t);
+    }
+  }
+  if (!seeds.length && focusKw) {
+    seeds.push(focusKw, `${focusKw} workflow`, `${focusKw} trade-offs`);
+  }
+  return seeds.slice(0, 6);
 }
 
 export function createResearchHandler(deps: ResearchDeps = {}) {
@@ -674,7 +991,7 @@ export function createResearchHandler(deps: ResearchDeps = {}) {
         .slice(0, 120);
 
       const fetcher = deps.fetchPage || fetchPublic;
-      const [siteResult, webResult] = await Promise.all([
+      const [siteResult, groundedResult, webResult] = await Promise.all([
         targetSite
           ? discoverSiteInternalLinks(
               targetSite,
@@ -684,6 +1001,26 @@ export function createResearchHandler(deps: ResearchDeps = {}) {
               fetcher,
             )
           : Promise.resolve({ links: [], warnings: [], origin: undefined }),
+        data.includeWebResearch && deps.groundedSearch
+          ? deps
+              .groundedSearch({
+                query: focusKw || cleanSearchQuery(topic, focusKw),
+                brief: data.brief,
+                language: data.language,
+                signal: req.signal,
+              })
+              .catch(() => ({
+                groundedSummary: "",
+                searchQueries: [],
+                groundedSources: [],
+                provider: "none" as const,
+              }))
+          : Promise.resolve({
+              groundedSummary: "",
+              searchQueries: [],
+              groundedSources: [],
+              provider: "none" as const,
+            }),
         data.includeWebResearch
           ? discoverPublicAuthorityLinks(
               topic,
@@ -695,50 +1032,117 @@ export function createResearchHandler(deps: ResearchDeps = {}) {
           : Promise.resolve({ links: [], snippets: [], warnings: [] }),
       ]);
 
+      const mergedExternalLinks: ResearchLinkItem[] = [];
+      const seenExt = new Set<string>();
+      for (const gs of groundedResult.groundedSources || []) {
+        if (gs.url && !seenExt.has(gs.url)) {
+          seenExt.add(gs.url);
+          mergedExternalLinks.push({
+            url: gs.url,
+            title: gs.title,
+            snippet: gs.snippet,
+            sourceKind: "external",
+            relevanceScore: 10,
+          });
+        }
+      }
+      for (const wl of webResult.links) {
+        if (wl.url && !seenExt.has(wl.url)) {
+          seenExt.add(wl.url);
+          mergedExternalLinks.push(wl);
+        }
+      }
+
+      const [competitorBenchmarks, brandVoice] = await Promise.all([
+        data.includeWebResearch
+          ? analyzeCompetitorUrls(
+              mergedExternalLinks.map((l) => l.url),
+              data.targetWords,
+              req.signal,
+              fetcher,
+            )
+          : Promise.resolve(defaultCompetitorBenchmarks(data.targetWords)),
+        siteResult.origin
+          ? extractWebsiteBrandVoice(
+              siteResult.origin,
+              siteResult.links,
+              req.signal,
+              fetcher,
+            )
+          : Promise.resolve(undefined),
+      ]);
+
+      const researchMode: ResearchPacket["researchMode"] =
+        groundedResult.provider === "gemini-google-search"
+          ? "live-google-grounding"
+          : groundedResult.provider === "serper" ||
+              groundedResult.provider === "tavily"
+            ? "live-serp-api"
+            : data.includeWebResearch && mergedExternalLinks.length > 0
+              ? "public-reference"
+              : "brief-only";
+
       const model = getGeminiModel("CONTENT_WRITER");
       const warnings = [...siteResult.warnings, ...webResult.warnings];
       const fanOutQuestions = buildQueryFanOutQuestions(focusKw, parsed.outline);
 
       if (!(deps.configured || isAiConfigured)(model)) {
+        const secondaryKws = parsed.outline.length
+          ? parsed.outline.map((o) => o.heading).slice(0, 5)
+          : [
+              `${focusKw} workflow`,
+              `${focusKw} comparison`,
+              `${focusKw} trade-offs`,
+              `${focusKw} checklist`,
+            ];
+        const lsiEntities = buildNeutralTopicEntities(
+          topic,
+          focusKw,
+          parsed.outline,
+        );
         const packet: ResearchPacket = {
           analyzedIntent: `Target topic "${topic}" focused on "${focusKw}" in ${data.language}.`,
           searchIntent: "informational",
           primaryTopic: topic,
           primaryKeyword: focusKw,
-          secondaryKeywords: parsed.outline.length
-            ? parsed.outline.map((o) => o.heading).slice(0, 5)
-            : [
-                `${focusKw} strategy`,
-                `${focusKw} decision matrix`,
-                `${focusKw} trade-offs and edge cases`,
-                `${focusKw} verification checklist`,
-              ],
-          lsiEntities: [
-            "query fan-out",
-            "search intent",
-            "structured data",
-            "internal linking",
-            "E-E-A-T signals",
-          ],
+          secondaryKeywords: secondaryKws,
+          lsiEntities,
           questionsToAnswer: fanOutQuestions,
           competitorAngles: [
-            `Include a side-by-side decision matrix comparing baseline vs. optimized ${focusKw} workflows`,
-            `Document explicit use-case boundaries: who ${focusKw} fits best and when to choose a simpler alternative`,
-            `Address common implementation failure modes, edge cases, and how practitioners verify ${focusKw} results`,
-            `Provide a 50-word self-contained answer capsule for Google AI Mode query fan-out and AI Overviews`,
+            `Compare real ${focusKw} options and explain explicit decision criteria`,
+            `Highlight common mistakes, edge cases, and when simpler alternatives work better`,
+            `Provide verifiable steps and concrete examples tailored to ${data.audience || "practitioners"}`,
           ],
           eeatSignals: [
-            "Cite primary technical documentation (Google Search Central, Schema.org, W3C WAI, MDN) instead of unverified claims",
-            "Document concrete before-and-after verification steps and measurable audit thresholds",
-            "Highlight real operational trade-offs, cost/latency constraints, and edge cases rather than generic summaries",
+            "Support claims with grounded documentation or explicit practitioner observations",
+            "State concrete conditions, limitations, and scope clearly",
+            "Avoid vague promotional filler and unsupported performance promises",
           ],
           conclusionDirective: directives.conclusionStyle || undefined,
           visualDirectives: directives.visualHints,
           internalLinks: siteResult.links,
-          externalLinks: webResult.links,
+          externalLinks: mergedExternalLinks.slice(0, 6),
           quickAnswerTargetWords: 50,
           fetchedAt: new Date().toISOString(),
           siteScanned: siteResult.origin,
+          researchMode,
+          searchQueriesUsed: groundedResult.searchQueries,
+          groundedSummary: groundedResult.groundedSummary || undefined,
+          competitorBenchmarks,
+          semanticTerms: buildWeightedSemanticTerms(
+            focusKw,
+            secondaryKws,
+            lsiEntities,
+          ),
+          evidencePassages: mergedExternalLinks
+            .filter((l) => l.snippet)
+            .slice(0, 5)
+            .map((l) => ({
+              claimOrFact: l.snippet!.slice(0, 260),
+              sourceTitle: l.title,
+              sourceUrl: l.url,
+            })),
+          brandVoice,
           warnings: [
             ...warnings,
             "AI keyword clustering is offline; using deterministic brief analysis.",
@@ -785,7 +1189,16 @@ export function createResearchHandler(deps: ResearchDeps = {}) {
                 language: data.language,
                 extractedOutline: parsed.outline,
                 directives,
-                webSnippets: webResult.snippets,
+                webSnippets: [
+                  ...(groundedResult.groundedSummary
+                    ? [`Live Search Summary:\n${groundedResult.groundedSummary}`]
+                    : []),
+                  ...webResult.snippets,
+                ],
+                competitorHeadings: competitorBenchmarks.analyzedPages.map((p) => ({
+                  title: p.title,
+                  h2s: p.h2Headings.slice(0, 8),
+                })),
                 internalPagesFound: siteResult.links.map((l) => l.title),
               }),
             },
@@ -810,20 +1223,37 @@ export function createResearchHandler(deps: ResearchDeps = {}) {
         )
         .slice(0, 6);
 
+      const finalPrimaryKw =
+        parsedAi.primaryKeyword.length <= 75 ? parsedAi.primaryKeyword : focusKw;
       const packet: ResearchPacket = {
         ...parsedAi,
-        primaryKeyword:
-          parsedAi.primaryKeyword.length <= 75
-            ? parsedAi.primaryKeyword
-            : focusKw,
+        primaryKeyword: finalPrimaryKw,
         questionsToAnswer: mergedQuestions,
         conclusionDirective: directives.conclusionStyle || undefined,
         visualDirectives: directives.visualHints,
         internalLinks: siteResult.links,
-        externalLinks: webResult.links,
+        externalLinks: mergedExternalLinks.slice(0, 6),
         quickAnswerTargetWords: 50,
         fetchedAt: new Date().toISOString(),
         siteScanned: siteResult.origin,
+        researchMode,
+        searchQueriesUsed: groundedResult.searchQueries,
+        groundedSummary: groundedResult.groundedSummary || undefined,
+        competitorBenchmarks,
+        semanticTerms: buildWeightedSemanticTerms(
+          finalPrimaryKw,
+          parsedAi.secondaryKeywords,
+          parsedAi.lsiEntities,
+        ),
+        evidencePassages: mergedExternalLinks
+          .filter((l) => l.snippet)
+          .slice(0, 6)
+          .map((l) => ({
+            claimOrFact: l.snippet!.slice(0, 260),
+            sourceTitle: l.title,
+            sourceUrl: l.url,
+          })),
+        brandVoice,
         warnings,
       };
 

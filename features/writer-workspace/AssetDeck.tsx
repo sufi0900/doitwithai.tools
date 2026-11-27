@@ -12,6 +12,8 @@ import {
   Volume2,
   X,
   Check,
+  Upload,
+  RotateCcw,
 } from "lucide-react";
 import JSZip from "jszip";
 import {
@@ -23,10 +25,12 @@ import type { Project } from "./types";
 import {
   articleRevision,
   bodyOf,
+  compressUploadedImageFile,
   evaluateAltText,
   hash,
   patchWorkspace,
   refreshVisual,
+  safeImageSrc,
   workspace,
   wordCount,
 } from "./model";
@@ -58,6 +62,8 @@ export default function AssetDeck({
       { files: Blob[]; revision: string } | undefined
     >();
   const abort = useRef<AbortController | null>(null),
+    overrideFileRef = useRef<HTMLInputElement | null>(null),
+    uploadTargetSid = useRef<string>(""),
     revision = articleRevision(p),
     w = workspace(p),
     posts = useMemo(() => socialDrafts(p), [p]);
@@ -233,19 +239,58 @@ export default function AssetDeck({
           <>
             {tab === "images" && (
               <>
+                <input
+                  ref={overrideFileRef}
+                  type="file"
+                  accept="image/*"
+                  style={{ display: "none" }}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    const sid = uploadTargetSid.current;
+                    e.target.value = "";
+                    if (!file || !sid) return;
+                    void run("Optimizing uploaded image", async () => {
+                      const compressed = await compressUploadedImageFile(file);
+                      onChange((now) => {
+                        const nw = workspace(now);
+                        const sec = now.sections.find((item) => item.id === sid);
+                        const altText =
+                          nw.sectionVisualOverrides?.[sid]?.altText ||
+                          nw.sectionAltTexts?.[sid]?.altText ||
+                          sec?.infographicConfig.altText ||
+                          sec?.h2Text ||
+                          file.name;
+                        return patchWorkspace(now, {
+                          sectionVisualOverrides: {
+                            ...(nw.sectionVisualOverrides || {}),
+                            [sid]: {
+                              dataUrl: compressed.dataUrl,
+                              altText,
+                            },
+                          },
+                        });
+                      });
+                      return ["Custom section image applied."];
+                    });
+                  }}
+                />
                 <p className={styles.muted}>
-                  Every H2 section pairs with our Blog Section Infographic
-                  Generator. Click <strong>Customize</strong> on any card to
-                  switch layout compositions, color themes, or explanations.
+                  Every H2 section pairs with an editable visual. Customize the
+                  infographic layout or upload your own image to replace it.
                 </p>
                 <div className={styles.imageGrid}>
                   {p.sections.map((s, i) => {
-                    const scene = s.infographicConfig.nodes.length
+                    const customOverride = w.sectionVisualOverrides?.[s.id],
+                      overrideSrc = customOverride?.dataUrl
+                        ? safeImageSrc(customOverride.dataUrl)
+                        : "",
+                      scene = s.infographicConfig.nodes.length
                         ? buildInfographicScene(s.infographicConfig)
                         : null,
                       stale = w.visualRevisions?.[s.id] !== hash(bodyOf(s)),
-                      available = scene && !scene.issues.length,
+                      available = Boolean(overrideSrc) || Boolean(scene && !scene.issues.length),
                       altTextVal =
+                        customOverride?.altText ||
                         w.sectionAltTexts?.[s.id]?.altText ||
                         s.infographicConfig.altText ||
                         s.h2Text,
@@ -253,7 +298,9 @@ export default function AssetDeck({
                     return (
                       <article className={styles.imageCard} key={s.id}>
                         <div className={styles.imageCanvas}>
-                          {available ? (
+                          {overrideSrc ? (
+                            <img src={overrideSrc} alt={altTextVal} />
+                          ) : available && scene ? (
                             <img
                               src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(scene.svg)}`}
                               alt={altTextVal}
@@ -270,8 +317,8 @@ export default function AssetDeck({
                         </div>
                         <div className={styles.imageInfo}>
                           <p className={styles.eyebrow}>
-                            Section {i + 1} · Alt Score {altEval.score}/100
-                            {stale && scene ? " · Review after edits" : ""}
+                            Section {i + 1} · {overrideSrc ? "Custom image" : "Infographic"} · Alt Score {altEval.score}/100
+                            {!overrideSrc && stale && scene ? " · Review after edits" : ""}
                           </p>
                           <h3>{s.h2Text}</h3>
                           <label className={styles.inlineAltBox}>
@@ -283,6 +330,7 @@ export default function AssetDeck({
                                 const nextCheck = evaluateAltText(val, s.h2Text);
                                 onChange((now) => {
                                   const nw = workspace(now);
+                                  const existingOverride = nw.sectionVisualOverrides?.[s.id];
                                   return {
                                     ...now,
                                     sections: now.sections.map((sec) =>
@@ -306,6 +354,17 @@ export default function AssetDeck({
                                           verdict: nextCheck.verdict,
                                         },
                                       },
+                                      ...(existingOverride
+                                        ? {
+                                            sectionVisualOverrides: {
+                                              ...(nw.sectionVisualOverrides || {}),
+                                              [s.id]: {
+                                                ...existingOverride,
+                                                altText: val,
+                                              },
+                                            },
+                                          }
+                                        : {}),
                                     },
                                   };
                                 });
@@ -316,26 +375,66 @@ export default function AssetDeck({
                           <div className={styles.buttonRow}>
                             <button
                               type="button"
-                              disabled={wordCount(bodyOf(s)) < 35}
-                              onClick={() => refresh(s.id)}
+                              onClick={() => {
+                                uploadTargetSid.current = s.id;
+                                overrideFileRef.current?.click();
+                              }}
                             >
-                              <RefreshCw size={14} />
-                              {scene ? "Refresh" : "Build visual"}
+                              <Upload size={14} />
+                              {overrideSrc ? "Swap Image" : "Replace with Image"}
                             </button>
-                            <button
-                              type="button"
-                              onClick={() => onEditVisual(s.id)}
-                            >
-                              Customize
-                              <ArrowUpRight size={14} />
-                            </button>
+                            {overrideSrc ? (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  onChange((now) => {
+                                    const nw = workspace(now);
+                                    const nextOverrides = {
+                                      ...(nw.sectionVisualOverrides || {}),
+                                    };
+                                    delete nextOverrides[s.id];
+                                    return patchWorkspace(now, {
+                                      sectionVisualOverrides: nextOverrides,
+                                    });
+                                  })
+                                }
+                              >
+                                <RotateCcw size={14} />
+                                Restore Infographic
+                              </button>
+                            ) : (
+                              <>
+                                <button
+                                  type="button"
+                                  disabled={wordCount(bodyOf(s)) < 35}
+                                  onClick={() => refresh(s.id)}
+                                >
+                                  <RefreshCw size={14} />
+                                  {scene ? "Refresh" : "Build visual"}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => onEditVisual(s.id)}
+                                >
+                                  Customize
+                                  <ArrowUpRight size={14} />
+                                </button>
+                              </>
+                            )}
                           </div>
                           <div className={styles.buttonRow}>
                             <button
                               type="button"
                               disabled={!available || Boolean(busy)}
                               onClick={() =>
-                                void run("Rendering PNG", async () => {
+                                void run("Downloading image", async () => {
+                                  if (overrideSrc) {
+                                    saveBlob(
+                                      await (await fetch(overrideSrc)).blob(),
+                                      `section-${i + 1}.jpg`,
+                                    );
+                                    return;
+                                  }
                                   saveBlob(
                                     await (
                                       await fetch(
@@ -351,23 +450,25 @@ export default function AssetDeck({
                                 })
                               }
                             >
-                              PNG
+                              {overrideSrc ? "Download Image" : "PNG"}
                             </button>
-                            <button
-                              type="button"
-                              disabled={!available}
-                              onClick={() =>
-                                saveBlob(
-                                  generateBlogInfographicSvg(
-                                    s.infographicConfig,
-                                  ),
-                                  `section-${i + 1}.svg`,
-                                  "image/svg+xml",
-                                )
-                              }
-                            >
-                              SVG
-                            </button>
+                            {!overrideSrc && (
+                              <button
+                                type="button"
+                                disabled={!scene || Boolean(scene?.issues.length)}
+                                onClick={() =>
+                                  saveBlob(
+                                    generateBlogInfographicSvg(
+                                      s.infographicConfig,
+                                    ),
+                                    `section-${i + 1}.svg`,
+                                    "image/svg+xml",
+                                  )
+                                }
+                              >
+                                SVG
+                              </button>
+                            )}
                             <button
                               type="button"
                               disabled={!available}

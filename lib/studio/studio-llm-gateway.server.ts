@@ -29,6 +29,13 @@ export const STUDIO_GEMINI_MODEL_CASCADE = [
   "gemini-2.0-flash",
 ] as const;
 
+export const STUDIO_EDITORIAL_MODEL_CASCADE = [
+  "gemini-2.5-flash",
+  "gemini-flash-latest",
+  "gemini-2.5-flash-lite",
+  "gemini-flash-lite-latest",
+] as const;
+
 export const STUDIO_GROQ_DEFAULT_MODEL = "llama-3.3-70b-versatile";
 
 function cleanSecret(raw: string | undefined | null): string {
@@ -304,9 +311,17 @@ function modelSupportsZeroThinkingConfig(model: string): boolean {
   return /gemini-2\.5|flash-lite|flash-latest/i.test(model);
 }
 
+export type StudioGenerationOptions = {
+  timeout?: number;
+  maxRetries?: 0;
+  temperature?: number;
+  profile?: "editorial" | "fast";
+  allowThinking?: boolean;
+};
+
 async function executeStudioGeneration<T>(
   params: GenerationParams<T>,
-  options: { timeout?: number; maxRetries?: 0; temperature?: number } = {},
+  options: StudioGenerationOptions = {},
 ): Promise<{
   output_parsed: T;
   model: string;
@@ -319,22 +334,29 @@ async function executeStudioGeneration<T>(
     throw new Error("STUDIO_AI_NOT_CONFIGURED");
   }
 
+  const isEditorial = options.profile === "editorial";
   const preferred = getPreferredStudioGeminiModel();
+  const cascade = isEditorial
+    ? STUDIO_EDITORIAL_MODEL_CASCADE
+    : STUDIO_GEMINI_MODEL_CASCADE;
   const candidateModels = Array.from(
     new Set([
-      preferred,
-      ...(params.model && /^gemini-/i.test(params.model) ? [params.model] : []),
-      ...STUDIO_GEMINI_MODEL_CASCADE,
+      ...(isEditorial ? [] : [preferred]),
+      ...(params.model && /^gemini-/i.test(params.model) && !isEditorial
+        ? [params.model]
+        : []),
+      ...cascade,
+      ...(isEditorial ? [preferred] : []),
     ]),
   ).filter(Boolean);
 
   // Ensure thinking/JSON formatting never starves output tokens
   const effectiveMaxTokens = Math.min(
     8192,
-    Math.max(params.max_output_tokens || 2600, 4096),
+    Math.max(params.max_output_tokens || 2600, isEditorial ? 5200 : 4096),
   );
   const timeoutMs = Math.min(Math.max(options.timeout ?? 42_000, 12_000), 55_000);
-  const temperature = options.temperature ?? 0.35;
+  const temperature = options.temperature ?? (isEditorial ? 0.58 : 0.35);
 
   let lastError: Error | null = null;
 
@@ -348,7 +370,7 @@ async function executeStudioGeneration<T>(
 
       const buildRequestBody = (
         useResponseJsonSchema: boolean,
-        includeZeroThinking: boolean,
+        includeThinkingConfig: boolean,
       ) => {
         const systemParts = params.input
           .filter((item) => item.role === "system")
@@ -361,6 +383,9 @@ async function executeStudioGeneration<T>(
             )}`,
           });
         }
+
+        const useEditorialThinking = isEditorial || Boolean(options.allowThinking);
+        const thinkingBudget = useEditorialThinking ? 1024 : 0;
 
         return JSON.stringify({
           ...(systemParts.length > 0
@@ -377,8 +402,8 @@ async function executeStudioGeneration<T>(
             ...(useResponseJsonSchema
               ? { responseJsonSchema: params.text.format.schema }
               : {}),
-            ...(includeZeroThinking && modelSupportsZeroThinkingConfig(targetModel)
-              ? { thinkingConfig: { thinkingBudget: 0 } }
+            ...(includeThinkingConfig && modelSupportsZeroThinkingConfig(targetModel)
+              ? { thinkingConfig: { thinkingBudget } }
               : {}),
             candidateCount: 1,
             maxOutputTokens: effectiveMaxTokens,
@@ -564,6 +589,284 @@ async function executeStudioGeneration<T>(
 export function getStudioGeminiClient() {
   return {
     generate: executeStudioGeneration,
+  };
+}
+
+export type StudioGroundedSearchResult = {
+  groundedSummary: string;
+  searchQueries: string[];
+  groundedSources: Array<{
+    url: string;
+    title: string;
+    snippet: string;
+  }>;
+  provider: "gemini-google-search" | "serper" | "tavily" | "none";
+};
+
+/**
+ * Runs live web research using optional SERP APIs (`SERPER_API_KEY` / `TAVILY_API_KEY`)
+ * or Gemini 2.5 Flash native Google Search Grounding (`tools: [{ google_search: {} }]`)
+ * on the isolated Studio Gemini key pool. Never throws on upstream unavailability.
+ */
+export async function executeStudioGroundedSearch(params: {
+  query: string;
+  brief: string;
+  language?: string;
+  timeoutMs?: number;
+  signal?: AbortSignal;
+}): Promise<StudioGroundedSearchResult> {
+  const query = params.query.trim();
+  if (!query) {
+    return {
+      groundedSummary: "",
+      searchQueries: [],
+      groundedSources: [],
+      provider: "none",
+    };
+  }
+
+  const timeoutMs = Math.min(Math.max(params.timeoutMs ?? 20_000, 6_000), 30_000);
+
+  // 1. Optional Serper (Google SERP JSON) if configured
+  const serperKey = cleanSecret(process.env.SERPER_API_KEY);
+  if (serperKey) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch("https://google.serper.dev/search", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-API-KEY": serperKey,
+        },
+        signal: params.signal
+          ? AbortSignal.any([params.signal, controller.signal])
+          : controller.signal,
+        body: JSON.stringify({ q: query, num: 6 }),
+      });
+      if (res.ok) {
+        const json = (await readBoundedJson(res, 250_000)) as {
+          organic?: Array<{ link?: string; title?: string; snippet?: string }>;
+          peopleAlsoAsk?: Array<{ question?: string; snippet?: string }>;
+          answerBox?: { answer?: string; snippet?: string; title?: string };
+        };
+        const sources = (json.organic || [])
+          .filter((item) => item.link && /^https?:\/\//i.test(item.link))
+          .slice(0, 6)
+          .map((item) => ({
+            url: item.link!,
+            title: (item.title || item.link!).slice(0, 220),
+            snippet: (item.snippet || "").slice(0, 420),
+          }));
+        const paaLines = (json.peopleAlsoAsk || [])
+          .slice(0, 5)
+          .map((p) => `- ${p.question || ""}: ${p.snippet || ""}`.trim())
+          .filter(Boolean);
+        const answerBox =
+          json.answerBox?.answer || json.answerBox?.snippet || "";
+        const summary = [
+          answerBox ? `Direct SERP Highlight: ${answerBox}` : "",
+          ...sources.map((s) => `- ${s.title}: ${s.snippet}`),
+          ...(paaLines.length ? ["People Also Ask:", ...paaLines] : []),
+        ]
+          .filter(Boolean)
+          .join("\n")
+          .slice(0, 3500);
+        if (sources.length > 0) {
+          return {
+            groundedSummary: summary,
+            searchQueries: [query],
+            groundedSources: sources,
+            provider: "serper",
+          };
+        }
+      }
+    } catch {
+      // Fall through to Tavily or Gemini Search Grounding
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  // 2. Optional Tavily Search API if configured
+  const tavilyKey = cleanSecret(process.env.TAVILY_API_KEY);
+  if (tavilyKey) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch("https://api.tavily.com/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: params.signal
+          ? AbortSignal.any([params.signal, controller.signal])
+          : controller.signal,
+        body: JSON.stringify({
+          api_key: tavilyKey,
+          query,
+          max_results: 6,
+          include_answer: true,
+        }),
+      });
+      if (res.ok) {
+        const json = (await readBoundedJson(res, 250_000)) as {
+          answer?: string;
+          results?: Array<{ url?: string; title?: string; content?: string }>;
+        };
+        const sources = (json.results || [])
+          .filter((item) => item.url && /^https?:\/\//i.test(item.url))
+          .slice(0, 6)
+          .map((item) => ({
+            url: item.url!,
+            title: (item.title || item.url!).slice(0, 220),
+            snippet: (item.content || "").slice(0, 420),
+          }));
+        const summary = [
+          json.answer ? `Search Synthesis: ${json.answer}` : "",
+          ...sources.map((s) => `- ${s.title}: ${s.snippet}`),
+        ]
+          .filter(Boolean)
+          .join("\n")
+          .slice(0, 3500);
+        if (sources.length > 0) {
+          return {
+            groundedSummary: summary,
+            searchQueries: [query],
+            groundedSources: sources,
+            provider: "tavily",
+          };
+        }
+      }
+    } catch {
+      // Fall through to Gemini Search Grounding
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  // 3. Gemini Native Google Search Grounding on Dedicated Studio Key
+  const geminiKeys = getStudioGeminiKeys();
+  if (geminiKeys.length === 0) {
+    return {
+      groundedSummary: "",
+      searchQueries: [],
+      groundedSources: [],
+      provider: "none",
+    };
+  }
+
+  const groundingModels = ["gemini-2.5-flash", "gemini-flash-latest", "gemini-2.0-flash"];
+  const promptText = `Search the live web for current, authoritative facts, benchmarks, common practitioner questions, and official documentation about: "${query}".
+Language context: ${params.language || "English"}.
+Brief context: ${params.brief.slice(0, 600)}
+
+Provide a dense, source-grounded research briefing covering:
+1. Key current facts, official guidelines, or verified quantitative benchmarks found in top search results.
+2. Specific subtopics and edge cases the strongest authoritative articles explain (versus what shallow articles miss).
+3. Concrete comparisons or checklists readers look for on this topic.
+Cite the exact web findings accurately without inventing numbers or fake URLs.`;
+
+  for (let keyIdx = 0; keyIdx < geminiKeys.length; keyIdx++) {
+    const activeKey = geminiKeys[keyIdx]!;
+    for (const targetModel of groundingModels) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        const res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
+            targetModel,
+          )}:generateContent`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-goog-api-key": activeKey,
+            },
+            cache: "no-store",
+            signal: params.signal
+              ? AbortSignal.any([params.signal, controller.signal])
+              : controller.signal,
+            body: JSON.stringify({
+              contents: [{ role: "user", parts: [{ text: promptText }] }],
+              tools: [{ google_search: {} }],
+              generationConfig: {
+                temperature: 0.2,
+                maxOutputTokens: 2048,
+              },
+            }),
+          },
+        );
+        if (!res.ok) {
+          if (res.status === 401 || res.status === 403) break;
+          continue;
+        }
+        const payload = (await readBoundedJson(res, 600_000)) as {
+          candidates?: Array<{
+            content?: { parts?: Array<{ text?: string; thought?: boolean }> };
+            groundingMetadata?: {
+              webSearchQueries?: string[];
+              groundingChunks?: Array<{ web?: { uri?: string; title?: string } }>;
+              groundingSupports?: Array<{
+                segment?: { text?: string };
+                groundingChunkIndices?: number[];
+              }>;
+            };
+          }>;
+        };
+        const candidate = payload.candidates?.[0];
+        const summary =
+          candidate?.content?.parts
+            ?.filter((p) => !p.thought)
+            .map((p) => p.text || "")
+            .join("")
+            .trim() || "";
+        const meta = candidate?.groundingMetadata;
+        const queriesUsed = (meta?.webSearchQueries || []).filter(Boolean).slice(0, 6);
+        const chunks = meta?.groundingChunks || [];
+        const supports = meta?.groundingSupports || [];
+        const sources: Array<{ url: string; title: string; snippet: string }> = [];
+        const seen = new Set<string>();
+
+        chunks.forEach((chunk, chunkIdx) => {
+          const uri = chunk.web?.uri?.trim();
+          const title = (chunk.web?.title || uri || "Web Source").trim();
+          if (!uri || !/^https?:\/\//i.test(uri) || seen.has(uri)) return;
+          seen.add(uri);
+          const supportText = supports
+            .filter((s) => s.groundingChunkIndices?.includes(chunkIdx))
+            .map((s) => s.segment?.text || "")
+            .join(" ")
+            .trim();
+          sources.push({
+            url: uri,
+            title: title.slice(0, 220),
+            snippet: (supportText || `Live grounded search reference from ${title}`).slice(
+              0,
+              420,
+            ),
+          });
+        });
+
+        if (summary || sources.length > 0) {
+          return {
+            groundedSummary: summary.slice(0, 3500),
+            searchQueries: queriesUsed.length ? queriesUsed : [query],
+            groundedSources: sources.slice(0, 6),
+            provider: "gemini-google-search",
+          };
+        }
+      } catch {
+        continue;
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+  }
+
+  return {
+    groundedSummary: "",
+    searchQueries: [],
+    groundedSources: [],
+    provider: "none",
   };
 }
 

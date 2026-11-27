@@ -33,6 +33,7 @@ import {
   workspace,
   escapeHtml,
   safeUrl,
+  safeImageSrc,
   textOf,
   bodyOf,
   hash,
@@ -388,7 +389,17 @@ const uriBytes = (uri: string) => {
   const raw = atob(uri.split(",")[1]);
   return Uint8Array.from(raw, (c) => c.charCodeAt(0));
 };
+function dataImageMeta(src: string): { mime: string; ext: string; bytes: Uint8Array } | null {
+  const m = /^data:(image\/(?:png|jpeg|jpg|webp|gif));base64,([A-Za-z0-9+/=]+)$/i.exec(
+    src.trim(),
+  );
+  if (!m) return null;
+  const rawMime = m[1].toLowerCase() === "image/jpg" ? "image/jpeg" : m[1].toLowerCase();
+  const ext = rawMime === "image/jpeg" ? "jpg" : rawMime.split("/")[1] || "png";
+  return { mime: rawMime, ext, bytes: uriBytes(src) };
+}
 export function htmlArticle(p: Project) {
+  const w = workspace(p);
   const render = (n: RichNode): string => {
     if (n.type === "text")
       return (n.marks || []).reduce(
@@ -405,8 +416,18 @@ export function htmlArticle(p: Project) {
         escapeHtml(n.text || ""),
       );
     if (n.type === "sectionVisual") {
-      const s = p.sections.find((s) => s.id === n.attrs?.sectionId);
+      const s = p.sections.find((sec) => sec.id === n.attrs?.sectionId);
       if (!s) return "";
+      const override = w.sectionVisualOverrides?.[s.id];
+      const overrideSrc = override?.dataUrl ? safeImageSrc(override.dataUrl) : "";
+      if (overrideSrc) {
+        const alt =
+          override?.altText ||
+          w.sectionAltTexts?.[s.id]?.altText ||
+          s.infographicConfig.altText ||
+          s.h2Text;
+        return `<figure><img alt="${escapeHtml(alt)}" src="${escapeHtml(overrideSrc)}" />${override?.caption ? `<figcaption>${escapeHtml(override.caption)}</figcaption>` : ""}</figure>`;
+      }
       try {
         const svg = generateBlogInfographicSvg(s.infographicConfig),
           v = svg.match(/<svg[^>]*width="(\d+)"[^>]*height="(\d+)"/);
@@ -414,6 +435,15 @@ export function htmlArticle(p: Project) {
       } catch {
         return `<p>Image needs review: ${escapeHtml(s.h2Text)}</p>`;
       }
+    }
+    if (n.type === "articleImage") {
+      const imageId = String(n.attrs?.imageId || "");
+      const stored = imageId ? w.customImages?.[imageId] : undefined;
+      const src = stored?.src || safeImageSrc(n.attrs?.src);
+      if (!src) return "";
+      const alt = stored?.alt || String(n.attrs?.alt || "Article image");
+      const caption = stored?.caption || String(n.attrs?.caption || "");
+      return `<figure><img alt="${escapeHtml(alt)}" src="${escapeHtml(src)}" />${caption ? `<figcaption>${escapeHtml(caption)}</figcaption>` : ""}</figure>`;
     }
     const tags: Record<string, string> = {
       doc: "article",
@@ -438,7 +468,6 @@ export function htmlArticle(p: Project) {
       : escapeHtml(textOf(n));
   };
   const body = render(projectDocument(p));
-  const w = workspace(p);
   const quizList = w.quizQuestions || [];
   const focusLabel =
     p.keywordCluster?.primaryKeyword ||
@@ -452,12 +481,31 @@ export function htmlArticle(p: Project) {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(p.metaPack.metaTitle || p.metaPack.h1Title)}</title><meta name="description" content="${escapeHtml(p.metaPack.metaDescription)}"><meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">${safeUrl(p.metaPack.canonicalUrl) ? `<link rel="canonical" href="${escapeHtml(safeUrl(p.metaPack.canonicalUrl))}">` : ""}<script type="application/ld+json">${JSON.stringify(combinedSchema).replace(/</g, "\\u003c")}</script><style>body{max-width:800px;margin:40px auto;padding:0 24px;color:#18223b;font:17px/1.75 Arial}img{max-width:100%;height:auto}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccd4e4;padding:10px}pre{white-space:pre-wrap}figure{margin:32px 0}</style></head><body>${body}${quizHtml}</body></html>`;
 }
 async function imageResources(p: Project) {
+  const w = workspace(p);
+  const article = articleModel(p);
   const images: Record<string, string> = {};
-  for (const s of p.sections) {
+  for (const b of article.blocks) {
+    if (b.kind !== "image" || b.included === false) continue;
     try {
-      images[`visual-${s.id}`] = await svgRaster(
-        generateBlogInfographicSvg(s.infographicConfig),
-      );
+      if (b.src?.startsWith("writer-override:")) {
+        const sectionId = b.src.slice("writer-override:".length);
+        const overrideSrc = safeImageSrc(w.sectionVisualOverrides?.[sectionId]?.dataUrl);
+        if (overrideSrc) images[b.id] = overrideSrc;
+      } else if (b.src?.startsWith("writer-visual:")) {
+        const sectionId = b.src.slice("writer-visual:".length);
+        const s = p.sections.find((sec) => sec.id === sectionId);
+        if (s) {
+          images[b.id] = await svgRaster(
+            generateBlogInfographicSvg(s.infographicConfig),
+          );
+        }
+      } else if (b.src?.startsWith("writer-image:")) {
+        const imageId = b.src.slice("writer-image:".length);
+        const customSrc = safeImageSrc(w.customImages?.[imageId]?.src);
+        if (customSrc) images[b.id] = customSrc;
+      } else if (b.src && safeImageSrc(b.src)) {
+        images[b.id] = b.src;
+      }
     } catch {}
   }
   return images;
@@ -487,9 +535,35 @@ export async function epubBytes(p: Project) {
         return `<h${level} id="sec-${index + 1}">${text}</h${level}>`;
       }
       if (b.kind === "image" && b.included) {
-        const section = p.sections.find((s) => `visual-${s.id}` === b.id);
-        if (!section) return "";
+        const w = workspace(p);
         try {
+          if (b.src?.startsWith("writer-override:") || b.src?.startsWith("writer-image:") || b.src?.startsWith("data:")) {
+            const rawSrc = b.src.startsWith("writer-override:")
+              ? w.sectionVisualOverrides?.[b.src.slice("writer-override:".length)]?.dataUrl
+              : b.src.startsWith("writer-image:")
+                ? w.customImages?.[b.src.slice("writer-image:".length)]?.src
+                : b.src;
+            const meta = rawSrc ? dataImageMeta(rawSrc) : null;
+            if (meta) {
+              const file = `images/image-${index + 1}.${meta.ext}`;
+              zip.file(`OEBPS/${file}`, meta.bytes);
+              images.push(
+                `<item id="image-${index + 1}" href="${file}" media-type="${meta.mime}"/>`,
+              );
+              return `<figure><img src="${file}" alt="${escapeHtml(b.alt || "Article image")}" style="max-width:100%;height:auto"/></figure>`;
+            }
+            const safeRemote = rawSrc ? safeImageSrc(rawSrc) : "";
+            if (safeRemote && /^https?:\/\//i.test(safeRemote)) {
+              warnings.push(`External image kept as URL in EPUB: ${b.alt || b.id}`);
+              return `<figure><img src="${escapeHtml(safeRemote)}" alt="${escapeHtml(b.alt || "Article image")}" style="max-width:100%;height:auto"/></figure>`;
+            }
+            return "";
+          }
+          const sectionId = b.src?.startsWith("writer-visual:")
+            ? b.src.slice("writer-visual:".length)
+            : b.id.replace(/^visual-/, "");
+          const section = p.sections.find((s) => s.id === sectionId);
+          if (!section) return "";
           const file = `images/section-${index + 1}.svg`;
           zip.file(
             `OEBPS/${file}`,
@@ -814,8 +888,16 @@ export async function downloadBundle(
   } catch {
     manifest.warnings.push("EPUB could not be prepared.");
   }
+  const w = workspace(p);
   for (let i = 0; i < p.sections.length; i++) {
     const s = p.sections[i];
+    const override = w.sectionVisualOverrides?.[s.id];
+    const overrideMeta = override?.dataUrl ? dataImageMeta(override.dataUrl) : null;
+    if (overrideMeta) {
+      onProgress(`Preparing uploaded section image ${i + 1}`);
+      add(`visuals/section-${i + 1}.${overrideMeta.ext}`, overrideMeta.bytes);
+      continue;
+    }
     if (!s.infographicConfig.nodes.length) {
       manifest.warnings.push(`Section ${i + 1} has no prepared image.`);
       continue;
@@ -829,6 +911,13 @@ export async function downloadBundle(
       manifest.warnings.push(
         `Section ${i + 1} image: ${e instanceof Error ? e.message : "needs review"}`,
       );
+    }
+  }
+  const customList = Object.values(w.customImages || {});
+  for (let i = 0; i < customList.length; i++) {
+    const meta = dataImageMeta(customList[i].src);
+    if (meta) {
+      add(`visuals/custom-${i + 1}.${meta.ext}`, meta.bytes);
     }
   }
   for (const post of socialDrafts(p)) {

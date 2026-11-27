@@ -50,15 +50,23 @@ function buildStageList(
 export function generationContext(p: Project) {
   const w = workspace(p);
   const research = w.research;
+  const linkMetaByUrl = new Map<string, string>();
+  for (const rl of research?.internalLinks || []) {
+    if (rl.snippet) linkMetaByUrl.set(rl.url, rl.snippet);
+  }
   const internalFromProject = (p.internalLinks || []).slice(0, 6).map((l) => ({
     url: l.targetUrl,
     title: l.targetTitle || l.anchorText,
     kind: "internal" as const,
+    ...(linkMetaByUrl.get(l.targetUrl)
+      ? { snippet: linkMetaByUrl.get(l.targetUrl)!.slice(0, 220) }
+      : {}),
   }));
   const internalFromResearch = (research?.internalLinks || []).slice(0, 6).map((l) => ({
     url: l.url,
     title: l.title,
     kind: "internal" as const,
+    ...(l.snippet ? { snippet: l.snippet.slice(0, 220) } : {}),
   }));
   const verifiedLinks = [
     ...(internalFromProject.length ? internalFromProject : internalFromResearch),
@@ -66,8 +74,43 @@ export function generationContext(p: Project) {
       url: l.url,
       title: l.title,
       kind: "external" as const,
+      ...(l.snippet ? { snippet: l.snippet.slice(0, 220) } : {}),
     })),
   ].filter((l) => Boolean(safeUrl(l.url)));
+
+  const brandVoice = p.brandSiteUrl.trim()
+    ? w.brandVoiceOverride?.voiceSummary ||
+      research?.brandVoice?.voiceSummary
+      ? [
+          w.brandVoiceOverride?.voiceSummary ||
+            research?.brandVoice?.voiceSummary ||
+            "",
+          w.brandVoiceOverride?.pointOfView ||
+            research?.brandVoice?.pointOfView ||
+            "",
+          w.brandVoiceOverride?.sentenceRhythm ||
+            research?.brandVoice?.sentenceRhythm ||
+            "",
+        ]
+          .filter(Boolean)
+          .join(" · ")
+          .slice(0, 800)
+      : ""
+    : "";
+
+  const researchSummary = [
+    research?.analyzedIntent || "",
+    research?.groundedSummary
+      ? `Live Web Findings:\n${research.groundedSummary.slice(0, 1800)}`
+      : "",
+    research?.competitorAngles?.length
+      ? `Angles: ${research.competitorAngles.slice(0, 4).join(" | ")}`
+      : "",
+  ]
+    .filter(Boolean)
+    .join("\n\n")
+    .slice(0, 3000);
+
   return {
     brief:
       p.rawUserBriefOrSourceText ||
@@ -92,7 +135,9 @@ export function generationContext(p: Project) {
       text: r.text.slice(0, 8000),
     })),
     verifiedLinks,
-    researchSummary: research?.analyzedIntent || "",
+    researchSummary,
+    semanticTerms: (research?.semanticTerms || []).map((t) => t.term).slice(0, 20),
+    brandVoiceSummary: brandVoice,
     instruction: p.customUserInstructions.slice(0, 2000),
   };
 }
@@ -250,6 +295,7 @@ export function useGeneration(store: ReturnType<typeof useWorkspace>) {
           audience: p.keywordCluster.targetAudience,
           tone: p.keywordCluster.toneOfVoice,
           language: workspace(p).language,
+          targetWords: workspace(p).targetWords,
           includeWebResearch: true,
         }),
       });
@@ -454,6 +500,50 @@ export function useGeneration(store: ReturnType<typeof useWorkspace>) {
           ...(intLinks.length ? [intLinks[secIdx % intLinks.length]] : []),
           ...(extLinks.length ? [extLinks[secIdx % extLinks.length]] : []),
         ];
+
+        const openingStyles = [
+          "Open with a direct, plain-language explanation of the core mechanism or decision.",
+          "Open with a concrete real-world scenario or operational trade-off readers actually face.",
+          "Open by clarifying an important distinction or common mistake before explaining what works.",
+          "Open directly with the first actionable premise and why sequence matters.",
+          "Open with a verified technical or practical cause-and-effect observation.",
+        ];
+        const priorSecs = p.sections
+          .slice(0, secIdx)
+          .filter((ps) => ps.bodyMarkdown.trim() || ps.subHeadings.some((h) => h.bodyMarkdown.trim()))
+          .map((ps) => {
+            const rawBody = (
+              ps.bodyMarkdown ||
+              ps.subHeadings.find((h) => h.bodyMarkdown.trim())?.bodyMarkdown ||
+              ""
+            )
+              .replace(/[#*_`>]/g, "")
+              .replace(/\s+/g, " ")
+              .trim();
+            const firstSent = rawBody.match(/^[^.!?]{12,240}[.!?]/)?.[0] || rawBody.slice(0, 180);
+            return {
+              heading: ps.h2Text,
+              openingSentence: firstSent.slice(0, 280),
+              summary: rawBody.slice(0, 280),
+            };
+          });
+
+        const primaryKwLower = p.keywordCluster.primaryKeyword.trim().toLowerCase();
+        const writtenBefore = [
+          p.metaPack.aeoDirectAnswer50Words,
+          ...p.sections.slice(0, secIdx).map((s) => `${s.h2Text}\n${s.bodyMarkdown}\n${s.subHeadings.map((h) => `${h.h3Text}\n${h.bodyMarkdown}`).join("\n")}`),
+        ]
+          .join("\n")
+          .toLowerCase();
+        let primaryKeywordUsesSoFar = 0;
+        if (primaryKwLower.length >= 3) {
+          let idx = 0;
+          while ((idx = writtenBefore.indexOf(primaryKwLower, idx)) !== -1) {
+            primaryKeywordUsesSoFar++;
+            idx += primaryKwLower.length;
+          }
+        }
+
         return requestWithAutoRetry(p, "section", abort.signal, {
           section: {
             id: section.id,
@@ -463,6 +553,9 @@ export function useGeneration(store: ReturnType<typeof useWorkspace>) {
           },
           previousEnding,
           verifiedLinks: sectionLinks.length ? sectionLinks : ctx.verifiedLinks,
+          priorSections: priorSecs,
+          openingStyle: openingStyles[secIdx % openingStyles.length]!,
+          primaryKeywordUsesSoFar,
         });
       },
     });

@@ -13,6 +13,7 @@ import {
   ListTree,
   Loader2,
   Moon,
+  PanelLeft,
   Plus,
   Sparkles,
   Sun,
@@ -78,6 +79,7 @@ import {
 import { SearchAppearancePanel } from "./SearchAppearancePanel";
 import { FeaturedBannerArtwork } from "./FeaturedBannerArtwork";
 import { BriefSettingsModal } from "./BriefSettingsModal";
+import { ContentScorePanel } from "./ContentScorePanel";
 import { downloadArticle, saveBlob } from "./assets";
 import styles from "./workspace.module.css";
 
@@ -109,6 +111,12 @@ export default function WriterWorkspace() {
   );
 
   const [leftTab, setLeftTab] = useState<StudioLeftTab>("helper"),
+    [leftOpen, setLeftOpen] = useState(false),
+    [rightScoreOpen, setRightScoreOpen] = useState(true),
+    [workspaceMode, setWorkspaceMode] = useState<
+      "editor" | "meta" | "visuals" | "faqs"
+    >("editor"),
+    [isStudioEmbedded, setIsStudioEmbedded] = useState(false),
     [briefModalOpen, setBriefModalOpen] = useState(false),
     [researchBusy, setResearchBusy] = useState(false),
     [highlightToggles, setHighlightToggles] =
@@ -223,6 +231,7 @@ export default function WriterWorkspace() {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
+      setIsStudioEmbedded(window.location.pathname.startsWith("/studio"));
       const fromQuery =
         new URLSearchParams(window.location.search).get("targetSiteId") || "";
       if (fromQuery) setTargetSiteId(fromQuery);
@@ -247,6 +256,7 @@ export default function WriterWorkspace() {
     setVisualId(null);
     setFocus(false);
     setBriefModalOpen(false);
+    setWorkspaceMode("editor");
     const hasDraft =
       Boolean(workspace(p).studioUnlocked) ||
       p.sections.some(
@@ -718,16 +728,21 @@ export default function WriterWorkspace() {
     );
 
   const launchGeneration = async (mode: "all" | "plan") => {
-    const parsed = parseBrief(current.current.rawUserBriefOrSourceText);
-    const directives = parseBriefDirectives(
-      current.current.rawUserBriefOrSourceText,
-    );
+    const rawBrief = current.current.rawUserBriefOrSourceText.trim();
+    const kw = current.current.keywordCluster.primaryKeyword.trim();
+    const effectiveBrief = !rawBrief && kw ? `Topic: ${kw}\nKeyword: ${kw}` : rawBrief;
+    const parsed = parseBrief(effectiveBrief);
+    const directives = parseBriefDirectives(effectiveBrief);
     if (
+      (!rawBrief && kw) ||
       (parsed.keyword && !current.current.keywordCluster.primaryKeyword) ||
       (directives.websiteUrl && !current.current.brandSiteUrl)
     ) {
       update((now) => ({
         ...now,
+        rawUserBriefOrSourceText: now.rawUserBriefOrSourceText.trim()
+          ? now.rawUserBriefOrSourceText
+          : effectiveBrief,
         brandSiteUrl: now.brandSiteUrl || directives.websiteUrl,
         keywordCluster: {
           ...now.keywordCluster,
@@ -746,6 +761,11 @@ export default function WriterWorkspace() {
   return (
     <div
       className={`${styles.shell} ${darkStudio ? styles.darkShell : ""} ${focus ? styles.focusMode : ""}`}
+      style={
+        {
+          "--writer-sticky-top": isStudioEmbedded ? "130px" : "80px",
+        } as React.CSSProperties
+      }
     >
       <header className={styles.workspaceHeader}>
         <div className={styles.projectTitle}>
@@ -889,7 +909,10 @@ export default function WriterWorkspace() {
               <a
                 href="#writer-assets"
                 className={styles.primary}
-                onClick={() => setFocus(false)}
+                onClick={() => {
+                  setFocus(false);
+                  setWorkspaceMode("visuals");
+                }}
               >
                 <Download size={15} />
                 Publishing kit
@@ -1120,9 +1143,22 @@ export default function WriterWorkspace() {
             </section>
           )}
 
-          {/* FULL 4-ZONE STUDIO DASHBOARD */}
-          <div className={styles.workspaceGrid}>
-            <LeftStudioPanel
+          {/* ARTICLE-FIRST STUDIO WORKSPACE WITH COLLAPSIBLE TOOLS & RIGHT SCORE GAUGE */}
+          <div
+            className={[
+              styles.workspaceLayout,
+              !focus && leftOpen ? styles.workspaceHasLeft : "",
+              !focus && rightScoreOpen
+                ? styles.workspaceHasScoreExpanded
+                : !focus
+                  ? styles.workspaceHasScoreRail
+                  : "",
+            ]
+              .filter(Boolean)
+              .join(" ")}
+          >
+            {!focus && leftOpen ? (
+              <LeftStudioPanel
               project={p}
               selection={selection}
               activeTab={leftTab}
@@ -1250,18 +1286,92 @@ export default function WriterWorkspace() {
               onRunResearch={() => void refreshResearchPacket()}
               researchBusy={researchBusy}
             />
+            ) : null}
 
             <main className={styles.editorColumn} aria-label="Article workspace">
-              {/* ZONE 1: SEARCH APPEARANCE, SERP SIMULATOR & SCHEMA */}
-              <SearchAppearancePanel
-                project={p}
-                onUpdateMeta={(patch) =>
-                  update((now) => ({
-                    ...now,
-                    metaPack: { ...now.metaPack, ...patch },
-                  }))
-                }
-              />
+              {/* Article-First Workspace Mode Switcher */}
+              <div className={styles.workspaceModeBar}>
+                <button
+                  type="button"
+                  className={`${styles.workspaceSideToggle} ${leftOpen ? styles.workspaceSideToggleOn : ""}`}
+                  onClick={() => {
+                    setFocus(false);
+                    setLeftOpen((prev) => !prev);
+                  }}
+                  aria-expanded={leftOpen}
+                  title="Toggle Editorial Tools Sidebar (SEO, Readability & Links)"
+                >
+                  <PanelLeft size={14} />
+                  <span>Editorial Tools</span>
+                </button>
+
+                <div
+                  className={styles.workspaceModeTabs}
+                  role="tablist"
+                  aria-label="Workspace sections"
+                >
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={workspaceMode === "editor"}
+                    onClick={() => setWorkspaceMode("editor")}
+                  >
+                    Article Editor
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={workspaceMode === "meta"}
+                    onClick={() => setWorkspaceMode("meta")}
+                  >
+                    Meta &amp; SERP
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={workspaceMode === "visuals"}
+                    onClick={() => setWorkspaceMode("visuals")}
+                  >
+                    Banner &amp; Visuals ({p.sections.length})
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={workspaceMode === "faqs"}
+                    onClick={() => setWorkspaceMode("faqs")}
+                  >
+                    FAQs &amp; Quiz ({p.faqs.length})
+                  </button>
+                </div>
+
+                {!focus && (
+                  <button
+                    type="button"
+                    className={`${styles.workspaceSideToggle} ${rightScoreOpen ? styles.workspaceSideToggleOn : ""}`}
+                    onClick={() => setRightScoreOpen((prev) => !prev)}
+                    aria-expanded={rightScoreOpen}
+                    title="Toggle Content Score Inspector"
+                  >
+                    <Sparkles size={13} />
+                    <span>Score</span>
+                  </button>
+                )}
+              </div>
+
+              {workspaceMode === "meta" && (
+                <>
+                  {/* ZONE 1: SEARCH APPEARANCE, SERP SIMULATOR & SCHEMA */}
+                  <SearchAppearancePanel
+                    project={p}
+                    onUpdateMeta={(patch) =>
+                      update((now) => ({
+                        ...now,
+                        metaPack: { ...now.metaPack, ...patch },
+                      }))
+                    }
+                  />
+                </>
+              )}
 
               {w.run.error ? (
                 <div className={styles.error} role="alert">
@@ -1283,10 +1393,10 @@ export default function WriterWorkspace() {
               ) : null}
 
               {/* PHASE 5: CONTENT ORGANIZER — CLICKABLE TOC & 50-WORD AEO DIRECT ANSWER */}
-              {p.sections.length > 0 ? (
+              {workspaceMode === "editor" && p.sections.length > 0 ? (
                 <div className={styles.tocStrip} aria-label="Table of contents">
                   <span className={styles.tocLabel}>
-                    <ListTree size={14} /> Contents:
+                    <ListTree size={14} /> Jump to:
                   </span>
                   {p.sections.map((sec, idx) => (
                     <button
@@ -1301,7 +1411,7 @@ export default function WriterWorkspace() {
                 </div>
               ) : null}
 
-              {(p.metaPack.aeoDirectAnswer50Words || w.quickAnswerBox) && (
+              {workspaceMode === "meta" && (
                 <section
                   className={styles.aeoAnswerCard}
                   aria-label="50-word quick answer box"
@@ -1353,96 +1463,128 @@ export default function WriterWorkspace() {
               )}
 
               {/* PHASE 5: 16:9 HORIZONTAL FEATURED BANNER & WCAG ALT TEXT AGENT */}
-              <FeaturedBannerArtwork
-                project={p}
-                onOptimizeAllAltTexts={() => {
-                  let count = 0;
-                  update((now) => {
-                    const res = optimizeVisualAltTexts(now);
-                    count = res.optimizedCount;
-                    return res.project;
-                  });
-                  setMessage(
-                    count > 0
-                      ? `Optimized ${count} visual alt text${count === 1 ? "" : "s"} from the featured banner and infographic labels. Review each description against its image.`
-                      : "The generated descriptions are unchanged. Check them against the actual images.",
-                  );
-                }}
-                onUpdateBanner={(patch) =>
-                  update((now) =>
-                    patchWorkspace(now, {
-                      featuredBanner: {
-                        ...(workspace(now).featuredBanner || {
-                          headline: now.metaPack.h1Title || now.projectTitle,
-                          subheadline: now.metaPack.metaDescription,
-                          altText: now.metaPack.h1Title || now.projectTitle,
-                          aspectRatio: "16:9",
-                          width: 1200,
-                          height: 630,
+              {workspaceMode === "visuals" && (
+                <>
+                  <FeaturedBannerArtwork
+                    project={p}
+                    onOptimizeAllAltTexts={() => {
+                      let count = 0;
+                      update((now) => {
+                        const res = optimizeVisualAltTexts(now);
+                        count = res.optimizedCount;
+                        return res.project;
+                      });
+                      setMessage(
+                        count > 0
+                          ? `Optimized ${count} visual alt text${count === 1 ? "" : "s"} from the featured banner and infographic labels. Review each description against its image.`
+                          : "The generated descriptions are unchanged. Check them against the actual images.",
+                      );
+                    }}
+                    onUpdateBanner={(patch) =>
+                      update((now) =>
+                        patchWorkspace(now, {
+                          featuredBanner: {
+                            ...(workspace(now).featuredBanner || {
+                              headline: now.metaPack.h1Title || now.projectTitle,
+                              subheadline: now.metaPack.metaDescription,
+                              altText: now.metaPack.h1Title || now.projectTitle,
+                              aspectRatio: "16:9",
+                              width: 1200,
+                              height: 630,
+                            }),
+                            ...patch,
+                          },
                         }),
-                        ...patch,
-                      },
-                    }),
-                  )
-                }
-              />
-
-              {/* ZONE 3: RICH H1-H6 ARTICLE EDITOR WITH EMBEDDED READABILITY & RIGHT-CLICK TELL AI */}
-              <div className={styles.editorLabel}>
-                <span>
-                  <FileText size={15} />
-                  Rich H1–H6 Article &amp; Inline Visual Editor
-                </span>
-                <div className={styles.editorQuickBar}>
-                  <span className={styles.wordCountPill}>
-                    {report.words.toLocaleString()} words · {report.minutes} min
-                    read
-                  </span>
-                  {report.words > 0 && (
-                    <div
-                      className={styles.quickDownloadRow}
-                      aria-label="Quick article downloads"
-                    >
-                      {["pdf", "docx", "html", "markdown"].map((fmt) => (
-                        <button
-                          key={fmt}
-                          type="button"
-                          disabled={Boolean(exportBusy)}
-                          onClick={() => void handleQuickExport(fmt)}
-                          title={`Download article as ${fmt.toUpperCase()}`}
-                        >
-                          <FileDown size={12} />
-                          {fmt === "markdown" ? "MD" : fmt.toUpperCase()}
-                        </button>
-                      ))}
-                    </div>
+                      )
+                    }
+                  />
+                  {!focus && (
+                    <AssetDeck
+                      key={p.projectId}
+                      project={p}
+                      onChange={update}
+                      onEditVisual={openVisual}
+                      onInsertVisual={(sid) => {
+                        setWorkspaceMode("editor");
+                        requestAnimationFrame(() => {
+                          editor.current?.insertVisual(sid);
+                          editor.current?.section(sid);
+                        });
+                      }}
+                    />
                   )}
-                </div>
-              </div>
+                </>
+              )}
 
-              <ArticleEditor
-                key={p.projectId}
-                ref={editor}
-                project={p}
-                highlights={leftTab === "readability" && Object.values(highlightToggles).some(Boolean)}
-                highlightToggles={highlightToggles}
-                targetGrade={targetGrade}
-                onChange={(doc: RichNode) =>
-                  update((now) => syncDocument(now, doc))
-                }
-                onEditVisual={openVisual}
-                onSelection={setSelection}
-                onTellAi={(inst, range, openTab) => {
-                  if (openTab) setLeftTab("helper");
-                  setFocus(false);
-                  if (range.text.trim()) setSelection(range.text);
-                  if (inst.trim()) {
-                    void requestRewrite(inst, "selection", range);
-                  }
-                }}
-              />
+              {/* ZONE 3: RICH H1-H6 ARTICLE EDITOR WITH EMBEDDED READABILITY & INLINE ASK AI */}
+              {workspaceMode === "editor" && (
+                <>
+                  <div className={styles.editorLabel}>
+                    <span>
+                      <FileText size={15} />
+                      Rich H1–H6 Article &amp; Inline Visual Editor
+                    </span>
+                    <div className={styles.editorQuickBar}>
+                      <span className={styles.wordCountPill}>
+                        {report.words.toLocaleString()} words · {report.minutes} min
+                        read
+                      </span>
+                      {report.words > 0 && (
+                        <div
+                          className={styles.quickDownloadRow}
+                          aria-label="Quick article downloads"
+                        >
+                          {["pdf", "docx", "html", "markdown"].map((fmt) => (
+                            <button
+                              key={fmt}
+                              type="button"
+                              disabled={Boolean(exportBusy)}
+                              onClick={() => void handleQuickExport(fmt)}
+                              title={`Download article as ${fmt.toUpperCase()}`}
+                            >
+                              <FileDown size={12} />
+                              {fmt === "markdown" ? "MD" : fmt.toUpperCase()}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <ArticleEditor
+                    key={p.projectId}
+                    ref={editor}
+                    project={p}
+                    highlights={leftOpen && leftTab === "readability" && Object.values(highlightToggles).some(Boolean)}
+                    highlightToggles={highlightToggles}
+                    targetGrade={targetGrade}
+                    onChange={(doc: RichNode) =>
+                      update((now) => syncDocument(now, doc))
+                    }
+                    onUpdateProject={update}
+                    onEditVisual={openVisual}
+                    onSelection={setSelection}
+                    onInlineAiRewrite={async (inst, range, signal) => {
+                      const res = await gen.rewrite(range.text, inst, signal);
+                      return res.data.text;
+                    }}
+                    onTellAi={(inst, range, openTab) => {
+                      if (openTab) {
+                        setLeftOpen(true);
+                        setLeftTab("helper");
+                      }
+                      setFocus(false);
+                      if (range.text.trim()) setSelection(range.text);
+                      if (inst.trim()) {
+                        void requestRewrite(inst, "selection", range);
+                      }
+                    }}
+                  />
+                </>
+              )}
 
               {/* PHASE 5: STRUCTURED FAQ SECTION & SCHEMA ORGANIZER */}
+              {workspaceMode === "faqs" && (
               <section
                 className={styles.faqOrganizerCard}
                 aria-label="Structured FAQ accordion"
@@ -1599,7 +1741,9 @@ export default function WriterWorkspace() {
                   </div>
                 )}
               </section>
+              )}
 
+              {workspaceMode === "editor" && (
               <ConnectedWebsitePublishBar
                 article={{
                   articleProjectId: p.projectId,
@@ -1669,25 +1813,38 @@ export default function WriterWorkspace() {
                   return { ok: true, liveUrl: data.liveUrl };
                 }}
               />
+              )}
 
+              {workspaceMode === "editor" && (
               <p className={styles.editorFootnote}>
-                Right-click any paragraph or highlight text to &ldquo;Tell AI about it&rdquo;. Click any inline section infographic to customize its layout and WCAG alt text.
+                Highlight any passage for instant formatting or inline &ldquo;Ask AI&rdquo;, or click &ldquo;+&rdquo; on an empty line to insert an uploaded image.
               </p>
+              )}
             </main>
-          </div>
 
-          {!focus && (
-            <AssetDeck
-              key={p.projectId}
-              project={p}
-              onChange={update}
-              onEditVisual={openVisual}
-              onInsertVisual={(sid) => {
-                editor.current?.insertVisual(sid);
-                editor.current?.section(sid);
-              }}
-            />
-          )}
+            {!focus && (
+              <ContentScorePanel
+                project={p}
+                collapsed={!rightScoreOpen}
+                onToggleCollapse={() => setRightScoreOpen((prev) => !prev)}
+                onSelectTerm={(term) => {
+                  setWorkspaceMode("editor");
+                  requestAnimationFrame(() => {
+                    editor.current?.highlightAndScrollToTerm(term);
+                  });
+                }}
+                onSelectHeading={(sid, headingText) => {
+                  setWorkspaceMode("editor");
+                  requestAnimationFrame(() => {
+                    if (sid) editor.current?.section(sid);
+                    else editor.current?.scrollToHeading(headingText);
+                  });
+                }}
+                onRunResearch={() => void refreshResearchPacket()}
+                researchBusy={researchBusy}
+              />
+            )}
+          </div>
         </>
       )}
 
