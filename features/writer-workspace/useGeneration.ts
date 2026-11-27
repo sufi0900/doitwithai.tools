@@ -217,7 +217,7 @@ export function useGeneration(store: ReturnType<typeof useWorkspace>) {
     const targetSite = (
       p.brandSiteUrl ||
       directives.websiteUrl ||
-      "https://doitwithai.tools"
+      ""
     ).trim();
     status({
       status: "planning",
@@ -229,7 +229,7 @@ export function useGeneration(store: ReturnType<typeof useWorkspace>) {
         web_research: { status: "active", detail: "Checking authority sources" },
         internal_links: {
           status: "active",
-          detail: `Scanning ${targetSite}`,
+          detail: targetSite ? `Scanning ${targetSite}` : "No website supplied",
         },
       }),
     });
@@ -255,7 +255,10 @@ export function useGeneration(store: ReturnType<typeof useWorkspace>) {
       });
       const json = await res.json().catch(() => null);
       if (ticket !== epoch.current) return false;
-      if (res.ok && json?.ok && json.packet) {
+      if (!res.ok || !json?.ok || !json.packet) {
+        throw new Error("Research unavailable");
+      }
+      if (json.packet) {
         const packet = json.packet as ResearchPacket;
         update((now) => {
           const w = workspace(now);
@@ -263,10 +266,7 @@ export function useGeneration(store: ReturnType<typeof useWorkspace>) {
           for (const ext of packet.externalLinks || []) {
             const validUrl = safeUrl(ext.url);
             if (validUrl && !mergedRefs.some((r) => r.url === validUrl)) {
-              const richText =
-                ext.snippet && ext.snippet.length >= 90
-                  ? ext.snippet
-                  : `${ext.title || validUrl} — Verified reference material and technical documentation supporting "${packet.primaryTopic || now.projectTitle}".`;
+              const richText = ext.snippet || "";
               mergedRefs.push({
                 id: id(),
                 url: validUrl,
@@ -310,11 +310,11 @@ export function useGeneration(store: ReturnType<typeof useWorkspace>) {
                   },
                   web_research: {
                     status: "done",
-                    detail: `${packet.externalLinks.length} authority references`,
+                    detail: `${packet.externalLinks.length} candidate references; claims need verification`,
                   },
                   internal_links: {
-                    status: "done",
-                    detail: `${packet.internalLinks.length} site links found`,
+                    status: targetSite ? "done" : "skipped",
+                    detail: targetSite ? `${packet.internalLinks.length} site links found` : "No website supplied",
                   },
                 }),
               },
@@ -355,8 +355,6 @@ export function useGeneration(store: ReturnType<typeof useWorkspace>) {
       stages: buildStageList(workspace(p).run.stages, {
         analyze: { status: "done" },
         keywords: { status: "done" },
-        web_research: { status: "done" },
-        internal_links: { status: "done" },
         serp_meta: { status: "active", detail: "Generating 4 title & 3 description options" },
         featured_image: { status: "active", detail: "Preparing 16:9 horizontal hero" },
         outline: { status: "active", detail: "Structuring H2/H3 flow & AEO box" },

@@ -53,10 +53,7 @@ import {
   readiness,
   refreshVisual,
   safeUrl,
-  sanitizeMarkdownHeadings,
   setSectionBody,
-  splitRunOnSentences,
-  stripAiClichesAndPolishRhythm,
   syncDocument,
   weaveSectionTakeawayCallouts,
   wordCount,
@@ -495,9 +492,13 @@ export default function WriterWorkspace() {
     const targetText =
       scope === "selection" && picked?.text.trim()
         ? picked.text
-        : articleMarkdown(current.current).slice(0, 14000);
+        : articleMarkdown(current.current);
     if (!targetText.trim()) {
       setRewriteError("Add or select text in the article first.");
+      return;
+    }
+    if (targetText.length > 18000) {
+      setRewriteError("This article is too long for one revision. Select a section to revise without truncating your draft.");
       return;
     }
     if (!customInstruction.trim()) {
@@ -512,7 +513,7 @@ export default function WriterWorkspace() {
     setRewriteError("");
     try {
       const res = await gen.rewrite(
-        targetText.slice(0, 18000),
+        targetText,
         customInstruction,
         c.signal,
       );
@@ -574,7 +575,7 @@ export default function WriterWorkspace() {
     const site = (
       current.current.brandSiteUrl ||
       directives.websiteUrl ||
-      "https://doitwithai.tools"
+      ""
     ).trim();
     try {
       const res = await fetch("/api/writer-workspace/research", {
@@ -613,7 +614,7 @@ export default function WriterWorkspace() {
               text:
                 ext.snippet && ext.snippet.length >= 90
                   ? ext.snippet
-                  : `${ext.title || validUrl} — Verified reference material and technical documentation supporting "${packet.primaryTopic || now.projectTitle}".`,
+                  : "",
             });
           }
         }
@@ -1144,33 +1145,10 @@ export default function WriterWorkspace() {
                 void requestRewrite(inst, scope)
               }
               onQuickReadabilityPolish={() => {
-                update((now) => {
-                  const polishedSections = now.sections.map((sec) => {
-                    const nextBody = stripAiClichesAndPolishRhythm(bodyOf(sec));
-                    const updatedSec = setSectionBody(sec, nextBody);
-                    try {
-                      return refreshVisual(updatedSec, now);
-                    } catch {
-                      return updatedSec;
-                    }
-                  });
-                  const polishedIntro = stripAiClichesAndPolishRhythm(
-                    now.metaPack.aeoDirectAnswer50Words || "",
-                  );
-                  return patchWorkspace(
-                    {
-                      ...now,
-                      metaPack: {
-                        ...now.metaPack,
-                        aeoDirectAnswer50Words: polishedIntro,
-                      },
-                      sections: polishedSections,
-                    },
-                    { document: undefined, quickAnswerBox: polishedIntro },
-                  );
-                });
-                setMessage(
-                  "Polished sentence rhythm, stripped AI clichés, split headings cleanly, and refreshed section infographics.",
+                setLeftTab("helper");
+                void requestRewrite(
+                  "Improve clarity and remove repetitive keyword-led openings and filler. Preserve all facts, qualifications, Markdown links, code and headings. Do not add claims or sources. Return the complete revised text for review.",
+                  selection.trim() ? "selection" : "article",
                 );
               }}
               onApplyRevision={applyRewriteProposal}

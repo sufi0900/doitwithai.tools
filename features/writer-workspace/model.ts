@@ -351,74 +351,12 @@ export function sanitizeMarkdownHeadings(md: string): string {
 }
 
 /**
- * Splits overly long compound sentences (> 24 words) at natural clause breaks
- * so generated prose stays crisp and avoids triggering red/amber readability
- * walls while leaving normal <=24-word sentences completely unchanged.
+ * Compatibility entry point for existing editor actions. Sentence-length advice
+ * belongs in the reviewer: rewriting raw Markdown can destroy URLs, code,
+ * abbreviations, decimal values and the author's meaning.
  */
 export function splitRunOnSentences(text: string): string {
-  return text
-    .split(/\n/)
-    .map((line) => {
-      const trimmed = line.trim();
-      if (
-        !trimmed ||
-        /^(?:#{1,6}\s|[-*+]\s|\d+[.)]\s|>|\||```)/.test(trimmed)
-      ) {
-        return line;
-      }
-      const sentences = line.match(/[^.!?]+[.!?]+(?:\s+|$)|[^.!?]+$/g) || [line];
-      return sentences
-        .map((sent) => {
-          const words = sent.trim().split(/\s+/).filter(Boolean);
-          if (words.length <= 24) return sent.trim();
-          const clauseRegex =
-            /,\s+(?:which|while|whereas|because|although|since|so\s+that|allowing|enabling|ensuring|making|where|and|but|so)\s+|;\s+|\s+—\s+/gi;
-          let bestMatch: RegExpExecArray | null = null;
-          let m: RegExpExecArray | null;
-          const midChar = Math.floor(sent.length / 2);
-          while ((m = clauseRegex.exec(sent))) {
-            const leftWords = sent.slice(0, m.index).trim().split(/\s+/).length;
-            const rightWords = sent
-              .slice(m.index + m[0].length)
-              .trim()
-              .split(/\s+/).length;
-            if (leftWords >= 7 && rightWords >= 6) {
-              if (
-                !bestMatch ||
-                Math.abs(m.index - midChar) < Math.abs(bestMatch.index - midChar)
-              ) {
-                bestMatch = m;
-              }
-            }
-          }
-          if (!bestMatch) return sent.trim();
-          const left = sent.slice(0, bestMatch.index).trim().replace(/[,;—]+$/, "");
-          const connectorRaw = bestMatch[0]
-            .replace(/^[,;—\s]+/, "")
-            .trim();
-          const rightBody = sent
-            .slice(bestMatch.index + bestMatch[0].length)
-            .trim();
-          let secondSentence = rightBody;
-          if (/^(?:which|allowing|enabling|ensuring|making)$/i.test(connectorRaw)) {
-            secondSentence = `This ${
-              /ing$/i.test(connectorRaw)
-                ? connectorRaw.toLowerCase().replace(/ing$/i, "s")
-                : ""
-            } ${rightBody}`.replace(/\s+/g, " ").trim();
-          } else if (/^(?:while|whereas|because|although|since)$/i.test(connectorRaw)) {
-            secondSentence = `${
-              connectorRaw.charAt(0).toUpperCase() + connectorRaw.slice(1)
-            } ${rightBody}`;
-          } else if (secondSentence) {
-            secondSentence =
-              secondSentence.charAt(0).toUpperCase() + secondSentence.slice(1);
-          }
-          return `${left}. ${secondSentence}`;
-        })
-        .join(" ");
-    })
-    .join("\n");
+  return text;
 }
 
 export function setSectionBody(
@@ -1075,77 +1013,9 @@ export function auditClaimVerification(md: string): {
 }
 
 
-const AI_CLICHE_PATTERNS: Array<{ pattern: RegExp; replacement: string; label: string }> = [
-  {
-    pattern: /\b[Ii]n today['’]s fast-paced digital (?:landscape|world|era|age),?\s*/g,
-    replacement: "",
-    label: "in today's fast-paced digital...",
-  },
-  {
-    pattern: /\b[Ii]n today['’]s digital (?:landscape|world|era|age),?\s*/g,
-    replacement: "",
-    label: "in today's digital landscape",
-  },
-  {
-    pattern: /\b[Ii]t is (?:important|worth|crucial|essential) to note that\s+/g,
-    replacement: "",
-    label: "it is important to note that",
-  },
-  {
-    pattern: /\b[Ii]t['’]s worth noting that\s+/g,
-    replacement: "",
-    label: "it's worth noting that",
-  },
-  {
-    pattern: /\b[Ww]hen it comes to\s+/g,
-    replacement: "For ",
-    label: "when it comes to",
-  },
-  {
-    pattern: /\b[Ii]n order to\b/g,
-    replacement: "to",
-    label: "in order to",
-  },
-  {
-    pattern: /\b[Dd]ue to the fact that\b/g,
-    replacement: "because",
-    label: "due to the fact that",
-  },
-  {
-    pattern: /\b[Dd]elving into\b/g,
-    replacement: "Examining",
-    label: "delving into",
-  },
-  {
-    pattern: /\b[Dd]elve into\b/g,
-    replacement: "explore",
-    label: "delve into",
-  },
-  {
-    pattern: /\b[Uu]tiliz(?:e|es|ed|ing)\b/g,
-    replacement: "use",
-    label: "utilize",
-  },
-  {
-    pattern: /\b[Ll]everag(?:e|es|ed|ing)\b/g,
-    replacement: "use",
-    label: "leverage",
-  },
-];
-
-/**
- * Deterministically strips robotic AI throat-clearing clichés, simplifies pompous
- * verbs, separates inline Markdown headings, and splits >24-word compound sentences.
- */
+/** Preserve authored Markdown; style changes require a reviewed rewrite. */
 export function stripAiClichesAndPolishRhythm(md: string): string {
-  if (!md) return "";
-  let text = sanitizeMarkdownHeadings(md);
-  for (const rule of AI_CLICHE_PATTERNS) {
-    text = text.replace(rule.pattern, rule.replacement);
-  }
-  // Ensure sentence starts after stripped openers are capitalized cleanly
-  text = text.replace(/(^|[.!?]\s+)([a-z])/gm, (_, prefix: string, ch: string) => `${prefix}${ch.toUpperCase()}`);
-  return splitRunOnSentences(text);
+  return md;
 }
 
 /**
@@ -1465,33 +1335,11 @@ export function autoWeaveContextualInternalLinks(
   maxToLink = 4,
 ): { project: Project; linkedCount: number } {
   const opportunities = auditContextualLinkOpportunities(p);
-  const w = workspace(p);
-  const fullMd = articleMarkdown(p);
-  const fallbackLinks = [
-    ...(p.internalLinks || []).map((l) => ({
-      url: l.targetUrl,
-      title: l.targetTitle || l.anchorText,
-      anchor: l.anchorText || l.targetTitle,
-    })),
-    ...(w.research?.internalLinks || []).map((l) => ({
-      url: l.url,
-      title: l.title,
-      anchor: l.anchorText || l.title,
-    })),
-  ].filter(
-    (item, idx, arr) =>
-      Boolean(safeUrl(item.url)) &&
-      arr.findIndex((x) => x.url === item.url) === idx &&
-      !fullMd.includes(item.url),
-  );
-
-  if (opportunities.length === 0 && fallbackLinks.length === 0) {
-    return { project: p, linkedCount: 0 };
-  }
+  if (opportunities.length === 0) return { project: p, linkedCount: 0 };
 
   let linkedCount = 0;
   const usedUrls = new Set<string>();
-  const nextSections = p.sections.map((sec, secIdx) => {
+  const nextSections = p.sections.map((sec) => {
     if (linkedCount >= maxToLink) return sec;
     let secMd = bodyOf(sec);
     const secOpps = opportunities.filter(
@@ -1513,16 +1361,6 @@ export function autoWeaveContextualInternalLinks(
         linkedCount += 1;
       }
     }
-    if (linkedCount < maxToLink) {
-      const candidate = fallbackLinks.find(
-        (fl) => !usedUrls.has(fl.url) && !secMd.includes(fl.url),
-      );
-      if (candidate && secIdx < maxToLink) {
-        secMd = `${secMd.trim()}\n\n- **Related Workflow Tool:** Use [${candidate.anchor || candidate.title}](${candidate.url}) to audit and implement this step.`;
-        usedUrls.add(candidate.url);
-        linkedCount += 1;
-      }
-    }
     const updated = setSectionBody(sec, secMd);
     try {
       return refreshVisual(updated, p);
@@ -1531,6 +1369,7 @@ export function autoWeaveContextualInternalLinks(
     }
   });
 
+  if (!linkedCount) return { project: p, linkedCount: 0 };
   const nextProject = patchWorkspace(
     { ...p, sections: nextSections },
     { document: undefined },

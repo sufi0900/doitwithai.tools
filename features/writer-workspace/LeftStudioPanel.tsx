@@ -625,9 +625,10 @@ export function LeftStudioPanel({
             <button
               type="button"
               className={`${s.btn} ${s.primary} ${s.fullWidthBtn}`}
+              disabled={aiRevisionState.busy}
               onClick={onQuickReadabilityPolish}
             >
-              <Zap className="w-4 h-4" aria-hidden /> Instant Auto-Polish Rhythm, Clichés &amp; Headings
+              <Zap className="w-4 h-4" aria-hidden /> Suggest Clarity Edits (Review Before Applying)
             </button>
           ) : null}
 

@@ -46,7 +46,7 @@ import {
   canApplyResponse,
   generationContext,
 } from "../../features/writer-workspace/useGeneration";
-import { createGenerationHandler } from "../../features/writer-workspace/generation.server";
+import { createGenerationHandler, normalizeAndValidateSectionMarkdown } from "../../features/writer-workspace/generation.server";
 import { createResearchHandler } from "../../features/writer-workspace/research.server";
 import {
   buildChannelCarouselSlides,
@@ -688,7 +688,7 @@ test("research handler validates payload and handles offline deterministic fallb
   assert.deepEqual(json.packet.externalLinks, []);
 });
 
-test("V3.2 and V3.3 quality auditors evaluate claim citations, burstiness rhythm, cliché stripping, and 40-60w section snippets", () => {
+test("V3.2 and V3.3 quality auditors evaluate claim citations, burstiness rhythm, non-destructive polishing, and section snippets", () => {
   const rawProse =
     "In today's fast-paced digital landscape, it is important to note that 68% of marketers utilize structured data. According to [Google Search Central](https://developers.google.com/search/docs/fundamentals/creating-helpful-content), 82% of helpful pages prioritize clarity.";
   const claimAudit = auditClaimVerification(rawProse);
@@ -697,9 +697,7 @@ test("V3.2 and V3.3 quality auditors evaluate claim citations, burstiness rhythm
   assert.equal(claimAudit.unverifiedClaims.length, 1);
 
   const polished = stripAiClichesAndPolishRhythm(rawProse);
-  assert.equal(/in today's fast-paced/i.test(polished), false);
-  assert.equal(/it is important to note/i.test(polished), false);
-  assert.equal(/\butilize\b/i.test(polished), false);
+  assert.equal(polished, rawProse, "Style suggestions must not mutate authored Markdown");
 
   const rhythm = auditBurstinessRhythm(
     "Short sentences create impact. Next, pair a medium-length analytical sentence with concrete examples so readers stay engaged across every section. Finally, verify every claim against primary documentation before publishing your article.",
@@ -948,4 +946,48 @@ test("quiz and image descriptions come from the actual sections", async () => {
   assert.match(images.sections[0].infographicConfig.altText, /Bright window/);
   assert.equal(m.bodyOf(images.sections[0]), m.bodyOf(p.sections[0]));
   assert.equal(images.writerWorkspace.featuredBanner.altScore, undefined);
+});
+
+
+test("polishing preserves Markdown URLs, code, decimals, quotations and sentence endings", () => {
+  const inputs = [
+    "According to [Google](https://developers.google.com/search/docs/appearance/ai-features), ordinary SEO practices still apply. Keep this final sentence",
+    "Use version 3.14 with Dr. Smith. A 12.5% change is not a guarantee.",
+    "[Guide](https://example.com/a_(b)?x=1.2#part) and ![Diagram](https://example.com/a.png)",
+    "```js\nconst url = 'https://example.com'; // utilize is a literal\n```",
+    "> In today's digital landscape, this quotation must remain exact.",
+    "| URL | Value |\n| --- | --- |\n| https://example.com | 2.5 |",
+  ];
+  for (const input of inputs) assert.equal(stripAiClichesAndPolishRhythm(input), input);
+});
+
+test("section validation rejects missing and swapped explanations without inventing filler", () => {
+  assert.throws(() => normalizeAndValidateSectionMarkdown(paragraphs.join("\n\n"), ["First", "Second"]));
+  assert.throws(() => normalizeAndValidateSectionMarkdown(`### Second\n\n${paragraphs[0]}\n\n### First\n\n${paragraphs[1]}`, ["First", "Second"]));
+  assert.throws(() => normalizeAndValidateSectionMarkdown(`### First\n\nShort.\n\n### Second\n\n${paragraphs[1]}`, ["First", "Second"]));
+});
+
+test("candidate URLs do not trigger forced resource blocks or unsupported attribution", async () => {
+  const body = `${paragraphs[0]} A survey found that 68% preferred this option.`;
+  const response = await createGenerationHandler({
+    configured: () => true, limit: allowed as any,
+    generate: provider({ bodyMarkdown: body }) as any,
+  })(req({ ...brief, verifiedLinks: [
+    { url: "https://example.com/tool", title: "Tool", kind: "internal" },
+    { url: "https://example.com/unrelated", title: "Unrelated report", kind: "external" },
+  ] }));
+  const result = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(result.data.bodyMarkdown, body);
+  assert.equal(result.reviewRequired, true);
+  assert.equal(auditClaimVerification(result.data.bodyMarkdown).unverifiedClaims.length, 1);
+});
+
+test("internal linking skips unrelated destinations rather than appending promotions", () => {
+  const p = draft();
+  p.internalLinks = [{ id: "unrelated", anchorText: "plumbing repairs", targetTitle: "Plumbing repairs", targetUrl: "https://example.com/plumbing", category: "pillar-guide" }];
+  const before = articleMarkdown(p);
+  const result = autoWeaveContextualInternalLinks(p);
+  assert.equal(result.linkedCount, 0);
+  assert.equal(articleMarkdown(result.project), before);
 });
