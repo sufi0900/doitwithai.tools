@@ -1,21 +1,9 @@
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import type { Metadata } from "next";
-import Link from "next/link";
-import {
-  ArrowRight,
-  CheckCircle2,
-  Layers3,
-  ScanLine,
-  ShieldCheck,
-  Sparkles,
-} from "lucide-react";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
+import { ArrowRight, CheckCircle2 } from "lucide-react";
 import AnalyzerClient from "@/features/on-page-analyzer/AnalyzerClient";
 import ToolResources from "@/features/tool-catalog/ToolResources";
-import {
-  ToolHeroBackground,
-  toolHeroHeading,
-  toolHeroSurface,
-} from "@/features/tool-ui/ToolHero";
+import Link from "next/link";
 const pageUrl = "https://doitwithai.tools/tools/on-page-ai-seo-analyzer";
 const url = pageUrl;
 const title = "On-page AI SEO Analyzer | Audit & Improve Your Page";
@@ -176,76 +164,18 @@ export default function OnPageAnalyzerPage() {
           __html: JSON.stringify(schema).replace(/</g, "\\u003c"),
         }}
       />
-      <section className={`relative overflow-hidden ${toolHeroSurface} text-white`}
+      <ToolLandingHero
+        slug="on-page-ai-seo-analyzer"
+        title="On-Page AI SEO Analyzer & Page Workspace"
+        description="Audit any public webpage URL or pasted HTML across metadata, heading hierarchy, internal/external links, schema markup, image alt attributes, and AI citation readiness."
+        categoryLabel="AI SEO Tools"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
       >
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">Tools</Link>
-            <span>/</span>
-            <span aria-current="page">On-page AI SEO Analyzer</span>
-          </nav>
-
-          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                On-Page SEO · 36-Factor Technical, Content & GEO Audit
-              </p>
-              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                On-Page AI SEO 
-                <span className={toolHeroHeading}>
-                  Analyzer & Page Workspace
-                </span>
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-                Audit any public webpage URL or pasted HTML across metadata, heading hierarchy, internal/external links, schema markup, image alt attributes, and AI citation readiness.
-              </p>
-              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Live URL or raw HTML audit
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Evidence behind every finding
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  AI-assisted fix suggestions
-                </span>
-              </div>
-              <PortableToolHeroBar />
-            </div>
-
-            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
-                4 Audit Dimensions Inspected
-              </p>
-              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
-                <li>
-                  <strong className="text-emerald-300">Snippet & Metadata:</strong> Title pixel width, meta description, canonical, and robots tags.
-                </li>
-                <li>
-                  <strong className="text-indigo-300">Content & Headings:</strong> H1–H6 structure, word count, readability, and passage clarity.
-                </li>
-                <li>
-                  <strong className="text-sky-300">Links & Media:</strong> Internal/external link ratios, anchor text, and image alt coverage.
-                </li>
-                <li>
-                  <strong className="text-amber-300">Schema & GEO:</strong> JSON-LD structured data entities, Open Graph, and trust signals.
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </section>
-      <section className="bg-[#f5f7fc] py-8 dark:bg-[#0c1422] sm:py-10">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+        <div className="p-4 sm:p-6">
           <AnalyzerClient />
         </div>
-      </section>
+      </ToolLandingHero>
       <section className="border-t border-slate-200 bg-white py-20 dark:border-slate-800 dark:bg-slate-950">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="max-w-2xl">

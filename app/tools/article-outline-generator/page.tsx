@@ -1,13 +1,9 @@
-import {
-  ToolHeroBackground,
-  toolHeroSurface,
-  toolHeroHeading,
-} from "@/features/tool-ui/ToolHero";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BookOpen, Layers3, ListChecks, PencilLine } from "lucide-react";
+import { BookOpen } from "lucide-react";
 import OutlineClient from "@/features/article-outline/OutlineClient";
 import ToolResources from "@/features/tool-catalog/ToolResources";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
 const pageUrl = "https://doitwithai.tools/tools/article-outline-generator";
 const description =
   "Plan an article around your reader's intent. Compare H1, H2, and H3 alternatives, edit section notes, and export a structured writing outline.";
@@ -68,60 +64,18 @@ export default function Page() {
           __html: JSON.stringify(schema).replace(/</g, "\\u003c"),
         }}
       />
-      <div
-        className={`relative overflow-hidden ${toolHeroSurface} pb-20 pt-10 sm:pt-16`}
+      <ToolLandingHero
+        slug="article-outline-generator"
+        title="AI Article Outline Generator: Give Every Section a Purpose"
+        description="Turn your title and context into a reader-focused article plan. Choose heading alternatives, shape the structure, and gather evidence before you draft."
+        categoryLabel="AI SEO · Content Writing"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
       >
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="flex flex-wrap gap-2 text-xs text-slate-400"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">Tools</Link>
-            <span>/</span>
-            <span aria-current="page" className="text-blue-200">
-              Article Outline Generator
-            </span>
-          </nav>
-          <header className="mx-auto mb-14 mt-12 max-w-5xl text-center text-white">
-            <p className="inline-flex rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-widest text-blue-100">
-              AI SEO · Content Writing
-            </p>
-            <h1 className="mt-7 text-4xl font-black tracking-tight sm:text-6xl lg:text-7xl">
-              AI Article Outline Generator
-              <span className={`mt-3 block text-balance ${toolHeroHeading}`}>
-                Give Every Section a Purpose
-              </span>
-            </h1>
-            <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-slate-300 sm:text-lg">
-              Turn your title and context into a reader-focused article plan.
-              Choose heading alternatives, shape the structure, and gather
-              evidence before you draft.
-            </p>
-            <div className="mt-7 flex flex-wrap justify-center gap-3 text-xs font-bold text-slate-300">
-              {[
-                [Layers3, "H1 / H2 / H3 structure"],
-                [PencilLine, "Editable writing notes"],
-                [ListChecks, "Human review"],
-              ].map(([Icon, label]) => {
-                const I = Icon as typeof Layers3;
-                return (
-                  <span
-                    key={label as string}
-                    className="inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-2"
-                  >
-                    <I aria-hidden className="h-4 w-4 text-blue-300" />
-                    {label as string}
-                  </span>
-                );
-              })}
-            </div>
-          </header>
+        <div className="p-4 sm:p-6">
           <OutlineClient />
         </div>
-      </div>
+      </ToolLandingHero>
       <div className="mx-auto max-w-7xl space-y-20 px-4 py-20 sm:px-6 lg:px-8">
         <section className="grid gap-8 lg:grid-cols-2">
           <div>

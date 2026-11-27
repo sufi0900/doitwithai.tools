@@ -566,10 +566,10 @@ export default function OutlineClient() {
             </p>
           )}
         </form>
-        <aside className="rounded-3xl border border-white/15 bg-white/[0.06] p-6 text-white">
-          <Layers3 aria-hidden className="h-7 w-7 text-blue-300" />
+        <aside className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-slate-900 dark:border-slate-800 dark:bg-slate-800/60 dark:text-white">
+          <Layers3 aria-hidden className="h-7 w-7 text-[#4058D0] dark:text-blue-300" />
           <h3 className="mt-5 text-xl font-extrabold">A plan you can shape</h3>
-          <ul className="mt-5 space-y-4 text-sm leading-7 text-slate-300">
+          <ul className="mt-5 space-y-4 text-sm leading-7 text-slate-600 dark:text-slate-300">
             {[
               "Three alternatives for every heading, including H1 and the closing section.",
               "Section purposes, opening approaches, and coverage points.",
@@ -579,7 +579,7 @@ export default function OutlineClient() {
               <li key={s}>{s}</li>
             ))}
           </ul>
-          <p className="mt-6 border-t border-white/10 pt-5 text-xs leading-6 text-slate-400">
+          <p className="mt-6 border-t border-slate-200 pt-5 text-xs leading-6 text-slate-500 dark:border-white/10 dark:text-slate-400">
             This is planning assistance. Intent is supplied by you, rather than
             verified through live search results.
           </p>

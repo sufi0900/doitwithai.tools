@@ -720,11 +720,11 @@ export function BlogInfographicStudio({
   }
   return (
     <section
-      id="tool-studio-workspace"
+      id={mode === "standalone" ? "blog-infographic-studio-panel" : "tool-studio-workspace"}
       aria-label="Blog infographic studio"
       className={
         mode === "standalone"
-          ? "mx-auto max-w-[1440px] px-4 py-10 sm:px-6"
+          ? "p-4 sm:p-6"
           : "rounded-3xl bg-white p-4 text-slate-900 dark:bg-slate-950 dark:text-white sm:p-6"
       }
     >

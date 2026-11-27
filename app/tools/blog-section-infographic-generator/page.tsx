@@ -14,17 +14,10 @@ import {
   Wand2,
 } from "lucide-react";
 import BlogInfographicStudio from "@/features/blog-infographic-studio/BlogInfographicStudio";
-import HeroAnimatedInfographicShowcase from "@/features/blog-infographic-studio/HeroAnimatedInfographicShowcase";
 import { BLOG_INFOGRAPHIC_25_TEMPLATES } from "@/lib/blog-infographic-studio/templates";
 import ToolFaq from "@/features/tool-ui/ToolFaq";
 import ToolResources from "@/features/tool-catalog/ToolResources";
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
-import {
-  ToolHeroBackground,
-  toolHeroHeading,
-  toolHeroSurface,
-} from "@/features/tool-ui/ToolHero";
-import { PlatformBrandIcon } from "@/features/tool-ui/PlatformBrandIcon";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
 
 const pageUrl =
   "https://doitwithai.tools/tools/blog-section-infographic-generator";
@@ -378,78 +371,16 @@ export default function BlogSectionInfographicGeneratorPage() {
         }}
       />
 
-      {/* ARTICLE-FOCUSED HERO WITH PORTRAIT INFOGRAPHIC SHOWCASE */}
-      <header
-        className={`relative overflow-hidden ${toolHeroSurface} text-white`}
+      <ToolLandingHero
+        slug="blog-section-infographic-generator"
+        title="Free AI Blog Section Infographic Generator"
+        description={description}
+        categoryLabel="Visual & Infographics"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
       >
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">Tools</Link>
-            <span>/</span>
-            <span aria-current="page">
-              Free AI Blog Section Infographic Generator
-            </span>
-          </nav>
-
-          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
-            <div>
-              <div className="mb-3 inline-flex flex-wrap items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-bold text-white backdrop-blur-xs">
-                <PlatformBrandIcon
-                  slugOrText="blog-section-infographic-generator"
-                  size={18}
-                />
-                <span>
-                  Free AI Blog Infographic Studio · No Signup · Zero Watermark
-                </span>
-                <span className="inline-flex items-center gap-0.5 text-amber-300">
-                  Editable source included
-                </span>
-              </div>
-
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                BLOG SECTION INFOGRAPHICS · EDITABLE TEXT · YOUR BRAND
-              </p>
-
-              <h1 className="mt-3 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                Free AI Blog Section Infographic Generator:{" "}
-                <span className={toolHeroHeading}>
-                  Turn Explanations Into Clear Visuals
-                </span>
-              </h1>
-
-              <p className="mt-4 max-w-2xl text-base leading-relaxed text-slate-200">
-                Turn a blog section into a clear visual story. Choose a section
-                from an article URL or paste its text, review the key
-                explanations, then make it yours with editable text, topic icons
-                and your brand. Start with 21 smart-matched editorial, chart,
-                roadmap, and diagram compositions, or explore the classic
-                collection.
-              </p>
-
-              <PortableToolHeroBar
-                slug="blog-section-infographic-generator"
-                title="Free AI Blog Section Infographic Generator"
-                path="/tools/blog-section-infographic-generator"
-                primaryLabel="Use Tool Now: Create Blog Infographic"
-                workspaceId="tool-studio-workspace"
-              />
-            </div>
-
-            <div className="min-w-0">
-              <HeroAnimatedInfographicShowcase />
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* INTERACTIVE 25-TEMPLATE STUDIO WORKSPACE */}
-      <BlogInfographicStudio mode="standalone" />
+        <BlogInfographicStudio mode="standalone" />
+      </ToolLandingHero>
 
       {/* 50-WORD QUICK ANSWER BOX FOR GOOGLE AI OVERVIEWS & AEO */}
       <section className={section}>
