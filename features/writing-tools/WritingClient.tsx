@@ -194,15 +194,15 @@ export default function WritingClient({ kind }: { kind: WritingKind }) {
           return (
             <div
               key={label as string}
-              className="rounded-xl border border-white/15 bg-white/[0.07] px-3.5 py-2.5 backdrop-blur"
+              className="rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 dark:border-white/15 dark:bg-white/[0.07]"
             >
               <div className="flex items-center justify-between gap-2">
-                <p className="text-2xl font-black text-white">
+                <p className="text-2xl font-black text-slate-900 dark:text-white">
                   {value as string}
                 </p>
-                <FeatureIcon className="h-5 w-5 text-blue-300" aria-hidden />
+                <FeatureIcon className="h-5 w-5 text-[#4058D0] dark:text-blue-300" aria-hidden />
               </div>
-              <p className="mt-2 text-[11px] font-semibold leading-5 text-blue-100/70">
+              <p className="mt-2 text-[11px] font-semibold leading-5 text-slate-600 dark:text-blue-100/70">
                 {label as string}
               </p>
             </div>
@@ -213,21 +213,21 @@ export default function WritingClient({ kind }: { kind: WritingKind }) {
       <div
         role="status"
         aria-live="polite"
-        className="mt-5 text-center text-xs font-semibold text-blue-100/80"
+        className="mt-5 text-center text-xs font-semibold text-slate-600 dark:text-blue-100/80"
       >
         {status}
       </div>
       {busy && (
-        <div className="mt-6 flex items-center gap-4 rounded-2xl border border-blue-400/20 bg-white/[0.06] p-5">
+        <div className="mt-6 flex items-center gap-4 rounded-2xl border border-blue-200 bg-blue-50/80 p-5 dark:border-blue-400/20 dark:bg-white/[0.06]">
           <BrainCircuit
             aria-hidden
-            className="animate-pulse motion-reduce:animate-none h-6 w-6 shrink-0 text-blue-300"
+            className="animate-pulse motion-reduce:animate-none h-6 w-6 shrink-0 text-[#4058D0] dark:text-blue-300"
           />
           <div>
-            <p className="text-sm font-extrabold text-white">
+            <p className="text-sm font-extrabold text-slate-900 dark:text-white">
               Writing alternatives for your page
             </p>
-            <p className="mt-1 text-xs leading-6 text-slate-300">
+            <p className="mt-1 text-xs leading-6 text-slate-600 dark:text-slate-300">
               You can compare directions, edit locally, and export once the
               options arrive.
             </p>

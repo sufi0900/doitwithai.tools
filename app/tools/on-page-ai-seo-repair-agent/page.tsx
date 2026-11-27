@@ -1,15 +1,15 @@
-﻿import type { Metadata } from "next";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
+import type { Metadata } from "next";
 import Link from "next/link";
-import { Code2, FileCheck2, ShieldCheck, Wrench } from "lucide-react";
+import {
+  Code2,
+  FileCheck2,
+  ShieldCheck,
+  Wrench,
+} from "lucide-react";
 import OnPageRepairAgentClient from "@/features/on-page-repair-agent/OnPageRepairAgentClient";
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import ToolFaq from "@/features/tool-ui/ToolFaq";
 import ToolResources from "@/features/tool-catalog/ToolResources";
-import {
-  ToolHeroBackground,
-  toolHeroHeading,
-  toolHeroSurface,
-} from "@/features/tool-ui/ToolHero";
 
 const pageUrl = "https://doitwithai.tools/tools/on-page-ai-seo-repair-agent";
 const title =
@@ -105,90 +105,18 @@ export default function OnPageAiSeoRepairAgentPage() {
         }}
       />
 
-      <header
-        className={`relative overflow-hidden ${toolHeroSurface} text-white`}
+      <ToolLandingHero
+        slug="on-page-ai-seo-repair-agent"
+        title="Autonomous On-Page AI SEO Repair Agent"
+        description="Move beyond passive SEO checklists. Extract any live URL, diagnose metadata and heading bottlenecks, and automatically compile a ready-to-deploy HTML &lt;head&gt; patch, 50-word Position Zero lead, semantic H1/H2 refactors, and validated JSON-LD schema."
+        categoryLabel="Autonomous SEO Agent Â"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
       >
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">AI Tools</Link>
-            <span>/</span>
-            <span aria-current="page">On-Page AI SEO Repair Agent</span>
-          </nav>
-
-          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                Autonomous SEO Agent Â· Diagnose &amp; Auto-Generate Code Patches
-              </p>
-              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                Autonomous On-Page{" "}
-                <span className={toolHeroHeading}>
-                  AI SEO Repair Agent
-                </span>
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-                Move beyond passive SEO checklists. Extract any live URL,
-                diagnose metadata and heading bottlenecks, and automatically
-                compile a ready-to-deploy HTML <code>&lt;head&gt;</code> patch,
-                50-word Position Zero lead, semantic H1/H2 refactors, and
-                validated JSON-LD schema.
-              </p>
-              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  1-click HTML &lt;head&gt; &amp; JSON-LD patch
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Before/After H1â€“H2 heading refactors
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  50-word Position Zero &amp; Image Alt fixes
-                </span>
-              </div>
-              <PortableToolHeroBar slug="on-page-ai-seo-repair-agent" />
-            </div>
-
-            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
-                4 Autonomous Repair Deliverables
-              </p>
-              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
-                <li>
-                  <strong className="text-emerald-300">
-                    Pixel-Checked Metadata:
-                  </strong>{" "}
-                  Rewrites Title (&lt;580px) and Meta Description for SERP CTR.
-                </li>
-                <li>
-                  <strong className="text-indigo-300">
-                    Position Zero Lead HTML:
-                  </strong>{" "}
-                  50-word semantic summary block for AI Overviews.
-                </li>
-                <li>
-                  <strong className="text-sky-300">
-                    Heading &amp; Alt Patches:
-                  </strong>{" "}
-                  Upgrades vague H2s and writes missing <code>&lt;img alt&gt;</code> tags.
-                </li>
-                <li>
-                  <strong className="text-amber-300">
-                    Drop-In JSON-LD @graph:
-                  </strong>{" "}
-                  TechArticle + FAQPage + Author entity structured data.
-                </li>
-              </ul>
-            </div>
-          </div>
+        <div className="p-4 sm:p-6">
+          <OnPageRepairAgentClient />
         </div>
-      </header>
-
-      <OnPageRepairAgentClient />
+      </ToolLandingHero>
 
       <section
         className={`${section} border-t border-slate-200 dark:border-slate-800`}

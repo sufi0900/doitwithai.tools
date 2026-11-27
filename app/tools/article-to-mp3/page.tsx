@@ -1,5 +1,4 @@
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
-import { ToolHeroBackground, toolHeroHeading, toolHeroSurface } from "@/features/tool-ui/ToolHero";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
 import type { Metadata } from "next";
 import Link from "next/link";
 import ArticlePdfClient from "@/features/article-conversion/ArticlePdfClient";
@@ -127,70 +126,18 @@ export default function Page() {
           __html: JSON.stringify(schema).replace(/</g, "\\u003c"),
         }}
       />
-      <header className="relative overflow-hidden bg-[#291B26] text-white">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -right-24 -top-20 h-80 w-80 rounded-full bg-[#5271ff]/100/20 blur-3xl"
-        />
-        <div className={`${section} relative py-12 sm:py-16`}>
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/tools">Tools</Link>
-            <span aria-hidden>/</span>
-            <Link href="/tools/categories/content-conversion">
-              Content conversion
-            </Link>
-            <span aria-hidden>/</span>
-            <span aria-current="page">Article to MP3</span>
-          </nav>
-          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                Content conversion · Listen and save
-              </p>
-              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                Article to MP3{" "}
-                <span className={toolHeroHeading}>and read aloud</span>
-              </h1>
-              <p className="mt-5 text-base leading-8 text-slate-300">
-                Give a useful article a listening format. Review the text,
-                choose from six English voices, and download an MP3 for offline
-                listening.
-              </p>
-              <div className="mt-6 flex flex-wrap gap-3 text-xs font-semibold text-orange-100">
-                {[
-                  "Real MP3 + WAV",
-                  "6 distinct English voices",
-                  "No voice account needed",
-                ].map((label) => (
-                  <span
-                    key={label}
-                    className="rounded-lg border border-orange-200/25 px-3 py-2"
-                  >
-                    {label}
-                  </span>
-                ))}
-              </div>
-              <PortableToolHeroBar />
-            </div>
-            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 shadow-xl p-6">
-              <h2 className="text-lg font-bold">A simple listening workflow</h2>
-              <ol className="mt-4 space-y-3 text-sm leading-7 text-slate-300">
-                <li>1. Import a URL or paste permitted content</li>
-                <li>2. Choose a starting section and preview an English voice</li>
-                <li>3. Listen, review, and save the MP3</li>
-              </ol>
-              <p className="mt-5 border-t border-orange-200/20 pt-4 text-xs leading-6 text-orange-100/80">
-                Six English voices (US, UK, India, Australia). Up to 20,000
-                selected characters and 20 minutes.
-              </p>
-            </div>
-          </div>
+      <ToolLandingHero
+        slug="article-to-mp3"
+        title="Article to MP3 and read aloud"
+        description={description}
+        categoryLabel="Content Conversion"
+        categoryHref="/tools/categories/content-conversion"
+        workspaceId="tool-studio-workspace"
+      >
+        <div className="p-4 sm:p-6">
+          <ArticlePdfClient format="audio" />
         </div>
-      </header>
-      <ArticlePdfClient format="audio" />
+      </ToolLandingHero>
       <section className={section}>
         <h2 className="text-2xl font-extrabold">
           Listen now or save a reading queue for later

@@ -15,17 +15,10 @@ import {
   Wand2,
 } from "lucide-react";
 import QuoteStatTestimonialCardStudioClient from "@/features/quote-stat-testimonial-card-studio/QuoteStatTestimonialCardStudioClient";
-import HeroAnimatedTestimonialShowcase from "@/features/quote-stat-testimonial-card-studio/HeroAnimatedTestimonialShowcase";
 import { QUOTE_TEMPLATES } from "@/features/quote-stat-testimonial-card-studio/model";
 import ToolFaq from "@/features/tool-ui/ToolFaq";
 import ToolResources from "@/features/tool-catalog/ToolResources";
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
-import {
-  ToolHeroBackground,
-  toolHeroHeading,
-  toolHeroSurface,
-} from "@/features/tool-ui/ToolHero";
-import { PlatformBrandIcon } from "@/features/tool-ui/PlatformBrandIcon";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
 
 const pageUrl =
   "https://doitwithai.tools/tools/quote-stat-testimonial-card-studio";
@@ -377,77 +370,18 @@ export default function QuoteStatTestimonialCardStudioPage() {
         }}
       />
 
-      {/* COMPACT UNIFIED HERO: LEFT SEO & CTA COLUMN + RIGHT FRAMED TESTIMONIAL SHOWCASE */}
-      <header
-        className={`relative overflow-hidden ${toolHeroSurface} text-white`}
+      <ToolLandingHero
+        slug="quote-stat-testimonial-card-studio"
+        title="Free AI Testimonial Card Generator"
+        description={description}
+        categoryLabel="Visual & Social Proof"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
       >
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">Tools</Link>
-            <span>/</span>
-            <span aria-current="page">Free AI Testimonial Card Generator</span>
-          </nav>
-
-          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
-            <div>
-              <div className="mb-3 inline-flex flex-wrap items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-bold text-white backdrop-blur-xs">
-                <PlatformBrandIcon
-                  slugOrText="quote-stat-testimonial-card-studio"
-                  size={18}
-                />
-                <span>
-                  Free AI Testimonial Studio · No Signup · Zero Watermark
-                </span>
-                <span className="inline-flex items-center gap-0.5 text-amber-300">
-                  <Star size={12} fill="currentColor" /> 4.9/5
-                </span>
-              </div>
-
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                AI TESTIMONIAL CARD GENERATOR · CUSTOMER QUOTE GRAPHICS · SOCIAL
-                PROOF
-              </p>
-
-              <h1 className="mt-3 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                Free AI Testimonial Card Generator:{" "}
-                <span className={toolHeroHeading}>
-                  Customer Quote, Photo &amp; Logo Studio
-                </span>
-              </h1>
-
-              <p className="mt-4 max-w-2xl text-base leading-relaxed text-slate-200">
-                Turn any customer review, case-study stat, or blog URL into a
-                studio-grade testimonial card. Upload a customer photo (auto
-                background removal + real-time ring, arch, position &amp; radius
-                controls), add your brand logo and hex colors, choose from{" "}
-                {templateCount} responsive templates, and export HD PNG, SVG, or
-                PDF.
-              </p>
-
-              <PortableToolHeroBar
-                slug="quote-stat-testimonial-card-studio"
-                title="Free AI Testimonial Card Generator"
-                path="/tools/quote-stat-testimonial-card-studio"
-                primaryLabel="Use Tool Now: Create Testimonial Card"
-                workspaceId="tool-studio-workspace"
-              />
-            </div>
-
-            <div>
-              <HeroAnimatedTestimonialShowcase />
-            </div>
-          </div>
+        <div className="p-4 sm:p-6">
+          <QuoteStatTestimonialCardStudioClient />
         </div>
-      </header>
-
-      {/* INTERACTIVE STUDIO WORKSPACE */}
-      <QuoteStatTestimonialCardStudioClient />
+      </ToolLandingHero>
 
       {/* 50-WORD QUICK ANSWER BOX FOR GOOGLE AI OVERVIEWS & AEO */}
       <section className={section}>

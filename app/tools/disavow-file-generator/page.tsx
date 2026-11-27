@@ -1,5 +1,5 @@
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import type { Metadata } from "next";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
 import Link from "next/link";
 import {
   FileCheck2,
@@ -10,11 +10,6 @@ import {
 import DisavowFileGeneratorClient from "@/features/disavow-file-generator/DisavowFileGeneratorClient";
 import ToolFaq from "@/features/tool-ui/ToolFaq";
 import ToolResources from "@/features/tool-catalog/ToolResources";
-import {
-  ToolHeroBackground,
-  toolHeroHeading,
-  toolHeroSurface,
-} from "@/features/tool-ui/ToolHero";
 
 const pageUrl = "https://doitwithai.tools/tools/disavow-file-generator";
 const title =
@@ -129,76 +124,18 @@ export default function DisavowFileGeneratorPage() {
         }}
       />
 
-      <header
-        className={`relative overflow-hidden ${toolHeroSurface} text-white`}
+      <ToolLandingHero
+        slug="disavow-file-generator"
+        title="Google Disavow File Generator & Syntax Validator"
+        description="Turn messy toxic URLs or backlink audit CSVs into a strict, Google Search Console compliant disavow.txt file. Normalize domain: prefixes, merge existing files, and guard against accidental self-disavows."
+        categoryLabel="Off-page SEO"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
       >
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">Tools</Link>
-            <span>/</span>
-            <span aria-current="page">Disavow file generator</span>
-          </nav>
-
-          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                Off-page SEO · Link Spam Cleanup
-              </p>
-              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                Google Disavow File Generator{" "}
-                <span className={toolHeroHeading}>
-                  & Syntax Validator
-                </span>
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-                Turn messy toxic URLs or backlink audit CSVs into a strict,
-                Google Search Console compliant <code>disavow.txt</code> file.
-                Normalize <code>domain:</code> prefixes, merge existing files,
-                and guard against accidental self-disavows.
-              </p>
-              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Strict GSC UTF-8 spec
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Existing disavow.txt merger
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Self-disavow & platform guard
-                </span>
-              </div>
-              <PortableToolHeroBar />
-            </div>
-
-            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
-                GSC Spec Checkpoints
-              </p>
-              <div className="mt-4 space-y-3 font-mono text-xs">
-                <div className="rounded-lg bg-slate-950/80 p-3 text-emerald-300">
-                  <p className="text-slate-400"># Valid domain-level syntax</p>
-                  <p>domain:spam-network-example.xyz</p>
-                  <p className="mt-2 text-slate-400"># Valid single-URL syntax</p>
-                  <p>https://example.org/spam-comment-page</p>
-                </div>
-                <p className="font-sans text-xs text-slate-300">
-                  Strips invalid <code>domain:https://</code> prefixes,
-                  deduplicates covered URLs, and verifies the 2 MB / 100k-line
-                  cap.
-                </p>
-              </div>
-            </div>
-          </div>
+        <div className="p-4 sm:p-6">
+          <DisavowFileGeneratorClient />
         </div>
-      </header>
-
-      <DisavowFileGeneratorClient />
+      </ToolLandingHero>
 
       <section
         className={`${section} border-t border-slate-200 dark:border-slate-800`}

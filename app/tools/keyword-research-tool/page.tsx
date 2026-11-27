@@ -1,14 +1,9 @@
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import React, { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import Client from "@/features/keyword-research/Client";
 import ToolResources from "@/features/tool-catalog/ToolResources";
-import {
-  ToolHeroBackground,
-  toolHeroHeading,
-  toolHeroSurface,
-} from "@/features/tool-ui/ToolHero";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
 const pageUrl = "https://doitwithai.tools/tools/keyword-research-tool";
 const description =
   "Explore keyword ideas, long-tail questions, likely intent, and proposed page groups. Import keyword metrics, build a shortlist, and export your research.";
@@ -100,72 +95,18 @@ export default function Page() {
           }).replace(/</g, "\\u003c"),
         }}
       />
-      <section className={`relative overflow-hidden ${toolHeroSurface} text-white`}
+      <ToolLandingHero
+        slug="keyword-research-tool"
+        title="Free AI Keyword Research & Planning Tool"
+        description={description}
+        categoryLabel="AI SEO Tools"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
       >
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">Tools</Link>
-            <span>/</span>
-            <span aria-current="page">Keyword Research Tool</span>
-          </nav>
-
-          <div className="mb-8 grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                AI SEO · Seed Topic Expansion & Intent Discovery
-              </p>
-              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                Free AI Keyword 
-                <span className={toolHeroHeading}>
-                  Research & Planning Tool
-                </span>
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-                Expand seed topics or extract keyword themes from any competitor URL. Organize queries by search intent, buyer stage, and page format—and merge your own CSV metrics.
-              </p>
-              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Competitor URL or seed input
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Intent & format classification
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  CSV metric import & export
-                </span>
-              </div>
-              <PortableToolHeroBar />
-            </div>
-
-            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
-                4 Steps From Seed to Content Plan
-              </p>
-              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
-                <li>
-                  <strong className="text-emerald-300">Topic Expansion:</strong> Generates informational, commercial, and long-tail query angles.
-                </li>
-                <li>
-                  <strong className="text-indigo-300">URL Extraction:</strong> Pulls focus topics directly from any live competitor article URL.
-                </li>
-                <li>
-                  <strong className="text-sky-300">Intent Filtering:</strong> Filters ideas by reader task, funnel stage, and page format.
-                </li>
-                <li>
-                  <strong className="text-amber-300">Shortlist Export:</strong> Save priority keywords and export a clean CSV planning sheet.
-                </li>
-              </ul>
-            </div>
-          </div>
+        <div className="p-4 sm:p-6">
           <Client />
         </div>
-      </section>
+      </ToolLandingHero>
       <div className="mx-auto max-w-6xl space-y-12 px-4 py-14 sm:px-6">
         <section>
           <h2 className="text-3xl font-bold">

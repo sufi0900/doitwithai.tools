@@ -1,15 +1,14 @@
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import type { Metadata } from "next";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
 import Link from "next/link";
-import { FileText, Film, Sparkles } from "lucide-react";
+import {
+  FileText,
+  Film,
+  Sparkles,
+} from "lucide-react";
 import VideoTranscriptToBlogClient from "@/features/video-transcript-to-blog/VideoTranscriptToBlogClient";
 import ToolFaq from "@/features/tool-ui/ToolFaq";
 import ToolResources from "@/features/tool-catalog/ToolResources";
-import {
-  ToolHeroBackground,
-  toolHeroHeading,
-  toolHeroSurface,
-} from "@/features/tool-ui/ToolHero";
 import { PlatformBrandIcon } from "@/features/tool-ui/PlatformBrandIcon";
 
 const pageUrl = "https://doitwithai.tools/tools/video-transcript-to-blog";
@@ -105,73 +104,18 @@ export default function VideoTranscriptToBlogPage() {
         }}
       />
 
-      <header
-        className={`relative overflow-hidden ${toolHeroSurface} text-white`}
+      <ToolLandingHero
+        slug="video-transcript-to-blog"
+        title="YouTube Transcript to SEO Blog Post Converter"
+        description="Turn raw YouTube transcripts, webinar recordings, or timestamped voice notes into a structured SEO article with H2 chapters, a 48-word Featured Snippet summary, key takeaway bullets, and FAQs."
+        categoryLabel="Content Conversion"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
       >
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">Tools</Link>
-            <span>/</span>
-            <span aria-current="page">Video Transcript to Blog</span>
-          </nav>
-
-          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
-            <div>
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-bold text-white backdrop-blur-xs">
-                <PlatformBrandIcon slugOrText="video-transcript-to-blog" size={18} />
-                <span>Official Platform Studio</span>
-              </div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                Content Conversion · Video-to-Article Repurposing
-              </p>
-              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                YouTube Transcript to{" "}
-                <span className={toolHeroHeading}>
-                  SEO Blog Post Converter
-                </span>
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-                Turn raw YouTube transcripts, webinar recordings, or timestamped
-                voice notes into a structured SEO article with H2 chapters, a
-                48-word Featured Snippet summary, key takeaway bullets, and
-                FAQs.
-              </p>
-              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Strips Spoken Filler Words
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Timestamps → H2 Chapters
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Markdown &amp; HTML Export
-                </span>
-              </div>
-              <PortableToolHeroBar />
-            </div>
-
-            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
-                From Spoken Transcript to Ranked Guide
-              </p>
-              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
-                <li>1. Removes &ldquo;um&rdquo;, &ldquo;uh&rdquo;, and spoken repetition</li>
-                <li>2. Builds a 48-word Featured Snippet summary</li>
-                <li>3. Converts timestamp chapters into H2 sections</li>
-                <li>4. Exports clean Markdown (.MD) or semantic HTML</li>
-              </ul>
-            </div>
-          </div>
+        <div className="p-4 sm:p-6">
+          <VideoTranscriptToBlogClient />
         </div>
-      </header>
-
-      <VideoTranscriptToBlogClient />
+      </ToolLandingHero>
 
       <section
         className={`${section} border-t border-slate-200 dark:border-slate-800`}

@@ -1,15 +1,15 @@
-﻿import type { Metadata } from "next";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
+import type { Metadata } from "next";
 import Link from "next/link";
-import { Mail, MessageSquare, Share2, ShieldCheck } from "lucide-react";
+import {
+  Mail,
+  MessageSquare,
+  Share2,
+  ShieldCheck,
+} from "lucide-react";
 import OmnichannelMarketingAgentClient from "@/features/omnichannel-marketing-agent/OmnichannelMarketingAgentClient";
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import ToolFaq from "@/features/tool-ui/ToolFaq";
 import ToolResources from "@/features/tool-catalog/ToolResources";
-import {
-  ToolHeroBackground,
-  toolHeroHeading,
-  toolHeroSurface,
-} from "@/features/tool-ui/ToolHero";
 
 const pageUrl = "https://doitwithai.tools/tools/omnichannel-marketing-agent";
 const title =
@@ -106,89 +106,18 @@ export default function OmnichannelMarketingAgentPage() {
         }}
       />
 
-      <header
-        className={`relative overflow-hidden ${toolHeroSurface} text-white`}
+      <ToolLandingHero
+        slug="omnichannel-marketing-agent"
+        title="Omni-Channel Content Repurposing & Marketing Agent"
+        description="Turn a single blog guide or free tool into a synchronized, spam-safe 4-channel distribution campaignâ€”complete with a LinkedIn post & carousel outline, 5-post X thread, value-first Reddit community reply, and email newsletter."
+        categoryLabel="Safe Digital Marketing Agent Â"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
       >
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">AI Tools</Link>
-            <span>/</span>
-            <span aria-current="page">Omni-Channel Marketing Agent</span>
-          </nav>
-
-          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                Safe Digital Marketing Agent Â· Hub-and-Spoke Distribution Studio
-              </p>
-              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                Omni-Channel Content{" "}
-                <span className={toolHeroHeading}>
-                  Repurposing &amp; Marketing Agent
-                </span>
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-                Turn a single blog guide or free tool into a synchronized,
-                spam-safe 4-channel distribution campaignâ€”complete with a
-                LinkedIn post &amp; carousel outline, 5-post X thread,
-                value-first Reddit community reply, and email newsletter.
-              </p>
-              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  LinkedIn post + 6-slide carousel
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Shadowban-safe Reddit answers
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  X thread + Mailchimp newsletter
-                </span>
-              </div>
-              <PortableToolHeroBar slug="omnichannel-marketing-agent" />
-            </div>
-
-            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
-                1 Hub URL â†’ 4 Native Channel Assets
-              </p>
-              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
-                <li>
-                  <strong className="text-emerald-300">
-                    LinkedIn Authority:
-                  </strong>{" "}
-                  Hook-driven post + 6-slide document carousel breakdown.
-                </li>
-                <li>
-                  <strong className="text-indigo-300">
-                    X / Twitter Thread:
-                  </strong>{" "}
-                  5 character-checked posts with clear practitioner takeaways.
-                </li>
-                <li>
-                  <strong className="text-sky-300">
-                    Reddit Community Reply:
-                  </strong>{" "}
-                  90% standalone answer value so moderators welcome your post.
-                </li>
-                <li>
-                  <strong className="text-amber-300">
-                    Email Newsletter:
-                  </strong>{" "}
-                  3 subject line options + scannable subscriber edition.
-                </li>
-              </ul>
-            </div>
-          </div>
+        <div className="p-4 sm:p-6">
+          <OmnichannelMarketingAgentClient />
         </div>
-      </header>
-
-      <OmnichannelMarketingAgentClient />
+      </ToolLandingHero>
 
       <section
         className={`${section} border-t border-slate-200 dark:border-slate-800`}

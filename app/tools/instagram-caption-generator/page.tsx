@@ -1,15 +1,14 @@
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import type { Metadata } from "next";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
 import Link from "next/link";
-import { Layers, Sparkles, Hash } from "lucide-react";
+import {
+  Layers,
+  Sparkles,
+  Hash,
+} from "lucide-react";
 import InstagramCaptionGeneratorClient from "@/features/instagram-caption-generator/InstagramCaptionGeneratorClient";
 import ToolFaq from "@/features/tool-ui/ToolFaq";
 import ToolResources from "@/features/tool-catalog/ToolResources";
-import {
-  ToolHeroBackground,
-  toolHeroHeading,
-  toolHeroSurface,
-} from "@/features/tool-ui/ToolHero";
 import { PlatformBrandIcon } from "@/features/tool-ui/PlatformBrandIcon";
 
 const pageUrl = "https://doitwithai.tools/tools/instagram-caption-generator";
@@ -100,61 +99,18 @@ export default function InstagramCaptionGeneratorPage() {
         }}
       />
 
-      <header
-        className={`relative overflow-hidden ${toolHeroSurface} text-white`}
+      <ToolLandingHero
+        slug="instagram-caption-generator"
+        title="Instagram Caption & Carousel Slide Studio"
+        description="Repurpose any blog URL or topic into a 5-slide vector carousel deck across 10 color themes with hover PNG/SVG downloads, multi-page PDF export, and 125-character hook previews."
+        categoryLabel="Social Media Studio"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
       >
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">Tools</Link>
-            <span>/</span>
-            <span aria-current="page">Instagram Caption Generator</span>
-          </nav>
-
-          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
-            <div>
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-bold text-white backdrop-blur-xs">
-                <PlatformBrandIcon slugOrText="instagram-caption-generator" size={24} />
-                <span>Instagram Studio · 5 Rendered Vector Slides</span>
-              </div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                Social Media Studio · 1-Click Carousels &amp; Vector Decks
-              </p>
-              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                Instagram Caption &amp;{" "}
-                <span className={toolHeroHeading}>
-                  Carousel Slide Studio
-                </span>
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-                Repurpose any blog URL or topic into a 5-slide vector carousel
-                deck across 10 color themes with hover PNG/SVG downloads,
-                multi-page PDF export, and 125-character hook previews.
-              </p>
-              <PortableToolHeroBar />
-            </div>
-
-            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
-                Complete 1-Click Carousel Package
-              </p>
-              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
-                <li>1. 1-Click URL Extraction with Sub-Topic Switcher</li>
-                <li>2. 5 Rendered 1080×1080 Vector Slide Graphics</li>
-                <li>3. 10 Curated Color Themes + Custom Color Pickers</li>
-                <li>4. Multi-Page Carousel PDF + PNG Slide Downloads</li>
-              </ul>
-            </div>
-          </div>
+        <div className="p-4 sm:p-6">
+          <InstagramCaptionGeneratorClient />
         </div>
-      </header>
-
-      <InstagramCaptionGeneratorClient />
+      </ToolLandingHero>
 
       <section
         className={`${section} border-t border-slate-200 dark:border-slate-800`}

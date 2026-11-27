@@ -1,13 +1,8 @@
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import type { Metadata } from "next";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
 import Link from "next/link";
 import PlannerClient from "@/features/digital-pr/PlannerClient";
 import ToolFaq from "@/features/tool-ui/ToolFaq";
-import {
-  ToolHeroBackground,
-  toolHeroHeading,
-  toolHeroSurface,
-} from "@/features/tool-ui/ToolHero";
 const pageUrl =
   "https://doitwithai.tools/tools/digital-pr-linkable-asset-planner";
 const title = "Digital PR and Linkable Asset Planner | Free Campaign Brief";
@@ -117,70 +112,18 @@ export default function Page() {
           __html: JSON.stringify(schema).replace(/</g, "\\u003c"),
         }}
       />
-      <header
-        className={`relative overflow-hidden ${toolHeroSurface} text-white`}
+      <ToolLandingHero
+        slug="digital-pr-linkable-asset-planner"
+        title="Digital PR and Linkable Asset Planner start with a reason to cite"
+        description="Turn a reader problem and your evidence access into a practical campaign brief. Plan the research, asset, review, and outreach before production begins."
+        categoryLabel="Off-page SEO"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
       >
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">Tools</Link>
-            <span>/</span>
-            <span aria-current="page">Digital PR planner</span>
-          </nav>
-          <div className="grid items-center gap-8 lg:grid-cols-[1.3fr_0.8fr]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                Off-page SEO · Guided campaign planning
-              </p>
-              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                Digital PR and Linkable Asset Planner{" "}
-                <span className={toolHeroHeading}>
-                  start with a reason to cite
-                </span>
-              </h1>
-              <p className="mt-5 text-base leading-8 text-slate-300">
-                Turn a reader problem and your evidence access into a practical
-                campaign brief. Plan the research, asset, review, and outreach
-                before production begins.
-              </p>
-              <div className="mt-6 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
-                {[
-                  "Transparent format recommendation",
-                  "Editable brief and action list",
-                  "DOCX, Markdown, and CSV",
-                ].map((label) => (
-                  <span
-                    key={label}
-                    className="rounded-lg border border-white/15 px-3 py-2"
-                  >
-                    {label}
-                  </span>
-                ))}
-              </div>
-              <PortableToolHeroBar />
-            </div>
-            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6">
-              <p className="text-xs font-bold uppercase tracking-wide text-[#b4c3ff]">
-                A useful question comes first
-              </p>
-              <p className="mt-5 text-lg leading-8">
-                What can you help these readers understand, decide, or do
-                better?
-              </p>
-              <p className="mt-4 text-sm leading-7 text-slate-300">
-                Define the value, check the evidence, and package something an
-                editor can review.
-              </p>
-            </div>
-          </div>
+        <div className="p-4 sm:p-6">
+          <PlannerClient />
         </div>
-      </header>
-      <PlannerClient />
+      </ToolLandingHero>
       <section className={section}>
         <h2 className="text-2xl font-extrabold">
           How to plan a linkable asset

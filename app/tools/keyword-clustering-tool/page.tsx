@@ -1,10 +1,5 @@
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
-import {
-  ToolHeroBackground,
-  toolHeroSurface,
-  toolHeroHeading,
-} from "@/features/tool-ui/ToolHero";
 import type { Metadata } from "next";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
 import Link from "next/link";
 import KeywordClusteringClient from "@/features/keyword-clustering/KeywordClusteringClient";
 import ToolResources from "@/features/tool-catalog/ToolResources";
@@ -141,86 +136,18 @@ export default function Page() {
           __html: JSON.stringify(schema).replace(/</g, "\\u003c"),
         }}
       />
-      <div className={`relative overflow-hidden ${toolHeroSurface} text-white`}>
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">Tools</Link>
-            <span>/</span>
-            <span aria-current="page">Keyword Clustering Tool</span>
-          </nav>
-
-          <div className="mb-8 grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                AI SEO · KEYWORD GROUPING &amp; SEARCH-INTENT CLUSTERING
-              </p>
-              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                Keyword Clustering Tool:{" "}
-                <span className={toolHeroHeading}>
-                  Group Your Keywords by Search Intent
-                </span>
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-                Paste a raw keyword list or upload a CSV to group related
-                searches into single-page topic clusters—so you know when to
-                write one comprehensive guide versus separate pages.
-              </p>
-              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Paste list or import CSV/TSV
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  AI Intent + Instant Stem Grouping
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Split, merge &amp; export briefs
-                </span>
-              </div>
-              <PortableToolHeroBar />
-            </div>
-
-            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
-                4 Outputs in Every Cluster Plan
-              </p>
-              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
-                <li>
-                  <strong className="text-emerald-300">
-                    Primary Hub Keyword:
-                  </strong>{" "}
-                  Selects a clear representative target query for each topic
-                  group.
-                </li>
-                <li>
-                  <strong className="text-indigo-300">
-                    Shared Reader Task:
-                  </strong>{" "}
-                  Explains why the grouped phrases belong on the same page.
-                </li>
-                <li>
-                  <strong className="text-sky-300">Page Format &amp; Focus:</strong>{" "}
-                  Recommends whether the cluster needs a guide, comparison, or
-                  interactive tool.
-                </li>
-                <li>
-                  <strong className="text-amber-300">
-                    Editable Workspace:
-                  </strong>{" "}
-                  Move, split, merge, and export clusters as CSV, JSON, or
-                  Markdown.
-                </li>
-              </ul>
-            </div>
-          </div>
+      <ToolLandingHero
+        slug="keyword-clustering-tool"
+        title="Keyword Clustering Tool: Group Your Keywords by Search Intent"
+        description="Paste a raw keyword list or upload a CSV to group related searches into single-page topic clusters—so you know when to write one comprehensive guide versus separate pages."
+        categoryLabel="AI SEO"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
+      >
+        <div className="p-4 sm:p-6">
           <KeywordClusteringClient />
         </div>
-      </div>
+      </ToolLandingHero>
 
       <div className="mx-auto max-w-6xl space-y-20 px-4 py-16 sm:px-6 lg:px-8">
         {/* CLEAR, NATURAL EXPLANATION: KEYWORD GROUPING VS KEYWORD CLUSTERING */}

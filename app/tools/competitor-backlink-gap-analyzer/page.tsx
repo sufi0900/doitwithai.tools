@@ -1,15 +1,14 @@
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import type { Metadata } from "next";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
 import Link from "next/link";
-import { FileSearch, GitCompareArrows, ListChecks } from "lucide-react";
+import {
+  FileSearch,
+  GitCompareArrows,
+  ListChecks,
+} from "lucide-react";
 import GapClient from "@/features/backlink-gap/GapClient";
 import ToolFaq from "@/features/tool-ui/ToolFaq";
 import ToolResources from "@/features/tool-catalog/ToolResources";
-import {
-  ToolHeroBackground,
-  toolHeroHeading,
-  toolHeroSurface,
-} from "@/features/tool-ui/ToolHero";
 
 const pageUrl =
   "https://doitwithai.tools/tools/competitor-backlink-gap-analyzer";
@@ -153,100 +152,18 @@ export default function Page() {
           __html: JSON.stringify(schema).replace(/</g, "\\u003c"),
         }}
       />
-      <header
-        className={`relative overflow-hidden ${toolHeroSurface} text-white`}
+      <ToolLandingHero
+        slug="competitor-backlink-gap-analyzer"
+        title="Find competitor backlink gaps you can actually review"
+        description="Compare supplied backlink exports, uncover referring-source overlap, and turn apparent gaps into an evidence-based shortlist."
+        categoryLabel="Off-page SEO"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
       >
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">Tools</Link>
-            <span>/</span>
-            <span aria-current="page">Competitor backlink gaps</span>
-          </nav>
-          <div className="grid items-center gap-8 lg:grid-cols-[1.25fr_0.9fr]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                Off-page SEO · Competitor backlink gap analyzer
-              </p>
-              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                Find competitor backlink gaps{" "}
-                <span className={toolHeroHeading}>you can actually review</span>
-              </h1>
-              <p className="mt-5 text-base leading-8 text-slate-300">
-                Compare supplied backlink exports, uncover referring-source
-                overlap, and turn apparent gaps into an evidence-based
-                shortlist.
-              </p>
-              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Your site + 5 competitors
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Private browser processing
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Source-level evidence
-                </span>
-              </div>
-              <PortableToolHeroBar />
-            </div>
-            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
-                Illustrative overlap
-              </p>
-              <table className="mt-5 w-full text-left text-xs leading-7">
-                <caption className="sr-only">
-                  Fictional referring-domain comparison
-                </caption>
-                <thead>
-                  <tr className="border-b border-slate-700 text-slate-400">
-                    <th scope="col" className="pb-3">
-                      Source
-                    </th>
-                    <th scope="col" className="pb-3">
-                      You
-                    </th>
-                    <th scope="col" className="pb-3">
-                      A
-                    </th>
-                    <th scope="col" className="pb-3">
-                      B
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <th scope="row" className="pt-3 font-medium">
-                      journal.example
-                    </th>
-                    <td className="pt-3 text-amber-200">Absent*</td>
-                    <td className="pt-3 text-emerald-300">✓</td>
-                    <td className="pt-3 text-emerald-300">✓</td>
-                  </tr>
-                  <tr>
-                    <th scope="row" className="pt-3 font-medium">
-                      shared.example
-                    </th>
-                    <td className="pt-3 text-emerald-300">✓</td>
-                    <td className="pt-3 text-emerald-300">✓</td>
-                    <td className="pt-3 text-slate-400">0</td>
-                  </tr>
-                </tbody>
-              </table>
-              <p className="mt-5 border-t border-slate-700 pt-4 text-xs leading-6 text-slate-400">
-                *Absent from the supplied export. Real backlink coverage still
-                needs review.
-              </p>
-            </div>
-          </div>
+        <div className="p-4 sm:p-6">
+          <GapClient />
         </div>
-      </header>
-      <GapClient />
+      </ToolLandingHero>
       <section
         className={`${section} border-t border-slate-200 dark:border-slate-800`}
       >

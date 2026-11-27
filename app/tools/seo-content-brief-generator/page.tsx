@@ -1,10 +1,5 @@
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
-import {
-  ToolHeroBackground,
-  toolHeroHeading,
-  toolHeroSurface,
-} from "@/features/tool-ui/ToolHero";
 import type { Metadata } from "next";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
 import { Suspense } from "react";
 import Link from "next/link";
 import ContentBriefClient from "@/features/content-brief/Client";
@@ -88,72 +83,18 @@ export default function Page() {
           __html: JSON.stringify(schema).replace(/</g, "\\u003c"),
         }}
       />
-      <section className={`relative overflow-hidden ${toolHeroSurface} text-white`}
+      <ToolLandingHero
+        slug="seo-content-brief-generator"
+        title="AI-Assisted SEO Content Brief Generator"
+        description="Turn a target keyword, audience, and topic into a structured writer handoff—complete with search intent, H2/H3 section plan, reader questions, and internal link targets."
+        categoryLabel="AI SEO"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
       >
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">Tools</Link>
-            <span>/</span>
-            <span aria-current="page">SEO content brief generator</span>
-          </nav>
-
-          <div className="mb-8 grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                AI SEO · Editorial Handoff & Outline Brief Builder
-              </p>
-              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                AI-Assisted SEO 
-                <span className={toolHeroHeading}>
-                  Content Brief Generator
-                </span>
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-                Turn a target keyword, audience, and topic into a structured writer handoff—complete with search intent, H2/H3 section plan, reader questions, and internal link targets.
-              </p>
-              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Instant template or AI draft
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Editable writer handoff
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Markdown brief download
-                </span>
-              </div>
-              <PortableToolHeroBar />
-            </div>
-
-            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
-                What Every Content Brief Includes
-              </p>
-              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
-                <li>
-                  <strong className="text-emerald-300">Search Intent & Goal:</strong> Defines the primary reader task, target persona, and page angle.
-                </li>
-                <li>
-                  <strong className="text-indigo-300">Heading Architecture:</strong> Structured H2/H3 outline with talking points for each section.
-                </li>
-                <li>
-                  <strong className="text-sky-300">Evidence Checklist:</strong> Specifies original examples, data points, and claims to verify.
-                </li>
-                <li>
-                  <strong className="text-amber-300">Internal Link Plan:</strong> Maps relevant existing URLs and anchor concepts to include.
-                </li>
-              </ul>
-            </div>
-          </div>
+        <div className="p-4 sm:p-6">
           <ContentBriefClient />
         </div>
-      </section>
+      </ToolLandingHero>
       <div className="mx-auto max-w-6xl space-y-12 px-4 py-16 sm:px-6">
         {sections.map(([heading, text]) => (
           <section key={heading}>

@@ -1,10 +1,5 @@
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
-import {
-  ToolHeroBackground,
-  toolHeroSurface,
-  toolHeroHeading,
-} from "@/features/tool-ui/ToolHero";
 import type { Metadata } from "next";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
 import Link from "next/link";
 import ExcelSeoReportClient from "@/features/excel-seo-report-generator/ExcelSeoReportClient";
 import ToolResources from "@/features/tool-catalog/ToolResources";
@@ -163,71 +158,18 @@ export default function ExcelSeoReportGeneratorPage() {
           __html: JSON.stringify(schema).replace(/</g, "\\u003c"),
         }}
       />
-      <div className={`relative overflow-hidden ${toolHeroSurface} text-white`}>
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">Tools</Link>
-            <span>/</span>
-            <span aria-current="page">
-              Excel SEO Tool &amp; Report Generator
-            </span>
-          </nav>
-
-          <div className="mb-8 grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                EXCEL SEO WORKFLOWS · LOOKER STUDIO &amp; CLIENT AUDIT REPORTS
-              </p>
-              <h1 className={toolHeroHeading}>
-                Free Excel SEO Tool &amp; Website Analysis Report Generator
-              </h1>
-              <p className="mt-4 max-w-2xl text-base leading-relaxed text-slate-200">
-                Turn raw Search Console exports into{" "}
-                <strong>tested Excel &amp; Google Sheets SEO formulas</strong>,{" "}
-                <strong>
-                  Looker Studio (Google Data Studio) ranking fields
-                </strong>
-                , and a{" "}
-                <strong>
-                  print-ready executive SEO website analysis report
-                </strong>
-                .
-              </p>
-              <div className="mt-5">
-                <PortableToolHeroBar slug="excel-seo-report-generator" />
-              </div>
-            </div>
-
-            <div className="rounded-3xl border border-white/15 bg-slate-900/75 p-5 shadow-2xl backdrop-blur-md">
-              <p className="text-xs font-bold uppercase tracking-wider text-blue-300">
-                Built for Analysts, Founders &amp; Agencies
-              </p>
-              <ul className="mt-3 space-y-2.5 text-xs leading-6 text-slate-200">
-                <li>
-                  • <strong>Excel &amp; Sheets Formulas</strong>: Instant
-                  Intent, Striking-Distance CTR &amp; KGR formulas.
-                </li>
-                <li>
-                  • <strong>Looker Studio Calculated Fields</strong>: Copy-paste{" "}
-                  <code>CASE WHEN</code> ranking &amp; intent buckets.
-                </li>
-                <li>
-                  • <strong>Print-Ready Audit Report</strong>: 1-click PDF print
-                  or Markdown/CSV client handoff.
-                </li>
-              </ul>
-            </div>
-          </div>
-
+      <ToolLandingHero
+        slug="excel-seo-report-generator"
+        title="Free Excel SEO Tool & Website Analysis Report Generator"
+        description="Turn raw Search Console exports into tested Excel & Google Sheets SEO formulas , Looker Studio (Google Data Studio) ranking fields , and a print-ready executive SEO website analysis report ."
+        categoryLabel="EXCEL SEO WORKFLOWS"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
+      >
+        <div className="p-4 sm:p-6">
           <ExcelSeoReportClient />
         </div>
-      </div>
+      </ToolLandingHero>
 
       <div className="mx-auto max-w-6xl space-y-20 px-4 py-16 sm:px-6 lg:px-8">
         {/* 50-WORD QUICK ANSWER */}

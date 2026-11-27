@@ -1,15 +1,15 @@
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import type { Metadata } from "next";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
 import Link from "next/link";
-import { Award, Lightbulb, Sparkles, Table2 } from "lucide-react";
+import {
+  Award,
+  Lightbulb,
+  Sparkles,
+  Table2,
+} from "lucide-react";
 import InformationGainAuditorClient from "@/features/information-gain-auditor/InformationGainAuditorClient";
 import ToolFaq from "@/features/tool-ui/ToolFaq";
 import ToolResources from "@/features/tool-catalog/ToolResources";
-import {
-  ToolHeroBackground,
-  toolHeroHeading,
-  toolHeroSurface,
-} from "@/features/tool-ui/ToolHero";
 
 const pageUrl = "https://doitwithai.tools/tools/information-gain-auditor";
 const title =
@@ -104,71 +104,18 @@ export default function InformationGainAuditorPage() {
         }}
       />
 
-      <header
-        className={`relative overflow-hidden ${toolHeroSurface} text-white`}
+      <ToolLandingHero
+        slug="information-gain-auditor"
+        title="Information Gain & Originality Scorer"
+        description="Compare your draft against competing articles to measure net-new entities, quantitative proof points, practitioner testing evidence, and unique subheadings—while stripping out generic AI filler."
+        categoryLabel="On-page SEO"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
       >
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">Tools</Link>
-            <span>/</span>
-            <span aria-current="page">Information gain auditor</span>
-          </nav>
-
-          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                On-page SEO · Content Differentiation & GEO Value
-              </p>
-              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                Information Gain &{" "}
-                <span className={toolHeroHeading}>
-                  Originality Scorer
-                </span>
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-                Compare your draft against competing articles to measure net-new
-                entities, quantitative proof points, practitioner testing
-                evidence, and unique subheadings—while stripping out generic AI
-                filler.
-              </p>
-              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  6 originality dimensions
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  AI-cliché & fluff detector
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  CSV & DOCX editorial briefs
-                </span>
-              </div>
-              <PortableToolHeroBar />
-            </div>
-
-            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
-                6 Signals of High Information Gain
-              </p>
-              <ul className="mt-4 space-y-2 text-xs text-slate-300">
-                <li>✓ Net-new named entities absent from competitors</li>
-                <li>✓ Concrete numbers, percentages & sample sizes</li>
-                <li>✓ First-hand testing & practitioner observations</li>
-                <li>✓ Original comparison tables & exhibits</li>
-                <li>✓ Contrarian / edge-case H2 subheadings</li>
-                <li>✓ Zero generic cliché intros</li>
-              </ul>
-            </div>
-          </div>
+        <div className="p-4 sm:p-6">
+          <InformationGainAuditorClient />
         </div>
-      </header>
-
-      <InformationGainAuditorClient />
+      </ToolLandingHero>
 
       <section
         className={`${section} border-t border-slate-200 dark:border-slate-800`}

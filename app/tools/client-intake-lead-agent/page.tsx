@@ -1,15 +1,15 @@
-﻿import type { Metadata } from "next";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
+import type { Metadata } from "next";
 import Link from "next/link";
-import { ListChecks, MessageSquare, ShieldCheck, Target } from "lucide-react";
+import {
+  ListChecks,
+  MessageSquare,
+  ShieldCheck,
+  Target,
+} from "lucide-react";
 import ClientIntakeLeadAgentClient from "@/features/client-intake-lead-agent/ClientIntakeLeadAgentClient";
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import ToolFaq from "@/features/tool-ui/ToolFaq";
 import ToolResources from "@/features/tool-catalog/ToolResources";
-import {
-  ToolHeroBackground,
-  toolHeroHeading,
-  toolHeroSurface,
-} from "@/features/tool-ui/ToolHero";
 
 const pageUrl = "https://doitwithai.tools/tools/client-intake-lead-agent";
 const title =
@@ -104,90 +104,18 @@ export default function ClientIntakeLeadAgentPage() {
         }}
       />
 
-      <header
-        className={`relative overflow-hidden ${toolHeroSurface} text-white`}
+      <ToolLandingHero
+        slug="client-intake-lead-agent"
+        title="B2B Buyer-Fit & Client Intake AI Agent"
+        description="Enter your service offer and target buyerâ€”our autonomous sales agent generates a 100-point Ideal Buyer Fit (ICP) Scoring Rubric, a 5-step interactive Client Intake & Qualification Flow, onboarding & AI voice scripts, and a downloadable intake bot widget."
+        categoryLabel="AI SEO Tools"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
       >
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">AI Tools</Link>
-            <span>/</span>
-            <span aria-current="page">B2B Buyer-Fit &amp; Client Intake Agent</span>
-          </nav>
-
-          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                B2B Lead-Gen, ICP Scoring &amp; Voice/Chat Qualification Studio
-              </p>
-              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                B2B Buyer-Fit &amp;{" "}
-                <span className={toolHeroHeading}>
-                  Client Intake AI Agent
-                </span>
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-                Enter your service offer and target buyerâ€”our autonomous sales
-                agent generates a 100-point Ideal Buyer Fit (ICP) Scoring
-                Rubric, a 5-step interactive Client Intake &amp; Qualification
-                Flow, onboarding &amp; AI voice scripts, and a downloadable
-                intake bot widget.
-              </p>
-              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  100-Point ICP Fit Rubric
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  5-Step Client Intake Flow
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Voice Scripts + HTML Bot Widget
-                </span>
-              </div>
-              <PortableToolHeroBar slug="client-intake-lead-agent" />
-            </div>
-
-            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
-                1 Service Offer â†’ Complete Qualification Engine
-              </p>
-              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
-                <li>
-                  <strong className="text-emerald-300">
-                    1. ICP Buyer-Fit Rubric:
-                  </strong>{" "}
-                  4-pillar scoring matrix with red-flag disqualifiers.
-                </li>
-                <li>
-                  <strong className="text-indigo-300">
-                    2. 5-Step Intake Flow:
-                  </strong>{" "}
-                  Conversational prompts that route Tier-A leads to your calendar.
-                </li>
-                <li>
-                  <strong className="text-sky-300">
-                    3. Onboarding &amp; Voice Scripts:
-                  </strong>{" "}
-                  First-message best practices + AI voice qualification prompt.
-                </li>
-                <li>
-                  <strong className="text-amber-300">
-                    4. Embeddable Intake Bot:
-                  </strong>{" "}
-                  Downloadable HTML/JS qualification calculator widget.
-                </li>
-              </ul>
-            </div>
-          </div>
+        <div className="p-4 sm:p-6">
+          <ClientIntakeLeadAgentClient />
         </div>
-      </header>
-
-      <ClientIntakeLeadAgentClient />
+      </ToolLandingHero>
 
       <section
         className={`${section} border-t border-slate-200 dark:border-slate-800`}

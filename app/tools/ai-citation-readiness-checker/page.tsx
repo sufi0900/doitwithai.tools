@@ -1,19 +1,8 @@
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
-import {
-  ToolHeroBackground,
-  toolHeroSurface,
-  toolHeroHeading,
-} from "@/features/tool-ui/ToolHero";
 import ToolResources from "@/features/tool-catalog/ToolResources";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
 import type { Metadata } from "next";
 import Link from "next/link";
-import {
-  ArrowRight,
-  CheckCircle2,
-  ListChecks,
-  ShieldCheck,
-  Sparkles,
-} from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import CitationReadinessClient from "@/features/citation-readiness/CitationReadinessClient";
 import Methodology from "@/features/citation-readiness/Methodology";
 import CitationReadinessEducation from "@/features/citation-readiness/CitationReadinessEducation";
@@ -181,75 +170,18 @@ export default function CitationReadinessPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
 
-      <div className={`relative overflow-hidden ${toolHeroSurface} text-white`}
+      <ToolLandingHero
+        slug="ai-citation-readiness-checker"
+        title="AI Citation Readiness Checker for Clarity, Access & Evidence"
+        description="Inspect any public URL or article draft across crawler access, answer-first passage structure, authorship, and verifiable source cues so AI answer engines can cite your page."
+        categoryLabel="GEO"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
       >
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">Tools</Link>
-            <span>/</span>
-            <span aria-current="page">AI Citation Readiness Checker</span>
-          </nav>
-
-          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                GEO · AI Search & Answer Engine Readiness
-              </p>
-              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                AI Citation Readiness Checker 
-                <span className={toolHeroHeading}>
-                  for Clarity, Access & Evidence
-                </span>
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-                Inspect any public URL or article draft across crawler access, answer-first passage structure, authorship, and verifiable source cues so AI answer engines can cite your page.
-              </p>
-              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Crawler & bot access check
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Passage-level citation cues
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Interactive article review
-                </span>
-              </div>
-              <PortableToolHeroBar />
-            </div>
-
-            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
-                4 Readiness Pillars Inspected
-              </p>
-              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
-                <li>
-                  <strong className="text-emerald-300">Crawler Access:</strong> Robots meta, canonical alignment, and AI bot reachability.
-                </li>
-                <li>
-                  <strong className="text-indigo-300">Answer Structure:</strong> Direct definition blocks, heading clarity, and scannable lists.
-                </li>
-                <li>
-                  <strong className="text-sky-300">Source Evidence:</strong> Outbound primary citations, statistics, and quoted references.
-                </li>
-                <li>
-                  <strong className="text-amber-300">Editorial Trust:</strong> Named author attribution, timestamps, and structured data.
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="mt-8">
-            <CitationReadinessClient />
-          </div>
+        <div className="p-4 sm:p-6">
+          <CitationReadinessClient />
         </div>
-      </div>
+      </ToolLandingHero>
 
       <Methodology />
       <CitationReadinessEducation />

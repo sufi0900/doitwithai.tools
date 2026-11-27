@@ -1,15 +1,16 @@
-﻿import type { Metadata } from "next";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
+import type { Metadata } from "next";
 import Link from "next/link";
-import { Calendar, Link2, Megaphone, ShieldCheck, Video } from "lucide-react";
+import {
+  Calendar,
+  Link2,
+  Megaphone,
+  ShieldCheck,
+  Video,
+} from "lucide-react";
 import MarketingCampaignAgentClient from "@/features/ai-marketing-campaign-agent/MarketingCampaignAgentClient";
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import ToolFaq from "@/features/tool-ui/ToolFaq";
 import ToolResources from "@/features/tool-catalog/ToolResources";
-import {
-  ToolHeroBackground,
-  toolHeroHeading,
-  toolHeroSurface,
-} from "@/features/tool-ui/ToolHero";
 
 const pageUrl = "https://doitwithai.tools/tools/ai-marketing-campaign-agent";
 const title =
@@ -104,89 +105,18 @@ export default function AiMarketingCampaignAgentPage() {
         }}
       />
 
-      <header
-        className={`relative overflow-hidden ${toolHeroSurface} text-white`}
+      <ToolLandingHero
+        slug="ai-marketing-campaign-agent"
+        title="Omnichannel Content & Marketing Campaign Agent"
+        description="Turn one product launch or article into a complete campaign in a single run: work-intake sprint & capacity plan, LinkedIn post + carousel, X thread, 60-second short-form video script, paid traffic ad copy angles, and UTM tracking links."
+        categoryLabel="1-Brief-to-Full-Campaign Agent Â"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
       >
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">AI Tools</Link>
-            <span>/</span>
-            <span aria-current="page">Omnichannel Marketing Campaign Agent</span>
-          </nav>
-
-          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                1-Brief-to-Full-Campaign Agent Â· Work Intake, Paid Ads &amp; UTM Studio
-              </p>
-              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                Omnichannel Content &amp;{" "}
-                <span className={toolHeroHeading}>
-                  Marketing Campaign Agent
-                </span>
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-                Turn one product launch or article into a complete campaign in a
-                single run: work-intake sprint &amp; capacity plan, LinkedIn
-                post + carousel, X thread, 60-second short-form video script,
-                paid traffic ad copy angles, and UTM tracking links.
-              </p>
-              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Work Intake &amp; Capacity Plan
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Social + 60s Video Script
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Paid Traffic Angles + UTM Links
-                </span>
-              </div>
-              <PortableToolHeroBar slug="ai-marketing-campaign-agent" />
-            </div>
-
-            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
-                AI Marketing Agent vs. Raw ChatGPT
-              </p>
-              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
-                <li>
-                  <strong className="text-emerald-300">
-                    1. Work Intake &amp; Capacity:
-                  </strong>{" "}
-                  5-day role-by-role sprint plan matched to weekly team hours.
-                </li>
-                <li>
-                  <strong className="text-indigo-300">
-                    2. Organic Social + Video:
-                  </strong>{" "}
-                  LinkedIn post, 6-slide carousel, X thread, and 60s Reels script.
-                </li>
-                <li>
-                  <strong className="text-sky-300">
-                    3. Paid Traffic Ad Angles:
-                  </strong>{" "}
-                  3 multi-channel ad variations with CTR/CPC hypotheses.
-                </li>
-                <li>
-                  <strong className="text-amber-300">
-                    4. Deterministic UTM Matrix:
-                  </strong>{" "}
-                  Pre-tagged attribution links for every channel.
-                </li>
-              </ul>
-            </div>
-          </div>
+        <div className="p-4 sm:p-6">
+          <MarketingCampaignAgentClient />
         </div>
-      </header>
-
-      <MarketingCampaignAgentClient />
+      </ToolLandingHero>
 
       <section
         className={`${section} border-t border-slate-200 dark:border-slate-800`}

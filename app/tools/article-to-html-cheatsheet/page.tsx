@@ -1,15 +1,14 @@
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import type { Metadata } from "next";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
 import Link from "next/link";
-import { Download, LayoutGrid, Printer } from "lucide-react";
+import {
+  Download,
+  LayoutGrid,
+  Printer,
+} from "lucide-react";
 import ArticleToHtmlCheatsheetClient from "@/features/article-to-html-cheatsheet/ArticleToHtmlCheatsheetClient";
 import ToolFaq from "@/features/tool-ui/ToolFaq";
 import ToolResources from "@/features/tool-catalog/ToolResources";
-import {
-  ToolHeroBackground,
-  toolHeroHeading,
-  toolHeroSurface,
-} from "@/features/tool-ui/ToolHero";
 
 const pageUrl = "https://doitwithai.tools/tools/article-to-html-cheatsheet";
 const title =
@@ -104,68 +103,18 @@ export default function ArticleToHtmlCheatsheetPage() {
         }}
       />
 
-      <header
-        className={`relative overflow-hidden ${toolHeroSurface} text-white`}
+      <ToolLandingHero
+        slug="article-to-html-cheatsheet"
+        title="Article to HTML Infographic & Summary Cheatsheet"
+        description="Distill any long-form guide or URL into a self-contained, print-ready 1-page HTML executive summary card with KPI benchmarks, numbered steps, and Do's & Don'ts."
+        categoryLabel="Content Conversion"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
       >
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">Tools</Link>
-            <span>/</span>
-            <span aria-current="page">Article to HTML Cheatsheet</span>
-          </nav>
-
-          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                Content Conversion · Visual Summaries &amp; Linkable Assets
-              </p>
-              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                Article to HTML Infographic{" "}
-                <span className={toolHeroHeading}>
-                  &amp; Summary Cheatsheet
-                </span>
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-                Distill any long-form guide or URL into a self-contained,
-                print-ready 1-page HTML executive summary card with KPI
-                benchmarks, numbered steps, and Do&apos;s &amp; Don&apos;ts.
-              </p>
-              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Standalone .HTML Export
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Print-Ready 1-Page PDF
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Connected to Chrome Extension
-                </span>
-              </div>
-              <PortableToolHeroBar />
-            </div>
-
-            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
-                Turn Long Guides Into Linkable Cheatsheets
-              </p>
-              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
-                <li>1. 4 KPI benchmark cards at the top of the sheet</li>
-                <li>2. 6-step visual implementation grid</li>
-                <li>3. Side-by-side Best Practices vs. Pitfalls</li>
-                <li>4. Zero external dependencies — works offline</li>
-              </ul>
-            </div>
-          </div>
+        <div className="p-4 sm:p-6">
+          <ArticleToHtmlCheatsheetClient />
         </div>
-      </header>
-
-      <ArticleToHtmlCheatsheetClient />
+      </ToolLandingHero>
 
       <section
         className={`${section} border-t border-slate-200 dark:border-slate-800`}

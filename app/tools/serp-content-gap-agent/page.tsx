@@ -1,15 +1,15 @@
-﻿import type { Metadata } from "next";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
+import type { Metadata } from "next";
 import Link from "next/link";
-import { Compass, Layers, ShieldCheck, Target } from "lucide-react";
+import {
+  Compass,
+  Layers,
+  ShieldCheck,
+  Target,
+} from "lucide-react";
 import SerpContentGapAgentClient from "@/features/serp-content-gap-agent/SerpContentGapAgentClient";
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import ToolFaq from "@/features/tool-ui/ToolFaq";
 import ToolResources from "@/features/tool-catalog/ToolResources";
-import {
-  ToolHeroBackground,
-  toolHeroHeading,
-  toolHeroSurface,
-} from "@/features/tool-ui/ToolHero";
 
 const pageUrl = "https://doitwithai.tools/tools/serp-content-gap-agent";
 const title =
@@ -105,89 +105,18 @@ export default function SerpContentGapAgentPage() {
         }}
       />
 
-      <header
-        className={`relative overflow-hidden ${toolHeroSurface} text-white`}
+      <ToolLandingHero
+        slug="serp-content-gap-agent"
+        title="Competitor SERP Content Gap & Outranker Agent"
+        description="Find what top-ranking pages cover that your draft missedâ€”and automatically write the exact H2/H3 sections, Information Gain proof blocks, and People Also Ask (PAA) answers needed to complete your article."
+        categoryLabel="Competitive SEO Agent Â"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
       >
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">AI Tools</Link>
-            <span>/</span>
-            <span aria-current="page">SERP Content Gap Agent</span>
-          </nav>
-
-          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                Competitive SEO Agent Â· Plug Subtopic Blind Spots &amp; Outrank
-              </p>
-              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                Competitor SERP{" "}
-                <span className={toolHeroHeading}>
-                  Content Gap &amp; Outranker Agent
-                </span>
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-                Find what top-ranking pages cover that your draft missedâ€”and
-                automatically write the exact H2/H3 sections, Information Gain
-                proof blocks, and People Also Ask (PAA) answers needed to
-                complete your article.
-              </p>
-              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Auto-drafts missing H2/H3 sections
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Information Gain angle injection
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  People Also Ask (PAA) Q&amp;A blocks
-                </span>
-              </div>
-              <PortableToolHeroBar slug="serp-content-gap-agent" />
-            </div>
-
-            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
-                How the Outranker Agent Works
-              </p>
-              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
-                <li>
-                  <strong className="text-emerald-300">
-                    1. Intent Alignment:
-                  </strong>{" "}
-                  Maps your outline against dominant SERP expectations.
-                </li>
-                <li>
-                  <strong className="text-indigo-300">
-                    2. Subtopic Gap Detection:
-                  </strong>{" "}
-                  Isolates high-priority headings your draft omits.
-                </li>
-                <li>
-                  <strong className="text-sky-300">
-                    3. Information Gain Synthesis:
-                  </strong>{" "}
-                  Weaves your unique practitioner angle into each new section.
-                </li>
-                <li>
-                  <strong className="text-amber-300">
-                    4. Ready-to-Paste Markdown:
-                  </strong>{" "}
-                  Outputs editable H2 blocks and PAA answers in one click.
-                </li>
-              </ul>
-            </div>
-          </div>
+        <div className="p-4 sm:p-6">
+          <SerpContentGapAgentClient />
         </div>
-      </header>
-
-      <SerpContentGapAgentClient />
+      </ToolLandingHero>
 
       <section
         className={`${section} border-t border-slate-200 dark:border-slate-800`}

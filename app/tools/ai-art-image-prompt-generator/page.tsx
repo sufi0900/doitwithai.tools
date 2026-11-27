@@ -1,10 +1,5 @@
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
-import {
-  ToolHeroBackground,
-  toolHeroSurface,
-  toolHeroHeading,
-} from "@/features/tool-ui/ToolHero";
 import type { Metadata } from "next";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
 import Link from "next/link";
 import AiArtImagePromptClient from "@/features/ai-art-image-prompt-generator/AiArtImagePromptClient";
 import ToolResources from "@/features/tool-catalog/ToolResources";
@@ -164,89 +159,18 @@ export default function AiArtImagePromptGeneratorPage() {
           __html: JSON.stringify(schema).replace(/</g, "\\u003c"),
         }}
       />
-      <div className={`relative overflow-hidden ${toolHeroSurface} text-white`}>
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">Tools</Link>
-            <span>/</span>
-            <span aria-current="page">
-              AI Art, Grok &amp; 8K Image Prompt Generator
-            </span>
-          </nav>
-
-          <div className="mb-8 grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                VISUAL &amp; IMAGE STUDIO · MIDJOURNEY, GROK, FLUX &amp; 8K UPSCALING
-              </p>
-              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                AI Art, Grok &amp; 8K{" "}
-                <span className={toolHeroHeading}>
-                  Image Prompt Generator
-                </span>
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-                Generate structured prompts for <strong>Midjourney v6.1</strong>,{" "}
-                <strong>Grok Aurora</strong>, <strong>Flux.1 Pro</strong>, and{" "}
-                <strong>8K photo restoration &amp; upscaling</strong>—or click{" "}
-                <strong>Random Art Prompt</strong> for instant creative ideas.
-              </p>
-              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  🎲 1-Click Random Art Prompt Generator
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  8K Restoration &amp; Upscaling Prompts
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Midjourney, Grok &amp; Flux Ready
-                </span>
-              </div>
-              <PortableToolHeroBar />
-            </div>
-
-            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
-                4 Prompts Generated in Every Run
-              </p>
-              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
-                <li>
-                  <strong className="text-violet-300">
-                    Midjourney v6.1 &amp; Flux Pro:
-                  </strong>{" "}
-                  Includes lens, lighting, and <code>--ar --v 6.1 --style raw</code> flags.
-                </li>
-                <li>
-                  <strong className="text-sky-300">
-                    Grok Aurora &amp; Ideogram 2.0:
-                  </strong>{" "}
-                  Natural-language spatial prompt with exact typography support.
-                </li>
-                <li>
-                  <strong className="text-emerald-300">
-                    8K Restoration &amp; Upscaling:
-                  </strong>{" "}
-                  Micro-texture recovery, de-blurring, and artifact removal.
-                </li>
-                <li>
-                  <strong className="text-amber-300">
-                    Negative Guardrails:
-                  </strong>{" "}
-                  Blocks plastic skin, warped hands, and compression noise.
-                </li>
-              </ul>
-            </div>
-          </div>
-
+      <ToolLandingHero
+        slug="ai-art-image-prompt-generator"
+        title="AI Art, Grok & 8K Image Prompt Generator"
+        description="Generate structured prompts for Midjourney v6.1 , Grok Aurora , Flux.1 Pro , and 8K photo restoration & upscaling —or click Random Art Prompt for instant creative ideas."
+        categoryLabel="VISUAL & IMAGE STUDIO"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
+      >
+        <div className="p-4 sm:p-6">
           <AiArtImagePromptClient />
         </div>
-      </div>
+      </ToolLandingHero>
 
       <div className="mx-auto max-w-6xl space-y-20 px-4 py-16 sm:px-6 lg:px-8">
         {/* 50-WORD QUICK ANSWER */}

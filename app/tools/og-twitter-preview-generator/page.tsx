@@ -1,16 +1,8 @@
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import ToolFaq from "@/features/tool-ui/ToolFaq";
-import { ToolHeroBackground, toolHeroSurface, toolHeroHeading } from "@/features/tool-ui/ToolHero";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
 import ToolResources from "@/features/tool-catalog/ToolResources";
 import type { Metadata } from "next";
 import Link from "next/link";
-import {
-  ArrowRight,
-  CheckCircle2,
-  ImageIcon,
-  ShieldCheck,
-  Sparkles,
-} from "lucide-react";
 import OgPreviewClient from "@/features/og-preview/OgPreviewClient";
 import OgPreviewTutorial from "@/features/og-preview/OgPreviewTutorial";
 import OgPreviewEducation from "@/features/og-preview/OgPreviewEducation";
@@ -152,75 +144,18 @@ export default function OgPreviewGeneratorPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
 
-      <div className={`relative overflow-hidden ${toolHeroSurface} text-white`}>
-        <ToolHeroBackground />
-
-        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">Tools</Link>
-            <span>/</span>
-            <span aria-current="page">OG & Twitter Card Preview Generator</span>
-          </nav>
-
-          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                Technical SEO · Social Sharing Card Simulator & Tag Builder
-              </p>
-              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                Open Graph & X Card 
-                <span className={toolHeroHeading}>
-                  Preview & Meta Tag Generator
-                </span>
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-                Import any live URL or edit fields directly to preview how your link renders on Facebook, LinkedIn, X (Twitter), and Discord—complete with live image dimension checks.
-              </p>
-              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Live URL metadata import
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Real og:image dimension check
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Copy HTML & Next.js metadata
-                </span>
-              </div>
-              <PortableToolHeroBar />
-            </div>
-
-            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
-                4 Social Card Checks Included
-              </p>
-              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
-                <li>
-                  <strong className="text-emerald-300">Live Tag Fetch:</strong> Imports existing og:title, og:description, and twitter:card tags.
-                </li>
-                <li>
-                  <strong className="text-indigo-300">Image Audit:</strong> Verifies 1200×630 (1.91:1) aspect ratio and file accessibility.
-                </li>
-                <li>
-                  <strong className="text-sky-300">Multi-Feed Preview:</strong> Simulates large-summary cards across major social feeds.
-                </li>
-                <li>
-                  <strong className="text-amber-300">Code Export:</strong> Outputs clean HTML &lt;meta&gt; tags ready to paste into your &lt;head&gt;.
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="mt-8">
-            <OgPreviewClient />
-          </div>
+      <ToolLandingHero
+        slug="og-twitter-preview-generator"
+        title="Open Graph & X Card Preview & Meta Tag Generator"
+        description="Import any live URL or edit fields directly to preview how your link renders on Facebook, LinkedIn, X (Twitter), and Discord—complete with live image dimension checks."
+        categoryLabel="Technical SEO"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
+      >
+        <div className="p-4 sm:p-6">
+          <OgPreviewClient />
         </div>
-      </div>
+      </ToolLandingHero>
 
       <OgPreviewTutorial />
       <OgPreviewEducation />

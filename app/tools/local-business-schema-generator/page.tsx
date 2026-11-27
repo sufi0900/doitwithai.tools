@@ -1,15 +1,14 @@
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import type { Metadata } from "next";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
 import Link from "next/link";
-import { Code2, Globe, MapPin } from "lucide-react";
+import {
+  Code2,
+  Globe,
+  MapPin,
+} from "lucide-react";
 import LocalBusinessSchemaGeneratorClient from "@/features/local-business-schema-generator/LocalBusinessSchemaGeneratorClient";
 import ToolFaq from "@/features/tool-ui/ToolFaq";
 import ToolResources from "@/features/tool-catalog/ToolResources";
-import {
-  ToolHeroBackground,
-  toolHeroHeading,
-  toolHeroSurface,
-} from "@/features/tool-ui/ToolHero";
 
 const pageUrl =
   "https://doitwithai.tools/tools/local-business-schema-generator";
@@ -105,71 +104,18 @@ export default function LocalBusinessSchemaGeneratorPage() {
         }}
       />
 
-      <header
-        className={`relative overflow-hidden ${toolHeroSurface} text-white`}
+      <ToolLandingHero
+        slug="local-business-schema-generator"
+        title="LocalBusiness JSON-LD Schema Markup Generator"
+        description="Generate rich, machine-readable LocalBusiness JSON-LD across 35+ industry subtypes with verified PostalAddress , GeoCoordinates , OpeningHoursSpecification , areaServed cities, and sameAs citation links."
+        categoryLabel="Local SEO"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
       >
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">Tools</Link>
-            <span>/</span>
-            <span aria-current="page">LocalBusiness Schema Generator</span>
-          </nav>
-
-          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                Local SEO · Structured Data &amp; Entity Disambiguation
-              </p>
-              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                LocalBusiness JSON-LD{" "}
-                <span className={toolHeroHeading}>
-                  Schema Markup Generator
-                </span>
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-                Generate rich, machine-readable <code>LocalBusiness</code>{" "}
-                JSON-LD across 35+ industry subtypes with verified{" "}
-                <code>PostalAddress</code>, <code>GeoCoordinates</code>,{" "}
-                <code>OpeningHoursSpecification</code>,{" "}
-                <code>areaServed</code> cities, and <code>sameAs</code> citation
-                links.
-              </p>
-              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  35+ Industry Subtypes
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  GeoCoordinates + areaServed
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  OpeningHours + sameAs
-                </span>
-              </div>
-              <PortableToolHeroBar />
-            </div>
-
-            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
-                Built for Local Pack &amp; AI Search
-              </p>
-              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
-                <li>1. Exact NAP parity with Google Business Profile</li>
-                <li>2. Explicit GeoCoordinates &amp; Google Maps CID link</li>
-                <li>3. Multi-city service-area declarations</li>
-                <li>4. Instant HTML <code>&lt;script&gt;</code> &amp; raw JSON export</li>
-              </ul>
-            </div>
-          </div>
+        <div className="p-4 sm:p-6">
+          <LocalBusinessSchemaGeneratorClient />
         </div>
-      </header>
-
-      <LocalBusinessSchemaGeneratorClient />
+      </ToolLandingHero>
 
       <section
         className={`${section} border-t border-slate-200 dark:border-slate-800`}

@@ -1,10 +1,5 @@
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
-import {
-  ToolHeroBackground,
-  toolHeroSurface,
-  toolHeroHeading,
-} from "@/features/tool-ui/ToolHero";
 import type { Metadata } from "next";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
 import Link from "next/link";
 import LocalSeoAuditClient from "@/features/local-seo-audit-tool/LocalSeoAuditClient";
 import ToolResources from "@/features/tool-catalog/ToolResources";
@@ -163,66 +158,18 @@ export default function LocalSeoAuditToolPage() {
           __html: JSON.stringify(schema).replace(/</g, "\\u003c"),
         }}
       />
-      <div className={`relative overflow-hidden ${toolHeroSurface} text-white`}>
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">Tools</Link>
-            <span>/</span>
-            <span aria-current="page">Free Local SEO Audit Tool</span>
-          </nav>
-
-          <div className="mb-8 grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                LOCAL SEO SUITE · MAP PACK, NEAR ME KEYWORDS &amp; SMB CITATIONS
-              </p>
-              <h1 className={toolHeroHeading}>
-                Free Local SEO Audit Tool: Map Pack &amp; &ldquo;Near Me&rdquo;
-                Optimizer
-              </h1>
-              <p className="mt-4 max-w-2xl text-base leading-relaxed text-slate-200">
-                Run an instant <strong>free local SEO audit</strong> for your
-                SMB or multi-location brand—checking{" "}
-                <strong>Google Business Profile 3-Pack readiness</strong>,{" "}
-                <strong>&ldquo;near me&rdquo; keyword placement</strong>,{" "}
-                <strong>NAP citation consistency</strong>, and{" "}
-                <strong>LocalBusiness JSON-LD schema</strong>.
-              </p>
-              <div className="mt-5">
-                <PortableToolHeroBar slug="local-seo-audit-tool" />
-              </div>
-            </div>
-
-            <div className="rounded-3xl border border-white/15 bg-slate-900/75 p-5 shadow-2xl backdrop-blur-md">
-              <p className="text-xs font-bold uppercase tracking-wider text-blue-300">
-                4-Pillar SMB Local SEO Engine
-              </p>
-              <ul className="mt-3 space-y-2.5 text-xs leading-6 text-slate-200">
-                <li>
-                  • <strong>Google Map Pack Diagnostics</strong>: Primary &amp;
-                  secondary GBP categories, review velocity &amp; photos.
-                </li>
-                <li>
-                  • <strong>&ldquo;Near Me&rdquo; Keyword Matrix</strong>: Maps
-                  implicit, city-explicit, emergency &amp; voice queries.
-                </li>
-                <li>
-                  • <strong>NAP &amp; LocalBusiness Schema</strong>: Outputs
-                  ready-to-paste JSON-LD with <code>areaServed</code>.
-                </li>
-              </ul>
-            </div>
-          </div>
-
+      <ToolLandingHero
+        slug="local-seo-audit-tool"
+        title="Free Local SEO Audit Tool: Map Pack & &ldquo;Near Me&rdquo; Optimizer"
+        description="Run an instant free local SEO audit for your SMB or multi-location brand—checking Google Business Profile 3-Pack readiness , &ldquo;near me&rdquo; keyword placement , NAP citation consistency , and LocalBusiness JSON-LD schema ."
+        categoryLabel="LOCAL SEO SUITE"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
+      >
+        <div className="p-4 sm:p-6">
           <LocalSeoAuditClient />
         </div>
-      </div>
+      </ToolLandingHero>
 
       <div className="mx-auto max-w-6xl space-y-20 px-4 py-16 sm:px-6 lg:px-8">
         {/* 50-WORD QUICK ANSWER */}

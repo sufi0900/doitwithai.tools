@@ -1,8 +1,4 @@
-import {
-  ToolHeroBackground,
-  toolHeroSurface,
-  toolHeroHeading,
-} from "@/features/tool-ui/ToolHero";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
 import Link from "next/link";
 import type { Metadata } from "next";
 import {
@@ -10,10 +6,6 @@ import {
   BookOpen,
   CheckCircle2,
   Layers3,
-  ListChecks,
-  PencilLine,
-  Search,
-  Sparkles,
 } from "lucide-react";
 import ToolResources from "@/features/tool-catalog/ToolResources";
 import WritingClient from "./WritingClient";
@@ -249,82 +241,26 @@ export default function WritingPage({ kind }: { kind: WritingKind }) {
           __html: JSON.stringify(schema).replace(/</g, "\\u003c"),
         }}
       />
-      <div
-        className={`relative overflow-hidden ${toolHeroSurface} pb-20 pt-10 text-white sm:pt-16 lg:pb-28`}
+      <ToolLandingHero
+        slug={page.slug}
+        title={
+          description
+            ? `AI ${page.name}: Make Every Word Earn Its Place`
+            : `AI ${page.name}: Give Your Page a Clear Starting Point`
+        }
+        description={
+          description
+            ? "Go beyond a quick sentence. Explore three snippet strategies, compare six alternatives, and refine the message in an editable preview."
+            : "Generate 6 reader-first H1 heading options across 3 editorial angles, inspect how each H1 pairs with your title tag and H2 outline, and refine wording live."
+        }
+        categoryLabel="AI SEO · Content Writing"
+        categoryHref="/tools"
+        workspaceId={`${kind}-workspace`}
       >
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-10 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-400"
-          >
-            <Link href="/" className="hover:text-white">
-              Home
-            </Link>
-            <span aria-hidden>/</span>
-            <Link href="/tools" className="hover:text-white">
-              Tools
-            </Link>
-            <span aria-hidden>/</span>
-            <span aria-current="page" className="text-blue-200">
-              {page.name}
-            </span>
-          </nav>
-          <header className="mx-auto max-w-5xl text-center">
-            <p className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.16em] text-blue-100">
-              <Sparkles className="h-4 w-4 text-cyan-300" aria-hidden /> AI SEO
-              · Content Writing
-            </p>
-            <h1 className="mt-7 text-4xl font-black leading-[1.08] tracking-[-0.04em] sm:text-6xl lg:text-7xl">
-              AI {page.name}
-              <span className={`mt-2 block text-balance ${toolHeroHeading}`}>
-                {description
-                  ? "Make Every Word Earn Its Place"
-                  : "Give Your Page a Clear Starting Point"}
-              </span>
-            </h1>
-            <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-slate-300 sm:text-lg">
-              {description
-                ? "Go beyond a quick sentence. Explore three snippet strategies, compare six alternatives, and refine the message in an editable preview."
-                : "Generate 6 reader-first H1 heading options across 3 editorial angles, inspect how each H1 pairs with your title tag and H2 outline, and refine wording live."}
-            </p>
-            <div className="mt-7 flex flex-wrap justify-center gap-3 text-xs font-bold text-slate-300">
-              {[
-                [
-                  description ? Search : Layers3,
-                  description ? "Snippet workspace" : "Page H1–H2 hierarchy preview",
-                ],
-                [ListChecks, "20–70 char & intent checks"],
-                [PencilLine, "Live editing lab"],
-              ].map(([Icon, label]) => {
-                const FeatureIcon = Icon as typeof Search;
-                return (
-                  <span
-                    key={label as string}
-                    className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-2"
-                  >
-                    <FeatureIcon
-                      className="h-3.5 w-3.5 text-blue-300"
-                      aria-hidden
-                    />
-                    {label as string}
-                  </span>
-                );
-              })}
-            </div>
-            <a
-              href={`#${kind}-workspace`}
-              className="mt-8 inline-flex min-h-12 items-center gap-2 rounded-xl bg-white px-5 py-3.5 text-sm font-extrabold text-slate-950 shadow-xl transition hover:bg-blue-50 focus-visible:ring-4 focus-visible:ring-blue-300"
-            >
-              Start with your page brief{" "}
-              <ArrowRight className="h-4 w-4" aria-hidden />
-            </a>
-          </header>
-          <div className="mt-14">
-            <WritingClient kind={kind} />
-          </div>
+        <div className="p-4 sm:p-6">
+          <WritingClient kind={kind} />
         </div>
-      </div>
+      </ToolLandingHero>
       <section
         aria-labelledby={`${kind}-workflow`}
         className="bg-slate-50 py-16 dark:bg-[#171C28]"

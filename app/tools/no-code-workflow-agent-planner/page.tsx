@@ -1,15 +1,15 @@
-﻿import type { Metadata } from "next";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
+import type { Metadata } from "next";
 import Link from "next/link";
-import { Code2, GitBranch, Sheet, ShieldCheck } from "lucide-react";
+import {
+  Code2,
+  GitBranch,
+  Sheet,
+  ShieldCheck,
+} from "lucide-react";
 import NoCodeWorkflowAgentPlannerClient from "@/features/no-code-workflow-agent-planner/NoCodeWorkflowAgentPlannerClient";
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import ToolFaq from "@/features/tool-ui/ToolFaq";
 import ToolResources from "@/features/tool-catalog/ToolResources";
-import {
-  ToolHeroBackground,
-  toolHeroHeading,
-  toolHeroSurface,
-} from "@/features/tool-ui/ToolHero";
 
 const pageUrl =
   "https://doitwithai.tools/tools/no-code-workflow-agent-planner";
@@ -107,94 +107,18 @@ export default function NoCodeWorkflowAgentPlannerPage() {
         }}
       />
 
-      <header
-        className={`relative overflow-hidden ${toolHeroSurface} text-white`}
+      <ToolLandingHero
+        slug="no-code-workflow-agent-planner"
+        title="No-Code Workflow & Capacity Planning AI Agent"
+        description="Describe any repetitive business taskâ€”like syncing Google Sheets leads to Google Calendar capacity slots and sending AI follow-upsâ€”and get a step-by-step no-code agent architecture, Excel/Sheets formulas, system prompts, and a downloadable n8n workflow blueprint."
+        categoryLabel="AI SEO Tools"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
       >
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">AI Tools</Link>
-            <span>/</span>
-            <span aria-current="page">
-              No-Code Workflow &amp; Capacity Planner
-            </span>
-          </nav>
-
-          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                n8n, Google Sheets, Calendar API &amp; Excel AI Orchestration Studio
-              </p>
-              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                No-Code Workflow &amp;{" "}
-                <span className={toolHeroHeading}>
-                  Capacity Planning AI Agent
-                </span>
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-                Describe any repetitive business taskâ€”like syncing Google Sheets
-                leads to Google Calendar capacity slots and sending AI
-                follow-upsâ€”and get a step-by-step no-code agent architecture,
-                Excel/Sheets formulas, system prompts, and a downloadable n8n
-                workflow blueprint.
-              </p>
-              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Sheets &amp; Calendar API Capacity Sync
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Excel AI &amp; Apps Script Formulas
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Downloadable n8n .JSON Blueprint
-                </span>
-              </div>
-              <PortableToolHeroBar slug="no-code-workflow-agent-planner" />
-            </div>
-
-            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
-                Plain-English Task â†’ Ready-to-Import n8n + Sheets Blueprint
-              </p>
-              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
-                <li>
-                  <strong className="text-emerald-300">
-                    1. 4-Node Agent Architecture:
-                  </strong>{" "}
-                  Trigger deduplication, Calendar free/busy check, AI reasoning,
-                  and writeback.
-                </li>
-                <li>
-                  <strong className="text-indigo-300">
-                    2. Sheets &amp; Excel Formulas:
-                  </strong>{" "}
-                  Copy-paste capacity overload flags and SLA deadline formulas.
-                </li>
-                <li>
-                  <strong className="text-sky-300">
-                    3. n8n vs. LangChain Matrix:
-                  </strong>{" "}
-                  Clear architectural guidance for non-coders and technical ops.
-                </li>
-                <li>
-                  <strong className="text-amber-300">
-                    4. Importable n8n JSON:
-                  </strong>{" "}
-                  One-click workflow blueprint with pre-wired LangChain agent
-                  prompts.
-                </li>
-              </ul>
-            </div>
-          </div>
+        <div className="p-4 sm:p-6">
+          <NoCodeWorkflowAgentPlannerClient />
         </div>
-      </header>
-
-      <NoCodeWorkflowAgentPlannerClient />
+      </ToolLandingHero>
 
       <section
         className={`${section} border-t border-slate-200 dark:border-slate-800`}

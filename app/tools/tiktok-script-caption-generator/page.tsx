@@ -1,15 +1,14 @@
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import type { Metadata } from "next";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
 import Link from "next/link";
-import { Film, Search, Zap } from "lucide-react";
+import {
+  Film,
+  Search,
+  Zap,
+} from "lucide-react";
 import TiktokScriptCaptionGeneratorClient from "@/features/tiktok-script-caption-generator/TiktokScriptCaptionGeneratorClient";
 import ToolFaq from "@/features/tool-ui/ToolFaq";
 import ToolResources from "@/features/tool-catalog/ToolResources";
-import {
-  ToolHeroBackground,
-  toolHeroHeading,
-  toolHeroSurface,
-} from "@/features/tool-ui/ToolHero";
 import { PlatformBrandIcon } from "@/features/tool-ui/PlatformBrandIcon";
 
 const pageUrl = "https://doitwithai.tools/tools/tiktok-script-caption-generator";
@@ -100,61 +99,18 @@ export default function TiktokScriptCaptionGeneratorPage() {
         }}
       />
 
-      <header
-        className={`relative overflow-hidden ${toolHeroSurface} text-white`}
+      <ToolLandingHero
+        slug="tiktok-script-caption-generator"
+        title="TikTok Script, Hook & Search SEO Studio"
+        description="Transform any article URL, YouTube video, or idea into a timestamped 15s/30s/60s TikTok script with 3-second pattern interrupt hooks and TikTok Search SEO captions."
+        categoryLabel="Social Media & Video Studio"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
       >
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">Tools</Link>
-            <span>/</span>
-            <span aria-current="page">TikTok Script &amp; Caption Generator</span>
-          </nav>
-
-          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
-            <div>
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-bold text-white backdrop-blur-xs">
-                <PlatformBrandIcon slugOrText="tiktok-script-caption-generator" size={18} />
-                <span>Official Platform Studio</span>
-              </div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                Social Media &amp; Video Studio · Hooks, Beats &amp; TikTok SEO
-              </p>
-              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                TikTok Script, Hook &amp;{" "}
-                <span className={toolHeroHeading}>
-                  Search SEO Studio
-                </span>
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-                Transform any article URL, YouTube video, or idea into a
-                timestamped 15s/30s/60s TikTok script with 3-second pattern
-                interrupt hooks and TikTok Search SEO captions.
-              </p>
-              <PortableToolHeroBar />
-            </div>
-
-            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
-                Engineered for Retention &amp; Search
-              </p>
-              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
-                <li>1. 3 First-3-Second Visual + Verbal Hooks</li>
-                <li>2. Timestamped Camera, Text &amp; Audio Beats</li>
-                <li>3. TikTok Search Bar Keyword &amp; Caption Package</li>
-                <li>4. Green-Screen Visual Card Backdrop Generator</li>
-              </ul>
-            </div>
-          </div>
+        <div className="p-4 sm:p-6">
+          <TiktokScriptCaptionGeneratorClient />
         </div>
-      </header>
-
-      <TiktokScriptCaptionGeneratorClient />
+      </ToolLandingHero>
 
       <section
         className={`${section} border-t border-slate-200 dark:border-slate-800`}

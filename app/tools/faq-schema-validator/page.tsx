@@ -1,10 +1,5 @@
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
-import {
-  ToolHeroBackground,
-  toolHeroSurface,
-  toolHeroHeading,
-} from "@/features/tool-ui/ToolHero";
 import type { Metadata } from "next";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
 import Link from "next/link";
 import FaqSchemaValidatorClient from "@/features/faq-schema-validator/FaqSchemaValidatorClient";
 import ToolResources from "@/features/tool-catalog/ToolResources";
@@ -162,68 +157,18 @@ export default function FaqSchemaValidatorPage() {
           __html: JSON.stringify(schema).replace(/</g, "\\u003c"),
         }}
       />
-      <div className={`relative overflow-hidden ${toolHeroSurface} text-white`}>
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">Tools</Link>
-            <span>/</span>
-            <span aria-current="page">
-              FAQ Schema Validator &amp; AI Visibility Optimizer
-            </span>
-          </nav>
-
-          <div className="mb-8 grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                STRUCTURED DATA STUDIO · FAQPAGE, PRODUCT @GRAPH &amp; AI CITATIONS
-              </p>
-              <h1 className={toolHeroHeading}>
-                Free FAQ Schema Validator &amp; AI Visibility Optimizer
-              </h1>
-              <p className="mt-4 max-w-2xl text-base leading-relaxed text-slate-200">
-                Validate, repair, and optimize your{" "}
-                <strong>FAQPage, Product, and WebApplication JSON-LD</strong>{" "}
-                markup—checking{" "}
-                <strong>40–55 word AI Overview answer lengths</strong>,{" "}
-                <strong>Schema.org syntax</strong>, and{" "}
-                <strong>unified @graph entities</strong>.
-              </p>
-              <div className="mt-5">
-                <PortableToolHeroBar slug="faq-schema-validator" />
-              </div>
-            </div>
-
-            <div className="rounded-3xl border border-white/15 bg-slate-900/75 p-5 shadow-2xl backdrop-blur-md">
-              <p className="text-xs font-bold uppercase tracking-wider text-blue-300">
-                Why Validate FAQ + Product @graph
-              </p>
-              <ul className="mt-3 space-y-2.5 text-xs leading-6 text-slate-200">
-                <li>
-                  • <strong>Syntax &amp; Context Repair</strong>: Fixes malformed
-                  JSON, <code>http://</code> context, and thin 1-word answers.
-                </li>
-                <li>
-                  • <strong>40–55 Word AI Sweet Spot</strong>: Tunes{" "}
-                  <code>acceptedAnswer.text</code> for Perplexity &amp; Google
-                  AIO.
-                </li>
-                <li>
-                  • <strong>Product + FAQ @graph</strong>: Connects pricing and
-                  specs directly to buyer Q&amp;As.
-                </li>
-              </ul>
-            </div>
-          </div>
-
+      <ToolLandingHero
+        slug="faq-schema-validator"
+        title="Free FAQ Schema Validator & AI Visibility Optimizer"
+        description="Validate, repair, and optimize your FAQPage, Product, and WebApplication JSON-LD markup—checking 40–55 word AI Overview answer lengths , Schema.org syntax , and unified @graph entities ."
+        categoryLabel="STRUCTURED DATA STUDIO"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
+      >
+        <div className="p-4 sm:p-6">
           <FaqSchemaValidatorClient />
         </div>
-      </div>
+      </ToolLandingHero>
 
       <div className="mx-auto max-w-6xl space-y-20 px-4 py-16 sm:px-6 lg:px-8">
         {/* 50-WORD QUICK ANSWER */}

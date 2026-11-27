@@ -1,15 +1,14 @@
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import type { Metadata } from "next";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
 import Link from "next/link";
-import { CheckCircle2, MapPin, Sparkles } from "lucide-react";
+import {
+  CheckCircle2,
+  MapPin,
+  Sparkles,
+} from "lucide-react";
 import GoogleBusinessProfileAuditorClient from "@/features/google-business-profile-auditor/GoogleBusinessProfileAuditorClient";
 import ToolFaq from "@/features/tool-ui/ToolFaq";
 import ToolResources from "@/features/tool-catalog/ToolResources";
-import {
-  ToolHeroBackground,
-  toolHeroHeading,
-  toolHeroSurface,
-} from "@/features/tool-ui/ToolHero";
 
 const pageUrl =
   "https://doitwithai.tools/tools/google-business-profile-auditor";
@@ -105,69 +104,18 @@ export default function GoogleBusinessProfileAuditorPage() {
         }}
       />
 
-      <header
-        className={`relative overflow-hidden ${toolHeroSurface} text-white`}
+      <ToolLandingHero
+        slug="google-business-profile-auditor"
+        title="Google Business Profile Auditor & AI Optimizer"
+        description="Score your Google Business Profile across 10 Local Pack ranking signals, uncover category and UTM gaps, and generate a compliant 750-character description, pre-seeded Q&As, and weekly GBP posts."
+        categoryLabel="Local SEO"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
       >
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">Tools</Link>
-            <span>/</span>
-            <span aria-current="page">Google Business Profile Auditor</span>
-          </nav>
-
-          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                Local SEO · Google Maps &amp; 3-Pack Optimization
-              </p>
-              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                Google Business Profile{" "}
-                <span className={toolHeroHeading}>
-                  Auditor &amp; AI Optimizer
-                </span>
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-                Score your Google Business Profile across 10 Local Pack ranking
-                signals, uncover category and UTM gaps, and generate a
-                compliant 750-character description, pre-seeded Q&amp;As, and
-                weekly GBP posts.
-              </p>
-              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  10-Point Local Pack Audit
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  750-Char GBP Description
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Owner Q&amp;A + Weekly Posts
-                </span>
-              </div>
-              <PortableToolHeroBar />
-            </div>
-
-            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
-                Complete GBP Optimization Suite
-              </p>
-              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
-                <li>1. Relevance, Prominence &amp; Conversion scores</li>
-                <li>2. Title keyword-stuffing suspension check</li>
-                <li>3. Optimized 750-char description with local entities</li>
-                <li>4. Pre-seeded Q&amp;As and 3 weekly GBP posts</li>
-              </ul>
-            </div>
-          </div>
+        <div className="p-4 sm:p-6">
+          <GoogleBusinessProfileAuditorClient />
         </div>
-      </header>
-
-      <GoogleBusinessProfileAuditorClient />
+      </ToolLandingHero>
 
       <section
         className={`${section} border-t border-slate-200 dark:border-slate-800`}

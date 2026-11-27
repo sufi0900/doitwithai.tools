@@ -135,13 +135,13 @@ export default function AiAutomationRoiCalculatorClient() {
             <div className="text-[11px] uppercase text-slate-400">Hours Saved / Yr</div>
             <div className="mt-1 text-2xl font-extrabold text-cyan-400">{metrics.annualHoursSaved.toLocaleString()}h</div>
           </div>
-          <div className="rounded-2xl border border-emerald-500/40 bg-emerald-950/20 p-4">
-            <div className="text-[11px] uppercase text-emerald-300">Net Annual Saved</div>
-            <div className="mt-1 text-2xl font-extrabold text-emerald-400">${metrics.netAnnualSavingsUsd.toLocaleString()}</div>
+          <div className="rounded-2xl border border-emerald-300 bg-emerald-50 p-4 dark:border-emerald-500/40 dark:bg-emerald-950/20">
+            <div className="text-[11px] font-semibold uppercase text-emerald-800 dark:text-emerald-300">Net Annual Saved</div>
+            <div className="mt-1 text-2xl font-extrabold text-emerald-700 dark:text-emerald-400">${metrics.netAnnualSavingsUsd.toLocaleString()}</div>
           </div>
-          <div className="rounded-2xl border border-indigo-500/40 bg-indigo-950/30 p-4">
-            <div className="text-[11px] uppercase text-indigo-300">ROI Multiple</div>
-            <div className="mt-1 text-2xl font-extrabold text-indigo-300">{metrics.roiMultiple}x</div>
+          <div className="rounded-2xl border border-indigo-300 bg-indigo-50 p-4 dark:border-indigo-500/40 dark:bg-indigo-950/30">
+            <div className="text-[11px] font-semibold uppercase text-indigo-800 dark:text-indigo-300">ROI Multiple</div>
+            <div className="mt-1 text-2xl font-extrabold text-indigo-700 dark:text-indigo-300">{metrics.roiMultiple}x</div>
           </div>
         </div>
 

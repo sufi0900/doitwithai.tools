@@ -1,15 +1,15 @@
-﻿import type { Metadata } from "next";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
+import type { Metadata } from "next";
 import Link from "next/link";
-import { Code2, MessageCircle, ShieldCheck, Users } from "lucide-react";
+import {
+  Code2,
+  MessageCircle,
+  ShieldCheck,
+  Users,
+} from "lucide-react";
 import WhatsappInstagramAgentStudioClient from "@/features/whatsapp-instagram-ai-agent-studio/WhatsappInstagramAgentStudioClient";
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import ToolFaq from "@/features/tool-ui/ToolFaq";
 import ToolResources from "@/features/tool-catalog/ToolResources";
-import {
-  ToolHeroBackground,
-  toolHeroHeading,
-  toolHeroSurface,
-} from "@/features/tool-ui/ToolHero";
 
 const pageUrl =
   "https://doitwithai.tools/tools/whatsapp-instagram-ai-agent-studio";
@@ -107,91 +107,18 @@ export default function WhatsappInstagramAiAgentStudioPage() {
         }}
       />
 
-      <header
-        className={`relative overflow-hidden ${toolHeroSurface} text-white`}
+      <ToolLandingHero
+        slug="whatsapp-instagram-ai-agent-studio"
+        title="WhatsApp, Telegram & Instagram DM Sales Agent Studio"
+        description="Build automated conversational DM & WhatsApp/Telegram flows for Instagram Shop price inquiries, appointment booking, objection handling, and community moderationâ€”complete with copy-paste ManyChat and n8n JSON templates."
+        categoryLabel="AI SEO Tools"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
       >
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">AI Tools</Link>
-            <span>/</span>
-            <span aria-current="page">
-              WhatsApp, Telegram &amp; Instagram DM Studio
-            </span>
-          </nav>
-
-          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                Conversational DM Commerce &amp; Community Management Studio
-              </p>
-              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                WhatsApp, Telegram &amp;{" "}
-                <span className={toolHeroHeading}>
-                  Instagram DM Sales Agent Studio
-                </span>
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-                Build automated conversational DM &amp; WhatsApp/Telegram flows
-                for Instagram Shop price inquiries, appointment booking,
-                objection handling, and community moderationâ€”complete with
-                copy-paste ManyChat and n8n JSON templates.
-              </p>
-              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  IG Shop Price Inquiry Flows
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  TG &amp; WhatsApp Community Rules
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  ManyChat &amp; n8n JSON Export
-                </span>
-              </div>
-              <PortableToolHeroBar slug="whatsapp-instagram-ai-agent-studio" />
-            </div>
-
-            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
-                1 Catalog Brief â†’ 4 Conversational Assets
-              </p>
-              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
-                <li>
-                  <strong className="text-emerald-300">
-                    1. Price Inquiry Funnel:
-                  </strong>{" "}
-                  3-step Comment-to-DM &amp; WhatsApp keyword conversation.
-                </li>
-                <li>
-                  <strong className="text-indigo-300">
-                    2. Objection Playbook:
-                  </strong>{" "}
-                  Empathetic DM replies for price, setup, and policy questions.
-                </li>
-                <li>
-                  <strong className="text-sky-300">
-                    3. Community Management:
-                  </strong>{" "}
-                  Telegram &amp; WhatsApp pinned welcome + anti-spam rules.
-                </li>
-                <li>
-                  <strong className="text-amber-300">
-                    4. Automation JSONs:
-                  </strong>{" "}
-                  Copy-paste ManyChat flow + n8n webhook router templates.
-                </li>
-              </ul>
-            </div>
-          </div>
+        <div className="p-4 sm:p-6">
+          <WhatsappInstagramAgentStudioClient />
         </div>
-      </header>
-
-      <WhatsappInstagramAgentStudioClient />
+      </ToolLandingHero>
 
       <section
         className={`${section} border-t border-slate-200 dark:border-slate-800`}
