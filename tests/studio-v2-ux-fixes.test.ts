@@ -215,5 +215,32 @@ test("Studio V2 UI & ToolsShell source guards prevent regressions", () => {
     "utf8",
   );
   assert.equal(drawerSrc.includes("zero context loss"), false);
-  assert.ok(drawerSrc.includes('drawer.type === "open-playbook"'));
+  assert.ok(drawerSrc.includes('drawer.type !== "open-copilot"'));
+
+  const inlinePanelSrc = fs.readFileSync(
+    path.join(ROOT, "features/studio/StudioInlineEmbedPanel.tsx"),
+    "utf8",
+  );
+  assert.ok(inlinePanelSrc.includes('item.type === "playbook"'));
+
+  assert.ok(vaultSrc.includes("Back to Tools"));
+  assert.ok(vaultSrc.includes("StudioInlineEmbedPanel"));
+
+  const writerSrc = fs.readFileSync(
+    path.join(ROOT, "features/studio/StudioWriterClient.tsx"),
+    "utf8",
+  );
+  assert.equal(writerSrc.includes("Fullscreen"), false);
+  assert.ok(writerSrc.includes("Search articles by title or keyword"));
+
+  const workspaceProviderSrc = fs.readFileSync(
+    path.join(ROOT, "features/tools-workspace/WorkspaceProvider.tsx"),
+    "utf8",
+  );
+  assert.equal(
+    workspaceProviderSrc.includes(
+      "Your saved tools could not load. Reload this page to retry.",
+    ),
+    false,
+  );
 });

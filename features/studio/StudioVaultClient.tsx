@@ -19,10 +19,14 @@ import {
   createDefaultStudioState,
   dispatchStudioDrawer,
   loadStudioState,
+  subscribeStudioDrawer,
   subscribeStudioState,
   togglePlaybookCompleted,
 } from "@/lib/studio/store";
 import type { ConnectedStudioSite, StudioWorkspaceState } from "@/lib/studio/types";
+import StudioInlineEmbedPanel, {
+  type StudioInlineItem,
+} from "./StudioInlineEmbedPanel";
 
 interface VaultPromptItem {
   id: string;
@@ -119,6 +123,8 @@ export default function StudioVaultClient() {
   const [activeTab, setActiveTab] = useState<"prompts" | "tools" | "playbooks">(
     "prompts",
   );
+  const [activeInlineItem, setActiveInlineItem] =
+    useState<StudioInlineItem | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [loading, setLoading] = useState(true);
@@ -135,6 +141,29 @@ export default function StudioVaultClient() {
   useEffect(() => {
     setStudio(loadStudioState());
     return subscribeStudioState(() => setStudio(loadStudioState()));
+  }, []);
+
+  // Capture open-tool / open-playbook actions (e.g. from Brand AI Strategist) inline inside the Vault
+  useEffect(() => {
+    return subscribeStudioDrawer((action) => {
+      if (action.type === "open-tool") {
+        setActiveTab("tools");
+        setActiveInlineItem({
+          type: "tool",
+          slug: action.slug,
+          title: action.title || formatSlugName(action.slug),
+        });
+      } else if (action.type === "open-playbook") {
+        setActiveTab("playbooks");
+        setActiveInlineItem({
+          type: "playbook",
+          slug: action.slug,
+          title: action.title,
+          url: action.url,
+          relatedTools: action.relatedTools,
+        });
+      }
+    });
   }, []);
 
   useEffect(() => {
@@ -183,6 +212,13 @@ export default function StudioVaultClient() {
     ? studio.keywords.find((k) => k.siteId === activeSite.id)?.keyword
     : undefined;
 
+  const openInlineItem = (next: StudioInlineItem) => {
+    setActiveInlineItem(next);
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
   const handleCopyPrompt = (id: string, text: string) => {
     if (typeof navigator !== "undefined" && navigator.clipboard) {
       void navigator.clipboard.writeText(text);
@@ -200,6 +236,13 @@ export default function StudioVaultClient() {
 
   const categoryLabelAll =
     activeTab === "playbooks" ? "All Tracks" : "All Categories";
+
+  const backLabel =
+    activeTab === "tools"
+      ? "Back to Tools"
+      : activeTab === "playbooks"
+        ? "Back to Playbooks"
+        : "Back to Prompts";
 
   const sectionTabs = [
     {
@@ -226,8 +269,8 @@ export default function StudioVaultClient() {
   ];
 
   return (
-    <div className="space-y-6">
-      {/* Navigation Hub Header + High-Contrast 3-Section Switcher */}
+    <div className="space-y-5">
+      {/* Persistent Top Vault Header + High-Contrast 3-Section Switcher */}
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs sm:p-6 dark:border-slate-800 dark:bg-[#0D1526]">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -257,7 +300,7 @@ export default function StudioVaultClient() {
         <div
           role="tablist"
           aria-label="Vault sections"
-          className="mt-5 grid grid-cols-1 gap-2.5 sm:grid-cols-3"
+          className="mt-4 grid grid-cols-1 gap-2.5 sm:grid-cols-3"
         >
           {sectionTabs.map((tab) => {
             const Icon = tab.icon;
@@ -271,6 +314,7 @@ export default function StudioVaultClient() {
                 onClick={() => {
                   setActiveTab(tab.id);
                   setSelectedCategory("all");
+                  setActiveInlineItem(null);
                 }}
                 className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-left transition ${
                   active
@@ -317,78 +361,91 @@ export default function StudioVaultClient() {
           })}
         </div>
 
-        {/* Clean Single-Row Search + Category Filter Toolbar */}
-        <div className="mt-4 flex flex-col gap-2.5 border-t border-slate-200/80 pt-4 sm:flex-row sm:items-center dark:border-slate-800/80">
-          <div className="relative flex-1">
-            <Search
-              size={14}
-              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
-            />
-            <input
-              type="search"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={`Search ${activeTab}...`}
-              className="w-full rounded-xl border border-slate-300 bg-white py-2 pl-9 pr-3.5 text-xs text-slate-900 focus:border-[#5271FF] focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-            />
-          </div>
+        {/* Search + Category Filter Toolbar (shown when browsing cards) */}
+        {activeInlineItem === null && (
+          <>
+            <div className="mt-4 flex flex-col gap-2.5 border-t border-slate-200/80 pt-4 sm:flex-row sm:items-center dark:border-slate-800/80">
+              <div className="relative flex-1">
+                <Search
+                  size={14}
+                  className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                />
+                <input
+                  type="search"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder={`Search ${activeTab}...`}
+                  className="w-full rounded-xl border border-slate-300 bg-white py-2 pl-9 pr-3.5 text-xs text-slate-900 focus:border-[#5271FF] focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                />
+              </div>
 
-          {categoryList.length > 0 && (
-            <div className="relative sm:w-64">
-              <Filter
-                size={13}
-                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-              />
-              <select
-                aria-label="Filter by category"
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full rounded-xl border border-slate-300 bg-white py-2 pl-8 pr-3 text-xs font-semibold text-slate-700 focus:border-[#5271FF] focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
-              >
-                <option value="all">{categoryLabelAll}</option>
-                {categoryList.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {formatCategoryLabel(cat)}
-                  </option>
-                ))}
-              </select>
+              {categoryList.length > 0 && (
+                <div className="relative sm:w-64">
+                  <Filter
+                    size={13}
+                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                  />
+                  <select
+                    aria-label="Filter by category"
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    className="w-full rounded-xl border border-slate-300 bg-white py-2 pl-8 pr-3 text-xs font-semibold text-slate-700 focus:border-[#5271FF] focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                  >
+                    <option value="all">{categoryLabelAll}</option>
+                    {categoryList.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {formatCategoryLabel(cat)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
-          )}
-        </div>
 
-        {/* Subtle Single-Line Quick-Filter Chips */}
-        {categoryList.length > 0 && (
-          <div className="mt-2.5 flex items-center gap-1.5 overflow-x-auto pb-1">
-            <button
-              type="button"
-              onClick={() => setSelectedCategory("all")}
-              className={`shrink-0 rounded-lg border px-2.5 py-1 text-[11px] font-medium transition ${
-                selectedCategory === "all"
-                  ? "border-[#5271FF]/40 bg-[#5271FF]/12 font-semibold text-[#4361EE] dark:text-[#b4c2ff]"
-                  : "border-transparent bg-slate-100/80 text-slate-600 hover:bg-slate-200/70 dark:bg-slate-800/60 dark:text-slate-400 dark:hover:text-slate-200"
-              }`}
-            >
-              All
-            </button>
-            {categoryList.map((cat) => (
-              <button
-                key={cat}
-                type="button"
-                onClick={() => setSelectedCategory(cat)}
-                className={`shrink-0 rounded-lg border px-2.5 py-1 text-[11px] font-medium transition ${
-                  selectedCategory === cat
-                    ? "border-[#5271FF]/40 bg-[#5271FF]/12 font-semibold text-[#4361EE] dark:text-[#b4c2ff]"
-                    : "border-transparent bg-slate-100/80 text-slate-600 hover:bg-slate-200/70 dark:bg-slate-800/60 dark:text-slate-400 dark:hover:text-slate-200"
-                }`}
-              >
-                {formatCategoryLabel(cat)}
-              </button>
-            ))}
-          </div>
+            {categoryList.length > 0 && (
+              <div className="mt-2.5 flex items-center gap-1.5 overflow-x-auto pb-1">
+                <button
+                  type="button"
+                  onClick={() => setSelectedCategory("all")}
+                  className={`shrink-0 rounded-lg border px-2.5 py-1 text-[11px] font-medium transition ${
+                    selectedCategory === "all"
+                      ? "border-[#5271FF]/40 bg-[#5271FF]/12 font-semibold text-[#4361EE] dark:text-[#b4c2ff]"
+                      : "border-transparent bg-slate-100/80 text-slate-600 hover:bg-slate-200/70 dark:bg-slate-800/60 dark:text-slate-400 dark:hover:text-slate-200"
+                  }`}
+                >
+                  All
+                </button>
+                {categoryList.map((cat) => (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setSelectedCategory(cat)}
+                    className={`shrink-0 rounded-lg border px-2.5 py-1 text-[11px] font-medium transition ${
+                      selectedCategory === cat
+                        ? "border-[#5271FF]/40 bg-[#5271FF]/12 font-semibold text-[#4361EE] dark:text-[#b4c2ff]"
+                        : "border-transparent bg-slate-100/80 text-slate-600 hover:bg-slate-200/70 dark:bg-slate-800/60 dark:text-slate-400 dark:hover:text-slate-200"
+                    }`}
+                  >
+                    {formatCategoryLabel(cat)}
+                  </button>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
 
-      {loading ? (
+      {/* INLINE TOOL / PLAYBOOK WORKSPACE OR LISTING CARDS */}
+      {activeInlineItem !== null ? (
+        <StudioInlineEmbedPanel
+          item={activeInlineItem}
+          activeSite={activeSite}
+          backLabel={backLabel}
+          completedPlaybookSlugs={studio.completedPlaybookSlugs}
+          onBack={() => setActiveInlineItem(null)}
+          onSwitchItem={(next) => openInlineItem(next)}
+        />
+      ) : loading ? (
         <div className="flex items-center justify-center rounded-2xl border border-slate-200 bg-white py-14 dark:border-slate-800 dark:bg-[#0D1526]">
           <Loader2 size={20} className="animate-spin text-[#5271FF]" />
         </div>
@@ -472,8 +529,8 @@ export default function StudioVaultClient() {
                       <button
                         type="button"
                         onClick={() =>
-                          dispatchStudioDrawer({
-                            type: "open-tool",
+                          openInlineItem({
+                            type: "tool",
                             slug: toolSlug,
                             title: matchedToolLabel,
                           })
@@ -491,7 +548,7 @@ export default function StudioVaultClient() {
           </div>
         )
       ) : activeTab === "tools" ? (
-        /* TAB 2: INTERACTIVE SEO TOOLS */
+        /* TAB 2: INTERACTIVE SEO TOOLS (Opens Inline) */
         tools.length === 0 ? (
           <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-xs text-slate-500 dark:border-slate-800 dark:bg-[#0D1526] dark:text-slate-400">
             No matching tools found. Try clearing your search or category filter.
@@ -519,8 +576,8 @@ export default function StudioVaultClient() {
                   <button
                     type="button"
                     onClick={() =>
-                      dispatchStudioDrawer({
-                        type: "open-tool",
+                      openInlineItem({
+                        type: "tool",
                         slug: tool.slug,
                         title: tool.name,
                       })
@@ -537,7 +594,7 @@ export default function StudioVaultClient() {
           </div>
         )
       ) : (
-        /* TAB 3: ACTION PLAYBOOKS */
+        /* TAB 3: ACTION PLAYBOOKS (Opens Inline) */
         <div className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3.5 text-xs dark:border-slate-800 dark:bg-[#0D1526]">
             <span className="font-semibold text-slate-700 dark:text-slate-300">
@@ -614,12 +671,12 @@ export default function StudioVaultClient() {
                       <button
                         type="button"
                         onClick={() =>
-                          dispatchStudioDrawer({
-                            type: "open-playbook",
+                          openInlineItem({
+                            type: "playbook",
                             slug: pb.slug,
                             title: pb.title,
                             url: pb.url,
-                            summary: pb.summary,
+                            track: pb.track,
                             relatedTools: relatedToolsList,
                           })
                         }
@@ -633,8 +690,8 @@ export default function StudioVaultClient() {
                         <button
                           type="button"
                           onClick={() =>
-                            dispatchStudioDrawer({
-                              type: "open-tool",
+                            openInlineItem({
+                              type: "tool",
                               slug: primaryTool.slug,
                               title: primaryTool.name,
                             })

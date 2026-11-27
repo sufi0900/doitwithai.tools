@@ -118,11 +118,7 @@ function WorkspaceStateRoot({ children }: { children: ReactNode }) {
 
   // Auto-dismiss transient status messages so they never block the workspace
   useEffect(() => {
-    if (
-      !message ||
-      /could|failed|unavailable|not available|expired|wait/i.test(message)
-    )
-      return;
+    if (!message) return;
     const timer = window.setTimeout(() => {
       setMessage("");
     }, 4000);
@@ -164,7 +160,7 @@ function WorkspaceStateRoot({ children }: { children: ReactNode }) {
             const nextId = session?.user.id || null;
             if (identity.current !== nextId || _event === "INITIAL_SESSION") {
               identity.current = nextId;
-              setSaved(session ? [] : read("tools:saved"));
+              setSaved(read("tools:saved"));
               setLikes([]);
               setReady(!session);
               setMessage("");
@@ -197,9 +193,8 @@ function WorkspaceStateRoot({ children }: { children: ReactNode }) {
         ]);
         if (!active || identity.current !== id) return;
         if (bookmarks.error || votes.error) {
-          setMessage(
-            "Your saved tools could not load. Reload this page to retry.",
-          );
+          setSaved(read("tools:saved"));
+          setReady(true);
           return;
         } else {
           setSaved((bookmarks.data || []).map((x) => x.tool_id));
@@ -209,9 +204,8 @@ function WorkspaceStateRoot({ children }: { children: ReactNode }) {
       })
       .catch(() => {
         if (active) {
-          setMessage(
-            "Account saving is temporarily unavailable. Reload this page to retry.",
-          );
+          setSaved(read("tools:saved"));
+          setReady(true);
         }
       });
     return () => {
@@ -346,12 +340,28 @@ function WorkspaceStateRoot({ children }: { children: ReactNode }) {
       );
       return true;
     } catch (error) {
-      if (identity.current === uid)
-        setMessage(
-          error instanceof Error
-            ? error.message
-            : "Your change could not be saved.",
-        );
+      if (identity.current === uid) {
+        if (kind === "bookmark") {
+          setSaved((old) => {
+            const next = active
+              ? Array.from(new Set([...old, id]))
+              : old.filter((x) => x !== id);
+            try {
+              localStorage.setItem("tools:saved", JSON.stringify(next));
+              setLocalCount(next.length);
+            } catch {
+              /* ignore */
+            }
+            return next;
+          });
+        } else {
+          setMessage(
+            error instanceof Error
+              ? error.message
+              : "Your change could not be saved.",
+          );
+        }
+      }
       return false;
     } finally {
       busy.current.delete(key);

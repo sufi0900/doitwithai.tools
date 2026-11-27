@@ -33,6 +33,7 @@ import {
   dispatchStudioDrawer,
   loadStudioState,
   saveStudioStateOptimistic,
+  subscribeStudioDrawer,
   subscribeStudioState,
 } from "@/lib/studio/store";
 import {
@@ -46,6 +47,9 @@ import type {
   StudioWorkspaceState,
 } from "@/lib/studio/types";
 import StudioGlobalDrawer from "./StudioGlobalDrawer";
+import StudioInlineEmbedPanel, {
+  type StudioInlineItem,
+} from "./StudioInlineEmbedPanel";
 
 interface SidebarNavItem {
   href: string;
@@ -136,6 +140,8 @@ export default function StudioShell({ children }: { children: ReactNode }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [siteArticlesCount, setSiteArticlesCount] = useState(0);
+  const [inlineWorkspaceItem, setInlineWorkspaceItem] =
+    useState<StudioInlineItem | null>(null);
 
   useEffect(() => {
     setStudio(loadStudioState());
@@ -179,6 +185,31 @@ export default function StudioShell({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setMobileNavOpen(false);
+    setInlineWorkspaceItem(null);
+  }, [pathname]);
+
+  useEffect(() => {
+    return subscribeStudioDrawer((action) => {
+      // /studio/vault renders inline tools & playbooks directly inside its own workspace so tabs remain on screen.
+      if (pathname === "/studio/vault" || pathname.startsWith("/studio/vault/")) {
+        return;
+      }
+      if (action.type === "open-tool") {
+        setInlineWorkspaceItem({
+          type: "tool",
+          slug: action.slug,
+          title: action.title || action.slug.replace(/-/g, " "),
+        });
+      } else if (action.type === "open-playbook") {
+        setInlineWorkspaceItem({
+          type: "playbook",
+          slug: action.slug,
+          title: action.title,
+          url: action.url,
+          relatedTools: action.relatedTools,
+        });
+      }
+    });
   }, [pathname]);
 
   const isAuthorized = Boolean(
@@ -398,6 +429,7 @@ export default function StudioShell({ children }: { children: ReactNode }) {
                 key={item.href}
                 href={item.href}
                 prefetch={false}
+                onClick={() => setInlineWorkspaceItem(null)}
                 title={compact ? item.label : undefined}
                 className={`flex items-center justify-between rounded-xl px-3 py-2.5 text-xs font-bold transition ${
                   active
@@ -443,6 +475,7 @@ export default function StudioShell({ children }: { children: ReactNode }) {
                   key={item.href}
                   href={item.href}
                   prefetch={false}
+                  onClick={() => setInlineWorkspaceItem(null)}
                   title={compact ? item.label : undefined}
                   className={`flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold transition ${
                     active
@@ -480,6 +513,7 @@ export default function StudioShell({ children }: { children: ReactNode }) {
                   key={item.href}
                   href={item.href}
                   prefetch={false}
+                  onClick={() => setInlineWorkspaceItem(null)}
                   title={compact ? item.label : undefined}
                   className={`flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold transition ${
                     active
@@ -646,7 +680,18 @@ export default function StudioShell({ children }: { children: ReactNode }) {
           </div>
 
           <div className="mx-auto w-full max-w-[1440px] flex-1 px-4 py-6 sm:px-6 lg:px-8">
-            {children}
+            {inlineWorkspaceItem ? (
+              <StudioInlineEmbedPanel
+                item={inlineWorkspaceItem}
+                activeSite={activeSite}
+                backLabel={`Back to ${currentNavItem?.label || "Dashboard"}`}
+                completedPlaybookSlugs={studio.completedPlaybookSlugs}
+                onBack={() => setInlineWorkspaceItem(null)}
+                onSwitchItem={(next) => setInlineWorkspaceItem(next)}
+              />
+            ) : (
+              children
+            )}
           </div>
         </div>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -10,12 +10,12 @@ import {
   ChevronDown,
   ChevronUp,
   Crown,
-  ExternalLink,
   FilePenLine,
   FileText,
   Globe,
   Link2,
   Plus,
+  Search,
   Trash2,
 } from "lucide-react";
 import WriterWorkspace from "@/features/writer-workspace/WriterWorkspace";
@@ -79,7 +79,12 @@ export default function StudioWriterClient() {
   const [articles, setArticles] = useState<StudioArticleEntry[]>([]);
   const [activeProjectId, setActiveProjectId] = useState<string>("");
   const [articlesExpanded, setArticlesExpanded] = useState(false);
-  const hasAutoExpandedRef = useRef(false);
+  const [dropdownAlign, setDropdownAlign] = useState<"left" | "right">("right");
+  const [articleSearch, setArticleSearch] = useState("");
+  const [articleStatusFilter, setArticleStatusFilter] = useState<
+    "all" | "in-progress" | "written" | "published"
+  >("all");
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setStudio(loadStudioState());
@@ -96,6 +101,29 @@ export default function StudioWriterClient() {
     return subscribeStudioState(() => setStudio(loadStudioState()));
   }, []);
 
+  useEffect(() => {
+    if (!articlesExpanded) return;
+    const handleMouseDown = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setArticlesExpanded(false);
+      }
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setArticlesExpanded(false);
+      }
+    };
+    document.addEventListener("mousedown", handleMouseDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleMouseDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [articlesExpanded]);
+
   const activeSite =
     studio.sites.find((s) => s.id === studio.activeSiteId) ||
     studio.sites[0] ||
@@ -111,11 +139,6 @@ export default function StudioWriterClient() {
           if (cancelled) return;
           const scoped = filterArticlesForSite(all, activeSite);
           setArticles(scoped);
-
-          if (!hasAutoExpandedRef.current && scoped.length > 0) {
-            hasAutoExpandedRef.current = true;
-            setArticlesExpanded(true);
-          }
 
           const latest = loadStudioState();
           const reconciled = reconcileKeywordStatuses(latest.keywords, all);
@@ -137,6 +160,47 @@ export default function StudioWriterClient() {
     };
   }, [activeSite?.id, activeSite]);
 
+  const activeArticle = useMemo(
+    () => articles.find((a) => a.projectId === activeProjectId) || null,
+    [articles, activeProjectId],
+  );
+
+  const statusCounts = useMemo(() => {
+    let inProgress = 0;
+    let written = 0;
+    let published = 0;
+    for (const a of articles) {
+      if (a.status === "published") published++;
+      else if (a.status === "written") written++;
+      else inProgress++;
+    }
+    return { inProgress, written, published, all: articles.length };
+  }, [articles]);
+
+  const filteredArticles = useMemo(() => {
+    const q = articleSearch.trim().toLowerCase();
+    return articles.filter((a) => {
+      if (
+        articleStatusFilter === "in-progress" &&
+        a.status !== "in-progress" &&
+        a.status !== "brief"
+      ) {
+        return false;
+      }
+      if (articleStatusFilter === "written" && a.status !== "written") {
+        return false;
+      }
+      if (articleStatusFilter === "published" && a.status !== "published") {
+        return false;
+      }
+      if (!q) return true;
+      return (
+        a.title.toLowerCase().includes(q) ||
+        a.primaryKeyword.toLowerCase().includes(q)
+      );
+    });
+  }, [articles, articleSearch, articleStatusFilter]);
+
   const limit = PLAN_LIMITS[studio.planTier];
   const overFreePreview =
     !unlimitedTesting &&
@@ -146,6 +210,25 @@ export default function StudioWriterClient() {
   const handleOpenArticle = (projectId: string) => {
     setActiveProjectId(projectId);
     requestWriterOpenProject(projectId);
+    setArticlesExpanded(false);
+  };
+
+  const toggleArticlesDropdown = () => {
+    setArticlesExpanded((prev) => {
+      const next = !prev;
+      if (next && dropdownRef.current && typeof window !== "undefined") {
+        const rect = dropdownRef.current.getBoundingClientRect();
+        const desiredWidth = Math.min(576, window.innerWidth - 32);
+        const spaceOnLeft = rect.right;
+        const spaceOnRight = window.innerWidth - rect.left;
+        setDropdownAlign(
+          spaceOnLeft < desiredWidth + 16 && spaceOnRight >= spaceOnLeft
+            ? "left"
+            : "right",
+        );
+      }
+      return next;
+    });
   };
 
   const handleStartNewArticle = () => {
@@ -173,7 +256,6 @@ export default function StudioWriterClient() {
     const due = new Date(Date.now() + 2 * 86_400_000)
       .toISOString()
       .slice(0, 10);
-    const activeArticle = articles.find((a) => a.projectId === activeProjectId);
     addPlannerItemOptimistic({
       id: `plan-${Date.now()}`,
       siteId: activeSite?.id || "general",
@@ -202,14 +284,15 @@ export default function StudioWriterClient() {
   };
 
   return (
-    <div className="space-y-5">
-      {/* Connected Website Context & Written Articles Switcher */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs sm:p-5 dark:border-slate-800 dark:bg-[#0D1526]">
+    <div className="space-y-4">
+      {/* Compact Workspace Toolbar + Searchable My Articles Dropdown */}
+      <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3.5 shadow-xs sm:px-5 dark:border-slate-800 dark:bg-[#0D1526]">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex min-w-0 flex-wrap items-center gap-2.5">
             <h1 className="text-base font-bold text-slate-900 sm:text-lg dark:text-white">
               AI Content Writer
             </h1>
+
             {activeSite ? (
               <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
                 <span
@@ -230,6 +313,26 @@ export default function StudioWriterClient() {
                 <Plus size={12} /> Connect Website
               </Link>
             )}
+
+            {activeArticle && (
+              <button
+                type="button"
+                onClick={toggleArticlesDropdown}
+                title={activeArticle.title}
+                className="hidden items-center gap-2 rounded-lg border border-slate-200/90 bg-slate-50/80 px-2.5 py-1 text-xs transition hover:border-[#5271FF]/40 md:inline-flex dark:border-slate-700/80 dark:bg-slate-900/70"
+              >
+                <span className="max-w-[240px] truncate font-semibold text-slate-800 dark:text-slate-100">
+                  {activeArticle.title}
+                </span>
+                <span
+                  className={`rounded border px-1.5 py-0.5 text-[10px] font-bold ${
+                    STATUS_BADGE_STYLES[activeArticle.status]
+                  }`}
+                >
+                  {ARTICLE_STATUS_LABELS[activeArticle.status]}
+                </span>
+              </button>
+            )}
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -242,24 +345,229 @@ export default function StudioWriterClient() {
               <span>New Article</span>
             </button>
 
-            <button
-              type="button"
-              onClick={() => setArticlesExpanded((prev) => !prev)}
-              aria-expanded={articlesExpanded}
-              className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-bold transition ${
-                articlesExpanded
-                  ? "border-[#5271FF]/50 bg-[#5271FF]/10 text-[#4361EE] dark:text-[#b4c2ff]"
-                  : "border-slate-200 bg-slate-50 text-slate-700 hover:border-[#5271FF]/40 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
-              }`}
-            >
-              <FileText size={13} />
-              <span>My Articles ({articles.length})</span>
-              {articlesExpanded ? (
-                <ChevronUp size={13} />
-              ) : (
-                <ChevronDown size={13} />
+            {/* Anchored My Articles Dropdown */}
+            <div ref={dropdownRef} className="relative">
+              <button
+                type="button"
+                onClick={toggleArticlesDropdown}
+                aria-expanded={articlesExpanded}
+                aria-haspopup="dialog"
+                className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-bold transition ${
+                  articlesExpanded
+                    ? "border-[#5271FF] bg-[#5271FF]/12 text-[#4361EE] dark:text-[#b4c2ff]"
+                    : "border-slate-200 bg-slate-50 text-slate-700 hover:border-[#5271FF]/50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                }`}
+              >
+                <FileText size={13} />
+                <span>My Articles ({articles.length})</span>
+                {articlesExpanded ? (
+                  <ChevronUp size={13} />
+                ) : (
+                  <ChevronDown size={13} />
+                )}
+              </button>
+
+              {articlesExpanded && (
+                <div
+                  role="dialog"
+                  aria-label="Saved articles list"
+                  className={`absolute top-full z-50 mt-2 w-[min(36rem,calc(100vw-2rem))] rounded-2xl border border-slate-200 bg-white p-3.5 shadow-2xl dark:border-slate-700 dark:bg-[#0D1526] ${
+                    dropdownAlign === "left" ? "left-0" : "right-0"
+                  }`}
+                >
+                  {/* Search & Status Filters */}
+                  <div className="space-y-2.5 border-b border-slate-200/80 pb-3 dark:border-slate-800">
+                    <div className="relative">
+                      <Search
+                        size={13}
+                        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                      />
+                      <input
+                        type="search"
+                        value={articleSearch}
+                        onChange={(e) => setArticleSearch(e.target.value)}
+                        placeholder="Search articles by title or keyword..."
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-8 pr-3 text-xs text-slate-900 focus:border-[#5271FF] focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                      />
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-1">
+                      {[
+                        { id: "all" as const, label: `All (${statusCounts.all})` },
+                        {
+                          id: "in-progress" as const,
+                          label: `In Progress (${statusCounts.inProgress})`,
+                        },
+                        {
+                          id: "written" as const,
+                          label: `Written (${statusCounts.written})`,
+                        },
+                        {
+                          id: "published" as const,
+                          label: `Published (${statusCounts.published})`,
+                        },
+                      ].map((tab) => (
+                        <button
+                          key={tab.id}
+                          type="button"
+                          onClick={() => setArticleStatusFilter(tab.id)}
+                          className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition ${
+                            articleStatusFilter === tab.id
+                              ? "bg-[#5271FF] text-white"
+                              : "bg-slate-100 text-slate-600 hover:bg-slate-200/70 dark:bg-slate-800/80 dark:text-slate-300 dark:hover:bg-slate-800"
+                          }`}
+                        >
+                          {tab.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Scrollable Compact Article Rows */}
+                  {filteredArticles.length === 0 ? (
+                    <div className="px-3 py-6 text-center text-xs text-slate-500 dark:text-slate-400">
+                      {articles.length === 0
+                        ? `No articles saved yet for ${activeSite?.name || "this workspace"}. Start writing below or pick a topic in Keyword Research.`
+                        : "No matching articles found. Try clearing your search or status filter."}
+                    </div>
+                  ) : (
+                    <div className="mt-2 max-h-[340px] divide-y divide-slate-100 overflow-y-auto pr-1 dark:divide-slate-800/80">
+                      {filteredArticles.map((article) => {
+                        const isCurrent = article.projectId === activeProjectId;
+                        const canPublishToggle =
+                          article.status === "written" ||
+                          article.status === "published";
+                        const formattedDate = article.updatedAtIso
+                          ? new Date(article.updatedAtIso).toLocaleDateString(
+                              undefined,
+                              { month: "short", day: "numeric" },
+                            )
+                          : "";
+
+                        return (
+                          <div
+                            key={article.projectId}
+                            className={`flex items-center justify-between gap-3 py-2.5 px-2 rounded-lg transition ${
+                              isCurrent
+                                ? "bg-[#5271FF]/[0.08]"
+                                : "hover:bg-slate-50 dark:hover:bg-slate-900/60"
+                            }`}
+                          >
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-xs font-bold text-slate-900 dark:text-white">
+                                {article.title}
+                              </p>
+                              <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+                                <span
+                                  className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-semibold ${
+                                    STATUS_BADGE_STYLES[article.status]
+                                  }`}
+                                >
+                                  {ARTICLE_STATUS_LABELS[article.status]}
+                                </span>
+                                {article.primaryKeyword && (
+                                  <span className="max-w-[180px] truncate font-medium text-slate-600 dark:text-slate-300">
+                                    {article.primaryKeyword}
+                                  </span>
+                                )}
+                                <span>·</span>
+                                <span>
+                                  {article.wordCount.toLocaleString()} words
+                                </span>
+                                {formattedDate && (
+                                  <>
+                                    <span>·</span>
+                                    <span>{formattedDate}</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="flex shrink-0 items-center gap-1.5">
+                              {isCurrent ? (
+                                <span className="inline-flex items-center gap-1 rounded-lg border border-[#5271FF]/35 bg-[#5271FF]/12 px-2.5 py-1 text-[11px] font-bold text-[#4361EE] dark:text-[#b4c2ff]">
+                                  Active
+                                </span>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleOpenArticle(article.projectId)
+                                  }
+                                  className="inline-flex items-center gap-1 rounded-lg bg-[#5271FF] px-2.5 py-1 text-[11px] font-bold text-white transition hover:bg-[#4361EE]"
+                                >
+                                  <FilePenLine size={11} />
+                                  <span>
+                                    {article.status === "in-progress" ||
+                                    article.status === "brief"
+                                      ? "Resume"
+                                      : "Open"}
+                                  </span>
+                                </button>
+                              )}
+
+                              {canPublishToggle && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    toggleArticlePublished(
+                                      article.projectId,
+                                      article.status !== "published",
+                                    )
+                                  }
+                                  title={
+                                    article.status === "published"
+                                      ? "Unmark as published"
+                                      : "Mark as published"
+                                  }
+                                  className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-[11px] font-semibold transition ${
+                                    article.status === "published"
+                                      ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 dark:text-emerald-300"
+                                      : "border-slate-200 text-slate-600 hover:border-emerald-500/50 hover:text-emerald-600 dark:border-slate-700 dark:text-slate-300"
+                                  }`}
+                                >
+                                  <CheckCircle2 size={11} />
+                                  <span>
+                                    {article.status === "published"
+                                      ? "Published"
+                                      : "Publish"}
+                                  </span>
+                                </button>
+                              )}
+
+                              <button
+                                type="button"
+                                onClick={() => void handleDeleteArticle(article)}
+                                title="Delete article"
+                                aria-label={`Delete ${article.title}`}
+                                className="rounded-lg p-1.5 text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40"
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Footer */}
+                  <div className="mt-2.5 flex items-center justify-between border-t border-slate-200/80 pt-2.5 text-[11px] text-slate-500 dark:border-slate-800 dark:text-slate-400">
+                    <span>
+                      Showing {filteredArticles.length} of {articles.length}{" "}
+                      articles
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleStartNewArticle}
+                      className="inline-flex items-center gap-1 font-bold text-[#5271FF] hover:underline dark:text-[#9aabff]"
+                    >
+                      <Plus size={12} /> New Article
+                    </button>
+                  </div>
+                </div>
               )}
-            </button>
+            </div>
 
             <button
               type="button"
@@ -277,169 +585,8 @@ export default function StudioWriterClient() {
               <span>Find Keywords</span>
               <ArrowRight size={12} />
             </Link>
-
-            <Link
-              href="/ai-content-writer"
-              className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 dark:border-slate-700 dark:text-slate-300 dark:hover:text-white"
-            >
-              <span>Fullscreen</span>
-              <ExternalLink size={12} />
-            </Link>
           </div>
         </div>
-
-        {/* Written Articles Library & 1-Click Switcher */}
-        {articlesExpanded && (
-          <div className="mt-4 border-t border-slate-200/80 pt-4 dark:border-slate-800/80">
-            {articles.length === 0 ? (
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-dashed border-slate-200 bg-slate-50/70 px-4 py-3 text-xs dark:border-slate-800 dark:bg-slate-900/40">
-                <span className="text-slate-600 dark:text-slate-300">
-                  No articles written yet for{" "}
-                  <strong>{activeSite?.name || "this workspace"}</strong>. Draft
-                  one below or pick a topic in Keyword Research.
-                </span>
-                <Link
-                  href="/studio/keywords"
-                  className="inline-flex items-center gap-1 font-bold text-[#5271FF] hover:underline dark:text-[#9aabff]"
-                >
-                  Open Keyword Research <ArrowRight size={12} />
-                </Link>
-              </div>
-            ) : (
-              <>
-                <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2 text-xs">
-                  <span className="font-semibold text-slate-600 dark:text-slate-300">
-                    Saved Articles ({articles.length}) — reopen any draft or
-                    finished article at any time:
-                  </span>
-                </div>
-
-                <div className="grid gap-2.5 md:grid-cols-2 xl:grid-cols-3">
-                  {articles.map((article) => {
-                    const isCurrent = article.projectId === activeProjectId;
-                    const canPublishToggle =
-                      article.status === "written" ||
-                      article.status === "published";
-                    const formattedDate = article.updatedAtIso
-                      ? new Date(article.updatedAtIso).toLocaleDateString(
-                          undefined,
-                          { month: "short", day: "numeric" },
-                        )
-                      : "";
-
-                    return (
-                      <div
-                        key={article.projectId}
-                        className={`flex flex-col justify-between rounded-xl border p-3.5 transition ${
-                          isCurrent
-                            ? "border-[#5271FF] bg-[#5271FF]/[0.06] ring-1 ring-[#5271FF]/30"
-                            : "border-slate-200/90 bg-slate-50/70 hover:border-[#5271FF]/60 dark:border-slate-800 dark:bg-slate-900/50"
-                        }`}
-                      >
-                        <div>
-                          <div className="flex items-center justify-between gap-2 text-[11px]">
-                            <span
-                              className={`inline-flex items-center rounded-md border px-2 py-0.5 font-semibold ${
-                                STATUS_BADGE_STYLES[article.status]
-                              }`}
-                            >
-                              {ARTICLE_STATUS_LABELS[article.status]}
-                            </span>
-                            <div className="flex items-center gap-1.5">
-                              {isCurrent && (
-                                <span className="rounded-md bg-[#5271FF] px-1.5 py-0.5 text-[10px] font-bold text-white">
-                                  Open now
-                                </span>
-                              )}
-                              <span className="text-slate-500 dark:text-slate-400">
-                                {article.wordCount.toLocaleString()} words
-                                {formattedDate ? ` · ${formattedDate}` : ""}
-                              </span>
-                            </div>
-                          </div>
-
-                          <p className="mt-2 line-clamp-2 text-xs font-bold text-slate-900 dark:text-white">
-                            {article.title}
-                          </p>
-                          {article.primaryKeyword && (
-                            <p className="mt-1 truncate text-[11px] text-slate-500 dark:text-slate-400">
-                              Keyword:{" "}
-                              <strong className="font-semibold">
-                                {article.primaryKeyword}
-                              </strong>
-                            </p>
-                          )}
-                        </div>
-
-                        <div className="mt-3 flex items-center gap-1.5">
-                          <button
-                            type="button"
-                            disabled={isCurrent}
-                            onClick={() => handleOpenArticle(article.projectId)}
-                            className={`inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition ${
-                              isCurrent
-                                ? "cursor-default border border-[#5271FF]/30 bg-[#5271FF]/10 text-[#4361EE] dark:text-[#b4c2ff]"
-                                : "bg-[#5271FF] text-white hover:bg-[#4361EE]"
-                            }`}
-                          >
-                            <FilePenLine size={12} />
-                            <span>
-                              {isCurrent
-                                ? "Currently Open"
-                                : article.status === "in-progress" ||
-                                    article.status === "brief"
-                                  ? "Resume Draft"
-                                  : "Open Article"}
-                            </span>
-                          </button>
-
-                          {canPublishToggle && (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                toggleArticlePublished(
-                                  article.projectId,
-                                  article.status !== "published",
-                                )
-                              }
-                              title={
-                                article.status === "published"
-                                  ? "Unmark as published"
-                                  : "Mark as published"
-                              }
-                              className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold transition ${
-                                article.status === "published"
-                                  ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 dark:text-emerald-300"
-                                  : "border-slate-200 text-slate-600 hover:border-emerald-500/50 hover:text-emerald-600 dark:border-slate-700 dark:text-slate-300"
-                              }`}
-                            >
-                              <CheckCircle2 size={12} />
-                              <span>
-                                {article.status === "published"
-                                  ? "Published"
-                                  : "Mark Published"}
-                              </span>
-                            </button>
-                          )}
-
-                          <button
-                            type="button"
-                            onClick={() => void handleDeleteArticle(article)}
-                            title="Delete article"
-                            aria-label={`Delete ${article.title}`}
-                            className="rounded-lg border border-transparent p-1.5 text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40"
-                          >
-                            <Trash2 size={13} />
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </>
-            )}
-          </div>
-        )}
       </div>
 
       {/* Only render Free Upgrade Banner when NOT in Unlimited Testing Mode */}
