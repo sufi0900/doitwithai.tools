@@ -29,6 +29,7 @@ import {
 } from "@/lib/shared/writer-batch-manifest";
 import { useWorkspace } from "./useWorkspace";
 import { useGeneration } from "./useGeneration";
+import { WRITER_OPEN_PROJECT_EVENT } from "@/lib/studio/article-library";
 import {
   articleMarkdown,
   articleRevision,
@@ -287,6 +288,30 @@ export default function WriterWorkspace() {
       window.removeEventListener("keydown", key);
       rewriteAbort.current?.abort();
     };
+  }, []);
+
+  const studioActionsRef = useRef({ gen, store, current });
+  studioActionsRef.current = { gen, store, current };
+
+  useEffect(() => {
+    const onOpenProject = (event: Event) => {
+      const detail = (event as CustomEvent<{ projectId?: string; create?: boolean }>)
+        .detail;
+      if (!detail) return;
+      const { gen: g, store: s, current: cur } = studioActionsRef.current;
+      if (detail.create) {
+        g.stop();
+        void s.create().then(() => setStudioUnlocked(false));
+        return;
+      }
+      if (detail.projectId && detail.projectId !== cur.current.projectId) {
+        g.stop();
+        void s.switchProject(detail.projectId);
+      }
+    };
+    window.addEventListener(WRITER_OPEN_PROJECT_EVENT, onOpenProject);
+    return () =>
+      window.removeEventListener(WRITER_OPEN_PROJECT_EVENT, onOpenProject);
   }, []);
 
   useEffect(() => {

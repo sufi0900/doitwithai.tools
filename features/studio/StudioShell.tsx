@@ -35,6 +35,12 @@ import {
   saveStudioStateOptimistic,
   subscribeStudioState,
 } from "@/lib/studio/store";
+import {
+  countSavedArticlesForSite,
+  filterArticlesForSite,
+  loadStudioArticleLibrary,
+  STUDIO_ARTICLES_CHANGED_EVENT,
+} from "@/lib/studio/article-library";
 import type {
   StudioRuntimeStatus,
   StudioWorkspaceState,
@@ -52,10 +58,9 @@ interface SidebarNavItem {
 const SIDEBAR_ITEMS: SidebarNavItem[] = [
   {
     href: "/studio/writer",
-    label: "Content Writer & Ideas",
+    label: "Content Writer",
     icon: FilePenLine,
     group: "primary",
-    badge: "Focus",
   },
   {
     href: "/studio/overview",
@@ -127,25 +132,45 @@ export default function StudioShell({ children }: { children: ReactNode }) {
     studioAiConfigured: true,
     providerLabel: "Studio Gateway",
   });
+  const [runtimeChecked, setRuntimeChecked] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [siteArticlesCount, setSiteArticlesCount] = useState(0);
 
   useEffect(() => {
     setStudio(loadStudioState());
+    try {
+      if (window.sessionStorage.getItem("doitwithai_studio_unlimited") === "1") {
+        setRuntime((prev) => ({ ...prev, unlimitedTesting: true }));
+        setRuntimeChecked(true);
+      }
+    } catch {
+      // ignore storage errors
+    }
     setHydrated(true);
 
     fetch("/api/studio/runtime")
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data && typeof data.unlimitedTesting === "boolean") {
+          const isUnlim = Boolean(data.unlimitedTesting);
           setRuntime({
-            unlimitedTesting: Boolean(data.unlimitedTesting),
+            unlimitedTesting: isUnlim,
             studioAiConfigured: Boolean(data.studioAiConfigured),
             providerLabel: String(data.providerLabel || "Studio Gateway"),
           });
+          try {
+            window.sessionStorage.setItem(
+              "doitwithai_studio_unlimited",
+              isUnlim ? "1" : "0",
+            );
+          } catch {
+            // ignore
+          }
         }
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setRuntimeChecked(true));
 
     return subscribeStudioState(() => {
       setStudio(loadStudioState());
@@ -163,6 +188,28 @@ export default function StudioShell({ children }: { children: ReactNode }) {
     studio.sites.find((s) => s.id === studio.activeSiteId) ||
     studio.sites[0] ||
     null;
+
+  useEffect(() => {
+    let cancelled = false;
+    setSiteArticlesCount(countSavedArticlesForSite());
+    const refreshArticlesCount = () => {
+      void loadStudioArticleLibrary()
+        .then((all) => {
+          if (cancelled) return;
+          setSiteArticlesCount(filterArticlesForSite(all, activeSite).length);
+        })
+        .catch(() => {});
+    };
+    refreshArticlesCount();
+    window.addEventListener(STUDIO_ARTICLES_CHANGED_EVENT, refreshArticlesCount);
+    return () => {
+      cancelled = true;
+      window.removeEventListener(
+        STUDIO_ARTICLES_CHANGED_EVENT,
+        refreshArticlesCount,
+      );
+    };
+  }, [activeSite?.id, activeSite]);
   const maxArticles = ARTICLE_LIMITS[studio.planTier];
   const isHubOrOnboarding =
     pathname === "/studio" || pathname.startsWith("/studio/onboarding");
@@ -181,7 +228,7 @@ export default function StudioShell({ children }: { children: ReactNode }) {
     }));
   };
 
-  if (!hydrated) {
+  if (!hydrated || (!isAuthorized && !runtimeChecked)) {
     return (
       <div className="min-h-screen bg-slate-50 px-4 py-12 text-slate-700 dark:bg-[#080E1C] dark:text-slate-200">
         <div className="mx-auto max-w-6xl animate-pulse space-y-4">
@@ -245,9 +292,6 @@ export default function StudioShell({ children }: { children: ReactNode }) {
   const currentNavItem = SIDEBAR_ITEMS.find(
     (item) => pathname === item.href || pathname.startsWith(`${item.href}/`),
   );
-  const siteIdeasCount = activeSite
-    ? studio.keywords.filter((k) => k.siteId === activeSite.id).length
-    : 0;
 
   const renderSidebarContent = (compact: boolean) => (
     <div className="flex h-full flex-col justify-between">
@@ -343,13 +387,8 @@ export default function StudioShell({ children }: { children: ReactNode }) {
           )}
         </div>
 
-        {/* Primary Focus Navigation */}
+        {/* Content Writer */}
         <div>
-          {!compact && (
-            <p className="mb-1.5 px-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-              Primary Focus
-            </p>
-          )}
           {SIDEBAR_ITEMS.filter((i) => i.group === "primary").map((item) => {
             const Icon = item.icon;
             const active =
@@ -370,15 +409,16 @@ export default function StudioShell({ children }: { children: ReactNode }) {
                   <Icon size={16} className="shrink-0" />
                   {!compact && <span className="truncate">{item.label}</span>}
                 </span>
-                {!compact && siteIdeasCount > 0 && (
+                {!compact && siteArticlesCount > 0 && (
                   <span
+                    title={`${siteArticlesCount} saved article${siteArticlesCount === 1 ? "" : "s"}`}
                     className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
                       active
                         ? "bg-white/20 text-white"
                         : "bg-[#5271FF]/15 text-[#5271FF] dark:text-[#b4c2ff]"
                     }`}
                   >
-                    {siteIdeasCount}
+                    {siteArticlesCount}
                   </span>
                 )}
               </Link>

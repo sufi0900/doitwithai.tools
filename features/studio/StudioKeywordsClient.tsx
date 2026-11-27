@@ -26,6 +26,15 @@ import {
   classifyManualKeyword,
   seedKeywordIntoWriterStudio,
 } from "@/lib/studio/writer-bridge";
+import {
+  countArticlesByKeyword,
+  loadStudioArticleLibrary,
+  reconcileKeywordStatuses,
+  setActiveWriterProject,
+  STUDIO_ARTICLES_CHANGED_EVENT,
+  toggleArticlePublished,
+  type StudioArticleEntry,
+} from "@/lib/studio/article-library";
 import QuotaUpgradeModal from "./QuotaUpgradeModal";
 import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 import type { SavedKeywordItem, StudioWorkspaceState } from "@/lib/studio/types";
@@ -43,7 +52,11 @@ export default function StudioKeywordsClient() {
   const [discoveryNote, setDiscoveryNote] = useState("");
   const [bulkInput, setBulkInput] = useState("");
   const [showManualAdd, setShowManualAdd] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<
+    "to-write" | "in-progress" | "completed" | "all"
+  >("to-write");
   const [activeCluster, setActiveCluster] = useState("all");
+  const [articles, setArticles] = useState<StudioArticleEntry[]>([]);
   const [launchingId, setLaunchingId] = useState<string | null>(null);
   const [upgradeReason, setUpgradeReason] = useState("");
   const [unlimitedTesting, setUnlimitedTesting] = useState(false);
@@ -73,6 +86,33 @@ export default function StudioKeywordsClient() {
     return subscribeStudioState(() => setStudio(loadStudioState()));
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    const syncArticles = () => {
+      void loadStudioArticleLibrary()
+        .then((all) => {
+          if (cancelled) return;
+          setArticles(all);
+          const current = loadStudioState();
+          const reconciled = reconcileKeywordStatuses(current.keywords, all);
+          if (reconciled) {
+            saveStudioStateOptimistic((prev) => ({
+              ...prev,
+              keywords: reconciled,
+            }));
+          }
+        })
+        .catch(() => {});
+    };
+
+    syncArticles();
+    window.addEventListener(STUDIO_ARTICLES_CHANGED_EVENT, syncArticles);
+    return () => {
+      cancelled = true;
+      window.removeEventListener(STUDIO_ARTICLES_CHANGED_EVENT, syncArticles);
+    };
+  }, []);
+
   const activeSite =
     studio.sites.find((s) => s.id === studio.activeSiteId) ||
     studio.sites[0] ||
@@ -94,17 +134,57 @@ export default function StudioKeywordsClient() {
     [studio.pageOptimizations, activeSite],
   );
 
-  const clusters = useMemo(() => {
-    const names = new Set(siteKeywords.map((k) => k.clusterName));
-    return ["all", ...Array.from(names)];
+  const statusCounts = useMemo(() => {
+    let toWrite = 0;
+    let inProgress = 0;
+    let completed = 0;
+    for (const k of siteKeywords) {
+      if (k.status === "drafting") inProgress++;
+      else if (k.status === "written" || k.status === "published") completed++;
+      else toWrite++;
+    }
+    return { toWrite, inProgress, completed, all: siteKeywords.length };
   }, [siteKeywords]);
+
+  const articleCountsByKeyword = useMemo(
+    () => countArticlesByKeyword(articles),
+    [articles],
+  );
+
+  const statusFilteredKeywords = useMemo(() => {
+    if (statusFilter === "to-write") {
+      return siteKeywords.filter(
+        (k) => k.status === "backlog" || k.status === "planned",
+      );
+    }
+    if (statusFilter === "in-progress") {
+      return siteKeywords.filter((k) => k.status === "drafting");
+    }
+    if (statusFilter === "completed") {
+      return siteKeywords.filter(
+        (k) => k.status === "written" || k.status === "published",
+      );
+    }
+    return siteKeywords;
+  }, [siteKeywords, statusFilter]);
+
+  const clusters = useMemo(() => {
+    const names = new Set(statusFilteredKeywords.map((k) => k.clusterName));
+    return ["all", ...Array.from(names)];
+  }, [statusFilteredKeywords]);
+
+  useEffect(() => {
+    if (activeCluster !== "all" && !clusters.includes(activeCluster)) {
+      setActiveCluster("all");
+    }
+  }, [activeCluster, clusters]);
 
   const filteredKeywords = useMemo(
     () =>
       activeCluster === "all"
-        ? siteKeywords
-        : siteKeywords.filter((k) => k.clusterName === activeCluster),
-    [siteKeywords, activeCluster],
+        ? statusFilteredKeywords
+        : statusFilteredKeywords.filter((k) => k.clusterName === activeCluster),
+    [statusFilteredKeywords, activeCluster],
   );
 
   const handleRunAiDiscovery = async (e: React.FormEvent) => {
@@ -248,10 +328,12 @@ export default function StudioKeywordsClient() {
         return;
       }
 
-      await seedKeywordIntoWriterStudio({
+      const projectId = await seedKeywordIntoWriterStudio({
         keyword: item.keyword,
         suggestedTitle: item.suggestedTitle,
         suggestedSlug: item.suggestedSlug,
+        articleAngle: item.articleAngle,
+        internalLinkTargets: item.internalLinkTargets,
         site: activeSite,
       });
       saveStudioStateOptimistic((prev) => ({
@@ -261,13 +343,53 @@ export default function StudioKeywordsClient() {
           articlesGenerated: prev.usage.articlesGenerated + 1,
         },
         keywords: prev.keywords.map((k) =>
-          k.id === item.id ? { ...k, status: "drafting" } : k,
+          k.id === item.id
+            ? { ...k, status: "drafting", articleProjectId: projectId }
+            : k,
         ),
       }));
       router.push("/studio/writer");
     } finally {
       setLaunchingId(null);
     }
+  };
+
+  const handleOpenLinkedArticle = (item: SavedKeywordItem) => {
+    const linkedId =
+      item.articleProjectId ||
+      articles.find(
+        (a) =>
+          a.primaryKeyword.trim().toLowerCase() ===
+          item.keyword.trim().toLowerCase(),
+      )?.projectId;
+    if (linkedId) {
+      setActiveWriterProject(linkedId);
+      router.push("/studio/writer");
+      return;
+    }
+    void handleSendToWriter(item);
+  };
+
+  const handleToggleKeywordPublished = (item: SavedKeywordItem) => {
+    const nextPublished = item.status !== "published";
+    const linkedId =
+      item.articleProjectId ||
+      articles.find(
+        (a) =>
+          a.primaryKeyword.trim().toLowerCase() ===
+          item.keyword.trim().toLowerCase(),
+      )?.projectId;
+    if (linkedId) {
+      toggleArticlePublished(linkedId, nextPublished);
+    }
+    saveStudioStateOptimistic((prev) => ({
+      ...prev,
+      keywords: prev.keywords.map((k) =>
+        k.id === item.id
+          ? { ...k, status: nextPublished ? "published" : "written" }
+          : k,
+      ),
+    }));
   };
 
   const handleScheduleInPlanner = (item: SavedKeywordItem) => {
@@ -334,7 +456,7 @@ export default function StudioKeywordsClient() {
                   : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
               }`}
             >
-              New Keyword &amp; Blog Ideas ({siteKeywords.length})
+              New Keyword &amp; Blog Ideas ({statusCounts.toWrite})
             </button>
             <button
               type="button"
@@ -428,6 +550,43 @@ export default function StudioKeywordsClient() {
       {/* TAB 1: NEW KEYWORD & BLOG IDEAS */}
       {activeTab === "new-ideas" ? (
         <div className="space-y-4">
+          {/* Article Progress Status Filter */}
+          <div className="flex flex-wrap items-center justify-between gap-2.5">
+            <div className="inline-flex flex-wrap items-center gap-1 rounded-xl border border-slate-200 bg-white p-1 dark:border-slate-800 dark:bg-[#0D1526]">
+              {[
+                {
+                  id: "to-write" as const,
+                  label: `To Write (${statusCounts.toWrite})`,
+                },
+                {
+                  id: "in-progress" as const,
+                  label: `In Progress (${statusCounts.inProgress})`,
+                },
+                {
+                  id: "completed" as const,
+                  label: `Written & Published (${statusCounts.completed})`,
+                },
+                {
+                  id: "all" as const,
+                  label: `All (${statusCounts.all})`,
+                },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setStatusFilter(tab.id)}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                    statusFilter === tab.id
+                      ? "bg-[#5271FF] text-white shadow-xs"
+                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {clusters.length > 1 && (
             <div className="flex flex-wrap items-center gap-1.5">
               {clusters.map((cluster) => (
@@ -441,7 +600,9 @@ export default function StudioKeywordsClient() {
                       : "border border-slate-200 bg-white text-slate-600 hover:border-[#5271FF]/50 dark:border-slate-800 dark:bg-[#0D1526] dark:text-slate-300"
                   }`}
                 >
-                  {cluster === "all" ? `All Clusters (${siteKeywords.length})` : cluster}
+                  {cluster === "all"
+                    ? `All Clusters (${statusFilteredKeywords.length})`
+                    : cluster}
                 </button>
               ))}
             </div>
@@ -449,23 +610,62 @@ export default function StudioKeywordsClient() {
 
           {filteredKeywords.length === 0 ? (
             <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center dark:border-slate-800 dark:bg-[#0D1526]">
-              <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                No saved keywords yet for this workspace.
-              </p>
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                Click &ldquo;Generate AI Niche Ideas&rdquo; above to synthesize
-                non-cannibalizing keywords and blog titles for your site.
-              </p>
+              {siteKeywords.length > 0 && statusFilter === "to-write" ? (
+                <>
+                  <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                    All saved keywords already have articles in progress or
+                    written.
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                    Switch tabs above to resume or review them, or generate
+                    fresh ideas at the top.
+                  </p>
+                  <div className="mt-4 flex flex-wrap justify-center gap-2">
+                    {statusCounts.inProgress > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setStatusFilter("in-progress")}
+                        className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3.5 py-1.5 text-xs font-bold text-amber-700 dark:text-amber-300"
+                      >
+                        View In Progress ({statusCounts.inProgress})
+                      </button>
+                    )}
+                    {statusCounts.completed > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setStatusFilter("completed")}
+                        className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3.5 py-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300"
+                      >
+                        View Written &amp; Published ({statusCounts.completed})
+                      </button>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                    {statusFilter === "all"
+                      ? "No saved keywords yet for this workspace."
+                      : `No keywords in "${statusFilter.replace("-", " ")}" yet.`}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                    Click &ldquo;Generate AI Niche Ideas&rdquo; above to
+                    synthesize non-cannibalizing keywords and blog titles for
+                    your site.
+                  </p>
+                </>
+              )}
             </div>
           ) : (
             <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs dark:border-slate-800 dark:bg-[#0D1526]">
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[820px] divide-y divide-slate-200 text-left text-xs dark:divide-slate-800">
+                <table className="w-full min-w-[900px] divide-y divide-slate-200 text-left text-xs dark:divide-slate-800">
                   <thead className="bg-slate-50/90 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:bg-slate-900/70 dark:text-slate-400">
                     <tr>
                       <th className="px-4 py-3">Keyword &amp; Suggested Article</th>
                       <th className="px-3 py-3">Cluster</th>
                       <th className="px-3 py-3">Intent</th>
+                      <th className="px-3 py-3">Status</th>
                       <th className="px-3 py-3">Sitemap Check</th>
                       <th className="px-4 py-3 text-right">Actions</th>
                     </tr>
@@ -473,6 +673,36 @@ export default function StudioKeywordsClient() {
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
                     {filteredKeywords.map((item) => {
                       const overlap = item.cannibalizationStatus || "clear";
+                      const articleCount =
+                        articleCountsByKeyword[
+                          item.keyword.trim().toLowerCase()
+                        ] || 0;
+                      const statusMeta =
+                        item.status === "published"
+                          ? {
+                              label: "Published",
+                              cls: "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+                            }
+                          : item.status === "written"
+                            ? {
+                                label: "Written",
+                                cls: "border-[#5271FF]/30 bg-[#5271FF]/10 text-[#4361EE] dark:text-[#b4c2ff]",
+                              }
+                            : item.status === "drafting"
+                              ? {
+                                  label: "In Progress",
+                                  cls: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+                                }
+                              : item.status === "planned"
+                                ? {
+                                    label: "Planned",
+                                    cls: "border-sky-500/30 bg-sky-500/10 text-sky-700 dark:text-sky-300",
+                                  }
+                                : {
+                                    label: "New Idea",
+                                    cls: "border-slate-200 bg-slate-100 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300",
+                                  };
+
                       return (
                         <tr
                           key={item.id}
@@ -507,6 +737,21 @@ export default function StudioKeywordsClient() {
                                 : ""}
                             </span>
                           </td>
+                          <td className="whitespace-nowrap px-3 py-3.5">
+                            <span
+                              className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[11px] font-semibold ${statusMeta.cls}`}
+                            >
+                              {statusMeta.label}
+                            </span>
+                            {articleCount > 1 && (
+                              <Link
+                                href="/studio/writer"
+                                className="mt-1 block text-[11px] font-semibold text-[#5271FF] hover:underline dark:text-[#9aabff]"
+                              >
+                                {articleCount} articles
+                              </Link>
+                            )}
+                          </td>
                           <td className="px-3 py-3.5">
                             {overlap === "clear" ? (
                               <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
@@ -523,29 +768,81 @@ export default function StudioKeywordsClient() {
                               </Link>
                             )}
                           </td>
-                          <td className="px-4 py-3.5 text-right">
+                          <td className="whitespace-nowrap px-4 py-3.5 text-right">
                             <div className="inline-flex items-center gap-1.5">
-                              <button
-                                type="button"
-                                disabled={launchingId === item.id}
-                                onClick={() => void handleSendToWriter(item)}
-                                className="inline-flex items-center gap-1.5 rounded-lg bg-[#5271FF] px-3 py-1.5 text-xs font-bold text-white transition hover:bg-[#4361EE] disabled:opacity-60"
-                              >
-                                <FilePenLine size={13} />
-                                <span>
-                                  {launchingId === item.id
-                                    ? "Opening..."
-                                    : "Write Article"}
-                                </span>
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleScheduleInPlanner(item)}
-                                title="Add to Editorial Planner"
-                                className="rounded-lg border border-slate-200 p-1.5 text-slate-600 hover:border-[#5271FF] hover:text-[#5271FF] dark:border-slate-700 dark:text-slate-300"
-                              >
-                                <CalendarPlus size={14} />
-                              </button>
+                              {item.status === "backlog" ||
+                              item.status === "planned" ? (
+                                <button
+                                  type="button"
+                                  disabled={launchingId === item.id}
+                                  onClick={() => void handleSendToWriter(item)}
+                                  className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg bg-[#5271FF] px-3 py-1.5 text-xs font-bold text-white transition hover:bg-[#4361EE] disabled:opacity-60"
+                                >
+                                  <FilePenLine size={13} />
+                                  <span>
+                                    {launchingId === item.id
+                                      ? "Opening..."
+                                      : "Write Article"}
+                                  </span>
+                                </button>
+                              ) : item.status === "drafting" ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenLinkedArticle(item)}
+                                  className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-amber-500/40 bg-amber-500/15 px-3 py-1.5 text-xs font-bold text-amber-800 transition hover:bg-amber-500/25 dark:text-amber-200"
+                                >
+                                  <FilePenLine size={13} />
+                                  <span>Resume Draft</span>
+                                </button>
+                              ) : (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenLinkedArticle(item)}
+                                    className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg bg-[#5271FF] px-3 py-1.5 text-xs font-bold text-white transition hover:bg-[#4361EE]"
+                                  >
+                                    <FilePenLine size={13} />
+                                    <span>Open Article</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleToggleKeywordPublished(item)
+                                    }
+                                    title={
+                                      item.status === "published"
+                                        ? "Unmark as published"
+                                        : "Mark as published"
+                                    }
+                                    className={`inline-flex items-center gap-1 whitespace-nowrap rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold transition ${
+                                      item.status === "published"
+                                        ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/25 dark:text-emerald-300"
+                                        : "border-slate-200 text-slate-600 hover:border-emerald-500/50 hover:text-emerald-600 dark:border-slate-700 dark:text-slate-300"
+                                    }`}
+                                  >
+                                    <CheckCircle2 size={12} />
+                                    <span>
+                                      {item.status === "published"
+                                        ? "Published"
+                                        : "Mark Published"}
+                                    </span>
+                                  </button>
+                                </>
+                              )}
+
+                              {(item.status === "backlog" ||
+                                item.status === "planned" ||
+                                item.status === "drafting") && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleScheduleInPlanner(item)}
+                                  title="Add to Editorial Planner"
+                                  className="rounded-lg border border-slate-200 p-1.5 text-slate-600 hover:border-[#5271FF] hover:text-[#5271FF] dark:border-slate-700 dark:text-slate-300"
+                                >
+                                  <CalendarPlus size={14} />
+                                </button>
+                              )}
+
                               <button
                                 type="button"
                                 onClick={() => handleDeleteKeyword(item.id)}

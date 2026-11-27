@@ -56,6 +56,7 @@ export default function ToolsShell({ children }: { children: ReactNode }) {
     [openSections, setOpenSections] = useState<Record<string, boolean>>({}),
     [embedConfig, setEmbedConfig] = useState<{
       active: boolean;
+      isStudioEmbed: boolean;
       accent: string;
       bg: string;
       brand: string;
@@ -63,8 +64,9 @@ export default function ToolsShell({ children }: { children: ReactNode }) {
       subtitle: string;
     }>({
       active: false,
-      accent: "#3452D1",
-      bg: "#0B1120",
+      isStudioEmbed: false,
+      accent: "",
+      bg: "",
       brand: "",
       title: "",
       subtitle: "",
@@ -72,7 +74,8 @@ export default function ToolsShell({ children }: { children: ReactNode }) {
   const triggerRef = useRef<HTMLButtonElement>(null),
     drawerRef = useRef<HTMLDivElement>(null),
     restoreRef = useRef<HTMLButtonElement>(null),
-    collapseRef = useRef<HTMLButtonElement>(null);
+    collapseRef = useRef<HTMLButtonElement>(null),
+    embedRootRef = useRef<HTMLDivElement>(null);
   const current = tools.find((tool) => toolPath(tool.slug) === pathname),
     isCatalog = !current;
   const collapsed = workspace.sidebarCollapsed;
@@ -84,21 +87,27 @@ export default function ToolsShell({ children }: { children: ReactNode }) {
       const params = new URLSearchParams(window.location.search);
       const isEmbed =
         params.get("embed") === "1" || params.get("app") === "1";
-      const accent = params.get("accent") || "#3452D1";
-      const bg = params.get("bg") || "#0B1120";
+      const isStudioEmbed = params.get("studio") === "1";
+      const rawAccent = (params.get("accent") || "").trim();
+      const rawBg = (params.get("bg") || "").trim();
       const brand = params.get("brand") || "";
       const title = params.get("title") || "";
       const subtitle = params.get("subtitle") || "";
       setEmbedConfig({
         active: isEmbed,
-        accent: accent.startsWith("#") ? accent : `#${accent}`,
-        bg: bg.startsWith("#") ? bg : `#${bg}`,
+        isStudioEmbed,
+        accent: rawAccent
+          ? rawAccent.startsWith("#")
+            ? rawAccent
+            : `#${rawAccent}`
+          : "",
+        bg: rawBg ? (rawBg.startsWith("#") ? rawBg : `#${rawBg}`) : "",
         brand,
         title,
         subtitle,
       });
 
-      if (isEmbed) {
+      if (isEmbed && (title || subtitle)) {
         const timer = window.setTimeout(() => {
           const h1 = document.querySelector(".diwai-embedded-tool-root h1");
           if (h1 && title) h1.textContent = title;
@@ -109,6 +118,108 @@ export default function ToolsShell({ children }: { children: ReactNode }) {
       }
     }
   }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!embedConfig.active) return;
+    const root = embedRootRef.current;
+    if (!root) return;
+    const contentWrapper = root.lastElementChild as HTMLElement | null;
+    if (!contentWrapper) return;
+
+    const getBlocks = (): HTMLElement[] => {
+      const nonMeta = (el: Element): el is HTMLElement =>
+        el instanceof HTMLElement &&
+        !["SCRIPT", "STYLE", "LINK", "TEMPLATE"].includes(el.tagName);
+
+      let container: HTMLElement = contentWrapper;
+      const topChildren = Array.from(container.children).filter(nonMeta);
+      if (
+        topChildren.length === 1 &&
+        (topChildren[0]!.tagName === "MAIN" || topChildren[0]!.tagName === "DIV")
+      ) {
+        const innerChildren = Array.from(topChildren[0]!.children).filter(nonMeta);
+        if (innerChildren.length > 1) {
+          container = topChildren[0]!;
+        }
+      }
+      return Array.from(container.children).filter(nonMeta);
+    };
+
+    const isInteractiveBlock = (block: HTMLElement): boolean => {
+      if (
+        block.querySelector(
+          'input, textarea, select, form, canvas, [contenteditable="true"], [role="tablist"]',
+        )
+      ) {
+        return true;
+      }
+      if (block.tagName === "HEADER" || block.querySelector("h1")) {
+        return false;
+      }
+      const buttons = Array.from(block.querySelectorAll("button"));
+      return buttons.some(
+        (btn) =>
+          !btn.closest("nav") && !btn.closest('[data-portable-hero-bar="true"]'),
+      );
+    };
+
+    const pruneStaticChrome = () => {
+      const blocks = getBlocks();
+      if (blocks.length === 0) return;
+
+      const interactiveIndices: number[] = [];
+      blocks.forEach((block, idx) => {
+        if (isInteractiveBlock(block)) interactiveIndices.push(idx);
+      });
+
+      // Safety invariant: never hide anything if no interactive block was detected
+      if (interactiveIndices.length === 0) {
+        blocks.forEach((b) => b.removeAttribute("data-studio-embed-hidden"));
+        return;
+      }
+
+      const firstInteractive = interactiveIndices[0]!;
+      const lastInteractive = interactiveIndices[interactiveIndices.length - 1]!;
+
+      blocks.forEach((block, idx) => {
+        if (isInteractiveBlock(block)) {
+          block.removeAttribute("data-studio-embed-hidden");
+        } else if (idx < firstInteractive) {
+          if (
+            block.querySelector("h1") &&
+            !block.querySelector("input, textarea, select, form")
+          ) {
+            block.setAttribute("data-studio-embed-hidden", "true");
+          } else {
+            block.removeAttribute("data-studio-embed-hidden");
+          }
+        } else if (idx > lastInteractive) {
+          if (!block.querySelector("input, textarea, select, form, canvas")) {
+            block.setAttribute("data-studio-embed-hidden", "true");
+          } else {
+            block.removeAttribute("data-studio-embed-hidden");
+          }
+        } else {
+          block.removeAttribute("data-studio-embed-hidden");
+        }
+      });
+    };
+
+    pruneStaticChrome();
+    const timer = window.setTimeout(pruneStaticChrome, 150);
+    const observer = new MutationObserver(() => pruneStaticChrome());
+    observer.observe(contentWrapper, { childList: true, subtree: true });
+    const stopObserverTimer = window.setTimeout(
+      () => observer.disconnect(),
+      3000,
+    );
+
+    return () => {
+      window.clearTimeout(timer);
+      window.clearTimeout(stopObserverTimer);
+      observer.disconnect();
+    };
+  }, [embedConfig.active, pathname]);
   useEffect(() => {
     if (!drawerOpen) return;
     const previous = document.body.style.overflow;
@@ -371,24 +482,32 @@ export default function ToolsShell({ children }: { children: ReactNode }) {
     </div>
   );
   if (embedConfig.active) {
+    const embedStyle: React.CSSProperties = {};
+    if (embedConfig.accent) {
+      (embedStyle as Record<string, string>)["--brand-accent"] =
+        embedConfig.accent;
+    }
+    if (embedConfig.bg) {
+      embedStyle.backgroundColor = embedConfig.bg;
+    }
+
     return (
       <div
+        ref={embedRootRef}
         className="diwai-embedded-tool-root min-h-screen w-full"
-        style={
-          {
-            "--brand-accent": embedConfig.accent,
-            backgroundColor: embedConfig.bg,
-          } as React.CSSProperties
-        }
+        data-studio-embed={embedConfig.isStudioEmbed ? "true" : undefined}
+        style={embedStyle}
       >
         <style>{`
           .diwai-embedded-tool-root nav[aria-label="Breadcrumb"],
           .diwai-embedded-tool-root [data-portable-hero-bar="true"],
-          .diwai-embedded-tool-root > div > section,
-          .diwai-embedded-tool-root > div > div + div,
-          .diwai-embedded-tool-root > div > div + section {
+          .diwai-embedded-tool-root aside[aria-label="Supporting guides and related tools"],
+          .diwai-embedded-tool-root [data-studio-embed-hidden="true"] {
             display: none !important;
           }
+          ${
+            embedConfig.accent
+              ? `
           .diwai-embedded-tool-root button[type="submit"],
           .diwai-embedded-tool-root .bg-\\[\\#3452d1\\],
           .diwai-embedded-tool-root .bg-blue-600 {
@@ -397,6 +516,8 @@ export default function ToolsShell({ children }: { children: ReactNode }) {
           .diwai-embedded-tool-root .text-\\[\\#5271ff\\],
           .diwai-embedded-tool-root .text-\\[\\#b4c3ff\\] {
             color: ${embedConfig.accent} !important;
+          }`
+              : ""
           }
         `}</style>
         <div>{children}</div>

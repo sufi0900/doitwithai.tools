@@ -15,8 +15,16 @@ const STUDIO_EVENT = "doitwithai:studio-updated";
 const STUDIO_DRAWER_EVENT = "doitwithai:studio-drawer";
 
 export type StudioDrawerAction =
-  | { type: "open-copilot"; prompt?: string }
+  | { type: "open-copilot"; prompt?: string; autoSend?: boolean }
   | { type: "open-tool"; slug: string; title?: string }
+  | {
+      type: "open-playbook";
+      slug: string;
+      title: string;
+      url: string;
+      summary?: string;
+      relatedTools?: Array<{ slug: string; name: string }>;
+    }
   | { type: "close" };
 
 export function dispatchStudioDrawer(action: StudioDrawerAction) {
@@ -163,6 +171,7 @@ export function upsertConnectedSite(
           (k) =>
             k.siteId !== effectiveSite.id ||
             k.status === "drafting" ||
+            k.status === "written" ||
             k.status === "published" ||
             (!incomingLower.has(k.keyword.toLowerCase()) &&
               !/how to start .* step by step/i.test(k.keyword)),

@@ -11,6 +11,7 @@ import {
 import type { BlogProjectMetaSummary } from "@/lib/blog-writer/project-storage-db";
 import type { Project } from "./types";
 import { blankProject, workspace } from "./model";
+import { notifyStudioArticlesChanged } from "@/lib/studio/article-library";
 const ACTIVE = "prism-writer-active-v1";
 export function useWorkspace() {
   const [project, setState] = useState<Project>(blankProject),
@@ -49,6 +50,7 @@ export function useWorkspace() {
             }
           }
           await refresh();
+          notifyStudioArticlesChanged();
         } catch {
           if (mounted.current) {
             setSaved(false);
@@ -94,6 +96,7 @@ export function useWorkspace() {
         current.current = p;
         setState(p);
         setProjects(list);
+        notifyStudioArticlesChanged();
         const durable = (await getBlogStorageBackend()) === "indexeddb";
         setPersistent(durable);
         setSaved(Boolean(selected) && durable);
@@ -145,6 +148,7 @@ export function useWorkspace() {
     current.current = p;
     setState(p);
     persisted.current = null;
+    notifyStudioArticlesChanged();
   };
   const switchProject = async (pid: string) => {
     await save();

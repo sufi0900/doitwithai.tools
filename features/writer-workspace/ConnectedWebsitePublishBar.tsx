@@ -14,6 +14,7 @@ import {
   setSelectedWriterTargetSiteId,
   upsertWriterArticleIntoLocalWebsite,
 } from "../website-builder/lib/local-websites-store";
+import { markArticlePublished } from "@/lib/studio/article-library";
 
 export interface ConnectedWebsitePublishBarProps {
   article: WriterArticleBridgeInput;
@@ -162,6 +163,9 @@ export function ConnectedWebsitePublishBar({
             localRes.message ||
               `Synced "${payload.title}" to "${selectedWebsite.name}".`,
           );
+          if (publishImmediately) {
+            markArticlePublished(payload.sourceArticleProjectId);
+          }
           setLocalWebsites(listLocalWebsitesAsConnectedSummaries());
         }
         return;
@@ -189,6 +193,9 @@ export function ConnectedWebsitePublishBar({
               ? `Published live to "${selectedWebsite.name}" (${payload.blocks.length} structured blocks synced).`
               : `Saved as a reviewable draft inside "${selectedWebsite.name}" (${payload.blocks.length} blocks).`,
           );
+          if (publishImmediately) {
+            markArticlePublished(payload.sourceArticleProjectId);
+          }
         }
       } else {
         const targetPath = selectedWebsite.publicSlug

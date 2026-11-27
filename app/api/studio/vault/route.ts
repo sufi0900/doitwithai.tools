@@ -20,6 +20,15 @@ function mapArticleToTrack(category: string, tags: string[]): string {
   return "Track 2 · AI Content Writing & GEO";
 }
 
+function formatSlugFallbackName(slug: string): string {
+  return slug
+    .replace(/-/g, " ")
+    .replace(/\b(ai|seo|geo|aeo|url|urls|faq|html|pdf|utm|nap|cta)\b/gi, (m) =>
+      m.toUpperCase(),
+    )
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const q = (url.searchParams.get("q") || "").trim().toLowerCase();
@@ -29,6 +38,8 @@ export async function GET(request: Request) {
     Math.max(12, Number(url.searchParams.get("limit") || 60)),
   );
 
+  const toolNameBySlug = new Map(ALL_LIVE_TOOLS.map((t) => [t.slug, t.name]));
+
   const promptCategories = Array.from(
     new Set(ALL_SITE_PROMPTS.map((p) => p.category)),
   );
@@ -36,8 +47,32 @@ export async function GET(request: Request) {
     new Set(ALL_LIVE_TOOLS.map((t) => t.category)),
   );
 
+  const mappedPlaybooks = ALL_PUBLISHED_ARTICLES.map((art) => ({
+    slug: art.slug,
+    title: art.title,
+    url: art.url,
+    summary: art.summary,
+    track: mapArticleToTrack(art.category, art.topicTags),
+    topicTags: art.topicTags.slice(0, 4),
+    relatedToolSlugs: art.relatedToolSlugs.slice(0, 3),
+    relatedTools: art.relatedToolSlugs.slice(0, 3).map((slug) => ({
+      slug,
+      name: toolNameBySlug.get(slug) || formatSlugFallbackName(slug),
+    })),
+  }));
+
+  const playbookTracks = Array.from(
+    new Set(mappedPlaybooks.map((p) => p.track)),
+  ).sort();
+
   const filteredPrompts = ALL_SITE_PROMPTS.filter((p) => {
-    if (category !== "all" && p.category !== category) return false;
+    if (
+      category !== "all" &&
+      promptCategories.includes(category) &&
+      p.category !== category
+    ) {
+      return false;
+    }
     if (!q) return true;
     return (
       p.title.toLowerCase().includes(q) ||
@@ -49,6 +84,7 @@ export async function GET(request: Request) {
   const filteredTools = ALL_LIVE_TOOLS.filter((t) => {
     if (
       category !== "all" &&
+      (toolCategories.includes(category) || t.categories.includes(category)) &&
       t.category !== category &&
       !t.categories.includes(category)
     ) {
@@ -60,26 +96,25 @@ export async function GET(request: Request) {
       t.shortDescription.toLowerCase().includes(q) ||
       t.tags.some((tag) => tag.toLowerCase().includes(q))
     );
-  }).slice(0, 96);
+  }).slice(0, 150);
 
-  const playbooks = ALL_PUBLISHED_ARTICLES.filter((a) => {
-    if (!q) return true;
-    return (
-      a.title.toLowerCase().includes(q) ||
-      a.summary.toLowerCase().includes(q) ||
-      a.topicTags.some((tag) => tag.toLowerCase().includes(q))
-    );
-  })
-    .slice(0, 60)
-    .map((art) => ({
-      slug: art.slug,
-      title: art.title,
-      url: art.url,
-      summary: art.summary,
-      track: mapArticleToTrack(art.category, art.topicTags),
-      topicTags: art.topicTags.slice(0, 4),
-      relatedToolSlugs: art.relatedToolSlugs.slice(0, 3),
-    }));
+  const playbooks = mappedPlaybooks
+    .filter((pb) => {
+      if (
+        category !== "all" &&
+        playbookTracks.includes(category) &&
+        pb.track !== category
+      ) {
+        return false;
+      }
+      if (!q) return true;
+      return (
+        pb.title.toLowerCase().includes(q) ||
+        pb.summary.toLowerCase().includes(q) ||
+        pb.topicTags.some((tag) => tag.toLowerCase().includes(q))
+      );
+    })
+    .slice(0, 80);
 
   return NextResponse.json(
     {
@@ -91,6 +126,7 @@ export async function GET(request: Request) {
       },
       promptCategories,
       toolCategories,
+      playbookTracks,
       prompts: filteredPrompts,
       tools: filteredTools,
       playbooks,

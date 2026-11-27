@@ -71,7 +71,8 @@ export interface SavedKeywordItem {
   kdEstimate: number;
   suggestedTitle: string;
   suggestedSlug: string;
-  status: "backlog" | "planned" | "drafting" | "published";
+  status: "backlog" | "planned" | "drafting" | "written" | "published";
+  articleProjectId?: string;
   funnelStage?: "tofu" | "mofu" | "bofu";
   articleAngle?: string;
   internalLinkTargets?: Array<{ url: string; title: string }>;

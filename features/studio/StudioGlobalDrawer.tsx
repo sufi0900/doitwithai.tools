@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
+  BookOpen,
   Bot,
   Check,
   Copy,
@@ -13,6 +14,7 @@ import {
   Wrench,
   X,
 } from "lucide-react";
+import { toolPath } from "@/features/tool-catalog/catalog";
 import {
   appendCopilotMessages,
   loadStudioState,
@@ -37,15 +39,24 @@ interface CopilotApiResponse {
   followUps?: string[];
 }
 
+function resolveDrawerToolPath(slug: string): string {
+  if (slug === "blog-to-infographic-generator") {
+    return "/tools/blog-section-infographic-generator";
+  }
+  return toolPath(slug);
+}
+
 export default function StudioGlobalDrawer({ activeSite }: Props) {
   const [drawer, setDrawer] = useState<StudioDrawerAction>({ type: "close" });
   const [messages, setMessages] = useState<StudioCopilotMessage[]>([]);
   const [input, setInput] = useState("");
+  const [pendingPrompt, setPendingPrompt] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [latestPrompts, setLatestPrompts] = useState<
     Array<{ id: string; title: string; prompt: string }>
   >([]);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [iframeLoaded, setIframeLoaded] = useState(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
   const siteKey = activeSite?.id || "global";
@@ -58,8 +69,15 @@ export default function StudioGlobalDrawer({ activeSite }: Props) {
   useEffect(() => {
     return subscribeStudioDrawer((action) => {
       setDrawer(action);
+      if (action.type === "open-tool" || action.type === "open-playbook") {
+        setIframeLoaded(false);
+      }
       if (action.type === "open-copilot" && action.prompt) {
-        setInput(action.prompt);
+        if (action.autoSend) {
+          setPendingPrompt(action.prompt);
+        } else {
+          setInput(action.prompt);
+        }
       }
     });
   }, []);
@@ -69,8 +87,6 @@ export default function StudioGlobalDrawer({ activeSite }: Props) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages, sending]);
-
-  if (drawer.type === "close") return null;
 
   const sendQuestion = async (rawQuestion: string) => {
     const trimmed = rawQuestion.trim();
@@ -155,6 +171,17 @@ export default function StudioGlobalDrawer({ activeSite }: Props) {
     }
   };
 
+  useEffect(() => {
+    if (drawer.type === "open-copilot" && pendingPrompt && !sending) {
+      const promptToRun = pendingPrompt;
+      setPendingPrompt(null);
+      void sendQuestion(promptToRun);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [drawer.type, pendingPrompt, sending]);
+
+  if (drawer.type === "close") return null;
+
   const handleCopyPrompt = (id: string, text: string) => {
     if (typeof navigator !== "undefined" && navigator.clipboard) {
       void navigator.clipboard.writeText(text);
@@ -175,11 +202,20 @@ export default function StudioGlobalDrawer({ activeSite }: Props) {
         "How do I earn natural editorial backlinks without cold spam?",
       ];
 
+  const isWideDrawer =
+    drawer.type === "open-tool" || drawer.type === "open-playbook";
+  const resolvedToolHref =
+    drawer.type === "open-tool" ? resolveDrawerToolPath(drawer.slug) : "";
+  const playbookEmbedHref =
+    drawer.type === "open-playbook"
+      ? `${drawer.url}${drawer.url.includes("?") ? "&" : "?"}embed=1`
+      : "";
+
   return (
     <div className="fixed inset-0 z-[10040] flex justify-end bg-slate-950/55 backdrop-blur-xs">
       <div
         className={`flex h-full w-full flex-col border-l border-slate-200 bg-white text-slate-900 shadow-2xl dark:border-slate-800 dark:bg-[#0B1222] dark:text-slate-100 ${
-          drawer.type === "open-tool" ? "max-w-4xl" : "max-w-xl"
+          isWideDrawer ? "max-w-4xl" : "max-w-xl"
         }`}
       >
         {/* Drawer Header */}
@@ -188,6 +224,8 @@ export default function StudioGlobalDrawer({ activeSite }: Props) {
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#5271FF]/15 text-[#5271FF] dark:text-[#9aabff]">
               {drawer.type === "open-copilot" ? (
                 <Bot size={18} />
+              ) : drawer.type === "open-playbook" ? (
+                <BookOpen size={17} />
               ) : (
                 <Wrench size={17} />
               )}
@@ -196,12 +234,14 @@ export default function StudioGlobalDrawer({ activeSite }: Props) {
               <h2 className="truncate text-sm font-bold">
                 {drawer.type === "open-copilot"
                   ? "DoItWithAI Brand Strategist"
-                  : drawer.title || "In-Dashboard Tool Workbench"}
+                  : drawer.type === "open-playbook"
+                    ? drawer.title
+                    : drawer.title || "Tool Workbench"}
               </h2>
               <p className="truncate text-xs text-slate-500 dark:text-slate-400">
                 {activeSite
-                  ? `Grounded in ${activeSite.name} + DoItWithAI Playbooks`
-                  : "Grounded in DoItWithAI Tools, Prompts & SEO Playbooks"}
+                  ? `Active site: ${activeSite.name}`
+                  : "DoItWithAI Studio"}
               </p>
             </div>
           </div>
@@ -216,35 +256,115 @@ export default function StudioGlobalDrawer({ activeSite }: Props) {
           </button>
         </div>
 
-        {/* MODE B: IN-DASHBOARD TOOL RUNNER */}
+        {/* MODE B: INTERACTIVE TOOL WORKBENCH */}
         {drawer.type === "open-tool" ? (
-          <div className="flex flex-1 flex-col overflow-hidden">
-            <div className="flex items-center justify-between border-b border-slate-200/80 bg-slate-50 px-5 py-2 text-xs dark:border-slate-800/80 dark:bg-slate-900/60">
+          <div className="relative flex flex-1 flex-col overflow-hidden">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/80 bg-slate-50 px-5 py-2 text-xs dark:border-slate-800/80 dark:bg-slate-900/60">
               <span className="font-medium text-slate-600 dark:text-slate-300">
-                Running inside your Studio workspace — zero context loss
+                {activeSite
+                  ? `Configured for ${activeSite.name}`
+                  : "Interactive SEO Tool"}
               </span>
               <div className="flex items-center gap-3">
                 <button
                   type="button"
                   onClick={() => setDrawer({ type: "open-copilot" })}
-                  className="font-semibold text-slate-600 hover:text-[#5271FF] dark:text-slate-300"
+                  className="inline-flex items-center gap-1 font-semibold text-slate-600 hover:text-[#5271FF] dark:text-slate-300"
                 >
-                  Switch to Brand AI
+                  <Bot size={12} />
+                  <span>Ask Brand AI</span>
                 </button>
                 <Link
-                  href={`/tools/${drawer.slug}`}
+                  href={resolvedToolHref}
                   target="_blank"
                   className="inline-flex items-center gap-1 font-semibold text-[#5271FF] hover:underline dark:text-[#9aabff]"
                 >
-                  Standalone view <ExternalLink size={12} />
+                  Open in new tab <ExternalLink size={12} />
                 </Link>
               </div>
             </div>
-            <iframe
-              src={`/tools/${drawer.slug}?embed=1`}
-              title={drawer.title || drawer.slug}
-              className="h-full w-full flex-1 border-0 bg-white dark:bg-[#0B1222]"
-            />
+
+            <div className="relative flex-1 overflow-hidden">
+              {!iframeLoaded && (
+                <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-white/80 dark:bg-[#0B1222]/85">
+                  <div className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 shadow-xs dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
+                    <Loader2 size={14} className="animate-spin text-[#5271FF]" />
+                    <span>Loading tool...</span>
+                  </div>
+                </div>
+              )}
+              <iframe
+                key={drawer.slug}
+                src={`${resolvedToolHref}?embed=1&studio=1`}
+                title={drawer.title || drawer.slug}
+                onLoad={() => setIframeLoaded(true)}
+                className="h-full w-full flex-1 border-0 bg-white dark:bg-[#0B1222]"
+              />
+            </div>
+          </div>
+        ) : drawer.type === "open-playbook" ? (
+          /* MODE C: EXECUTIVE PLAYBOOK READER + MATCHED TOOL SHORTCUT */
+          <div className="relative flex flex-1 flex-col overflow-hidden">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/80 bg-slate-50 px-5 py-2.5 text-xs dark:border-slate-800/80 dark:bg-slate-900/60">
+              <div className="flex flex-wrap items-center gap-2">
+                {drawer.relatedTools?.[0] && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const t = drawer.relatedTools![0]!;
+                      setIframeLoaded(false);
+                      setDrawer({
+                        type: "open-tool",
+                        slug: t.slug,
+                        title: t.name,
+                      });
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#5271FF] px-3 py-1 font-bold text-white transition hover:bg-[#4361EE]"
+                  >
+                    <Wrench size={12} />
+                    <span>{drawer.relatedTools[0].name}</span>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const prompt = `Summarize the step-by-step action checklist from "${drawer.title}" and tailor it to my connected website.`;
+                    setDrawer({ type: "open-copilot", prompt, autoSend: true });
+                    setPendingPrompt(prompt);
+                  }}
+                  className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 font-semibold text-slate-700 hover:border-[#5271FF] hover:text-[#5271FF] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                >
+                  <Bot size={12} />
+                  <span>AI Action Checklist</span>
+                </button>
+              </div>
+              <Link
+                href={drawer.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 font-semibold text-[#5271FF] hover:underline dark:text-[#9aabff]"
+              >
+                Open in new tab <ExternalLink size={12} />
+              </Link>
+            </div>
+
+            <div className="relative flex-1 overflow-hidden">
+              {!iframeLoaded && (
+                <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-white/80 dark:bg-[#0B1222]/85">
+                  <div className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 shadow-xs dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
+                    <Loader2 size={14} className="animate-spin text-[#5271FF]" />
+                    <span>Loading playbook...</span>
+                  </div>
+                </div>
+              )}
+              <iframe
+                key={drawer.url}
+                src={playbookEmbedHref}
+                title={drawer.title}
+                onLoad={() => setIframeLoaded(true)}
+                className="h-full w-full flex-1 border-0 bg-white dark:bg-[#0B1222]"
+              />
+            </div>
           </div>
         ) : (
           /* MODE A: SITE-AWARE DOITWITHAI BRAND AI STRATEGIST CHAT */
@@ -310,17 +430,18 @@ export default function StudioGlobalDrawer({ activeSite }: Props) {
                             <button
                               key={slug}
                               type="button"
-                              onClick={() =>
+                              onClick={() => {
+                                setIframeLoaded(false);
                                 setDrawer({
                                   type: "open-tool",
                                   slug,
                                   title: name || slug,
-                                })
-                              }
+                                });
+                              }}
                               className="inline-flex items-center gap-1 rounded-lg border border-[#5271FF]/30 bg-[#5271FF]/10 px-2.5 py-1 text-[11px] font-semibold text-[#5271FF] hover:bg-[#5271FF] hover:text-white dark:text-[#9aabff]"
                             >
                               <Wrench size={11} />
-                              <span>Run {name || slug}</span>
+                              <span>{name || slug}</span>
                             </button>
                           );
                         })}

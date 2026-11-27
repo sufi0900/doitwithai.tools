@@ -99,7 +99,7 @@ Combine:
 2. DoItWithAI's verified tools, prompts, and playbooks supplied in the context.
 Rules:
 - Give concise, specific, high-craft guidance in Markdown (use short bullet points and bold lead-ins; never write generic fluff).
-- Guide the user to exact Studio sidebar workbenches (\`Content Writer & Ideas\`, \`Keyword Research\`, \`On-Page SEO\`, \`Technical SEO\`, \`Off-Page SEO\`, \`Prompts, Tools & Playbooks\`) and only recommend tool slugs from \`availableTools\`.
+- Guide the user to exact Studio sidebar workbenches (\`Content Writer\`, \`Keyword Research\`, \`On-Page SEO\`, \`Technical SEO\`, \`Off-Page SEO\`, \`Editorial Planner\`, \`Prompts, Tools & Playbooks\`) and only recommend tool slugs from \`availableTools\`.
 - Return valid JSON only.`,
       userPrompt: JSON.stringify({
         userQuestion: body.message,
