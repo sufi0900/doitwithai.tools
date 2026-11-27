@@ -23,6 +23,11 @@ import {
 } from "./model";
 import type { useWorkspace } from "./useWorkspace";
 import { canApplyResponse, draftPendingSections } from "./jobs";
+import {
+  allocateRoleWeightedSectionBudgets,
+  auditAndRepairArticleFactualIntegrity,
+  matchSectionLinksByCapability,
+} from "./niche-policies";
 export { canApplyResponse } from "./jobs";
 
 export const INITIAL_PIPELINE_STAGES: PipelineStageRecord[] = [
@@ -98,18 +103,52 @@ export function generationContext(p: Project) {
       : ""
     : "";
 
+  const contract = research?.briefContract;
+  const resolvedTargetWords =
+    w.lengthMode !== "custom" && contract
+      ? contract.recommendedTargetWords
+      : w.targetWords;
+  const resolvedTone =
+    w.toneMode !== "custom" && contract
+      ? contract.resolvedTone
+      : p.keywordCluster.toneOfVoice;
+
+  const briefContractSummary = contract
+    ? `Format: ${contract.archetypeLabel} | Niche: ${contract.nicheLabel} (${contract.editorialStrictness} accuracy) | Auto Length: ${contract.targetWordsMin}-${contract.targetWordsMax}w | Tone: ${resolvedTone} | Qualifiers: ${contract.requiredQualifiers.join("; ")} | Avoid: ${contract.prohibitedClaims.join("; ")}`
+    : "";
+
+  const evidenceLines = (research?.evidencePassages || [])
+    .slice(0, 8)
+    .map((ev) => `- ${ev.claimOrFact} (${ev.sourceTitle})`)
+    .join("\n");
+
   const researchSummary = [
     research?.analyzedIntent || "",
     research?.groundedSummary
-      ? `Live Web Findings:\n${research.groundedSummary.slice(0, 1800)}`
+      ? `Live Web Findings:\n${research.groundedSummary.slice(0, 2800)}`
       : "",
+    evidenceLines ? `Extracted Source Passages:\n${evidenceLines}` : "",
     research?.competitorAngles?.length
-      ? `Angles: ${research.competitorAngles.slice(0, 4).join(" | ")}`
+      ? `Information Gain Angles: ${research.competitorAngles.slice(0, 5).join(" | ")}`
       : "",
   ]
     .filter(Boolean)
     .join("\n\n")
-    .slice(0, 3000);
+    .slice(0, 6000);
+
+  // Prioritize external/primary evidence first so internal site links never crowd out research
+  const prioritizedSources = [
+    ...w.references.filter(
+      (r) =>
+        !p.brandSiteUrl ||
+        !r.url.startsWith(p.brandSiteUrl.replace(/\/+$/, "")),
+    ),
+    ...w.references.filter(
+      (r) =>
+        Boolean(p.brandSiteUrl) &&
+        r.url.startsWith(p.brandSiteUrl.replace(/\/+$/, "")),
+    ),
+  ].slice(0, 8);
 
   return {
     brief:
@@ -117,9 +156,9 @@ export function generationContext(p: Project) {
       `Write an article titled ${p.metaPack.h1Title || p.projectTitle}.`,
     keyword: p.keywordCluster.primaryKeyword,
     audience: p.keywordCluster.targetAudience,
-    tone: p.keywordCluster.toneOfVoice,
+    tone: resolvedTone,
     language: w.language,
-    targetWords: w.targetWords,
+    targetWords: resolvedTargetWords,
     outline: p.sections.slice(0, 10).map((s) => ({
       id: s.id,
       heading: s.h2Text,
@@ -129,13 +168,14 @@ export function generationContext(p: Project) {
         .slice(0, 8),
       words: Math.max(100, Math.min(800, s.targetWordCount || 300)),
     })),
-    sources: w.references.slice(0, 4).map((r) => ({
+    sources: prioritizedSources.map((r) => ({
       url: r.url,
       title: r.title,
       text: r.text.slice(0, 8000),
     })),
     verifiedLinks,
     researchSummary,
+    briefContractSummary,
     semanticTerms: (research?.semanticTerms || []).map((t) => t.term).slice(0, 20),
     brandVoiceSummary: brandVoice,
     instruction: p.customUserInstructions.slice(0, 2000),
@@ -259,19 +299,20 @@ export function useGeneration(store: ReturnType<typeof useWorkspace>) {
   ) => {
     const p = current.current;
     const directives = parseBriefDirectives(p.rawUserBriefOrSourceText);
+    const wCurrent = workspace(p);
     const targetSite = (
-      p.brandSiteUrl ||
       directives.websiteUrl ||
+      p.brandSiteUrl ||
       ""
     ).trim();
     status({
       status: "planning",
       stage: "analyze",
-      stageLabel: "Analyzing your prompt, search intent, internal links & authority sources...",
+      stageLabel: "Classifying intent, checking primary sources & matching internal tool capabilities...",
       stages: buildStageList(INITIAL_PIPELINE_STAGES, {
-        analyze: { status: "active", detail: "Reading structure & instructions" },
+        analyze: { status: "active", detail: "Classifying format & niche policy" },
         keywords: { status: "active", detail: "Mapping primary & LSI entities" },
-        web_research: { status: "active", detail: "Checking authority sources" },
+        web_research: { status: "active", detail: "Gathering live grounded web sources" },
         internal_links: {
           status: "active",
           detail: targetSite ? `Scanning ${targetSite}` : "No website supplied",
@@ -284,7 +325,7 @@ export function useGeneration(store: ReturnType<typeof useWorkspace>) {
       const res = await fetch("/api/writer-workspace/research", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        signal: AbortSignal.any([abort.signal, AbortSignal.timeout(35000)]),
+        signal: AbortSignal.any([abort.signal, AbortSignal.timeout(42000)]),
         body: JSON.stringify({
           requestId,
           brief:
@@ -293,9 +334,14 @@ export function useGeneration(store: ReturnType<typeof useWorkspace>) {
           keyword: p.keywordCluster.primaryKeyword,
           websiteUrl: targetSite,
           audience: p.keywordCluster.targetAudience,
-          tone: p.keywordCluster.toneOfVoice,
-          language: workspace(p).language,
-          targetWords: workspace(p).targetWords,
+          tone:
+            wCurrent.toneMode === "custom"
+              ? p.keywordCluster.toneOfVoice
+              : "auto",
+          language: wCurrent.language,
+          targetWords: wCurrent.targetWords,
+          lengthMode: wCurrent.lengthMode || "auto",
+          toneMode: wCurrent.toneMode || "auto",
           includeWebResearch: true,
         }),
       });
@@ -321,9 +367,16 @@ export function useGeneration(store: ReturnType<typeof useWorkspace>) {
               });
             }
           }
+          const isLive =
+            packet.researchMode === "live-google-grounding" ||
+            packet.researchMode === "live-serp-api";
+          const nextTargetWords =
+            w.lengthMode !== "custom" && packet.briefContract
+              ? packet.briefContract.recommendedTargetWords
+              : w.targetWords;
           return {
             ...now,
-            brandSiteUrl: now.brandSiteUrl || packet.siteScanned || targetSite,
+            brandSiteUrl: targetSite || now.brandSiteUrl || packet.siteScanned || "",
             keywordCluster: {
               ...now.keywordCluster,
               primaryKeyword:
@@ -344,23 +397,33 @@ export function useGeneration(store: ReturnType<typeof useWorkspace>) {
             })),
             writerWorkspace: {
               ...w,
+              targetWords: nextTargetWords,
               research: packet,
-              references: mergedRefs.slice(0, 8),
+              references: mergedRefs.slice(0, 10),
               run: {
                 ...w.run,
                 stages: buildStageList(w.run.stages, {
-                  analyze: { status: "done", detail: packet.searchIntent },
+                  analyze: {
+                    status: "done",
+                    detail: packet.briefContract
+                      ? `${packet.briefContract.archetypeLabel} · ${packet.briefContract.nicheLabel}`
+                      : packet.searchIntent,
+                  },
                   keywords: {
                     status: "done",
                     detail: `${packet.secondaryKeywords.length} related keywords`,
                   },
                   web_research: {
-                    status: "done",
-                    detail: `${packet.externalLinks.length} candidate references; claims need verification`,
+                    status: isLive ? "done" : packet.externalLinks.length ? "done" : "skipped",
+                    detail: isLive
+                      ? `${packet.externalLinks.length} live web sources · ${(packet.evidencePassages || []).length} passages`
+                      : packet.externalLinks.length
+                        ? `${packet.externalLinks.length} public fallback refs (verify facts)`
+                        : "Brief-only mode (no live web search)",
                   },
                   internal_links: {
                     status: targetSite ? "done" : "skipped",
-                    detail: targetSite ? `${packet.internalLinks.length} site links found` : "No website supplied",
+                    detail: targetSite ? `${packet.internalLinks.length} site links indexed` : "No website supplied",
                   },
                 }),
               },
@@ -419,16 +482,15 @@ export function useGeneration(store: ReturnType<typeof useWorkspace>) {
       );
     const planPayload = res.data as Plan;
     const next = applyPlan(current.current, planPayload, supplied);
-    next.sections = next.sections.map((s) => ({
-      ...s,
-      targetWordCount: Math.max(
-        100,
-        Math.min(
-          800,
-          Math.round(workspace(next).targetWords / next.sections.length),
-        ),
-      ),
-    }));
+    const wApplied = workspace(next);
+    const planWordTarget =
+      wApplied.lengthMode !== "custom" && wApplied.research?.briefContract
+        ? wApplied.research.briefContract.recommendedTargetWords
+        : wApplied.targetWords;
+    next.sections = allocateRoleWeightedSectionBudgets(
+      next.sections,
+      planWordTarget,
+    );
     const wNext = workspace(next);
     const banner = defaultFeaturedBanner(next);
     const bannerAltCheck = evaluateAltText(banner.altText, banner.headline);
@@ -485,6 +547,9 @@ export function useGeneration(store: ReturnType<typeof useWorkspace>) {
         )
         .map((s) => s.id),
     });
+    const usedInternalUrls = new Set<string>();
+    const usedExternalUrls = new Set<string>();
+
     await draftPendingSections({
       get: () => current.current,
       commit: update,
@@ -493,13 +558,31 @@ export function useGeneration(store: ReturnType<typeof useWorkspace>) {
       active: () => ticket === epoch.current,
       request: (p, section, previousEnding) => {
         const ctx = generationContext(p);
+        const wNow = workspace(p);
         const secIdx = Math.max(0, p.sections.findIndex((x) => x.id === section.id));
-        const intLinks = ctx.verifiedLinks.filter((l) => l.kind === "internal");
-        const extLinks = ctx.verifiedLinks.filter((l) => l.kind === "external");
-        const sectionLinks = [
-          ...(intLinks.length ? [intLinks[secIdx % intLinks.length]] : []),
-          ...(extLinks.length ? [extLinks[secIdx % extLinks.length]] : []),
-        ];
+        const researchInternal = wNow.research?.internalLinks?.length
+          ? wNow.research.internalLinks
+          : (p.internalLinks || []).map((l) => ({
+              url: l.targetUrl,
+              title: l.targetTitle || l.anchorText,
+              anchorText: l.anchorText,
+              sourceKind: "internal" as const,
+            }));
+        const researchExternal = wNow.research?.externalLinks || [];
+
+        const sectionLinks = matchSectionLinksByCapability({
+          sectionHeading: section.h2Text,
+          subheadings: section.subHeadings.map((h) => h.h3Text),
+          topicText: `${p.keywordCluster.primaryKeyword} ${p.rawUserBriefOrSourceText.slice(0, 400)}`,
+          internalPool: researchInternal,
+          externalPool: researchExternal,
+          usedInternalUrls,
+          usedExternalUrls,
+        });
+        for (const matched of sectionLinks) {
+          if (matched.kind === "internal") usedInternalUrls.add(matched.url);
+          else usedExternalUrls.add(matched.url);
+        }
 
         const openingStyles = [
           "Open with a direct, plain-language explanation of the core mechanism or decision.",
@@ -512,11 +595,18 @@ export function useGeneration(store: ReturnType<typeof useWorkspace>) {
           .slice(0, secIdx)
           .filter((ps) => ps.bodyMarkdown.trim() || ps.subHeadings.some((h) => h.bodyMarkdown.trim()))
           .map((ps) => {
-            const rawBody = (
-              ps.bodyMarkdown ||
-              ps.subHeadings.find((h) => h.bodyMarkdown.trim())?.bodyMarkdown ||
-              ""
+            const fullSecText = [
+              ps.bodyMarkdown,
+              ...ps.subHeadings.map((h) => `${h.h3Text}\n${h.bodyMarkdown}`),
+            ]
+              .filter(Boolean)
+              .join("\n");
+            const linksInserted = Array.from(
+              fullSecText.matchAll(/\[[^\]]+\]\((https?:\/\/[^)]+)\)/g),
             )
+              .map((m) => m[1])
+              .slice(0, 4);
+            const rawBody = fullSecText
               .replace(/[#*_`>]/g, "")
               .replace(/\s+/g, " ")
               .trim();
@@ -524,9 +614,23 @@ export function useGeneration(store: ReturnType<typeof useWorkspace>) {
             return {
               heading: ps.h2Text,
               openingSentence: firstSent.slice(0, 280),
-              summary: rawBody.slice(0, 280),
+              summary: rawBody.slice(0, 360),
+              coveredConcepts: ps.subHeadings.map((h) => h.h3Text).slice(0, 5),
+              linksInserted,
             };
           });
+
+        const contract = wNow.research?.briefContract;
+        const secLower = `${section.h2Text} ${section.subHeadings.map((h) => h.h3Text).join(" ")}`.toLowerCase();
+        const sectionAssetDirective = contract
+          ? /\b(workflow|step|prompt|export|diagnos|setup|audit|how to)\b/i.test(secLower)
+            ? `Include concrete exact input schemas/column requirements or copyable templates/prompts where genuinely useful (${contract.requiredAssets[0] || ""}).`
+            : /\b(matrix|compare|decision|merge|vs\.|trade|keep)\b/i.test(secLower)
+              ? `Include explicit decision criteria and a worked counterexample showing when NOT to merge or act.`
+              : /\b(checklist|verify|monitor|measure)\b/i.test(secLower)
+                ? `Provide a verifiable pre/post check so readers measure the real impact rather than vanity fluctuations.`
+                : contract.requiredAssets[secIdx % contract.requiredAssets.length] || ""
+          : "";
 
         const primaryKwLower = p.keywordCluster.primaryKeyword.trim().toLowerCase();
         const writtenBefore = [
@@ -549,13 +653,14 @@ export function useGeneration(store: ReturnType<typeof useWorkspace>) {
             id: section.id,
             heading: section.h2Text,
             subheadings: section.subHeadings.map((h) => h.h3Text),
-            words: Math.max(100, Math.min(800, section.targetWordCount)),
+            words: Math.max(120, Math.min(800, section.targetWordCount)),
           },
           previousEnding,
-          verifiedLinks: sectionLinks.length ? sectionLinks : ctx.verifiedLinks,
+          verifiedLinks: sectionLinks,
           priorSections: priorSecs,
           openingStyle: openingStyles[secIdx % openingStyles.length]!,
           primaryKeywordUsesSoFar,
+          sectionAssetDirective,
         });
       },
     });
@@ -577,10 +682,53 @@ export function useGeneration(store: ReturnType<typeof useWorkspace>) {
   };
 
   const runEnrichmentStep = async (abort: AbortController, ticket: number) => {
+    const initialP = current.current;
+    const mode = workspace(initialP).research?.researchMode || "brief-only";
+    const researchStatus =
+      mode === "live-google-grounding" || mode === "live-serp-api"
+        ? ("live-verified" as const)
+        : mode === "public-reference"
+          ? ("partial-web" as const)
+          : ("brief-only" as const);
+    const hasPending = initialP.sections.some(
+      (s) =>
+        !s.bodyMarkdown.trim() &&
+        !s.subHeadings.some((h) => h.bodyMarkdown.trim()),
+    );
+    const draftStatus = hasPending ? ("partial" as const) : ("complete" as const);
+
+    // Whole-article factual verification & surgical auto-repair across 100% of sections (no 14k slicing!)
+    const auditResult = auditAndRepairArticleFactualIntegrity({
+      project: initialP,
+      researchStatus,
+      draftStatus,
+      enrichmentStatus: "complete",
+    });
+
+    if (auditResult.repairedCount > 0) {
+      update((now) => ({
+        ...now,
+        sections: auditResult.updatedSections,
+        writerWorkspace: {
+          ...workspace(now),
+          verificationLog: auditResult.report,
+        },
+      }));
+    } else {
+      update((now) => ({
+        ...now,
+        writerWorkspace: {
+          ...workspace(now),
+          verificationLog: auditResult.report,
+        },
+      }));
+    }
+
     const p = current.current;
     try {
+      const fullMd = articleMarkdown(p);
       const res = await request(p, "enrichment", abort.signal, {
-        selection: articleMarkdown(p).slice(0, 14000),
+        selection: fullMd.slice(0, 28000),
       });
       if (ticket !== epoch.current) return;
       const data = res.data as {
@@ -702,12 +850,17 @@ export function useGeneration(store: ReturnType<typeof useWorkspace>) {
               current: undefined,
               error: undefined,
               stage: "social_video",
-              stageLabel: "Studio complete — all 11 AI agents finished.",
+              stageLabel:
+                auditResult.repairedCount > 0
+                  ? `Reviewed & repaired ${auditResult.repairedCount} factual check(s) — article ready for final human review.`
+                  : auditResult.report.status === "needs-review"
+                    ? "Draft ready — inspect flagged verification items in Brief & Log."
+                    : "Reviewed draft complete — inspect Research Brief & Log before publishing.",
               stages: buildStageList(w.run.stages, {
                 infographics: { status: "done", detail: "All visuals + WCAG alt text scored" },
                 readability_eeat: {
                   status: "done",
-                  detail: `${data.faqs?.length || 0} FAQ pairs generated`,
+                  detail: `${(auditResult.report.fullTextCharsAudited).toLocaleString()} chars audited · ${auditResult.repairedCount} auto-repairs · ${data.faqs?.length || 0} FAQs`,
                 },
                 social_video: { status: "done", detail: "All 9 channels + video ready" },
               }),
@@ -718,19 +871,40 @@ export function useGeneration(store: ReturnType<typeof useWorkspace>) {
       await save(current.current);
     } catch {
       if (ticket !== epoch.current) return;
+      const failedAudit = auditAndRepairArticleFactualIntegrity({
+        project: current.current,
+        researchStatus,
+        draftStatus,
+        enrichmentStatus: "failed",
+      });
       const doneProject = status({
         status: "done",
         current: undefined,
-        error: undefined,
-        stage: "social_video",
-        stageLabel: "Article drafted — Studio ready.",
+        error: "Social/FAQ enrichment could not complete; your drafted article was verified locally and saved.",
+        stage: "readability_eeat",
+        stageLabel: "Draft saved & locally verified — optional enrichment step failed.",
         stages: buildStageList(workspace(current.current).run.stages, {
-          infographics: { status: "done" },
-          readability_eeat: { status: "done", detail: "Deterministic audit ready" },
-          social_video: { status: "done", detail: "Draft templates ready" },
+          infographics: { status: "done", detail: "Section diagrams ready" },
+          readability_eeat: {
+            status: "done",
+            detail: `${failedAudit.report.fullTextCharsAudited.toLocaleString()} chars audited · ${failedAudit.repairedCount} auto-repairs`,
+          },
+          social_video: { status: "skipped", detail: "Enrichment failed — using offline channel templates" },
         }),
       });
-      const unlocked = patchWorkspace(doneProject, { studioUnlocked: true });
+      const unlocked = patchWorkspace(
+        {
+          ...doneProject,
+          sections:
+            failedAudit.repairedCount > 0
+              ? failedAudit.updatedSections
+              : doneProject.sections,
+        },
+        {
+          studioUnlocked: true,
+          verificationLog: failedAudit.report,
+        },
+      );
       update(unlocked);
       await save(unlocked);
     }

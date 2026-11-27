@@ -154,11 +154,11 @@ export function analyzeReadabilityAndBurstiness(fullText: string): {
   const aiClichesDetected = AI_CLICHE_PHRASES.filter((phrase) =>
     lower.includes(phrase),
   );
-  const burstinessBonus = Math.min(25, Math.round(burstinessStdDev * 2.8));
-  const clichePenalty = aiClichesDetected.length * 8;
+  const burstinessBonus = Math.min(18, Math.round(burstinessStdDev * 2.1));
+  const clichePenalty = aiClichesDetected.length * 9;
   const humanOriginalityScore = Math.max(
-    45,
-    Math.min(99, 74 + burstinessBonus - clichePenalty),
+    40,
+    Math.min(92, 68 + burstinessBonus - clichePenalty),
   );
   const readabilityScore =
     fleschReadingEase >= 55 && fleschReadingEase <= 80

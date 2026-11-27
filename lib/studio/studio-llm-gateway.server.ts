@@ -608,6 +608,40 @@ export type StudioGroundedSearchResult = {
  * or Gemini 2.5 Flash native Google Search Grounding (`tools: [{ google_search: {} }]`)
  * on the isolated Studio Gemini key pool. Never throws on upstream unavailability.
  */
+async function resolveGroundingRedirectUri(
+  uri: string,
+  signal?: AbortSignal,
+): Promise<string> {
+  if (!/vertexaisearch\.cloud\.google\.com\/grounding-api-redirect/i.test(uri)) {
+    return uri;
+  }
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 2200);
+  try {
+    const res = await fetch(uri, {
+      method: "HEAD",
+      redirect: "manual",
+      cache: "no-store",
+      signal: signal ? AbortSignal.any([signal, controller.signal]) : controller.signal,
+    });
+    const loc = res.headers.get("location")?.trim();
+    if (!loc || !/^https?:\/\//i.test(loc)) return uri;
+    const parsed = new URL(loc);
+    if (
+      /^(localhost|127\.|10\.|192\.168\.|169\.254\.|172\.(1[6-9]|2\d|3[01])\.|\[?::1\]?|0\.0\.0\.0)/i.test(
+        parsed.hostname,
+      )
+    ) {
+      return uri;
+    }
+    return parsed.href;
+  } catch {
+    return uri;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export async function executeStudioGroundedSearch(params: {
   query: string;
   brief: string;
@@ -625,7 +659,9 @@ export async function executeStudioGroundedSearch(params: {
     };
   }
 
-  const timeoutMs = Math.min(Math.max(params.timeoutMs ?? 20_000, 6_000), 30_000);
+  const perAttemptTimeoutMs = Math.min(Math.max(params.timeoutMs ?? 12_000, 5_000), 14_000);
+  const deadlineMs = Date.now() + 21_000;
+  const timeoutMs = perAttemptTimeoutMs;
 
   // 1. Optional Serper (Google SERP JSON) if configured
   const serperKey = cleanSecret(process.env.SERPER_API_KEY);
@@ -768,8 +804,10 @@ Cite the exact web findings accurately without inventing numbers or fake URLs.`;
   for (let keyIdx = 0; keyIdx < geminiKeys.length; keyIdx++) {
     const activeKey = geminiKeys[keyIdx]!;
     for (const targetModel of groundingModels) {
+      if (Date.now() >= deadlineMs) break;
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      const attemptTimeout = Math.max(3500, Math.min(timeoutMs, deadlineMs - Date.now()));
+      const timer = setTimeout(() => controller.abort(), attemptTimeout);
       try {
         const res = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
@@ -790,7 +828,7 @@ Cite the exact web findings accurately without inventing numbers or fake URLs.`;
               tools: [{ google_search: {} }],
               generationConfig: {
                 temperature: 0.2,
-                maxOutputTokens: 2048,
+                maxOutputTokens: 2400,
               },
             }),
           },
@@ -820,37 +858,46 @@ Cite the exact web findings accurately without inventing numbers or fake URLs.`;
             .join("")
             .trim() || "";
         const meta = candidate?.groundingMetadata;
-        const queriesUsed = (meta?.webSearchQueries || []).filter(Boolean).slice(0, 6);
-        const chunks = meta?.groundingChunks || [];
+        const queriesUsed = (meta?.webSearchQueries || []).filter(Boolean).slice(0, 8);
+        const chunks = (meta?.groundingChunks || []).slice(0, 10);
         const supports = meta?.groundingSupports || [];
+        const resolvedChunks = await Promise.all(
+          chunks.map(async (chunk, chunkIdx) => {
+            const rawUri = chunk.web?.uri?.trim();
+            if (!rawUri || !/^https?:\/\//i.test(rawUri)) return null;
+            const canonicalUri = await resolveGroundingRedirectUri(
+              rawUri,
+              params.signal,
+            );
+            const title = (chunk.web?.title || canonicalUri || "Web Source").trim();
+            const supportText = supports
+              .filter((s) => s.groundingChunkIndices?.includes(chunkIdx))
+              .map((s) => s.segment?.text || "")
+              .join(" ")
+              .trim();
+            return {
+              url: canonicalUri,
+              title: title.slice(0, 220),
+              snippet: (supportText || `Live grounded search reference from ${title}`).slice(
+                0,
+                500,
+              ),
+            };
+          }),
+        );
         const sources: Array<{ url: string; title: string; snippet: string }> = [];
         const seen = new Set<string>();
-
-        chunks.forEach((chunk, chunkIdx) => {
-          const uri = chunk.web?.uri?.trim();
-          const title = (chunk.web?.title || uri || "Web Source").trim();
-          if (!uri || !/^https?:\/\//i.test(uri) || seen.has(uri)) return;
-          seen.add(uri);
-          const supportText = supports
-            .filter((s) => s.groundingChunkIndices?.includes(chunkIdx))
-            .map((s) => s.segment?.text || "")
-            .join(" ")
-            .trim();
-          sources.push({
-            url: uri,
-            title: title.slice(0, 220),
-            snippet: (supportText || `Live grounded search reference from ${title}`).slice(
-              0,
-              420,
-            ),
-          });
-        });
+        for (const item of resolvedChunks) {
+          if (!item || seen.has(item.url)) continue;
+          seen.add(item.url);
+          sources.push(item);
+        }
 
         if (summary || sources.length > 0) {
           return {
-            groundedSummary: summary.slice(0, 3500),
+            groundedSummary: summary.slice(0, 4800),
             searchQueries: queriesUsed.length ? queriesUsed : [query],
-            groundedSources: sources.slice(0, 6),
+            groundedSources: sources.slice(0, 8),
             provider: "gemini-google-search",
           };
         }

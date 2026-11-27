@@ -296,7 +296,7 @@ export function OnboardingGate({
           />
         </div>
 
-        {/* Clean 1-row configuration strip */}
+        {/* Clean primary configuration strip (Length & Tone default to Auto) */}
         <div className={s.onboardingCompactRow}>
           <div>
             <label className={s.label} htmlFor="onboarding-detected-site">
@@ -320,54 +320,6 @@ export function OnboardingGate({
           </div>
 
           <div>
-            <label className={s.label} htmlFor="onboarding-words">
-              Target Length
-            </label>
-            <select
-              id="onboarding-words"
-              className={s.input}
-              value={w.targetWords}
-              onChange={(e) =>
-                onPatchWorkspace({ targetWords: Number(e.target.value) || 1600 })
-              }
-            >
-              <option value={900}>Short (~900 words)</option>
-              <option value={1400}>Standard (~1,400 words)</option>
-              <option value={1800}>Deep guide (~1,800 words)</option>
-              <option value={2600}>Pillar (~2,600 words)</option>
-            </select>
-          </div>
-
-          <div>
-            <label className={s.label} htmlFor="onboarding-tone">
-              Editorial Tone
-            </label>
-            <select
-              id="onboarding-tone"
-              className={s.input}
-              value={project.keywordCluster.toneOfVoice}
-              onChange={(e) =>
-                onPatchProject({
-                  keywordCluster: {
-                    ...project.keywordCluster,
-                    toneOfVoice: e.target
-                      .value as Project["keywordCluster"]["toneOfVoice"],
-                  },
-                })
-              }
-            >
-              <option value="Authoritative & Human">Authoritative &amp; Human</option>
-              <option value="Conversational First-Person">
-                Conversational First-Person
-              </option>
-              <option value="Technical & Data-Driven">
-                Technical &amp; Data-Driven
-              </option>
-              <option value="Executive B2B">Executive B2B</option>
-            </select>
-          </div>
-
-          <div>
             <label className={s.label} htmlFor="onboarding-lang">
               Language
             </label>
@@ -379,6 +331,17 @@ export function OnboardingGate({
               placeholder="English"
             />
           </div>
+
+          <div>
+            <span className={s.label}>Length &amp; Editorial Tone</span>
+            <div className={s.autoModeReadout}>
+              <Sparkles className="w-3.5 h-3.5" aria-hidden />
+              <span>
+                {w.lengthMode === "custom" ? `~${w.targetWords.toLocaleString()}w` : "Auto length"} ·{" "}
+                {w.toneMode === "custom" ? project.keywordCluster.toneOfVoice : "Auto tone"}
+              </span>
+            </div>
+          </div>
         </div>
 
         <details className={s.onboardingAdvanced}>
@@ -387,9 +350,80 @@ export function OnboardingGate({
               className="w-3.5 h-3.5 inline mr-1.5"
               aria-hidden
             />
-            Advanced Website URL, Audience &amp; Brand Voice Options
+            Advanced Overrides: Target Length, Editorial Tone, Website URL &amp; Audience
           </summary>
           <div className={s.onboardingAdvancedGrid}>
+            <div>
+              <label className={s.label} htmlFor="onboarding-words">
+                Target Length (default: Auto)
+              </label>
+              <select
+                id="onboarding-words"
+                className={s.input}
+                value={w.lengthMode === "custom" ? String(w.targetWords) : "auto"}
+                onChange={(e) => {
+                  if (e.target.value === "auto") {
+                    onPatchWorkspace({ lengthMode: "auto" });
+                  } else {
+                    onPatchWorkspace({
+                      lengthMode: "custom",
+                      targetWords: Number(e.target.value) || 1600,
+                    });
+                  }
+                }}
+              >
+                <option value="auto">
+                  Auto (Matched to intent, format &amp; web depth)
+                </option>
+                <option value="900">Short (~900 words)</option>
+                <option value="1400">Standard (~1,400 words)</option>
+                <option value="1800">Deep guide (~1,800 words)</option>
+                <option value="2600">Pillar guide (~2,600 words)</option>
+                <option value="3200">Comprehensive pillar (~3,200 words)</option>
+              </select>
+            </div>
+
+            <div>
+              <label className={s.label} htmlFor="onboarding-tone">
+                Editorial Tone (default: Auto)
+              </label>
+              <select
+                id="onboarding-tone"
+                className={s.input}
+                value={
+                  w.toneMode === "custom"
+                    ? project.keywordCluster.toneOfVoice
+                    : "auto"
+                }
+                onChange={(e) => {
+                  if (e.target.value === "auto") {
+                    onPatchWorkspace({ toneMode: "auto" });
+                  } else {
+                    onPatchWorkspace({ toneMode: "custom" });
+                    onPatchProject({
+                      keywordCluster: {
+                        ...project.keywordCluster,
+                        toneOfVoice: e.target
+                          .value as Project["keywordCluster"]["toneOfVoice"],
+                      },
+                    });
+                  }
+                }}
+              >
+                <option value="auto">
+                  Auto (Matched to niche, intent &amp; brand voice)
+                </option>
+                <option value="Authoritative & Human">Authoritative &amp; Human</option>
+                <option value="Conversational First-Person">
+                  Conversational First-Person
+                </option>
+                <option value="Technical & Data-Driven">
+                  Technical &amp; Data-Driven
+                </option>
+                <option value="Executive B2B">Executive B2B</option>
+              </select>
+            </div>
+
             <div>
               <label className={s.label} htmlFor="onboarding-website">
                 External Website URL (optional — samples voice &amp; links)

@@ -76,6 +76,87 @@ export type SemanticTermTarget = {
   category: "primary" | "secondary" | "entity";
 };
 
+export type ContentArchetypeId =
+  | "how-to-tutorial"
+  | "comparison-versus"
+  | "listicle-roundup"
+  | "news-update"
+  | "conceptual-explainer"
+  | "product-review"
+  | "opinion-essay";
+
+export type NicheDomainId =
+  | "seo-marketing"
+  | "software-dev"
+  | "health-medical"
+  | "finance-tax"
+  | "legal-compliance"
+  | "gardening-home"
+  | "travel-local"
+  | "ecommerce-product"
+  | "entertainment-culture"
+  | "general-business";
+
+export type CanonicalBriefContract = {
+  archetype: ContentArchetypeId;
+  archetypeLabel: string;
+  niche: NicheDomainId;
+  nicheLabel: string;
+  lengthMode: "auto" | "custom";
+  targetWordsMin: number;
+  targetWordsMax: number;
+  recommendedTargetWords: number;
+  lengthRationale: string;
+  toneMode: "auto" | "custom";
+  resolvedTone: string;
+  toneRationale: string;
+  requiredAssets: string[];
+  requiredQualifiers: string[];
+  prohibitedClaims: string[];
+  editorialStrictness: "standard" | "high" | "strict" | "maximum";
+  firstHandExperienceProvided: boolean;
+};
+
+export type InternalCapabilityRecord = {
+  url: string;
+  title: string;
+  anchorText: string;
+  pageType: "tool" | "guide" | "page";
+  verifiedCapabilities: string[];
+  supportedInputs: string[];
+  nonCapabilities: string[];
+  keywords: string;
+};
+
+export type ClaimVerificationEntry = {
+  id: string;
+  sectionHeading?: string;
+  claimText: string;
+  category:
+    | "factual-rule"
+    | "ui-workflow"
+    | "tool-capability"
+    | "citation"
+    | "domain-qualifier"
+    | "first-hand-claim";
+  status: "verified" | "qualified" | "repaired" | "flagged";
+  detail: string;
+  sourceUrl?: string;
+};
+
+export type VerificationLogReport = {
+  verifiedAt: string;
+  status: "passed" | "repaired" | "needs-review";
+  researchStatus: "live-verified" | "partial-web" | "brief-only" | "failed";
+  draftStatus: "complete" | "partial" | "failed";
+  verificationStatus: "passed" | "passed-with-repairs" | "needs-review" | "skipped";
+  enrichmentStatus: "complete" | "partial" | "failed";
+  fullTextCharsAudited: number;
+  claimsChecked: ClaimVerificationEntry[];
+  repairsApplied: string[];
+  warnings: string[];
+};
+
 export type ResearchPacket = {
   analyzedIntent: string;
   searchIntent: "informational" | "commercial" | "transactional" | "navigational" | "mixed";
@@ -109,6 +190,8 @@ export type ResearchPacket = {
     sourceUrl: string;
   }>;
   brandVoice?: BrandVoiceProfile;
+  briefContract?: CanonicalBriefContract;
+  capabilityLinks?: InternalCapabilityRecord[];
 };
 
 export type FeaturedBannerState = {
@@ -168,6 +251,8 @@ export interface WriterWorkspaceState {
   document?: RichNode;
   references: Reference[];
   targetWords: number;
+  lengthMode?: "auto" | "custom";
+  toneMode?: "auto" | "custom";
   language: string;
   metaDescriptions: string[];
   serpTitles?: string[];
@@ -181,6 +266,7 @@ export interface WriterWorkspaceState {
   sectionAltTexts?: Record<string, { altText: string; score?: number; verdict?: string }>;
   research?: ResearchPacket;
   brandVoiceOverride?: Partial<BrandVoiceProfile>;
+  verificationLog?: VerificationLogReport;
   customImages?: Record<
     string,
     { id: string; src: string; alt: string; caption?: string }

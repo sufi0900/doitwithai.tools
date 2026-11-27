@@ -126,36 +126,74 @@ export function BriefSettingsModal({
               </div>
               <div>
                 <label className={s.label} htmlFor="modal-tone-input">
-                  Tone &amp; Language
+                  Tone &amp; Length Mode
                 </label>
                 <div className={s.onboardingGrid2}>
                   <select
                     id="modal-tone-input"
                     className={s.input}
-                    value={project.keywordCluster.toneOfVoice}
-                    onChange={(e) =>
-                      onPatchProject({
-                        keywordCluster: {
-                          ...project.keywordCluster,
-                          toneOfVoice: e.target.value as Project["keywordCluster"]["toneOfVoice"],
-                        },
-                      })
+                    value={
+                      w.toneMode === "custom"
+                        ? project.keywordCluster.toneOfVoice
+                        : "auto"
                     }
+                    onChange={(e) => {
+                      if (e.target.value === "auto") {
+                        onPatchWorkspace({ toneMode: "auto" });
+                      } else {
+                        onPatchWorkspace({ toneMode: "custom" });
+                        onPatchProject({
+                          keywordCluster: {
+                            ...project.keywordCluster,
+                            toneOfVoice: e.target.value as Project["keywordCluster"]["toneOfVoice"],
+                          },
+                        });
+                      }
+                    }}
                   >
+                    <option value="auto">Auto (Matched to niche &amp; intent)</option>
                     <option value="Authoritative & Human">Authoritative &amp; Human</option>
                     <option value="Conversational First-Person">Conversational First-Person</option>
                     <option value="Technical & Data-Driven">Technical &amp; Data-Driven</option>
                     <option value="Executive B2B">Executive B2B</option>
                   </select>
-                  <input
+                  <select
+                    aria-label="Target length mode"
                     className={s.input}
-                    aria-label="Language"
-                    value={w.language}
-                    onChange={(e) =>
-                      onPatchWorkspace({ language: e.target.value })
-                    }
-                  />
+                    value={w.lengthMode === "custom" ? String(w.targetWords) : "auto"}
+                    onChange={(e) => {
+                      if (e.target.value === "auto") {
+                        onPatchWorkspace({ lengthMode: "auto" });
+                      } else {
+                        onPatchWorkspace({
+                          lengthMode: "custom",
+                          targetWords: Number(e.target.value) || 1600,
+                        });
+                      }
+                    }}
+                  >
+                    <option value="auto">Auto length</option>
+                    <option value="900">Short (~900w)</option>
+                    <option value="1400">Standard (~1,400w)</option>
+                    <option value="1800">Deep (~1,800w)</option>
+                    <option value="2600">Pillar (~2,600w)</option>
+                    <option value="3200">Comprehensive (~3,200w)</option>
+                  </select>
                 </div>
+              </div>
+              <div>
+                <label className={s.label} htmlFor="modal-lang-input">
+                  Output Language
+                </label>
+                <input
+                  id="modal-lang-input"
+                  className={s.input}
+                  aria-label="Language"
+                  value={w.language}
+                  onChange={(e) =>
+                    onPatchWorkspace({ language: e.target.value })
+                  }
+                />
               </div>
             </div>
 

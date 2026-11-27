@@ -237,32 +237,103 @@ export function AgentPipelineTheatre({
       </div>
 
       {research ? (
-        <div className={s.theatrePacketPreview}>
-          <div className={s.theatrePacketHeader}>
+        <details className={s.theatrePacketPreview} open>
+          <summary className={s.theatrePacketHeader}>
             <CircleDashed className="w-3.5 h-3.5" aria-hidden />
-            Live Research &amp; Link Discovery Packet Active
-          </div>
-          <div className={s.theatrePacketRow}>
-            <span>
-              <strong>Intent:</strong> {research.searchIntent}
+            Live Research Brief &amp; Factual Verification Log
+            <span className={s.theatreModeTag}>
+              {research.researchMode === "live-google-grounding" ||
+              research.researchMode === "live-serp-api"
+                ? "Live Web Grounded"
+                : research.researchMode === "public-reference"
+                  ? "Public Fallback Refs"
+                  : "Brief Only"}
             </span>
+          </summary>
+          <div className={s.theatrePacketRow}>
+            {research.briefContract ? (
+              <>
+                <span>
+                  <strong>Format:</strong> {research.briefContract.archetypeLabel}
+                </span>
+                <span>
+                  <strong>Niche Policy:</strong> {research.briefContract.nicheLabel} (
+                  {research.briefContract.editorialStrictness})
+                </span>
+                <span>
+                  <strong>Auto Length:</strong>{" "}
+                  {research.briefContract.targetWordsMin.toLocaleString()}–
+                  {research.briefContract.targetWordsMax.toLocaleString()}w
+                </span>
+                <span>
+                  <strong>Resolved Tone:</strong> {research.briefContract.resolvedTone}
+                </span>
+              </>
+            ) : (
+              <span>
+                <strong>Intent:</strong> {research.searchIntent}
+              </span>
+            )}
             <span>
               <strong>Focus Keyword:</strong> {research.primaryKeyword || "—"}
             </span>
             <span>
-              <strong>Secondary / LSI:</strong>{" "}
-              {research.secondaryKeywords.length + research.lsiEntities.length} mapped
+              <strong>Authority Sources:</strong> {research.externalLinks.length}
+            </span>
+            <span>
+              <strong>Evidence Passages:</strong>{" "}
+              {(research.evidencePassages || []).length}
             </span>
             <span>
               <strong>Verified Internal Links:</strong>{" "}
               {research.internalLinks.length}
             </span>
-            <span>
-              <strong>Authority Citations:</strong>{" "}
-              {research.externalLinks.length}
-            </span>
           </div>
-        </div>
+
+          {research.briefContract ? (
+            <div className={s.theatreBriefLogColumns}>
+              <div>
+                <strong>Active Factual &amp; Niche Guardrails</strong>
+                <ul>
+                  {research.briefContract.requiredQualifiers.slice(0, 3).map((q, i) => (
+                    <li key={`q-${i}`}>{q}</li>
+                  ))}
+                  {research.briefContract.prohibitedClaims.slice(0, 2).map((c, i) => (
+                    <li key={`c-${i}`}>Blocked: {c}</li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <strong>
+                  Grounded References &amp; Passages ({research.externalLinks.length})
+                </strong>
+                <ul>
+                  {research.externalLinks.slice(0, 4).map((ext) => (
+                    <li key={ext.url}>
+                      <a href={ext.url} target="_blank" rel="noreferrer noopener">
+                        {ext.title}
+                      </a>
+                    </li>
+                  ))}
+                  {!research.externalLinks.length ? (
+                    <li>No external web URLs returned yet — verify facts after drafting.</li>
+                  ) : null}
+                </ul>
+              </div>
+            </div>
+          ) : null}
+
+          {w.verificationLog ? (
+            <div className={s.theatreVerifyStrip}>
+              <strong>
+                Factual Verification Log ({w.verificationLog.verificationStatus}):
+              </strong>{" "}
+              Audited {w.verificationLog.fullTextCharsAudited.toLocaleString()} chars ·{" "}
+              {w.verificationLog.repairsApplied.length} auto-repair(s) ·{" "}
+              {w.verificationLog.warnings.length} warning(s)
+            </div>
+          ) : null}
+        </details>
       ) : null}
     </section>
   );

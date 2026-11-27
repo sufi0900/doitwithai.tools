@@ -12,6 +12,11 @@ import type { StudioGroundedSearchResult } from "@/lib/studio/studio-llm-gateway
 import { checkAiToolRateLimit } from "@/lib/ai-tools/rate-limit";
 import { readBoundedJson, BodyError } from "@/lib/ai-tools/request-body";
 import { parseBrief, parseBriefDirectives } from "./model";
+import {
+  classifyBriefAndBuildContract,
+  DOITWITHAI_CAPABILITY_CATALOG,
+  isSeoOrWebTopic,
+} from "./niche-policies";
 import type {
   BrandVoiceProfile,
   OutlineItem,
@@ -27,9 +32,11 @@ export const researchRequestSchema = z.object({
   keyword: z.string().max(160).default(""),
   websiteUrl: z.string().max(500).default(""),
   audience: z.string().max(500).default(""),
-  tone: z.string().max(100).default("Clear and helpful"),
+  tone: z.string().max(100).default("auto"),
   language: z.string().max(60).default("English"),
   targetWords: z.number().min(500).max(4000).default(1600),
+  lengthMode: z.enum(["auto", "custom"]).default("auto"),
+  toneMode: z.enum(["auto", "custom"]).default("auto"),
   includeWebResearch: z.boolean().default(true),
 });
 
@@ -65,121 +72,13 @@ type ResearchDeps = {
   }) => Promise<StudioGroundedSearchResult>;
 };
 
-const DOITWITHAI_INTERNAL_CATALOG: Array<{
-  path: string;
-  title: string;
-  anchorText: string;
-  keywords: string;
-}> = [
-  {
-    path: "/ai-content-writer",
-    title: "AI Content Writer & Publishing Studio",
-    anchorText: "AI Content Writer Studio",
-    keywords: "ai content writer blog article studio seo writing workflow",
-  },
-  {
-    path: "/tools/on-page-ai-seo-analyzer",
-    title: "On-Page AI SEO Analyzer",
-    anchorText: "on-page AI SEO audit tool",
-    keywords: "on-page seo analyzer website optimization audit headings meta",
-  },
-  {
-    path: "/tools/ai-citation-readiness-checker",
-    title: "AI Citation & GEO Readiness Checker",
-    anchorText: "AI citation readiness checker",
-    keywords: "ai seo geo aeo citation readiness google ai overviews",
-  },
-  {
-    path: "/tools/blog-section-infographic-generator",
-    title: "Blog Section Infographic Generator",
-    anchorText: "blog section infographic generator",
-    keywords: "infographic generator visual content blog diagrams svg",
-  },
-  {
-    path: "/tools/schema-markup-generator",
-    title: "Schema Markup & JSON-LD Generator",
-    anchorText: "JSON-LD schema markup generator",
-    keywords: "schema markup json-ld structured data article faqpage seo",
-  },
-  {
-    path: "/tools/readability-checker",
-    title: "AI Readability & Clarity Checker",
-    anchorText: "readability and sentence clarity checker",
-    keywords: "readability score flesch grade level clear writing sentences",
-  },
-  {
-    path: "/tools/keyword-clustering-tool",
-    title: "AI Keyword Clustering & Topic Map Tool",
-    anchorText: "keyword clustering tool",
-    keywords: "keyword research clustering search intent topic clusters",
-  },
-  {
-    path: "/tools/internal-link-opportunity-finder",
-    title: "Internal Link Opportunity Finder",
-    anchorText: "internal link opportunity finder",
-    keywords: "internal linking anchor text site architecture seo links",
-  },
-  {
-    path: "/tools/serp-rich-result-preview-generator",
-    title: "Google SERP & Rich Result Simulator",
-    anchorText: "Google SERP preview simulator",
-    keywords: "serp preview meta title description pixel width rich results",
-  },
-  {
-    path: "/tools/search-intent-checker",
-    title: "Search Intent & SERP Alignment Checker",
-    anchorText: "search intent analyzer",
-    keywords: "search intent informational commercial transactional query",
-  },
-  {
-    path: "/tools/eeat-content-auditor",
-    title: "E-E-A-T Content Quality Auditor",
-    anchorText: "E-E-A-T content quality auditor",
-    keywords: "eeat experience expertise authoritativeness trustworthiness",
-  },
-  {
-    path: "/ai-seo/ai-readability-tools",
-    title: "AI Readability Tools & Comprehension Guide",
-    anchorText: "AI readability and comprehension guide",
-    keywords: "readability tools comprehension clarity editorial review",
-  },
-  {
-    path: "/tools/seo-content-pricing-calculator",
-    title: "AI SEO Content Writing Cost & Per-Article ROI Calculator",
-    anchorText: "SEO content pricing and ROI calculator",
-    keywords: "content writing pricing cost per article roi agency vs ai calculator",
-  },
-  {
-    path: "/tools/article-to-quiz-test-generator",
-    title: "AI Article-to-Quiz & Interactive Lead Magnet Generator",
-    anchorText: "article-to-quiz generator",
-    keywords: "quiz generator interactive assessment lead magnet reader engagement",
-  },
-  {
-    path: "/tools/source-pdf-to-article-generator",
-    title: "Source, PDF, Interview & NotebookLM-to-Article Studio",
-    anchorText: "source and PDF to article converter",
-    keywords: "pdf to article notebooklm interview transcript research synthesis",
-  },
-  {
-    path: "/tools/ai-article-summarizer",
-    title: "AI Article Summarizer & 50-Word AI Overview Box Builder",
-    anchorText: "50-word AI Overview summary builder",
-    keywords: "article summarizer 50 word quick answer box tldr ai overviews",
-  },
-  {
-    path: "/tools/seo-originality-plagiarism-checker",
-    title: "AI Content Burstiness Grader & Human-Like Article Polisher",
-    anchorText: "AI burstiness and originality grader",
-    keywords: "burstiness humanize ai text originality sentence variety",
-  },
-  {
-    path: "/ai-seo/h1-heading",
-    title: "H1 Heading & Tag Structure Guide",
-    anchorText: "H1 heading optimization guide",
-    keywords: "h1 heading structure h2 h3 hierarchy on-page seo",
-  },
-];
+const DOITWITHAI_INTERNAL_CATALOG = DOITWITHAI_CAPABILITY_CATALOG.map((item) => ({
+  path: item.url,
+  title: item.title,
+  anchorText: item.anchorText,
+  keywords: item.keywords,
+  snippet: `${item.verifiedCapabilities.join("; ")} (Does NOT: ${item.nonCapabilities.join("; ")})`,
+}));
 
 const VERIFIED_AUTHORITY_REFERENCES: Array<{
   url: string;
@@ -251,11 +150,11 @@ const VERIFIED_AUTHORITY_REFERENCES: Array<{
     keywords: "ai features ai overviews ai mode query fan-out google search citations",
   },
   {
-    url: "https://developers.google.com/search/docs/fundamentals/ai-optimization-guide",
-    title: "Google Search Central: Optimizing Your Website for Generative AI Features",
+    url: "https://support.google.com/webmasters/answer/7576553",
+    title: "Google Search Console Help: Performance Report (Search Results)",
     snippet:
-      "Official Google guide on structuring helpful people-first content, clear headings, and verifiable E-E-A-T context for generative AI search experiences.",
-    keywords: "generative ai optimization geo aeo structured content google search",
+      "Official Google Search Console documentation detailing clicks, impressions, CTR, and position filtering by Queries and Pages inside the Performance report.",
+    keywords: "google search console performance report query page impressions clicks cannibalization",
   },
   {
     url: "https://developer.mozilla.org/en-US/docs/Web/HTML/Element/article",
@@ -426,6 +325,7 @@ export async function discoverSiteInternalLinks(
         url: fullUrl,
         title: item.title,
         anchorText: item.anchorText,
+        snippet: item.snippet,
         sourceKind: "internal",
         relevanceScore: rel + 2,
       });
@@ -645,12 +545,16 @@ export async function discoverPublicAuthorityLinks(
     // Public fallback optional
   }
 
-  const rankedCatalog = [...VERIFIED_AUTHORITY_REFERENCES]
-    .map((ref) => ({
-      ...ref,
-      score: scoreOverlap(tokens, `${ref.title} ${ref.keywords} ${ref.snippet}`),
-    }))
-    .sort((a, b) => b.score - a.score);
+  // Only include hardcoded SEO/Web fallback references when the user topic actually concerns SEO or web engineering
+  const seoTopicActive = isSeoOrWebTopic(`${topic} ${keyword} ${query}`);
+  const rankedCatalog = seoTopicActive
+    ? [...VERIFIED_AUTHORITY_REFERENCES]
+        .map((ref) => ({
+          ...ref,
+          score: scoreOverlap(tokens, `${ref.title} ${ref.keywords} ${ref.snippet}`),
+        }))
+        .sort((a, b) => b.score - a.score)
+    : [];
 
   for (const ref of rankedCatalog) {
     if (links.length >= 6) break;
@@ -775,7 +679,15 @@ async function analyzeCompetitorUrls(
       ? Math.max(10, Math.min(...paraArr))
       : baseline.targetParagraphsMin,
     targetParagraphsMax: paraArr.length
-      ? Math.min(140, Math.max(paraArr.reduce((a, b) => a + b, 0) / paraArr.length + 12, ...paraArr))
+      ? Math.min(
+          140,
+          Math.round(
+            Math.max(
+              paraArr.reduce((a, b) => a + b, 0) / paraArr.length + 12,
+              ...paraArr,
+            ),
+          ),
+        )
       : baseline.targetParagraphsMax,
     targetImagesMin: Math.max(
       2,
@@ -977,9 +889,27 @@ export function createResearchHandler(deps: ResearchDeps = {}) {
     let release: (() => Promise<void>) | undefined;
     try {
       const data = researchRequestSchema.parse(await readBoundedJson(req, 32000));
+
+      // Enforce rate limit BEFORE executing any external site crawls, search APIs, or LLM grounding calls
+      const limit = await (deps.limit || checkAiToolRateLimit)(
+        req,
+        "writer-workspace",
+        { dailyLimit: 100, burstLimit: 18, refundFailures: true },
+      );
+      if (!limit.allowed) {
+        return NextResponse.json(
+          { error: "Research rate limit reached; retry in a moment." },
+          {
+            status: 429,
+            headers: { "Retry-After": String(limit.retryAfterSeconds) },
+          },
+        );
+      }
+      release = limit.release;
+
       const parsed = parseBrief(data.brief);
       const directives = parseBriefDirectives(data.brief);
-      const targetSite = (data.websiteUrl || directives.websiteUrl || "").trim();
+      const targetSite = (directives.websiteUrl || data.websiteUrl || "").trim();
       const topic = parsed.topic || data.keyword || "Article Topic";
       const focusKw = (
         data.keyword ||
@@ -989,6 +919,21 @@ export function createResearchHandler(deps: ResearchDeps = {}) {
       )
         .trim()
         .slice(0, 120);
+
+      const initialContract = classifyBriefAndBuildContract({
+        topic,
+        keyword: focusKw,
+        brief: data.brief,
+        audience: data.audience,
+        lengthMode: data.lengthMode,
+        customTargetWords: data.lengthMode === "custom" ? data.targetWords : undefined,
+        toneMode: data.toneMode,
+        customTone: data.toneMode === "custom" ? data.tone : undefined,
+      });
+      const effectiveTargetWords =
+        data.lengthMode === "custom"
+          ? data.targetWords
+          : initialContract.recommendedTargetWords;
 
       const fetcher = deps.fetchPage || fetchPublic;
       const [siteResult, groundedResult, webResult] = await Promise.all([
@@ -1057,11 +1002,11 @@ export function createResearchHandler(deps: ResearchDeps = {}) {
         data.includeWebResearch
           ? analyzeCompetitorUrls(
               mergedExternalLinks.map((l) => l.url),
-              data.targetWords,
+              effectiveTargetWords,
               req.signal,
               fetcher,
             )
-          : Promise.resolve(defaultCompetitorBenchmarks(data.targetWords)),
+          : Promise.resolve(defaultCompetitorBenchmarks(effectiveTargetWords)),
         siteResult.origin
           ? extractWebsiteBrandVoice(
               siteResult.origin,
@@ -1071,6 +1016,28 @@ export function createResearchHandler(deps: ResearchDeps = {}) {
             )
           : Promise.resolve(undefined),
       ]);
+
+      const briefContract = classifyBriefAndBuildContract({
+        topic,
+        keyword: focusKw,
+        brief: data.brief,
+        audience: data.audience,
+        lengthMode: data.lengthMode,
+        customTargetWords: data.lengthMode === "custom" ? data.targetWords : undefined,
+        toneMode: data.toneMode,
+        customTone: data.toneMode === "custom" ? data.tone : undefined,
+        brandVoice,
+        competitorBenchmarks,
+      });
+
+      const resolvedBenchmarks: ResearchCompetitorBenchmarks =
+        data.lengthMode !== "custom"
+          ? {
+              ...competitorBenchmarks,
+              targetWordsMin: briefContract.targetWordsMin,
+              targetWordsMax: briefContract.targetWordsMax,
+            }
+          : competitorBenchmarks;
 
       const researchMode: ResearchPacket["researchMode"] =
         groundedResult.provider === "gemini-google-search"
@@ -1121,14 +1088,14 @@ export function createResearchHandler(deps: ResearchDeps = {}) {
           conclusionDirective: directives.conclusionStyle || undefined,
           visualDirectives: directives.visualHints,
           internalLinks: siteResult.links,
-          externalLinks: mergedExternalLinks.slice(0, 6),
+          externalLinks: mergedExternalLinks.slice(0, 8),
           quickAnswerTargetWords: 50,
           fetchedAt: new Date().toISOString(),
           siteScanned: siteResult.origin,
           researchMode,
           searchQueriesUsed: groundedResult.searchQueries,
           groundedSummary: groundedResult.groundedSummary || undefined,
-          competitorBenchmarks,
+          competitorBenchmarks: resolvedBenchmarks,
           semanticTerms: buildWeightedSemanticTerms(
             focusKw,
             secondaryKws,
@@ -1136,13 +1103,15 @@ export function createResearchHandler(deps: ResearchDeps = {}) {
           ),
           evidencePassages: mergedExternalLinks
             .filter((l) => l.snippet)
-            .slice(0, 5)
+            .slice(0, 10)
             .map((l) => ({
-              claimOrFact: l.snippet!.slice(0, 260),
+              claimOrFact: l.snippet!.slice(0, 450),
               sourceTitle: l.title,
               sourceUrl: l.url,
             })),
           brandVoice,
+          briefContract,
+          capabilityLinks: DOITWITHAI_CAPABILITY_CATALOG,
           warnings: [
             ...warnings,
             "AI keyword clustering is offline; using deterministic brief analysis.",
@@ -1150,22 +1119,6 @@ export function createResearchHandler(deps: ResearchDeps = {}) {
         };
         return NextResponse.json({ ok: true, packet, provider: "deterministic" });
       }
-
-      const limit = await (deps.limit || checkAiToolRateLimit)(
-        req,
-        "writer-workspace",
-        { dailyLimit: 100, burstLimit: 18, refundFailures: true },
-      );
-      if (!limit.allowed) {
-        return NextResponse.json(
-          { error: "Research rate limit reached; retry in a moment." },
-          {
-            status: 429,
-            headers: { "Retry-After": String(limit.retryAfterSeconds) },
-          },
-        );
-      }
-      release = limit.release;
 
       const aiRes = await (deps.generate || getGeminiClient)().generate(
         {
@@ -1176,7 +1129,7 @@ export function createResearchHandler(deps: ResearchDeps = {}) {
             {
               role: "system",
               content:
-                "You are an SEO, AEO, Query Fan-Out & Information Gain editorial research strategist. Deeply analyze the user's brief, custom headings, visual/conclusion requests, and verified web snippets to build an actionable keyword/intent/E-E-A-T research packet. Ensure primaryKeyword is a clean 2-6 word search query (never a full sentence or URL). In questionsToAnswer, generate 5-6 natural People Also Ask (PAA) & Query Fan-Out sub-questions ending with '?' that span definitional, comparative ('vs.'), step-by-step implementation, cost/latency trade-offs, and failure-mode/edge-case intents. In competitorAngles, surface concrete Information Gain subtopic gaps (decision matrices, explicit use-case boundaries, and implementation edge cases). Never fabricate external URLs or statistics. Return only requested JSON.",
+                "You are an SEO, AEO, Query Fan-Out & Information Gain editorial research strategist operating across all niches. Deeply analyze the user's brief, detected content archetype & niche policy, custom headings, visual/conclusion requests, and verified web snippets to build an actionable keyword/intent/E-E-A-T research packet. Ensure primaryKeyword is a clean 2-6 word search query (never a full sentence or URL). In questionsToAnswer, generate 5-6 natural People Also Ask (PAA) & Query Fan-Out sub-questions ending with '?' that span definitional, comparative ('vs.'), step-by-step implementation, trade-offs, and failure-mode/edge-case intents. In competitorAngles, surface concrete Information Gain subtopic gaps (decision criteria, counterexamples, and implementation edge cases). Never fabricate external URLs or statistics. Return only requested JSON.",
             },
             {
               role: "user",
@@ -1185,7 +1138,9 @@ export function createResearchHandler(deps: ResearchDeps = {}) {
                 topic,
                 keyword: focusKw,
                 audience: data.audience,
-                tone: data.tone,
+                tone: briefContract.resolvedTone,
+                archetype: briefContract.archetypeLabel,
+                niche: briefContract.nicheLabel,
                 language: data.language,
                 extractedOutline: parsed.outline,
                 directives,
@@ -1232,14 +1187,14 @@ export function createResearchHandler(deps: ResearchDeps = {}) {
         conclusionDirective: directives.conclusionStyle || undefined,
         visualDirectives: directives.visualHints,
         internalLinks: siteResult.links,
-        externalLinks: mergedExternalLinks.slice(0, 6),
+        externalLinks: mergedExternalLinks.slice(0, 8),
         quickAnswerTargetWords: 50,
         fetchedAt: new Date().toISOString(),
         siteScanned: siteResult.origin,
         researchMode,
         searchQueriesUsed: groundedResult.searchQueries,
         groundedSummary: groundedResult.groundedSummary || undefined,
-        competitorBenchmarks,
+        competitorBenchmarks: resolvedBenchmarks,
         semanticTerms: buildWeightedSemanticTerms(
           finalPrimaryKw,
           parsedAi.secondaryKeywords,
@@ -1247,13 +1202,15 @@ export function createResearchHandler(deps: ResearchDeps = {}) {
         ),
         evidencePassages: mergedExternalLinks
           .filter((l) => l.snippet)
-          .slice(0, 6)
+          .slice(0, 10)
           .map((l) => ({
-            claimOrFact: l.snippet!.slice(0, 260),
+            claimOrFact: l.snippet!.slice(0, 450),
             sourceTitle: l.title,
             sourceUrl: l.url,
           })),
         brandVoice,
+        briefContract,
+        capabilityLinks: DOITWITHAI_CAPABILITY_CATALOG,
         warnings,
       };
 

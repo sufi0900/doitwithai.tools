@@ -8,6 +8,8 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  Download,
+  FileCheck2,
   Globe,
   RefreshCw,
   Sparkles,
@@ -17,6 +19,8 @@ import {
   workspace,
   type ContentScoreTermItem,
 } from "./model";
+import { formatResearchAndVerificationLogMarkdown } from "./niche-policies";
+import { saveBlob } from "./assets";
 import type { Project } from "./types";
 import styles from "./workspace.module.css";
 
@@ -30,7 +34,7 @@ type Props = {
   researchBusy?: boolean;
 };
 
-type ScoreTab = "keywords" | "headings" | "fixes";
+type ScoreTab = "keywords" | "headings" | "fixes" | "brief_log";
 
 function StatusBadge({
   actual,
@@ -254,8 +258,8 @@ export function ContentScorePanel({
             />
           </strong>
           <small>
-            {scorecard.structure.paragraphs.min} –{" "}
-            {scorecard.structure.paragraphs.max}
+            {Math.round(scorecard.structure.paragraphs.min)} –{" "}
+            {Math.round(scorecard.structure.paragraphs.max)}
           </small>
         </div>
         <div className={styles.scoreStructCell}>
@@ -291,7 +295,74 @@ export function ContentScorePanel({
         </button>
       )}
 
-      {/* Inspector Tabs: Keywords | Headings | Fixes */}
+      {/* Collapsible Research Brief & Verification Log Summary Drawer */}
+      {(w.research || w.verificationLog) && (
+        <details className={styles.scoreLogDrawer}>
+          <summary className={styles.scoreLogDrawerSummary}>
+            <FileCheck2 size={14} className="shrink-0" />
+            <span className={styles.scoreLogTitle}>Brief &amp; Verify Log</span>
+            <small>
+              {w.verificationLog
+                ? w.verificationLog.verificationStatus === "passed"
+                  ? "Verified"
+                  : w.verificationLog.verificationStatus === "passed-with-repairs"
+                    ? `${w.verificationLog.repairsApplied.length} repaired`
+                    : "Review needed"
+                : w.research?.briefContract
+                  ? "Brief ready"
+                  : "Ready"}
+            </small>
+          </summary>
+          <div className={styles.scoreLogDrawerBody}>
+            {w.research?.briefContract ? (
+              <p>
+                <strong>Strategy:</strong> {w.research.briefContract.archetypeLabel} ·{" "}
+                {w.research.briefContract.nicheLabel} ({w.research.briefContract.lengthMode} length ·{" "}
+                {w.research.briefContract.resolvedTone})
+              </p>
+            ) : null}
+            {w.verificationLog ? (
+              <p>
+                <strong>Audit:</strong>{" "}
+                {w.verificationLog.fullTextCharsAudited.toLocaleString()} chars ·{" "}
+                {w.verificationLog.repairsApplied.length} repair(s) ·{" "}
+                {w.verificationLog.warnings.length} warning(s)
+              </p>
+            ) : null}
+            <div className={styles.scoreLogActionRow}>
+              <button
+                type="button"
+                className={styles.scoreGroundBtn}
+                onClick={() => setActiveTab("brief_log")}
+              >
+                Open Full Brief &amp; Log Tab
+              </button>
+              <button
+                type="button"
+                className={styles.scoreGroundBtn}
+                onClick={() => {
+                  const mdLog = formatResearchAndVerificationLogMarkdown(project);
+                  const slug =
+                    project.metaPack.urlSlug ||
+                    project.keywordCluster.primaryKeyword
+                      .toLowerCase()
+                      .replace(/[^a-z0-9]+/g, "-") ||
+                    "article";
+                  saveBlob(
+                    `${slug}-research-verification-log.md`,
+                    mdLog,
+                    "text/markdown;charset=utf-8",
+                  );
+                }}
+              >
+                <Download size={13} className="shrink-0" /> Export Log (.md)
+              </button>
+            </div>
+          </div>
+        </details>
+      )}
+
+      {/* Inspector Tabs: Keywords | Headings | Fixes | Brief & Log */}
       <div className={styles.scoreTabs} role="tablist" aria-label="Score details">
         <button
           type="button"
@@ -299,7 +370,7 @@ export function ContentScorePanel({
           aria-selected={activeTab === "keywords"}
           onClick={() => setActiveTab("keywords")}
         >
-          Keywords ({scorecard.terms.length})
+          Terms ({scorecard.terms.length})
         </button>
         <button
           type="button"
@@ -316,6 +387,14 @@ export function ContentScorePanel({
           onClick={() => setActiveTab("fixes")}
         >
           Fixes ({scorecard.issues.length})
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "brief_log"}
+          onClick={() => setActiveTab("brief_log")}
+        >
+          Brief &amp; Log
         </button>
       </div>
 
@@ -423,6 +502,113 @@ export function ContentScorePanel({
                       : "Neutral editorial voice (no website connected)"}
               </p>
             </div>
+          </div>
+        )}
+
+        {activeTab === "brief_log" && (
+          <div className={styles.scoreBriefLogPanel}>
+            {w.verificationLog ? (
+              <div className={styles.scoreAxisGrid}>
+                <div>
+                  <span>Research</span>
+                  <strong>{w.verificationLog.researchStatus}</strong>
+                </div>
+                <div>
+                  <span>Draft</span>
+                  <strong>{w.verificationLog.draftStatus}</strong>
+                </div>
+                <div>
+                  <span>Verifier</span>
+                  <strong>{w.verificationLog.verificationStatus}</strong>
+                </div>
+                <div>
+                  <span>Assets</span>
+                  <strong>{w.verificationLog.enrichmentStatus}</strong>
+                </div>
+              </div>
+            ) : null}
+
+            {w.research?.briefContract ? (
+              <div className={styles.scoreVoiceBox}>
+                <strong>{w.research.briefContract.archetypeLabel}</strong>
+                <p>
+                  <strong>Niche Policy:</strong> {w.research.briefContract.nicheLabel} (
+                  {w.research.briefContract.editorialStrictness})
+                </p>
+                <p>
+                  <strong>Length ({w.research.briefContract.lengthMode}):</strong>{" "}
+                  {w.research.briefContract.lengthRationale}
+                </p>
+                <p>
+                  <strong>Tone ({w.research.briefContract.toneMode}):</strong>{" "}
+                  {w.research.briefContract.resolvedTone}
+                </p>
+              </div>
+            ) : null}
+
+            {w.verificationLog?.repairsApplied.length ? (
+              <div className={styles.scoreVoiceBox}>
+                <strong>
+                  Auto-Repairs Applied ({w.verificationLog.repairsApplied.length})
+                </strong>
+                <ul className={styles.scoreLogList}>
+                  {w.verificationLog.repairsApplied.map((rep, idx) => (
+                    <li key={`rep-${idx}`}>{rep}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+
+            {w.verificationLog?.claimsChecked.length ? (
+              <div className={styles.scoreVoiceBox}>
+                <strong>
+                  Verification Ledger ({w.verificationLog.fullTextCharsAudited.toLocaleString()} chars)
+                </strong>
+                <ul className={styles.scoreLogList}>
+                  {w.verificationLog.claimsChecked.map((c) => (
+                    <li key={c.id}>
+                      <em>[{c.status}]</em> {c.claimText} — {c.detail}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+
+            {w.research?.externalLinks.length ? (
+              <div className={styles.scoreVoiceBox}>
+                <strong>Grounded Sources ({w.research.externalLinks.length})</strong>
+                <ul className={styles.scoreLogList}>
+                  {w.research.externalLinks.map((ext) => (
+                    <li key={ext.url}>
+                      <a href={ext.url} target="_blank" rel="noreferrer noopener">
+                        {ext.title}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+
+            <button
+              type="button"
+              className={styles.scoreGroundBtn}
+              onClick={() => {
+                const mdLog = formatResearchAndVerificationLogMarkdown(project);
+                const slug =
+                  project.metaPack.urlSlug ||
+                  project.keywordCluster.primaryKeyword
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, "-") ||
+                  "article";
+                saveBlob(
+                  `${slug}-research-verification-log.md`,
+                  mdLog,
+                  "text/markdown;charset=utf-8",
+                );
+              }}
+            >
+              <Download size={13} className="shrink-0" /> Export Research &amp; Verification Log (.md)
+            </button>
           </div>
         )}
       </div>

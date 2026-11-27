@@ -50,6 +50,13 @@ import {
 import { createGenerationHandler, normalizeAndValidateSectionMarkdown } from "../../features/writer-workspace/generation.server";
 import { createResearchHandler } from "../../features/writer-workspace/research.server";
 import {
+  allocateRoleWeightedSectionBudgets,
+  auditAndRepairArticleFactualIntegrity,
+  classifyBriefAndBuildContract,
+  formatResearchAndVerificationLogMarkdown,
+  matchSectionLinksByCapability,
+} from "../../features/writer-workspace/niche-policies";
+import {
   buildChannelCarouselSlides,
   getSocialChannelSpec,
 } from "../../features/writer-workspace/adapters/socialVisualRegistry";
@@ -1204,4 +1211,192 @@ test("generation handler forwards running section memory, openingStyle, and anti
   assert.match(capturedPrompt, /Waterlogged roots starve quickly/);
   assert.match(capturedPrompt, /Direct practitioner voice with zero hype/);
   assert.match(capturedPrompt, /permaculture mulch/);
+});
+
+test("V5 onboarding defaults to Auto length & Auto tone and adapts cross-niche policy & section budgets", () => {
+  const p = blankProject();
+  const w = workspace(p);
+  assert.equal(w.lengthMode, "auto");
+  assert.equal(w.toneMode, "auto");
+
+  const seoTutorial = classifyBriefAndBuildContract({
+    topic: "How to Fix Keyword Cannibalization with AI",
+    keyword: "fix keyword cannibalization",
+    brief: "Practical guide using Google Search Console exports and AI prompts.",
+  });
+  const newsContract = classifyBriefAndBuildContract({
+    topic: "Google Announces March 2026 Core Search Update",
+    keyword: "March 2026 core update",
+    brief: "Short summary of what changed and immediate owner takeaways.",
+  });
+  const medicalContract = classifyBriefAndBuildContract({
+    topic: "Managing Iron Deficiency Anemia in Adults",
+    keyword: "iron deficiency treatment symptoms",
+    brief: "Overview of dietary and clinician-guided options.",
+  });
+
+  assert.equal(seoTutorial.archetype, "how-to-tutorial");
+  assert.equal(seoTutorial.niche, "seo-marketing");
+  assert.ok(seoTutorial.recommendedTargetWords > newsContract.recommendedTargetWords);
+  assert.equal(newsContract.archetype, "news-update");
+  assert.equal(medicalContract.niche, "health-medical");
+  assert.equal(medicalContract.editorialStrictness, "maximum");
+
+  const weighted = allocateRoleWeightedSectionBudgets(
+    [
+      makeSection({ heading: "What Is Keyword Cannibalization", subheadings: [] }, 0),
+      makeSection({ heading: "Step-by-Step AI Audit Workflow", subheadings: ["GSC CSV Export", "Prompt"] }, 1),
+      makeSection({ heading: "Verification Checklist", subheadings: [] }, 2),
+    ],
+    2400,
+  );
+  assert.ok(weighted[1].targetWordCount > weighted[0].targetWordCount);
+  assert.ok(weighted[1].targetWordCount > weighted[2].targetWordCount);
+});
+
+test("V5 capability matcher prevents modulo Source/PDF misattribution and picks Keyword Cannibalization Finder", () => {
+  const matched = matchSectionLinksByCapability({
+    sectionHeading: "How to Diagnose Competing URLs in Search Console",
+    subheadings: ["Detecting Keyword Cannibalization Splits"],
+    topicText: "how to fix keyword cannibalization with ai",
+    internalPool: [
+      {
+        url: "https://doitwithai.tools/tools/source-pdf-to-article-generator",
+        title: "Source, PDF, Interview & NotebookLM-to-Article Studio",
+        sourceKind: "internal",
+      },
+      {
+        url: "https://doitwithai.tools/tools/keyword-cannibalization-finder",
+        title: "Keyword Cannibalization Finder",
+        sourceKind: "internal",
+      },
+    ],
+    externalPool: [],
+    usedInternalUrls: new Set(),
+    usedExternalUrls: new Set(),
+  });
+
+  assert.equal(matched.length, 1);
+  assert.equal(
+    matched[0].url,
+    "https://doitwithai.tools/tools/keyword-cannibalization-finder",
+  );
+  assert.ok(matched[0].nonCapabilities?.includes("Does not merge PDFs"));
+});
+
+test("V5 whole-article factual verifier repairs hallucinations beyond 14k chars and flags missing YMYL qualifiers", () => {
+  let p = draft();
+  p.rawUserBriefOrSourceText = "Topic: How to Fix Keyword Cannibalization with AI\nKeyword: fix keyword cannibalization";
+  const filler = "Search Console performance exports pair query impressions with landing page URLs cleanly. ".repeat(220); // >18,000 chars
+  p.sections[0] = setSectionBody(
+    p.sections[0],
+    `${filler}\n\nCheck index coverage reports for fluctuating impressions and notice if pages hover around positions 8 to 20.`,
+  );
+  p.sections[1] = setSectionBody(
+    p.sections[1],
+    "A complete rewrite risks losing established backlinks, while embeddings measure exact conceptual distance. Merge pages using [source and PDF to article studio](https://doitwithai.tools/tools/source-pdf-to-article-generator).",
+  );
+
+  const auditRes = auditAndRepairArticleFactualIntegrity({
+    project: p,
+    researchStatus: "live-verified",
+    draftStatus: "complete",
+  });
+
+  assert.ok(auditRes.report.fullTextCharsAudited > 14000);
+  assert.equal(auditRes.repairedCount, 2);
+  assert.ok(auditRes.report.repairsApplied.length >= 4);
+  const repairedMd = [
+    auditRes.updatedSections[0].bodyMarkdown,
+    auditRes.updatedSections[1].bodyMarkdown,
+  ].join("\n");
+  assert.doesNotMatch(repairedMd, /hover around positions 8 to 20/i);
+  assert.doesNotMatch(repairedMd, /index coverage reports for fluctuating impressions/i);
+  assert.doesNotMatch(repairedMd, /measure exact conceptual distance/i);
+  assert.doesNotMatch(repairedMd, /source-pdf-to-article-generator/i);
+  assert.match(repairedMd, /keyword-cannibalization-finder/i);
+
+  const mdExport = formatResearchAndVerificationLogMarkdown(
+    patchWorkspace(p, { verificationLog: auditRes.report }),
+  );
+  assert.match(mdExport, /Research Brief & Factual Verification Log/);
+  assert.match(mdExport, /Automatic Factual & Tool Repairs Applied/);
+
+  // YMYL health check flags missing clinician disclaimer
+  let med = blankProject();
+  med.keywordCluster.primaryKeyword = "iron deficiency treatment dosage";
+  med.sections = [
+    setSectionBody(
+      makeSection({ heading: "Iron Supplement Overview", subheadings: [] }, 0),
+      "Adults absorb elemental iron differently depending on gastric acidity.",
+    ),
+  ];
+  const medAudit = auditAndRepairArticleFactualIntegrity({
+    project: med,
+    researchStatus: "brief-only",
+    draftStatus: "complete",
+  });
+  assert.equal(medAudit.report.status, "needs-review");
+  assert.ok(medAudit.report.warnings.some((w) => /clinician/i.test(w)));
+});
+
+test("V5 research enforces rate limits before upstream APIs and keeps non-SEO gardening clean of SEO catalog URLs", async () => {
+  let externalCalled = false;
+  const blockedHandler = createResearchHandler({
+    limit: async () => ({
+      allowed: false,
+      remaining: 0,
+      retryAfterSeconds: 30,
+      release: async () => {},
+    }),
+    groundedSearch: async () => {
+      externalCalled = true;
+      return { groundedSummary: "", searchQueries: [], groundedSources: [], provider: "none" };
+    },
+    fetchPage: async () => {
+      externalCalled = true;
+      return { status: 200, url: "https://example.com", html: "", headers: {}, redirects: [] };
+    },
+  });
+  const blockedRes = await blockedHandler(
+    new NextRequest("http://localhost/api/writer-workspace/research", {
+      method: "POST",
+      body: JSON.stringify({
+        requestId: "req-rate-limit-1",
+        brief: "Topic: Gardening basics\nKeyword: indoor herbs",
+      }),
+    }),
+  );
+  assert.equal(blockedRes.status, 429);
+  assert.equal(externalCalled, false);
+
+  const gardenHandler = createResearchHandler({
+    configured: () => false,
+    limit: async () => allowed(),
+    fetchPage: async () => ({
+      status: 404,
+      url: "https://example.org",
+      html: "",
+      headers: {},
+      redirects: [],
+    }),
+  });
+  const gardenRes = await gardenHandler(
+    new NextRequest("http://localhost/api/writer-workspace/research", {
+      method: "POST",
+      body: JSON.stringify({
+        requestId: "req-garden-seo-check",
+        brief: "Topic: Indoor Herb Gardening for Beginners\nKeyword: indoor herb gardening",
+      }),
+    }),
+  );
+  assert.equal(gardenRes.status, 200);
+  const gardenJson = await gardenRes.json();
+  assert.equal(gardenJson.packet.briefContract.niche, "gardening-home");
+  assert.equal(
+    gardenJson.packet.externalLinks.some((l: { url: string }) =>
+      /developers\.google\.com\/search/i.test(l.url),
+    ),
+    false,
+  );
 });

@@ -79,6 +79,8 @@ export function workspace(p: Project): WriterWorkspaceState {
     studioUnlocked: raw?.studioUnlocked,
     references: Array.isArray(raw?.references) ? raw.references : [],
     targetWords: raw?.targetWords || 1600,
+    lengthMode: raw?.lengthMode || "auto",
+    toneMode: raw?.toneMode || "auto",
     language: raw?.language || "English",
     metaDescriptions: raw?.metaDescriptions || [],
     serpTitles: raw?.serpTitles,
@@ -101,6 +103,7 @@ export function workspace(p: Project): WriterWorkspaceState {
     sectionAltTexts: raw?.sectionAltTexts,
     research: raw?.research,
     brandVoiceOverride: raw?.brandVoiceOverride,
+    verificationLog: raw?.verificationLog,
     customImages: raw?.customImages || {},
     sectionVisualOverrides: raw?.sectionVisualOverrides || {},
     visualRevisions: raw?.visualRevisions || {},
@@ -282,9 +285,12 @@ export function inputRevision(p: Project) {
     JSON.stringify([
       p.rawUserBriefOrSourceText,
       p.customUserInstructions,
+      p.brandSiteUrl,
       p.keywordCluster,
       w.references,
       w.targetWords,
+      w.lengthMode,
+      w.toneMode,
       w.language,
       p.sections.map((s) => [
         s.id,
@@ -2299,9 +2305,19 @@ export function computeContentScorecard(p: Project): ContentScorecardResult {
   const lowerAll = `${p.metaPack.h1Title}\n${md}`.toLowerCase();
 
   const bench = w.research?.competitorBenchmarks;
-  const targetWords = w.targetWords || 1600;
-  const wordsMin = bench?.targetWordsMin ?? Math.round(targetWords * 0.8);
-  const wordsMax = bench?.targetWordsMax ?? Math.round(targetWords * 1.25);
+  const contract = w.research?.briefContract;
+  const targetWords =
+    (w.lengthMode !== "custom" ? contract?.recommendedTargetWords : undefined) ||
+    w.targetWords ||
+    1600;
+  const wordsMin =
+    w.lengthMode !== "custom" && contract
+      ? contract.targetWordsMin
+      : (bench?.targetWordsMin ?? Math.round(targetWords * 0.8));
+  const wordsMax =
+    w.lengthMode !== "custom" && contract
+      ? contract.targetWordsMax
+      : (bench?.targetWordsMax ?? Math.round(targetWords * 1.25));
   const h2Min = bench?.targetH2Min ?? 4;
   const h2Max = bench?.targetH2Max ?? 9;
   const paraMin = bench?.targetParagraphsMin ?? Math.max(10, Math.round(targetWords / 70));
@@ -2438,14 +2454,50 @@ export function computeContentScorecard(p: Project): ContentScorecardResult {
     score += Math.round((serp.serpScore / 100) * 12);
     score += p.metaPack.urlSlug.trim() ? 3 : 0;
 
-    // 5. Contextual links & grounded evidence (15 pts)
+    // 5. Contextual links, grounded evidence & factual verification (15 pts)
     const hasMdLink = /\[[^\]]{2,}\]\(https?:\/\/[^)]+\)/.test(md);
     const hasCustomOrInternal = p.internalLinks.some((l) => md.includes(l.targetUrl)) || hasMdLink;
-    score += hasCustomOrInternal ? 10 : 3;
-    score += w.references.length > 0 || (w.research?.externalLinks?.length || 0) > 0 ? 5 : 0;
+    score += hasCustomOrInternal ? 6 : 2;
+    const researchMode = w.research?.researchMode || "brief-only";
+    const evidencePts =
+      researchMode === "live-google-grounding" || researchMode === "live-serp-api"
+        ? 5
+        : researchMode === "public-reference"
+          ? 2
+          : 0;
+    const flaggedClaims =
+      w.verificationLog?.claimsChecked.filter((c) => c.status === "flagged").length || 0;
+    const verificationPts = w.verificationLog
+      ? Math.max(0, 4 - flaggedClaims * 2)
+      : 1;
+    score += evidencePts + verificationPts;
   }
 
-  // Diagnostic actionable issues for the inspector
+  // Diagnostic actionable issues for the inspector (factual blockers pinned first)
+  if (w.verificationLog) {
+    for (const claim of w.verificationLog.claimsChecked) {
+      if (claim.status === "flagged") {
+        issues.push({
+          id: `verify-${claim.id}`,
+          severity: "error",
+          label: `Verify: ${claim.claimText}`,
+          detail: claim.detail,
+        });
+      }
+    }
+    if (w.verificationLog.researchStatus !== "live-verified" && r.words > 0) {
+      issues.push({
+        id: "research-partial",
+        severity: "warn",
+        label:
+          w.verificationLog.researchStatus === "brief-only"
+            ? "Draft built in brief-only mode (no live web search)"
+            : "Partial web research only (live search fallback used)",
+        detail:
+          "Run Live Research or inspect the Brief & Log tab to verify external facts and citations before publishing.",
+      });
+    }
+  }
   if (stuffedPrimary && primaryItem) {
     issues.push({
       id: "stuffed-primary",
