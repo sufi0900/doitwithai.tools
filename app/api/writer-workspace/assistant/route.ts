@@ -114,9 +114,9 @@ async function answer(body: z.infer<typeof input>, signal: AbortSignal, progress
     body.question.toLowerCase().includes(item.heading.toLowerCase()));
   const sectionId = named?.id || body.focus?.sectionId || "";
   const section = headings.find((item) => item?.id === sectionId)?.heading || "";
-  const focus = named?.id && named.id !== body.focus?.sectionId
-    ? { sectionId: named.id } : body.focus;
-  const proposed = focus && "proposal" in focus ? focus.proposal : undefined;
+  const focus: z.infer<typeof input>["focus"] = named?.id && named.id !== body.focus?.sectionId
+    ? { sectionId: named.id, request: "" } : body.focus;
+  const proposed = focus?.proposal;
   const focusedText = proposed?.markdown || body.passage;
   const focusTopic = section || focusedText.split(/\n/).find((line) => line.length > 9)?.replace(/^#+\s*/, "").slice(0, 210)
     || focus?.request?.slice(0, 180) || body.title;

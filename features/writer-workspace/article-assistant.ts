@@ -108,7 +108,7 @@ export function assistantContinuity(previous: AssistantTurn[]) {
   };
 }
 
-export function assistantLinkIntent(question: string, recentQuestion = "") {
+export function assistantLinkIntent(question: string, recentQuestion = ""): { internal: boolean; authority: boolean } {
   const internal = /\b(?:internal (?:link(?:ing|s)?|source)|link to (?:my|our|the same) (?:site|website|blog))\b/i.test(question);
   const authority = /\b(?:external (?:link(?:ing|s)?|sources?)|first[- ]party|authority (?:sites?|sources?|links?|websites?)|authoritative (?:links?|sources?|websites?)|official (?:links?|sources?|documentation|reference))\b/i.test(question);
   if (!internal && !authority && /\b(?:another|different|one more|same|that|it)\b/i.test(question) &&
