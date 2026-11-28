@@ -1,6 +1,12 @@
 import { jsPDF } from "jspdf";
 import { autoTable } from "jspdf-autotable";
-import { safeLink, validate, type Article, type Settings } from "./model";
+import {
+  safeLink,
+  validate,
+  type Article,
+  type BlockLink,
+  type Settings,
+} from "./model";
 export type Resources = {
   sans: string;
   arabic: string;
@@ -107,6 +113,7 @@ export async function articlePdf(a: Article, s: Settings, r: Resources) {
     space = 9,
     color: [number, number, number] = [25, 30, 40],
     url = "",
+    links: BlockLink[] = [],
   ) {
     check();
     if (!t.trim()) {
@@ -118,6 +125,7 @@ export async function articlePdf(a: Article, s: Settings, r: Resources) {
     pdf.setR2L(false);
     pdf.setTextColor(...color);
     const lines = wrap(t);
+    let cursor = 0;
     for (let index = 0; index < lines.length; index++) {
       const value = lines[index];
       // Keep at least two final lines together when a paragraph crosses a page.
@@ -127,17 +135,94 @@ export async function articlePdf(a: Article, s: Settings, r: Resources) {
       )
         next();
       pdf.setR2L(false);
-      pdf.text(value, rtl ? width - m : m, y + size, {
-        align: rtl ? "right" : "left",
-        isInputVisual: false,
-        isInputRtl: rtl,
-        isOutputVisual: true,
-        isOutputRtl: false,
-      });
-      if (url) pdf.link(m, y, max, line, { url });
+      // Inline hyperlinks (LTR text only): draw the line in coloured pieces and
+      // add a clickable annotation + underline over each linked piece.
+      const pieces = !rtl && links.length ? linePieces(t, value, links, cursor) : null;
+      if (pieces) {
+        cursor = pieces.cursor;
+        pdf.setFont("ArticleSans", "normal");
+        pdf.setFontSize(size);
+        for (const piece of pieces.list) {
+          const seg = value.slice(piece.s, piece.e);
+          if (!seg) continue;
+          const x = m + pdf.getTextWidth(value.slice(0, piece.s));
+          if (piece.url) pdf.setTextColor(52, 82, 209);
+          else pdf.setTextColor(...color);
+          pdf.text(seg, x, y + size);
+          if (piece.url) {
+            const w = pdf.getTextWidth(seg);
+            pdf.link(x, y, w, line, { url: piece.url });
+            pdf.setDrawColor(52, 82, 209);
+            pdf.setLineWidth(0.5);
+            pdf.line(x, y + size + 1.6, x + w, y + size + 1.6);
+          }
+        }
+        pdf.setTextColor(...color);
+      } else {
+        pdf.text(value, rtl ? width - m : m, y + size, {
+          align: rtl ? "right" : "left",
+          isInputVisual: false,
+          isInputRtl: rtl,
+          isOutputVisual: true,
+          isOutputRtl: false,
+        });
+        if (url) pdf.link(m, y, max, line, { url });
+      }
       y += line;
     }
     y += space;
+  }
+  /**
+   * Maps link ranges (offsets in the original paragraph) onto one wrapped line.
+   * Words in a wrapped line appear in order in the source text, so we walk the
+   * source with a moving cursor to recover each word's original offset.
+   */
+  function linePieces(
+    source: string,
+    value: string,
+    links: BlockLink[],
+    from: number,
+  ) {
+    let cursor = from;
+    let lp = 0;
+    const words: { ls: number; os: number; oe: number }[] = [];
+    for (const word of value.split(" ")) {
+      if (!word) {
+        lp += 1;
+        continue;
+      }
+      const at = source.indexOf(word, cursor);
+      if (at < 0) return null;
+      words.push({ ls: lp, os: at, oe: at + word.length });
+      cursor = at + word.length;
+      lp += word.length + 1;
+    }
+    const spans: { s: number; e: number; url: string }[] = [];
+    for (const link of links) {
+      let prev: { s: number; e: number; url: string } | undefined;
+      for (const w of words) {
+        const a = Math.max(w.os, link.start),
+          b = Math.min(w.oe, link.end);
+        if (b <= a) continue;
+        const s = w.ls + (a - w.os),
+          e = w.ls + (b - w.os);
+        if (prev && prev.url === link.url && s - prev.e <= 1) prev.e = e;
+        else {
+          prev = { s, e, url: link.url };
+          spans.push(prev);
+        }
+      }
+    }
+    spans.sort((x, y2) => x.s - y2.s);
+    const list: { s: number; e: number; url?: string }[] = [];
+    let pos = 0;
+    for (const sp of spans) {
+      if (sp.s > pos) list.push({ s: pos, e: sp.s });
+      list.push(sp);
+      pos = Math.max(pos, sp.e);
+    }
+    if (pos < value.length) list.push({ s: pos, e: value.length });
+    return { list, cursor };
   }
   text(a.title, 22, 16);
   if (a.byline.trim()) text(a.byline, 10, 5, [75, 80, 90]);
@@ -150,7 +235,7 @@ export async function articlePdf(a: Article, s: Settings, r: Resources) {
     await r.yield?.();
     if (b.kind === "heading") {
       if (y + 80 > bottom) next();
-      text(b.text, b.level && b.level > 2 ? 14 : 17, 10);
+      text(b.text, b.level && b.level > 2 ? 14 : 17, 10, undefined, "", b.links);
     } else if (b.kind === "table" && b.cells?.length) {
       for (const cell of b.cells.flat()) font(cell, s.fontSize);
       pdf.setR2L(false);
@@ -232,8 +317,10 @@ export async function articlePdf(a: Article, s: Settings, r: Resources) {
       text(
         b.text,
         s.fontSize,
-        9,
+        b.kind === "list" ? 4 : 9,
         b.kind === "quote" ? [65, 70, 85] : [25, 30, 40],
+        "",
+        b.links,
       );
     if (pdf.getNumberOfPages() > 120)
       throw Error("This layout exceeds 120 pages. Reduce the article length.");

@@ -768,6 +768,49 @@ export const articleRevision = (p: Project) =>
       workspace(p).brand,
     ]),
   );
+/**
+ * Flattens a rich node to plain text while keeping hyperlink ranges, so PDF and
+ * DOCX exports can render clickable inline links (not just a trailing list).
+ */
+export function linkedText(node: RichNode): {
+  text: string;
+  links: { start: number; end: number; url: string }[];
+} {
+  let text = "";
+  const links: { start: number; end: number; url: string }[] = [];
+  const walk = (x: RichNode, boundary: boolean) => {
+    if (x.type === "hardBreak") {
+      text += "\n";
+      return;
+    }
+    if (x.type === "text") {
+      const t = x.text || "";
+      const mark = (x.marks || []).find(
+        (m) => m.type === "link" && safeUrl(m.attrs?.href),
+      );
+      if (mark && t) {
+        const url = safeUrl(mark.attrs?.href);
+        const prev = links[links.length - 1];
+        if (prev && prev.end === text.length && prev.url === url)
+          prev.end += t.length;
+        else links.push({ start: text.length, end: text.length + t.length, url });
+      }
+      text += t;
+      return;
+    }
+    (x.content || []).forEach((child, idx) => {
+      if (
+        idx > 0 &&
+        boundary &&
+        /^(paragraph|listItem|bulletList|orderedList)$/.test(child.type)
+      )
+        text += "\n";
+      walk(child, /^(listItem|blockquote|bulletList|orderedList)$/.test(x.type));
+    });
+  };
+  walk(node, /^(listItem|blockquote)$/.test(node.type));
+  return { text, links };
+}
 export function articleModel(p: Project): Article {
   const blocks: Block[] = [];
   let i = 0;
@@ -823,16 +866,29 @@ export function articleModel(p: Project): Article {
       });
       return;
     }
-    if (
-      [
-        "heading",
-        "paragraph",
-        "codeBlock",
-        "blockquote",
-        "bulletList",
-        "orderedList",
-      ].includes(n.type)
-    ) {
+    if (n.type === "bulletList" || n.type === "orderedList") {
+      // One block per list item with a visible marker (matches the export
+      // convention used by the PDF/DOCX renderers) and preserved hyperlinks.
+      const ordered = n.type === "orderedList";
+      (n.content || []).forEach((item, idx) => {
+        const { text, links } = linkedText(item);
+        const prefix = ordered ? `${idx + 1}. ` : "• ";
+        if (!text.trim()) return;
+        blocks.push({
+          id: `b${i++}`,
+          kind: "list",
+          text: prefix + text,
+          links: links.map((l) => ({
+            ...l,
+            start: l.start + prefix.length,
+            end: l.end + prefix.length,
+          })),
+        });
+      });
+      return;
+    }
+    if (["heading", "paragraph", "codeBlock", "blockquote"].includes(n.type)) {
+      const { text, links } = linkedText(n);
       blocks.push({
         id: `b${i++}`,
         kind:
@@ -842,12 +898,9 @@ export function articleModel(p: Project): Article {
               ? "code"
               : n.type === "blockquote"
                 ? "quote"
-                : n.type.endsWith("List")
-                  ? "list"
-                  : "paragraph",
-        text: n.type.endsWith("List")
-          ? (n.content || []).map(textOf).join("\n")
-          : textOf(n),
+                : "paragraph",
+        text,
+        ...(links.length ? { links } : {}),
         level: n.attrs?.level,
       });
       return;

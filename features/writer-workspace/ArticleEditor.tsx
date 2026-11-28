@@ -13,6 +13,7 @@ import {
   NodeViewWrapper,
   ReactNodeViewRenderer,
   Extension,
+  getMarkRange,
   useEditor,
 } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -41,6 +42,11 @@ import {
   Check,
   Loader2,
   RefreshCw,
+  ExternalLink,
+  Pencil,
+  Copy,
+  Unlink,
+  Zap,
 } from "lucide-react";
 import { SafeLink } from "@/features/readability/components/rich-text";
 import {
@@ -53,6 +59,7 @@ import {
   id as createWriterId,
   inline,
   markdownNodes,
+  nodeMarkdown,
   patchWorkspace,
   projectDocument,
   safeImageSrc,
@@ -60,6 +67,7 @@ import {
   syncDocument,
   workspace,
 } from "./model";
+import { instantEdit, normalizeAiMarkdown } from "./instant-edits";
 import type { ReadabilityHighlightToggles } from "./LeftStudioPanel";
 import type { Project, RichNode } from "./types";
 import styles from "./workspace.module.css";
@@ -117,7 +125,8 @@ function trimEdgeWhitespace(nodes: RichNode[]): RichNode[] {
   return cloned.filter((n) => n.type !== "text" || Boolean(n.text));
 }
 
-function buildContentNodesFromText(text: string): RichNode[] {
+function buildContentNodesFromText(raw: string): RichNode[] {
+  const text = normalizeAiMarkdown(raw);
   const hasBlockMd =
     /(?:^|\n)\s*(?:#{1,6}\s|[-*+]\s|\d+[.)]\s|>|\|)|\n\s*\n/.test(text);
   return hasBlockMd
@@ -128,6 +137,73 @@ function buildContentNodesFromText(text: string): RichNode[] {
           ...(i ? [{ type: "hardBreak" }] : []),
           ...(t ? inline(t) : []),
         ]);
+}
+
+/** Read-only rich preview of Markdown so lists/tables look like the real result. */
+function RichPreview({ md }: { md: string }) {
+  const render = (n: RichNode, key: number): React.ReactNode => {
+    const kids = (n.content || []).map(render);
+    switch (n.type) {
+      case "text": {
+        let el: React.ReactNode = n.text || "";
+        for (const m of n.marks || []) {
+          if (m.type === "bold") el = <strong>{el}</strong>;
+          else if (m.type === "italic") el = <em>{el}</em>;
+          else if (m.type === "code") el = <code>{el}</code>;
+          else if (m.type === "link" && safeUrl(m.attrs?.href))
+            el = (
+              <a href={safeUrl(m.attrs?.href)} target="_blank" rel="noopener noreferrer">
+                {el}
+              </a>
+            );
+        }
+        return <React.Fragment key={key}>{el}</React.Fragment>;
+      }
+      case "hardBreak":
+        return <br key={key} />;
+      case "heading":
+        return (
+          <p key={key}>
+            <strong>{kids}</strong>
+          </p>
+        );
+      case "bulletList":
+        return <ul key={key}>{kids}</ul>;
+      case "orderedList":
+        return <ol key={key}>{kids}</ol>;
+      case "listItem":
+        return <li key={key}>{kids}</li>;
+      case "blockquote":
+        return <blockquote key={key}>{kids}</blockquote>;
+      case "table":
+        return (
+          <table key={key}>
+            <tbody>{kids}</tbody>
+          </table>
+        );
+      case "tableRow":
+        return <tr key={key}>{kids}</tr>;
+      case "tableHeader":
+        return <th key={key}>{kids}</th>;
+      case "tableCell":
+        return <td key={key}>{kids}</td>;
+      case "codeBlock":
+        return (
+          <pre key={key}>
+            <code>{kids}</code>
+          </pre>
+        );
+      default:
+        return <p key={key}>{kids}</p>;
+    }
+  };
+  const nodes = buildContentNodesFromText(md);
+  const inlineOnly = nodes.every((n) => n.type === "text" || n.type === "hardBreak");
+  return (
+    <div className={styles.proposalRich}>
+      {inlineOnly ? <p>{nodes.map(render)}</p> : nodes.map(render)}
+    </div>
+  );
 }
 
 type Props = {
@@ -143,6 +219,7 @@ type Props = {
     instruction: string,
     range: { from: number; to: number; text: string },
     signal: AbortSignal,
+    context?: { before: string; after: string },
   ) => Promise<string>;
   onTellAi?: (
     instruction: string,
@@ -194,6 +271,7 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
       instruction: string;
       text: string;
       range: { from: number; to: number; text: string };
+      instant?: boolean;
     } | null>(null);
 
     const [linkPopoverOpen, setLinkPopoverOpen] = useState(false);
@@ -209,20 +287,54 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
     const [emptyLinePos, setEmptyLinePos] = useState<{ pos: number; top: number } | null>(null);
     const [plusMenuOpen, setPlusMenuOpen] = useState(false);
 
-    const floatingLockRef = useRef(false);
-    floatingLockRef.current = Boolean(
-      aiPanelOpen || aiBusy || aiProposal || linkPopoverOpen,
-    );
+    // Ask AI session lifecycle refs. `useEditor` captures its callbacks once, so
+    // anything those callbacks read must live in refs that we refresh each render.
+    const aiBusyRef = useRef(false);
+    const aiProposalRef = useRef<unknown>(null);
+    const aiPanelOpenRef = useRef(false);
+    const linkPopoverOpenRef = useRef(false);
+    const askRangeRef = useRef<{ from: number; to: number } | null>(null);
+    const resetAiSessionRef = useRef<() => void>(() => {});
+    const linkCardRef = useRef<HTMLDivElement | null>(null);
+    const linkHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    aiBusyRef.current = aiBusy;
+    aiProposalRef.current = aiProposal;
+    aiPanelOpenRef.current = aiPanelOpen;
+    linkPopoverOpenRef.current = linkPopoverOpen;
+    // The highlighted Ask-AI target lives as long as the AI panel is open — it
+    // survives focus loss, outside clicks, processing and the result card.
+    const askRange =
+      floating && (aiPanelOpen || aiBusy || aiProposal)
+        ? { from: floating.from, to: floating.to }
+        : null;
+    askRangeRef.current = askRange;
 
-    const dismissFloating = () => {
+    const [linkCard, setLinkCard] = useState<{
+      href: string;
+      x: number;
+      y: number;
+      from: number;
+      to: number;
+      sticky: boolean;
+    } | null>(null);
+
+    /** Closes the current Ask-AI/link session (never while a request is in flight). */
+    const resetAiSession = (force = false) => {
+      if (aiBusyRef.current && !force) return;
       aiAbortRef.current?.abort();
-      setFloating(null);
       setAiPanelOpen(false);
       setAiPrompt("");
       setAiBusy(false);
       setAiError("");
       setAiProposal(null);
       setLinkPopoverOpen(false);
+    };
+    resetAiSessionRef.current = () => resetAiSession();
+
+    const dismissFloating = () => {
+      resetAiSession(true);
+      setFloating(null);
+      setLinkCard(null);
     };
 
     const computeCoordsForRange = (from: number, to: number, fallbackClient?: { x: number; y: number }) => {
@@ -755,6 +867,31 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
                     }
                   });
 
+                  // 3. Persistent Ask-AI target highlight while panel, processing, or proposal is open
+                  const ask = askRangeRef.current;
+                  if (ask && ask.to > ask.from) {
+                    const docSize = state.doc.content.size;
+                    const from = Math.max(0, Math.min(ask.from, docSize));
+                    const to = Math.max(from, Math.min(ask.to, docSize));
+                    if (to > from) {
+                      list.push(
+                        Decoration.inline(from, to, {
+                          class: styles.askTargetInline,
+                        }),
+                      );
+                      state.doc.nodesBetween(from, to, (node, pos) => {
+                        if (node.isTextblock) {
+                          list.push(
+                            Decoration.node(pos, pos + node.nodeSize, {
+                              class: styles.askTargetBlock,
+                            }),
+                          );
+                          return false;
+                        }
+                      });
+                    }
+                  }
+
                   return list.length ? DecorationSet.create(state.doc, list) : DecorationSet.empty;
                 },
                 transformPastedHTML(html) {
@@ -800,6 +937,51 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
       ];
     }, []);
 
+    const showLinkInfoCard = (
+      anchor: HTMLAnchorElement,
+      sticky: boolean,
+    ) => {
+      const ed = editorRef.current;
+      const surf = surfaceRef.current;
+      if (!ed || !surf) return;
+      const href = safeUrl(anchor.getAttribute("href"));
+      if (!href) return;
+      if (linkHideTimerRef.current) {
+        clearTimeout(linkHideTimerRef.current);
+        linkHideTimerRef.current = null;
+      }
+      let from = 0;
+      let to = 0;
+      try {
+        const pos = ed.view.posAtDOM(anchor, 0);
+        const $pos = ed.state.doc.resolve(Math.min(pos + 1, ed.state.doc.content.size));
+        const range = ed.state.schema.marks.link
+          ? getMarkRange($pos, ed.state.schema.marks.link)
+          : undefined;
+        if (range) {
+          from = range.from;
+          to = range.to;
+        } else {
+          from = pos;
+          to = Math.min(ed.state.doc.content.size, pos + (anchor.textContent?.length || 1));
+        }
+      } catch {
+        // fallback coords still show URL cleanly
+      }
+      const aRect = anchor.getBoundingClientRect();
+      const sRect = surf.getBoundingClientRect();
+      const x = Math.max(12, Math.min(sRect.width - 340, aRect.left - sRect.left));
+      const y = Math.max(66, aRect.bottom - sRect.top + 6);
+      setLinkCard((prev) => ({
+        href,
+        x,
+        y,
+        from,
+        to,
+        sticky: sticky || Boolean(prev?.sticky && prev.href === href && prev.from === from),
+      }));
+    };
+
     const editor = useEditor({
       extensions,
       content: projectDocument(props.project),
@@ -811,12 +993,51 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
           role: "textbox",
           "aria-multiline": "true",
         },
+        handleDOMEvents: {
+          mouseover(_view, event) {
+            const target = event.target as HTMLElement | null;
+            const anchor = target?.closest?.("a[href]") as HTMLAnchorElement | null;
+            if (!anchor) return false;
+            showLinkInfoCard(anchor, false);
+            return false;
+          },
+          mouseout(_view, event) {
+            const target = event.target as HTMLElement | null;
+            const anchor = target?.closest?.("a[href]");
+            if (!anchor) return false;
+            const related = event.relatedTarget as globalThis.Node | null;
+            if (
+              related &&
+              (anchor.contains(related) || linkCardRef.current?.contains(related))
+            ) {
+              return false;
+            }
+            if (linkHideTimerRef.current) clearTimeout(linkHideTimerRef.current);
+            linkHideTimerRef.current = setTimeout(() => {
+              setLinkCard((prev) => (prev && !prev.sticky ? null : prev));
+            }, 200);
+            return false;
+          },
+          click(_view, event) {
+            const target = event.target as HTMLElement | null;
+            const anchor = target?.closest?.("a[href]") as HTMLAnchorElement | null;
+            if (!anchor) return false;
+            event.preventDefault();
+            showLinkInfoCard(anchor, true);
+            return false;
+          },
+        },
       },
       onUpdate: ({ editor: ed }) => {
         if (skipOnChangeRef.current) return;
         latest.current.onChange(ed.getJSON() as RichNode);
       },
       onSelectionUpdate: ({ editor: ed }) => {
+        // Lock active Ask AI processing or result card against accidental editor clicks
+        if (aiBusyRef.current || aiProposalRef.current) {
+          return;
+        }
+
         const { from, to } = ed.state.selection;
         savedSelectionRef.current = { from, to };
         const selected = ed.state.doc.textBetween(from, to, " ");
@@ -854,8 +1075,13 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
           return;
         }
 
-        // Preserve active Ask-AI / Link popover if user is typing inside it
-        if (floatingLockRef.current) return;
+        // Preserve active Link popover while editing a URL
+        if (linkPopoverOpenRef.current) return;
+
+        // Selecting/clicking another passage closes any idle Ask AI prompt and updates toolbar
+        if (aiPanelOpenRef.current) {
+          resetAiSessionRef.current();
+        }
 
         if (selected.trim().length >= 2 && to > from) {
           const coords = computeCoordsForRange(from, to);
@@ -890,21 +1116,39 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
     ]);
 
     useEffect(() => {
-      if (!floating && !linkPopoverOpen && !plusMenuOpen) return;
+      if (!editor) return;
+      editor.view.dispatch(editor.state.tr.setMeta("askTarget", true));
+    }, [editor, askRange?.from, askRange?.to, Boolean(askRange)]);
+
+    useEffect(() => {
+      if (!floating && !linkPopoverOpen && !plusMenuOpen && !linkCard) return;
       const onKey = (e: KeyboardEvent) => {
         if (e.key === "Escape") {
-          dismissFloating();
           setPlusMenuOpen(false);
           setImageModalOpen(false);
+          setLinkCard(null);
+          if (!aiBusyRef.current && !aiProposalRef.current) {
+            dismissFloating();
+          }
         }
       };
       const onMouseDown = (e: MouseEvent) => {
         const target = e.target as globalThis.Node | null;
+        if (linkCardRef.current && target && linkCardRef.current.contains(target)) {
+          return;
+        }
+        if (target && !(target as HTMLElement).closest?.("a[href]")) {
+          setLinkCard(null);
+        }
         if (floatingRef.current && target && floatingRef.current.contains(target)) {
           return;
         }
+        // Keep Ask AI locked while processing or displaying a proposal, even on clicks outside
+        if (aiBusyRef.current || aiProposalRef.current) {
+          return;
+        }
         if (target && surfaceRef.current && !surfaceRef.current.contains(target)) {
-          if (!aiBusy) dismissFloating();
+          dismissFloating();
           setPlusMenuOpen(false);
         }
       };
@@ -914,7 +1158,7 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
         window.removeEventListener("keydown", onKey);
         window.removeEventListener("mousedown", onMouseDown);
       };
-    }, [floating, linkPopoverOpen, plusMenuOpen, aiBusy]);
+    }, [floating, linkPopoverOpen, plusMenuOpen, linkCard]);
 
     useEffect(() => () => aiAbortRef.current?.abort(), []);
 
@@ -1217,15 +1461,42 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
       [editor],
     );
 
+    const sliceToMarkdown = (from: number, to: number): string => {
+      if (!editor) return "";
+      try {
+        const sliced = editor.state.doc.slice(from, to).content.toJSON() as RichNode[];
+        const md = nodeMarkdown({ type: "doc", content: sliced }).trim();
+        if (md) return md;
+      } catch {
+        // fallback to plain text below
+      }
+      return editor.state.doc.textBetween(from, to, "\n");
+    };
+
     const runInlineAi = async (
       instruction: string,
       target: FloatingToolbarState,
     ) => {
       if (!instruction.trim()) return;
+      const selectionMd = sliceToMarkdown(target.from, target.to) || target.text;
+      const scripted = instantEdit(instruction, selectionMd);
+      if (scripted) {
+        aiAbortRef.current?.abort();
+        setAiPanelOpen(true);
+        setAiBusy(false);
+        setAiError("");
+        setAiProposal({
+          instruction,
+          text: scripted,
+          range: { from: target.from, to: target.to, text: target.text },
+          instant: true,
+        });
+        return;
+      }
       if (!latest.current.onInlineAiRewrite) {
         latest.current.onTellAi?.(
           instruction,
-          { from: target.from, to: target.to, text: target.text },
+          { from: target.from, to: target.to, text: selectionMd },
           true,
         );
         return;
@@ -1237,17 +1508,26 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
       setAiBusy(true);
       setAiError("");
       setAiProposal(null);
+      const docSize = editor?.state.doc.content.size ?? target.to;
+      const contextBefore = editor
+        ? editor.state.doc.textBetween(Math.max(0, target.from - 650), target.from, "\n")
+        : "";
+      const contextAfter = editor
+        ? editor.state.doc.textBetween(target.to, Math.min(docSize, target.to + 650), "\n")
+        : "";
       try {
         const resultText = await latest.current.onInlineAiRewrite(
           instruction,
-          { from: target.from, to: target.to, text: target.text },
+          { from: target.from, to: target.to, text: selectionMd },
           ctrl.signal,
+          { before: contextBefore, after: contextAfter },
         );
         if (ctrl.signal.aborted) return;
         setAiProposal({
           instruction,
-          text: resultText,
+          text: normalizeAiMarkdown(resultText),
           range: { from: target.from, to: target.to, text: target.text },
+          instant: false,
         });
       } catch (err) {
         if (ctrl.signal.aborted) return;
@@ -1899,13 +2179,23 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
                       Cancel
                     </button>
                   ) : (
-                    <button
-                      type="submit"
-                      disabled={!aiPrompt.trim()}
-                      aria-label="Run Ask AI edit"
-                    >
-                      <Send size={13} />
-                    </button>
+                    <>
+                      <button
+                        type="submit"
+                        disabled={!aiPrompt.trim()}
+                        aria-label="Run Ask AI edit"
+                      >
+                        <Send size={13} />
+                      </button>
+                      <button
+                        type="button"
+                        aria-label="Close Ask AI"
+                        title="Close Ask AI"
+                        onClick={() => resetAiSession(false)}
+                      >
+                        <X size={13} />
+                      </button>
+                    </>
                   )}
                 </form>
 
@@ -1942,8 +2232,13 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
 
                 {aiProposal && (
                   <div className={styles.floatingProposalBox}>
+                    {aiProposal.instant && (
+                      <span className={styles.floatingInstantBadge}>
+                        <Zap size={11} /> Instant format
+                      </span>
+                    )}
                     <div className={styles.floatingProposalPreview}>
-                      {aiProposal.text}
+                      <RichPreview md={aiProposal.text} />
                     </div>
                     <div className={styles.floatingProposalActions}>
                       <button
@@ -1995,7 +2290,7 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
                       >
                         <RefreshCw size={12} /> Retry
                       </button>
-                      <button type="button" onClick={() => setAiProposal(null)}>
+                      <button type="button" onClick={() => dismissFloating()}>
                         Discard
                       </button>
                     </div>
@@ -2006,9 +2301,120 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
           </div>
         )}
 
+        {/* Link Hover / Click Inspector Popover */}
+        {linkCard && (
+          <div
+            ref={linkCardRef}
+            className={styles.linkInfoCard}
+            style={{ left: linkCard.x, top: linkCard.y }}
+            onMouseEnter={() => {
+              if (linkHideTimerRef.current) {
+                clearTimeout(linkHideTimerRef.current);
+                linkHideTimerRef.current = null;
+              }
+            }}
+            onMouseLeave={() => {
+              if (!linkCard.sticky) {
+                linkHideTimerRef.current = setTimeout(() => {
+                  setLinkCard((prev) => (prev && !prev.sticky ? null : prev));
+                }, 180);
+              }
+            }}
+          >
+            {(() => {
+              let isInternal = false;
+              try {
+                const uHost = new URL(linkCard.href).hostname.replace(/^www\./, "");
+                const siteHost = props.project.brandSiteUrl
+                  ? new URL(safeUrl(props.project.brandSiteUrl) || "https://doitwithai.tools").hostname.replace(/^www\./, "")
+                  : "doitwithai.tools";
+                isInternal = uHost === siteHost || uHost.endsWith(`.${siteHost}`);
+              } catch {}
+              return (
+                <span
+                  className={`${styles.linkInfoKind} ${!isInternal ? styles.linkInfoKindExternal : ""}`}
+                >
+                  {isInternal ? "Internal" : "External"}
+                </span>
+              );
+            })()}
+            <a
+              className={styles.linkInfoUrl}
+              href={linkCard.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={linkCard.href}
+            >
+              {linkCard.href}
+            </a>
+            <button
+              type="button"
+              title="Open link in new tab"
+              onClick={() => window.open(linkCard.href, "_blank", "noopener,noreferrer")}
+            >
+              <ExternalLink size={12} /> Open
+            </button>
+            <button
+              type="button"
+              title="Copy URL"
+              onClick={() => {
+                void navigator.clipboard?.writeText(linkCard.href);
+                setNotice("Link URL copied.");
+              }}
+            >
+              <Copy size={12} />
+            </button>
+            <button
+              type="button"
+              title="Edit link URL"
+              onClick={() => {
+                if (!editor || linkCard.to <= linkCard.from) return;
+                const coords = computeCoordsForRange(linkCard.from, linkCard.to);
+                const selected = editor.state.doc.textBetween(linkCard.from, linkCard.to, " ");
+                setFloating({
+                  from: linkCard.from,
+                  to: linkCard.to,
+                  text: selected || linkCard.href,
+                  ...coords,
+                });
+                setAiPanelOpen(false);
+                setLinkTargetRange({ from: linkCard.from, to: linkCard.to });
+                setLinkValue(linkCard.href);
+                setLinkPopoverOpen(true);
+                setLinkCard(null);
+              }}
+            >
+              <Pencil size={12} /> Edit
+            </button>
+            <button
+              type="button"
+              title="Remove link"
+              onClick={() => {
+                if (!editor || linkCard.to <= linkCard.from) return;
+                editor
+                  .chain()
+                  .focus()
+                  .setTextSelection({ from: linkCard.from, to: linkCard.to })
+                  .unsetMark("link")
+                  .run();
+                setLinkCard(null);
+              }}
+            >
+              <Unlink size={12} />
+            </button>
+            <button
+              type="button"
+              aria-label="Close link preview"
+              onClick={() => setLinkCard(null)}
+            >
+              <X size={12} />
+            </button>
+          </div>
+        )}
+
         <div
           onContextMenu={(e) => {
-            if (!editor) return;
+            if (!editor || aiBusyRef.current || aiProposalRef.current) return;
             const { from, to } = editor.state.selection;
             let rangeFrom = from;
             let rangeTo = to;

@@ -724,6 +724,82 @@ export type SectionMatchedLink = {
  * Replaces modulo internal link assignment (`secIdx % length`) with capability-verified
  * semantic matching so each link only appears in the section where it actually fits.
  */
+/**
+ * Returns true only for non-competitor first-party authority domains:
+ * government agencies, international/regulatory bodies, academic/standards orgs,
+ * encyclopedic references, and official primary vendor documentation.
+ */
+export function isFirstPartyAuthorityUrl(
+  rawUrl: string,
+  brandSiteUrl = "",
+): boolean {
+  try {
+    const parsed = new URL(rawUrl);
+    if (!/^https?:$/i.test(parsed.protocol)) return false;
+    const host = parsed.hostname.toLowerCase().replace(/^www\./, "");
+    if (brandSiteUrl) {
+      try {
+        const brandHost = new URL(brandSiteUrl).hostname
+          .toLowerCase()
+          .replace(/^www\./, "");
+        if (host === brandHost || host.endsWith(`.${brandHost}`)) return false;
+      } catch {}
+    }
+    if (
+      /\.(gov|mil|edu|int)$/i.test(host) ||
+      /\.gov\.[a-z]{2,3}$/i.test(host) ||
+      /\.ac\.[a-z]{2,3}$/i.test(host) ||
+      /\.edu\.[a-z]{2,3}$/i.test(host)
+    ) {
+      return true;
+    }
+    const FIRST_PARTY_HOSTS = [
+      "developers.google.com",
+      "support.google.com",
+      "search.google.com",
+      "ai.google.dev",
+      "cloud.google.com",
+      "web.dev",
+      "openai.com",
+      "platform.openai.com",
+      "help.openai.com",
+      "anthropic.com",
+      "docs.anthropic.com",
+      "support.anthropic.com",
+      "developer.mozilla.org",
+      "learn.microsoft.com",
+      "docs.github.com",
+      "w3.org",
+      "schema.org",
+      "ietf.org",
+      "iso.org",
+      "rfc-editor.org",
+      "who.int",
+      "un.org",
+      "oecd.org",
+      "imf.org",
+      "worldbank.org",
+      "europa.eu",
+      "canada.ca",
+      "wikipedia.org",
+      "en.wikipedia.org",
+      "react.dev",
+      "nextjs.org",
+      "docs.stripe.com",
+      "shopify.dev",
+      "help.shopify.com",
+      "wordpress.org",
+      "support.apple.com",
+      "arxiv.org",
+    ];
+    return FIRST_PARTY_HOSTS.some(
+      (allowed) => host === allowed || host.endsWith(`.${allowed}`),
+    );
+  } catch {
+    return false;
+  }
+}
+
 export function matchSectionLinksByCapability(params: {
   sectionHeading: string;
   subheadings: string[];
@@ -794,15 +870,19 @@ export function matchSectionLinksByCapability(params: {
     .slice(0, 1);
 
   const scoredExternal = params.externalPool
-    .filter((l) => !params.usedExternalUrls.has(l.url))
+    .filter(
+      (l) =>
+        !params.usedExternalUrls.has(l.url) &&
+        isFirstPartyAuthorityUrl(l.url),
+    )
     .map((link) => {
       const linkTokens = tokenizeSemantic(`${link.title} ${link.snippet || ""}`);
       let hits = linkTokens.reduce(
         (acc, t) => acc + (headingTokens.has(t) ? 3 : secTokens.has(t) ? 1 : 0),
         0,
       );
-      if (/developers\.google\.com|search\.google|openai\.com|nih\.gov|cdc\.gov|gov\.uk|irs\.gov|who\.int/i.test(link.url)) {
-        hits += 2;
+      if (isFirstPartyAuthorityUrl(link.url)) {
+        hits += 3;
       }
       return { link, score: hits };
     })

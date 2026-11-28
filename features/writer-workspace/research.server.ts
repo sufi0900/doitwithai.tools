@@ -15,6 +15,7 @@ import { parseBrief, parseBriefDirectives } from "./model";
 import {
   classifyBriefAndBuildContract,
   DOITWITHAI_CAPABILITY_CATALOG,
+  isFirstPartyAuthorityUrl,
   isSeoOrWebTopic,
 } from "./niche-policies";
 import type {
@@ -980,7 +981,11 @@ export function createResearchHandler(deps: ResearchDeps = {}) {
       const mergedExternalLinks: ResearchLinkItem[] = [];
       const seenExt = new Set<string>();
       for (const gs of groundedResult.groundedSources || []) {
-        if (gs.url && !seenExt.has(gs.url)) {
+        if (
+          gs.url &&
+          !seenExt.has(gs.url) &&
+          isFirstPartyAuthorityUrl(gs.url, data.websiteUrl)
+        ) {
           seenExt.add(gs.url);
           mergedExternalLinks.push({
             url: gs.url,
@@ -992,7 +997,11 @@ export function createResearchHandler(deps: ResearchDeps = {}) {
         }
       }
       for (const wl of webResult.links) {
-        if (wl.url && !seenExt.has(wl.url)) {
+        if (
+          wl.url &&
+          !seenExt.has(wl.url) &&
+          isFirstPartyAuthorityUrl(wl.url, data.websiteUrl)
+        ) {
           seenExt.add(wl.url);
           mergedExternalLinks.push(wl);
         }

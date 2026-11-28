@@ -176,6 +176,7 @@ export function generationContext(p: Project) {
     verifiedLinks,
     researchSummary,
     briefContractSummary,
+    archetype: contract?.archetype || "",
     semanticTerms: (research?.semanticTerms || []).map((t) => t.term).slice(0, 20),
     brandVoiceSummary: brandVoice,
     instruction: p.customUserInstructions.slice(0, 2000),
@@ -986,11 +987,42 @@ export function useGeneration(store: ReturnType<typeof useWorkspace>) {
     text: string,
     instruction: string,
     signal: AbortSignal,
-  ) =>
-    request(current.current, "rewrite", signal, {
-      selection: text,
-      instruction,
+    context: { before?: string; after?: string } = {},
+  ) => {
+    // Lean payload: an inline edit only needs the selection, the instruction and
+    // a little neighbouring text — not the whole brief, 8 source pages and outline
+    // (which previously made every Ask AI call slow and expensive).
+    const p = current.current;
+    const w = workspace(p);
+    const requestId = id();
+    const res = await fetch("/api/writer-workspace/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      signal: AbortSignal.any([signal, AbortSignal.timeout(40000)]),
+      body: JSON.stringify({
+        operation: "rewrite",
+        requestId,
+        brief: (p.metaPack.h1Title || p.projectTitle || "Article").slice(0, 300),
+        keyword: (p.keywordCluster.primaryKeyword || "").slice(0, 160),
+        tone: (p.keywordCluster.toneOfVoice || "Clear and helpful").slice(0, 100),
+        language: w.language || "English",
+        brandVoiceSummary: (
+          w.brandVoiceOverride?.voiceSummary || ""
+        ).slice(0, 800),
+        selection: text,
+        instruction,
+        contextBefore: (context.before || "").slice(-1400),
+        contextAfter: (context.after || "").slice(0, 1400),
+      }),
     });
+    const data = await res.json().catch(() => null);
+    if (!res.ok || !data?.ok || data.requestId !== requestId)
+      throw new Error(
+        data?.error ||
+          "The writing service did not return a valid response. Retry this step.",
+      );
+    return data;
+  };
 
   return { busy, plan, draft, generateAll, stop, rewrite };
 }

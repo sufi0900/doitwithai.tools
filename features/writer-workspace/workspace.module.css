@@ -4569,6 +4569,151 @@
   gap: 4px;
 }
 
+/* Ask AI session target: stays visible while the toolbar is open, busy, or showing a result. */
+.askTargetInline {
+  background: rgba(99, 102, 241, 0.22);
+  border-radius: 3px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+.darkShell .askTargetInline {
+  background: rgba(129, 140, 248, 0.34);
+}
+.askTargetBlock {
+  background: rgba(99, 102, 241, 0.07);
+  box-shadow: -10px 0 0 rgba(99, 102, 241, 0.07), 10px 0 0 rgba(99, 102, 241, 0.07);
+  border-radius: 4px;
+  transition: background 0.15s ease;
+}
+.darkShell .askTargetBlock {
+  background: rgba(129, 140, 248, 0.13);
+  box-shadow: -10px 0 0 rgba(129, 140, 248, 0.13), 10px 0 0 rgba(129, 140, 248, 0.13);
+}
+.floatingInstantBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #047857;
+}
+.darkShell .floatingInstantBadge {
+  color: #6ee7b7;
+}
+.proposalRich {
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--ink);
+}
+.proposalRich p {
+  margin: 0 0 6px;
+}
+.proposalRich ul,
+.proposalRich ol {
+  margin: 0 0 6px;
+  padding-left: 18px;
+}
+.proposalRich ul {
+  list-style: disc;
+}
+.proposalRich ol {
+  list-style: decimal;
+}
+.proposalRich blockquote {
+  margin: 0 0 6px;
+  padding-left: 9px;
+  border-left: 3px solid #6366f1;
+  color: #475569;
+}
+.proposalRich table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 6px;
+  font-size: 11.5px;
+}
+.proposalRich th,
+.proposalRich td {
+  border: 1px solid rgba(100, 116, 139, 0.35);
+  padding: 4px 7px;
+  text-align: left;
+  vertical-align: top;
+}
+.proposalRich th {
+  background: rgba(99, 102, 241, 0.1);
+  font-weight: 700;
+}
+.proposalRich a {
+  color: #4f46e5;
+  text-decoration: underline;
+}
+.darkShell .proposalRich a {
+  color: #a5b4fc;
+}
+/* Link info card: shows where a link points on hover / click. */
+.linkInfoCard {
+  position: absolute;
+  z-index: 46;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: min(460px, calc(100% - 24px));
+  padding: 6px 8px;
+  border-radius: 10px;
+  border: 1px solid #d1d9ec;
+  background: #ffffff;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.18);
+  font-size: 12px;
+}
+.darkShell .linkInfoCard {
+  background: #0f182c;
+  border-color: #2f426b;
+  box-shadow: 0 16px 40px rgba(2, 6, 23, 0.8);
+}
+.linkInfoUrl {
+  display: block;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #3858dd;
+  font-weight: 600;
+  text-decoration: none;
+}
+.darkShell .linkInfoUrl {
+  color: #a5b4fc;
+}
+.linkInfoUrl:hover {
+  text-decoration: underline;
+}
+.linkInfoKind {
+  flex-shrink: 0;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: rgba(16, 185, 129, 0.14);
+  color: #047857;
+}
+.linkInfoKindExternal {
+  background: rgba(245, 158, 11, 0.16);
+  color: #b45309;
+}
+.linkInfoCard button {
+  flex-shrink: 0;
+  min-height: 26px !important;
+  padding: 3px 8px !important;
+  font-size: 11px !important;
+  border-radius: 7px !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .hlSearchMatch {
   background: rgba(99, 102, 241, 0.28);
   border-bottom: 2px solid #4f46e5;

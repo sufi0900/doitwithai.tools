@@ -1564,8 +1564,8 @@ export default function WriterWorkspace() {
                     onUpdateProject={update}
                     onEditVisual={openVisual}
                     onSelection={setSelection}
-                    onInlineAiRewrite={async (inst, range, signal) => {
-                      const res = await gen.rewrite(range.text, inst, signal);
+                    onInlineAiRewrite={async (inst, range, signal, ctx) => {
+                      const res = await gen.rewrite(range.text, inst, signal, ctx);
                       return res.data.text;
                     }}
                     onTellAi={(inst, range, openTab) => {
