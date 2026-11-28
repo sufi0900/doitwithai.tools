@@ -1,16 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
-  Check,
   ExternalLink,
   Link2,
   SlidersHorizontal,
-  Sparkles,
   BookOpen,
   SearchCheck,
   Wand2,
-  X,
   AlertTriangle,
   Zap,
 } from "lucide-react";
@@ -38,7 +35,7 @@ import {
 import type { Project } from "./types";
 import s from "./workspace.module.css";
 
-export type StudioLeftTab = "helper" | "readability" | "seo";
+export type StudioLeftTab = "readability" | "seo";
 
 export type ReadabilityHighlightToggles = {
   veryHard: boolean;
@@ -47,20 +44,8 @@ export type ReadabilityHighlightToggles = {
   simpler: boolean;
 };
 
-const QUICK_AI_CHIPS = [
-  { label: "Tighten & clarify", prompt: "Make this clearer, tighter, and eliminate filler words while preserving every fact and Markdown heading." },
-  { label: "Shorten hard sentences", prompt: "Break long complex sentences into short, direct, high-readability 14-word sentences and keep all headings on separate lines." },
-  { label: "Convert to bullets", prompt: "Convert dense prose here into crisp scannable bullet points with bold lead-ins." },
-  { label: "Add concrete example", prompt: "Keep the meaning intact and add one clear practical example to make it actionable." },
-  { label: "Convert to table", prompt: "Organize this comparison or structured criteria into a clean Markdown table." },
-  { label: "Decision matrix", prompt: "Add a 3-column Markdown decision matrix (Approach | Best For | Key Tradeoff) comparing the options in this section." },
-  { label: "E-E-A-T pro tip", prompt: "Add a concise '> **Practitioner Pro Tip:**' blockquote highlighting a real-world implementation edge case or pitfall to avoid." },
-  { label: "Stronger conclusion", prompt: "Rewrite this closing section with an actionable takeaway checklist and zero fluff." },
-];
-
 export function LeftStudioPanel({
   project,
-  selection,
   activeTab,
   highlightToggles,
   targetGrade,
@@ -71,8 +56,6 @@ export function LeftStudioPanel({
   onOpenBriefModal,
   onRunAiHelper,
   onQuickReadabilityPolish,
-  onApplyRevision,
-  onDiscardRevision,
   onInsertLink,
   onAutoWeaveInternalLinks,
   onNormalizeFaqsPaa,
@@ -85,7 +68,6 @@ export function LeftStudioPanel({
   researchBusy,
 }: {
   project: Project;
-  selection: string;
   activeTab: StudioLeftTab;
   highlightToggles: ReadabilityHighlightToggles;
   targetGrade: number;
@@ -102,8 +84,6 @@ export function LeftStudioPanel({
   onOpenBriefModal: () => void;
   onRunAiHelper: (instruction: string, scope: "selection" | "article") => void;
   onQuickReadabilityPolish?: () => void;
-  onApplyRevision: () => void;
-  onDiscardRevision: () => void;
   onInsertLink: (title: string, url: string) => void;
   onAutoWeaveInternalLinks?: () => void;
   onNormalizeFaqsPaa?: () => void;
@@ -115,13 +95,6 @@ export function LeftStudioPanel({
   onRunResearch?: () => void;
   researchBusy?: boolean;
 }) {
-  const [instruction, setInstruction] = useState(
-    "Make this clearer, tighter, and easier to scan.",
-  );
-  const [scope, setScope] = useState<"selection" | "article">(
-    selection.trim() ? "selection" : "article",
-  );
-
   const w = workspace(project);
   const md = useMemo(() => articleMarkdown(project), [project]);
   const r = useMemo(() => readiness(project), [project]);
@@ -164,8 +137,6 @@ export function LeftStudioPanel({
     [md, targetGrade],
   );
 
-  const effectiveScope: "selection" | "article" =
-    selection.trim() && scope === "selection" ? "selection" : scope;
 
   const isEnglish = !w.language || /^en(g|glish)?/i.test(w.language.trim());
 
@@ -292,16 +263,6 @@ export function LeftStudioPanel({
         <button
           type="button"
           role="tab"
-          aria-selected={activeTab === "helper"}
-          className={activeTab === "helper" ? s.tabOn : ""}
-          onClick={() => onChangeTab("helper")}
-        >
-          <Sparkles className="w-3.5 h-3.5" aria-hidden />
-          AI Helper
-        </button>
-        <button
-          type="button"
-          role="tab"
           aria-selected={activeTab === "readability"}
           className={activeTab === "readability" ? s.tabOn : ""}
           onClick={() => onChangeTab("readability")}
@@ -321,77 +282,8 @@ export function LeftStudioPanel({
         </button>
       </div>
 
-      {activeTab === "helper" ? (
-        <div className={s.panelSection}>
-          <div className={s.helperScopeRow}>
-            <span className={s.label}>Target Scope</span>
-            <div className={s.scopePills}>
-              <button
-                type="button"
-                className={`${s.scopePill} ${effectiveScope === "selection" ? s.scopePillOn : ""}`}
-                onClick={() => setScope("selection")}
-              >
-                Selected {selection.trim() ? `(${selection.trim().split(/\s+/).length}w)` : ""}
-              </button>
-              <button
-                type="button"
-                className={`${s.scopePill} ${effectiveScope === "article" ? s.scopePillOn : ""}`}
-                onClick={() => setScope("article")}
-              >
-                Full Article Intro/Body
-              </button>
-            </div>
-          </div>
-
-          {effectiveScope === "selection" && !selection.trim() ? (
-            <div className={s.helperSelectionHint}>
-              Highlight any sentence, paragraph, or heading inside the article editor (or right-click a block → <strong>Tell AI about it</strong>) to target a specific passage.
-            </div>
-          ) : effectiveScope === "selection" ? (
-            <div className={s.selectionQuoteBox}>
-              <span>Selected text preview:</span>
-              <p>{selection.trim().slice(0, 180)}{selection.trim().length > 180 ? "…" : ""}</p>
-            </div>
-          ) : null}
-
-          <label className={s.label} htmlFor="left-ai-helper-input">
-            Tell AI what to change or restructure
-          </label>
-          <textarea
-            id="left-ai-helper-input"
-            className={`${s.area} ${s.helperPromptArea}`}
-            value={instruction}
-            onChange={(e) => setInstruction(e.target.value)}
-            placeholder="e.g. Rewrite this in simpler everyday language, convert the comparison into a Markdown table, or add a clear takeaway..."
-          />
-
-          <div className={s.chipGrid}>
-            {QUICK_AI_CHIPS.map((chip) => (
-              <button
-                key={chip.label}
-                type="button"
-                className={s.helperChip}
-                disabled={aiRevisionState.busy}
-                onClick={() => {
-                  setInstruction(chip.prompt);
-                  onRunAiHelper(chip.prompt, effectiveScope);
-                }}
-              >
-                {chip.label}
-              </button>
-            ))}
-          </div>
-
-          <button
-            type="button"
-            className={`${s.btn} ${s.primary} ${s.fullWidthBtn}`}
-            disabled={aiRevisionState.busy || !instruction.trim()}
-            onClick={() => onRunAiHelper(instruction, effectiveScope)}
-          >
-            <Wand2 className="w-4 h-4" aria-hidden />
-            {aiRevisionState.busy ? "Revising with AI..." : "Run AI Revision"}
-          </button>
-
+      {activeTab === "seo" && <details className={s.panelSection}>
+        <summary>Insert a template block</summary>
           <div className={s.seoBlock}>
             <div className={s.seoBlockHeader}>
               <strong>Instant Markdown Block Generators (0 Tokens)</strong>
@@ -449,39 +341,8 @@ export function LeftStudioPanel({
             </div>
           </div>
 
-          {aiRevisionState.error ? (
-            <div className={s.helperError}>{aiRevisionState.error}</div>
-          ) : null}
 
-          {aiRevisionState.proposed ? (
-            <div className={s.diffBox}>
-              <div className={s.diffHeader}>
-                <strong>Proposed Revision ({aiRevisionState.scope})</strong>
-                <div className={s.diffActions}>
-                  <button
-                    type="button"
-                    className={s.diffAcceptBtn}
-                    onClick={onApplyRevision}
-                  >
-                    <Check className="w-3.5 h-3.5" aria-hidden /> Apply
-                  </button>
-                  <button
-                    type="button"
-                    className={s.diffDiscardBtn}
-                    onClick={onDiscardRevision}
-                  >
-                    <X className="w-3.5 h-3.5" aria-hidden /> Discard
-                  </button>
-                </div>
-              </div>
-              <pre className={s.diffPreview}>
-                {aiRevisionState.proposed.slice(0, 650)}
-                {aiRevisionState.proposed.length > 650 ? "…" : ""}
-              </pre>
-            </div>
-          ) : null}
-        </div>
-      ) : null}
+      </details>}
 
       {activeTab === "readability" ? (
         <div className={s.panelSection}>
@@ -638,7 +499,6 @@ export function LeftStudioPanel({
               className={`${s.btn} ${s.fullWidthBtn}`}
               disabled={aiRevisionState.busy}
               onClick={() => {
-                onChangeTab("helper");
                 onRunAiHelper(
                   `Improve readability to Grade ${targetGrade}: shorten sentences over 18 words, add bullet points with bold lead-ins, keep all ## and ### headings on their own lines, and preserve all facts.`,
                   "article",
@@ -1012,7 +872,6 @@ export function LeftStudioPanel({
                         type="button"
                         className={s.insertLinkBtn}
                         onClick={() => {
-                          onChangeTab("helper");
                           onRunAiHelper(
                             `Weave this specific Information Gain / E-E-A-T angle naturally into the article with a concrete practical example: "${item.text}"`,
                             "article",
@@ -1066,7 +925,6 @@ export function LeftStudioPanel({
                       type="button"
                       className={s.insertLinkBtn}
                       onClick={() => {
-                        onChangeTab("helper");
                         onRunAiHelper(
                           `Review this sentence for E-E-A-T accuracy: "${uc.sentence}". Either attribute it to one of our verified external references via Markdown [Source](url) or rephrase it into an honest, verifiable practitioner observation without invented statistics.`,
                           "article",
@@ -1154,7 +1012,6 @@ export function LeftStudioPanel({
                         type="button"
                         className={s.insertLinkBtn}
                         onClick={() => {
-                          onChangeTab("helper");
                           onRunAiHelper(
                             `In H2 section "${sec.h2}", rewrite the opening paragraph immediately beneath the H2 into a direct, self-contained 45 to 55 word answer paragraph (inverted pyramid, zero throat-clearing) while keeping all ### subheadings, bullet lists, and links intact.`,
                             "article",

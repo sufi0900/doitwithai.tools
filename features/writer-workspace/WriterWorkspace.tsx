@@ -33,6 +33,9 @@ import { useGeneration } from "./useGeneration";
 import { WRITER_OPEN_PROJECT_EVENT } from "@/lib/studio/article-library";
 import {
   articleMarkdown,
+  computeContentScorecard,
+  auditContextualLinkOpportunities,
+  auditSerpPixelAndCtrReadiness,
   articleRevision,
   applyContentRefreshUpgrade,
   auditQuickAnswerBoxReadiness,
@@ -54,14 +57,14 @@ import {
   readiness,
   refreshVisual,
   safeUrl,
-  setSectionBody,
+  projectDocument,
   syncDocument,
   weaveSectionTakeawayCallouts,
   wordCount,
   workspace,
 } from "./model";
 import type { Project, ResearchPacket, RichNode } from "./types";
-import ArticleEditor, { type EditorHandle } from "./ArticleEditor";
+import ArticleEditor, { RichPreview, type EditorHandle } from "./ArticleEditor";
 import AssetDeck from "./AssetDeck";
 import { ConnectedWebsitePublishBar } from "./ConnectedWebsitePublishBar";
 import { authorizedWebsiteFetch } from "@/features/website-builder/lib/supabase/browser";
@@ -82,6 +85,9 @@ import { BriefSettingsModal } from "./BriefSettingsModal";
 import { ContentScorePanel } from "./ContentScorePanel";
 import { downloadArticle, saveBlob } from "./assets";
 import styles from "./workspace.module.css";
+import assistantStyles from "./article-assistant.module.css";
+import { ArticleAssistant, type AssistantLaunch } from "./ArticleAssistant";
+import { articleDownloads, type AssistantReply, type Passage } from "./article-assistant";
 
 const InfographicStudio = dynamic(
   () => import("@/features/blog-infographic-studio/BlogInfographicStudio"),
@@ -110,7 +116,7 @@ export default function WriterWorkspace() {
       s.bodyMarkdown.trim() || s.subHeadings.some((h) => h.bodyMarkdown.trim()),
   );
 
-  const [leftTab, setLeftTab] = useState<StudioLeftTab>("helper"),
+  const [leftTab, setLeftTab] = useState<StudioLeftTab>("readability"),
     [leftOpen, setLeftOpen] = useState(false),
     [rightScoreOpen, setRightScoreOpen] = useState(true),
     [workspaceMode, setWorkspaceMode] = useState<
@@ -138,6 +144,7 @@ export default function WriterWorkspace() {
       to: number;
       scope: "selection" | "article";
       revision: string;
+      sectionId?: string;
     } | null>(null),
     [rewriteBusy, setRewriteBusy] = useState(false),
     [rewriteError, setRewriteError] = useState(""),
@@ -246,6 +253,7 @@ export default function WriterWorkspace() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const [assistant, setAssistant] = useState<AssistantLaunch | null>(null);
   const dialog = useRef<HTMLDivElement>(null);
   const editor = useRef<EditorHandle>(null),
     importInput = useRef<HTMLInputElement>(null),
@@ -254,6 +262,7 @@ export default function WriterWorkspace() {
 
   useEffect(() => {
     setVisualId(null);
+    setAssistant(null);
     setFocus(false);
     setBriefModalOpen(false);
     setWorkspaceMode("editor");
@@ -266,7 +275,7 @@ export default function WriterWorkspace() {
       ) ||
       Boolean(workspace(p).document && readiness(p).words > 0);
     setStudioUnlocked(hasDraft);
-    setLeftTab("helper");
+    setLeftTab("readability");
     setRewrite(null);
     setRewriteError("");
     setSelection("");
@@ -499,11 +508,12 @@ export default function WriterWorkspace() {
     explicitRange?: { from: number; to: number; text: string },
   ) => {
     const picked = explicitRange || editor.current?.selection();
+    if (rewriteAbort.current) rewriteAbort.current.abort();
     const targetText =
       scope === "selection" && picked?.text.trim()
         ? picked.text
         : articleMarkdown(current.current);
-    if (!targetText.trim()) {
+    if ((scope === "selection" && !picked?.text.trim()) || !targetText.trim()) {
       setRewriteError("Add or select text in the article first.");
       return;
     }
@@ -512,7 +522,7 @@ export default function WriterWorkspace() {
       return;
     }
     if (!customInstruction.trim()) {
-      setLeftTab("helper");
+      setLeftTab("readability");
       return;
     }
     const revision = articleRevision(current.current),
@@ -520,6 +530,7 @@ export default function WriterWorkspace() {
       c = new AbortController();
     rewriteAbort.current = c;
     setRewriteBusy(true);
+    setRewrite(null);
     setRewriteError("");
     try {
       const res = await gen.rewrite(
@@ -527,7 +538,7 @@ export default function WriterWorkspace() {
         customInstruction,
         c.signal,
       );
-      if (current.current.projectId !== pid) return;
+      if (c.signal.aborted || current.current.projectId !== pid) return;
       setRewrite({
         original: targetText,
         proposed: res.data.text,
@@ -537,9 +548,33 @@ export default function WriterWorkspace() {
         revision,
       });
     } catch (e) {
-      setRewriteError(errorText(e));
+      if (!c.signal.aborted) setRewriteError(errorText(e));
     } finally {
-      setRewriteBusy(false);
+      if (rewriteAbort.current === c) setRewriteBusy(false);
+    }
+  };
+
+  const requestSectionRevision = async (sectionId: string, instruction: string) => {
+    const section = current.current.sections.find((item) => item.id === sectionId);
+    if (!section || !bodyOf(section).trim()) {
+      setRewriteError("This section has no text to revise.");
+      return;
+    }
+    rewriteAbort.current?.abort();
+    const rev = articleRevision(current.current);
+    const ctrl = new AbortController();
+    rewriteAbort.current = ctrl;
+    setRewriteBusy(true);
+    setRewriteError("");
+    try {
+      const original = bodyOf(section);
+      const result = await gen.rewrite(original, instruction + " Preserve the existing H3 headings and their order.", ctrl.signal);
+      if (ctrl.signal.aborted) return;
+      setRewrite({ original, proposed: result.data.text, from: 0, to: 0, scope: "selection", revision: rev, sectionId });
+    } catch (error) {
+      if (!ctrl.signal.aborted) setRewriteError(errorText(error));
+    } finally {
+      if (rewriteAbort.current === ctrl) setRewriteBusy(false);
     }
   };
 
@@ -551,9 +586,39 @@ export default function WriterWorkspace() {
       );
       return;
     }
-    if (rewrite.scope === "selection" && rewrite.to > rewrite.from) {
-      editor.current?.replace(rewrite.from, rewrite.to, rewrite.proposed);
+    if (rewrite.sectionId) {
+      const sectionId = rewrite.sectionId;
+      const doc = projectDocument(current.current);
+      const content = doc.content || [];
+      const start = content.findIndex((node) => node.type === "heading" && node.attrs?.level === 2 && node.attrs?.sectionId === sectionId);
+      if (start < 0) {
+        setRewriteError("Open the section and select the text you want to replace.");
+        return;
+      }
+      const next = content.findIndex((node, index) => index > start && node.type === "heading" && node.attrs?.level === 2);
+      const end = next < 0 ? content.length : next;
+      const body = markdownNodes(rewrite.proposed);
+      if (body.some((node) => node.type === "heading" && Number(node.attrs?.level) <= 2)) {
+        setRewriteError("The proposed edit changes section boundaries. Request a body-only revision.");
+        return;
+      }
+      const retained = content.slice(start + 1, end).filter((node) =>
+        node.type === "sectionVisual" || node.type === "image",
+      );
+      update((now) => syncDocument(now, {
+        ...doc, content: [...content.slice(0, start + 1), ...body, ...retained, ...content.slice(end)],
+      }));
+    } else if (rewrite.scope === "selection" && rewrite.to > rewrite.from) {
+      if (!editor.current) {
+        setRewriteError("Open the editor and select the passage again.");
+        return;
+      }
+      editor.current.replace(rewrite.from, rewrite.to, rewrite.proposed);
     } else {
+      if (computeContentScorecard(current.current).structure.images.actual > 0) {
+        setRewriteError("To preserve existing visuals, apply edits to individual sections or selected passages.");
+        return;
+      }
       update((now) => {
         const synced = syncDocument(now, {
           type: "doc",
@@ -717,6 +782,139 @@ export default function WriterWorkspace() {
     }
   };
 
+  const openAssistant = (range?: { from: number; to: number; text: string }) => {
+    rewriteAbort.current?.abort();
+    setRewriteBusy(false);
+    setRewrite(null);
+    setRewriteError("");
+    setAssistant({ id: id(), ...(range ? { passage: { ...range, revision: articleRevision(current.current) } } : {}) });
+  };
+
+  const assistantScore = useMemo(() => assistant ? computeContentScorecard(p) : null, [assistant, p]);
+
+  const assistantContext = () => {
+    const article = articleMarkdown(p);
+    const score = assistantScore || computeContentScorecard(p);
+
+    return {
+      article: article.slice(0, 48000),
+      diagnostics: JSON.stringify({
+        truncated: article.length > 48000,
+        words: report.words, readingMinutes: report.minutes,
+        score: score.overallScore, targetScore: score.targetBenchmark,
+        structure: score.structure, terms: score.terms, issues: score.issues.slice(0, 12),
+        readability: { longSentences: report.readability.longSentences.length, longParagraphs: report.readability.longParagraphs.length }, editorialChecks: report.checks,
+        keyword: p.keywordCluster.primaryKeyword,
+        meta: { title: p.metaPack.metaTitle, description: p.metaPack.metaDescription,
+          characters: p.metaPack.metaDescription.length, slug: p.metaPack.urlSlug,
+          ...auditSerpPixelAndCtrReadiness(p) },
+        faqs: { count: p.faqs.length, entries: p.faqs.slice(0, 8) },
+        includedImages: score.structure.images.actual,
+        featuredBanner: w.featuredBanner?.headline || null,
+        headings: p.sections.map((section) => ({ id: section.id, heading: section.h2Text,
+          visual: Boolean(section.infographicConfig.nodes.length || w.sectionVisualOverrides?.[section.id]?.dataUrl) })),
+        contextualLinkOpportunities: auditContextualLinkOpportunities(p).slice(0, 6),
+        downloads: articleDownloads.map(({ label }) => label),
+      }, (_key, value) => Array.isArray(value) ? value.slice(0, 30) : typeof value === "string" ? value.slice(0, 650) : value).slice(0, 24000),
+    };
+  };
+
+  const directAssistantReply = (question: string): AssistantReply | undefined => {
+    const q = question.toLowerCase().trim();
+    if (/^(?:what(?:'s| is) (?:the |my )?(?:current )?(?:content )?score|(?:show )?(?:my |the )?content score)[.?!]?$/.test(q) && assistantScore)
+      return { reply: `The current Content Score is **${assistantScore.overallScore}/100**, with **${assistantScore.issues.length} flagged issues**.`, cards: ["score"] };
+    if (/^(?:how long is|what(?:'s| is) the length of) (?:my |the )?meta description[.?!]?$/.test(q))
+      return { reply: `The saved meta description is **${p.metaPack.metaDescription.length} characters** long.`, cards: ["meta"] };
+    if (/^(?:how many words|what is (?:the |my )?word count|word count)[^?]*\??$/.test(q) && !/\band\b/.test(q))
+      return { reply: `Your draft has **${report.words.toLocaleString()} words**.`, cards: [] };
+    if (/^(?:what(?:'s| is) (?:the |my |this article's )?(?:estimated )?reading time|reading time|how long (?:does|will) it take to read)[^?]*\??$/.test(q) && !/\band\b/.test(q))
+      return { reply: report.words ? `The estimated reading time is **${report.minutes} min**.` : "Add draft text to calculate reading time.", cards: [] };
+    if (/^(?:how many faqs|faq count)[^?]*\??$/.test(q) && !/\band\b/.test(q))
+      return { reply: `This draft has **${p.faqs.length} saved FAQ entries**.`, cards: ["faqs"] };
+    if (/^(?:how do i download|how can i download|download this article|export formats)\b/.test(q) && !/\band\b/.test(q))
+      return { reply: "Choose PDF for sharing, Word for editing, HTML for web use, or Markdown for a portable text copy.", cards: ["downloads"] };
+    if (/^show (?:my |the )?meta(?: & serp)? (?:details|information)[.?!]?$/.test(q))
+      return { reply: "Here’s the metadata saved for this draft.", cards: ["meta"] };
+    return undefined;
+  };
+
+  const openEditorDestination = (target: "meta" | "faqs" | "visuals" | "score" | "readability" | "seo" | "headings", headingId?: string) => {
+    setAssistant(null);
+    rewriteAbort.current?.abort();
+    setRewriteBusy(false);
+    setFocus(false);
+    if (target === "meta" || target === "faqs" || target === "visuals") {
+      setWorkspaceMode(target);
+      return;
+    }
+    setWorkspaceMode("editor");
+    if (target === "readability" || target === "seo") {
+      setLeftOpen(true);
+      setLeftTab(target);
+    } else if (headingId) {
+      requestAnimationFrame(() => editor.current?.section(headingId));
+    } else {
+      setRightScoreOpen(true);
+    }
+  };
+
+  const assistantActions = (answer: AssistantReply, passage?: Passage) => {
+    const score = assistantScore;
+    const selectedHeading = p.sections.find((section) => section.id === answer.headingId);
+    const selectedVisual = p.sections.find((section) => section.id === answer.visualId);
+    const sectionCard = (title: string, content: React.ReactNode, action: () => void, label: string) => (
+      <div className={assistantStyles.card}><small>Live article data</small><strong>{title}</strong>{content}<button type="button" onClick={action}>{label}</button></div>
+    );
+    return <div className={assistantStyles.cards}>
+      {[...new Set(answer.cards)].map((card) => <React.Fragment key={card}>
+        {card === "meta" && sectionCard("Meta & SERP", <>
+          <small>Meta title</small><b>{p.metaPack.metaTitle || "No meta title saved"}</b>
+          <small>Meta description · {p.metaPack.metaDescription.length} characters</small>
+          <div>{p.metaPack.metaDescription || "No description saved"}</div>
+        </>, () => openEditorDestination("meta"), "Open Google search preview")}
+        {card === "faqs" && sectionCard(`FAQs · ${p.faqs.length} entries`, <>
+          {p.faqs.slice(0, 5).map((faq, index) => <details key={index}><summary>{faq.question}</summary><p>{faq.answer}</p></details>)}
+        </>, () => openEditorDestination("faqs"), "Open FAQ organizer")}
+        {card === "visuals" && sectionCard("Banner & visuals", <>
+          <span>{score?.structure.images.actual ?? 0} images in article</span>
+          <span>{w.featuredBanner?.headline || "No saved featured banner"}</span>
+          <nav>{p.sections.filter((section) => section.infographicConfig.nodes.length || w.sectionVisualOverrides?.[section.id]?.dataUrl).slice(0, 8).map((section) =>
+            <button key={section.id} type="button" onClick={() => {
+              openEditorDestination("visuals");
+              openVisual(section.id);
+            }}>{section.h2Text}</button>)}</nav>
+        </>, () => openEditorDestination("visuals"), "Open visuals")}
+        {card === "score" && sectionCard("Content Score", <>
+          <span>{score?.overallScore ?? 0}/100 · {score?.issues.length ?? 0} flagged issues</span>
+          {score?.issues.slice(0, 3).map((issue) => <span key={issue.id}>{issue.label}</span>)}
+        </>, () => openEditorDestination("score"), "Open score inspector")}
+        {card === "readability" && sectionCard("Readability", <span>{report.words.toLocaleString()} words · {report.minutes} min · {report.readability.longSentences.length} long sentences</span>, () => openEditorDestination("readability"), "Open readability tools")}
+        {card === "seo" && sectionCard("SEO & Links", <><span>{score?.terms.length ?? 0} tracked terms · {p.internalLinks.length} saved internal-link targets</span>
+          {score?.terms.filter((term) => term.status !== "optimal").slice(0, 4).map((term) =>
+            <span key={term.term}>{term.term} · {term.actual} uses (target {term.min}–{term.max})</span>)}</>, () => openEditorDestination("seo"), "Open SEO & Links")}
+        {card === "headings" && <details className={assistantStyles.card}><summary>Headings · {p.sections.length} sections</summary>
+          <nav>{p.sections.map((section) => <button key={section.id} type="button" onClick={() => openEditorDestination("headings", section.id)}>{section.h2Text}</button>)}</nav>
+        </details>}
+        {card === "downloads" && <div className={assistantStyles.card}><strong>Download article</strong><nav>
+          {articleDownloads.map(({ id: format, label }) => <button key={format} type="button" disabled={!report.words || Boolean(exportBusy)} onClick={() => void handleQuickExport(format)}>{exportBusy === format ? "Preparing…" : label}</button>)}
+        </nav>{message && <small role="status">{message}</small>}</div>}
+      </React.Fragment>)}
+      {selectedHeading && <button type="button" onClick={() => openEditorDestination("headings", selectedHeading.id)}>Go to {selectedHeading.h2Text}</button>}
+      {selectedVisual && <button type="button" onClick={() => { openEditorDestination("visuals"); openVisual(selectedVisual.id); }}>Open visual for {selectedVisual.h2Text}</button>}
+      {answer.editInstruction && <button type="button" disabled={rewriteBusy} onClick={() => {
+        if (passage && (workspaceMode !== "editor" || passage.revision !== articleRevision(current.current))) {
+          setRewriteError("Select the passage again in the current draft before requesting an edit.");
+          return;
+        }
+        if (selectedHeading && !passage) {
+          void requestSectionRevision(selectedHeading.id, answer.editInstruction!);
+          return;
+        }
+        void requestRewrite(answer.editInstruction!, passage ? "selection" : "article", passage);
+      }}>Preview {passage ? "passage" : selectedHeading ? "section" : "article"} edit</button>}
+    </div>;
+  };
+
   if (!store.ready)
     return (
       <div className={`${styles.shell} ${darkStudio ? styles.darkShell : ""}`}>
@@ -785,6 +983,9 @@ export default function WriterWorkspace() {
           </div>
         </div>
         <div className={styles.headerActions}>
+          <button type="button" className={styles.workspaceSideToggle} onClick={() => openAssistant()} aria-haspopup="dialog">
+            <Sparkles size={15} /> Article AI
+          </button>
           <span className={styles.saveStatus} role="status">
             {store.saving ? (
               <>
@@ -1160,7 +1361,6 @@ export default function WriterWorkspace() {
             {!focus && leftOpen ? (
               <LeftStudioPanel
               project={p}
-              selection={selection}
               activeTab={leftTab}
               highlightToggles={highlightToggles}
               targetGrade={targetGrade}
@@ -1177,18 +1377,17 @@ export default function WriterWorkspace() {
               }
               onChangeTargetGrade={setTargetGrade}
               onOpenBriefModal={() => setBriefModalOpen(true)}
-              onRunAiHelper={(inst, scope) =>
-                void requestRewrite(inst, scope)
-              }
+              onRunAiHelper={(inst, scope) => {
+                openAssistant(scope === "selection" ? editor.current?.selection() : undefined);
+                void requestRewrite(inst, scope);
+              }}
               onQuickReadabilityPolish={() => {
-                setLeftTab("helper");
+                openAssistant();
                 void requestRewrite(
                   "Improve clarity and remove repetitive keyword-led openings and filler. Preserve all facts, qualifications, Markdown links, code and headings. Do not add claims or sources. Return the complete revised text for review.",
                   selection.trim() ? "selection" : "article",
                 );
               }}
-              onApplyRevision={applyRewriteProposal}
-              onDiscardRevision={() => setRewrite(null)}
               onInsertLink={(anchor, url) =>
                 editor.current?.insertLink(anchor, url)
               }
@@ -1568,16 +1767,9 @@ export default function WriterWorkspace() {
                       const res = await gen.rewrite(range.text, inst, signal, ctx);
                       return res.data.text;
                     }}
-                    onTellAi={(inst, range, openTab) => {
-                      if (openTab) {
-                        setLeftOpen(true);
-                        setLeftTab("helper");
-                      }
-                      setFocus(false);
-                      if (range.text.trim()) setSelection(range.text);
-                      if (inst.trim()) {
-                        void requestRewrite(inst, "selection", range);
-                      }
+                    onTellAi={(inst, range) => {
+                      openAssistant(range);
+                      if (inst.trim()) void requestRewrite(inst, "selection", range);
                     }}
                   />
                 </>
@@ -1847,6 +2039,22 @@ export default function WriterWorkspace() {
           </div>
         </>
       )}
+
+      {assistant && <ArticleAssistant key={p.projectId} projectId={p.projectId}
+        title={p.metaPack.h1Title || p.projectTitle} launch={assistant} dark={darkStudio}
+        onSwitchThread={() => { rewriteAbort.current?.abort(); setRewriteBusy(false); setRewrite(null); setRewriteError(""); }}
+        onClose={() => { setAssistant(null); rewriteAbort.current?.abort(); setRewriteBusy(false); }}
+        getContext={assistantContext} getDirectReply={directAssistantReply} renderActions={assistantActions}
+        revision={(rewrite || rewriteBusy || rewriteError) && <div className={assistantStyles.card}>
+          {rewriteBusy && <span role="status">Preparing an edit preview…</span>}
+          {rewriteError && <span role="alert">{rewriteError}</span>}
+          {rewrite && !rewriteBusy && <>
+            <strong>Proposed edit</strong><RichPreview md={rewrite.proposed} />
+            <nav><button type="button" onClick={applyRewriteProposal}>Apply edit</button>
+              <button type="button" onClick={() => setRewrite(null)}>Discard</button></nav>
+          </>}
+        </div>}
+      />}
 
       <BriefSettingsModal
         open={briefModalOpen}
