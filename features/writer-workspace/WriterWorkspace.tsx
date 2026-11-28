@@ -756,7 +756,7 @@ export default function WriterWorkspace() {
   };
 
   const openEditorDestination = (target: "meta" | "faqs" | "visuals" | "score" | "readability" | "seo" | "headings", headingId?: string) => {
-    setAssistant(null);
+    closeAssistant();
     setFocus(false);
     if (target === "meta" || target === "faqs" || target === "visuals") {
       setWorkspaceMode(target);

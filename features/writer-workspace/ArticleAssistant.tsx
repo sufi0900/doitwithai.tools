@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
-import { ArrowUp, Database, Globe2, Loader2, Maximize2, Minimize2, Plus, Sparkles, X } from "lucide-react";
+import { ArrowUp, ChevronDown, Database, Globe2, Loader2, Maximize2, Minimize2, Plus, Sparkles, X } from "lucide-react";
 import { RichPreview } from "./ArticleEditor";
 import { safeUrl } from "./model";
-import { requestsResearch, type AssistantReply, type Passage, type ResearchMode, type SavedProposal } from "./article-assistant";
+import { relevantAssistantActions, requestsResearch, type AssistantReply, type Passage, type ResearchMode, type SavedProposal } from "./article-assistant";
 import s from "./article-assistant.module.css";
 
 type Turn = {
@@ -91,7 +91,9 @@ function Conversation({ projectId, title, launch, dark, expanded, onExpand, onCl
   const applying = useRef(new Set<string>());
   const requests = useRef(new Map<string, AbortController>());
   const dialog = useRef<HTMLDialogElement>(null);
-  const end = useRef<HTMLDivElement>(null);
+  const transcript = useRef<HTMLDivElement>(null);
+  const scrollPinned = useRef(true);
+  const titleRef = useRef<HTMLHeadingElement>(null);
   const composer = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -126,13 +128,21 @@ function Conversation({ projectId, title, launch, dark, expanded, onExpand, onCl
     node.close();
     if (expanded) node.show();
     else node.showModal();
-    composer.current?.focus({ preventScroll: true });
-    return () => node.close();
+    titleRef.current?.focus({ preventScroll: true });
+    const frame = expanded ? requestAnimationFrame(() =>
+      node.scrollIntoView({ block: "start", inline: "nearest" }),
+    ) : undefined;
+    return () => {
+      if (frame !== undefined) cancelAnimationFrame(frame);
+      node.close();
+    };
   }, [expanded]);
 
   const thread = threads.find((item) => item.id === active.id) || active;
   const stage = pending[thread.id];
-  useEffect(() => { end.current?.scrollIntoView({ block: "nearest" }); }, [thread.id, thread.turns, stage]);
+  useEffect(() => {
+    if (transcript.current && scrollPinned.current) transcript.current.scrollTop = transcript.current.scrollHeight;
+  }, [thread.id, thread.turns, stage, expanded]);
 
   function saveThread(next: Thread) {
     const saved = [next, ...records.current.filter((item) => item.id !== next.id)].slice(0, 30);
@@ -152,6 +162,7 @@ function Conversation({ projectId, title, launch, dark, expanded, onExpand, onCl
   }
 
   function switchThread(next: Thread) {
+    scrollPinned.current = true;
     setActive(next);
     setDraft("");
     try { localStorage.setItem(storageKey + ":active", next.id); } catch {}
@@ -160,6 +171,7 @@ function Conversation({ projectId, title, launch, dark, expanded, onExpand, onCl
 
   async function ask(question: string, target: Thread, retry?: Turn) {
     if (!ready || !question || requests.current.has(target.id)) return;
+    scrollPinned.current = true;
     const turn: Turn = { id: retry?.id || crypto.randomUUID(), question, passage: retry ? retry.passage : target.passage };
     const ctrl = new AbortController();
     requests.current.set(target.id, ctrl);
@@ -261,7 +273,7 @@ function Conversation({ projectId, title, launch, dark, expanded, onExpand, onCl
       aria-labelledby="writer-assistant-title" onCancel={(event) => { event.preventDefault(); onClose(); }}
       onKeyDown={(event) => { if (expanded && event.key === "Escape") onClose(); }}>
       <header className={s.header}>
-        <div><h2 id="writer-assistant-title"><Sparkles size={17} /> Article AI</h2><p>{title}</p></div>
+        <div><h2 id="writer-assistant-title" ref={titleRef} tabIndex={-1}><Sparkles size={17} /> Article AI</h2><p>{title}</p></div>
         <div className={s.headerActions}>
           <button type="button" onClick={onExpand} aria-label={expanded ? "Return to side panel" : "Expand into article workspace"} title={expanded ? "Return to side panel" : "Expand into article workspace"}>
             {expanded ? <Minimize2 size={17} /> : <Maximize2 size={17} />}
@@ -278,7 +290,11 @@ function Conversation({ projectId, title, launch, dark, expanded, onExpand, onCl
           {threads.map((item) => <option key={item.id} value={item.id}>{item.turns[0]?.question.slice(0, 65)}</option>)}
         </select>
       </div>
-      <div className={s.transcript} role="log" aria-label="Conversation">
+      <div ref={transcript} className={s.transcript} role="log" aria-label="Conversation"
+        onScroll={(event) => {
+          const log = event.currentTarget;
+          scrollPinned.current = log.scrollHeight - log.scrollTop - log.clientHeight < 56;
+        }}>
         {!thread.turns.length && <div className={s.empty}>
           <Sparkles size={22} />
           <h3>{thread.passage ? "What would you like to do with this passage?" : "What would you like to work on?"}</h3>
@@ -287,57 +303,62 @@ function Conversation({ projectId, title, launch, dark, expanded, onExpand, onCl
             ["How can I improve this article?", "Show my meta & SERP details", "How do I download this article?"]).map((item) =>
             <button key={item} type="button" onClick={() => { setDraft(item); composer.current?.focus(); }}>{item}</button>)}</div>
         </div>}
-        {thread.turns.map((turn, index) => <div className={s.turn} key={turn.id}>
-          <div className={s.user}>
-            {turn.passage && (index === 0 || thread.turns[index - 1]?.passage?.text !== turn.passage.text) &&
-              <details className={s.context}><summary>Selected passage</summary><p>{turn.passage.text}</p></details>}
-            {turn.question}
-          </div>
-          {turn.answer && <div className={s.reply}>
-            {turn.answer.researchNote && <p className={s.researchNote}>{turn.answer.researchNote}</p>}
-            <RichPreview md={turn.answer.reply} />
-            {turn.proposal && <div className={s.card}>
-              <strong>{turn.proposal.kind === "insert-section" ? "Proposed new section" : turn.proposal.kind === "passage" ? "Proposed passage revision" : "Proposed revision"}</strong>
-              <div className={s.proposal}><RichPreview md={turn.proposal.markdown} /></div>
-              {turn.proposal.status === "pending" ? <nav>
-                <button type="button" onClick={() => resolveProposal(turn, "applied")}>{turn.proposal.kind === "insert-section" ? "Insert section" : "Apply to draft"}</button>
-                <button type="button" onClick={() => resolveProposal(turn, "discarded")}>Discard proposal</button>
-              </nav> : <small>{turn.proposal.status === "applied" ? "Applied to draft" : "Proposal discarded"}</small>}
-              {applyError[turn.id] && <small role="alert">{applyError[turn.id]}</small>}
+        {thread.turns.map((turn, index) => {
+          const actions = turn.answer && relevantAssistantActions(turn.question, turn.answer);
+          return <div className={s.turn} key={turn.id}>
+            <div className={s.user} role="group" aria-label="Your message">
+              {turn.passage && (index === 0 || thread.turns[index - 1]?.passage?.text !== turn.passage.text) &&
+                <details className={s.context}><summary>Selected passage</summary><p>{turn.passage.text}</p></details>}
+              {turn.question}
+            </div>
+            {turn.answer && <div className={s.reply} role="group" aria-label="Article AI reply">
+              {turn.answer.researchNote && <p className={s.researchNote}>{turn.answer.researchNote}</p>}
+              <RichPreview md={turn.answer.reply} />
+              {turn.proposal && <div className={s.card}>
+                <strong>{turn.proposal.kind === "insert-section" ? "Proposed new section" : turn.proposal.kind === "passage" ? "Proposed passage revision" : "Proposed revision"}</strong>
+                <div className={s.proposal}><RichPreview md={turn.proposal.markdown} /></div>
+                {turn.proposal.status === "pending" ? <nav>
+                  <button type="button" onClick={() => resolveProposal(turn, "applied")}>{turn.proposal.kind === "insert-section" ? "Insert section" : "Apply to draft"}</button>
+                  <button type="button" onClick={() => resolveProposal(turn, "discarded")}>Discard proposal</button>
+                </nav> : <small>{turn.proposal.status === "applied" ? "Applied to draft" : "Proposal discarded"}</small>}
+                {applyError[turn.id] && <small role="alert">{applyError[turn.id]}</small>}
+              </div>}
+              {actions && (actions.cards.length > 0 || actions.headingId || actions.visualId) && renderActions({ ...turn.answer, ...actions })}
+              {!!turn.answer.sources?.length && <details className={s.sources}><summary>Web sources</summary>
+                {turn.answer.sources.map((source, j) => safeUrl(source.url) && <a href={safeUrl(source.url)} key={j} target="_blank" rel="noreferrer">{source.title || source.url}</a>)}
+              </details>}
             </div>}
-            {renderActions(turn.answer)}
-            {!!turn.answer.sources?.length && <details className={s.sources}><summary>Web sources</summary>
-              {turn.answer.sources.map((source, j) => safeUrl(source.url) && <a href={safeUrl(source.url)} key={j} target="_blank" rel="noreferrer">{source.title || source.url}</a>)}
-            </details>}
-          </div>}
-          {turn.error && <div className={s.error}><span role="alert">{turn.error}</span> <button type="button" disabled={Boolean(stage)} onClick={() => void ask(turn.question, thread, turn)}>Retry</button></div>}
-        </div>)}
+            {turn.error && <div className={s.error}><span role="alert">{turn.error}</span> <button type="button" disabled={Boolean(stage)} onClick={() => void ask(turn.question, thread, turn)}>Retry</button></div>}
+          </div>;
+        })}
         {stage && <div className={s.progress} data-stage={stage} role="status">
           {stage === "web" || stage === "reading" ? <Globe2 size={16} /> : stage === "workspace" ? <Database size={16} /> : <Loader2 size={16} />}
           {stageLabel[stage]}
         </div>}
         {saveError && <p className={s.error} role="alert">{saveError}</p>}
-        <div ref={end} />
       </div>
       <form className={s.composer} onSubmit={send}>
-        {thread.passage && <div className={s.attachment}>
-          <details className={s.context}><summary>Selected passage</summary><p>{thread.passage.text}</p></details>
-          <span className={s.excerpt} aria-hidden>{thread.passage.text.slice(0, 180)}</span>
-          <button type="button" onClick={removePassage} aria-label="Remove selected passage"><X size={14} /></button>
-        </div>}
-        <textarea ref={composer} aria-label="Message Article AI" placeholder={thread.passage ? "Ask about this passage…" : "Ask Article AI…"}
-          rows={2} maxLength={3000} value={draft} onChange={(event) => setDraft(event.target.value)}
-          onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
-            event.preventDefault(); event.currentTarget.form?.requestSubmit();
-          } }} />
-        <div className={s.composerActions}>
-          <label className={s.researchMode}><Globe2 size={15} />
-            <select aria-label="Research mode" value={mode} onChange={(event) => setMode(event.target.value as ResearchMode)}>
-              <option value="auto">Search: Auto</option><option value="web">Search: Web</option><option value="off">Search: Off</option>
-            </select>
-          </label>
-          {stage ? <button type="button" onClick={stop}>Stop</button>
-            : <button type="submit" className={s.send} disabled={!ready || !draft.trim()} aria-label="Send message"><ArrowUp size={18} /></button>}
+        <div className={s.composerBox}>
+          {thread.passage && <div className={s.attachment}>
+            <details className={s.context}><summary>Selected passage</summary><p>{thread.passage.text}</p></details>
+            <span className={s.excerpt} aria-hidden>{thread.passage.text.slice(0, 180)}</span>
+            <button type="button" onClick={removePassage} aria-label="Remove selected passage"><X size={14} /></button>
+          </div>}
+          <textarea ref={composer} aria-label="Message Article AI" placeholder={thread.passage ? "Ask about this passage…" : "Ask Article AI…"}
+            rows={2} maxLength={3000} value={draft} onChange={(event) => setDraft(event.target.value)}
+            onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
+              event.preventDefault(); event.currentTarget.form?.requestSubmit();
+            } }} />
+          <div className={s.composerActions}>
+            <div className={s.researchMode}><Globe2 size={15} aria-hidden="true" />
+              <select aria-label="Research mode" value={mode} onChange={(event) => setMode(event.target.value as ResearchMode)}>
+                <option value="auto">Search: Auto</option><option value="web">Search: Web</option><option value="off">Search: Off</option>
+              </select>
+              <ChevronDown size={13} aria-hidden="true" />
+            </div>
+            {stage ? <button type="button" onClick={stop}>Stop</button>
+              : <button type="submit" className={s.send} disabled={!ready || !draft.trim()} aria-label="Send message"><ArrowUp size={18} /></button>}
+          </div>
         </div>
       </form>
     </dialog>
