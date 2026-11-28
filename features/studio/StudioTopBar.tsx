@@ -2,17 +2,19 @@
 
 import { useEffect, useRef, type ReactNode } from "react";
 import Link from "next/link";
-import { LogIn, LogOut, Moon, Sun, UserRound } from "lucide-react";
+import { Bookmark, Clock, FilePenLine, Globe, LayoutDashboard, LayoutGrid, LogIn, LogOut, Moon, RefreshCw, Sun, UserRound } from "lucide-react";
 import { useTheme } from "next-themes";
-import { useWorkspace } from "@/features/tools-workspace/WorkspaceProvider";
+import { useWorkspace, type WorkspaceView } from "@/features/tools-workspace/WorkspaceProvider";
 import styles from "./studio-shell.module.css";
 
 export default function StudioTopBar({
   pathname,
+  siteName,
   children,
   actions,
 }: {
   pathname: string;
+  siteName?: string;
   children: ReactNode;
   actions?: ReactNode;
 }) {
@@ -24,7 +26,14 @@ export default function StudioTopBar({
   const name = typeof rawName === "string" ? rawName : "Your account";
   const photo = user?.user_metadata?.avatar_url;
 
-  useEffect(() => { if (profile.current) profile.current.open = false; }, [pathname]);
+  const closeProfile = () => { if (profile.current) profile.current.open = false; };
+  const openTools = (view: WorkspaceView) => {
+    workspace?.setActiveTopic("");
+    workspace?.selectView(view);
+    closeProfile();
+  };
+
+  useEffect(closeProfile, [pathname]);
 
   useEffect(() => {
     function closeOnOutsideClick(event: PointerEvent) {
@@ -64,10 +73,46 @@ export default function StudioTopBar({
               )}
             </summary>
             <div className={styles.profileMenu}>
-              <div className={styles.profileIdentity} title={name}>{name}</div>
+              <div className={styles.profileIdentity}>
+                <span title={name}>{name}</span>
+                {user.email && <small title={user.email}>{user.email}</small>}
+              </div>
+              <div className={styles.profileGroup}>
+                <Link href="/studio" prefetch={false} className={styles.profileItem} onClick={closeProfile}>
+                  <LayoutDashboard size={14} /> My Dashboard
+                </Link>
+                {siteName && (
+                  <Link href="/studio/writer" prefetch={false} className={styles.profileItem} onClick={closeProfile}>
+                    <FilePenLine size={14} /> <span title={siteName}>Open {siteName} Studio</span>
+                  </Link>
+                )}
+                <Link href="/ai-website-builder" prefetch={false} className={styles.profileItem} onClick={closeProfile}>
+                  <Globe size={14} /> AI Website Builder
+                </Link>
+              </div>
+              <div className={styles.profileGroup}>
+                <div className={styles.profileLabel}>Tool Workspace</div>
+                <Link href="/tools#view=all" prefetch={false} className={styles.profileItem} onClick={() => openTools("all")}>
+                  <LayoutGrid size={14} /> All tools directory
+                </Link>
+                <Link href="/tools#view=saved" prefetch={false} className={styles.profileItem} onClick={() => openTools("saved")}>
+                  <Bookmark size={14} /> Your saved tools <small className={styles.profileCount}>{workspace.saved.length}</small>
+                </Link>
+                <Link href="/tools#view=recent" prefetch={false} className={styles.profileItem} onClick={() => openTools("recent")}>
+                  <Clock size={14} /> Recently used <small className={styles.profileCount}>{workspace.recent.length}</small>
+                </Link>
+                {workspace.localCount > 0 && (
+                  <button type="button" className={styles.profileItem} onClick={() => {
+                    workspace.sync();
+                    closeProfile();
+                  }}>
+                    <RefreshCw size={14} /> Sync {workspace.localCount} device {workspace.localCount === 1 ? "bookmark" : "bookmarks"}
+                  </button>
+                )}
+              </div>
               <button type="button" className={styles.profileItem} onClick={() => {
-                if (profile.current) profile.current.open = false;
-                workspace?.signOut();
+                closeProfile();
+                workspace.signOut();
               }}><LogOut size={14} /> Sign out</button>
             </div>
           </details>

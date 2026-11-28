@@ -324,7 +324,7 @@ export default function StudioShell({ children }: { children: ReactNode }) {
   }, []);
 
   const renderTopBar = () => (
-    <StudioTopBar pathname={pathname} actions={showNavigation ? (
+    <StudioTopBar pathname={pathname} siteName={activeSite?.name} actions={showNavigation ? (
       <>
         <button
           type="button"

@@ -117,7 +117,10 @@
   position: absolute;
   inset-block-start: calc(100% + 7px);
   inset-inline-end: 0;
-  width: min(232px, calc(100vw - 32px));
+  width: min(280px, calc(100vw - 20px));
+  max-height: calc(100dvh - var(--studio-top-bar-height) - 12px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 6px;
   border: 1px solid var(--studio-border);
   border-radius: 8px;
@@ -135,6 +138,25 @@
   white-space: nowrap;
   font-weight: 600;
 }
+.profileIdentity span, .profileIdentity small, .profileItem span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.profileIdentity small, .profileLabel, .profileCount {
+  color: var(--studio-text-muted);
+  font-size: 11px;
+  font-weight: 500;
+}
+.profileGroup {
+  padding-bottom: 4px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--studio-border);
+}
+.profileLabel { padding: 4px 8px 2px; }
+.profileCount { margin-inline-start: auto; }
+.profileItem svg { flex-shrink: 0; }
 .profileItem {
   display: flex;
   align-items: center;
