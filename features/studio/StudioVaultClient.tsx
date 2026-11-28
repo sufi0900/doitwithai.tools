@@ -215,7 +215,8 @@ export default function StudioVaultClient() {
   const openInlineItem = (next: StudioInlineItem) => {
     setActiveInlineItem(next);
     if (typeof window !== "undefined") {
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      const scrollArea = document.querySelector<HTMLElement>("[data-studio-scroll]");
+      (scrollArea || window).scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 

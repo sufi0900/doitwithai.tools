@@ -2,6 +2,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useTheme } from "next-themes";
 import { createPortal } from "react-dom";
 import {
   CheckCircle2,
@@ -107,6 +109,9 @@ function errorText(e: unknown) {
 }
 
 export default function WriterWorkspace() {
+  const pathname = usePathname() || "";
+  const isStudioEmbedded = pathname === "/studio" || pathname.startsWith("/studio/");
+  const { resolvedTheme } = useTheme();
   const store = useWorkspace(),
     { project: p, update, current } = store,
     gen = useGeneration(store),
@@ -125,7 +130,6 @@ export default function WriterWorkspace() {
     [workspaceMode, setWorkspaceMode] = useState<
       "editor" | "meta" | "visuals" | "faqs"
     >("editor"),
-    [isStudioEmbedded, setIsStudioEmbedded] = useState(false),
     [briefModalOpen, setBriefModalOpen] = useState(false),
     [researchBusy, setResearchBusy] = useState(false),
     [highlightToggles, setHighlightToggles] =
@@ -137,7 +141,7 @@ export default function WriterWorkspace() {
       }),
     [targetGrade, setTargetGrade] = useState(10),
     [studioUnlocked, setStudioUnlocked] = useState(Boolean(w.studioUnlocked)),
-    [darkStudio, setDarkStudio] = useState(true),
+    [standaloneDark, setStandaloneDark] = useState(true),
     [focus, setFocus] = useState(false),
     [exportBusy, setExportBusy] = useState(""),
     [message, setMessage] = useState(""),
@@ -229,7 +233,6 @@ export default function WriterWorkspace() {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      setIsStudioEmbedded(window.location.pathname.startsWith("/studio"));
       const fromQuery =
         new URLSearchParams(window.location.search).get("targetSiteId") || "";
       if (fromQuery) setTargetSiteId(fromQuery);
@@ -822,9 +825,16 @@ export default function WriterWorkspace() {
     </div>;
   };
 
+  const darkStudio = isStudioEmbedded ? resolvedTheme === "dark" : standaloneDark;
+  const writerShellClass = [
+    styles.shell,
+    isStudioEmbedded && styles.studioEmbedded,
+    darkStudio && styles.darkShell,
+  ].filter(Boolean).join(" ");
+
   if (!store.ready)
     return (
-      <div className={`${styles.shell} ${darkStudio ? styles.darkShell : ""}`}>
+      <div className={writerShellClass}>
         <p className={styles.loading}>
           <Loader2 size={18} />
           Opening your writing workspace…
@@ -865,10 +875,10 @@ export default function WriterWorkspace() {
 
   return (
     <div
-      className={`${styles.shell} ${darkStudio ? styles.darkShell : ""} ${focus ? styles.focusMode : ""}`}
+      className={`${writerShellClass} ${focus ? styles.focusMode : ""}`}
       style={
         {
-          "--writer-sticky-top": isStudioEmbedded ? "130px" : "80px",
+          "--writer-sticky-top": isStudioEmbedded ? "0px" : "80px",
         } as React.CSSProperties
       }
     >
@@ -910,18 +920,16 @@ export default function WriterWorkspace() {
               "Temporary session"
             )}
           </span>
-          <button
-            type="button"
-            title={
-              darkStudio
-                ? "Switch to Daylight Paper theme"
-                : "Switch to DoItWithAI Dark Studio theme"
-            }
-            onClick={() => setDarkStudio(!darkStudio)}
-          >
-            {darkStudio ? <Sun size={15} /> : <Moon size={15} />}
-            <span>{darkStudio ? "Daylight" : "Dark Studio"}</span>
-          </button>
+          {!isStudioEmbedded && (
+            <button
+              type="button"
+              title={standaloneDark ? "Switch to light mode" : "Switch to dark mode"}
+              onClick={() => setStandaloneDark(!standaloneDark)}
+            >
+              {standaloneDark ? <Sun size={15} /> : <Moon size={15} />}
+              <span>{standaloneDark ? "Daylight" : "Dark Studio"}</span>
+            </button>
+          )}
           <button
             type="button"
             onClick={async () => {

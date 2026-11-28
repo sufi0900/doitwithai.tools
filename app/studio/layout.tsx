@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import StudioShell from "@/features/studio/StudioShell";
+import styles from "@/features/studio/studio-shell.module.css";
 
 export const metadata: Metadata = {
   title: "DoItWithAI Studio — DIY SEO, Content Writer & Website Builder",
@@ -19,5 +20,9 @@ export const metadata: Metadata = {
 };
 
 export default function StudioLayout({ children }: { children: ReactNode }) {
-  return <StudioShell>{children}</StudioShell>;
+  return (
+    <div className={styles.viewport}>
+      <StudioShell>{children}</StudioShell>
+    </div>
+  );
 }

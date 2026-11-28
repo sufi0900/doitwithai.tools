@@ -184,7 +184,8 @@ export default function ClientLayoutShell({ children }) {
 
       <Providers>
         <WorkspaceProvider>
-          {!isEmbeddedView &&
+          {!isStudioPage &&
+            !isEmbeddedView &&
             !isFounderHubPage &&
             !isStandaloneWebsiteRoute &&
             (isSlugPage ? <ConditionalGlobalHeader /> : <Header />)}
@@ -192,7 +193,9 @@ export default function ClientLayoutShell({ children }) {
           <CacheProvider>
             <main
               className={
-                isEmbeddedView || isFounderHubPage || isStandaloneWebsiteRoute
+                isStudioPage
+                  ? "h-dvh overflow-hidden"
+                  : isEmbeddedView || isFounderHubPage || isStandaloneWebsiteRoute
                   ? "min-h-screen"
                   : isLockedAppShell
                     ? "h-dvh pt-[80px] overflow-hidden"

@@ -5475,3 +5475,26 @@
   font-size: 12px !important;
   border-radius: 8px !important;
 }
+
+/* Studio owns the palette. Standalone writer embeds retain their own theme. */
+.shell.studioEmbedded {
+  --blue: var(--studio-accent);
+  --ink: var(--studio-text-primary);
+  --muted: var(--studio-text-muted);
+  --line: var(--studio-border);
+  --canvas: var(--studio-shell-bg);
+  background: var(--canvas);
+  border-color: var(--line);
+  box-shadow: none;
+}
+.shell.studioEmbedded .workspaceHeader,
+.shell.studioEmbedded .toolbar {
+  background: var(--studio-header-bg);
+  border-color: var(--line);
+  box-shadow: none;
+}
+.shell.studioEmbedded .editorSurface {
+  background: var(--studio-canvas-bg);
+  border-color: var(--line);
+  box-shadow: none;
+}

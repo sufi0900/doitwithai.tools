@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, type ReactNode } from "react";
+import React, { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -49,6 +49,8 @@ import type {
   StudioWorkspaceState,
 } from "@/lib/studio/types";
 import StudioGlobalDrawer from "./StudioGlobalDrawer";
+import StudioTopBar from "./StudioTopBar";
+import styles from "./studio-shell.module.css";
 import StudioInlineEmbedPanel, {
   type StudioInlineItem,
 } from "./StudioInlineEmbedPanel";
@@ -161,7 +163,11 @@ export default function StudioShell({ children }: { children: ReactNode }) {
     providerLabel: "Studio Gateway",
   });
   const [runtimeChecked, setRuntimeChecked] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const isWriter = pathname === "/studio/writer" || pathname.startsWith("/studio/writer/");
+  const [navPreference, setNavPreference] = useState<{ writer: boolean; collapsed: boolean } | null>(null);
+  const sidebarCollapsed = navPreference?.writer === isWriter ? navPreference.collapsed : isWriter;
+  const workspaceScroll = useRef<HTMLDivElement>(null);
+  const mobileNav = useRef<HTMLDialogElement>(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [siteArticlesCount, setSiteArticlesCount] = useState(0);
   const [activeSocialChannel, setActiveSocialChannel] = useState("Instagram");
@@ -210,6 +216,7 @@ export default function StudioShell({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setMobileNavOpen(false);
+    if (workspaceScroll.current) workspaceScroll.current.scrollTop = 0;
     setInlineWorkspaceItem(null);
     if (typeof window !== "undefined") {
       const ch = new URLSearchParams(window.location.search).get("channel");
@@ -296,6 +303,95 @@ export default function StudioShell({ children }: { children: ReactNode }) {
   const isHubOrOnboarding =
     pathname === "/studio" || pathname.startsWith("/studio/onboarding");
 
+  const currentNavItem = SIDEBAR_ITEMS.find(
+    (item) => pathname === item.href || pathname.startsWith(`${item.href}/`),
+  );
+  const showNavigation = hydrated && isAuthorized && !isHubOrOnboarding;
+  const moduleTitle = currentNavItem?.label || (showNavigation ? "Studio" : undefined);
+
+  useEffect(() => {
+    const drawer = mobileNav.current;
+    if (!drawer) return;
+    if (mobileNavOpen && showNavigation && !drawer.open) drawer.showModal();
+    else if ((!mobileNavOpen || !showNavigation) && drawer.open) drawer.close();
+  }, [mobileNavOpen, showNavigation]);
+
+  useEffect(() => {
+    const media = window.matchMedia("(min-width: 1024px)");
+    const closeOnDesktop = () => { if (media.matches) setMobileNavOpen(false); };
+    media.addEventListener("change", closeOnDesktop);
+    return () => media.removeEventListener("change", closeOnDesktop);
+  }, []);
+
+  const renderTopBar = () => (
+    <StudioTopBar pathname={pathname} actions={showNavigation ? (
+      <>
+        <button
+          type="button"
+          className={styles.topAction}
+          onClick={() => dispatchStudioDrawer({ type: "open-copilot" })}
+          aria-label="Brand AI"
+          title="Brand AI"
+        >
+          <Bot size={15} aria-hidden="true" />
+          <span className={styles.actionLabel}>Brand AI</span>
+        </button>
+        {!isWriter && (
+          <Link href="/studio/writer" aria-label="Write article" title="Write article" className={styles.topAction}>
+            <FilePenLine size={15} aria-hidden="true" />
+            <span className={styles.actionLabel}>Write Article</span>
+          </Link>
+        )}
+      </>
+    ) : undefined}>
+      {showNavigation && (
+        <>
+          <button
+            type="button"
+            className={`${styles.topAction} ${styles.desktopNavToggle}`}
+            aria-controls="studio-navigation"
+            aria-expanded={!sidebarCollapsed}
+            aria-label={sidebarCollapsed ? "Expand Studio navigation" : "Collapse Studio navigation"}
+            title={sidebarCollapsed ? "Expand Studio navigation" : "Collapse Studio navigation"}
+            onClick={() => setNavPreference({ writer: isWriter, collapsed: !sidebarCollapsed })}
+          >
+            {sidebarCollapsed ? <PanelLeftOpen size={17} aria-hidden="true" /> : <PanelLeftClose size={17} aria-hidden="true" />}
+          </button>
+          <button
+            type="button"
+            className={`${styles.topAction} ${styles.mobileNavToggle}`}
+            aria-controls="studio-mobile-navigation"
+            aria-expanded={mobileNavOpen}
+            aria-label="Open Studio navigation"
+            onClick={() => setMobileNavOpen(true)}
+          >
+            <Menu size={18} aria-hidden="true" />
+          </button>
+        </>
+      )}
+      <div className={styles.breadcrumbs}>
+        <Link href="/studio" className={`${styles.siteName} ${moduleTitle ? styles.siteWithModule : ""}`}
+          title={showNavigation ? activeSite?.name || "Workspace" : "Studio"}>
+          {showNavigation ? activeSite?.name || "Workspace" : "Studio"}
+        </Link>
+        {moduleTitle && <>
+          <span className={styles.divider} aria-hidden="true">/</span>
+          <span className={styles.moduleName} title={moduleTitle}>{moduleTitle}</span>
+        </>}
+        {showNavigation && activeSite && activeSite.sitemapUrls.length > 0 && (
+          <span className={styles.syncCount}>{activeSite.sitemapUrls.length} URLs synced</span>
+        )}
+      </div>
+    </StudioTopBar>
+  );
+
+  const renderStandalone = (content: ReactNode) => (
+    <>
+      {renderTopBar()}
+      <div ref={workspaceScroll} data-studio-scroll className={styles.scrollArea}>{content}</div>
+    </>
+  );
+
   const handleSelectSite = (siteId: string) => {
     saveStudioStateOptimistic((prev) => ({
       ...prev,
@@ -311,8 +407,8 @@ export default function StudioShell({ children }: { children: ReactNode }) {
   };
 
   if (!hydrated || (!isAuthorized && !runtimeChecked)) {
-    return (
-      <div className="min-h-screen bg-slate-50 px-4 py-12 text-slate-700 dark:bg-[#080E1C] dark:text-slate-200">
+    return renderStandalone(
+      <div className="px-4 py-12">
         <div className="mx-auto max-w-6xl animate-pulse space-y-4">
           <div className="h-12 rounded-2xl bg-slate-200 dark:bg-slate-800/70" />
           <div className="h-96 rounded-2xl bg-slate-200/70 dark:bg-slate-900/80" />
@@ -322,8 +418,8 @@ export default function StudioShell({ children }: { children: ReactNode }) {
   }
 
   if (!isAuthorized) {
-    return (
-      <div className="min-h-[82vh] bg-slate-50 px-4 py-16 text-slate-900 dark:bg-[#080E1C] dark:text-slate-100">
+    return renderStandalone(
+      <div className="px-4 py-16">
         <div className="mx-auto max-w-lg rounded-2xl border border-slate-200 bg-white p-8 shadow-lg dark:border-slate-800 dark:bg-[#0D1526]">
           <span className="inline-flex items-center gap-1.5 rounded-full border border-[#5271FF]/30 bg-[#5271FF]/10 px-3 py-1 text-xs font-semibold text-[#5271FF] dark:text-[#9aabff]">
             <Lock size={12} />
@@ -360,55 +456,28 @@ export default function StudioShell({ children }: { children: ReactNode }) {
 
   // LEVEL 1: WORKSPACE HUB & ONBOARDING (Clean layout without site-specific SEO sidebar)
   if (isHubOrOnboarding) {
-    return (
+    return renderStandalone(
       <RecentUrlsProvider>
-        <div className="min-h-[calc(100vh-80px)] bg-slate-50 text-slate-900 dark:bg-[#080E1C] dark:text-slate-100">
-          {children}
-          <StudioGlobalDrawer activeSite={activeSite} />
-        </div>
+        {children}
+        <StudioGlobalDrawer activeSite={activeSite} />
       </RecentUrlsProvider>
     );
   }
 
   // LEVEL 2: CONNECTED WEBSITE LEFT-SIDEBAR SAAS DASHBOARD
-  const currentNavItem = SIDEBAR_ITEMS.find(
-    (item) => pathname === item.href || pathname.startsWith(`${item.href}/`),
-  );
-
   const renderSidebarContent = (compact: boolean) => (
-    <div className="flex h-full flex-col justify-between">
-      <div className="space-y-5 overflow-y-auto px-3 py-4">
+    <div className={`flex h-full flex-col justify-between ${styles.navContents}`} data-compact={compact}>
+      <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-3 py-4">
         {/* Top Hub Back-Link + Active Website Selector */}
         <div className="space-y-2.5">
-          <div
-            className={`flex items-center px-1 ${
-              compact ? "justify-center" : "justify-between"
-            }`}
-          >
-            {!compact && (
-              <Link
-                href="/studio"
-                prefetch={false}
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 transition hover:text-[#5271FF] dark:text-slate-400 dark:hover:text-[#9aabff]"
-              >
-                <ArrowLeft size={13} />
-                <span>Workspace Hub</span>
-              </Link>
-            )}
-            <button
-              type="button"
-              onClick={() => setSidebarCollapsed((prev) => !prev)}
-              className="hidden rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 lg:inline-flex dark:hover:bg-slate-800 dark:hover:text-slate-200"
-              title={compact ? "Expand sidebar" : "Collapse sidebar"}
-              aria-label={compact ? "Expand sidebar" : "Collapse sidebar"}
+          {!compact && (
+            <Link href="/studio" prefetch={false}
+              className="inline-flex items-center gap-1.5 px-1 text-xs font-semibold text-slate-500 hover:text-[#5271FF] dark:text-slate-400"
             >
-              {compact ? (
-                <PanelLeftOpen size={15} />
-              ) : (
-                <PanelLeftClose size={15} />
-              )}
-            </button>
-          </div>
+              <ArrowLeft size={13} aria-hidden="true" />
+              Workspace Hub
+            </Link>
+          )}
 
           {!compact &&
             (studio.sites.length > 0 ? (
@@ -765,7 +834,10 @@ export default function StudioShell({ children }: { children: ReactNode }) {
 
             <button
               type="button"
-              onClick={() => dispatchStudioDrawer({ type: "open-copilot" })}
+              onClick={() => {
+                setMobileNavOpen(false);
+                dispatchStudioDrawer({ type: "open-copilot" });
+              }}
               title={compact ? "Brand AI Strategist" : undefined}
               className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-[#5271FF] dark:text-slate-300 dark:hover:bg-slate-800/60 dark:hover:text-[#9aabff]"
             >
@@ -818,114 +890,48 @@ export default function StudioShell({ children }: { children: ReactNode }) {
 
   return (
     <RecentUrlsProvider>
-      <div className="flex min-h-[calc(100vh-80px)] bg-slate-50 text-slate-900 dark:bg-[#080E1C] dark:text-slate-100">
-        {/* Desktop Collapsible Left Sidebar */}
-        <aside
-          className={`sticky top-[80px] hidden h-[calc(100vh-80px)] shrink-0 border-r border-slate-200/90 bg-white transition-all duration-200 lg:block dark:border-slate-800/90 dark:bg-[#0B1222] ${
-            sidebarCollapsed ? "w-[68px]" : "w-[256px]"
-          }`}
-        >
+      {renderTopBar()}
+      <div className={styles.body}>
+        <aside id="studio-navigation" aria-label="Studio navigation" className={styles.desktopNav} data-collapsed={sidebarCollapsed}>
           {renderSidebarContent(sidebarCollapsed)}
         </aside>
 
-        {/* Mobile Sidebar Drawer */}
-        {mobileNavOpen && (
-          <div className="fixed inset-0 z-[10030] flex lg:hidden">
-            <div
-              className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs"
-              onClick={() => setMobileNavOpen(false)}
-            />
-            <div className="relative z-10 flex h-full w-72 flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-[#0B1222]">
-              <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3 dark:border-slate-800">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                  Studio Navigation
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setMobileNavOpen(false)}
-                  className="rounded-lg p-1 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
-                >
-                  <X size={16} />
-                </button>
-              </div>
-              {renderSidebarContent(false)}
-            </div>
+        <dialog
+          id="studio-mobile-navigation"
+          ref={mobileNav}
+          className={styles.mobileNav}
+          aria-labelledby="studio-mobile-navigation-title"
+          onClose={() => setMobileNavOpen(false)}
+          onClick={(event) => {
+            if (event.target === event.currentTarget ||
+              (event.target instanceof Element && event.target.closest("a[href]"))) setMobileNavOpen(false);
+          }}
+        >
+          <div className={styles.mobileNavHeader}>
+            <span id="studio-mobile-navigation-title">Studio navigation</span>
+            <button type="button" className={styles.topAction} aria-label="Close Studio navigation" onClick={() => setMobileNavOpen(false)}>
+              <X size={17} aria-hidden="true" />
+            </button>
           </div>
-        )}
+          <div className={styles.mobileNavBody}>{renderSidebarContent(false)}</div>
+        </dialog>
 
-        {/* Main Workspace Column */}
-        <div className="flex min-w-0 flex-1 flex-col">
-          {/* Calm Contextual Workspace Sub-Header */}
-          <div className="sticky top-[80px] z-20 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 bg-white/90 px-4 py-2.5 backdrop-blur-md sm:px-6 dark:border-slate-800/80 dark:bg-[#0B1222]/90">
-            <div className="flex min-w-0 items-center gap-2.5">
-              <button
-                type="button"
-                onClick={() => setMobileNavOpen(true)}
-                className="inline-flex rounded-lg border border-slate-200 p-1.5 text-slate-600 lg:hidden dark:border-slate-700 dark:text-slate-300"
-                aria-label="Open Studio sidebar"
-              >
-                <Menu size={16} />
-              </button>
-
-              <div className="flex min-w-0 items-center gap-2 text-xs">
-                <Link
-                  href="/studio"
-                  className="hidden font-medium text-slate-500 hover:text-slate-900 sm:inline dark:text-slate-400 dark:hover:text-white"
-                >
-                  {activeSite ? activeSite.name : "Workspace"}
-                </Link>
-                <span className="hidden text-slate-300 sm:inline dark:text-slate-700">
-                  /
-                </span>
-                <span className="truncate font-bold text-slate-900 dark:text-white">
-                  {currentNavItem?.label || "Studio"}
-                </span>
-                {activeSite && activeSite.sitemapUrls.length > 0 && (
-                  <span className="hidden rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-medium text-slate-600 md:inline-flex dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
-                    {activeSite.sitemapUrls.length} sitemap URLs synced
-                  </span>
-                )}
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => dispatchStudioDrawer({ type: "open-copilot" })}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-[#5271FF]/50 hover:text-[#5271FF] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:text-[#9aabff]"
-              >
-                <Bot size={14} className="text-[#5271FF]" />
-                <span>Brand AI</span>
-              </button>
-
-              {pathname !== "/studio/writer" && (
-                <Link
-                  href="/studio/writer"
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-[#5271FF] px-3 py-1.5 text-xs font-bold text-white transition hover:bg-[#4361EE]"
-                >
-                  <FilePenLine size={13} />
-                  <span>Write Article</span>
-                </Link>
+        <div ref={workspaceScroll} data-studio-scroll className={styles.scrollArea}>
+          <div className="mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8">
+              {inlineWorkspaceItem ? (
+                <StudioInlineEmbedPanel
+                  item={inlineWorkspaceItem}
+                  activeSite={activeSite}
+                  backLabel={`Back to ${currentNavItem?.label || "Dashboard"}`}
+                  completedPlaybookSlugs={studio.completedPlaybookSlugs}
+                  onBack={() => setInlineWorkspaceItem(null)}
+                  onSwitchItem={(next) => setInlineWorkspaceItem(next)}
+                />
+              ) : (
+                children
               )}
-            </div>
-          </div>
-
-          <div className="mx-auto w-full max-w-[1440px] flex-1 px-4 py-6 sm:px-6 lg:px-8">
-            {inlineWorkspaceItem ? (
-              <StudioInlineEmbedPanel
-                item={inlineWorkspaceItem}
-                activeSite={activeSite}
-                backLabel={`Back to ${currentNavItem?.label || "Dashboard"}`}
-                completedPlaybookSlugs={studio.completedPlaybookSlugs}
-                onBack={() => setInlineWorkspaceItem(null)}
-                onSwitchItem={(next) => setInlineWorkspaceItem(next)}
-              />
-            ) : (
-              children
-            )}
           </div>
         </div>
-
         <StudioGlobalDrawer activeSite={activeSite} />
       </div>
     </RecentUrlsProvider>

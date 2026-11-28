@@ -53,7 +53,7 @@
   position: relative;
   inset: auto;
   width: 100%;
-  height: calc(100dvh - var(--writer-sticky-top, 80px) - 10px);
+  height: calc(100dvh - var(--studio-top-bar-height, var(--writer-sticky-top, 80px)) - 10px);
   scroll-margin-block-start: calc(var(--writer-sticky-top, 80px) + 4px);
   border: 1px solid var(--assistant-line);
   border-radius: 14px;
