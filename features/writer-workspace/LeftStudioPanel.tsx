@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   ExternalLink,
   Link2,
@@ -29,6 +29,9 @@ import {
   auditFaqPaaReadiness,
   auditSectionSnippetReadiness,
   auditSubtopicCoverageGaps,
+  draftLinkUrls,
+  projectDocument,
+  safeUrl,
   readiness,
   workspace,
 } from "./model";
@@ -58,6 +61,8 @@ export function LeftStudioPanel({
   onRunAiHelper,
   onQuickReadabilityPolish,
   onInsertLink,
+  onLinkSelection,
+  onJumpToSection,
   onAutoWeaveInternalLinks,
   onNormalizeFaqsPaa,
   onInjectUncoveredQuestions,
@@ -67,6 +72,7 @@ export function LeftStudioPanel({
   onRunMasterAeoPolish,
   onRunResearch,
   researchBusy,
+  researchNotice,
 }: {
   project: Project;
   activeTab: StudioLeftTab;
@@ -87,6 +93,8 @@ export function LeftStudioPanel({
   onRunAiHelper: (instruction: string, scope: "selection" | "article") => void;
   onQuickReadabilityPolish?: () => void;
   onInsertLink: (title: string, url: string) => void;
+  onLinkSelection?: (url: string) => boolean;
+  onJumpToSection?: (id: string) => void;
   onAutoWeaveInternalLinks?: () => void;
   onNormalizeFaqsPaa?: () => void;
   onInjectUncoveredQuestions?: () => void;
@@ -96,8 +104,11 @@ export function LeftStudioPanel({
   onRunMasterAeoPolish?: () => void;
   onRunResearch?: () => void;
   researchBusy?: boolean;
+  researchNotice?: string;
 }) {
   const w = workspace(project);
+  const [linkNotice, setLinkNotice] = useState("");
+  const linkedUrls = useMemo(() => embedded && activeTab === "seo" ? draftLinkUrls(projectDocument(project)) : new Set<string>(), [embedded, activeTab, project]);
   const md = useMemo(() => articleMarkdown(project), [project]);
   const r = useMemo(() => readiness(project), [project]);
   const claimAudit = useMemo(() => auditClaimVerification(md), [md]);
@@ -215,6 +226,98 @@ export function LeftStudioPanel({
     : kw && lowerMd.includes(kw.toLowerCase())
       ? 100
       : 0;
+
+  if (embedded && activeTab === "seo") {
+    const internal = new Map(internalLinks.filter((link) => safeUrl(link.url)).map((link) => [safeUrl(link.url), link]));
+    const external = new Map(externalLinks.filter((link) => safeUrl(link.url) && !internal.has(safeUrl(link.url))).map((link) => [safeUrl(link.url), link]));
+    const linkList = (links: typeof internal | typeof external, type: "internal" | "external") => (
+      <ul className={s.inspectorLinkList}>
+        {[...links].map(([url, link]) => (
+          <li key={url}>
+            <a href={url} target="_blank" rel="noreferrer">{link.title || url}<ExternalLink size={12} aria-hidden="true" /></a>
+            <span className={s.inspectorLinkUrl} title={url}>{url}</span>
+            <div className={s.inspectorCardActions}>
+              {linkedUrls.has(url) ? <small>In draft</small> : <button type="button" onClick={() => {
+                const linked = onLinkSelection?.(url);
+                setLinkNotice(linked ? "Link applied." : "Select text in the editor, then choose Link selection.");
+              }}>Link selection</button>}
+            </div>
+          </li>
+        ))}
+        {!links.size && <li>{type === "internal" ? "No internal pages saved for this article." : "No external sources saved for this article."}</li>}
+      </ul>
+    );
+
+    return (
+      <section className={s.seoInspector} aria-label="Links and editorial review">
+        <header className={s.seoInspectorTitle}>
+          <h3>Article links</h3>
+          {onRunResearch && <button type="button" onClick={onRunResearch} disabled={researchBusy}>
+            {researchBusy ? "Refreshing…" : "Refresh research"}
+          </button>}
+        </header>
+        <p>Internal links come from the connected site or saved brief. External sources come from research and imported references.</p>
+        {researchNotice && <p className={s.inspectorLinkNotice} role="status">{researchNotice}</p>}
+        {linkNotice && <p role="status" className={s.inspectorLinkNotice}>{linkNotice}</p>}
+        <details className={s.seoInspectorGroup} open>
+          <summary>Internal links <small>{internal.size}</small></summary>
+          {linkList(internal, "internal")}
+        </details>
+        <details className={s.seoInspectorGroup}>
+          <summary>External sources <small>{external.size}</small></summary>
+          {linkList(external, "external")}
+        </details>
+
+        <details className={s.seoInspectorGroup}>
+          <summary>Section openings <small>{snippetAudit.totalSections}</small></summary>
+          <p>Review how each section starts. The 35–65 word range is an editorial guideline for a concise lead.</p>
+          <ol className={s.inspectorSectionList}>
+            {snippetAudit.sections.map((sec) => (
+              <li key={sec.id}>
+                <strong>{sec.h2}</strong>
+                <small>{sec.leadWords ? `${sec.leadWords} words in the lead` : "No opening paragraph detected"}</small>
+                <div className={s.inspectorCardActions}>
+                  <button type="button" onClick={() => onJumpToSection?.(sec.id)}>Go to section</button>
+                  {sec.leadStatus !== "optimal" && <button type="button" onClick={() => onRunAiHelper(
+                    `Review the lead of the section titled "${sec.h2}". Suggest a concise opening that answers the reader's question and fits this section. Preserve the meaning, facts, headings, sources, and remaining paragraphs. Change only the opening paragraph.`,
+                    "article",
+                  )}>Review lead with AI</button>}
+                </div>
+              </li>
+            ))}
+            {!snippetAudit.sections.length && <li>Add section headings to review their openings.</li>}
+          </ol>
+        </details>
+
+        {claimAudit.unverifiedClaims.length > 0 && <details className={s.seoInspectorGroup}>
+          <summary>Claims to check <small>{claimAudit.unverifiedClaims.length}</small></summary>
+          <p>These sentences may need a source. Check that a citation supports the specific claim.</p>
+          <ul className={s.inspectorSectionList}>
+            {claimAudit.unverifiedClaims.map((claim, index) => <li key={index}>
+              <span>{claim.sentence}</span>
+              <div className={s.inspectorCardActions}><button type="button" onClick={() => onRunAiHelper(
+                `Verify this exact claim with authoritative sources: "${claim.sentence}". Cite only sources that substantiate it. If it cannot be verified, suggest a revision or removal.`, "article",
+              )}>Check with AI</button></div>
+            </li>)}
+          </ul>
+        </details>}
+        {(infoGainAngles.length > 0 || subtopicGaps.uncoveredQuestions.length > 0) && <details className={s.seoInspectorGroup}>
+          <summary>Research ideas</summary>
+          <p>Ideas from the saved research packet. Use the ones that help the reader.</p>
+          {onInjectUncoveredQuestions && subtopicGaps.uncoveredQuestions.length > 0 &&
+            <button type="button" className={s.inspectorGroupAction} onClick={onInjectUncoveredQuestions}>Add uncovered questions to FAQs</button>}
+          <ul className={s.inspectorSectionList}>
+            {infoGainAngles.map((idea, index) => <li key={index}>
+              <span>{idea.text}</span>
+              <div className={s.inspectorCardActions}><button type="button" onClick={() => onRunAiHelper(
+                `Evaluate this research idea for the current article: "${idea.text}". If it adds value, suggest where it fits and how to develop it without inventing evidence.`, "article",
+              )}>Discuss with AI</button></div>
+            </li>)}
+          </ul>
+        </details>}
+      </section>
+    );
+  }
 
   return (
     <aside className={s.sidebar} data-inspector-embedded={embedded || undefined} aria-label="Editorial studio controls">
@@ -543,6 +646,7 @@ export function LeftStudioPanel({
                 </button>
               ) : null}
             </div>
+            {researchNotice && <p className={s.researchNotice} role="status">{researchNotice}</p>}
             {kw ? (
               <div className={s.primaryKwStatus}>
                 <span

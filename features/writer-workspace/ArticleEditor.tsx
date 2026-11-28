@@ -20,6 +20,8 @@ import StarterKit from "@tiptap/starter-kit";
 import { Plugin } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
 import {
+  ArrowDown,
+  ArrowUp,
   Bold,
   Italic,
   List,
@@ -66,6 +68,7 @@ import {
   syncDocument,
   workspace,
 } from "./model";
+import { termMatcher } from "./term-matches";
 import { normalizeAiMarkdown } from "./instant-edits";
 import type { ReadabilityHighlightToggles } from "./LeftStudioPanel";
 import type { Project, RichNode } from "./types";
@@ -216,6 +219,7 @@ type Props = {
   highlightToggles?: ReadabilityHighlightToggles;
   targetGrade?: number;
   onSelection: (text: string) => void;
+  onReady?: () => void;
   onInlineAiRewrite?: (
     instruction: string,
     range: { from: number; to: number; text: string },
@@ -262,8 +266,8 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
     const toolbarRef = useRef<HTMLDivElement | null>(null);
     const floatingRef = useRef<HTMLDivElement | null>(null);
     const savedSelectionRef = useRef<{ from: number; to: number } | null>(null);
-    const searchTermRef = useRef("");
-    const searchClearTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const searchRef = useRef<{ term: string; index: number } | null>(null);
+    const [termNavigation, setTermNavigation] = useState<{ term: string; index: number; count: number } | null>(null);
     const aiAbortRef = useRef<AbortController | null>(null);
     const uploadImgInputRef = useRef<HTMLInputElement | null>(null);
     const skipOnChangeRef = useRef(false);
@@ -803,7 +807,9 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
               props: {
                 decorations(state) {
                   const list: Decoration[] = [];
-                  const activeSearch = searchTermRef.current.trim().toLowerCase();
+                  const search = searchRef.current;
+                  const matcher = search ? termMatcher(search.term) : null;
+                  let matchIndex = 0;
 
                   state.doc.descendants((node, pos) => {
                     if (!node.isTextblock) return;
@@ -816,21 +822,13 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
                     if (!text.trim()) return;
                     const maxPos = pos + 1 + node.content.size;
 
-                    // 1. Live keyword/issue navigation highlight (always active when searching)
-                    if (activeSearch.length >= 2) {
-                      const lowerText = text.toLowerCase();
-                      let idx = 0;
-                      while ((idx = lowerText.indexOf(activeSearch, idx)) !== -1) {
-                        const from = Math.min(maxPos, pos + 1 + idx);
-                        const to = Math.min(maxPos, from + activeSearch.length);
-                        if (to > from) {
-                          list.push(
-                            Decoration.inline(from, to, {
-                              class: styles.hlSearchMatch,
-                            }),
-                          );
-                        }
-                        idx += activeSearch.length;
+                    if (matcher && search) {
+                      for (const match of text.matchAll(matcher)) {
+                        const from = pos + 1 + match.index;
+                        const active = matchIndex++ === search.index;
+                        list.push(Decoration.inline(from, from + match[0].length, {
+                          class: active ? styles.hlSearchCurrent : styles.hlSearchMatch,
+                        }));
                       }
                     }
 
@@ -1035,7 +1033,11 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
           },
         },
       },
-      onUpdate: ({ editor: ed }) => {
+      onUpdate: ({ editor: ed, transaction }) => {
+        if (transaction.docChanged && searchRef.current) {
+          searchRef.current = null;
+          setTermNavigation(null);
+        }
         if (skipOnChangeRef.current) return;
         latest.current.onChange(ed.getJSON() as RichNode);
       },
@@ -1102,10 +1104,16 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
     editorRef.current = editor;
 
     useEffect(() => {
+      if (editor) latest.current.onReady?.();
+    }, [editor]);
+
+    useEffect(() => {
       if (!editor) return;
       const desired = projectDocument(props.project);
       if (documentKey(editor.getJSON()) !== documentKey(desired)) {
         const selection = editor.state.selection;
+        searchRef.current = null;
+        setTermNavigation(null);
         editor.commands.setContent(desired, false);
         if (selection.from <= editor.state.doc.content.size)
           editor.commands.setTextSelection({
@@ -1168,6 +1176,35 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
     }, [floating, linkPopoverOpen, plusMenuOpen, linkCard]);
 
     useEffect(() => () => aiAbortRef.current?.abort(), []);
+
+    const clearTermNavigation = () => {
+      searchRef.current = null;
+      setTermNavigation(null);
+      if (editor) editor.view.dispatch(editor.state.tr.setMeta("writerDisplay", true));
+    };
+    const navigateTerm = (term: string, requestedIndex: number) => {
+      if (!editor) return false;
+      const matcher = termMatcher(term);
+      if (!matcher) return false;
+      let count = 0;
+      editor.state.doc.descendants((node) => {
+        if (node.isTextblock) {
+          count += Array.from(node.textBetween(0, node.content.size, "\n", "\n").matchAll(matcher)).length;
+        }
+      });
+      if (!count) {
+        clearTermNavigation();
+        return false;
+      }
+      const index = ((requestedIndex % count) + count) % count;
+      searchRef.current = { term, index };
+      setTermNavigation({ term, index, count });
+      editor.view.dispatch(editor.state.tr.setMeta("writerDisplay", true));
+      requestAnimationFrame(() => {
+        surfaceRef.current?.querySelector("." + styles.hlSearchCurrent)?.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+      });
+      return true;
+    };
 
     const applyBlockStyle = (
       styleValue: string,
@@ -1410,54 +1447,7 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
             )
             .run();
         },
-        highlightAndScrollToTerm: (term: string) => {
-          if (!editor || !term.trim()) return false;
-          const needle = term.trim().toLowerCase();
-          let firstMatch = -1;
-          editor.state.doc.descendants((node, pos) => {
-            if (firstMatch >= 0 || !node.isTextblock) return;
-            const text = node.textBetween(0, node.content.size, "\n", "\n");
-            const idx = text.toLowerCase().indexOf(needle);
-            if (idx >= 0) {
-              firstMatch = pos + 1 + idx;
-            }
-          });
-          searchTermRef.current = term.trim();
-          if (searchClearTimerRef.current) {
-            clearTimeout(searchClearTimerRef.current);
-          }
-          searchClearTimerRef.current = setTimeout(() => {
-            searchTermRef.current = "";
-            if (editorRef.current && !editorRef.current.isDestroyed) {
-              editorRef.current.view.dispatch(
-                editorRef.current.state.tr.setMeta("writerDisplay", true),
-              );
-            }
-          }, 4200);
-          editor.view.dispatch(editor.state.tr.setMeta("writerDisplay", true));
-
-          if (firstMatch >= 0) {
-            suppressFloatingRef.current = true;
-            setFloating(null);
-            setAiPanelOpen(false);
-            const matchEnd = Math.min(
-              editor.state.doc.content.size,
-              firstMatch + term.trim().length,
-            );
-            editor.commands.setTextSelection({ from: firstMatch, to: matchEnd });
-            requestAnimationFrame(() => {
-              suppressFloatingRef.current = false;
-              try {
-                const dom = editor.view.domAtPos(firstMatch).node;
-                const el = dom instanceof Element ? dom : dom.parentElement;
-                el?.scrollIntoView({ behavior: "smooth", block: "center" });
-              } catch {}
-            });
-            return true;
-          }
-          setNotice(`"${term}" does not appear yet in the draft.`);
-          return false;
-        },
+        highlightAndScrollToTerm: (term) => navigateTerm(term, 0),
         scrollToHeading: (headingText: string) => {
           if (!editor || !headingText.trim()) return false;
           const needle = headingText.trim().toLowerCase();
@@ -1766,6 +1756,18 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
           )}
           {props.toolbarEnd}
         </div>
+
+        {termNavigation && (
+          <div className={styles.termNavigator} aria-label="Find in draft">
+            <span title={termNavigation.term}>{termNavigation.term}</span>
+            <small role="status">{termNavigation.index + 1} of {termNavigation.count}</small>
+            <button type="button" aria-label="Previous match" disabled={termNavigation.count < 2}
+              onClick={() => navigateTerm(termNavigation.term, termNavigation.index - 1)}><ArrowUp size={14} /></button>
+            <button type="button" aria-label="Next match" disabled={termNavigation.count < 2}
+              onClick={() => navigateTerm(termNavigation.term, termNavigation.index + 1)}><ArrowDown size={14} /></button>
+            <button type="button" aria-label="Close term navigation" onClick={clearTermNavigation}><X size={14} /></button>
+          </div>
+        )}
 
         {/* Inline Toolbar Link Popover */}
         {linkPopoverOpen && !floating ? (

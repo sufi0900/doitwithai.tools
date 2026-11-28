@@ -5135,48 +5135,6 @@
   flex-wrap: wrap;
   gap: 5px;
 }
-.scoreTermPill {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  min-height: 26px !important;
-  padding: 3px 8px !important;
-  font-size: 11px !important;
-  border-radius: 999px !important;
-  border: 1px solid var(--line) !important;
-  text-align: left;
-}
-.scoreTermPill em {
-  font-style: normal;
-  font-weight: 700;
-  font-size: 10px;
-  opacity: 0.85;
-}
-.scoreTermOk {
-  background: rgba(16, 185, 129, 0.1) !important;
-  border-color: rgba(16, 185, 129, 0.35) !important;
-  color: #059669 !important;
-}
-.darkShell .scoreTermOk {
-  color: #6ee7b7 !important;
-}
-.scoreTermUnder {
-  background: rgba(245, 158, 11, 0.1) !important;
-  border-color: rgba(245, 158, 11, 0.35) !important;
-  color: #b45309 !important;
-}
-.darkShell .scoreTermUnder {
-  color: #fcd34d !important;
-}
-.scoreTermOver {
-  background: rgba(239, 68, 68, 0.1) !important;
-  border-color: rgba(239, 68, 68, 0.4) !important;
-  color: #dc2626 !important;
-}
-.darkShell .scoreTermOver {
-  color: #fca5a5 !important;
-}
-
 .scoreHeadingList {
   display: flex;
   flex-direction: column;
@@ -5842,24 +5800,7 @@
   text-transform: capitalize;
 }
 .writerInspector .scoreTermList { display: grid; gap: 0; }
-.writerInspector button.scoreTermPill {
-  justify-content: space-between;
-  min-height: 38px !important;
-  padding: 7px 6px !important;
-  border: 0 !important;
-  border-bottom: 1px solid var(--studio-border) !important;
-  border-radius: 0 !important;
-  background: transparent;
-  color: var(--studio-text-primary);
-  text-align: start;
-  gap: 8px;
-}
-.writerInspector .scoreTermPill > span { min-width: 0; overflow-wrap: anywhere; white-space: normal; }
-.writerInspector .scoreTermPill em { flex: none; border-radius: 5px; padding: 2px 4px; background: var(--studio-card-bg); }
-.writerInspector [data-term-status="optimal"] em { color: var(--studio-success); }
-.writerInspector [data-term-status="low"] em { color: var(--studio-warning); }
-.writerInspector [data-term-status="stuffed"] em { color: #e05d64; }
-.writerInspector :is(.scoreTermPill, .scoreHeadingItem):hover { background: var(--studio-hover); }
+.writerInspector .scoreHeadingItem:hover { background: var(--studio-hover); }
 .writerInspector .scoreHeadingItem { width: 100%; border-color: var(--studio-border); background: var(--studio-card-bg); }
 
 .writerInspector .sidebar[data-inspector-embedded] { gap: 10px; }
@@ -6003,3 +5944,143 @@
     clip-path: inset(50%);
   }
 }
+
+/* Term tracking and editorial review */
+.hlSearchCurrent {
+  background: #fbbf24;
+  color: #231b07;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px #b45309;
+}
+.termNavigator {
+  position: sticky;
+  top: calc(var(--writer-sticky-top, 80px) + 44px);
+  z-index: 27;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  margin-inline-start: auto;
+  width: fit-content;
+  max-width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 0 0 0 8px;
+  background: var(--studio-header-bg, var(--canvas));
+  color: var(--ink);
+  font-size: 12px;
+}
+.termNavigator > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.termNavigator > small { flex: none; color: var(--muted); font-variant-numeric: tabular-nums; }
+.shell .termNavigator button { flex: none; min-width: 28px; min-height: 28px; padding: 4px; }
+
+.termTools {
+  margin-bottom: 4px;
+  padding: 7px;
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+}
+.termTools summary, .seoInspectorGroup > summary { cursor: pointer; font-weight: 650; }
+.termTools p, .seoInspector p, .seoInspectorGroup p {
+  margin: 5px 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+.termTools form { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; margin-block: 8px 4px; }
+.termTools input {
+  flex: 1;
+  width: 120px;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--studio-card-bg);
+  color: var(--ink);
+  padding: 5px;
+}
+.termRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-bottom: 1px solid var(--line);
+  min-width: 0;
+}
+.shell .termMatchButton, .termMissing {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  text-align: start;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: inherit;
+}
+.shell .termMatchButton:hover { background: var(--studio-hover, var(--canvas)); }
+.termText { min-width: 0; overflow-wrap: anywhere; }
+.termText strong, .termText small { display: block; font-size: 12px; }
+.termText small { color: var(--muted); font-size: 10px; }
+.termCount { flex: none; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.termRow[data-term-status="optimal"] .termCount { color: var(--studio-success, #059669); }
+.termRow[data-term-status="stuffed"] .termCount { color: var(--studio-warning, #b45309); }
+.shell .termRowAction { flex: none; min-width: 28px; min-height: 28px; padding: 4px; margin-inline-end: 2px; }
+
+.seoInspectorTitle { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: space-between; }
+.seoInspectorTitle h3 { font-size: 13px; font-weight: 650; }
+.seoInspectorGroup {
+  min-width: 0;
+  margin-top: 10px;
+  padding: 9px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--studio-card-bg);
+}
+.seoInspectorGroup > summary { font-size: 13px; }
+.seoInspectorGroup small { color: var(--muted); font-size: 11px; }
+.seoInspectorGroup > summary small { margin-inline-start: 4px; font-variant-numeric: tabular-nums; }
+.inspectorLinkList, .inspectorSectionList { display: grid; list-style: none; margin: 8px 0 0; padding: 0; }
+.inspectorLinkList li, .inspectorSectionList li {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.inspectorLinkList li:last-child, .inspectorSectionList li:last-child { padding-bottom: 0; }
+.inspectorLinkList a { display: flex; align-items: baseline; gap: 5px; font-weight: 650; }
+.inspectorLinkList a:hover { text-decoration: underline; }
+.inspectorLinkList a svg { flex: none; }
+.inspectorLinkUrl { font-size: 11px; color: var(--muted); }
+.inspectorCardActions { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+.shell :is(.seoInspectorTitle button, .inspectorCardActions button, .inspectorGroupAction, .termTools button) {
+  max-width: 100%;
+  min-height: 30px;
+  min-width: 0;
+  padding: 4px 8px;
+  border-radius: 6px;
+  white-space: normal;
+  text-align: start;
+  background: var(--studio-header-bg);
+  border-color: var(--line);
+  color: var(--ink);
+  font-size: 11px;
+}
+.shell :is(.seoInspectorTitle button, .inspectorCardActions button, .inspectorGroupAction, .termTools button):hover {
+  background: var(--studio-hover);
+}
+.inspectorGroupAction { margin-block-start: 7px; }
+.seoInspector .inspectorLinkNotice { border-inline-start: 2px solid var(--studio-accent); padding-inline-start: 6px; }
+
+@media (max-width: 767px) {
+  .shell .termNavigator button, .shell .termRowAction { min-width: 36px; min-height: 36px; }
+  .shell :is(.seoInspectorTitle button, .inspectorCardActions button, .inspectorGroupAction, .termTools button) { min-height: 38px; }
+}
+.researchNotice { padding: 5px 9px; color: var(--muted); font-size: 12px; }

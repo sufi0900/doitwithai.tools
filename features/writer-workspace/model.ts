@@ -1,3 +1,4 @@
+import { normalizeTrackedTerm, termMatcher } from "./term-matches";
 import { createNewBlogProjectState } from "@/lib/blog-writer/project-storage-db";
 import type { BlogSectionNode } from "@/lib/blog-writer/canonical-state";
 import { reviewAlt } from "@/features/alt-text/review";
@@ -109,6 +110,7 @@ export function workspace(p: Project): WriterWorkspaceState {
     visualRevisions: raw?.visualRevisions || {},
     email: raw?.email,
     document: raw?.document,
+    trackedTerms: Array.isArray(raw?.trackedTerms) ? raw.trackedTerms.filter((term) => typeof term === "string").slice(0, 20) : [],
   };
 }
 export function safeImageSrc(raw: unknown): string {
@@ -641,6 +643,20 @@ export function projectDocument(p: Project): RichNode {
     content: content.length ? content : [{ type: "paragraph" }],
   };
 }
+export function draftLinkUrls(document: RichNode): Set<string> {
+  const urls = new Set<string>();
+  const visit = (node: RichNode) => {
+    for (const mark of node.marks || []) {
+      if (mark.type !== "link") continue;
+      const url = safeUrl(mark.attrs?.href);
+      if (url) urls.add(url);
+    }
+    node.content?.forEach(visit);
+  };
+  visit(document);
+  return urls;
+}
+
 export function textOf(node: RichNode): string {
   if (node.type === "hardBreak") return "\n";
   return (
@@ -2298,6 +2314,7 @@ export function runMasterAeoAndReadinessPolish(p: Project) {
 export type ContentScoreTermItem = {
   term: string;
   category: "primary" | "secondary" | "entity";
+  source: "brief" | "research" | "custom";
   actual: number;
   min: number;
   max: number;
@@ -2333,16 +2350,10 @@ export type ContentScorecardResult = {
   minutes: number;
 };
 
-function countSubstringOccurrences(haystackLower: string, needleLower: string): number {
-  const clean = needleLower.trim();
-  if (!clean || clean.length < 2) return 0;
-  let count = 0;
-  let pos = 0;
-  while ((pos = haystackLower.indexOf(clean, pos)) !== -1) {
-    count += 1;
-    pos += clean.length;
-  }
-  return count;
+// Count what the rich editor can highlight, including inline text split by marks.
+function draftTextBlocks(node: RichNode): string[] {
+  if (["paragraph", "heading", "codeBlock"].includes(node.type)) return [textOf(node)];
+  return node.content?.flatMap(draftTextBlocks) || [];
 }
 
 /**
@@ -2355,7 +2366,7 @@ export function computeContentScorecard(p: Project): ContentScorecardResult {
   const article = articleModel(p);
   const r = readiness(p);
   const md = articleMarkdown(p);
-  const lowerAll = `${p.metaPack.h1Title}\n${md}`.toLowerCase();
+  const textBlocks = draftTextBlocks(projectDocument(p));
 
   const bench = w.research?.competitorBenchmarks;
   const contract = w.research?.briefContract;
@@ -2384,46 +2395,34 @@ export function computeContentScorecard(p: Project): ContentScorecardResult {
   const actualPara = article.blocks.filter((b) => b.kind === "paragraph").length;
   const actualImages = article.blocks.filter((b) => b.kind === "image" && b.included !== false).length;
 
-  // Build weighted term list from research semanticTerms OR keywordCluster fallback
-  const sourceTerms =
-    w.research?.semanticTerms && w.research.semanticTerms.length > 0
-      ? w.research.semanticTerms
-      : [
-          ...(p.keywordCluster.primaryKeyword.trim()
-            ? [
-                {
-                  term: p.keywordCluster.primaryKeyword.trim(),
-                  minCount: 1,
-                  maxCount: 3,
-                  category: "primary" as const,
-                },
-              ]
-            : []),
-          ...(p.keywordCluster.secondaryKeywords || []).slice(0, 6).map((t) => ({
-            term: t.trim(),
-            minCount: 1,
-            maxCount: 4,
-            category: "secondary" as const,
-          })),
-          ...(p.keywordCluster.lsiEntities || []).slice(0, 6).map((t) => ({
-            term: t.trim(),
-            minCount: 1,
-            maxCount: 3,
-            category: "entity" as const,
-          })),
-        ].filter((t) => Boolean(t.term));
-
-  const terms: ContentScoreTermItem[] = sourceTerms.slice(0, 16).map((t) => {
-    const actual = countSubstringOccurrences(lowerAll, t.term.toLowerCase());
-    const status: ContentScoreTermItem["status"] =
-      actual > t.maxCount ? "stuffed" : actual >= t.minCount ? "optimal" : "low";
+  const sourceTerms = new Map<string, Omit<ContentScoreTermItem, "actual" | "status">>();
+  const addTerm = (raw: string, category: ContentScoreTermItem["category"], source: ContentScoreTermItem["source"], min: number, max: number) => {
+    const term = normalizeTrackedTerm(raw);
+    const key = term.toLowerCase();
+    if (term.length >= 2 && !sourceTerms.has(key)) sourceTerms.set(key, { term, category, source, min, max });
+  };
+  const research = w.research;
+  addTerm(p.keywordCluster.primaryKeyword || research?.primaryKeyword || "", "primary", "brief", 1, 3);
+  for (const item of research?.semanticTerms || []) {
+    // The project's current focus keyword takes precedence over a previous research run.
+    if (item.category !== "primary") addTerm(item.term, item.category, "research", item.minCount, item.maxCount);
+  }
+  for (const term of research?.secondaryKeywords || []) addTerm(term, "secondary", "research", 1, 4);
+  for (const term of research?.lsiEntities || []) addTerm(term, "entity", "research", 1, 3);
+  for (const term of p.keywordCluster.secondaryKeywords || []) addTerm(term, "secondary", "brief", 1, 4);
+  for (const term of p.keywordCluster.lsiEntities || []) addTerm(term, "entity", "brief", 1, 3);
+  const scoredTerms = [...sourceTerms.values()].slice(0, 16);
+  // Custom terms are an editorial watchlist and never change the scoring denominator.
+  const tracked = (w.trackedTerms || []).filter((term) => !scoredTerms.some((item) => item.term.toLowerCase() === normalizeTrackedTerm(term).toLowerCase()));
+  sourceTerms.clear();
+  for (const term of tracked) addTerm(term, "secondary", "custom", 1, Number.POSITIVE_INFINITY);
+  const terms: ContentScoreTermItem[] = [...scoredTerms, ...sourceTerms.values()].map((item) => {
+    const matcher = termMatcher(item.term);
+    const actual = matcher ? textBlocks.reduce((count, block) => count + Array.from(block.matchAll(matcher)).length, 0) : 0;
     return {
-      term: t.term,
-      category: t.category,
+      ...item,
       actual,
-      min: t.minCount,
-      max: t.maxCount,
-      status,
+      status: actual > item.max ? "stuffed" : actual >= item.min ? "optimal" : "low",
     };
   });
 
@@ -2488,9 +2487,9 @@ export function computeContentScorecard(p: Project): ContentScorecardResult {
     score += wordScore + h2Score + paraScore + imgScore;
 
     // 2. Semantic terms & anti-stuffing (25 pts)
-    if (terms.length > 0) {
-      const optimalCount = terms.filter((t) => t.status === "optimal").length;
-      const coverage = Math.round((optimalCount / terms.length) * 25);
+    if (scoredTerms.length > 0) {
+      const optimalCount = terms.filter((t) => t.source !== "custom" && t.status === "optimal").length;
+      const coverage = Math.round((optimalCount / scoredTerms.length) * 25);
       const stuffingPenalty = stuffedPrimary ? 8 : 0;
       score += Math.max(0, coverage - stuffingPenalty);
     } else {
@@ -2555,8 +2554,8 @@ export function computeContentScorecard(p: Project): ContentScorecardResult {
     issues.push({
       id: "stuffed-primary",
       severity: "error",
-      label: `Primary keyword stuffed (${primaryItem.actual}x vs max ${primaryItem.max}x)`,
-      detail: `Replace excess uses of "${primaryItem.term}" with natural pronouns or related terms.`,
+      label: `Review repeated focus keyword (${primaryItem.actual} mentions)`,
+      detail: `Check the passages that use "${primaryItem.term}" and revise any repetition that feels unnatural.`,
       searchTerm: primaryItem.term,
     });
   }
@@ -2591,7 +2590,7 @@ export function computeContentScorecard(p: Project): ContentScorecardResult {
       severity: "warn",
       label: `${r.readability.longSentences.length} dense sentence${r.readability.longSentences.length === 1 ? "" : "s"}`,
       detail: "Click to inspect and simplify long multi-clause sentences.",
-      searchTerm: r.readability.longSentences[0]?.text.slice(0, 32),
+      searchTerm: r.readability.longSentences[0]?.text,
     });
   }
   if (!/\[[^\]]{2,}\]\(https?:\/\/[^)]+\)/.test(md) && r.words > 200) {

@@ -13,6 +13,7 @@ import {
   Globe,
   RefreshCw,
   Sparkles,
+  X,
 } from "lucide-react";
 import {
   computeContentScorecard,
@@ -21,6 +22,7 @@ import {
 } from "./model";
 import { formatResearchAndVerificationLogMarkdown } from "./niche-policies";
 import { saveBlob } from "./assets";
+import { normalizeTrackedTerm } from "./term-matches";
 import { documentHeadings } from "./WriterInspector";
 import type { Project } from "./types";
 import styles from "./workspace.module.css";
@@ -33,8 +35,12 @@ type Props = {
   onSelectHeading: (sectionId: string, headingText: string) => void;
   onRunResearch: () => void;
   researchBusy?: boolean;
+  researchNotice?: string;
   inspectorView?: "score" | "fixes" | "brief_log";
   onJumpToHeading?: (index: number) => void;
+  onOpenTerms?: () => void;
+  onPlanTerm?: (term: string) => void;
+  onUpdateTrackedTerms?: (update: (terms: string[]) => string[]) => void;
   onFixWithAi?: (label: string, detail: string) => void;
 };
 
@@ -90,13 +96,39 @@ export function ContentScorePanel({
   onSelectHeading,
   onRunResearch,
   researchBusy,
+  researchNotice,
   inspectorView,
   onJumpToHeading,
   onFixWithAi,
+  onOpenTerms,
+  onPlanTerm,
+  onUpdateTrackedTerms,
 }: Props) {
   const [tab, setActiveTab] = useState<ScoreTab>("keywords");
   const [filter, setFilter] = useState<"all" | "missing" | "done">("all");
   const [query, setQuery] = useState("");
+  const [customTerm, setCustomTerm] = useState("");
+  const [termFeedback, setTermFeedback] = useState("");
+  const addTrackedTerm = () => {
+    const term = normalizeTrackedTerm(customTerm);
+    if (term.length < 2 || term.length > 100) {
+      setTermFeedback("Enter a term of 2–100 characters.");
+      return;
+    }
+    if (scorecard.terms.some((item) => item.term.toLowerCase() === term.toLowerCase())) {
+      setTermFeedback("This term is already tracked.");
+      return;
+    }
+    if ((w.trackedTerms?.length || 0) >= 20) {
+      setTermFeedback("Remove a custom term before adding another (20 maximum).");
+      return;
+    }
+    onUpdateTrackedTerms?.((terms) => [...terms, term]);
+    setCustomTerm("");
+    setQuery("");
+    setFilter("all");
+    setTermFeedback("");
+  };
   const activeTab = inspectorView === "score" || !inspectorView ? tab : inspectorView;
   const scorecard = useMemo(() => computeContentScorecard(project), [project]);
   const w = workspace(project);
@@ -228,6 +260,7 @@ export function ContentScorePanel({
             <RefreshCw size={13} className={researchBusy ? styles.spinIcon : undefined} />
             {researchBusy ? "Benchmarking SERP…" : "Benchmark against live competitors"}
           </button>}
+          {researchNotice && <p className={styles.researchNotice} role="status">{researchNotice}</p>}
         </details>
         <div className={styles.scoreTabs} aria-label="Score details">
           <button type="button" aria-pressed={activeTab === "keywords"} onClick={() => { setActiveTab("keywords"); setQuery(""); }}>Terms ({scorecard.terms.length})</button>
@@ -287,6 +320,7 @@ export function ContentScorePanel({
             {researchBusy ? "Benchmarking SERP…" : "Run Live Competitor Analysis"}
           </button>
         ) : null}
+        {researchNotice && <p className={styles.researchNotice} role="status">{researchNotice}</p>}
       </div>
 
       {/* 2x2 Structure Grid */}
@@ -482,32 +516,51 @@ export function ContentScorePanel({
       </>}
 
       <div className={styles.scoreTabBody}>
-        {activeTab === "keywords" && (
+        {activeTab === "keywords" && <>
+          {inspectorView === "score" && <details className={styles.termTools}>
+            <summary>Term sources &amp; custom tracking</summary>
+            <p>Terms come from the article’s brief and saved draft research. Counts are exact phrases in the current draft. Ranges are editorial guides and make up 25 of 100 score points.</p>
+            <p>Custom terms track mentions without changing the score.</p>
+            {onUpdateTrackedTerms && <form onSubmit={(event) => { event.preventDefault(); addTrackedTerm(); }}>
+              <input aria-label="Custom term" placeholder="Enter a keyword or phrase" value={customTerm} maxLength={100}
+                onChange={(event) => { setCustomTerm(event.target.value); setTermFeedback(""); }} />
+              <button type="submit">Add term</button>
+            </form>}
+            {termFeedback && <small role="status">{termFeedback}</small>}
+          </details>}
           <div className={styles.scoreTermList}>
             {terms.length ? (
-              terms.map((item: ContentScoreTermItem) => (
-                <button
-                  key={`${item.category}-${item.term}`}
-                  type="button"
-                  className={`${styles.scoreTermPill} ${inspectorView ? "" : item.status === "optimal"
-                    ? styles.scoreTermOk : item.status === "stuffed" ? styles.scoreTermOver : styles.scoreTermUnder}`}
-                  data-term-status={inspectorView ? item.status : undefined}
-                  onClick={() => onSelectTerm(item.term)}
-                  title={`Click to locate "${item.term}" in draft`}
-                >
-                  <span>{item.term}</span>
-                  <em>
-                    {item.actual}/{item.min === item.max ? item.max : `${item.min}–${item.max}`}
-                  </em>
-                </button>
-              ))
+              terms.map((item: ContentScoreTermItem) => {
+                const label = item.source === "custom" ? "Custom" : item.category === "primary"
+                  ? "Focus keyword" : item.source === "research" ? "Draft research" : "Brief";
+                const count = item.source === "custom" ? String(item.actual) : `${item.actual} / ${item.min}–${item.max}`;
+                const termText = <span className={styles.termText}><strong>{item.term}</strong><small>{label}</small></span>;
+                return <div className={styles.termRow} key={item.term} data-term-status={item.status}>
+                  {item.actual ? (
+                    <button type="button" className={styles.termMatchButton} onClick={() => onSelectTerm(item.term)}
+                      title={`Find ${item.actual} exact match${item.actual === 1 ? "" : "es"} in draft`}>
+                      {termText}<small className={styles.termCount}>{count}</small>
+                    </button>
+                  ) : (
+                    <div className={styles.termMissing}>
+                      {termText}<small className={styles.termCount}>{count}</small>
+                    </div>
+                  )}
+                  {(!item.actual || item.source === "custom") && onPlanTerm && <button type="button" className={styles.termRowAction}
+                    aria-label={`Plan coverage for ${item.term}`} title="Plan coverage in Article AI"
+                    onClick={() => onPlanTerm(item.term)}><Sparkles size={14} /></button>}
+                  {item.source === "custom" && onUpdateTrackedTerms && <button type="button" className={styles.termRowAction}
+                    aria-label={`Remove ${item.term} from tracking`} title="Remove custom term"
+                    onClick={() => onUpdateTrackedTerms((list) => list.filter((entry) => normalizeTrackedTerm(entry).toLowerCase() !== item.term.toLowerCase()))}><X size={14} /></button>}
+                </div>;
+              })
             ) : (
               <p className={styles.leftMetaSub}>
                 {scorecard.terms.length ? "No terms match your filters." : "Add a primary keyword or benchmark against live competitors to see suggested terms."}
               </p>
             )}
           </div>
-        )}
+        </>}
 
         {activeTab === "headings" && (
           <div className={styles.scoreHeadingList}>
@@ -553,7 +606,10 @@ export function ContentScorePanel({
 
         {activeTab === "fixes" && (
           <div className={styles.scoreFixList}>
-            {inspectorView && <h3>Fixes ({scorecard.issues.length})</h3>}
+            {inspectorView && <div className={styles.seoInspectorTitle}>
+              <h3>Draft fixes ({scorecard.issues.length})</h3>
+              {onOpenTerms && <button type="button" onClick={onOpenTerms}>Tracked terms</button>}
+            </div>}
             {scorecard.issues.length ? (
               scorecard.issues.map((issue) => (
                 inspectorView ? <div key={issue.id} className={styles.inspectorFix}>

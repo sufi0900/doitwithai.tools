@@ -249,6 +249,7 @@ export interface WriterWorkspaceState {
   version: 1;
   studioUnlocked?: boolean;
   document?: RichNode;
+  trackedTerms?: string[];
   references: Reference[];
   targetWords: number;
   lengthMode?: "auto" | "custom";

@@ -142,6 +142,7 @@ export default function WriterWorkspace({ documentNavigation, articleSwitcher, r
     >("editor"),
     [briefModalOpen, setBriefModalOpen] = useState(false),
     [researchBusy, setResearchBusy] = useState(false),
+    [researchNotice, setResearchNotice] = useState(""),
     [highlightToggles, setHighlightToggles] =
       useState<ReadabilityHighlightToggles>({
         veryHard: true,
@@ -272,11 +273,14 @@ export default function WriterWorkspace({ documentNavigation, articleSwitcher, r
     setInspectorOpen(window.matchMedia("(min-width: 1024px)").matches);
   }, [isStudioEmbedded]);
   const dialog = useRef<HTMLDivElement>(null);
+  const pendingEditorAction = useRef<((handle: EditorHandle) => void) | null>(null);
   const editor = useRef<EditorHandle>(null),
     importInput = useRef<HTMLInputElement>(null),
     logoInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    pendingEditorAction.current = null;
+    setResearchNotice("");
     setVisualId(null);
     setAssistant(null);
     setAssistantExpanded(false);
@@ -570,7 +574,9 @@ export default function WriterWorkspace({ documentNavigation, articleSwitcher, r
 
   const refreshResearchPacket = async () => {
     if (researchBusy) return;
+    const projectId = current.current.projectId;
     setResearchBusy(true);
+    setResearchNotice("");
     setMessage("");
     const directives = parseBriefDirectives(
       current.current.rawUserBriefOrSourceText,
@@ -603,6 +609,7 @@ export default function WriterWorkspace({ documentNavigation, articleSwitcher, r
       if (!res.ok || !json?.ok || !json.packet) {
         throw new Error(json?.error || "Could not refresh research links.");
       }
+      if (current.current.projectId !== projectId) return;
       const packet = json.packet as ResearchPacket;
       update((now) => {
         const nw = workspace(now);
@@ -649,11 +656,10 @@ export default function WriterWorkspace({ documentNavigation, articleSwitcher, r
           },
         };
       });
-      setMessage(
-        `Research refreshed: ${packet.internalLinks.length} internal links & ${packet.externalLinks.length} authority references ready.`,
-      );
+      const result = `Research refreshed. ${packet.internalLinks.length} internal links and ${packet.externalLinks.length} external sources found.`;
+      setResearchNotice(result);
     } catch (e) {
-      setMessage(errorText(e));
+      if (current.current.projectId === projectId) setResearchNotice(errorText(e));
     } finally {
       setResearchBusy(false);
     }
@@ -865,7 +871,7 @@ export default function WriterWorkspace({ documentNavigation, articleSwitcher, r
         {card === "readability" && sectionCard("Readability", <span>{report.words.toLocaleString()} words · {report.minutes} min · {report.readability.longSentences.length} long sentences</span>, () => openEditorDestination("readability"), "Open readability tools")}
         {card === "seo" && sectionCard("SEO & Links", <><span>{score?.terms.length ?? 0} tracked terms · {p.internalLinks.length} saved internal-link targets</span>
           {score?.terms.filter((term) => term.status !== "optimal").slice(0, 4).map((term) =>
-            <span key={term.term}>{term.term} · {term.actual} uses (target {term.min}–{term.max})</span>)}</>, () => openEditorDestination("seo"), "Open SEO & Links")}
+            <span key={term.term}>{term.term} · {term.actual} uses{term.source !== "custom" && ` (target ${term.min}–${term.max})`}</span>)}</>, () => openEditorDestination("seo"), "Open SEO & Links")}
         {card === "headings" && <details className={assistantStyles.card}><summary>Headings · {p.sections.length} sections</summary>
           <nav>{p.sections.map((section) => <button key={section.id} type="button" onClick={() => openEditorDestination("headings", section.id)}>{section.h2Text}</button>)}</nav>
         </details>}
@@ -935,30 +941,38 @@ export default function WriterWorkspace({ documentNavigation, articleSwitcher, r
     setBriefModalOpen(true);
   };
   const navigateEditor = (action: (handle: EditorHandle) => void) => {
-    setWorkspaceMode("editor");
     if (isStudioEmbedded) dismissSheetForEditor();
+    if (workspaceMode !== "editor") {
+      pendingEditorAction.current = action;
+      setWorkspaceMode("editor");
+      return;
+    }
     requestAnimationFrame(() => {
       if (editor.current) action(editor.current);
     });
   };
-  const jumpToHeading = (index: number) => {
-    setWorkspaceMode("editor");
-    dismissSheetForEditor();
-    requestAnimationFrame(() => {
-      document.querySelectorAll("[data-writer-canvas] .tiptap :is(h1,h2,h3,h4,h5,h6)")[index]
-        ?.scrollIntoView({ block: "start", behavior: "smooth" });
-    });
-  };
+  const jumpToHeading = (index: number) => navigateEditor(() => {
+    document.querySelectorAll("[data-writer-canvas] .tiptap :is(h1,h2,h3,h4,h5,h6)")[index]
+      ?.scrollIntoView({ block: "start", behavior: "smooth" });
+  });
   const scorePanelProps = {
     project: p,
     collapsed: false,
     onToggleCollapse: () => setRightScoreOpen((prev) => !prev),
     onSelectTerm: (term: string) => navigateEditor((handle) => handle.highlightAndScrollToTerm(term)),
+    onOpenTerms: () => openInspector("score"),
+    onPlanTerm: (term: string) => openAssistant(undefined,
+      `Review whether "${term}" belongs in this draft. If it fits the reader's intent, identify the best existing section and suggest a natural revision that adds useful context. Avoid forced repetition.`,
+    ),
+    onUpdateTrackedTerms: (change: (terms: string[]) => string[]) => update((now) =>
+      patchWorkspace(now, { trackedTerms: change(workspace(now).trackedTerms || []).slice(0, 20) }),
+    ),
     onSelectHeading: (sectionId: string, heading: string) => navigateEditor((handle) => {
       if (sectionId) handle.section(sectionId);
       else handle.scrollToHeading(heading);
     }),
     onJumpToHeading: jumpToHeading,
+    researchNotice,
     onRunResearch: () => void refreshResearchPacket(),
     researchBusy,
   };
@@ -1081,6 +1095,13 @@ export default function WriterWorkspace({ documentNavigation, articleSwitcher, r
         "Improve readability. Remove filler and repetitive openings while preserving facts, Markdown links and headings.",
       )}
       onInsertLink={(anchor, url) => navigateEditor((handle) => handle.insertLink(anchor, url))}
+    onLinkSelection={(url) => {
+      const handle = editor.current;
+      if (!handle?.selection()?.text.trim() || workspaceMode !== "editor") return false;
+      navigateEditor((active) => active.insertLink("", url));
+      return true;
+    }}
+    onJumpToSection={(sectionId) => navigateEditor((handle) => handle.section(sectionId))}
       onAutoWeaveInternalLinks={() => {
         let count = 0;
         update((now) => {
@@ -1174,6 +1195,7 @@ export default function WriterWorkspace({ documentNavigation, articleSwitcher, r
       }}
       onRunResearch={() => void refreshResearchPacket()}
       researchBusy={researchBusy}
+      researchNotice={researchNotice}
     />
   );
 
@@ -1860,6 +1882,11 @@ export default function WriterWorkspace({ documentNavigation, articleSwitcher, r
                     onUpdateProject={update}
                     onEditVisual={openVisual}
                     onSelection={() => {}}
+                    onReady={() => {
+                      const action = pendingEditorAction.current;
+                      pendingEditorAction.current = null;
+                      if (action && editor.current) action(editor.current);
+                    }}
                     onInlineAiRewrite={async (inst, range, signal, ctx) => {
                       const res = await gen.rewrite(range.text, inst, signal, ctx);
                       return res.data.text;
