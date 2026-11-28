@@ -51,6 +51,6 @@ export function unsupportedArticleClaims(text: string, original: string, evidenc
 }
 
 export function preservesExamples(before: string, after: string) {
-  const examples = before.match(/(?:^|\n)(?:```[^\n]*\n[\s\S]*?\n```|~~~[^\n]*\n[\s\S]*?\n~~~)|<keyword_matrix\b[^>]*>[\s\S]*?<\/keyword_matrix>/gi) || [];
+  const examples: string[] = before.match(/(?:^|\n)(?:```[^\n]*\n[\s\S]*?\n```|~~~[^\n]*\n[\s\S]*?\n~~~)|<keyword_matrix\b[^>]*>[\s\S]*?<\/keyword_matrix>/gi) || [];
   return examples.every((example) => after.includes(example.trim()));
 }
