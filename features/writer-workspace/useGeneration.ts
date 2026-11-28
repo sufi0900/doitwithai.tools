@@ -987,7 +987,7 @@ export function useGeneration(store: ReturnType<typeof useWorkspace>) {
     text: string,
     instruction: string,
     signal: AbortSignal,
-    context: { before?: string; after?: string } = {},
+    context: { before?: string; after?: string; chatHistory?: Array<{ question: string; answer: string }> } = {},
   ) => {
     // Lean payload: an inline edit only needs the selection, the instruction and
     // a little neighbouring text — not the whole brief, 8 source pages and outline
@@ -998,7 +998,7 @@ export function useGeneration(store: ReturnType<typeof useWorkspace>) {
     const res = await fetch("/api/writer-workspace/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      signal: AbortSignal.any([signal, AbortSignal.timeout(40000)]),
+      signal: AbortSignal.any([signal, AbortSignal.timeout(55000)]),
       body: JSON.stringify({
         operation: "rewrite",
         requestId,
@@ -1011,6 +1011,10 @@ export function useGeneration(store: ReturnType<typeof useWorkspace>) {
         ).slice(0, 800),
         selection: text,
         instruction,
+        chatHistory: context.chatHistory?.slice(-3).map(({ question, answer }) => ({
+          question: question.slice(0, 500),
+          answer: answer.slice(0, 900),
+        })),
         contextBefore: (context.before || "").slice(-1400),
         contextAfter: (context.after || "").slice(0, 1400),
       }),
@@ -1026,3 +1030,4 @@ export function useGeneration(store: ReturnType<typeof useWorkspace>) {
 
   return { busy, plan, draft, generateAll, stop, rewrite };
 }
+

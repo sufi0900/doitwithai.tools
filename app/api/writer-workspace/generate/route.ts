@@ -1,6 +1,7 @@
 import { createGenerationHandler } from "@/features/writer-workspace/generation.server";
 import {
   checkStudioRateLimit,
+  executeStudioGroundedSearch,
   getStudioGeminiClient,
   isStudioAiConfigured,
 } from "@/lib/studio/studio-llm-gateway.server";
@@ -11,4 +12,6 @@ export const POST = createGenerationHandler({
   generate: getStudioGeminiClient,
   configured: isStudioAiConfigured,
   limit: checkStudioRateLimit,
+  search: executeStudioGroundedSearch,
 });
+

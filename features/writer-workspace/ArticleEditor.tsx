@@ -46,7 +46,6 @@ import {
   Pencil,
   Copy,
   Unlink,
-  Zap,
 } from "lucide-react";
 import { SafeLink } from "@/features/readability/components/rich-text";
 import {
@@ -67,7 +66,7 @@ import {
   syncDocument,
   workspace,
 } from "./model";
-import { instantEdit, normalizeAiMarkdown } from "./instant-edits";
+import { normalizeAiMarkdown } from "./instant-edits";
 import type { ReadabilityHighlightToggles } from "./LeftStudioPanel";
 import type { Project, RichNode } from "./types";
 import styles from "./workspace.module.css";
@@ -219,7 +218,7 @@ type Props = {
     instruction: string,
     range: { from: number; to: number; text: string },
     signal: AbortSignal,
-    context?: { before: string; after: string },
+    context?: { before: string; after: string; chatHistory?: Array<{ question: string; answer: string }> },
   ) => Promise<string>;
   onTellAi?: (
     instruction: string,
@@ -237,11 +236,18 @@ type FloatingToolbarState = {
   maxWidth: number;
 };
 
-const QUICK_AI_CHIPS = [
+const EDIT_AI_CHIPS = [
   { label: "Rewrite", instruction: "Rewrite this passage clearly with sharper prose while keeping all facts intact." },
   { label: "Simplify", instruction: "Simplify complex phrasing and split dense sentences into plain English." },
   { label: "Add example", instruction: "Expand this point with one concrete, practical real-world example." },
+  { label: "Shorten", instruction: "Shorten this passage while preserving its facts and qualifications." },
+  { label: "Expand", instruction: "Expand the explanation with useful detail without inventing facts." },
+];
+
+const FORMAT_AI_CHIPS = [
   { label: "To bullets", instruction: "Convert this passage into crisp, scannable bullet points." },
+  { label: "To numbered steps", instruction: "Convert the passage into ordered steps if it describes a sequence. Preserve prerequisites and explain if a sequence would be misleading." },
+  { label: "To callout", instruction: "Turn the key message into a Markdown callout. Do not invent a quotation or attribution." },
   { label: "To table", instruction: "Turn these points into a compact, readable Markdown comparison table." },
 ];
 
@@ -264,6 +270,11 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
     const [notice, setNotice] = useState("");
     const [floating, setFloating] = useState<FloatingToolbarState | null>(null);
     const [aiPanelOpen, setAiPanelOpen] = useState(false);
+    const chatSelectionRef = useRef("");
+    const [chatOpen, setChatOpen] = useState(false);
+    const [chatTurns, setChatTurns] = useState<Array<{ question: string; answer: string }>>([]);
+    const chatOpenRef = useRef(false);
+    chatOpenRef.current = chatOpen;
     const [aiPrompt, setAiPrompt] = useState("");
     const [aiBusy, setAiBusy] = useState(false);
     const [aiError, setAiError] = useState("");
@@ -271,7 +282,6 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
       instruction: string;
       text: string;
       range: { from: number; to: number; text: string };
-      instant?: boolean;
     } | null>(null);
 
     const [linkPopoverOpen, setLinkPopoverOpen] = useState(false);
@@ -323,6 +333,8 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
       if (aiBusyRef.current && !force) return;
       aiAbortRef.current?.abort();
       setAiPanelOpen(false);
+      setChatOpen(false);
+      setChatTurns([]);
       setAiPrompt("");
       setAiBusy(false);
       setAiError("");
@@ -1034,7 +1046,7 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
       },
       onSelectionUpdate: ({ editor: ed }) => {
         // Lock active Ask AI processing or result card against accidental editor clicks
-        if (aiBusyRef.current || aiProposalRef.current) {
+        if (aiBusyRef.current || aiProposalRef.current || chatOpenRef.current) {
           return;
         }
 
@@ -1144,7 +1156,7 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
           return;
         }
         // Keep Ask AI locked while processing or displaying a proposal, even on clicks outside
-        if (aiBusyRef.current || aiProposalRef.current) {
+        if (aiBusyRef.current || aiProposalRef.current || chatOpenRef.current) {
           return;
         }
         if (target && surfaceRef.current && !surfaceRef.current.contains(target)) {
@@ -1462,7 +1474,7 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
     );
 
     const sliceToMarkdown = (from: number, to: number): string => {
-      if (!editor) return "";
+      if (!editor || from < 0 || to > editor.state.doc.content.size) return "";
       try {
         const sliced = editor.state.doc.slice(from, to).content.toJSON() as RichNode[];
         const md = nodeMarkdown({ type: "doc", content: sliced }).trim();
@@ -1478,21 +1490,12 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
       target: FloatingToolbarState,
     ) => {
       if (!instruction.trim()) return;
-      const selectionMd = sliceToMarkdown(target.from, target.to) || target.text;
-      const scripted = instantEdit(instruction, selectionMd);
-      if (scripted) {
-        aiAbortRef.current?.abort();
-        setAiPanelOpen(true);
-        setAiBusy(false);
-        setAiError("");
-        setAiProposal({
-          instruction,
-          text: scripted,
-          range: { from: target.from, to: target.to, text: target.text },
-          instant: true,
-        });
+      if (!editor || target.to > editor.state.doc.content.size) {
+        setAiError("The selected passage changed. Close Ask AI and select the text again.");
         return;
       }
+      const sourceDocument = editor.state.doc;
+      const selectionMd = chatOpen ? chatSelectionRef.current : sliceToMarkdown(target.from, target.to) || target.text;
       if (!latest.current.onInlineAiRewrite) {
         latest.current.onTellAi?.(
           instruction,
@@ -1520,14 +1523,26 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
           instruction,
           { from: target.from, to: target.to, text: selectionMd },
           ctrl.signal,
-          { before: contextBefore, after: contextAfter },
+          {
+            before: contextBefore,
+            after: contextAfter,
+            ...(chatOpen ? { chatHistory: chatTurns.slice(-3) } : {}),
+          },
         );
         if (ctrl.signal.aborted) return;
+        if (!chatOpen && editor.state.doc !== sourceDocument) {
+          setAiError("The article changed while Ask AI was working. Select the passage again.");
+          return;
+        }
+        if (chatOpen) {
+          setChatTurns((turns) => [...turns, { question: instruction, answer: resultText }]);
+          setAiPrompt("");
+          return;
+        }
         setAiProposal({
           instruction,
           text: normalizeAiMarkdown(resultText),
-          range: { from: target.from, to: target.to, text: target.text },
-          instant: false,
+          range: { from: target.from, to: target.to, text: selectionMd },
         });
       } catch (err) {
         if (ctrl.signal.aborted) return;
@@ -1972,14 +1987,14 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
             ref={floatingRef}
             className={styles.floatingAnchorBox}
             style={{
-              left: floating.x,
-              top: floating.y,
-              maxWidth: floating.maxWidth,
+              ...(chatOpen
+                ? { position: "fixed", inset: "auto 16px 16px auto", width: 420, maxWidth: "calc(100vw - 32px)", zIndex: 100 }
+                : { left: floating.x, top: floating.y, maxWidth: floating.maxWidth }),
             }}
             role="toolbar"
             aria-label="Selection formatting and AI toolbar"
           >
-            <div className={styles.floatingMainRow}>
+            <div className={styles.floatingMainRow} style={chatOpen ? { display: "none" } : undefined}>
               <button
                 type="button"
                 className={`${styles.floatingAiBtn} ${aiPanelOpen ? styles.floatingAiBtnActive : ""}`}
@@ -1995,28 +2010,6 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
 
               <span className={styles.floatingDivider} />
 
-              <button
-                type="button"
-                title="Convert selected text or sentence to H2"
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => {
-                  applyBlockStyle("2", floating);
-                  setFloating(null);
-                }}
-              >
-                H2
-              </button>
-              <button
-                type="button"
-                title="Convert selected text or sentence to H3"
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => {
-                  applyBlockStyle("3", floating);
-                  setFloating(null);
-                }}
-              >
-                H3
-              </button>
               <button
                 type="button"
                 title="Bold"
@@ -2165,7 +2158,8 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
                     type="text"
                     value={aiPrompt}
                     onChange={(e) => setAiPrompt(e.target.value)}
-                    placeholder="Ask AI how to edit…"
+                    placeholder={chatOpen ? "Ask a question or follow up…" : "Describe an edit or ask for web research…"}
+                    maxLength={2000}
                     autoFocus
                   />
                   {aiBusy ? (
@@ -2199,25 +2193,50 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
                   )}
                 </form>
 
-                {!aiProposal && !aiBusy && (
-                  <div className={styles.floatingQuickChips}>
-                    {QUICK_AI_CHIPS.map((chip) => (
-                      <button
-                        key={chip.label}
-                        type="button"
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => void runInlineAi(chip.instruction, floating)}
-                      >
-                        {chip.label}
-                      </button>
+                {chatOpen ? (
+                  <div aria-label="Selected passage conversation" style={{ maxHeight: "42vh", overflowY: "auto" }} aria-live="polite">
+                    <strong>Chat about this passage</strong>
+                    <p>{floating.text.slice(0, 240)}{floating.text.length > 240 ? "…" : ""}</p>
+                    {chatTurns.map((turn, index) => (
+                      <div key={index}>
+                        <strong>{turn.question}</strong>
+                        <RichPreview md={turn.answer} />
+                      </div>
                     ))}
                   </div>
+                ) : !aiBusy && (
+                  <button type="button" onClick={() => {
+                    setAiProposal(null);
+                    setAiError("");
+                    chatSelectionRef.current = sliceToMarkdown(floating.from, floating.to) || floating.text;
+                    setChatOpen(true);
+                  }}>
+                    Open passage chat
+                  </button>
                 )}
+
+                {!chatOpen && !aiProposal && !aiBusy && [
+                  { title: "Edit text", chips: EDIT_AI_CHIPS },
+                  { title: "Convert format", chips: FORMAT_AI_CHIPS },
+                ].map(({ title, chips }) => (
+                  <div key={title}>
+                    <strong>{title}</strong>
+                    <div className={styles.floatingQuickChips}>
+                      {chips.map((chip) => (
+                        <button key={chip.label} type="button"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => void runInlineAi(chip.instruction, floating)}>
+                          {chip.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
 
                 {aiBusy && (
                   <div className={styles.floatingStatusLine}>
                     <Loader2 size={13} className={styles.spinIcon} />
-                    <span>Rewriting selected passage in place…</span>
+                    <span>Working on the selected passage…</span>
                   </div>
                 )}
 
@@ -2232,11 +2251,6 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
 
                 {aiProposal && (
                   <div className={styles.floatingProposalBox}>
-                    {aiProposal.instant && (
-                      <span className={styles.floatingInstantBadge}>
-                        <Zap size={11} /> Instant format
-                      </span>
-                    )}
                     <div className={styles.floatingProposalPreview}>
                       <RichPreview md={aiProposal.text} />
                     </div>
@@ -2246,6 +2260,10 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
                         className={styles.primary}
                         onClick={() => {
                           if (!editor) return;
+                          if (sliceToMarkdown(aiProposal.range.from, aiProposal.range.to) !== aiProposal.range.text) {
+                            setAiError("The selected passage changed. Select it again before applying an edit.");
+                            return;
+                          }
                           editor
                             .chain()
                             .focus()
@@ -2266,6 +2284,10 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
                         type="button"
                         onClick={() => {
                           if (!editor) return;
+                          if (sliceToMarkdown(aiProposal.range.from, aiProposal.range.to) !== aiProposal.range.text) {
+                            setAiError("The selected passage changed. Select it again before applying an edit.");
+                            return;
+                          }
                           const $to = editor.state.doc.resolve(aiProposal.range.to);
                           const insertAt =
                             $to.depth >= 1 ? $to.after(1) : aiProposal.range.to;
@@ -2454,3 +2476,4 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
 );
 
 export default ArticleEditor;
+
