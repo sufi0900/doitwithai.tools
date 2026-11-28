@@ -3,6 +3,7 @@
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import {
   Bookmark,
+  ChevronDown,
   Clock,
   LayoutGrid,
   List,
@@ -37,7 +38,13 @@ function readHashView(): WorkspaceView | null {
   return null;
 }
 
-export default function ToolCatalog({ category }: { category?: string }) {
+export default function ToolCatalog({
+  category,
+  faqs,
+}: {
+  category?: string;
+  faqs?: ReadonlyArray<readonly [string, string]>;
+}) {
   const workspace = useWorkspace();
   const setWorkspaceView = workspace?.setView;
   const [localView, setLocalView] = useState<WorkspaceView>("all");
@@ -53,16 +60,24 @@ export default function ToolCatalog({ category }: { category?: string }) {
 
   const updateView = (next: WorkspaceView) => {
     setLocalView(next);
-    updateTopic("");
+    setLocalTopic("");
+    workspace?.setActiveTopic("");
     workspace?.selectView(next);
     if (typeof window !== "undefined") {
       window.history.replaceState(null, "", `#view=${next}`);
     }
   };
 
-  const updateTopic = (next: string) => {
-    setLocalTopic(next);
-    workspace?.setActiveTopic(next);
+  const selectDiscipline = (nextTopic: string) => {
+    setLocalTopic(nextTopic);
+    workspace?.setActiveTopic(nextTopic);
+    if (view !== "all") {
+      setLocalView("all");
+      workspace?.selectView("all");
+      if (typeof window !== "undefined") {
+        window.history.replaceState(null, "", "#view=all");
+      }
+    }
   };
 
   useEffect(() => {
@@ -75,7 +90,9 @@ export default function ToolCatalog({ category }: { category?: string }) {
       const detail = (event as CustomEvent<{ view?: WorkspaceView }>).detail;
       if (detail?.view) {
         setLocalView(detail.view);
-        setQuery("");
+        if (detail.view !== "all") {
+          setQuery("");
+        }
         setSelected(category || "all");
       }
     };
@@ -128,14 +145,13 @@ export default function ToolCatalog({ category }: { category?: string }) {
 
   const resetAllFilters = () => {
     setQuery("");
-    updateTopic("");
     updateView("all");
     setSelected(category || "all");
   };
 
   const activeTopicMeta = topic ? getTopicMeta(topic) : null;
   const showFeaturedRow =
-    !topic && !query.trim() && view === "all" && !category;
+    layout === "grid" && !topic && !query.trim() && view === "all" && !category;
 
   return (
     <section
@@ -159,8 +175,8 @@ export default function ToolCatalog({ category }: { category?: string }) {
           </p>
         )}
 
-      {/* Mobile-only Workspace View Tabs (hidden on desktop where ToolsShell sidebar handles All/Saved/Recent) */}
-      <div className="mb-3 flex flex-wrap items-center gap-2 lg:hidden">
+      {/* Mobile & Compact Desktop Workspace View Tabs (hidden >=1400px where ToolsShell sidebar handles All/Saved/Recent) */}
+      <div className="mb-3 flex flex-wrap items-center gap-2 min-[1400px]:hidden">
         {(
           [
             ["all", "All tools", tools.length, LayoutGrid],
@@ -295,27 +311,27 @@ export default function ToolCatalog({ category }: { category?: string }) {
         >
           <button
             type="button"
-            aria-pressed={!topic}
-            onClick={() => updateTopic("")}
-            className={`workspace-topic-chip shrink-0 rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${
-              !topic
+            aria-pressed={!topic && view === "all"}
+            onClick={() => selectDiscipline("")}
+            className={`shrink-0 rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${
+              !topic && view === "all"
                 ? "border-[#5271FF] bg-[#5271FF] text-white"
                 : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:text-white"
             }`}
           >
-            All
+            All tools
           </button>
 
           {topics.map((item) => {
             const meta = getTopicMeta(item.id, item.name);
-            const isSelected = topic === item.id;
+            const isSelected = topic === item.id && view === "all";
             return (
               <button
                 key={item.id}
                 type="button"
                 aria-pressed={isSelected}
-                onClick={() => updateTopic(isSelected ? "" : item.id)}
-                className={`workspace-topic-chip shrink-0 rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${
+                onClick={() => selectDiscipline(isSelected ? "" : item.id)}
+                className={`shrink-0 rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${
                   isSelected
                     ? "border-[#5271FF] bg-[#5271FF] text-white"
                     : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:text-white"
@@ -328,7 +344,7 @@ export default function ToolCatalog({ category }: { category?: string }) {
         </div>
       </div>
 
-      {/* Featured Tools Row (only on default All view with empty search) */}
+      {/* Featured Tools Row (only on default Grid All view with empty search) */}
       {showFeaturedRow && featuredTools.length > 0 && (
         <div className="mt-6" aria-labelledby="featured-tools-heading">
           <div className="mb-3 flex items-center justify-between gap-2 px-0.5">
@@ -380,28 +396,33 @@ export default function ToolCatalog({ category }: { category?: string }) {
             className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-[#4A6CF7] transition hover:border-[#5271FF]/50 hover:bg-[#5271FF]/5 dark:border-slate-700 dark:bg-slate-800 dark:text-[#AEBBFF]"
           >
             <RotateCcw size={12} />
-            Reset filters
+            {view !== "all" ? `Browse all ${tools.length} tools` : "Reset filters"}
           </button>
         )}
       </div>
 
-      {/* Tool Cards Grid / List */}
-      <div
-        className={
-          layout === "grid"
-            ? "grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-            : "grid gap-2.5"
-        }
-      >
-        {results.map((tool) => (
-          <ToolCard
-            key={tool.id}
-            tool={tool}
-            workspace
-            list={layout === "list"}
-          />
+      {/* Tool Cards Grid / Unified Directory List */}
+      {results.length > 0 &&
+        (layout === "grid" ? (
+          <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {results.map((tool) => (
+              <ToolCard key={tool.id} tool={tool} workspace />
+            ))}
+          </div>
+        ) : (
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+            <div className="hidden grid-cols-[minmax(0,1fr)_160px_100px] items-center gap-4 border-b border-slate-200 bg-slate-50/90 px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:border-slate-800 dark:bg-slate-950/50 dark:text-slate-400 sm:grid">
+              <span>Tool</span>
+              <span>Discipline</span>
+              <span className="text-right">Action</span>
+            </div>
+            <div className="divide-y divide-slate-100 dark:divide-slate-800">
+              {results.map((tool) => (
+                <ToolCard key={tool.id} tool={tool} workspace list />
+              ))}
+            </div>
+          </div>
         ))}
-      </div>
 
       {/* Empty State */}
       {!results.length && (
@@ -429,6 +450,33 @@ export default function ToolCatalog({ category }: { category?: string }) {
             {view !== "all" ? "Browse all tools" : "Reset filters"}
           </button>
         </div>
+      )}
+
+      {/* Single Collapsed FAQ Line (rendered only in All view) */}
+      {view === "all" && faqs && faqs.length > 0 && (
+        <details className="group mt-8 rounded-xl border border-slate-200/90 bg-white px-4 py-3 text-xs dark:border-slate-800 dark:bg-slate-900/70">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-2 font-semibold text-slate-600 transition hover:text-slate-900 dark:text-slate-300 dark:hover:text-white [&::-webkit-details-marker]:hidden">
+            <span>
+              Frequently asked questions about these SEO &amp; content tools
+            </span>
+            <ChevronDown
+              size={14}
+              className="shrink-0 opacity-70 transition group-open:rotate-180"
+            />
+          </summary>
+          <div className="mt-3 grid gap-4 border-t border-slate-100 pt-3 dark:border-slate-800 sm:grid-cols-2">
+            {faqs.map(([question, answer]) => (
+              <div key={question}>
+                <h3 className="font-semibold text-slate-900 dark:text-slate-100">
+                  {question}
+                </h3>
+                <p className="mt-1 leading-5 text-slate-600 dark:text-slate-400">
+                  {answer}
+                </p>
+              </div>
+            ))}
+          </div>
+        </details>
       )}
 
       <noscript>

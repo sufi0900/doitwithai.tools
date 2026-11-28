@@ -26,17 +26,17 @@ export default function ToolCard({
     return (
       <article
         data-tool-slug={tool.slug}
-        className={`${workspace ? "workspace-topic-card" : ""} group relative flex min-w-0 flex-col justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3.5 transition hover:border-slate-300 hover:shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700 sm:flex-row sm:items-center`}
+        className={`${workspace ? "workspace-topic-card" : ""} group relative grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-2.5 transition hover:bg-slate-50/90 dark:hover:bg-slate-800/40 sm:grid-cols-[minmax(0,1fr)_160px_100px] sm:gap-4`}
       >
-        <div className="flex min-w-0 flex-1 items-start gap-3">
+        <div className="flex min-w-0 items-center gap-3">
           <div
             data-topic-icon
-            className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-slate-200/80 bg-slate-50 dark:border-slate-700/80 dark:bg-slate-800/80"
+            className="grid h-7 w-7 shrink-0 place-items-center rounded-md border border-slate-200/80 bg-slate-50 dark:border-slate-700/80 dark:bg-slate-800/80"
           >
-            <PlatformBrandIcon slug={tool.slug} size={20} />
+            <PlatformBrandIcon slug={tool.slug} size={17} />
           </div>
           <div className="min-w-0 flex-1">
-            <Heading className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+            <Heading className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
               <Link
                 prefetch={false}
                 href={toolPath(tool.slug)}
@@ -45,32 +45,30 @@ export default function ToolCard({
                 {tool.name}
               </Link>
             </Heading>
-            <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-600 dark:text-slate-400">
+            <p className="truncate text-xs text-slate-500 dark:text-slate-400">
               {tool.description}
             </p>
           </div>
         </div>
-        <div className="flex shrink-0 items-center justify-between gap-4 sm:justify-end">
-          <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-            {disciplineLabel}
+        <span className="hidden truncate text-xs font-medium text-slate-500 dark:text-slate-400 sm:block">
+          {disciplineLabel}
+        </span>
+        <div className="flex shrink-0 items-center justify-end gap-2">
+          {workspace && (
+            <div className="relative z-10 shrink-0">
+              <ToolActions id={tool.id} compact />
+            </div>
+          )}
+          <span
+            data-open-tool
+            className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 transition group-hover:text-[#4A6CF7] dark:text-slate-400 dark:group-hover:text-[#93B4FF]"
+          >
+            Open
+            <ArrowRight
+              aria-hidden
+              className="h-3.5 w-3.5 transition group-hover:translate-x-0.5 motion-reduce:transform-none"
+            />
           </span>
-          <div className="flex items-center gap-2">
-            {workspace && (
-              <div className="relative z-10 shrink-0">
-                <ToolActions id={tool.id} compact />
-              </div>
-            )}
-            <span
-              data-open-tool
-              className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 transition group-hover:text-[#4A6CF7] dark:text-slate-400 dark:group-hover:text-[#93B4FF]"
-            >
-              Open
-              <ArrowRight
-                aria-hidden
-                className="h-3.5 w-3.5 transition group-hover:translate-x-0.5 motion-reduce:transform-none"
-              />
-            </span>
-          </div>
         </div>
       </article>
     );
