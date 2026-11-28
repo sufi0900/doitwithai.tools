@@ -368,3 +368,19 @@
 .drawer[data-embedded="true"] .header p { display: none; }
 .drawer[data-embedded="true"] .composer { padding-block: 8px; }
 .drawer[data-embedded="true"] .transcript { scrollbar-gutter: stable; }
+.drawer[data-embedded="true"] .history { flex-wrap: wrap; }
+.drawer[data-embedded="true"] .history button {
+  min-width: 0;
+  white-space: normal;
+  text-align: start;
+}
+.drawer[data-embedded="true"] .history select {
+  flex: 1 1 128px;
+  width: 0;
+  max-width: 100%;
+}
+.drawer[data-embedded="true"][data-expanded="true"] .history select {
+  flex: 0 1 36rem;
+  width: auto;
+  min-width: min(128px, 100%);
+}

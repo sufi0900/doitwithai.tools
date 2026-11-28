@@ -152,7 +152,7 @@ export default function WriterWorkspace({ documentNavigation, articleSwitcher, r
     [targetGrade, setTargetGrade] = useState(10),
     [studioUnlocked, setStudioUnlocked] = useState(Boolean(w.studioUnlocked)),
     [standaloneDark, setStandaloneDark] = useState(true),
-    [focus, setFocus] = useState(false),
+    [focusRequested, setFocus] = useState(false),
     [exportBusy, setExportBusy] = useState(""),
     [message, setMessage] = useState(""),
     [sourceUrl, setSourceUrl] = useState(""),
@@ -257,6 +257,7 @@ export default function WriterWorkspace({ documentNavigation, articleSwitcher, r
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const focus = focusRequested && workspaceMode === "editor";
   const [assistant, setAssistant] = useState<AssistantLaunch | null>(null);
   const [assistantExpanded, setAssistantExpanded] = useState(false);
   const [inspectorTab, setInspectorTab] = useState<InspectorTab>("score");
@@ -304,7 +305,7 @@ export default function WriterWorkspace({ documentNavigation, articleSwitcher, r
 
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
-      if (e.key === "\\" && (e.metaKey || e.ctrlKey) && !e.repeat && !gen.busy && studioUnlocked) {
+      if (e.key === "\\" && (e.metaKey || e.ctrlKey) && !e.repeat && !gen.busy && studioUnlocked && workspaceMode === "editor") {
         e.preventDefault();
         setAssistantExpanded(false);
         setFocus((previous) => !previous);
@@ -320,7 +321,7 @@ export default function WriterWorkspace({ documentNavigation, articleSwitcher, r
     return () => {
       window.removeEventListener("keydown", key);
     };
-  }, [gen.busy, studioUnlocked]);
+  }, [gen.busy, studioUnlocked, workspaceMode]);
 
   const studioActionsRef = useRef({ gen, store, current });
   studioActionsRef.current = { gen, store, current };
@@ -981,6 +982,7 @@ export default function WriterWorkspace({ documentNavigation, articleSwitcher, r
     setFocus((previous) => !previous);
   };
   const switchMode = (mode: typeof workspaceMode) => {
+    if (mode !== "editor") setFocus(false);
     setAssistantExpanded(false);
     setWorkspaceMode(mode);
     document.querySelector("[data-studio-scroll]")?.scrollTo({ top: 0 });
@@ -1045,13 +1047,13 @@ export default function WriterWorkspace({ documentNavigation, articleSwitcher, r
       <button type="button" className={styles.publishingAction} title="Publishing kit" aria-label="Publishing kit" onClick={openPublishingKit}>
         <Download size={15} /><span>Publishing Kit</span>
       </button>
-      <button type="button" className={styles.focusAction} aria-label="Focus mode" title="Focus mode (Ctrl/⌘ + \)" aria-pressed={focus}
-        onClick={toggleFocus}><Focus size={16} /></button>
+      {workspaceMode === "editor" && <button type="button" className={styles.focusAction} aria-label="Focus mode" title="Focus mode (Ctrl/⌘ + \)" aria-pressed={focus}
+        onClick={toggleFocus}><Focus size={16} /></button>}
       <WriterMenu label={<><MoreHorizontal size={17} /><span className={styles.srOnly}>More article actions</span></>}>
         <div className={styles.mobileArticleActions}>
           <label>Project name<input value={p.projectTitle} maxLength={180} onChange={(event) => field("projectTitle", event.target.value)} /></label>
           <button type="button" onClick={openPublishingKit}><Download size={14} /> Publishing Kit</button>
-          <button type="button" onClick={toggleFocus}><Focus size={14} /> {focus ? "Exit focus mode" : "Focus mode"}</button>
+          {workspaceMode === "editor" && <button type="button" onClick={toggleFocus}><Focus size={14} /> {focus ? "Exit focus mode" : "Focus mode"}</button>}
           {backupActions}
         </div>
         {repurposeActions && <div className={styles.menuSection}><small>Repurpose</small>{repurposeActions}</div>}
@@ -1177,7 +1179,7 @@ export default function WriterWorkspace({ documentNavigation, articleSwitcher, r
 
   return (
     <div
-      className={`${writerShellClass} ${focus ? styles.focusMode : ""}`}
+      className={`${writerShellClass} ${focus && !isStudioEmbedded ? styles.focusMode : ""}`}
       data-writer-document={isStudioEmbedded && isEditing ? "true" : undefined}
       data-writer-focus={isStudioEmbedded && focus && isEditing ? "true" : undefined}
       style={
@@ -1319,14 +1321,14 @@ export default function WriterWorkspace({ documentNavigation, articleSwitcher, r
           </div>
           {!showOnboardingHero && !gen.busy ? (
             <>
-              <button
+              {workspaceMode === "editor" && <button
                 type="button"
                 aria-pressed={focus}
-                onClick={() => setFocus(!focus)}
+                onClick={toggleFocus}
               >
                 <Focus size={15} />
                 <span>{focus ? "Exit focus" : "Focus"}</span>
-              </button>
+              </button>}
               <a
                 href="#writer-assets"
                 className={styles.primary}
@@ -1607,7 +1609,7 @@ export default function WriterWorkspace({ documentNavigation, articleSwitcher, r
                     type="button"
                     role="tab"
                     aria-selected={workspaceMode === "editor"}
-                    onClick={() => setWorkspaceMode("editor")}
+                    onClick={() => switchMode("editor")}
                   >
                     Article Editor
                   </button>
@@ -1615,7 +1617,7 @@ export default function WriterWorkspace({ documentNavigation, articleSwitcher, r
                     type="button"
                     role="tab"
                     aria-selected={workspaceMode === "meta"}
-                    onClick={() => setWorkspaceMode("meta")}
+                    onClick={() => switchMode("meta")}
                   >
                     Meta &amp; SERP
                   </button>
@@ -1623,7 +1625,7 @@ export default function WriterWorkspace({ documentNavigation, articleSwitcher, r
                     type="button"
                     role="tab"
                     aria-selected={workspaceMode === "visuals"}
-                    onClick={() => setWorkspaceMode("visuals")}
+                    onClick={() => switchMode("visuals")}
                   >
                     Banner &amp; Visuals ({p.sections.length})
                   </button>
@@ -1631,7 +1633,7 @@ export default function WriterWorkspace({ documentNavigation, articleSwitcher, r
                     type="button"
                     role="tab"
                     aria-selected={workspaceMode === "faqs"}
-                    onClick={() => setWorkspaceMode("faqs")}
+                    onClick={() => switchMode("faqs")}
                   >
                     FAQs &amp; Quiz ({p.faqs.length})
                   </button>
@@ -1791,21 +1793,19 @@ export default function WriterWorkspace({ documentNavigation, articleSwitcher, r
                       )
                     }
                   />
-                  {!focus && (
-                    <AssetDeck
-                      key={p.projectId}
-                      project={p}
-                      onChange={update}
-                      onEditVisual={openVisual}
-                      onInsertVisual={(sid) => {
-                        setWorkspaceMode("editor");
-                        requestAnimationFrame(() => {
-                          editor.current?.insertVisual(sid);
-                          editor.current?.section(sid);
-                        });
-                      }}
-                    />
-                  )}
+                  <AssetDeck
+                    key={p.projectId}
+                    project={p}
+                    onChange={update}
+                    onEditVisual={openVisual}
+                    onInsertVisual={(sid) => {
+                      setWorkspaceMode("editor");
+                      requestAnimationFrame(() => {
+                        editor.current?.insertVisual(sid);
+                        editor.current?.section(sid);
+                      });
+                    }}
+                  />
                 </>
               )}
 

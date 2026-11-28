@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useId, useMemo, useState } from "react";
 import {
   AlertTriangle,
   ArrowDown,
@@ -106,6 +106,7 @@ export function ContentScorePanel({
     (filter === "all" || (filter === "missing" ? term.actual < term.min : term.status === "optimal")),
   ) : scorecard.terms;
 
+  const gaugeGradientId = useId();
   const score = Math.max(0, Math.min(100, scorecard.overallScore));
   const arcLen = Math.PI * 82; // ~257.6
   const dashOffset = arcLen * (1 - score / 100);
@@ -119,6 +120,46 @@ export function ContentScorePanel({
       : score >= 55
         ? styles.scoreToneMid
         : styles.scoreToneLow;
+
+  const gauge = (
+    <svg
+      viewBox="0 0 220 124"
+      className={styles.scoreGaugeSvg}
+      aria-hidden="true"
+    >
+      <defs>
+        <linearGradient id={gaugeGradientId} x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#ef4444" />
+          <stop offset="52%" stopColor="#f59e0b" />
+          <stop offset="100%" stopColor="#10b981" />
+        </linearGradient>
+      </defs>
+      <path
+        d="M 28 108 A 82 82 0 0 1 192 108"
+        fill="none"
+        stroke="currentColor"
+        className={styles.scoreGaugeTrack}
+        strokeWidth="12"
+        strokeLinecap="round"
+      />
+      <path
+        d="M 28 108 A 82 82 0 0 1 192 108"
+        fill="none"
+        stroke={`url(#${gaugeGradientId})`}
+        strokeWidth="12"
+        strokeLinecap="round"
+        strokeDasharray={arcLen}
+        strokeDashoffset={dashOffset}
+      />
+      <circle
+        cx={markerX}
+        cy={markerY}
+        r="6.5"
+        className={styles.scoreGaugeKnob}
+        strokeWidth="2.5"
+      />
+    </svg>
+  );
 
   const voice = (
     <div className={styles.scoreVoiceBox}>
@@ -163,7 +204,10 @@ export function ContentScorePanel({
       {inspectorView === "score" && <>
         <details className={styles.compactScore} open>
           <summary>
-            <strong className={scoreToneClass}>{score}<small>/100</small></strong>
+            <span className={styles.compactGauge}>
+              {gauge}
+              <strong className={scoreToneClass}>{score}<small>/100</small></strong>
+            </span>
             <span>Content score <small>Target {scorecard.targetBenchmark}+ · <ResearchModeLabel mode={scorecard.researchMode} /></small></span>
             <ChevronRight size={14} aria-hidden="true" />
           </summary>
@@ -221,44 +265,7 @@ export function ContentScorePanel({
 
       {/* Semi-Circular Speedometer Gauge */}
       <div className={styles.scoreGaugeWrap}>
-        <svg
-          viewBox="0 0 220 124"
-          className={styles.scoreGaugeSvg}
-          role="img"
-          aria-label={`Content score ${score} out of 100`}
-        >
-          <defs>
-            <linearGradient id="writerScoreGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#ef4444" />
-              <stop offset="52%" stopColor="#f59e0b" />
-              <stop offset="100%" stopColor="#10b981" />
-            </linearGradient>
-          </defs>
-          <path
-            d="M 28 108 A 82 82 0 0 1 192 108"
-            fill="none"
-            stroke="currentColor"
-            className={styles.scoreGaugeTrack}
-            strokeWidth="12"
-            strokeLinecap="round"
-          />
-          <path
-            d="M 28 108 A 82 82 0 0 1 192 108"
-            fill="none"
-            stroke="url(#writerScoreGrad)"
-            strokeWidth="12"
-            strokeLinecap="round"
-            strokeDasharray={arcLen}
-            strokeDashoffset={dashOffset}
-          />
-          <circle
-            cx={markerX}
-            cy={markerY}
-            r="6.5"
-            className={styles.scoreGaugeKnob}
-            strokeWidth="2.5"
-          />
-        </svg>
+        {gauge}
         <div className={styles.scoreGaugeCenter}>
           <span className={styles.scoreBenchmarkChip}>
             Target {scorecard.targetBenchmark}+
