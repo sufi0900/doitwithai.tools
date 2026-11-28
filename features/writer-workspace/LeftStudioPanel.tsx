@@ -47,6 +47,7 @@ export type ReadabilityHighlightToggles = {
 export function LeftStudioPanel({
   project,
   activeTab,
+  embedded,
   highlightToggles,
   targetGrade,
   aiRevisionState,
@@ -69,6 +70,7 @@ export function LeftStudioPanel({
 }: {
   project: Project;
   activeTab: StudioLeftTab;
+  embedded?: boolean;
   highlightToggles: ReadabilityHighlightToggles;
   targetGrade: number;
   aiRevisionState: {
@@ -215,7 +217,8 @@ export function LeftStudioPanel({
       : 0;
 
   return (
-    <aside className={s.sidebar} aria-label="Editorial studio controls">
+    <aside className={s.sidebar} data-inspector-embedded={embedded || undefined} aria-label="Editorial studio controls">
+      {!embedded && <>
       <div className={s.leftHeaderBar}>
         <div className={s.leftScoreHeaderTop}>
           <div className={s.scoreBar}>
@@ -281,6 +284,8 @@ export function LeftStudioPanel({
           SEO &amp; Links
         </button>
       </div>
+
+      </>}
 
       {activeTab === "seo" && <details className={s.panelSection}>
         <summary>Insert a template block</summary>
@@ -366,9 +371,14 @@ export function LeftStudioPanel({
               <strong>{docAnalysis.fleschEase ?? "—"}</strong>
               <small>Avg {docAnalysis.averageSentenceWords} words/sentence</small>
             </div>
+            {embedded && <div className={s.readabilityMetricCard}>
+              <span>Clarity</span>
+              <strong>{readableSentencePct}%</strong>
+              <small>Sentences ≤25 words</small>
+            </div>}
           </div>
 
-          <div className={s.leftScoreProgressWrap}>
+          {!embedded && <div className={s.leftScoreProgressWrap}>
             <div className={s.leftScoreProgressLabels}>
               <span>Sentence Clarity Rate (&le;25w)</span>
               <strong>{readableSentencePct}%</strong>
@@ -384,6 +394,8 @@ export function LeftStudioPanel({
               />
             </div>
           </div>
+
+          }
 
           <div>
             <label className={s.label} htmlFor="readability-target-grade">
@@ -408,6 +420,7 @@ export function LeftStudioPanel({
             <button
               type="button"
               className={`${s.highlightToggle} ${s.hlVeryHard} ${highlightToggles.veryHard ? s.hlActive : ""}`}
+              aria-pressed={highlightToggles.veryHard}
               onClick={() => onToggleHighlight("veryHard")}
             >
               <span className={s.hlCountBadge}>{countFlagged("veryHard")}</span>
@@ -416,6 +429,7 @@ export function LeftStudioPanel({
             <button
               type="button"
               className={`${s.highlightToggle} ${s.hlHard} ${highlightToggles.hard ? s.hlActive : ""}`}
+              aria-pressed={highlightToggles.hard}
               onClick={() => onToggleHighlight("hard")}
             >
               <span className={s.hlCountBadge}>{countFlagged("hard")}</span>
@@ -424,6 +438,7 @@ export function LeftStudioPanel({
             <button
               type="button"
               className={`${s.highlightToggle} ${s.hlPassive} ${highlightToggles.passive ? s.hlActive : ""}`}
+              aria-pressed={highlightToggles.passive}
               onClick={() => onToggleHighlight("passive")}
             >
               <span className={s.hlCountBadge}>{countFlagged("passive")}</span>
@@ -432,6 +447,7 @@ export function LeftStudioPanel({
             <button
               type="button"
               className={`${s.highlightToggle} ${s.hlSimpler} ${highlightToggles.simpler ? s.hlActive : ""}`}
+              aria-pressed={highlightToggles.simpler}
               onClick={() => onToggleHighlight("simpler")}
             >
               <span className={s.hlCountBadge}>

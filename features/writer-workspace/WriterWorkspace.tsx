@@ -7,6 +7,10 @@ import { useTheme } from "next-themes";
 import { createPortal } from "react-dom";
 import {
   CheckCircle2,
+  ChevronDown,
+  ClipboardCopy,
+  PanelRightOpen,
+  MoreHorizontal,
   Download,
   FileDown,
   FileText,
@@ -84,8 +88,10 @@ import { SearchAppearancePanel } from "./SearchAppearancePanel";
 import { FeaturedBannerArtwork } from "./FeaturedBannerArtwork";
 import { BriefSettingsModal } from "./BriefSettingsModal";
 import { ContentScorePanel } from "./ContentScorePanel";
-import { downloadArticle, saveBlob } from "./assets";
+import { downloadArticle, htmlArticle, saveBlob } from "./assets";
 import styles from "./workspace.module.css";
+import WriterMenu from "./WriterMenu";
+import WriterInspector, { WriterOutline, type InspectorTab } from "./WriterInspector";
 import assistantStyles from "./article-assistant.module.css";
 import { ArticleAssistant, type AssistantLaunch } from "./ArticleAssistant";
 import { articleDownloads, type AssistantReply, type Passage, type SavedProposal } from "./article-assistant";
@@ -108,7 +114,11 @@ function errorText(e: unknown) {
     : "Something went wrong. Please try again.";
 }
 
-export default function WriterWorkspace() {
+export default function WriterWorkspace({ documentNavigation, articleSwitcher, repurposeActions }: {
+  documentNavigation?: React.ReactNode;
+  articleSwitcher?: React.ReactNode;
+  repurposeActions?: React.ReactNode;
+} = {}) {
   const pathname = usePathname() || "";
   const isStudioEmbedded = pathname === "/studio" || pathname.startsWith("/studio/");
   const { resolvedTheme } = useTheme();
@@ -249,6 +259,17 @@ export default function WriterWorkspace() {
 
   const [assistant, setAssistant] = useState<AssistantLaunch | null>(null);
   const [assistantExpanded, setAssistantExpanded] = useState(false);
+  const [inspectorTab, setInspectorTab] = useState<InspectorTab>("score");
+  const [inspectorOpen, setInspectorOpen] = useState(false);
+  const [barSlots, setBarSlots] = useState<{ document: HTMLElement; modes: HTMLElement; actions: HTMLElement }>();
+  useEffect(() => {
+    if (!isStudioEmbedded) return;
+    const title = document.getElementById("studio-writer-document");
+    const modes = document.getElementById("studio-writer-modes");
+    const actions = document.getElementById("studio-writer-actions");
+    if (title && modes && actions) setBarSlots({ document: title, modes, actions });
+    setInspectorOpen(window.matchMedia("(min-width: 1024px)").matches);
+  }, [isStudioEmbedded]);
   const dialog = useRef<HTMLDivElement>(null);
   const editor = useRef<EditorHandle>(null),
     importInput = useRef<HTMLInputElement>(null),
@@ -258,6 +279,7 @@ export default function WriterWorkspace() {
     setVisualId(null);
     setAssistant(null);
     setAssistantExpanded(false);
+    setInspectorTab("score");
     setFocus(false);
     setBriefModalOpen(false);
     setWorkspaceMode("editor");
@@ -282,6 +304,11 @@ export default function WriterWorkspace() {
 
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
+      if (e.key === "\\" && (e.metaKey || e.ctrlKey) && !e.repeat && !gen.busy && studioUnlocked) {
+        e.preventDefault();
+        setAssistantExpanded(false);
+        setFocus((previous) => !previous);
+      }
       if (e.key === "Escape") {
         setVisualId(null);
         setBriefModalOpen(false);
@@ -293,7 +320,7 @@ export default function WriterWorkspace() {
     return () => {
       window.removeEventListener("keydown", key);
     };
-  }, []);
+  }, [gen.busy, studioUnlocked]);
 
   const studioActionsRef = useRef({ gen, store, current });
   studioActionsRef.current = { gen, store, current };
@@ -682,12 +709,30 @@ export default function WriterWorkspace() {
     }
   };
 
-  const closeAssistant = () => {
-    setAssistant(null);
+  const closeInspector = () => {
+    setInspectorOpen(false);
     setAssistantExpanded(false);
   };
 
+  const closeAssistant = () => {
+    setAssistant(null);
+    setAssistantExpanded(false);
+    if (isStudioEmbedded) closeInspector();
+  };
+
+  const openInspector = (tab: InspectorTab) => {
+    setInspectorTab(tab);
+    setInspectorOpen(true);
+    setFocus(false);
+    if (tab === "ai") setAssistant((session) => session || { id: id() });
+    else setAssistantExpanded(false);
+  };
+
   const openAssistant = (range?: { from: number; to: number; text: string }, prompt?: string) => {
+    if (isStudioEmbedded) {
+      openInspector("ai");
+      if (!range?.text.trim() && !prompt) return;
+    }
     setAssistantExpanded(false);
     setAssistant({ id: id(), prompt, ...(range?.text.trim() && range.to > range.from
       ? { passage: { ...range, revision: assistantRevision(current.current) } } : {}) });
@@ -762,7 +807,14 @@ export default function WriterWorkspace() {
   };
 
   const openEditorDestination = (target: "meta" | "faqs" | "visuals" | "score" | "readability" | "seo" | "headings", headingId?: string) => {
-    closeAssistant();
+    if (isStudioEmbedded) {
+      setAssistantExpanded(false);
+      if (target === "readability" || target === "seo" || target === "score") {
+        openInspector(target);
+        return;
+      }
+      closeInspector();
+    } else closeAssistant();
     setFocus(false);
     if (target === "meta" || target === "faqs" || target === "visuals") {
       setWorkspaceMode(target);
@@ -873,15 +925,268 @@ export default function WriterWorkspace() {
     }
   };
 
+  const isEditing = !showOnboardingHero && !gen.busy;
+  const dismissSheetForEditor = () => {
+    if (matchMedia("(max-width: 1023px)").matches) closeInspector();
+  };
+  const openBrief = () => {
+    dismissSheetForEditor();
+    setBriefModalOpen(true);
+  };
+  const navigateEditor = (action: (handle: EditorHandle) => void) => {
+    setWorkspaceMode("editor");
+    if (isStudioEmbedded) dismissSheetForEditor();
+    requestAnimationFrame(() => {
+      if (editor.current) action(editor.current);
+    });
+  };
+  const jumpToHeading = (index: number) => {
+    setWorkspaceMode("editor");
+    dismissSheetForEditor();
+    requestAnimationFrame(() => {
+      document.querySelectorAll("[data-writer-canvas] .tiptap :is(h1,h2,h3,h4,h5,h6)")[index]
+        ?.scrollIntoView({ block: "start", behavior: "smooth" });
+    });
+  };
+  const scorePanelProps = {
+    project: p,
+    collapsed: false,
+    onToggleCollapse: () => setRightScoreOpen((prev) => !prev),
+    onSelectTerm: (term: string) => navigateEditor((handle) => handle.highlightAndScrollToTerm(term)),
+    onSelectHeading: (sectionId: string, heading: string) => navigateEditor((handle) => {
+      if (sectionId) handle.section(sectionId);
+      else handle.scrollToHeading(heading);
+    }),
+    onJumpToHeading: jumpToHeading,
+    onRunResearch: () => void refreshResearchPacket(),
+    researchBusy,
+  };
+  const assistantPanel = assistant && <ArticleAssistant key={p.projectId} projectId={p.projectId} embedded={isStudioEmbedded}
+    title={p.metaPack.h1Title || p.projectTitle} launch={assistant} dark={darkStudio}
+    expanded={assistantExpanded} onExpand={() => setAssistantExpanded((expanded) => !expanded)}
+    onClose={closeAssistant} getContext={assistantContext} getDirectReply={directAssistantReply}
+    renderActions={assistantActions} applyProposal={applyAssistantProposal}
+  />;
+  const copyArticleHtml = async () => {
+    try {
+      const html = new DOMParser().parseFromString(htmlArticle(p), "text/html");
+      await navigator.clipboard.writeText(html.body.innerHTML);
+      setMessage("Article HTML copied.");
+    } catch (error) {
+      setMessage(errorText(error));
+    }
+  };
+  const toggleFocus = () => {
+    setAssistantExpanded(false);
+    setFocus((previous) => !previous);
+  };
+  const switchMode = (mode: typeof workspaceMode) => {
+    setAssistantExpanded(false);
+    setWorkspaceMode(mode);
+    document.querySelector("[data-studio-scroll]")?.scrollTo({ top: 0 });
+  };
+  const openPublishingKit = () => {
+    setFocus(false);
+    if (assistantExpanded) closeInspector();
+    setWorkspaceMode("visuals");
+    requestAnimationFrame(() => document.getElementById("writer-assets")?.scrollIntoView({ block: "start" }));
+  };
+  const modes = [
+    { id: "editor", label: "Editor" },
+    { id: "meta", label: "Meta & SERP" },
+    { id: "visuals", label: `Visuals (${p.sections.length})` },
+    { id: "faqs", label: `FAQs & Quiz (${p.faqs.length})` },
+  ] as const;
+  const backupActions = <>
+    <button type="button" onClick={() => importInput.current?.click()}><Upload size={14} /> Import backup</button>
+    <button type="button" onClick={() => saveBlob(store.backup(), `${p.metaPack.urlSlug || "article"}.blogproject.json`, "application/json")}>
+      <Download size={14} /> Download backup
+    </button>
+  </>;
+  const studioTopBar = barSlots && <>
+    {createPortal(<div className={styles.documentHeading}>
+      {documentNavigation}
+      <input className={styles.documentTitle} aria-label="Project name" title={p.projectTitle} value={p.projectTitle}
+        maxLength={180} onChange={(event) => field("projectTitle", event.target.value)} />
+      <span className={styles.documentSaved} role="status" title={store.saving ? "Saving…" : store.saved ? "Saved in this browser" : "Unsaved changes"}>
+        {store.saving ? <Loader2 size={13} className={styles.spinIcon} /> : store.saved ? <CheckCircle2 size={13} /> : null}
+        <span className={styles.srOnly}>{store.saving ? "Saving…" : store.saved ? "Saved in this browser" : "Unsaved changes"}</span>
+      </span>
+      <WriterMenu align="start" className={styles.articleSwitcher} label={<><ChevronDown size={15} /><span className={styles.srOnly}>Switch article</span></>}>
+        {articleSwitcher}
+        {backupActions}
+      </WriterMenu>
+    </div>, barSlots.document)}
+    {isEditing && createPortal(<>
+      <nav className={styles.studioModeTabs} aria-label="Workspace sections">
+        {modes.map((mode) => <button type="button" key={mode.id} aria-pressed={workspaceMode === mode.id}
+          onClick={() => switchMode(mode.id)}>{mode.label}</button>)}
+      </nav>
+      <select className={styles.studioModeSelect} aria-label="Workspace section" value={workspaceMode}
+        onChange={(event) => switchMode(event.target.value as typeof workspaceMode)}>
+        {modes.map((mode) => <option key={mode.id} value={mode.id}>{mode.label}</option>)}
+      </select>
+    </>, barSlots.modes)}
+    {isEditing && createPortal(<div className={styles.studioWriterActions}>
+      <button type="button" aria-label="Open inspector" title="Editorial inspector" aria-controls="writer-inspector"
+        aria-expanded={inspectorOpen && !focus} onClick={() => inspectorOpen && !focus ? closeInspector() : openInspector("score")}>
+        <PanelRightOpen size={16} />
+      </button>
+      <button type="button" aria-label="Article AI" title="Article AI" aria-controls="writer-inspector"
+        aria-pressed={inspectorOpen && inspectorTab === "ai" && !focus}
+        onClick={() => inspectorOpen && inspectorTab === "ai" && !focus ? closeInspector() : openAssistant()}>
+        <Sparkles size={16} /> <span>Article AI</span>
+      </button>
+      <WriterMenu label={<><FileDown size={15} /><span className={styles.actionText}>Export</span><ChevronDown size={12} /></>}>
+        {articleDownloads.map(({ id: format, label }) => <button key={format} type="button" disabled={!report.words || Boolean(exportBusy)}
+          onClick={() => void handleQuickExport(format)}><FileDown size={14} /> Download {label}</button>)}
+        <button type="button" disabled={!report.words} onClick={() => void copyArticleHtml()}><ClipboardCopy size={14} /> Copy Clean HTML</button>
+      </WriterMenu>
+      <button type="button" className={styles.publishingAction} title="Publishing kit" aria-label="Publishing kit" onClick={openPublishingKit}>
+        <Download size={15} /><span>Publishing Kit</span>
+      </button>
+      <button type="button" className={styles.focusAction} aria-label="Focus mode" title="Focus mode (Ctrl/⌘ + \)" aria-pressed={focus}
+        onClick={toggleFocus}><Focus size={16} /></button>
+      <WriterMenu label={<><MoreHorizontal size={17} /><span className={styles.srOnly}>More article actions</span></>}>
+        <div className={styles.mobileArticleActions}>
+          <label>Project name<input value={p.projectTitle} maxLength={180} onChange={(event) => field("projectTitle", event.target.value)} /></label>
+          <button type="button" onClick={openPublishingKit}><Download size={14} /> Publishing Kit</button>
+          <button type="button" onClick={toggleFocus}><Focus size={14} /> {focus ? "Exit focus mode" : "Focus mode"}</button>
+          {backupActions}
+        </div>
+        {repurposeActions && <div className={styles.menuSection}><small>Repurpose</small>{repurposeActions}</div>}
+      </WriterMenu>
+    </div>, barSlots.actions)}
+  </>;
+
+  const editorialTools = (
+    <LeftStudioPanel
+      project={p}
+      embedded={isStudioEmbedded}
+      activeTab={isStudioEmbedded && inspectorTab === "seo" ? "seo" : isStudioEmbedded ? "readability" : leftTab}
+      highlightToggles={highlightToggles}
+      targetGrade={targetGrade}
+      aiRevisionState={{ busy: false, original: "", proposed: "", scope: "article" }}
+      onChangeTab={setLeftTab}
+      onToggleHighlight={(k) => {
+        if (isStudioEmbedded) { setWorkspaceMode("editor"); dismissSheetForEditor(); }
+        setHighlightToggles((prev) => ({ ...prev, [k]: !prev[k] }));
+      }}
+      onChangeTargetGrade={setTargetGrade}
+      onOpenBriefModal={openBrief}
+      onRunAiHelper={(instruction, scope) => openAssistant(scope === "selection" ? editor.current?.selection() : undefined, instruction)}
+      onQuickReadabilityPolish={() => openAssistant(editor.current?.selection(),
+        "Improve readability. Remove filler and repetitive openings while preserving facts, Markdown links and headings.",
+      )}
+      onInsertLink={(anchor, url) => navigateEditor((handle) => handle.insertLink(anchor, url))}
+      onAutoWeaveInternalLinks={() => {
+        let count = 0;
+        update((now) => {
+          const res = autoWeaveContextualInternalLinks(now, 4);
+          count = res.linkedCount;
+          return res.project;
+        });
+        setMessage(
+          count > 0
+            ? `Wove ${count} verified internal link${count === 1 ? "" : "s"} into relevant body sections.`
+            : "All top internal links are already woven into your article.",
+        );
+      }}
+      onNormalizeFaqsPaa={() => {
+        let count = 0;
+        update((now) => {
+          const res = normalizeFaqPaaLengths(now);
+          count = res.normalizedCount;
+          return res.project;
+        });
+        setMessage(
+          count > 0
+            ? `Normalized ${count} FAQ item${count === 1 ? "" : "s"} into the 35–55 word Google PAA & voice-search extraction window.`
+            : "All FAQ answers are already within the optimal 35–55 word PAA window.",
+        );
+      }}
+      onInjectUncoveredQuestions={() => {
+        let count = 0;
+        update((now) => {
+          const res = injectUncoveredQuestionsIntoFaqs(now, 3);
+          count = res.addedCount;
+          return res.project;
+        });
+        setMessage(
+          count > 0
+            ? `Added ${count} uncovered research question${count === 1 ? "" : "s"} with 40–50w PAA answers to your FAQPage schema.`
+            : "All research questions are already covered in your article or FAQs.",
+        );
+      }}
+      onConvertH2sToQuestions={() => {
+        let count = 0;
+        update((now) => {
+          const res = convertStatementHeadingsToQuestions(now, 50);
+          count = res.convertedCount;
+          return res.project;
+        });
+        setMessage(
+          count > 0
+            ? `Converted ${count} statement H2 heading${count === 1 ? "" : "s"} into AEO question headings for higher AI citation eligibility.`
+            : "Your H2 headings already meet the 35%–75% AEO question-heading benchmark.",
+        );
+      }}
+      onApplyContentRefresh={() => {
+        let count = 0;
+        update((now) => {
+          const res = applyContentRefreshUpgrade(now);
+          count = res.changesApplied;
+          return res.project;
+        });
+        setMessage(
+          count > 0
+            ? `Applied ${count} content refresh & anti-decay upgrade${count === 1 ? "" : "s"} (2026 recency signals, decision matrix & editorial verification note).`
+            : "Your article already meets all 2026 content freshness and anti-decay benchmarks.",
+        );
+      }}
+      onWeaveSectionTakeaways={() => {
+        let count = 0;
+        update((now) => {
+          const res = weaveSectionTakeawayCallouts(now);
+          count = res.addedCount;
+          return res.project;
+        });
+        setMessage(
+          count > 0
+            ? `Wove ${count} Key Takeaway callout box${count === 1 ? "" : "es"} into sections missing summary callouts.`
+            : "Every H2 section already includes a Key Takeaway callout box.",
+        );
+      }}
+      onRunMasterAeoPolish={() => {
+        let count = 0;
+        update((now) => {
+          const res = runMasterAeoAndReadinessPolish(now);
+          count = res.totalUpgrades;
+          return res.project;
+        });
+        setMessage(
+          count > 0
+            ? `Master AEO Polish complete: applied ${count} deterministic optimization${count === 1 ? "" : "s"} across metadata, the direct answer, and visual descriptions. Review the edits before publishing.`
+            : "No automatic changes were needed. Review facts, accessibility, and search intent manually.",
+        );
+      }}
+      onRunResearch={() => void refreshResearchPacket()}
+      researchBusy={researchBusy}
+    />
+  );
+
   return (
     <div
       className={`${writerShellClass} ${focus ? styles.focusMode : ""}`}
+      data-writer-document={isStudioEmbedded && isEditing ? "true" : undefined}
+      data-writer-focus={isStudioEmbedded && focus && isEditing ? "true" : undefined}
       style={
         {
           "--writer-sticky-top": isStudioEmbedded ? "0px" : "80px",
         } as React.CSSProperties
       }
     >
+      {barSlots ? studioTopBar : (
       <header className={styles.workspaceHeader}>
         <div className={styles.projectTitle}>
           <span className={styles.appIcon}>
@@ -1037,6 +1342,7 @@ export default function WriterWorkspace() {
           ) : null}
         </div>
       </header>
+      )}
 
       <input
         ref={importInput}
@@ -1261,138 +1567,23 @@ export default function WriterWorkspace() {
 
           {/* ARTICLE-FIRST STUDIO WORKSPACE WITH COLLAPSIBLE TOOLS & RIGHT SCORE GAUGE */}
           <div
-            style={assistantExpanded ? { display: "none" } : undefined}
+            style={!isStudioEmbedded && assistantExpanded ? { display: "none" } : undefined}
+            data-inspector-open={isStudioEmbedded && inspectorOpen && !focus}
+            data-inspector-expanded={isStudioEmbedded && assistantExpanded && !focus}
             className={[
               styles.workspaceLayout,
-              !focus && leftOpen ? styles.workspaceHasLeft : "",
-              !focus && rightScoreOpen
-                ? styles.workspaceHasScoreExpanded
-                : !focus
-                  ? styles.workspaceHasScoreRail
-                  : "",
+              isStudioEmbedded ? styles.studioWriterGrid : "",
+              !isStudioEmbedded && !focus && leftOpen ? styles.workspaceHasLeft : "",
+              !isStudioEmbedded && !focus && (rightScoreOpen ? styles.workspaceHasScoreExpanded : styles.workspaceHasScoreRail),
             ]
               .filter(Boolean)
               .join(" ")}
           >
-            {!focus && leftOpen ? (
-              <LeftStudioPanel
-              project={p}
-              activeTab={leftTab}
-              highlightToggles={highlightToggles}
-              targetGrade={targetGrade}
-              aiRevisionState={{ busy: false, original: "", proposed: "", scope: "article" }}
-              onChangeTab={setLeftTab}
-              onToggleHighlight={(k) =>
-                setHighlightToggles((prev) => ({ ...prev, [k]: !prev[k] }))
-              }
-              onChangeTargetGrade={setTargetGrade}
-              onOpenBriefModal={() => setBriefModalOpen(true)}
-              onRunAiHelper={(instruction, scope) => openAssistant(scope === "selection" ? editor.current?.selection() : undefined, instruction)}
-              onQuickReadabilityPolish={() => openAssistant(editor.current?.selection(),
-                "Improve readability. Remove filler and repetitive openings while preserving facts, Markdown links and headings.",
-              )}
-              onInsertLink={(anchor, url) =>
-                editor.current?.insertLink(anchor, url)
-              }
-              onAutoWeaveInternalLinks={() => {
-                let count = 0;
-                update((now) => {
-                  const res = autoWeaveContextualInternalLinks(now, 4);
-                  count = res.linkedCount;
-                  return res.project;
-                });
-                setMessage(
-                  count > 0
-                    ? `Wove ${count} verified internal link${count === 1 ? "" : "s"} into relevant body sections.`
-                    : "All top internal links are already woven into your article.",
-                );
-              }}
-              onNormalizeFaqsPaa={() => {
-                let count = 0;
-                update((now) => {
-                  const res = normalizeFaqPaaLengths(now);
-                  count = res.normalizedCount;
-                  return res.project;
-                });
-                setMessage(
-                  count > 0
-                    ? `Normalized ${count} FAQ item${count === 1 ? "" : "s"} into the 35–55 word Google PAA & voice-search extraction window.`
-                    : "All FAQ answers are already within the optimal 35–55 word PAA window.",
-                );
-              }}
-              onInjectUncoveredQuestions={() => {
-                let count = 0;
-                update((now) => {
-                  const res = injectUncoveredQuestionsIntoFaqs(now, 3);
-                  count = res.addedCount;
-                  return res.project;
-                });
-                setMessage(
-                  count > 0
-                    ? `Added ${count} uncovered research question${count === 1 ? "" : "s"} with 40–50w PAA answers to your FAQPage schema.`
-                    : "All research questions are already covered in your article or FAQs.",
-                );
-              }}
-              onConvertH2sToQuestions={() => {
-                let count = 0;
-                update((now) => {
-                  const res = convertStatementHeadingsToQuestions(now, 50);
-                  count = res.convertedCount;
-                  return res.project;
-                });
-                setMessage(
-                  count > 0
-                    ? `Converted ${count} statement H2 heading${count === 1 ? "" : "s"} into AEO question headings for higher AI citation eligibility.`
-                    : "Your H2 headings already meet the 35%–75% AEO question-heading benchmark.",
-                );
-              }}
-              onApplyContentRefresh={() => {
-                let count = 0;
-                update((now) => {
-                  const res = applyContentRefreshUpgrade(now);
-                  count = res.changesApplied;
-                  return res.project;
-                });
-                setMessage(
-                  count > 0
-                    ? `Applied ${count} content refresh & anti-decay upgrade${count === 1 ? "" : "s"} (2026 recency signals, decision matrix & editorial verification note).`
-                    : "Your article already meets all 2026 content freshness and anti-decay benchmarks.",
-                );
-              }}
-              onWeaveSectionTakeaways={() => {
-                let count = 0;
-                update((now) => {
-                  const res = weaveSectionTakeawayCallouts(now);
-                  count = res.addedCount;
-                  return res.project;
-                });
-                setMessage(
-                  count > 0
-                    ? `Wove ${count} Key Takeaway callout box${count === 1 ? "" : "es"} into sections missing summary callouts.`
-                    : "Every H2 section already includes a Key Takeaway callout box.",
-                );
-              }}
-              onRunMasterAeoPolish={() => {
-                let count = 0;
-                update((now) => {
-                  const res = runMasterAeoAndReadinessPolish(now);
-                  count = res.totalUpgrades;
-                  return res.project;
-                });
-                setMessage(
-                  count > 0
-                    ? `Master AEO Polish complete: applied ${count} deterministic optimization${count === 1 ? "" : "s"} across metadata, the direct answer, and visual descriptions. Review the edits before publishing.`
-                    : "No automatic changes were needed. Review facts, accessibility, and search intent manually.",
-                );
-              }}
-              onRunResearch={() => void refreshResearchPacket()}
-              researchBusy={researchBusy}
-            />
-            ) : null}
+            {!isStudioEmbedded && !focus && leftOpen ? editorialTools : null}
 
-            <main className={styles.editorColumn} aria-label="Article workspace">
+            <main className={styles.editorColumn} aria-label="Article workspace" data-writer-canvas={isStudioEmbedded || undefined}>
               {/* Article-First Workspace Mode Switcher */}
-              <div className={styles.workspaceModeBar}>
+              {!isStudioEmbedded && (<div className={styles.workspaceModeBar}>
                 <button
                   type="button"
                   className={`${styles.workspaceSideToggle} ${leftOpen ? styles.workspaceSideToggleOn : ""}`}
@@ -1458,7 +1649,7 @@ export default function WriterWorkspace() {
                     <span>Score</span>
                   </button>
                 )}
-              </div>
+              </div>)}
 
               {workspaceMode === "meta" && (
                 <>
@@ -1495,7 +1686,7 @@ export default function WriterWorkspace() {
               ) : null}
 
               {/* PHASE 5: CONTENT ORGANIZER — CLICKABLE TOC & 50-WORD AEO DIRECT ANSWER */}
-              {workspaceMode === "editor" && p.sections.length > 0 ? (
+              {!isStudioEmbedded && workspaceMode === "editor" && p.sections.length > 0 ? (
                 <div className={styles.tocStrip} aria-label="Table of contents">
                   <span className={styles.tocLabel}>
                     <ListTree size={14} /> Jump to:
@@ -1621,7 +1812,7 @@ export default function WriterWorkspace() {
               {/* ZONE 3: RICH H1-H6 ARTICLE EDITOR WITH EMBEDDED READABILITY & INLINE ASK AI */}
               {workspaceMode === "editor" && (
                 <>
-                  <div className={styles.editorLabel}>
+                  {!isStudioEmbedded && (<div className={styles.editorLabel}>
                     <span>
                       <FileText size={15} />
                       Rich H1–H6 Article &amp; Inline Visual Editor
@@ -1651,13 +1842,16 @@ export default function WriterWorkspace() {
                         </div>
                       )}
                     </div>
-                  </div>
+                  </div>)}
 
                   <ArticleEditor
                     key={p.projectId}
                     ref={editor}
                     project={p}
-                    highlights={leftOpen && leftTab === "readability" && Object.values(highlightToggles).some(Boolean)}
+                    toolbarEnd={isStudioEmbedded && <span className={styles.toolbarCount}>
+                      {report.words.toLocaleString()} words <span>· {report.minutes} min</span>
+                    </span>}
+                    highlights={(isStudioEmbedded ? !focus && inspectorTab === "readability" : leftOpen && leftTab === "readability") && Object.values(highlightToggles).some(Boolean)}
                     highlightToggles={highlightToggles}
                     targetGrade={targetGrade}
                     onChange={(doc: RichNode) =>
@@ -1909,45 +2103,37 @@ export default function WriterWorkspace() {
               />
               )}
 
-              {workspaceMode === "editor" && (
+              {!isStudioEmbedded && workspaceMode === "editor" && (
               <p className={styles.editorFootnote}>
                 Highlight any passage for instant formatting or inline &ldquo;Ask AI&rdquo;, or click &ldquo;+&rdquo; on an empty line to insert an uploaded image.
               </p>
               )}
             </main>
 
-            {!focus && (
-              <ContentScorePanel
-                project={p}
-                collapsed={!rightScoreOpen}
-                onToggleCollapse={() => setRightScoreOpen((prev) => !prev)}
-                onSelectTerm={(term) => {
-                  setWorkspaceMode("editor");
-                  requestAnimationFrame(() => {
-                    editor.current?.highlightAndScrollToTerm(term);
-                  });
-                }}
-                onSelectHeading={(sid, headingText) => {
-                  setWorkspaceMode("editor");
-                  requestAnimationFrame(() => {
-                    if (sid) editor.current?.section(sid);
-                    else editor.current?.scrollToHeading(headingText);
-                  });
-                }}
-                onRunResearch={() => void refreshResearchPacket()}
-                researchBusy={researchBusy}
-              />
-            )}
+            {isStudioEmbedded ? (
+              <WriterInspector tab={inspectorTab} open={inspectorOpen && !focus} expanded={assistantExpanded}
+                onTab={openInspector} onClose={closeInspector} assistant={assistantPanel}>
+                {inspectorTab === "score" && <ContentScorePanel {...scorePanelProps} inspectorView="score" />}
+                {inspectorTab === "readability" && editorialTools}
+                {inspectorTab === "seo" && <>
+                  <ContentScorePanel {...scorePanelProps} inspectorView="fixes"
+                    onFixWithAi={(label, detail) => openAssistant(undefined, `Help me address this issue: ${label}. ${detail}`)} />
+                  {editorialTools}
+                </>}
+                {inspectorTab === "outline" && <WriterOutline project={p} onJump={jumpToHeading}>
+                  <details className={styles.outlineLog}>
+                    <summary>Brief &amp; Verify Log {w.verificationLog?.verificationStatus === "passed" && <small>Verified</small>}</summary>
+                    <ContentScorePanel {...scorePanelProps} inspectorView="brief_log" />
+                  </details>
+                  <button className={styles.inspectorBrief} type="button" onClick={openBrief}>Edit article brief</button>
+                </WriterOutline>}
+              </WriterInspector>
+            ) : !focus && <ContentScorePanel {...scorePanelProps} collapsed={!rightScoreOpen} />}
           </div>
         </>
       )}
 
-      {assistant && <ArticleAssistant key={p.projectId} projectId={p.projectId}
-        title={p.metaPack.h1Title || p.projectTitle} launch={assistant} dark={darkStudio}
-        expanded={assistantExpanded} onExpand={() => setAssistantExpanded((expanded) => !expanded)}
-        onClose={closeAssistant} getContext={assistantContext} getDirectReply={directAssistantReply}
-        renderActions={assistantActions} applyProposal={applyAssistantProposal}
-      />}
+      {!isStudioEmbedded && assistantPanel}
 
       <BriefSettingsModal
         open={briefModalOpen}

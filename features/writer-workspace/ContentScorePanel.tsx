@@ -21,6 +21,7 @@ import {
 } from "./model";
 import { formatResearchAndVerificationLogMarkdown } from "./niche-policies";
 import { saveBlob } from "./assets";
+import { documentHeadings } from "./WriterInspector";
 import type { Project } from "./types";
 import styles from "./workspace.module.css";
 
@@ -32,6 +33,9 @@ type Props = {
   onSelectHeading: (sectionId: string, headingText: string) => void;
   onRunResearch: () => void;
   researchBusy?: boolean;
+  inspectorView?: "score" | "fixes" | "brief_log";
+  onJumpToHeading?: (index: number) => void;
+  onFixWithAi?: (label: string, detail: string) => void;
 };
 
 type ScoreTab = "keywords" | "headings" | "fixes" | "brief_log";
@@ -86,10 +90,21 @@ export function ContentScorePanel({
   onSelectHeading,
   onRunResearch,
   researchBusy,
+  inspectorView,
+  onJumpToHeading,
+  onFixWithAi,
 }: Props) {
-  const [activeTab, setActiveTab] = useState<ScoreTab>("keywords");
+  const [tab, setActiveTab] = useState<ScoreTab>("keywords");
+  const [filter, setFilter] = useState<"all" | "missing" | "done">("all");
+  const [query, setQuery] = useState("");
+  const activeTab = inspectorView === "score" || !inspectorView ? tab : inspectorView;
   const scorecard = useMemo(() => computeContentScorecard(project), [project]);
   const w = workspace(project);
+  const headings = useMemo(() => inspectorView === "score" ? documentHeadings(project) : [], [project, inspectorView]);
+  const terms = inspectorView === "score" ? scorecard.terms.filter((term) =>
+    term.term.toLowerCase().includes(query.trim().toLowerCase()) &&
+    (filter === "all" || (filter === "missing" ? term.actual < term.min : term.status === "optimal")),
+  ) : scorecard.terms;
 
   const score = Math.max(0, Math.min(100, scorecard.overallScore));
   const arcLen = Math.PI * 82; // ~257.6
@@ -104,6 +119,24 @@ export function ContentScorePanel({
       : score >= 55
         ? styles.scoreToneMid
         : styles.scoreToneLow;
+
+  const voice = (
+    <div className={styles.scoreVoiceBox}>
+      <div className={styles.scoreVoiceTitle}>
+        <Globe size={13} />
+        <strong>Brand Voice DNA</strong>
+      </div>
+      <p>
+        {w.research?.brandVoice
+          ? `${w.research.brandVoice.voiceSummary} (${w.research.brandVoice.pointOfView}, ${w.research.brandVoice.sentenceRhythm})`
+          : w.brandVoiceOverride?.voiceSummary
+            ? w.brandVoiceOverride.voiceSummary
+            : project.brandSiteUrl
+              ? `Connected: ${project.brandSiteUrl}`
+              : "Neutral editorial voice (no website connected)"}
+      </p>
+    </div>
+  );
 
   if (collapsed) {
     return (
@@ -126,7 +159,48 @@ export function ContentScorePanel({
   }
 
   return (
-    <aside className={styles.scoreSidebar} aria-label="Content Score and SEO Benchmarks">
+    <aside className={styles.scoreSidebar} data-inspector-view={inspectorView} aria-label={inspectorView === "fixes" ? "Article fixes" : inspectorView === "brief_log" ? "Brief and verification log" : "Content score"}>
+      {inspectorView === "score" && <>
+        <details className={styles.compactScore} open>
+          <summary>
+            <strong className={scoreToneClass}>{score}<small>/100</small></strong>
+            <span>Content score <small>Target {scorecard.targetBenchmark}+ · <ResearchModeLabel mode={scorecard.researchMode} /></small></span>
+            <ChevronRight size={14} aria-hidden="true" />
+          </summary>
+          <div className={styles.compactStructure}>
+            {([
+              ["Words", scorecard.structure.words],
+              ["Headings", scorecard.structure.headings],
+              ["Paragraphs", scorecard.structure.paragraphs],
+              ["Images", scorecard.structure.images],
+            ] as const).map(([label, metric]) => (
+              <div key={label} title={`Target ${metric.min}–${metric.max}`}>
+                <small>{label}</small>
+                <strong>{metric.actual.toLocaleString()} <StatusBadge {...metric} /></strong>
+              </div>
+            ))}
+          </div>
+          {scorecard.researchMode === "brief-only" && <button type="button" className={styles.scoreGroundBtn} onClick={onRunResearch} disabled={researchBusy}>
+            <RefreshCw size={13} className={researchBusy ? styles.spinIcon : undefined} />
+            {researchBusy ? "Benchmarking SERP…" : "Benchmark against live competitors"}
+          </button>}
+        </details>
+        <div className={styles.scoreTabs} aria-label="Score details">
+          <button type="button" aria-pressed={activeTab === "keywords"} onClick={() => { setActiveTab("keywords"); setQuery(""); }}>Terms ({scorecard.terms.length})</button>
+          <button type="button" aria-pressed={activeTab === "headings"} onClick={() => { setActiveTab("headings"); setQuery(""); }}>Headings ({headings.length})</button>
+        </div>
+        <div className={styles.scoreFilters}>
+          <input type="search" aria-label={activeTab === "keywords" ? "Find a term" : "Find a heading"}
+            placeholder={activeTab === "keywords" ? "Find a term…" : "Find a heading…"}
+            value={query} onChange={(event) => setQuery(event.target.value)} />
+          {activeTab === "keywords" && <div aria-label="Filter terms">
+            {(["all", "missing", "done"] as const).map((choice) => (
+              <button type="button" key={choice} aria-pressed={filter === choice} onClick={() => setFilter(choice)}>{choice}</button>
+            ))}
+          </div>}
+        </div>
+      </>}
+      {!inspectorView && <>
       <div className={styles.scoreTopBar}>
         <div className={styles.scoreTopTitle}>
           <span>Content Score</span>
@@ -398,21 +472,19 @@ export function ContentScorePanel({
         </button>
       </div>
 
-        <div className={styles.scoreTabBody}>
+      </>}
+
+      <div className={styles.scoreTabBody}>
         {activeTab === "keywords" && (
           <div className={styles.scoreTermList}>
-            {scorecard.terms.length ? (
-              scorecard.terms.map((item: ContentScoreTermItem) => (
+            {terms.length ? (
+              terms.map((item: ContentScoreTermItem) => (
                 <button
                   key={`${item.category}-${item.term}`}
                   type="button"
-                  className={`${styles.scoreTermPill} ${
-                    item.status === "optimal"
-                      ? styles.scoreTermOk
-                      : item.status === "stuffed"
-                        ? styles.scoreTermOver
-                        : styles.scoreTermUnder
-                  }`}
+                  className={`${styles.scoreTermPill} ${inspectorView ? "" : item.status === "optimal"
+                    ? styles.scoreTermOk : item.status === "stuffed" ? styles.scoreTermOver : styles.scoreTermUnder}`}
+                  data-term-status={inspectorView ? item.status : undefined}
                   onClick={() => onSelectTerm(item.term)}
                   title={`Click to locate "${item.term}" in draft`}
                 >
@@ -424,7 +496,7 @@ export function ContentScorePanel({
               ))
             ) : (
               <p className={styles.leftMetaSub}>
-                Add a primary keyword or run live web analysis to see topic-neutral semantic terms.
+                {scorecard.terms.length ? "No terms match your filters." : "Add a primary keyword or benchmark against live competitors to see suggested terms."}
               </p>
             )}
           </div>
@@ -432,6 +504,16 @@ export function ContentScorePanel({
 
         {activeTab === "headings" && (
           <div className={styles.scoreHeadingList}>
+            {inspectorView === "score" ? (
+              headings.some(({ text }) => text.trim() && text.toLowerCase().includes(query.trim().toLowerCase()))
+                ? headings.map(({ text, level }, index) => (
+                  text.trim() && text.toLowerCase().includes(query.trim().toLowerCase()) &&
+                  <button type="button" key={index} className={styles.scoreHeadingItem} onClick={() => onJumpToHeading?.(index)}>
+                    <span className={styles.scoreHeadingTag}>H{level}</span><span>{text}</span>
+                  </button>
+                ))
+                : <p className={styles.leftMetaSub}>{query.trim() ? "No headings match your search." : "Add a heading in the editor to see it here."}</p>
+            ) : <>
             {project.metaPack.h1Title ? (
               <button
                 type="button"
@@ -453,6 +535,7 @@ export function ContentScorePanel({
                 <span>{sec.h2Text}</span>
               </button>
             ))}
+            </>}
             {scorecard.repeatedOpeners.length > 0 && (
               <p className={styles.scoreWarnNote}>
                 Repeated opening hook detected ({scorecard.repeatedOpeners[0]}…). Vary H2 leads.
@@ -463,9 +546,17 @@ export function ContentScorePanel({
 
         {activeTab === "fixes" && (
           <div className={styles.scoreFixList}>
+            {inspectorView && <h3>Fixes ({scorecard.issues.length})</h3>}
             {scorecard.issues.length ? (
               scorecard.issues.map((issue) => (
-                <button
+                inspectorView ? <div key={issue.id} className={styles.inspectorFix}>
+                  <strong>{issue.label}</strong>
+                  <p>{issue.detail}</p>
+                  <div>
+                    {issue.searchTerm && <button type="button" onClick={() => onSelectTerm(issue.searchTerm!)}>Jump to issue</button>}
+                    {onFixWithAi && <button type="button" onClick={() => onFixWithAi(issue.label, issue.detail)}>Fix with Article AI</button>}
+                  </div>
+                </div> : <button
                   key={issue.id}
                   type="button"
                   className={`${styles.scoreFixCard} ${
@@ -487,26 +578,13 @@ export function ContentScorePanel({
               </div>
             )}
 
-            <div className={styles.scoreVoiceBox}>
-              <div className={styles.scoreVoiceTitle}>
-                <Globe size={13} />
-                <strong>Brand Voice DNA</strong>
-              </div>
-              <p>
-                {w.research?.brandVoice
-                  ? `${w.research.brandVoice.voiceSummary} (${w.research.brandVoice.pointOfView}, ${w.research.brandVoice.sentenceRhythm})`
-                  : w.brandVoiceOverride?.voiceSummary
-                    ? w.brandVoiceOverride.voiceSummary
-                    : project.brandSiteUrl
-                      ? `Connected: ${project.brandSiteUrl}`
-                      : "Neutral editorial voice (no website connected)"}
-              </p>
-            </div>
+            {!inspectorView && voice}
           </div>
         )}
 
         {activeTab === "brief_log" && (
           <div className={styles.scoreBriefLogPanel}>
+            {inspectorView && voice}
             {w.verificationLog ? (
               <div className={styles.scoreAxisGrid}>
                 <div>

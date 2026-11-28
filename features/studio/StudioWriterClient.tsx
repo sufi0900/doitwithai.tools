@@ -8,7 +8,6 @@ import {
   ArrowRight,
   CalendarPlus,
   CheckCircle2,
-  ChevronDown,
   Crown,
   FilePenLine,
   FileText,
@@ -20,6 +19,7 @@ import {
   Share2,
   Trash2,
 } from "lucide-react";
+import writerStyles from "@/features/writer-workspace/workspace.module.css";
 import WriterWorkspace from "@/features/writer-workspace/WriterWorkspace";
 import RecentUrlsProvider from "@/features/tool-ui/recent-urls/RecentUrlsProvider";
 import { deleteBlogProject } from "@/lib/blog-writer/project-storage-db";
@@ -82,12 +82,10 @@ export default function StudioWriterClient() {
   const [libraryReady, setLibraryReady] = useState(false);
   const [viewMode, setViewMode] = useState<"table" | "editor">("table");
   const [activeProjectId, setActiveProjectId] = useState<string>("");
-  const [switcherOpen, setSwitcherOpen] = useState(false);
   const [tableSearch, setTableSearch] = useState("");
   const [tableStatusFilter, setTableStatusFilter] = useState<
     "all" | "in-progress" | "written" | "published"
   >("all");
-  const switcherRef = useRef<HTMLDivElement>(null);
   const hasInitializedViewRef = useRef(false);
 
   useEffect(() => {
@@ -113,27 +111,6 @@ export default function StudioWriterClient() {
 
     return subscribeStudioState(() => setStudio(loadStudioState()));
   }, []);
-
-  useEffect(() => {
-    if (!switcherOpen) return;
-    const onMouseDown = (event: MouseEvent) => {
-      if (
-        switcherRef.current &&
-        !switcherRef.current.contains(event.target as Node)
-      ) {
-        setSwitcherOpen(false);
-      }
-    };
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setSwitcherOpen(false);
-    };
-    document.addEventListener("mousedown", onMouseDown);
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("mousedown", onMouseDown);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [switcherOpen]);
 
   const activeSite =
     studio.sites.find((s) => s.id === studio.activeSiteId) ||
@@ -183,8 +160,7 @@ export default function StudioWriterClient() {
     const onReset = (e: Event) => {
       if ((e as CustomEvent<string>).detail === "/studio/writer") {
         setViewMode((prev) => (articles.length > 0 ? "table" : prev));
-        setSwitcherOpen(false);
-      }
+          }
     };
     window.addEventListener("doitwithai:studio-distribution-reset", onReset);
     return () =>
@@ -245,14 +221,12 @@ export default function StudioWriterClient() {
   const handleOpenArticle = (projectId: string) => {
     setActiveProjectId(projectId);
     requestWriterOpenProject(projectId);
-    setSwitcherOpen(false);
     setViewMode("editor");
   };
 
   const handleStartNewArticle = () => {
     setActiveProjectId("");
     requestWriterNewArticle();
-    setSwitcherOpen(false);
     setViewMode("editor");
   };
 
@@ -614,148 +588,7 @@ export default function StudioWriterClient() {
           )}
         </div>
       ) : (
-        /* MODE 2: FOCUSED ARTICLE EDITOR VIEW + SIMPLE ARTICLE SWITCHER DROPDOWN */
         <>
-          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-xs sm:px-5 dark:border-slate-800 dark:bg-[#0D1526]">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex min-w-0 flex-wrap items-center gap-2.5">
-                {articles.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setViewMode("table")}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-700 transition hover:border-[#5271FF] hover:text-[#5271FF] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
-                  >
-                    <ArrowLeft size={13} />
-                    <span>All Articles ({articles.length})</span>
-                  </button>
-                )}
-
-                {/* Simple, Clean Article Switcher Dropdown */}
-                {articles.length > 0 && (
-                  <div ref={switcherRef} className="relative">
-                    <button
-                      type="button"
-                      onClick={() => setSwitcherOpen((prev) => !prev)}
-                      aria-expanded={switcherOpen}
-                      aria-haspopup="listbox"
-                      className="inline-flex max-w-[300px] items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 transition hover:border-[#5271FF]/60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-                    >
-                      <FileText size={13} className="shrink-0 text-[#5271FF]" />
-                      <span className="truncate">
-                        {activeArticle ? activeArticle.title : "Select Article"}
-                      </span>
-                      {activeArticle && (
-                        <span
-                          className={`shrink-0 rounded border px-1.5 py-0.5 text-[10px] font-bold ${
-                            STATUS_BADGE_STYLES[activeArticle.status]
-                          }`}
-                        >
-                          {ARTICLE_STATUS_LABELS[activeArticle.status]}
-                        </span>
-                      )}
-                      <ChevronDown size={13} className="shrink-0 text-slate-400" />
-                    </button>
-
-                    {switcherOpen && (
-                      <div
-                        role="listbox"
-                        aria-label="Switch article"
-                        className="absolute left-0 top-full z-50 mt-1.5 w-80 max-w-[calc(100vw-2rem)] rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl dark:border-slate-700 dark:bg-[#0D1526]"
-                      >
-                        <div className="max-h-72 space-y-0.5 overflow-y-auto">
-                          {articles.map((article) => {
-                            const isCurrent =
-                              article.projectId === activeProjectId;
-                            return (
-                              <button
-                                key={article.projectId}
-                                type="button"
-                                role="option"
-                                aria-selected={isCurrent}
-                                onClick={() =>
-                                  handleOpenArticle(article.projectId)
-                                }
-                                className={`flex w-full items-center justify-between gap-2.5 rounded-lg px-2.5 py-2 text-left text-xs transition ${
-                                  isCurrent
-                                    ? "bg-[#5271FF]/12 font-bold text-[#4361EE] dark:text-[#b4c2ff]"
-                                    : "text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800/70"
-                                }`}
-                              >
-                                <span className="min-w-0 flex-1 truncate">
-                                  {article.title}
-                                </span>
-                                <span
-                                  className={`shrink-0 rounded border px-1.5 py-0.5 text-[10px] font-semibold ${
-                                    STATUS_BADGE_STYLES[article.status]
-                                  }`}
-                                >
-                                  {ARTICLE_STATUS_LABELS[article.status]}
-                                </span>
-                              </button>
-                            );
-                          })}
-                        </div>
-                        <div className="mt-1 border-t border-slate-100 pt-1 dark:border-slate-800">
-                          <button
-                            type="button"
-                            onClick={handleStartNewArticle}
-                            className="flex w-full items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold text-[#5271FF] transition hover:bg-[#5271FF]/10 dark:text-[#9aabff]"
-                          >
-                            <Plus size={13} />
-                            <span>Write New Article</span>
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {activeSite && (
-                  <span className="hidden items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-600 xl:inline-flex dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
-                    <Globe size={12} />
-                    <span>{activeSite.name}</span>
-                  </span>
-                )}
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleStartNewArticle}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-[#5271FF] px-3 py-1.5 text-xs font-bold text-white transition hover:bg-[#4361EE]"
-                >
-                  <Plus size={13} />
-                  <span>New Article</span>
-                </button>
-
-                <Link
-                  href={`/studio/social${activeProjectId ? `?articleId=${encodeURIComponent(activeProjectId)}&mode=workbench` : ""}`}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-[#5271FF] hover:text-[#5271FF] dark:border-slate-700 dark:text-slate-200"
-                >
-                  <Share2 size={13} />
-                  <span>Social &amp; Video Studio</span>
-                </Link>
-
-                <Link
-                  href={`/studio/email${activeProjectId ? `?articleId=${encodeURIComponent(activeProjectId)}&mode=workbench` : ""}`}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-[#5271FF] hover:text-[#5271FF] dark:border-slate-700 dark:text-slate-200"
-                >
-                  <Mail size={13} />
-                  <span>Email Newsletter</span>
-                </Link>
-
-                <button
-                  type="button"
-                  onClick={handleLogToPlanner}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-[#5271FF] hover:text-[#5271FF] dark:border-slate-700 dark:text-slate-200"
-                >
-                  <CalendarPlus size={13} />
-                  <span>Save to Planner</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
           {/* Only render Free Upgrade Banner when NOT in Unlimited Testing Mode */}
           {overFreePreview && (
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-500/40 bg-amber-500/10 px-5 py-3.5 text-xs">
@@ -781,7 +614,32 @@ export default function StudioWriterClient() {
 
           {/* Full Flagship Writer + Web Research + Section Infographics + Export */}
           <RecentUrlsProvider>
-            <WriterWorkspace />
+            <WriterWorkspace
+              documentNavigation={
+                <button type="button" className={writerStyles.documentBack} onClick={() => setViewMode("table")} aria-label="Back to articles" title="Back to articles">
+                  <ArrowLeft size={16} /> <span>Articles</span>
+                </button>
+              }
+              articleSwitcher={
+                <>
+                  {articles.map((article) => (
+                    <button type="button" key={article.projectId} aria-current={article.projectId === activeProjectId ? "true" : undefined}
+                      onClick={() => handleOpenArticle(article.projectId)}>
+                      <span className={writerStyles.menuTitle}>{article.title}</span>
+                      <small>{ARTICLE_STATUS_LABELS[article.status]}</small>
+                    </button>
+                  ))}
+                  <button type="button" onClick={handleStartNewArticle}><Plus size={14} /> New article</button>
+                </>
+              }
+              repurposeActions={
+                <>
+                  <Link href={`/studio/social${activeProjectId ? `?articleId=${encodeURIComponent(activeProjectId)}&mode=workbench` : ""}`}><Share2 size={14} /> Social &amp; Video Studio</Link>
+                  <Link href={`/studio/email${activeProjectId ? `?articleId=${encodeURIComponent(activeProjectId)}&mode=workbench` : ""}`}><Mail size={14} /> Email Newsletter</Link>
+                  <button type="button" onClick={handleLogToPlanner}><CalendarPlus size={14} /> Save to Planner</button>
+                </>
+              }
+            />
           </RecentUrlsProvider>
         </>
       )}

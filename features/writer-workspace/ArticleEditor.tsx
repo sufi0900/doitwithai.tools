@@ -208,6 +208,7 @@ export function RichPreview({ md }: { md: string }) {
 
 type Props = {
   project: Project;
+  toolbarEnd?: React.ReactNode;
   onChange: (doc: RichNode) => void;
   onEditVisual: (id: string) => void;
   onUpdateProject?: (updater: (p: Project) => Project) => void;
@@ -1763,6 +1764,7 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
           {action("Redo typing", <Redo2 size={16} />, () =>
             editor?.chain().focus().redo().run(),
           )}
+          {props.toolbarEnd}
         </div>
 
         {/* Inline Toolbar Link Popover */}
@@ -2013,7 +2015,7 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
                 }}
               >
                 <Sparkles size={13} />
-                <span>Ask AI</span>
+                <span>{props.toolbarEnd ? "Ask Article AI" : "Ask AI"}</span>
               </button>
 
               <span className={styles.floatingDivider} />

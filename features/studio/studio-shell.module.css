@@ -233,3 +233,30 @@
   .topBarLeft, .topBarActions { gap: 3px; }
   .siteWithModule, .divider, .actionLabel { display: none; }
 }
+
+.writerSlot, .writerModes { display: flex; align-items: center; min-width: 0; }
+.writerSlot:empty, .writerModes:empty { display: none; }
+.writerSlot:not(:empty) + .breadcrumbs { display: none; }
+.writerModes { flex: none; }
+.viewport:has([data-writer-document="true"]) .writerContainer { max-width: none; padding: 0; }
+.viewport:has([data-writer-focus="true"]) .desktopNav,
+.viewport:has([data-writer-focus="true"]) :is(.desktopNavToggle, .mobileNavToggle) { display: none; }
+
+@media (max-width: 767px) {
+  .topBar:has(.writerModes:not(:empty)) { gap: 3px; padding-inline: 4px; }
+  .topBar:has(.writerModes:not(:empty)) :is(.topBarLeft, .topBarActions) { gap: 2px; }
+  .topBar:has(.writerModes:not(:empty)) :is(.topAction, .avatarButton) { min-width: 38px; height: 44px; padding-inline: 4px; }
+}
+
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .body:has([data-writer-document="true"]) { position: relative; }
+  .body:has([data-writer-document="true"]) .desktopNav[data-collapsed="false"] {
+    position: absolute;
+    inset: 0 auto 0 0;
+    z-index: 32;
+    box-shadow: 8px 0 20px rgb(0 0 0 / 14%);
+  }
+}
+@media (max-width: 370px) {
+  .topBar:has(.writerModes:not(:empty)) :is(.topAction, .avatarButton) { min-width: 32px; width: 32px; }
+}

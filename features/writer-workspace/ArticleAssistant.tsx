@@ -18,6 +18,7 @@ type Props = {
   dark: boolean;
   expanded: boolean;
   onExpand: () => void;
+  embedded?: boolean;
   onClose: () => void;
   getContext: () => { article: string; diagnostics: string; title: string; site: string; revision: string };
   getDirectReply: (question: string) => AssistantReply | undefined;
@@ -88,7 +89,7 @@ export function ArticleAssistant(props: Props) {
   return <Conversation key={props.launch.id} {...props} />;
 }
 
-function Conversation({ projectId, title, launch, dark, expanded, onExpand, onClose, getContext, getDirectReply, renderActions, applyProposal }: Props) {
+function Conversation({ projectId, title, launch, dark, expanded, embedded, onExpand, onClose, getContext, getDirectReply, renderActions, applyProposal }: Props) {
   const legacyKey = `writer-assistant:v1:${projectId}`;
   const storageKey = useRef(legacyKey);
   const cloud = useRef<Awaited<ReturnType<typeof openAssistantHistory>>>(null);
@@ -152,7 +153,7 @@ function Conversation({ projectId, title, launch, dark, expanded, onExpand, onCl
 
   useEffect(() => {
     const node = dialog.current;
-    if (!node) return;
+    if (!node || embedded) return;
     node.close();
     if (expanded) node.show();
     else node.showModal();
@@ -164,7 +165,7 @@ function Conversation({ projectId, title, launch, dark, expanded, onExpand, onCl
       if (frame !== undefined) cancelAnimationFrame(frame);
       node.close();
     };
-  }, [expanded]);
+  }, [embedded, expanded]);
 
   const thread = threads.find((item) => item.id === active.id) || active;
   const stage = pending[thread.id];
@@ -308,17 +309,15 @@ function Conversation({ projectId, title, launch, dark, expanded, onExpand, onCl
     else setActive({ ...thread, passage: undefined });
   }
 
-  return (
-    <dialog ref={dialog} className={s.drawer} data-dark={dark} data-expanded={expanded}
-      aria-labelledby="writer-assistant-title" onCancel={(event) => { event.preventDefault(); onClose(); }}
-      onKeyDown={(event) => { if (expanded && event.key === "Escape") onClose(); }}>
+  const content = (
+    <>
       <header className={s.header}>
         <div><h2 id="writer-assistant-title" ref={titleRef} tabIndex={-1}><Sparkles size={17} /> Article AI</h2><p>{title}</p></div>
         <div className={s.headerActions}>
           <button type="button" onClick={onExpand} aria-label={expanded ? "Return to side panel" : "Expand into article workspace"} title={expanded ? "Return to side panel" : "Expand into article workspace"}>
             {expanded ? <Minimize2 size={17} /> : <Maximize2 size={17} />}
           </button>
-          <button type="button" onClick={onClose} aria-label="Close Article AI"><X size={18} /></button>
+          {!embedded && <button type="button" onClick={onClose} aria-label="Close Article AI"><X size={18} /></button>}
         </div>
       </header>
       <div className={s.history}>
@@ -341,7 +340,7 @@ function Conversation({ projectId, title, launch, dark, expanded, onExpand, onCl
           <h3>{thread.passage ? "What would you like to do with this passage?" : "What would you like to work on?"}</h3>
           <p>{thread.passage ? "Your selection is attached below." : "Ask about your draft, check its SEO details, or research a claim."}</p>
           <div>{(thread.passage ? ["Improve the readability", "Give me a practical example"] :
-            ["How can I improve this article?", "Show my meta & SERP details", "How do I download this article?"]).map((item) =>
+            ["Improve the intro hook", "Strengthen credibility", "Fix readability", "Generate FAQ", "Add a comparison table"]).map((item) =>
             <button key={item} type="button" onClick={() => { setDraft(item); composer.current?.focus(); }}>{item}</button>)}</div>
         </div>}
         {thread.turns.map((turn, index) => {
@@ -402,6 +401,11 @@ function Conversation({ projectId, title, launch, dark, expanded, onExpand, onCl
           </div>
         </div>
       </form>
-    </dialog>
+    </>
   );
+  return embedded
+    ? <section className={s.drawer} data-embedded="true" data-dark={dark} data-expanded={expanded} aria-labelledby="writer-assistant-title">{content}</section>
+    : <dialog ref={dialog} className={s.drawer} data-dark={dark} data-expanded={expanded}
+        aria-labelledby="writer-assistant-title" onCancel={(event) => { event.preventDefault(); onClose(); }}
+        onKeyDown={(event) => { if (expanded && event.key === "Escape") onClose(); }}>{content}</dialog>;
 }

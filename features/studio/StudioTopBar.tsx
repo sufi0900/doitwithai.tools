@@ -12,11 +12,13 @@ export default function StudioTopBar({
   siteName,
   children,
   actions,
+  center,
 }: {
   pathname: string;
   siteName?: string;
   children: ReactNode;
   actions?: ReactNode;
+  center?: ReactNode;
 }) {
   const { resolvedTheme, setTheme } = useTheme();
   const workspace = useWorkspace();
@@ -46,6 +48,7 @@ export default function StudioTopBar({
   return (
     <header className={styles.topBar}>
       <div className={styles.topBarLeft}>{children}</div>
+      {center}
       <div className={styles.topBarActions}>
         {actions}
         <button

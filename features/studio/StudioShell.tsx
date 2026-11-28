@@ -324,7 +324,9 @@ export default function StudioShell({ children }: { children: ReactNode }) {
   }, []);
 
   const renderTopBar = () => (
-    <StudioTopBar pathname={pathname} siteName={activeSite?.name} actions={showNavigation ? (
+    <StudioTopBar pathname={pathname} siteName={activeSite?.name}
+      center={isWriter && <div id="studio-writer-modes" className={styles.writerModes} />}
+      actions={isWriter ? <div id="studio-writer-actions" className={styles.writerSlot} /> : showNavigation ? (
       <>
         <button
           type="button"
@@ -336,12 +338,10 @@ export default function StudioShell({ children }: { children: ReactNode }) {
           <Bot size={15} aria-hidden="true" />
           <span className={styles.actionLabel}>Brand AI</span>
         </button>
-        {!isWriter && (
           <Link href="/studio/writer" aria-label="Write article" title="Write article" className={styles.topAction}>
             <FilePenLine size={15} aria-hidden="true" />
             <span className={styles.actionLabel}>Write Article</span>
           </Link>
-        )}
       </>
     ) : undefined}>
       {showNavigation && (
@@ -369,6 +369,7 @@ export default function StudioShell({ children }: { children: ReactNode }) {
           </button>
         </>
       )}
+      {isWriter && <div id="studio-writer-document" className={styles.writerSlot} />}
       <div className={styles.breadcrumbs}>
         <Link href="/studio" className={`${styles.siteName} ${moduleTitle ? styles.siteWithModule : ""}`}
           title={showNavigation ? activeSite?.name || "Workspace" : "Studio"}>
@@ -917,7 +918,7 @@ export default function StudioShell({ children }: { children: ReactNode }) {
         </dialog>
 
         <div ref={workspaceScroll} data-studio-scroll className={styles.scrollArea}>
-          <div className="mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8">
+          <div className={`mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8 ${isWriter ? styles.writerContainer : ""}`}>
               {inlineWorkspaceItem ? (
                 <StudioInlineEmbedPanel
                   item={inlineWorkspaceItem}
