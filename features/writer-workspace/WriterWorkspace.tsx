@@ -86,7 +86,7 @@ import { downloadArticle, saveBlob } from "./assets";
 import styles from "./workspace.module.css";
 import assistantStyles from "./article-assistant.module.css";
 import { ArticleAssistant, type AssistantLaunch } from "./ArticleAssistant";
-import { articleDownloads, type AssistantReply, type SavedProposal } from "./article-assistant";
+import { articleDownloads, type AssistantReply, type Passage, type SavedProposal } from "./article-assistant";
 
 const InfographicStudio = dynamic(
   () => import("@/features/blog-infographic-studio/BlogInfographicStudio"),
@@ -488,7 +488,7 @@ export default function WriterWorkspace() {
     }
   };
 
-  const applyAssistantProposal = (proposal: SavedProposal): string | undefined => {
+  const applyAssistantProposal = (proposal: SavedProposal): string | Passage | undefined => {
     const now = current.current;
     if (assistantRevision(now) !== proposal.revision)
       return "The draft has changed since this proposal was created. Ask Article AI to update it using the current draft.";
@@ -503,7 +503,9 @@ export default function WriterWorkspace() {
       try {
         if (!editor.current.replace(selected.from, selected.to, proposal.markdown)) return "The selection is no longer available. Select the passage again.";
       } catch { return "The selected passage could not be replaced. Select it again to retry."; }
-      return;
+      const revised = editor.current.findRevisedPassage(proposal.markdown, selected.from);
+      const revision = assistantRevision(current.current);
+      return revised && revision !== proposal.revision ? { ...revised, revision } : undefined;
     }
     const doc = projectDocument(now);
     const content = doc.content || [];
@@ -703,7 +705,7 @@ export default function WriterWorkspace() {
       ...(w.research?.internalLinks || []).map((link) => ({ url: link.url, title: link.title, anchor: link.anchorText })),
       ...(p.internalLinks || []).map((link) => ({ url: link.targetUrl, title: link.targetTitle, anchor: link.anchorText })),
     ].filter((link, index, links) => brandHost && hostname(link.url) === brandHost &&
-      links.findIndex((candidate) => candidate.url === link.url) === index).slice(0, 16);
+      links.findIndex((candidate) => candidate.url === link.url) === index).slice(0, 30);
     return {
       title: (p.metaPack.h1Title || p.projectTitle || "Article draft").slice(0, 250),
       site: site.slice(0, 700),
@@ -714,6 +716,7 @@ export default function WriterWorkspace() {
         site, brand: w.brand.name,
         brandVoice: { ...w.research?.brandVoice, ...w.brandVoiceOverride },
         sitePages,
+        brief: p.rawUserBriefOrSourceText.slice(0, 650),
         audience: p.keywordCluster.targetAudience,
         language: w.language,
         words: report.words, readingMinutes: report.minutes,

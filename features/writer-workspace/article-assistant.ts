@@ -28,6 +28,7 @@ export type AssistantReply = {
   editInstruction?: string;
   change?: DraftChange;
   researchNote?: string;
+  focusSectionId?: string;
   sources?: Array<{ title: string; url: string }>;
 };
 
@@ -74,4 +75,45 @@ export function relevantAssistantActions(question: string, answer: AssistantRepl
     headingId: clauses.some((clause) => navigating.test(clause) && /\b(?:sections?|headings?|outline)\b/i.test(clause) && !drafting.test(clause)) ? answer.headingId : undefined,
     visualId: clauses.some((clause) => navigating.test(clause) && toolTopics.visuals.test(clause)) ? answer.visualId : undefined,
   };
+}
+
+export type AssistantTurn = {
+  id: string;
+  question: string;
+  passage?: Passage;
+  answer?: AssistantReply;
+  proposal?: SavedProposal;
+  error?: string;
+};
+
+export type AssistantThread = { id: string; passage?: Passage; turns: AssistantTurn[]; savedAt?: number };
+
+export function assistantContinuity(previous: AssistantTurn[]) {
+  const completed = previous.filter((turn) => turn.answer);
+  const recent = completed.at(-1);
+  const activeProposal = completed.slice().reverse().find((item) => item.proposal?.status === "pending" || item.proposal?.status === "applied");
+  const sectionTurn = completed.slice().reverse().find((turn) => turn.answer?.focusSectionId || turn.proposal?.sectionId);
+  const sectionId = sectionTurn?.answer?.focusSectionId || sectionTurn?.proposal?.sectionId;
+  const latestFocus = sectionId || activeProposal?.proposal?.sectionId || "";
+  const original = activeProposal?.proposal;
+  const proposal = original && (!sectionId || sectionId === original.sectionId || recent?.id === activeProposal?.id)
+    ? { kind: original.kind, markdown: original.markdown.slice(0, 24000), sectionId: original.sectionId, status: original.status === "applied" ? "applied" : "pending" }
+    : undefined;
+  return {
+    focus: { sectionId: latestFocus, proposal, request: activeProposal?.question.slice(0, 1500) || "" },
+    history: completed.slice(-8).map((turn) => ({
+      question: turn.question.slice(0, 3000),
+      reply: turn.answer!.reply.slice(0, 4000),
+    })),
+  };
+}
+
+export function assistantLinkIntent(question: string, recentQuestion = "") {
+  const internal = /\b(?:internal (?:link(?:ing|s)?|source)|link to (?:my|our|the same) (?:site|website|blog))\b/i.test(question);
+  const authority = /\b(?:external (?:link(?:ing|s)?|sources?)|first[- ]party|authority (?:sites?|sources?|links?|websites?)|authoritative (?:links?|sources?|websites?)|official (?:links?|sources?|documentation|reference))\b/i.test(question);
+  if (!internal && !authority && /\b(?:another|different|one more|same|that|it)\b/i.test(question) &&
+      /\b(?:links?|sources?|citations?|find|add|insert|replace)\b/i.test(question)) {
+    return recentQuestion ? assistantLinkIntent(recentQuestion) : { internal, authority };
+  }
+  return { internal, authority };
 }

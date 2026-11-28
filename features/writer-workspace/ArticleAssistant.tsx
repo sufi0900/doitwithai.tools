@@ -4,18 +4,10 @@ import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "rea
 import { ArrowUp, ChevronDown, Database, Globe2, Loader2, Maximize2, Minimize2, Plus, Sparkles, X } from "lucide-react";
 import { RichPreview } from "./ArticleEditor";
 import { safeUrl } from "./model";
-import { relevantAssistantActions, requestsResearch, type AssistantReply, type Passage, type ResearchMode, type SavedProposal } from "./article-assistant";
+import { assistantContinuity, assistantLinkIntent, relevantAssistantActions, requestsResearch, type AssistantThread as Thread, type AssistantTurn as Turn, type AssistantReply, type Passage, type ResearchMode, type SavedProposal } from "./article-assistant";
 import s from "./article-assistant.module.css";
+import { mergeAssistantHistory, openAssistantHistory } from "./assistant-history";
 
-type Turn = {
-  id: string;
-  question: string;
-  passage?: Passage;
-  answer?: AssistantReply;
-  proposal?: SavedProposal;
-  error?: string;
-};
-type Thread = { id: string; passage?: Passage; turns: Turn[] };
 type Stage = "reply" | "web" | "workspace" | "reading" | "edit";
 export type AssistantLaunch = { id: string; passage?: Passage; prompt?: string };
 
@@ -30,10 +22,29 @@ type Props = {
   getContext: () => { article: string; diagnostics: string; title: string; site: string; revision: string };
   getDirectReply: (question: string) => AssistantReply | undefined;
   renderActions: (answer: AssistantReply) => ReactNode;
-  applyProposal: (proposal: SavedProposal) => string | undefined;
+  applyProposal: (proposal: SavedProposal) => string | Passage | undefined;
 };
 
 const createThread = (passage?: Passage): Thread => ({ id: crypto.randomUUID(), passage, turns: [] });
+
+function normalizeThreads(stored: unknown): Thread[] {
+  if (!Array.isArray(stored)) return [];
+  return (stored as Thread[]).flatMap((item) => {
+    if (!item || typeof item.id !== "string" || !Array.isArray(item.turns)) return [];
+    const turns = item.turns.filter((turn) => typeof turn?.question === "string" &&
+      (!turn.answer || (typeof turn.answer.reply === "string" && Array.isArray(turn.answer.cards))))
+      .map((turn, index) => ({
+        ...turn, id: turn.id || item.id + ":" + index,
+        passage: turn.passage || (index === 0 ? item.passage : undefined),
+        error: turn.error || (!turn.answer ? "This reply was interrupted. You can retry it." : undefined),
+      }));
+    return [{ ...item, turns }];
+  });
+}
+
+function readLocalThreads(key: string) {
+  try { return normalizeThreads(JSON.parse(localStorage.getItem(key) || "[]")); } catch { return []; }
+}
 
 async function readReply(res: Response, onStage: (stage: Stage) => void): Promise<AssistantReply> {
   if (!res.ok || !res.body || !res.headers.get("content-type")?.includes("application/x-ndjson")) {
@@ -78,7 +89,10 @@ export function ArticleAssistant(props: Props) {
 }
 
 function Conversation({ projectId, title, launch, dark, expanded, onExpand, onClose, getContext, getDirectReply, renderActions, applyProposal }: Props) {
-  const storageKey = `writer-assistant:v1:${projectId}`;
+  const legacyKey = `writer-assistant:v1:${projectId}`;
+  const storageKey = useRef(legacyKey);
+  const cloud = useRef<Awaited<ReturnType<typeof openAssistantHistory>>>(null);
+  const [canImport, setCanImport] = useState(false);
   const [active, setActive] = useState(() => createThread(launch.passage));
   const [threads, setThreads] = useState<Thread[]>([]);
   const records = useRef<Thread[]>([]);
@@ -97,30 +111,44 @@ function Conversation({ projectId, title, launch, dark, expanded, onExpand, onCl
   const composer = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    try {
-      const stored = JSON.parse(localStorage.getItem(storageKey) || "[]");
-      if (Array.isArray(stored)) {
-        const valid: Thread[] = stored.flatMap((item: Thread) => {
-          if (!item || typeof item.id !== "string" || !Array.isArray(item.turns)) return [];
-          const turns = item.turns.filter((turn) => typeof turn?.question === "string" &&
-            (!turn.answer || (typeof turn.answer.reply === "string" && Array.isArray(turn.answer.cards))))
-            .map((turn, index) => ({
-              ...turn, id: turn.id || item.id + ":" + index, passage: turn.passage || (index === 0 ? item.passage : undefined),
-              error: turn.error || (!turn.answer ? "This reply was interrupted. You can retry it." : undefined),
-            }));
-          return [{ ...item, turns }];
-        });
-        records.current = valid;
-        setThreads(valid);
-        const last = localStorage.getItem(storageKey + ":active");
-        const recent = valid.find((item) => item.id === last) || valid[0];
-        if (!launch.passage && !launch.prompt && recent) setActive(recent);
-      }
-    } catch {}
-    setReady(true);
+    let disposed = false;
+    let unwatch: (() => void) | undefined;
     const running = requests.current;
-    return () => { for (const request of running.values()) request.abort(); running.clear(); };
-  }, [storageKey, launch]);
+    async function hydrate() {
+      const account = await openAssistantHistory(projectId).catch(() => null);
+      if (disposed) return;
+      if (account) {
+        cloud.current = account;
+        storageKey.current = legacyKey + ":account:" + account.userId;
+        unwatch = account.watchAccount(onClose);
+      }
+      const key = storageKey.current;
+      const local = readLocalThreads(key);
+      if (account && readLocalThreads(legacyKey).length) {
+        try { setCanImport(localStorage.getItem(key + ":legacy-imported") !== "true"); } catch {}
+      }
+      const remote = account ? await account.read().catch(() => null) : [];
+      if (disposed) return;
+      if (account && remote === null) setSaveError("Account chat history is unavailable. This browser can still save your conversation.");
+      const recordsToShow = mergeAssistantHistory(local, normalizeThreads(remote));
+      records.current = recordsToShow;
+      setThreads(recordsToShow);
+      let last: string | null = null;
+      try { last = localStorage.getItem(key + ":active"); } catch {}
+      const recent = recordsToShow.find((item) => item.id === last) || recordsToShow[0];
+      if (!launch.passage && !launch.prompt && recent) setActive(recent);
+      setReady(true);
+    }
+    void hydrate();
+    return () => {
+      disposed = true;
+      unwatch?.();
+      for (const request of running.values()) request.abort();
+      running.clear();
+    };
+    // The dialog is keyed by its launch, so a new launch gets a new history session.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [legacyKey, projectId, launch]);
 
   useEffect(() => {
     const node = dialog.current;
@@ -144,16 +172,28 @@ function Conversation({ projectId, title, launch, dark, expanded, onExpand, onCl
     if (transcript.current && scrollPinned.current) transcript.current.scrollTop = transcript.current.scrollHeight;
   }, [thread.id, thread.turns, stage, expanded]);
 
-  function saveThread(next: Thread) {
+  function saveThread(thread: Thread) {
+    const next = { ...thread, savedAt: Date.now() };
     const saved = [next, ...records.current.filter((item) => item.id !== next.id)].slice(0, 30);
     records.current = saved;
     setThreads(saved);
     try {
-      localStorage.setItem(storageKey, JSON.stringify(saved));
+      localStorage.setItem(storageKey.current, JSON.stringify(saved));
       setSaveError("");
     } catch {
       setSaveError("This browser couldn’t save the latest conversation changes.");
     }
+    if (next.turns.every((turn) => turn.answer || turn.error)) {
+      void cloud.current?.write(next).catch(() => setSaveError("Account sync is unavailable. Your conversation is saved in this browser when storage is available."));
+    }
+  }
+
+  function importLegacy() {
+    for (const thread of readLocalThreads(legacyKey).reverse()) {
+      if (!records.current.some((saved) => saved.id === thread.id)) saveThread(thread);
+    }
+    try { localStorage.setItem(storageKey.current + ":legacy-imported", "true"); } catch {}
+    setCanImport(false);
   }
 
   function updateThread(id: string, transform: (current: Thread) => Thread) {
@@ -165,7 +205,7 @@ function Conversation({ projectId, title, launch, dark, expanded, onExpand, onCl
     scrollPinned.current = true;
     setActive(next);
     setDraft("");
-    try { localStorage.setItem(storageKey + ":active", next.id); } catch {}
+    try { localStorage.setItem(storageKey.current + ":active", next.id); } catch {}
     composer.current?.focus();
   }
 
@@ -175,13 +215,13 @@ function Conversation({ projectId, title, launch, dark, expanded, onExpand, onCl
     const turn: Turn = { id: retry?.id || crypto.randomUUID(), question, passage: retry ? retry.passage : target.passage };
     const ctrl = new AbortController();
     requests.current.set(target.id, ctrl);
-    const explicitWeb = mode === "web" || (mode === "auto" && requestsResearch(question));
+    const explicitWeb = mode === "web" || (mode === "auto" && (requestsResearch(question) || assistantLinkIntent(question).authority));
     const isFollowUp = target.turns.length > 0;
     const direct = explicitWeb || turn.passage || isFollowUp || launch.prompt ? undefined : getDirectReply(question);
     saveThread({ ...target, turns: retry
       ? target.turns.map((item) => item.id === turn.id ? turn : item)
       : [...target.turns, turn].slice(-50) });
-    try { localStorage.setItem(storageKey + ":active", target.id); } catch {}
+    try { localStorage.setItem(storageKey.current + ":active", target.id); } catch {}
     const localStage = /\b(?:rewrite|revise|improve|shorten|simplify|expand|edit)\b/i.test(question) ? "edit" : "reply";
     setPending((state) => ({ ...state, [target.id]: explicitWeb ? "web" : direct ? "workspace" : localStage }));
     try {
@@ -195,9 +235,7 @@ function Conversation({ projectId, title, launch, dark, expanded, onExpand, onCl
           signal: AbortSignal.any([ctrl.signal, AbortSignal.timeout(57000)]),
           body: JSON.stringify({
             ...context, question, mode, passage: turn.passage?.text.slice(0, 12000) || "",
-            history: previous.filter((item) => item.answer).slice(-8).map((item) => ({
-              question: item.question, reply: [item.answer!.reply, item.proposal?.markdown].filter(Boolean).join("\n\n").slice(0, 5000),
-            })),
+            ...assistantContinuity(previous),
           }),
         });
         answer = await readReply(res, (next) => {
@@ -248,17 +286,19 @@ function Conversation({ projectId, title, launch, dark, expanded, onExpand, onCl
   function resolveProposal(turn: Turn, next: "applied" | "discarded") {
     if (!turn.proposal || turn.proposal.status !== "pending" || applying.current.has(turn.id)) return;
     applying.current.add(turn.id);
+    let revised: Passage | undefined;
     if (next === "applied") {
-      const error = applyProposal(turn.proposal);
-      if (error) {
+      const outcome = applyProposal(turn.proposal);
+      if (typeof outcome === "string") {
         applying.current.delete(turn.id);
-        setApplyError((state) => ({ ...state, [turn.id]: error }));
+        setApplyError((state) => ({ ...state, [turn.id]: outcome }));
         return;
       }
+      revised = outcome;
     }
     setApplyError(({ [turn.id]: _error, ...rest }) => rest);
     updateThread(thread.id, (item) => ({
-      ...item, turns: item.turns.map((entry) => entry.id === turn.id && entry.proposal
+      ...item, passage: revised || item.passage, turns: item.turns.map((entry) => entry.id === turn.id && entry.proposal
         ? { ...entry, proposal: { ...entry.proposal, status: next } } : entry),
     }));
   }
@@ -284,6 +324,7 @@ function Conversation({ projectId, title, launch, dark, expanded, onExpand, onCl
       <div className={s.history}>
         <button type="button" onClick={() => switchThread(createThread())}><Plus size={15} /> New chat</button>
         {thread.passage && <button type="button" onClick={() => switchThread(createThread(thread.passage))}>New with passage</button>}
+        {canImport && <button type="button" onClick={importLegacy} title="Add the existing local chats for this article to your account">Import browser chats</button>}
         <select aria-label="Chat history" value={thread.turns.length ? thread.id : ""}
           onChange={(event) => { const next = threads.find((item) => item.id === event.target.value); if (next) switchThread(next); }}>
           {!thread.turns.length && <option value="">Chat history</option>}

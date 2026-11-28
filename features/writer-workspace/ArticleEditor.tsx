@@ -74,6 +74,7 @@ import styles from "./workspace.module.css";
 export type EditorHandle = {
   selection: () => { from: number; to: number; text: string };
   replace: (from: number, to: number, text: string) => boolean;
+  findRevisedPassage: (markdown: string, near: number) => { from: number; to: number; text: string } | undefined;
   insertLink: (anchor: string, url: string) => void;
   section: (id: string) => void;
   insertVisual: (id: string) => void;
@@ -1311,6 +1312,25 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
           });
           if (protectedNode) return false;
           return editor.commands.insertContentAt({ from, to }, buildContentNodesFromText(text));
+        },
+        findRevisedPassage: (markdown, near) => {
+          if (!editor) return;
+          const expected = markdownNodes(markdown);
+          if (expected.length !== 1 || expected[0].type !== "paragraph") return;
+          const plain = (expected[0].content || []).map((node) => node.type === "text" ? node.text || "" : "").join("");
+          if (!plain.trim() || expected[0].content?.some((node) => node.type !== "text")) return;
+          const matches: Array<{ from: number; to: number; text: string }> = [];
+          editor.state.doc.descendants((node, pos) => {
+            if (node.type.name !== "paragraph" || !node.textContent.includes(plain)) return;
+            let allText = true;
+            node.forEach((child) => { if (!child.isText) allText = false; });
+            if (!allText) return;
+            for (let offset = node.textContent.indexOf(plain); offset >= 0; offset = node.textContent.indexOf(plain, offset + 1)) {
+              matches.push({ from: pos + 1 + offset, to: pos + 1 + offset + plain.length, text: markdown });
+              if (matches.length > 1) break;
+            }
+          });
+          return matches.length === 1 && Math.abs(matches[0].from - near) <= 1 ? matches[0] : undefined;
         },
         insertLink: (anchor, url) => {
           if (!editor) return;
