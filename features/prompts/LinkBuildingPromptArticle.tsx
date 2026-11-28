@@ -4,6 +4,7 @@ import Link from "next/link";
 import LinkBuildingPromptLibrary from "./LinkBuildingPromptLibrary";
 import { linkBuildingPromoGuides } from "./LinkBuildingPromoGuides";
 import KeywordGuideCard from "./KeywordGuideCard";
+import { PROMPT_INLINE_LINK_CLASS } from "./promptLinkStyles";
 
 const body = "mt-4 text-lg leading-9 text-slate-600 dark:text-slate-300";
 const button =
@@ -169,23 +170,23 @@ export default function LinkBuildingPromptArticle({
           <p className={body}>
             <strong>Fast Link Building Path:</strong> Start by planning a
             citable asset with{" "}
-            <a href="#linkpr-prompt-001" className="underline font-semibold">
+            <a href="#linkpr-prompt-001" className={PROMPT_INLINE_LINK_CLASS}>
               Prompt 1 (Citation Magnet Data Studies)
             </a>
             , extract press angles with{" "}
-            <a href="#linkpr-prompt-012" className="underline font-semibold">
+            <a href="#linkpr-prompt-012" className={PROMPT_INLINE_LINK_CLASS}>
               Prompt 12 (5 Digital PR Angles)
             </a>
             , answer reporter queries with{" "}
-            <a href="#linkpr-prompt-023" className="underline font-semibold">
+            <a href="#linkpr-prompt-023" className={PROMPT_INLINE_LINK_CLASS}>
               Prompt 23 (150-Word HARO Pitch)
             </a>
             , send personalized emails with{" "}
-            <a href="#linkpr-prompt-034" className="underline font-semibold">
+            <a href="#linkpr-prompt-034" className={PROMPT_INLINE_LINK_CLASS}>
               Prompt 34 (95-Word Editorial Gap Pitch)
             </a>
             , and reclaim existing mentions with{" "}
-            <a href="#linkpr-prompt-056" className="underline font-semibold">
+            <a href="#linkpr-prompt-056" className={PROMPT_INLINE_LINK_CLASS}>
               Prompt 56 (Unlinked Brand Mention)
             </a>
             .

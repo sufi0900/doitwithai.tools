@@ -1,15 +1,14 @@
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import type { Metadata } from "next";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
 import Link from "next/link";
-import { MessageSquare, ShieldAlert, Star } from "lucide-react";
+import {
+  MessageSquare,
+  ShieldAlert,
+  Star,
+} from "lucide-react";
 import GoogleReviewResponseGeneratorClient from "@/features/google-review-response-generator/GoogleReviewResponseGeneratorClient";
 import ToolFaq from "@/features/tool-ui/ToolFaq";
 import ToolResources from "@/features/tool-catalog/ToolResources";
-import {
-  ToolHeroBackground,
-  toolHeroHeading,
-  toolHeroSurface,
-} from "@/features/tool-ui/ToolHero";
 
 const pageUrl =
   "https://doitwithai.tools/tools/google-review-response-generator";
@@ -105,68 +104,18 @@ export default function GoogleReviewResponseGeneratorPage() {
         }}
       />
 
-      <header
-        className={`relative overflow-hidden ${toolHeroSurface} text-white`}
+      <ToolLandingHero
+        slug="google-review-response-generator"
+        title="Google Review Response & Crisis Reply Generator"
+        description="Draft warm, local-entity-rich owner replies for 5-star reviews and calm, privacy-safe de-escalation responses for 1-star or mixed feedback in seconds."
+        categoryLabel="Local SEO"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
       >
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">Tools</Link>
-            <span>/</span>
-            <span aria-current="page">Google Review Response Generator</span>
-          </nav>
-
-          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                Local SEO · Reputation Management &amp; Owner Replies
-              </p>
-              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                Google Review Response{" "}
-                <span className={toolHeroHeading}>
-                  &amp; Crisis Reply Generator
-                </span>
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-                Draft warm, local-entity-rich owner replies for 5-star reviews
-                and calm, privacy-safe de-escalation responses for 1-star or
-                mixed feedback in seconds.
-              </p>
-              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  5-Star Local-SEO Replies
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  1-Star Crisis De-Escalation
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  3 Tone Variations per Review
-                </span>
-              </div>
-              <PortableToolHeroBar />
-            </div>
-
-            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
-                3 Strategic Reply Styles
-              </p>
-              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
-                <li>1. Warm &amp; Local-SEO Optimized (City + Service)</li>
-                <li>2. Concise &amp; Executive Professional</li>
-                <li>3. Empathy &amp; Offline Resolution (Privacy-Safe)</li>
-                <li>4. Instant AI customization for any customer quote</li>
-              </ul>
-            </div>
-          </div>
+        <div className="p-4 sm:p-6">
+          <GoogleReviewResponseGeneratorClient />
         </div>
-      </header>
-
-      <GoogleReviewResponseGeneratorClient />
+      </ToolLandingHero>
 
       <section
         className={`${section} border-t border-slate-200 dark:border-slate-800`}

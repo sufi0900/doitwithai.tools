@@ -1,7 +1,7 @@
 // app/api/og/route.js - Optimized for performance and visibility
 import { ImageResponse } from 'next/og';
 
-export const runtime = 'edge';
+// Use default Node.js runtime so @opennextjs/cloudflare bundles ImageResponse cleanly.
 
 export async function GET(request) {
   try {
@@ -149,7 +149,7 @@ export async function GET(request) {
       }}
     >
         <img
-  src={`${process.env.NEXT_PUBLIC_SITE_URL || 'https://doitwithai.tools'}/D2.png`}
+  src={`${process.env.NEXT_PUBLIC_SITE_URL || 'https://doitwithai.tools'}/doitwithai-logo-square.png`}
   width={142}
   height={142}
   style={{

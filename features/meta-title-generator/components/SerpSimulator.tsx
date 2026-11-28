@@ -10,7 +10,7 @@ import {
   Smartphone,
   ZoomIn,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import CopyButton from "@/components/ai-tools/CopyButton";
 import {
   META_TITLE_LIMITS,
@@ -62,9 +62,11 @@ export default function SerpSimulator({
   const [customDescription, setCustomDescription] = useState(() =>
     buildDescription(input.topicSummary),
   );
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   const evaluation = useMemo(
-    () => evaluateTitle(title, input, lens),
-    [title, input, lens],
+    () => evaluateTitle(title, input, lens, mounted),
+    [title, input, lens, mounted],
   );
   const pixelLimit =
     device === "mobile"
@@ -143,7 +145,8 @@ export default function SerpSimulator({
                   Editable title
                 </label>
                 <span className="text-xs font-bold text-slate-500">
-                  {evaluation.characters} chars · {evaluation.pixels}px
+                  {evaluation.characters} chars ·{" "}
+                  <span suppressHydrationWarning>{evaluation.pixels}</span>px
                 </span>
               </div>
               <textarea
@@ -303,9 +306,11 @@ export default function SerpSimulator({
           <div className="mt-5 rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
             <div className="flex flex-wrap items-center justify-between gap-3 text-xs font-bold">
               <span className="text-slate-700 dark:text-slate-200">
-                {evaluation.pixels}px / {pixelLimit}px {device} target
+                <span suppressHydrationWarning>{evaluation.pixels}</span>px /{" "}
+                {pixelLimit}px {device} target
               </span>
               <span
+                suppressHydrationWarning
                 className={
                   over
                     ? "text-red-600"
@@ -323,6 +328,7 @@ export default function SerpSimulator({
             </div>
             <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
               <div
+                suppressHydrationWarning
                 className={`h-full rounded-full transition-all ${over ? "bg-red-500" : usage > 88 ? "bg-amber-500" : "bg-emerald-500"}`}
                 style={{ width: `${usage}%` }}
               />

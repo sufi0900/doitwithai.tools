@@ -1,10 +1,5 @@
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
-import {
-  ToolHeroBackground,
-  toolHeroSurface,
-  toolHeroHeading,
-} from "@/features/tool-ui/ToolHero";
 import type { Metadata } from "next";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
 import Link from "next/link";
 import OutboundLinkCheckerClient from "@/features/outbound-link-checker/OutboundLinkCheckerClient";
 import ToolResources from "@/features/tool-catalog/ToolResources";
@@ -163,67 +158,18 @@ export default function OutboundLinkCheckerPage() {
           __html: JSON.stringify(schema).replace(/</g, "\\u003c"),
         }}
       />
-      <div className={`relative overflow-hidden ${toolHeroSurface} text-white`}>
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">Tools</Link>
-            <span>/</span>
-            <span aria-current="page">Outbound Link Checker</span>
-          </nav>
-
-          <div className="mb-8 grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                LINK AUDIT &amp; VERIFICATION · REL ATTRIBUTES &amp; ANCHOR SAFETY
-              </p>
-              <h1 className={toolHeroHeading}>
-                Free Outbound Link Checker &amp; External SEO Link Auditor
-              </h1>
-              <p className="mt-4 max-w-2xl text-base leading-relaxed text-slate-200">
-                Inspect your external HTML and Markdown links for{" "}
-                <strong>
-                  rel=&ldquo;sponsored&rdquo; / &ldquo;nofollow&rdquo; compliance
-                </strong>
-                , <strong>target-keyword anchor leaks</strong>,{" "}
-                <strong>insecure HTTP URLs</strong>, and{" "}
-                <strong>E-E-A-T deep-link authority</strong>—with instant,
-                copy-ready HTML repairs.
-              </p>
-              <div className="mt-5">
-                <PortableToolHeroBar slug="outbound-link-checker" />
-              </div>
-            </div>
-
-            <div className="rounded-3xl border border-white/15 bg-slate-900/75 p-5 shadow-2xl backdrop-blur-md">
-              <p className="text-xs font-bold uppercase tracking-wider text-blue-300">
-                What This Link Checker Protects
-              </p>
-              <ul className="mt-3 space-y-2.5 text-xs leading-6 text-slate-200">
-                <li>
-                  • <strong>Google Link Spam Compliance</strong>: Auto-detects
-                  affiliate URLs missing <code>rel=&quot;sponsored&quot;</code>.
-                </li>
-                <li>
-                  • <strong>Keyword Cannibalization Guard</strong>: Flags
-                  external links that use your page&apos;s own target keyword.
-                </li>
-                <li>
-                  • <strong>Deep-Link Citation Quality</strong>: Separates
-                  specific documentation URLs from bare homepages.
-                </li>
-              </ul>
-            </div>
-          </div>
-
+      <ToolLandingHero
+        slug="outbound-link-checker"
+        title="Free Outbound Link Checker & External SEO Link Auditor"
+        description="Inspect your external HTML and Markdown links for rel=&ldquo;sponsored&rdquo; / &ldquo;nofollow&rdquo; compliance , target-keyword anchor leaks , insecure HTTP URLs , and E-E-A-T deep-link authority —with instant, copy-ready HTML repairs."
+        categoryLabel="LINK AUDIT & VERIFICATION"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
+      >
+        <div className="p-4 sm:p-6">
           <OutboundLinkCheckerClient />
         </div>
-      </div>
+      </ToolLandingHero>
 
       <div className="mx-auto max-w-6xl space-y-20 px-4 py-16 sm:px-6 lg:px-8">
         {/* 50-WORD QUICK ANSWER */}

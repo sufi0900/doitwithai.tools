@@ -393,7 +393,7 @@ function SlideCard({
                   borderColor: s.accent,
                   boxShadow: `0 0 30px ${s.accent}33, 0 10px 25px -5px rgba(0,0,0,0.5)`,
                 }}
-                className="relative z-10 h-[202px] w-[156px] overflow-hidden rounded-3xl border-[2.5px] bg-slate-900 shadow-2xl sm:h-[216px] sm:w-[166px]"
+                className="relative z-10 h-[202px] w-[156px] overflow-hidden rounded-3xl border-[2.5px] bg-slate-50 dark:bg-slate-900 shadow-2xl sm:h-[216px] sm:w-[166px]"
               >
                 <Image
                   src={s.imageSrc}
@@ -431,7 +431,7 @@ function SlideCard({
 
       <div
         style={{ backgroundColor: t.footer }}
-        className="relative z-20 flex items-center justify-between gap-2 px-5 py-2.5 text-white"
+        className="relative z-20 flex items-center justify-between gap-2 px-5 py-2.5 text-slate-900 dark:text-white"
       >
         <div className="flex min-w-0 items-center gap-2.5">
           <div
@@ -453,7 +453,7 @@ function SlideCard({
               </span>
               <ShieldCheck size={13} style={{ color: s.accent }} />
             </div>
-            <p className="truncate text-[10px] font-medium text-slate-300">
+            <p className="truncate text-[10px] font-medium text-slate-700 dark:text-slate-300">
               {s.personRole}
             </p>
           </div>
@@ -466,7 +466,7 @@ function SlideCard({
             borderColor: `${s.accent}88`,
             backgroundColor: `${s.accent}2E`,
           }}
-          className="inline-flex shrink-0 items-center gap-1 rounded-lg border px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-white transition hover:brightness-125"
+          className="inline-flex shrink-0 items-center gap-1 rounded-lg border px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-slate-900 dark:text-white transition hover:brightness-125"
         >
           <span>{s.brand}</span>
           <ArrowDownRight size={11} />
@@ -499,7 +499,7 @@ export default function HeroAnimatedTestimonialShowcase() {
       aria-label="Interactive AI testimonial card template showcase"
     >
       <div className="mb-2.5 flex flex-wrap items-center justify-between gap-1.5 px-0.5">
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-[11px] font-extrabold text-white backdrop-blur-xs">
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-[11px] font-extrabold text-slate-900 dark:text-white backdrop-blur-xs">
           <Sparkles size={12} className="animate-pulse text-amber-300" />
           Live Framed Templates
         </span>
@@ -551,9 +551,9 @@ export default function HeroAnimatedTestimonialShowcase() {
         })}
       </div>
 
-      <div className="mt-2.5 flex items-center justify-between px-1 text-[11px] text-slate-300">
+      <div className="mt-2.5 flex items-center justify-between px-1 text-[11px] text-slate-700 dark:text-slate-300">
         <span>
-          Previewing: <strong className="text-white">{currentSlide.label}</strong>
+          Previewing: <strong className="text-slate-900 dark:text-white">{currentSlide.label}</strong>
         </span>
         <button
           type="button"

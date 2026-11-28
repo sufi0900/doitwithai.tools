@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { runMultiModelTextFailover } from "@/lib/ai/multi-model-router";
 
 export const runtime = "nodejs";
 
@@ -10,60 +11,6 @@ interface PricingRequest {
   agencyPerArticle?: number;
   hybridPerArticle?: number;
   annualSavingsVsAgency?: number;
-}
-
-async function callFourTierAiAdvisor(prompt: string): Promise<{ text: string; tier: string } | null> {
-  const geminiKey = process.env.GEMINI_API_KEY;
-  if (geminiKey) {
-    try {
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { temperature: 0.45, maxOutputTokens: 900 }
-          })
-        }
-      );
-      if (res.ok) {
-        const data = await res.json();
-        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (text) return { text, tier: "Tier 1 · Gemini 2.5 Flash" };
-      }
-    } catch {
-      // Fall through
-    }
-  }
-
-  const groqKey = process.env.GROQ_API_KEY;
-  if (groqKey) {
-    try {
-      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${groqKey}`
-        },
-        body: JSON.stringify({
-          model: "llama-3.3-70b-versatile",
-          messages: [{ role: "user", content: prompt }],
-          temperature: 0.45,
-          max_tokens: 900
-        })
-      });
-      if (res.ok) {
-        const data = await res.json();
-        const text = data?.choices?.[0]?.message?.content;
-        if (text) return { text, tier: "Tier 2 · Groq Llama-3.3-70B" };
-      }
-    } catch {
-      // Fall through
-    }
-  }
-
-  return null;
 }
 
 export async function POST(request: Request) {
@@ -84,7 +31,11 @@ Include:
 2. Recommended 90-Day Cluster Rollout Plan
 3. Where to invest human SME hours for maximum Google AI Overview citations.`;
 
-    const aiRes = await callFourTierAiAdvisor(prompt);
+    const aiRes = await runMultiModelTextFailover({
+      prompt,
+      temperature: 0.45,
+      maxOutputTokens: 900,
+    });
 
     const fallbackMemo = `# 2026 Executive Content Budget & Allocation Memo: ${niche}
 - **Publishing Cadence**: ${articles} articles/month (${words.toLocaleString()} words/article · ${complexity.toUpperCase()} tier)

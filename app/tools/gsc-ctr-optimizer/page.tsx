@@ -1,15 +1,15 @@
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import type { Metadata } from "next";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
 import Link from "next/link";
-import { BarChart3, MousePointerClick, Sparkles, TrendingUp } from "lucide-react";
+import {
+  BarChart3,
+  MousePointerClick,
+  Sparkles,
+  TrendingUp,
+} from "lucide-react";
 import GscCtrOptimizerClient from "@/features/gsc-ctr-optimizer/GscCtrOptimizerClient";
 import ToolFaq from "@/features/tool-ui/ToolFaq";
 import ToolResources from "@/features/tool-catalog/ToolResources";
-import {
-  ToolHeroBackground,
-  toolHeroHeading,
-  toolHeroSurface,
-} from "@/features/tool-ui/ToolHero";
 
 const pageUrl = "https://doitwithai.tools/tools/gsc-ctr-optimizer";
 const title =
@@ -104,80 +104,18 @@ export default function GscCtrOptimizerPage() {
         }}
       />
 
-      <header
-        className={`relative overflow-hidden ${toolHeroSurface} text-white`}
+      <ToolLandingHero
+        slug="gsc-ctr-optimizer"
+        title="GSC CTR Benchmark & Snippet Click-Loss Calculator"
+        description="Compare your Google Search Console CTR against organic position curves, quantify exact lost monthly clicks, and generate high-converting title & meta description test variants."
+        categoryLabel="On-page SEO"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
       >
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">Tools</Link>
-            <span>/</span>
-            <span aria-current="page">GSC CTR optimizer</span>
-          </nav>
-
-          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                On-page SEO · Search Console Click Recovery
-              </p>
-              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                GSC CTR Benchmark &{" "}
-                <span className={toolHeroHeading}>
-                  Snippet Click-Loss Calculator
-                </span>
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-                Compare your Google Search Console CTR against organic position
-                curves, quantify exact lost monthly clicks, and generate
-                high-converting title & meta description test variants.
-              </p>
-              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  3 SERP CTR benchmark curves
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Exact click-deficit math
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Title rewrite pack (.DOCX / .CSV)
-                </span>
-              </div>
-              <PortableToolHeroBar />
-            </div>
-
-            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
-                Top-5 Organic CTR Benchmarks
-              </p>
-              <div className="mt-4 space-y-2 text-xs text-slate-300">
-                <div className="flex justify-between">
-                  <span>Position #1 (Standard / AI-Adjusted)</span>
-                  <span className="font-bold text-emerald-300">27.6% / 19.5%</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Position #2</span>
-                  <span className="font-bold text-indigo-300">15.8% / 11.4%</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Position #3</span>
-                  <span className="font-bold text-sky-300">11.0% / 8.2%</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Positions #4 – #5</span>
-                  <span className="font-bold text-amber-300">8.4% – 6.3%</span>
-                </div>
-              </div>
-            </div>
-          </div>
+        <div className="p-4 sm:p-6">
+          <GscCtrOptimizerClient />
         </div>
-      </header>
-
-      <GscCtrOptimizerClient />
+      </ToolLandingHero>
 
       <section
         className={`${section} border-t border-slate-200 dark:border-slate-800`}

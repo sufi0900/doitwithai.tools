@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
 import Link from "next/link";
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import ToolFaq from "@/features/tool-ui/ToolFaq";
 import ToolResources from "@/features/tool-catalog/ToolResources";
-import { ToolHeroBackground, toolHeroHeading, toolHeroSurface } from "@/features/tool-ui/ToolHero";
 import AiWorkflowBlueprintGeneratorClient from "@/features/ai-workflow-blueprint-generator/AiWorkflowBlueprintGeneratorClient";
 
 const pageUrl = "https://doitwithai.tools/tools/ai-workflow-blueprint-generator";
@@ -32,46 +31,24 @@ const faqs = [
 
 export default function AiWorkflowBlueprintGeneratorPage() {
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-100 pb-20">
-      <section className={`${toolHeroSurface} relative overflow-hidden border-b border-slate-800/80 py-8`}>
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <nav className="mb-3 flex items-center gap-2 text-xs text-slate-400">
-            <Link href="/" className="hover:text-white">Home</Link>
-            <span>/</span>
-            <Link href="/tools" className="hover:text-white">Tools</Link>
-            <span>/</span>
-            <span className="text-indigo-400">AI Workflow Blueprint Generator</span>
-          </nav>
-          <div className="max-w-3xl space-y-3">
-            <h1 className={`${toolHeroHeading} text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-white`}>
-              Free AI Workflow Blueprint Generator for{" "}
-              <span className="bg-gradient-to-r from-indigo-400 via-cyan-300 to-emerald-400 bg-clip-text text-transparent">
-                Make, Zapier & n8n
-              </span>
-            </h1>
-            <p className="text-sm sm:text-base text-slate-300 leading-relaxed">
-              Map your trigger app, AI reasoning prompt, and CRM/Slack destination into a structured node architecture and downloadable JSON blueprint.
-            </p>
-            <PortableToolHeroBar
-              slug="ai-workflow-blueprint-generator"
-              title="AI Workflow Blueprint Generator (Make, Zapier & n8n)"
-              path="/tools/ai-workflow-blueprint-generator"
-              primaryLabel="Use Tool Now: Build Workflow Blueprint"
-              workspaceId="ai-workflow-blueprint-workspace"
-            />
-          </div>
+    <div className="min-h-screen bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100 pb-20">
+      <ToolLandingHero
+        slug="ai-workflow-blueprint-generator"
+        title="Free AI Workflow Blueprint Generator for Make, Zapier & n8n"
+        description="Map your trigger app, AI reasoning prompt, and CRM/Slack destination into a structured node architecture and downloadable JSON blueprint."
+        categoryLabel="AI SEO Tools"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
+      >
+        <div className="p-4 sm:p-6">
+          <AiWorkflowBlueprintGeneratorClient />
         </div>
-      </section>
-
-      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-6">
-        <AiWorkflowBlueprintGeneratorClient />
-      </section>
+      </ToolLandingHero>
 
       <section className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 pt-16 space-y-10">
         <ToolResources slug="ai-workflow-blueprint-generator" />
         <ToolFaq title="AI Workflow Blueprint Generator FAQs" faqs={faqs} />
       </section>
-    </main>
+    </div>
   );
 }

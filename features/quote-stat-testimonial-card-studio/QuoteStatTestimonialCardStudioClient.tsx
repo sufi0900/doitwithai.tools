@@ -150,7 +150,7 @@ function TemplateThumb({
       }`}
     >
       <div>
-        <div className="relative overflow-hidden rounded-xl border border-slate-200/80 bg-slate-900 dark:border-slate-800">
+        <div className="relative overflow-hidden rounded-xl border border-slate-200/80 bg-slate-50 dark:bg-slate-900 dark:border-slate-800">
           <canvas
             ref={ref}
             role="img"
@@ -1298,7 +1298,7 @@ export default function QuoteStatTestimonialCardStudioClient() {
                   type="button"
                   onClick={handleAddQuoteCard}
                   disabled={!canAddCard}
-                  className="inline-flex items-center gap-0.5 rounded-lg bg-[#4058d0] px-2 py-1 text-[11px] font-bold text-white disabled:opacity-40"
+                  className="inline-flex items-center gap-0.5 rounded-lg bg-[#4058d0] px-2 py-1 text-[11px] font-bold text-slate-900 dark:text-white disabled:opacity-40"
                 >
                   <Plus size={12} /> Add
                 </button>
@@ -1315,8 +1315,8 @@ export default function QuoteStatTestimonialCardStudioClient() {
             </div>
 
             <div className="overflow-hidden rounded-2xl border-2 border-slate-300 bg-[#070b14] shadow-xl dark:border-slate-700">
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 bg-slate-900 px-4 py-2.5">
-                <span className="text-[11px] font-black uppercase tracking-wider text-white">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-4 py-2.5">
+                <span className="text-[11px] font-black uppercase tracking-wider text-slate-900 dark:text-white">
                   Card {activeCardIdx + 1} · {input.aspectRatio || "1:1"} HD
                 </span>
                 <div className="flex flex-wrap items-center gap-1.5">
@@ -1346,7 +1346,7 @@ export default function QuoteStatTestimonialCardStudioClient() {
                           : "Use the PNG download in this browser.",
                       );
                     }}
-                    className="inline-flex items-center gap-1 rounded-lg bg-white/15 px-2.5 py-1.5 text-xs font-bold text-white hover:bg-white/25"
+                    className="inline-flex items-center gap-1 rounded-lg bg-white/15 px-2.5 py-1.5 text-xs font-bold text-slate-900 dark:text-white hover:bg-white/25"
                   >
                     <Copy size={12} /> Copy
                   </button>
@@ -1359,7 +1359,7 @@ export default function QuoteStatTestimonialCardStudioClient() {
                       );
                       notify("Downloaded SVG.");
                     }}
-                    className="inline-flex items-center gap-1 rounded-lg bg-white/15 px-2.5 py-1.5 text-xs font-bold text-white hover:bg-white/25"
+                    className="inline-flex items-center gap-1 rounded-lg bg-white/15 px-2.5 py-1.5 text-xs font-bold text-slate-900 dark:text-white hover:bg-white/25"
                   >
                     <FileCode2 size={12} /> SVG
                   </button>
@@ -1373,7 +1373,7 @@ export default function QuoteStatTestimonialCardStudioClient() {
                       );
                       notify("Opened print-ready PDF view.");
                     }}
-                    className="inline-flex items-center gap-1 rounded-lg bg-white/15 px-2.5 py-1.5 text-xs font-bold text-white hover:bg-white/25"
+                    className="inline-flex items-center gap-1 rounded-lg bg-white/15 px-2.5 py-1.5 text-xs font-bold text-slate-900 dark:text-white hover:bg-white/25"
                   >
                     <Printer size={12} /> PDF
                   </button>
@@ -1383,7 +1383,7 @@ export default function QuoteStatTestimonialCardStudioClient() {
                       await navigator.clipboard.writeText(pack.socialCaption);
                       notify("Copied social caption.");
                     }}
-                    className="inline-flex items-center gap-1 rounded-lg bg-white/15 px-2.5 py-1.5 text-xs font-bold text-white hover:bg-white/25"
+                    className="inline-flex items-center gap-1 rounded-lg bg-white/15 px-2.5 py-1.5 text-xs font-bold text-slate-900 dark:text-white hover:bg-white/25"
                   >
                     <FileText size={12} /> Caption
                   </button>
@@ -1427,8 +1427,8 @@ export default function QuoteStatTestimonialCardStudioClient() {
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-800 bg-[#0d1424] px-3.5 py-2 text-xs text-slate-300">
-                <span className="text-[11px] text-slate-400">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 dark:border-slate-800 bg-[#0d1424] px-3.5 py-2 text-xs text-slate-700 dark:text-slate-300">
+                <span className="text-[11px] text-slate-500 dark:text-slate-400">
                   Ctrl + scroll to zoom · Use sliders on left to adjust ring,
                   radius &amp; photo position
                 </span>
@@ -1439,7 +1439,7 @@ export default function QuoteStatTestimonialCardStudioClient() {
                     onClick={() =>
                       setZoomLevel((z) => Math.max(0.6, +(z - 0.15).toFixed(2)))
                     }
-                    className="rounded-lg bg-slate-800 px-2 py-1 text-white hover:bg-slate-700"
+                    className="rounded-lg bg-slate-800 px-2 py-1 text-slate-900 dark:text-white hover:bg-slate-700"
                   >
                     <ZoomOut size={12} />
                   </button>
@@ -1462,7 +1462,7 @@ export default function QuoteStatTestimonialCardStudioClient() {
                         Math.min(2.25, +(z + 0.15).toFixed(2)),
                       )
                     }
-                    className="rounded-lg bg-slate-800 px-2 py-1 text-white hover:bg-slate-700"
+                    className="rounded-lg bg-slate-800 px-2 py-1 text-slate-900 dark:text-white hover:bg-slate-700"
                   >
                     <ZoomIn size={12} />
                   </button>
@@ -1471,7 +1471,7 @@ export default function QuoteStatTestimonialCardStudioClient() {
                       type="button"
                       aria-label="Reset zoom"
                       onClick={() => setZoomLevel(1)}
-                      className="rounded-lg border border-slate-700 px-2 py-1 text-slate-300"
+                      className="rounded-lg border border-slate-300 dark:border-slate-700 px-2 py-1 text-slate-700 dark:text-slate-300"
                     >
                       <RotateCcw size={11} />
                     </button>

@@ -243,8 +243,8 @@ export default function ArticleToHtmlCheatsheetClient() {
 
         {/* RIGHT COLUMN: LIVE 1-PAGE VISUAL INFOGRAPHIC CHEATSHEET */}
         <div className="space-y-6">
-          <div className="rounded-3xl border-2 border-[#4058D0]/60 bg-[#0F172A] p-6 text-white shadow-2xl">
-            <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-800 pb-4">
+          <div className="rounded-3xl border-2 border-[#4058D0]/60 bg-[#0F172A] p-6 text-slate-900 dark:text-white shadow-2xl">
+            <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
               <div className="min-w-0 flex-1">
                 <input
                   type="text"
@@ -258,7 +258,7 @@ export default function ArticleToHtmlCheatsheetClient() {
                   }
                   className="w-full rounded bg-transparent text-[11px] font-extrabold uppercase tracking-widest text-sky-300 focus:bg-slate-900 focus:outline-none focus:ring-1 focus:ring-[#5271ff]"
                 />
-                <h3 className="mt-1 text-xl font-black text-white sm:text-2xl">
+                <h3 className="mt-1 text-xl font-black text-slate-900 dark:text-white sm:text-2xl">
                   {sheet.title}
                 </h3>
               </div>
@@ -269,7 +269,7 @@ export default function ArticleToHtmlCheatsheetClient() {
                   onClick={() =>
                     setViewMode((v) => (v === "visual" ? "html" : "visual"))
                   }
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-bold text-slate-100 hover:border-[#5271ff]"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-800 px-3 py-2 text-xs font-bold text-slate-900 dark:text-slate-100 hover:border-[#5271ff]"
                 >
                   {viewMode === "visual" ? (
                     <>
@@ -292,7 +292,7 @@ export default function ArticleToHtmlCheatsheetClient() {
                 <button
                   type="button"
                   onClick={printCheatsheetPdf}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-bold text-slate-100 hover:border-[#5271ff]"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-800 px-3 py-2 text-xs font-bold text-slate-900 dark:text-slate-100 hover:border-[#5271ff]"
                 >
                   <Printer size={14} />
                   Print / Save PDF
@@ -305,7 +305,7 @@ export default function ArticleToHtmlCheatsheetClient() {
                     );
                     notify("Copied standalone HTML Cheatsheet code!");
                   }}
-                  className="inline-flex items-center gap-1 rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-bold text-slate-100 hover:border-[#5271ff]"
+                  className="inline-flex items-center gap-1 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-800 px-3 py-2 text-xs font-bold text-slate-900 dark:text-slate-100 hover:border-[#5271ff]"
                 >
                   <Copy size={13} /> Copy HTML
                 </button>
@@ -314,17 +314,17 @@ export default function ArticleToHtmlCheatsheetClient() {
 
             {viewMode === "html" ? (
               <div className="mt-4">
-                <p className="mb-2 text-xs text-slate-400">
+                <p className="mb-2 text-xs text-slate-500 dark:text-slate-400">
                   Standalone self-contained HTML5 document ready to embed or
                   save:
                 </p>
-                <pre className="max-h-[460px] overflow-auto rounded-2xl border border-slate-800 bg-slate-950 p-4 font-mono text-xs leading-6 text-emerald-300">
+                <pre className="max-h-[460px] overflow-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-4 font-mono text-xs leading-6 text-emerald-300">
                   {sheet.standaloneHtmlDocument}
                 </pre>
               </div>
             ) : (
               <>
-                <p className="mt-3 text-[11px] text-slate-400">
+                <p className="mt-3 text-[11px] text-slate-500 dark:text-slate-400">
                   Click any KPI metric or step card below to customize text inline before downloading or printing:
                 </p>
                 {/* 4 KPI Strip (Inline Editable) */}
@@ -332,7 +332,7 @@ export default function ArticleToHtmlCheatsheetClient() {
                   {sheet.kpis.map((k, idx) => (
                     <div
                       key={idx}
-                      className="rounded-xl border border-slate-800 bg-[#162038] p-3 text-center"
+                      className="rounded-xl border border-slate-200 dark:border-slate-800 bg-[#162038] p-3 text-center"
                     >
                       <input
                         type="text"
@@ -366,7 +366,7 @@ export default function ArticleToHtmlCheatsheetClient() {
                             kpis: next,
                           }));
                         }}
-                        className="mt-0.5 w-full bg-transparent text-center text-[11px] font-semibold text-slate-300 focus:outline-none focus:ring-1 focus:ring-[#5271ff]"
+                        className="mt-0.5 w-full bg-transparent text-center text-[11px] font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-[#5271ff]"
                       />
                     </div>
                   ))}
@@ -377,7 +377,7 @@ export default function ArticleToHtmlCheatsheetClient() {
                   {sheet.steps.map((s, idx) => (
                     <div
                       key={s.stepNumber}
-                      className="rounded-xl border border-slate-800 bg-[#162038] p-3.5"
+                      className="rounded-xl border border-slate-200 dark:border-slate-800 bg-[#162038] p-3.5"
                     >
                       <span className="inline-block rounded-full bg-[#4058D0] px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-white">
                         Step {s.stepNumber}
@@ -397,7 +397,7 @@ export default function ArticleToHtmlCheatsheetClient() {
                             steps: next,
                           }));
                         }}
-                        className="mt-1.5 block w-full rounded bg-transparent text-sm font-extrabold text-white focus:bg-slate-900 focus:outline-none focus:ring-1 focus:ring-[#5271ff]"
+                        className="mt-1.5 block w-full rounded bg-transparent text-sm font-extrabold text-slate-900 dark:text-white focus:bg-slate-900 focus:outline-none focus:ring-1 focus:ring-[#5271ff]"
                       />
                       <textarea
                         rows={2}
@@ -414,7 +414,7 @@ export default function ArticleToHtmlCheatsheetClient() {
                             steps: next,
                           }));
                         }}
-                        className="mt-1 w-full rounded bg-transparent text-xs leading-5 text-slate-300 focus:bg-slate-900 focus:outline-none focus:ring-1 focus:ring-[#5271ff]"
+                        className="mt-1 w-full rounded bg-transparent text-xs leading-5 text-slate-700 dark:text-slate-300 focus:bg-slate-900 focus:outline-none focus:ring-1 focus:ring-[#5271ff]"
                       />
                     </div>
                   ))}
@@ -426,7 +426,7 @@ export default function ArticleToHtmlCheatsheetClient() {
                     <strong className="flex items-center gap-1.5 font-extrabold text-emerald-300">
                       <CheckCircle2 size={14} /> Best Practices (Do This)
                     </strong>
-                    <ul className="mt-2 space-y-1 text-slate-200">
+                    <ul className="mt-2 space-y-1 text-slate-800 dark:text-slate-200">
                       {sheet.dosList.map((d, i) => (
                         <li key={i}>• {d}</li>
                       ))}
@@ -437,7 +437,7 @@ export default function ArticleToHtmlCheatsheetClient() {
                     <strong className="flex items-center gap-1.5 font-extrabold text-rose-300">
                       <XCircle size={14} /> Common Pitfalls (Avoid)
                     </strong>
-                    <ul className="mt-2 space-y-1 text-slate-200">
+                    <ul className="mt-2 space-y-1 text-slate-800 dark:text-slate-200">
                       {sheet.dontsList.map((d, i) => (
                         <li key={i}>• {d}</li>
                       ))}

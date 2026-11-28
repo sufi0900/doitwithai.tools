@@ -46,7 +46,7 @@ export default function SlugCard({
             >
               {group.eyebrow}
             </span>
-            <span className="text-xs font-bold text-slate-400">
+            <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
               {candidate.angle}
             </span>
           </div>
@@ -57,7 +57,7 @@ export default function SlugCard({
           >
             /{candidate.slug}
           </p>
-          <p className="mt-2 truncate text-xs font-semibold text-slate-400">
+          <p className="mt-2 truncate text-xs font-semibold text-slate-500 dark:text-slate-400">
             {fullUrl}
           </p>
         </div>

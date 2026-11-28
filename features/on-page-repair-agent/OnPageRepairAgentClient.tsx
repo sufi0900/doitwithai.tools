@@ -367,7 +367,7 @@ export default function OnPageRepairAgentClient() {
               <span className="rounded-xl bg-amber-500/15 px-3 py-1.5 text-xs font-extrabold text-amber-700 dark:text-amber-300">
                 Before: {pack.overallHealthScore}/100
               </span>
-              <span className="text-xs font-black text-slate-400">→</span>
+              <span className="text-xs font-black text-slate-500 dark:text-slate-400">→</span>
               <span className="rounded-xl bg-emerald-500/15 px-3 py-1.5 text-xs font-extrabold text-emerald-700 dark:text-emerald-300">
                 After Patch: {pack.repairedScoreProjection}/100
               </span>
@@ -500,7 +500,7 @@ export default function OnPageRepairAgentClient() {
                     Copy HTML Block
                   </button>
                 </div>
-                <pre className="mt-2 overflow-x-auto whitespace-pre-wrap rounded-xl bg-slate-950 p-3 font-mono text-xs text-emerald-300">
+                <pre className="mt-2 overflow-x-auto whitespace-pre-wrap rounded-xl bg-white dark:bg-slate-950 p-3 font-mono text-xs text-emerald-300">
                   {pack.positionZeroLeadBlock}
                 </pre>
               </div>
@@ -610,7 +610,7 @@ export default function OnPageRepairAgentClient() {
                     <p className="mt-1.5 text-xs text-emerald-700 dark:text-emerald-300">
                       <strong>Alt:</strong> &quot;{img.suggestedAlt}&quot;
                     </p>
-                    <pre className="mt-2 overflow-x-auto rounded-xl bg-slate-950 p-2.5 font-mono text-[11px] text-slate-200">
+                    <pre className="mt-2 overflow-x-auto rounded-xl bg-white dark:bg-slate-950 p-2.5 font-mono text-[11px] text-slate-800 dark:text-slate-200">
                       {img.htmlSnippet}
                     </pre>
                   </div>
@@ -640,7 +640,7 @@ export default function OnPageRepairAgentClient() {
                 rows={18}
                 readOnly
                 value={pack.jsonLdSchemaCode}
-                className="w-full rounded-2xl border border-slate-300 bg-slate-950 p-4 font-mono text-xs leading-relaxed text-emerald-300 focus:outline-none dark:border-slate-800"
+                className="w-full rounded-2xl border border-slate-300 bg-white dark:bg-slate-950 p-4 font-mono text-xs leading-relaxed text-emerald-300 focus:outline-none dark:border-slate-800"
               />
             </div>
           )}
@@ -656,7 +656,7 @@ export default function OnPageRepairAgentClient() {
                   rows={16}
                   readOnly
                   value={pack.completeHeadPatchHtml}
-                  className="w-full rounded-2xl border border-slate-300 bg-slate-950 p-4 font-mono text-xs leading-relaxed text-sky-300 focus:outline-none dark:border-slate-800"
+                  className="w-full rounded-2xl border border-slate-300 bg-white dark:bg-slate-950 p-4 font-mono text-xs leading-relaxed text-sky-300 focus:outline-none dark:border-slate-800"
                 />
               </div>
 

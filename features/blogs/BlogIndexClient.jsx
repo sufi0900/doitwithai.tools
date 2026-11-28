@@ -163,6 +163,7 @@ export default function AllBlogsAggregated({
               <div className="flex flex-wrap gap-2">
                 <Link
                   href="/blogs"
+                  prefetch={false}
                   className={`px-6 py-3 rounded-full font-medium transition-all duration-300 whitespace-nowrap ${
                     selectedCategory === 'all'
                       ? 'bg-blue-600 text-white shadow-md'
@@ -175,6 +176,7 @@ export default function AllBlogsAggregated({
                   <Link
                     key={key}
                     href={getBlogCategoryHref(key)}
+                    prefetch={false}
                     className={`px-6 py-3 rounded-full font-medium transition-all duration-300 whitespace-nowrap ${
                       selectedCategory === key
                         ? 'bg-blue-600 text-white shadow-md'

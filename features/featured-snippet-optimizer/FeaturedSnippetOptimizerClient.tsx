@@ -803,7 +803,7 @@ export default function FeaturedSnippetOptimizerClient() {
                   ))}
                 </div>
               ) : (
-                <pre className="mt-4 max-h-[380px] w-full max-w-full overflow-auto whitespace-pre-wrap break-words rounded-xl border border-slate-200 bg-slate-950 p-4 font-mono text-xs leading-6 text-emerald-300 dark:border-slate-700">
+                <pre className="mt-4 max-h-[380px] w-full max-w-full overflow-auto whitespace-pre-wrap break-words rounded-xl border border-slate-200 bg-white dark:bg-slate-950 p-4 font-mono text-xs leading-6 text-emerald-300 dark:border-slate-700">
                   {activeCodeTab === "html" ? htmlCode : mdCode}
                 </pre>
               )}

@@ -1,7 +1,11 @@
+/** Inline hyperlink range (character offsets into `Block.text`). */
+export type BlockLink = { start: number; end: number; url: string };
 export type Block = {
   id: string;
   kind: "heading" | "paragraph" | "list" | "quote" | "code" | "table" | "image";
   text: string;
+  /** Inline hyperlinks inside `text`, preserved for PDF/DOCX export. */
+  links?: BlockLink[];
   level?: number;
   cells?: string[][];
   header?: boolean;

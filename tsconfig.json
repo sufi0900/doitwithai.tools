@@ -1,9 +1,18 @@
 {
   "compilerOptions": {
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"]
+      "@/*": [
+        "./*"
+      ],
+      "@/lib/blog-writer/technical-seo-compiler": [
+        "./lib/blog-infographic-studio/writer-export"
+      ]
     },
     "allowJs": true,
     "skipLibCheck": true,
@@ -44,6 +53,7 @@
     "app/faq/page.jsx",
     "app/faq/FAQClient.jsx",
     "app/layout.jsx",
+    "app/ClientLayoutShell.jsx",
     "app/DeferredResources.js",
     "app/contact/page.jsx",
     "components/Blog/HomeMediumCard.jsx",
@@ -51,5 +61,15 @@
     "app/ai-seo/categories/[category]/page.jsx",
     "app/ai-seo/categories/[category]/code.jsx"
   ],
-  "exclude": ["node_modules", "updated-source", "chrome-extension"]
+  "exclude": [
+    "node_modules",
+    "_archive",
+    "updated-source",
+    "chrome-extension",
+    ".open-next",
+    ".portable-build",
+    "public/portable-tools",
+    "sanitystudio",
+    "tests"
+  ]
 }

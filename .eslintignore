@@ -1,0 +1,10 @@
+_archive/
+node_modules/
+.next/
+.open-next/
+.portable-build/
+public/portable-tools/
+chrome-extension/
+updated-source/
+sanitystudio/
+dist/

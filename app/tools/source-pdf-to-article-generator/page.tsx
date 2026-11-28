@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
 import Link from "next/link";
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import ToolFaq from "@/features/tool-ui/ToolFaq";
 import ToolResources from "@/features/tool-catalog/ToolResources";
-import { ToolHeroBackground, toolHeroHeading, toolHeroSurface } from "@/features/tool-ui/ToolHero";
 import SourcePdfToArticleGeneratorClient from "@/features/source-pdf-to-article-generator/SourcePdfToArticleGeneratorClient";
 
 const pageUrl = "https://doitwithai.tools/tools/source-pdf-to-article-generator";
@@ -84,78 +83,24 @@ const jsonLd = {
 
 export default function SourcePdfToArticleGeneratorPage() {
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-100 pb-20">
+    <div className="min-h-screen bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100 pb-20">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      <section className={`${toolHeroSurface} relative overflow-hidden border-b border-slate-800/80 py-8`}>
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <nav className="mb-3 flex items-center gap-2 text-xs text-slate-400">
-            <Link href="/" className="hover:text-white">Home</Link>
-            <span>/</span>
-            <Link href="/tools" className="hover:text-white">Tools</Link>
-            <span>/</span>
-            <span className="text-indigo-400">Source, PDF & NotebookLM-to-Article Studio</span>
-          </nav>
-
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-            <div className="lg:col-span-7 space-y-3">
-              <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/30 bg-indigo-500/10 px-3 py-1 text-xs font-medium text-indigo-300">
-                <span>📑 NotebookLM + PDF + Interview Synthesis · [S1]/[S2]/[S3] Footnotes</span>
-              </div>
-              <h1 className={`${toolHeroHeading} text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-white`}>
-                Free AI Source, PDF, Interview &{" "}
-                <span className="bg-gradient-to-r from-indigo-400 via-cyan-300 to-emerald-400 bg-clip-text text-transparent">
-                  NotebookLM-to-Article Converter
-                </span>
-              </h1>
-              <p className="text-sm sm:text-base text-slate-300 max-w-2xl leading-relaxed">
-                Combine NotebookLM research briefs, PDF whitepaper extracts, and founder or SME interview transcripts into a citation-mapped long-form SEO article with explicit <code className="text-indigo-300">[S1]</code>, <code className="text-emerald-300">[S2]</code>, and <code className="text-amber-300">[S3]</code> footnotes.
-              </p>
-              <PortableToolHeroBar
-                slug="source-pdf-to-article-generator"
-                title="AI Source, PDF & NotebookLM-to-Article Studio"
-                path="/tools/source-pdf-to-article-generator"
-                primaryLabel="Use Tool Now: Synthesize Sources into Article"
-                workspaceId="source-pdf-to-article-workspace"
-              />
-            </div>
-
-            <div className="lg:col-span-5 rounded-2xl border border-slate-800 bg-slate-900/90 p-4 shadow-xl space-y-3">
-              <div className="flex items-center justify-between text-xs border-b border-slate-800 pb-2">
-                <span className="font-semibold text-indigo-300">🔬 Zero-Hallucination Citation Ledger</span>
-                <span className="rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-emerald-300 font-medium">
-                  Free Unlimited
-                </span>
-              </div>
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <div className="rounded-xl bg-slate-950 p-2.5 border border-slate-800">
-                  <div className="text-[10px] uppercase text-cyan-300">[S1] Input</div>
-                  <div className="text-xs font-extrabold text-white mt-0.5">PDF / Notes</div>
-                </div>
-                <div className="rounded-xl bg-slate-950 p-2.5 border border-slate-800">
-                  <div className="text-[10px] uppercase text-emerald-300">[S2] Input</div>
-                  <div className="text-xs font-extrabold text-white mt-0.5">SME Interview</div>
-                </div>
-                <div className="rounded-xl bg-slate-950 p-2.5 border border-slate-800">
-                  <div className="text-[10px] uppercase text-amber-300">[S3] Input</div>
-                  <div className="text-xs font-extrabold text-white mt-0.5">Metrics Proof</div>
-                </div>
-              </div>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Replaces single-source PDF converters and paid interview-to-article apps with a unified 3-source E-E-A-T studio.
-              </p>
-            </div>
-          </div>
+      <ToolLandingHero
+        slug="source-pdf-to-article-generator"
+        title="Free AI Source, PDF, Interview & NotebookLM-to-Article Converter"
+        description="Combine NotebookLM research briefs, PDF whitepaper extracts, and founder or SME interview transcripts into a citation-mapped long-form SEO article with explicit [S1] , [S2] , and [S3] footnotes."
+        categoryLabel="AI SEO Tools"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
+      >
+        <div className="p-4 sm:p-6">
+          <SourcePdfToArticleGeneratorClient />
         </div>
-      </section>
-
-      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-6">
-        <SourcePdfToArticleGeneratorClient />
-      </section>
+      </ToolLandingHero>
 
       <section className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 pt-16 space-y-10">
         <div className="rounded-2xl border border-indigo-500/30 bg-indigo-950/20 p-6">
@@ -173,6 +118,6 @@ export default function SourcePdfToArticleGeneratorPage() {
           faqs={faqs}
         />
       </section>
-    </main>
+    </div>
   );
 }

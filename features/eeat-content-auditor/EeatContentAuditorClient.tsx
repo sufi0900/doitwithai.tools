@@ -532,7 +532,7 @@ export default function EeatContentAuditorClient() {
                 </p>
                 <p className="mt-2 text-3xl font-black text-[#3452d1] dark:text-[#9aabff]">
                   {report.overallScore}
-                  <span className="text-base font-semibold text-slate-400">
+                  <span className="text-base font-semibold text-slate-500 dark:text-slate-400">
                     /100
                   </span>
                 </p>
@@ -659,7 +659,7 @@ export default function EeatContentAuditorClient() {
               </label>
             </div>
 
-            <pre className="mt-4 max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-xl border border-slate-200 bg-slate-950 p-4 font-mono text-xs leading-6 text-emerald-300 dark:border-slate-700">
+            <pre className="mt-4 max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-xl border border-slate-200 bg-white dark:bg-slate-950 p-4 font-mono text-xs leading-6 text-emerald-300 dark:border-slate-700">
               {eeatRemediationSnippet}
             </pre>
           </div>

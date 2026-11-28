@@ -389,7 +389,7 @@ export function SocialMediaVideoThumbnailGrabberClient() {
             <strong className="font-bold text-slate-900 dark:text-white">
               {result.title}
             </strong>{" "}
-            <span className="text-slate-400">by {result.authorOrChannel}</span>
+            <span className="text-slate-500 dark:text-slate-400">by {result.authorOrChannel}</span>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -438,8 +438,8 @@ export function SocialMediaVideoThumbnailGrabberClient() {
 
       {/* ZOOMABLE HD INSPECTOR STAGE WHEN A THUMBNAIL IS SELECTED FOR DETAIL VIEW */}
       {inspectedThumb && (
-        <div className="overflow-hidden rounded-2xl border-2 border-[#4058d0] bg-[#070b14] text-white shadow-2xl">
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 bg-slate-900 px-4 py-2.5">
+        <div className="overflow-hidden rounded-2xl border-2 border-[#4058d0] bg-[#070b14] text-slate-900 dark:text-white shadow-2xl">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-4 py-2.5">
             <div>
               <span className="text-xs font-extrabold text-[#9aabff]">
                 HD Zoom Inspector · {inspectedThumb.label} (
@@ -452,7 +452,7 @@ export function SocialMediaVideoThumbnailGrabberClient() {
                 onClick={() =>
                   setZoomLevel((z) => Math.max(0.6, +(z - 0.2).toFixed(2)))
                 }
-                className="rounded-lg bg-slate-800 px-2 py-1 text-xs font-bold text-white hover:bg-slate-700"
+                className="rounded-lg bg-slate-800 px-2 py-1 text-xs font-bold text-slate-900 dark:text-white hover:bg-slate-700"
               >
                 <ZoomOut size={13} />
               </button>
@@ -475,7 +475,7 @@ export function SocialMediaVideoThumbnailGrabberClient() {
                 onClick={() =>
                   setZoomLevel((z) => Math.min(2.5, +(z + 0.2).toFixed(2)))
                 }
-                className="rounded-lg bg-slate-800 px-2 py-1 text-xs font-bold text-white hover:bg-slate-700"
+                className="rounded-lg bg-slate-800 px-2 py-1 text-xs font-bold text-slate-900 dark:text-white hover:bg-slate-700"
               >
                 <ZoomIn size={13} />
               </button>
@@ -562,7 +562,7 @@ export function SocialMediaVideoThumbnailGrabberClient() {
                     setInspectedThumb(thumb);
                     setZoomLevel(1.25);
                   }}
-                  className="group relative flex aspect-video cursor-zoom-in items-center justify-center overflow-hidden rounded-xl border border-slate-200/70 bg-slate-950/5 dark:border-slate-800"
+                  className="group relative flex aspect-video cursor-zoom-in items-center justify-center overflow-hidden rounded-xl border border-slate-200/70 bg-white dark:bg-slate-950/5 dark:border-slate-800"
                   title="Click to zoom and inspect thumbnail"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -684,7 +684,7 @@ export function SocialMediaVideoThumbnailGrabberClient() {
                   : "Copy Embed Code"}
               </button>
             </div>
-            <pre className="overflow-x-auto rounded-xl border border-slate-200 bg-slate-950 p-3.5 font-mono text-xs text-emerald-300">
+            <pre className="overflow-x-auto rounded-xl border border-slate-200 bg-white dark:bg-slate-950 p-3.5 font-mono text-xs text-emerald-300">
               {result.embedHtml}
             </pre>
           </div>

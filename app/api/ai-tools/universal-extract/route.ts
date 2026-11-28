@@ -1,8 +1,20 @@
+import { extractWebsiteBrand } from "@/lib/blog-infographic-studio/brand-source";
+import type { WebsiteBrandHint } from "@/lib/blog-infographic-studio/brand-source";
 import { NextRequest, NextResponse } from "next/server";
 import { parseHTML } from "linkedom";
 import { Readability } from "@mozilla/readability";
 import { z } from "zod";
+import { extractArticleSource } from "@/lib/blog-infographic-studio/article-source";
+import type {
+  ArticleSourceSection,
+  ArticleSourceCoverage,
+} from "@/lib/blog-infographic-studio/article-source";
 import { BodyError, readBoundedJson } from "@/lib/ai-tools/request-body";
+import {
+  GEMINI_MODEL_CASCADE,
+  getGeminiApiKeys,
+  getGeminiModel,
+} from "@/lib/ai-tools/gemini";
 import {
   fetchPublic,
   publicUrl,
@@ -14,12 +26,14 @@ export const maxDuration = 60;
 
 const inputSchema = z.object({
   url: z.string().trim().min(4).max(2048),
+  purpose: z.literal("infographic").optional(),
 });
 
 export type ExtractedSubTopic = {
   title: string;
   summary: string;
   content: string;
+  sectionId?: string;
 };
 
 export type ExtractedImageAsset = {
@@ -46,6 +60,11 @@ export type UniversalExtractResponse = {
   keyTakeaways: string[];
   subTopics: ExtractedSubTopic[];
   images: ExtractedImageAsset[];
+  sections?: ArticleSourceSection[];
+  recommendedSectionId?: string;
+  selectedSectionId?: string;
+  coverage?: ArticleSourceCoverage;
+  brandTheme?: WebsiteBrandHint;
   rawTranscriptWithTimestamps?: string;
   transcriptSegments?: Array<{
     timestamp: string;
@@ -740,7 +759,12 @@ function parsePlainTimestampedLines(
     if (m) {
       let sec = parseTimestampStrToSeconds(m[1]);
       // If Gemini returned relative timestamps starting at 0:00 for a later window, offset them cleanly
-      if (windowStartSec > 0 && sec < windowStartSec && out.length === 0 && sec < 30) {
+      if (
+        windowStartSec > 0 &&
+        sec < windowStartSec &&
+        out.length === 0 &&
+        sec < 30
+      ) {
         sec += windowStartSec;
       }
       const spoken = clean(m[2]);
@@ -762,8 +786,8 @@ function parsePlainTimestampedLines(
  * with `thinkingBudget: 0` and plain-text line output so ZERO tokens are wasted and ZERO sections are skipped!
  */
 async function transcribeYoutubeChunkWithGemini(params: {
-  apiKey: string;
-  model: string;
+  apiKeys: string[];
+  models: string[];
   canonicalWatchUrl: string;
   title: string;
   author: string;
@@ -772,8 +796,8 @@ async function transcribeYoutubeChunkWithGemini(params: {
   totalDurationSec: number;
 }): Promise<Array<{ timestamp: string; seconds: number; text: string }>> {
   const {
-    apiKey,
-    model,
+    apiKeys,
+    models,
     canonicalWatchUrl,
     title,
     author,
@@ -784,65 +808,74 @@ async function transcribeYoutubeChunkWithGemini(params: {
   const startLabel = formatSec(startSec);
   const endLabel = formatSec(endSec);
 
-  try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": apiKey,
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              role: "user",
-              parts: [
+  for (const apiKey of apiKeys) {
+    for (const model of models) {
+      try {
+        const res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-goog-api-key": apiKey,
+            },
+            body: JSON.stringify({
+              contents: [
                 {
-                  fileData: {
-                    mimeType: "video/mp4",
-                    fileUri: canonicalWatchUrl,
-                  },
-                  videoMetadata: {
-                    startOffset: `${startSec}s`,
-                    endOffset: `${endSec}s`,
-                  },
-                },
-                {
-                  text: [
-                    `Transcribe the COMPLETE, word-for-word spoken audio of this YouTube video ("${title}" by ${author}) strictly from ${startLabel} (${startSec}s) to ${endLabel} (${endSec}s) out of ${formatSec(totalDurationSec)}.`,
-                    `CRITICAL RULES:`,
-                    `1. Output ONLY plain-text timestamped lines in the exact format: M:SS spoken words (one short line every 2 to 4 seconds, e.g., "${startLabel} ...").`,
-                    `2. Use absolute video timestamps starting at ${startLabel} and ending at ${endLabel}.`,
-                    `3. Do NOT summarize, do NOT skip any examples, statistics, or tips, and do NOT stop early — transcribe every single spoken sentence verbatim until ${endLabel}.`,
-                  ].join("\n"),
+                  role: "user",
+                  parts: [
+                    {
+                      fileData: {
+                        mimeType: "video/mp4",
+                        fileUri: canonicalWatchUrl,
+                      },
+                      videoMetadata: {
+                        startOffset: `${startSec}s`,
+                        endOffset: `${endSec}s`,
+                      },
+                    },
+                    {
+                      text: [
+                        `Transcribe the COMPLETE, word-for-word spoken audio of this YouTube video ("${title}" by ${author}) strictly from ${startLabel} (${startSec}s) to ${endLabel} (${endSec}s) out of ${formatSec(totalDurationSec)}.`,
+                        `CRITICAL RULES:`,
+                        `1. Output ONLY plain-text timestamped lines in the exact format: M:SS spoken words (one short line every 2 to 4 seconds, e.g., "${startLabel} ...").`,
+                        `2. Use absolute video timestamps starting at ${startLabel} and ending at ${endLabel}.`,
+                        `3. Do NOT summarize, do NOT skip any examples, statistics, or tips, and do NOT stop early — transcribe every single spoken sentence verbatim until ${endLabel}.`,
+                      ].join("\n"),
+                    },
+                  ],
                 },
               ],
-            },
-          ],
-          generationConfig: {
-            temperature: 0.1,
-            maxOutputTokens: 8192,
-            thinkingConfig: {
-              thinkingBudget: 0,
-            },
+              generationConfig: {
+                temperature: 0.1,
+                maxOutputTokens: 8192,
+                thinkingConfig: {
+                  thinkingBudget: 0,
+                },
+              },
+            }),
+            signal: AbortSignal.timeout(34000),
           },
-        }),
-        signal: AbortSignal.timeout(34000),
-      },
-    );
+        );
 
-    if (!res.ok) return [];
-    const data = await res.json();
-    const rawText =
-      data?.candidates?.[0]?.content?.parts
-        ?.map((p: { text?: string }) => p.text || "")
-        .join("\n") || "";
-    if (!rawText) return [];
-    return parsePlainTimestampedLines(rawText, startSec);
-  } catch {
-    return [];
+        if (!res.ok) {
+          if (res.status === 404) continue;
+          if ([401, 403, 429, 503].includes(res.status)) break;
+          continue;
+        }
+        const data = await res.json();
+        const rawText =
+          data?.candidates?.[0]?.content?.parts
+            ?.map((p: { text?: string }) => p.text || "")
+            .join("\n") || "";
+        if (!rawText) continue;
+        return parsePlainTimestampedLines(rawText, startSec);
+      } catch {
+        break;
+      }
+    }
   }
+  return [];
 }
 
 /**
@@ -856,12 +889,11 @@ async function fetchGeminiDirectYoutubeTranscript(
   author: string,
   durationSeconds = 600,
 ): Promise<Array<{ timestamp: string; seconds: number; text: string }>> {
-  const apiKey = process.env.GEMINI_API_KEY?.trim();
-  const model =
-    process.env.GEMINI_YOUTUBE_TRANSCRIPT_MODEL?.trim() ||
-    process.env.GEMINI_MODEL?.trim() ||
-    "gemini-2.5-flash";
-  if (!apiKey) return [];
+  const apiKeys = getGeminiApiKeys();
+  if (!apiKeys.length) return [];
+  const models = Array.from(
+    new Set([getGeminiModel("YOUTUBE_TRANSCRIPT"), ...GEMINI_MODEL_CASCADE]),
+  );
 
   const safeDuration = Math.max(120, Math.min(3600, durationSeconds || 600));
   // Split into parallel 220-second (~3.6 min) windows so each window transcribes rapidly at 100% verbatim fidelity
@@ -879,8 +911,8 @@ async function fetchGeminiDirectYoutubeTranscript(
   const chunkResults = await Promise.all(
     windows.map((w) =>
       transcribeYoutubeChunkWithGemini({
-        apiKey,
-        model,
+        apiKeys,
+        models,
         canonicalWatchUrl,
         title,
         author,
@@ -955,7 +987,9 @@ async function extractYoutubeUrlData(
             const titleMatch = html.match(/<title>([^<]+)<\/title>/i);
             if (titleMatch) {
               title = cleanArticleTitle(
-                decodeXmlEntities(titleMatch[1].replace(/\s*-\s*YouTube$/i, "")),
+                decodeXmlEntities(
+                  titleMatch[1].replace(/\s*-\s*YouTube$/i, ""),
+                ),
               );
             }
           }
@@ -1319,7 +1353,8 @@ async function extractYoutubeUrlData(
  * so browser SVG/PNG/PDF exports in EditableInfographicStudio never fail on CORS.
  */
 export async function GET(request: NextRequest) {
-  const rawImgUrl = request.nextUrl.searchParams.get("proxyImage")?.trim() || "";
+  const rawImgUrl =
+    request.nextUrl.searchParams.get("proxyImage")?.trim() || "";
   if (!rawImgUrl) {
     return NextResponse.json(
       { error: "Missing proxyImage query parameter." },
@@ -1332,7 +1367,8 @@ export async function GET(request: NextRequest) {
       headers: {
         "User-Agent":
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/132.0.0.0 Safari/537.36",
-        Accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+        Accept:
+          "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
       },
       signal: AbortSignal.timeout(9000),
     });
@@ -1506,9 +1542,7 @@ export async function POST(request: NextRequest) {
     } catch {}
 
     if (paragraphs.length === 0) {
-      paragraphs = Array.from(
-        document.querySelectorAll("article p, main p, p"),
-      )
+      paragraphs = Array.from(document.querySelectorAll("article p, main p, p"))
         .map((p: unknown) => clean((p as Element).textContent))
         .filter((t) => t.length >= 40 && !/^table of contents/i.test(t))
         .slice(0, 35);
@@ -1611,6 +1645,90 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    const sourceTree =
+      input.purpose === "infographic"
+        ? extractArticleSource(document as unknown as Document, title)
+        : undefined;
+    const substantiveSections = sourceTree
+      ? sourceTree.sections.filter(
+          (s) => s.role === "content" && s.archetype !== "skip",
+        )
+      : undefined;
+    const exposedSections =
+      sourceTree && substantiveSections && substantiveSections.length > 0
+        ? substantiveSections
+        : sourceTree?.sections;
+    const sourceParagraphs = exposedSections?.flatMap((s) =>
+      s.blocks.filter((b) => b.kind !== "heading").map((b) => b.text),
+    );
+    let externalCss = "";
+    if (sourceTree) {
+      try {
+        const sheetLinks = Array.from(
+          document.querySelectorAll('link[rel="stylesheet"][href]'),
+        )
+          .map((el) => el.getAttribute("href") || "")
+          .filter(
+            (href) =>
+              href &&
+              !/fonts\.googleapis|fontawesome|cdn\.jsdelivr|unpkg\.com|cookie/i.test(
+                href,
+              ),
+          )
+          .slice(0, 2);
+        for (const href of sheetLinks) {
+          const absHref = new URL(href, finalUrl).href;
+          const safeCssUrl = publicUrl(absHref);
+          const cssRes = await fetchPublic(safeCssUrl.href, {
+            text: true,
+            timeout: 2000,
+            bytes: 120_000,
+            maxDecodedBytes: 120_000,
+          });
+          if (cssRes.status >= 200 && cssRes.status < 300) {
+            const text = (cssRes.html || "").slice(0, 120_000);
+            if (text) {
+              externalCss += "\n" + text;
+              if (externalCss.length >= 90_000) break;
+            }
+          }
+        }
+      } catch {
+        // Non-blocking: fall back cleanly to inline styles & metadata when external CSS cannot be fetched
+      }
+    }
+    let brandTheme = sourceTree
+      ? extractWebsiteBrand(
+          document as unknown as Document,
+          domain,
+          finalUrl,
+          externalCss,
+        )
+      : undefined;
+    if (brandTheme?.logoUrl) {
+      try {
+        const logoRes = await fetch(brandTheme.logoUrl, {
+          signal: AbortSignal.timeout(2500),
+          headers: { Accept: "image/png,image/jpeg,image/webp" },
+        });
+        const ct = (logoRes.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
+        if (
+          logoRes.ok &&
+          ["image/png", "image/jpeg", "image/webp"].includes(ct)
+        ) {
+          const buf = await logoRes.arrayBuffer();
+          if (buf.byteLength > 0 && buf.byteLength <= 220_000) {
+            const b64 = Buffer.from(buf).toString("base64");
+            brandTheme = {
+              ...brandTheme,
+              logoDataUrl: `data:${ct};base64,${b64}`,
+            };
+          }
+        }
+      } catch {
+        // Non-blocking: fall back to text domain signature when logo fetch fails
+      }
+    }
     const resPayload: UniversalExtractResponse = {
       isYoutube: false,
       url: finalUrl,
@@ -1620,10 +1738,37 @@ export async function POST(request: NextRequest) {
       author,
       focusKeyword: focusKeyword || "ai tools",
       headings,
-      paragraphs,
-      cleanText: paragraphs.join("\n\n"),
-      keyTakeaways,
-      subTopics,
+      paragraphs: sourceParagraphs || paragraphs,
+      cleanText: (sourceParagraphs || paragraphs).join("\n\n"),
+      keyTakeaways: exposedSections
+        ? exposedSections
+            .filter((s) => s.role === "content")
+            .flatMap((s) =>
+              s.blocks
+                .filter((b) => b.kind !== "heading")
+                .slice(0, 1)
+                .map((b) => b.text),
+            )
+            .slice(0, 6)
+        : keyTakeaways,
+      subTopics: exposedSections
+        ? exposedSections.map((s) => ({
+            sectionId: s.id,
+            title: s.title,
+            summary: s.blocks.find((b) => b.kind !== "heading")?.text || "",
+            content: s.blocks
+              .filter((b) => b.kind !== "heading")
+              .map((b) => b.text)
+              .join("\n\n"),
+          }))
+        : subTopics,
+      ...(sourceTree
+        ? {
+            ...sourceTree,
+            sections: exposedSections,
+            brandTheme,
+          }
+        : {}),
       images: images.slice(0, 25),
     };
 

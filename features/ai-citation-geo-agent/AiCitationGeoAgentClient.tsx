@@ -321,7 +321,7 @@ export default function AiCitationGeoAgentClient() {
               <span className="rounded-xl bg-amber-500/15 px-3 py-1.5 text-xs font-extrabold text-amber-700 dark:text-amber-300">
                 Draft Readiness: {pack.citationReadinessScore}/100
               </span>
-              <span className="text-xs font-black text-slate-400">→</span>
+              <span className="text-xs font-black text-slate-500 dark:text-slate-400">→</span>
               <span className="rounded-xl bg-emerald-500/15 px-3 py-1.5 text-xs font-extrabold text-emerald-700 dark:text-emerald-300">
                 GEO Upgraded: {pack.upgradedScoreProjection}/100
               </span>
@@ -423,7 +423,7 @@ export default function AiCitationGeoAgentClient() {
                     Copy HTML
                   </button>
                 </div>
-                <pre className="mt-2 overflow-x-auto whitespace-pre-wrap rounded-xl bg-slate-950 p-3 font-mono text-xs text-emerald-300">
+                <pre className="mt-2 overflow-x-auto whitespace-pre-wrap rounded-xl bg-white dark:bg-slate-950 p-3 font-mono text-xs text-emerald-300">
                   {pack.directAnswerDefinitionHtml}
                 </pre>
               </div>
@@ -501,7 +501,7 @@ export default function AiCitationGeoAgentClient() {
                 rows={10}
                 readOnly
                 value={pack.comparisonFactMatrixMarkdown}
-                className="w-full rounded-2xl border border-slate-300 bg-slate-950 p-4 font-mono text-xs leading-relaxed text-emerald-300 focus:outline-none dark:border-slate-800"
+                className="w-full rounded-2xl border border-slate-300 bg-white dark:bg-slate-950 p-4 font-mono text-xs leading-relaxed text-emerald-300 focus:outline-none dark:border-slate-800"
               />
 
               <div className="space-y-2.5">
@@ -553,7 +553,7 @@ export default function AiCitationGeoAgentClient() {
                 rows={18}
                 readOnly
                 value={pack.entityKnowledgeGraphJsonLd}
-                className="w-full rounded-2xl border border-slate-300 bg-slate-950 p-4 font-mono text-xs leading-relaxed text-sky-300 focus:outline-none dark:border-slate-800"
+                className="w-full rounded-2xl border border-slate-300 bg-white dark:bg-slate-950 p-4 font-mono text-xs leading-relaxed text-sky-300 focus:outline-none dark:border-slate-800"
               />
             </div>
           )}

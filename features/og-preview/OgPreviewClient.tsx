@@ -54,7 +54,7 @@ function FacebookPreview({
             className={`h-full w-full ${fitMode === "contain" ? "object-contain" : "object-cover"}`}
           />
         ) : (
-          <div className="flex h-full items-center justify-center text-slate-400">
+          <div className="flex h-full items-center justify-center text-slate-500 dark:text-slate-400">
             <ImageIcon className="h-8 w-8" />
           </div>
         )}
@@ -108,7 +108,7 @@ function TwitterPreview({
             className={`h-full w-full ${fitMode === "contain" ? "object-contain" : "object-cover"}`}
           />
         ) : (
-          <div className="flex h-full items-center justify-center text-slate-400">
+          <div className="flex h-full items-center justify-center text-slate-500 dark:text-slate-400">
             <ImageIcon className="h-6 w-6" />
           </div>
         )}
@@ -120,7 +120,7 @@ function TwitterPreview({
         <p className="line-clamp-2 text-xs text-slate-500 dark:text-slate-400">
           {state.description || "Your page description will show here."}
         </p>
-        <p className="text-xs text-slate-400">{host}</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400">{host}</p>
       </div>
     </div>
   );
@@ -147,7 +147,7 @@ function SlackWhatsAppPreview({
           {state.description || "Your page description will show here."}
         </p>
         {state.imageUrl && (
-          <div className="mt-2 aspect-[1.91/1] max-w-xs overflow-hidden rounded-lg border border-slate-200 bg-slate-900 dark:border-slate-700">
+          <div className="mt-2 aspect-[1.91/1] max-w-xs overflow-hidden rounded-lg border border-slate-200 bg-slate-50 dark:bg-slate-900 dark:border-slate-700">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={state.imageUrl}
@@ -591,7 +591,7 @@ export default function OgPreviewClient() {
                 })}
               </ul>
             )}
-            <p className="mt-3 text-[11px] leading-5 text-slate-400">
+            <p className="mt-3 text-[11px] leading-5 text-slate-500 dark:text-slate-400">
               {errorCount > 0
                 ? "Resolve the errors above first."
                 : "Each platform renders and caches cards slightly differently; always spot-check with the platform's own debugger."}
@@ -625,7 +625,7 @@ export default function OgPreviewClient() {
                 </button>
               </div>
             </div>
-            <pre className="mt-3 max-h-[280px] overflow-auto whitespace-pre-wrap break-words rounded-2xl border border-slate-200 bg-slate-950 p-4 font-mono text-xs leading-6 text-slate-100 dark:border-slate-700">
+            <pre className="mt-3 max-h-[280px] overflow-auto whitespace-pre-wrap break-words rounded-2xl border border-slate-200 bg-white dark:bg-slate-950 p-4 font-mono text-xs leading-6 text-slate-900 dark:text-slate-100 dark:border-slate-700">
               {output || "Fill in the fields above to generate tags."}
             </pre>
           </section>

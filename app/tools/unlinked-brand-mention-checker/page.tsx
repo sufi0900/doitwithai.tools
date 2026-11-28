@@ -1,15 +1,14 @@
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import type { Metadata } from "next";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
 import Link from "next/link";
-import { Link2, TextSearch, ScanEye } from "lucide-react";
+import {
+  Link2,
+  TextSearch,
+  ScanEye,
+} from "lucide-react";
 import MentionClient from "@/features/brand-mentions/MentionClient";
 import ToolFaq from "@/features/tool-ui/ToolFaq";
 import ToolResources from "@/features/tool-catalog/ToolResources";
-import {
-  ToolHeroBackground,
-  toolHeroHeading,
-  toolHeroSurface,
-} from "@/features/tool-ui/ToolHero";
 
 const pageUrl = "https://doitwithai.tools/tools/unlinked-brand-mention-checker";
 const title = "Unlinked Brand Mention Checker | Review Pages and Links";
@@ -147,70 +146,18 @@ export default function Page() {
           __html: JSON.stringify(schema).replace(/</g, "\\u003c"),
         }}
       />
-      <header
-        className={`relative overflow-hidden ${toolHeroSurface} text-white`}
+      <ToolLandingHero
+        slug="unlinked-brand-mention-checker"
+        title="Unlinked Brand Mention Checker with the context to review"
+        description="Check whether supplied pages mention your brand, link that mention, or reference your website elsewhere. Keep the source evidence behind each result."
+        categoryLabel="Off-page SEO"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
       >
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">Tools</Link>
-            <span>/</span>
-            <span aria-current="page">Unlinked brand mentions</span>
-          </nav>
-          <div className="grid items-center gap-8 lg:grid-cols-[1.2fr_0.9fr]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                Off-page SEO · Supplied-page checks
-              </p>
-              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                Unlinked Brand Mention Checker{" "}
-                <span className={toolHeroHeading}>
-                  with the context to review
-                </span>
-              </h1>
-              <p className="mt-5 text-base leading-8 text-slate-300">
-                Check whether supplied pages mention your brand, link that
-                mention, or reference your website elsewhere. Keep the source
-                evidence behind each result.
-              </p>
-              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Brand text + link context
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Live or supplied HTML
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Evidence CSV
-                </span>
-              </div>
-              <PortableToolHeroBar />
-            </div>
-            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
-                Illustrative text, fictional publisher
-              </p>
-              <blockquote className="mt-5 text-lg leading-8">
-                “Our editors mentioned{" "}
-                <span className="rounded bg-[#5271ff]/25 px-1 font-bold text-[#c6d0ff]">
-                  Do It With AI Tools
-                </span>{" "}
-                when discussing content planning.”
-              </blockquote>
-              <p className="mt-5 border-t border-slate-700 pt-4 text-sm leading-7 text-slate-300">
-                A matching phrase is a starting point. Check its destination and
-                the rest of the page before planning outreach.
-              </p>
-            </div>
-          </div>
+        <div className="p-4 sm:p-6">
+          <MentionClient />
         </div>
-      </header>
-      <MentionClient />
+      </ToolLandingHero>
       <section
         className={`${section} border-t border-slate-200 dark:border-slate-800`}
       >

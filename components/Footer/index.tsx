@@ -10,7 +10,7 @@ const TrustpilotInvite = () => {
       {/* Trustpilot Card */}
       <div className="bg-gradient-to-r from-blue-500/10 to-indigo-500/10 dark:from-blue-700/15 dark:to-indigo-700/15 border border-blue-500/20 dark:border-blue-700/30 rounded-xl shadow-sm hover:shadow-md backdrop-blur-sm transition-all duration-300 px-4 py-4 sm:px-6 sm:py-5 md:px-8 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 text-center sm:text-left">
         {/* Rating Section */}
-        <Link
+        <Link prefetch={false}
           href="https://www.trustpilot.com/review/doitwithai.tools"
           target="_blank"
           rel="noopener noreferrer"
@@ -38,7 +38,7 @@ const TrustpilotInvite = () => {
         {/* Message to invite reviews */}
         <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
           Love our content?{" "}
-          <Link
+          <Link prefetch={false}
             href="https://www.trustpilot.com/review/doitwithai.tools"
             target="_blank"
             rel="noopener noreferrer"
@@ -86,7 +86,7 @@ const Footer = () => {
                 {/* Logo and Content Container */}
                 <div className="flex flex-col items-center space-y-4 sm:space-y-5 lg:flex-row lg:items-start lg:space-y-0 lg:space-x-4 xl:space-x-6">
                   {/* Logo */}
-                  <Link href="/" className="inline-block group flex-shrink-0">
+                  <Link prefetch={false} href="/" className="inline-block group flex-shrink-0">
                     <Image
                       src="/logoForHeader.png"
                       alt="DoItWithAI.tools Logo"
@@ -104,7 +104,7 @@ const Footer = () => {
 Put AI to work with practical tools, step-by-step guides, and free resources for smarter work and stronger online presence.                    </p>
                     <p className="dark:text-gray-300 mb-4 sm:mb-5 lg:mb-6 text-sm sm:text-base leading-relaxed text-gray-600">
                       Learn, build & grow with AI at{" "}
-                      <Link
+                      <Link prefetch={false}
                         className="font-medium text-[#2563eb] hover:text-[#1d4ed8] underline
                                    dark:text-blue-400 dark:hover:text-blue-300 hover:no-underline
                                    transition-colors duration-300 break-words"
@@ -140,7 +140,7 @@ Put AI to work with practical tools, step-by-step guides, and free resources for
       { icon: "tiktok", href: "https://www.tiktok.com/@doitwithai.tools" },
       { icon: "pinterest", href: "https://www.pinterest.com/doitwithai/" }
     ].map((social) => (
-      <Link
+      <Link prefetch={false}
         key={social.icon}
         href={social.href}
         target="_blank"
@@ -231,6 +231,9 @@ Put AI to work with practical tools, step-by-step guides, and free resources for
                 <ul className="space-y-2 sm:space-y-3 w-full">
                   {[
                     { href: "/tools", text: "AI tools" },
+                    { href: "/ai-content-writer", text: "AI Content Writer" },
+                    { href: "/ai-website-builder", text: "AI Website Builder" },
+                    { href: "/pricing", text: "Pricing" },
                     { href: "/prompts", text: "AI prompt library" },
                     { href: "/ai-seo", text: "Learn with AI" },
                     { href: "/blogs", text: "All articles" },
@@ -239,7 +242,7 @@ Put AI to work with practical tools, step-by-step guides, and free resources for
                     { href: "/free-ai-resources", text: "Free Resources" }
                   ].map((link) => (
                     <li key={link.href} className="text-center sm:text-left">
-                      <Link
+                      <Link prefetch={false}
                         href={link.href}
                         className="text-gray-600 dark:text-gray-300 hover:text-[#2563eb]
                                    dark:hover:text-blue-400 transition-colors duration-300
@@ -269,7 +272,7 @@ Put AI to work with practical tools, step-by-step guides, and free resources for
                     { href: "/privacy", text: "Refund Policy" }
                   ].map((link) => (
                     <li key={link.href} className="text-center sm:text-left">
-                      <Link
+                      <Link prefetch={false}
                         href={link.href}
                         className="text-gray-600 dark:text-gray-300 hover:text-[#2563eb]
                                    dark:hover:text-blue-400 transition-colors duration-300
@@ -299,7 +302,7 @@ Put AI to work with practical tools, step-by-step guides, and free resources for
                     { href: "/about", text: "About Us" }
                   ].map((link) => (
                     <li key={link.href} className="text-center sm:text-left">
-                      <Link
+                      <Link prefetch={false}
                         href={link.href}
                         className="text-gray-600 dark:text-gray-300 hover:text-[#2563eb]
                                    dark:hover:text-blue-400 transition-colors duration-300
@@ -332,7 +335,7 @@ Put AI to work with practical tools, step-by-step guides, and free resources for
               </p>
               <p className="text-xs leading-relaxed text-gray-500 dark:text-gray-400 max-w-md mx-auto">
                 Template by{" "}
-                <Link
+                <Link prefetch={false}
                   className="font-medium text-[#2563eb] hover:text-[#1d4ed8] underline
                              dark:text-blue-400 dark:hover:text-blue-300 hover:no-underline
                              transition-colors duration-300"
@@ -342,7 +345,7 @@ Put AI to work with practical tools, step-by-step guides, and free resources for
                   Next.js Templates
                 </Link>
                 {" "} • Redesigned by{" "}
-                <Link
+                <Link prefetch={false}
                   className="font-medium text-[#2563eb] hover:text-[#1d4ed8] underline
                              dark:text-blue-400 dark:hover:text-blue-300 hover:no-underline
                              transition-colors duration-300"

@@ -1,16 +1,8 @@
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import ToolFaq from "@/features/tool-ui/ToolFaq";
-import { ToolHeroBackground, toolHeroSurface, toolHeroHeading } from "@/features/tool-ui/ToolHero";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
 import ToolResources from "@/features/tool-catalog/ToolResources";
 import type { Metadata } from "next";
 import Link from "next/link";
-import {
-  ArrowRight,
-  CheckCircle2,
-  FileCode2,
-  ShieldCheck,
-  Sparkles,
-} from "lucide-react";
 import SitemapXmlClient from "@/features/sitemap-xml/SitemapXmlClient";
 import SitemapXmlTutorial from "@/features/sitemap-xml/SitemapXmlTutorial";
 import SitemapXmlEducation from "@/features/sitemap-xml/SitemapXmlEducation";
@@ -165,75 +157,18 @@ export default function SitemapXmlGeneratorPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
 
-      <div className={`relative overflow-hidden ${toolHeroSurface} text-white`}>
-        <ToolHeroBackground />
-
-        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">Tools</Link>
-            <span>/</span>
-            <span aria-current="page">Sitemap.xml Generator & Validator</span>
-          </nav>
-
-          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                Technical SEO · XML Sitemap Compiler & Protocol Auditor
-              </p>
-              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                Sitemap.xml Generator 
-                <span className={toolHeroHeading}>
-                  & Live XML Validator
-                </span>
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-                Turn a list of canonical URLs into a standards-compliant XML sitemap (with automatic 50,000-URL index splitting) or paste an existing sitemap.xml to audit protocol errors.
-              </p>
-              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Generate or validate XML
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Auto-splits large URL lists
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Instant .xml & robots.txt snippet
-                </span>
-              </div>
-              <PortableToolHeroBar />
-            </div>
-
-            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
-                4 Sitemap Protocol Checks
-              </p>
-              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
-                <li>
-                  <strong className="text-emerald-300">URL Normalization:</strong> Checks absolute HTTPS URLs, duplicates, and fragment exclusions.
-                </li>
-                <li>
-                  <strong className="text-indigo-300">Metadata Tags:</strong> Formats ISO-8601 &lt;lastmod&gt;, &lt;changefreq&gt;, and &lt;priority&gt; nodes.
-                </li>
-                <li>
-                  <strong className="text-sky-300">Size & Index Limits:</strong> Enforces the 50,000-URL / 50MB sitemaps.org protocol thresholds.
-                </li>
-                <li>
-                  <strong className="text-amber-300">Validator Diagnostics:</strong> Catches malformed XML tags, non-canonical URLs, and namespace errors.
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="mt-8">
-            <SitemapXmlClient />
-          </div>
+      <ToolLandingHero
+        slug="sitemap-xml-generator"
+        title="Sitemap.xml Generator & Live XML Validator"
+        description="Turn a list of canonical URLs into a standards-compliant XML sitemap (with automatic 50,000-URL index splitting) or paste an existing sitemap.xml to audit protocol errors."
+        categoryLabel="Technical SEO"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
+      >
+        <div className="p-4 sm:p-6">
+          <SitemapXmlClient />
         </div>
-      </div>
+      </ToolLandingHero>
 
       <SitemapXmlTutorial />
       <SitemapXmlEducation />

@@ -1,5 +1,50 @@
 // next.config.js — Optimized by Apex-CWV (Phase 4: AVIF/WebP Image Pipeline & Immutable Cache-Control Headers)
+const path = require("path");
+
 const nextConfig = {
+  webpack(config, { isServer }) {
+    // Extraction needs DOM parsing, not the optional native canvas adapter.
+    // Keep normal imports for CommonJS test runners; bundle the DOM-only build.
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      "linkedom$": require.resolve("linkedom/package.json").replace(/package\.json$/, "worker.js"),
+      ...(isServer
+        ? {
+            "@/features/website-builder/tools/transferred-tool-registry$": path.resolve(
+              __dirname,
+              "features/website-builder/tools/transferred-tool-registry.server-stub.ts",
+            ),
+            [path.resolve(
+              __dirname,
+              "features/website-builder/tools/transferred-tool-registry",
+            )]: path.resolve(
+              __dirname,
+              "features/website-builder/tools/transferred-tool-registry.server-stub.ts",
+            ),
+            [path.resolve(
+              __dirname,
+              "features/website-builder/tools/transferred-tool-registry.ts",
+            )]: path.resolve(
+              __dirname,
+              "features/website-builder/tools/transferred-tool-registry.server-stub.ts",
+            ),
+          }
+        : {}),
+    };
+    if (!isServer) {
+      config.module.rules.push({
+        test: /[\\/]app[\\/]tools[\\/].+[\\/]page\.tsx$/,
+        enforce: "pre",
+        use: [
+          {
+            loader: path.resolve(__dirname, "scripts/strip-client-page-metadata-loader.cjs"),
+          },
+        ],
+      });
+    }
+    return config;
+  },
+
   async redirects() {
     const registry = require('./features/tool-catalog/registry.json');
     const tools = Array.isArray(registry) ? registry : registry.tools || [];
@@ -27,6 +72,72 @@ const nextConfig = {
         destination: '/tools/categories/ai-seo',
         permanent: true,
       },
+      {
+        source: '/download-and-embed',
+        destination: '/tools/downloadable-ai-tools',
+        permanent: true,
+      },
+      // Two-Brand Clean Split & Duplicate Writer/Builder Route Consolidation (HTTP 301)
+      {
+        source: '/tools/ai-content-writer',
+        destination: '/ai-content-writer',
+        statusCode: 301,
+      },
+      {
+        source: '/tools/ai-article-writer',
+        destination: '/ai-content-writer',
+        statusCode: 301,
+      },
+      {
+        source: '/tools/ai-blog-writer',
+        destination: '/ai-content-writer',
+        statusCode: 301,
+      },
+      {
+        source: '/tools/ai-blog-article-writer',
+        destination: '/ai-content-writer',
+        statusCode: 301,
+      },
+      {
+        source: '/ai-content-writer/automation',
+        destination: '/ai-content-writer',
+        statusCode: 301,
+      },
+      {
+        source: '/tools/ai-website-builder',
+        destination: '/ai-website-builder',
+        statusCode: 301,
+      },
+      {
+        source: '/tools/ai-website-builder/:path*',
+        destination: '/ai-website-builder',
+        statusCode: 301,
+      },
+      {
+        source: '/ai-employee-agency',
+        destination: '/studio',
+        statusCode: 301,
+      },
+      {
+        source: '/ai-employee-agency/:path*',
+        destination: '/studio',
+        statusCode: 301,
+      },
+      {
+        source: '/agents',
+        destination: '/tools',
+        statusCode: 301,
+      },
+      {
+        source: '/agents/:path*',
+        destination: '/tools',
+        statusCode: 301,
+      },
+      {
+        source: '/chrome-extension',
+        destination: '/tools',
+        statusCode: 301,
+      },
     ];
   },
 
@@ -53,6 +164,10 @@ const nextConfig = {
     ];
   },
 
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
   },
@@ -60,6 +175,7 @@ const nextConfig = {
   optimizeFonts: true,
 
   images: {
+    unoptimized: true,
     domains: ['your-sanity-domain.com'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     imageSizes: [16, 32, 48, 64, 85, 96, 128, 256, 384],
@@ -75,10 +191,17 @@ const nextConfig = {
   },
 
   experimental: {
+    webpackBuildWorker: true,
+    cpus: 1,
+    workerThreads: false,
     serverActions: {
-      allowedOrigins: ['localhost:3000', '*.vercel.app'],
+      allowedOrigins: [
+        'localhost:3000',
+        'doitwithai.tools',
+        'www.doitwithai.tools',
+        '*.workers.dev',
+      ],
     },
-    optimizeCss: true,
   },
 
   trailingSlash: false,

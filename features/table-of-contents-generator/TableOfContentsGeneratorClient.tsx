@@ -701,7 +701,7 @@ export default function TableOfContentsGeneratorClient() {
                             >
                               {listStyle === "ol" ? `${idx + 1}. ` : "• "}
                               {item.text}{" "}
-                              <span className="break-all font-mono text-[10px] text-slate-400">
+                              <span className="break-all font-mono text-[10px] text-slate-500 dark:text-slate-400">
                                 (#{item.slug})
                               </span>
                             </button>

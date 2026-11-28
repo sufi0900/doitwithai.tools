@@ -271,10 +271,10 @@ export default function IndexNowClient() {
         description="Checking key file accessibility and submitting URLs to participating search engines."
       />
       <div className="mb-6 rounded-2xl border border-blue-300/20 bg-blue-300/5 p-5">
-        <p className="font-bold text-white">
+        <p className="font-bold text-slate-900 dark:text-white">
           Generate → Publish → Verify → Submit
         </p>
-        <p className="mt-2 text-sm leading-7 text-slate-300">
+        <p className="mt-2 text-sm leading-7 text-slate-700 dark:text-slate-300">
           Generating a key does not install anything on your website. Download
           its text file, upload it to your site root, then verify it.
         </p>
@@ -326,7 +326,7 @@ export default function IndexNowClient() {
         <div>
           <p className={labelClass}>1. Generate your key and key file</p>
           <label
-            className="mb-1 block text-xs font-semibold text-slate-300"
+            className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300"
             htmlFor="indexnow-host"
           >
             Your website domain
@@ -344,7 +344,7 @@ export default function IndexNowClient() {
             autoComplete="off"
             className={inputClass}
           />
-          <p className="mt-1.5 text-xs text-slate-400">
+          <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
             Use the exact host your URLs use ;{" "}
             <span className="font-semibold">www.example.com</span> and{" "}
             <span className="font-semibold">example.com</span> count as
@@ -361,7 +361,7 @@ export default function IndexNowClient() {
           )}
 
           <label
-            className="mb-1 mt-4 block text-xs font-semibold text-slate-300"
+            className="mb-1 mt-4 block text-xs font-semibold text-slate-700 dark:text-slate-300"
             htmlFor="indexnow-key"
           >
             IndexNow key
@@ -399,21 +399,21 @@ export default function IndexNowClient() {
           )}
 
           {keyOk && (
-            <div className="mt-4 rounded-2xl border border-white/10 bg-slate-900/60 p-4">
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
+            <div className="mt-4 rounded-2xl border border-white/10 bg-slate-50 dark:bg-slate-900/60 p-4">
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 Key file to host
               </p>
               <p className="mt-2 break-all font-mono text-xs text-blue-200">
                 {keyFileName(key)}
               </p>
-              <p className="mt-1 text-xs leading-6 text-slate-400">
+              <p className="mt-1 text-xs leading-6 text-slate-500 dark:text-slate-400">
                 A plain text file containing only the key, placed at the root of
                 your site
                 {hostOk ? (
                   <>
                     {" "}
                     so it opens at{" "}
-                    <span className="break-all font-mono text-slate-300">
+                    <span className="break-all font-mono text-slate-700 dark:text-slate-300">
                       {keyFileUrl(host, key)}
                     </span>
                   </>
@@ -453,7 +453,7 @@ export default function IndexNowClient() {
                   Check key file
                 </button>
               </div>
-              <div className="mt-4 rounded-xl border border-blue-300/20 p-4 text-xs leading-6 text-slate-300">
+              <div className="mt-4 rounded-xl border border-blue-300/20 p-4 text-xs leading-6 text-slate-700 dark:text-slate-300">
                 <p className="font-bold text-blue-200">
                   Publish the file before checking
                 </p>
@@ -483,7 +483,7 @@ export default function IndexNowClient() {
               )}
             </div>
           )}
-          <p className="mt-3 text-xs leading-6 text-slate-400">
+          <p className="mt-3 text-xs leading-6 text-slate-500 dark:text-slate-400">
             Your domain and key are remembered in this browser only, so you can
             reuse the same key later.
           </p>
@@ -492,13 +492,13 @@ export default function IndexNowClient() {
         {/* Step 2 */}
         <div>
           <p className={labelClass}>2. Submit new or updated URLs</p>
-          <p className="mb-3 text-xs leading-6 text-slate-300">
+          <p className="mb-3 text-xs leading-6 text-slate-700 dark:text-slate-300">
             Submission unlocks after your current host and key are verified. A
             404 means the key file is missing, not that your whole website is
             broken.
           </p>
           <label
-            className="mb-1 block text-xs font-semibold text-slate-300"
+            className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300"
             htmlFor="indexnow-urls"
           >
             URLs (one per line, up to {MAX_URLS.toLocaleString()})
@@ -544,7 +544,7 @@ export default function IndexNowClient() {
                 </li>
               )}
               {parsedUrls.insecure > 0 && (
-                <li className="flex items-start gap-2 text-slate-300">
+                <li className="flex items-start gap-2 text-slate-700 dark:text-slate-300">
                   <AlertTriangle
                     className="mt-1 h-3.5 w-3.5 shrink-0"
                     aria-hidden="true"
@@ -554,7 +554,7 @@ export default function IndexNowClient() {
                 </li>
               )}
               {parsedUrls.duplicates > 0 && (
-                <li className="text-slate-400">
+                <li className="text-slate-500 dark:text-slate-400">
                   {parsedUrls.duplicates} duplicate(s) removed.
                 </li>
               )}
@@ -567,7 +567,7 @@ export default function IndexNowClient() {
             </ul>
           )}
           {!hostOk && urlsText.trim() && (
-            <p className="mt-2 text-xs text-slate-400">
+            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
               Enter your domain in step 1 to validate these URLs.
             </p>
           )}
@@ -601,11 +601,11 @@ export default function IndexNowClient() {
           </div>
 
           {curlSnippet && (
-            <div className="mt-4 rounded-2xl border border-white/10 bg-slate-900/60 p-3.5">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+            <div className="mt-4 rounded-2xl border border-white/10 bg-slate-50 dark:bg-slate-900/60 p-3.5">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 Live IndexNow API cURL Request Preview
               </p>
-              <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-all rounded-xl bg-slate-950/90 p-3 font-mono text-[11px] leading-5 text-emerald-300">
+              <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-all rounded-xl bg-white dark:bg-slate-950/90 p-3 font-mono text-[11px] leading-5 text-emerald-300">
                 {curlSnippet}
               </pre>
             </div>
@@ -620,7 +620,7 @@ export default function IndexNowClient() {
               {submitResult.detail}
             </p>
           )}
-          <p className="mt-3 text-xs leading-6 text-slate-400">
+          <p className="mt-3 text-xs leading-6 text-slate-500 dark:text-slate-400">
             Submitting tells participating search engines these pages changed.
             It doesn&apos;t guarantee indexing or rankings.
           </p>

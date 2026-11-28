@@ -1,15 +1,14 @@
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import type { Metadata } from "next";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
 import Link from "next/link";
-import { Image as ImageIcon, Layers, Sparkles } from "lucide-react";
+import {
+  Image as ImageIcon,
+  Layers,
+  Sparkles,
+} from "lucide-react";
 import PinterestPinVisualGeneratorClient from "@/features/pinterest-pin-visual-generator/PinterestPinVisualGeneratorClient";
 import ToolFaq from "@/features/tool-ui/ToolFaq";
 import ToolResources from "@/features/tool-catalog/ToolResources";
-import {
-  ToolHeroBackground,
-  toolHeroHeading,
-  toolHeroSurface,
-} from "@/features/tool-ui/ToolHero";
 import { PlatformBrandIcon } from "@/features/tool-ui/PlatformBrandIcon";
 
 const pageUrl = "https://doitwithai.tools/tools/pinterest-pin-visual-generator";
@@ -100,65 +99,18 @@ export default function PinterestPinVisualGeneratorPage() {
         }}
       />
 
-      <header
-        className={`relative overflow-hidden ${toolHeroSurface} text-white`}
+      <ToolLandingHero
+        slug="pinterest-pin-visual-generator"
+        title="AI Blog to Pinterest Tall Pin Visual Studio"
+        description="Turn any blog post URL into scroll-stopping 1000×1500 (2:3) vertical Pinterest Pin graphics with 6 editable templates, 1-click article photo integration, and keyword-indexed Pin SEO copy."
+        categoryLabel="Social Media Studio"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
       >
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">Tools</Link>
-            <span>/</span>
-            <span aria-current="page">Pinterest Pin Visual Generator</span>
-          </nav>
-
-          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
-            <div>
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-bold text-white backdrop-blur-xs">
-                <PlatformBrandIcon
-                  slugOrText="pinterest-pin-visual-generator"
-                  size={18}
-                />
-                <span>1000×1500 Tall Pin Designer · 6 Templates</span>
-              </div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                Social Media Studio · Visual Pinterest Pins &amp; Evergreen Traffic
-              </p>
-              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                AI Blog to{" "}
-                <span className={toolHeroHeading}>
-                  Pinterest Tall Pin Visual Studio
-                </span>
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-                Turn any blog post URL into scroll-stopping 1000×1500 (2:3)
-                vertical Pinterest Pin graphics with 6 editable templates,
-                1-click article photo integration, and keyword-indexed Pin SEO
-                copy.
-              </p>
-              <PortableToolHeroBar />
-            </div>
-
-            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
-                Complete 2:3 Tall Pin Package
-              </p>
-              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
-                <li>1. 6 Editable 1000×1500 Vertical Pin Layouts</li>
-                <li>2. 1-Click Extracted Blog Photo Integration</li>
-                <li>3. 3 Pin Angles with SEO Titles &amp; Descriptions</li>
-                <li>4. Instant PNG + SEO Copy Bundle Download</li>
-              </ul>
-            </div>
-          </div>
+        <div className="p-4 sm:p-6">
+          <PinterestPinVisualGeneratorClient />
         </div>
-      </header>
-
-      <PinterestPinVisualGeneratorClient />
+      </ToolLandingHero>
 
       <section
         className={`${section} border-t border-slate-200 dark:border-slate-800`}

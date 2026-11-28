@@ -12,10 +12,10 @@
 
 export const seoArticleOverrides = {
   "seo:h1-heading": {
-    title: "H1 Tag in SEO: Best Practices, Length, Examples & AI Guide",
-    metatitle: "H1 Tag Length & SEO Guide (2026): Examples + Free Checker",
+    title: "H1 Tag in SEO (2026): Best Practices, Length, Examples & Free Generator",
+    metatitle: "H1 Tag SEO Guide (2026): Length, Examples + Free Generator",
     metadesc:
-      "What is an H1 tag and how long should it be? See the 20–70 char & 600px SERP rules, H1 vs. title tag examples, CMS fixes, and test your H1 live for free.",
+      "What is an H1 tag in SEO and how long should it be? See 20–70 char & <600px rules, H1 vs. meta title examples, and generate click-worthy H1s free.",
     relatedToolSlugs: [
       "h1-heading-generator",
       "heading-structure-analyzer",
@@ -26,7 +26,7 @@ export const seoArticleOverrides = {
     quickAnswer: {
       question: "What is an H1 tag and how long should an H1 heading be for SEO?",
       answer:
-        "An H1 tag (<h1>) is the primary HTML heading visible on a webpage that defines its main topic for readers, screen readers, and search engines. While Google sets no strict H1 character limit, keeping your H1 between 20 and 70 characters (or 50–60 characters / ~600px when your CMS reuses the H1 as the <title> tag) prevents mobile wrapping and SERP title-link truncation.",
+        "An H1 tag (<h1>) is the single primary visible headline on a webpage that signals the page's core topic to readers and search engines. Keep your H1 between 20 and 70 characters (~50–60 chars / under 600px when your CMS reuses it as the <title> tag), match search intent directly, and test variations in our free AI H1 Heading Generator below.",
     },
     checker: {
       kind: "length",
@@ -40,10 +40,14 @@ export const seoArticleOverrides = {
       tooLong: "Over 70 chars — likely to wrap to 3+ lines on mobile and truncate past ~600px if used as a SERP title link.",
     },
     tools: [
-      { slug: "h1-heading-generator", name: "AI H1 Tag Generator", primary: true },
+      { slug: "h1-heading-generator", name: "Free AI H1 Heading Generator", primary: true },
       { slug: "heading-structure-analyzer", name: "H1–H6 Structure Analyzer" },
       { slug: "meta-title-generator", name: "Meta Title Generator" },
     ],
+    hubLink: {
+      href: "/tools/h1-heading-generator",
+      label: "Launch Free AI H1 Heading Generator (/tools/h1-heading-generator) →",
+    },
   },
 
   "seo:meta-description": {
@@ -95,36 +99,52 @@ export const seoArticleOverrides = {
   },
 
   "aitool:merlin-ai-review": {
-    metatitle: "Merlin AI Chrome Extension Review: Features & Limits",
+    metatitle: "Merlin AI Review (2026): Pricing, Free Limits & Pros/Cons",
     metadesc:
-      "Hands-on look at the Merlin AI Chrome extension: webpage and YouTube summaries, pricing limits, privacy checks, useful prompts, and free tools to try.",
-    relatedToolSlugs: ["on-page-ai-seo-analyzer", "readability-checker", "article-outline-generator"],
+      "Honest 2026 Merlin AI Chrome extension review: daily free query caps, Pro pricing, YouTube & PDF summary accuracy, privacy checks, and free alternatives.",
+    relatedToolSlugs: [
+      "on-page-ai-seo-analyzer",
+      "readability-checker",
+      "article-outline-generator",
+      "youtube-transcript-generator",
+    ],
     quickAnswer: {
-      question: "Is the Merlin AI Chrome extension worth it?",
+      question: "Is Merlin AI worth it in 2026? (Pricing, Free Tier & Verdict)",
       answer:
-        "Merlin AI is a browser extension that brings chat-style AI help to any webpage, including page and YouTube summaries and writing assistance. It is convenient for quick research inside Chrome, but free usage is limited, so check the current plan limits and privacy settings before relying on it for client or sensitive work.",
+        "Merlin AI is a multi-model Chrome sidebar that brings GPT, Claude, and Gemini summaries to any webpage, YouTube video, or Gmail thread via Ctrl/Cmd+M. It saves time on quick browser lookups, though heavy daily research hits free-tier credit caps fast—making zero-signup browser SEO & writing tools a practical companion.",
     },
     tools: [
-      { slug: "on-page-ai-seo-analyzer", name: "On-page AI SEO Analyzer", primary: true },
+      { slug: "on-page-ai-seo-analyzer", name: "Free On-Page AI SEO Analyzer", primary: true },
       { slug: "readability-checker", name: "Readability Checker" },
+      { slug: "article-outline-generator", name: "Article Outline Generator" },
     ],
-    hubLink: { href: "/tools", label: "Browse all free tools (no signup)" },
+    hubLink: { href: "/ai-content-writer", label: "Try Flagship AI Content Writer Free (No Extension Needed) →" },
   },
 
   "coding:chatgpt-portfolio-website": {
-    metatitle: "Build a Portfolio Website With ChatGPT + SEO Checklist",
+    metatitle: "Build a Portfolio Website With ChatGPT (Free HTML Prompts)",
     metadesc:
-      "Step by step: generate portfolio HTML with ChatGPT, customize it, deploy free on Netlify, then run a quick SEO check so your AI-built site can be indexed.",
-    relatedToolSlugs: ["on-page-ai-seo-analyzer", "sitemap-xml-generator", "meta-title-generator"],
+      "Copy exact ChatGPT prompts to generate a responsive HTML/CSS portfolio website in 10 minutes, deploy free, or launch a 2D/3D site in AI Website Builder.",
+    relatedToolSlugs: [
+      "on-page-ai-seo-analyzer",
+      "sitemap-xml-generator",
+      "meta-title-generator",
+      "schema-markup-generator",
+    ],
     quickAnswer: {
-      question: "Can ChatGPT build a portfolio website for free?",
+      question: "How do you build a portfolio website with ChatGPT for free?",
       answer:
-        "Yes. Ask ChatGPT for a single-page HTML and CSS layout, add your own content, and deploy it free on a host such as Netlify. AI-built pages still need a unique title, a meta description, one clear H1, image alt text and a sitemap so search engines can understand and index them.",
+        "Give ChatGPT a structured section brief (Hero, Projects Grid, Case Studies, About, Contact) to generate semantic HTML5 and CSS, customize your project links, and deploy free—or skip manual coding and launch an instant 2D/3D portfolio with our AI Website Builder. Always add a unique <title>, H1, and XML sitemap so Google indexes your work.",
     },
     tools: [
-      { slug: "on-page-ai-seo-analyzer", name: "On-page SEO Analyzer", primary: true },
+      { slug: "on-page-ai-seo-analyzer", name: "Audit Your Portfolio SEO", primary: true },
       { slug: "sitemap-xml-generator", name: "Sitemap XML Generator" },
+      { slug: "schema-markup-generator", name: "Person & Portfolio Schema" },
     ],
+    hubLink: {
+      href: "/ai-website-builder",
+      label: "Skip Manual HTML: Launch a Free 2D/3D Portfolio in AI Website Builder →",
+    },
   },
 
   "seo:what-is-ai-seo": {
@@ -202,19 +222,29 @@ export const seoArticleOverrides = {
   },
 
   "makemoney:ai-infographic-generators": {
-    metatitle: "Can ChatGPT Make Infographics? Prompts & 5 AI Tools",
+    metatitle: "7 Best AI Infographic Generators (2026): Free Tools Tested",
     metadesc:
-      "Learn how to turn blog posts and data into infographics using ChatGPT prompts and visual AI tools. Compare free limits, design steps, and image SEO.",
-    relatedToolSlugs: ["blog-to-infographic-generator", "data-to-chart-visual-card-maker", "image-alt-text-generator"],
+      "Compare the best free AI infographic generators and ChatGPT prompts to turn blog posts and stats into crisp SVG/PNG visuals, LinkedIn carousels, and Pins.",
+    relatedToolSlugs: [
+      "blog-to-infographic-generator",
+      "data-to-chart-visual-card-maker",
+      "blog-to-linkedin-carousel",
+      "image-alt-text-generator",
+    ],
     quickAnswer: {
-      question: "Can ChatGPT and AI tools create infographics from blog content?",
+      question: "What are the best free AI infographic generators for blog posts and data?",
       answer:
-        "ChatGPT can summarize an article into structured infographic sections, headline points, and visual layout briefs, while visual infographic studios turn that structure into an editable graphic. Always verify numbers and source facts before exporting your image.",
+        "The best workflow pairs structured ChatGPT data summarization with a vector infographic studio—such as our free Blog-to-Infographic Generator, Canva Magic Design, Venngage AI, or Piktochart AI—so text stays crisp, brand colors match your site, and every stat is fact-checked before export.",
     },
     tools: [
-      { slug: "blog-to-infographic-generator", name: "Blog to Infographic Studio", primary: true },
+      { slug: "blog-to-infographic-generator", name: "Free Blog-to-Infographic Studio", primary: true },
       { slug: "data-to-chart-visual-card-maker", name: "Data to Chart Card Maker" },
+      { slug: "blog-to-linkedin-carousel", name: "Blog to LinkedIn Carousel" },
     ],
+    hubLink: {
+      href: "/prompts/infographic-data-visualization-prompts",
+      label: "Copy 77 Free Infographic & Data Visualization AI Prompts →",
+    },
   },
 
   "seo:ai-readability-tools": {

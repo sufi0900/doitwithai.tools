@@ -11,7 +11,7 @@ import {
   siteOrigin,
 } from "@/features/tool-catalog/catalog";
 type Props = { params: { category: string } };
-export const dynamicParams = false;
+export const dynamicParams = true;
 export function generateStaticParams() {
   return categories.map(({ slug }) => ({ category: slug }));
 }

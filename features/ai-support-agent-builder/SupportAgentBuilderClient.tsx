@@ -451,7 +451,7 @@ export default function SupportAgentBuilderClient() {
                       {turn.text}
                     </div>
                     {turn.citation && (
-                      <span className="mt-1 text-[10px] font-bold text-slate-400">
+                      <span className="mt-1 text-[10px] font-bold text-slate-500 dark:text-slate-400">
                         {turn.citation}
                       </span>
                     )}
@@ -526,7 +526,7 @@ export default function SupportAgentBuilderClient() {
                   Copy System Prompt
                 </button>
               </div>
-              <pre className="whitespace-pre-wrap rounded-2xl border border-slate-200 bg-slate-950 p-4 text-xs leading-relaxed text-emerald-300 dark:border-slate-800">
+              <pre className="whitespace-pre-wrap rounded-2xl border border-slate-200 bg-white dark:bg-slate-950 p-4 text-xs leading-relaxed text-emerald-300 dark:border-slate-800">
                 {pack.domainBoundaryGuardrails.systemPrompt}
               </pre>
             </div>
@@ -550,7 +550,7 @@ export default function SupportAgentBuilderClient() {
                   Copy HTML Snippet
                 </button>
               </div>
-              <pre className="max-h-72 overflow-auto rounded-2xl border border-slate-200 bg-slate-950 p-4 text-xs text-sky-300 dark:border-slate-800">
+              <pre className="max-h-72 overflow-auto rounded-2xl border border-slate-200 bg-white dark:bg-slate-950 p-4 text-xs text-sky-300 dark:border-slate-800">
                 {pack.embeddableHtmlWidgetCode}
               </pre>
 
@@ -572,7 +572,7 @@ export default function SupportAgentBuilderClient() {
                   Copy React .TSX
                 </button>
               </div>
-              <pre className="max-h-72 overflow-auto rounded-2xl border border-slate-200 bg-slate-950 p-4 text-xs text-indigo-300 dark:border-slate-800">
+              <pre className="max-h-72 overflow-auto rounded-2xl border border-slate-200 bg-white dark:bg-slate-950 p-4 text-xs text-indigo-300 dark:border-slate-800">
                 {pack.embeddableReactComponentCode}
               </pre>
             </div>

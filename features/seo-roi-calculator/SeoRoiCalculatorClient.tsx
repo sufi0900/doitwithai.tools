@@ -447,7 +447,7 @@ export default function SeoRoiCalculatorClient() {
     <section
       id="seo-roi-workspace"
       aria-label="SEO ROI, Cost and Budget Calculator Workspace"
-      className="rounded-[28px] border border-white/10 bg-slate-900/85 p-5 shadow-2xl sm:p-8 space-y-8"
+      className="rounded-[28px] border border-white/10 bg-slate-50 dark:bg-slate-900/85 p-5 shadow-2xl sm:p-8 space-y-8"
     >
       <ToolRunOverlay
         active={busy}
@@ -466,7 +466,7 @@ export default function SeoRoiCalculatorClient() {
       {/* TOP COMMAND PANEL: Presets + Financial & Traffic Inputs */}
       <form
         onSubmit={(e) => void handleRunCalculation(e)}
-        className="rounded-2xl border border-white/10 bg-slate-950/65 p-5 sm:p-6 space-y-6"
+        className="rounded-2xl border border-white/10 bg-white dark:bg-slate-950/65 p-5 sm:p-6 space-y-6"
       >
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-4">
           <div className="flex items-center gap-3">
@@ -474,10 +474,10 @@ export default function SeoRoiCalculatorClient() {
               <Calculator aria-hidden className="h-5 w-5 text-blue-300" />
             </div>
             <div>
-              <h2 className="text-lg sm:text-xl font-black text-white">
+              <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white">
                 Configure Your SEO Budget, Traffic &amp; Conversion Inputs
               </h2>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Select an industry benchmark preset or enter your own monthly budget, keyword volume, and customer LTV.
               </p>
             </div>
@@ -504,13 +504,13 @@ export default function SeoRoiCalculatorClient() {
 
         {/* 6 Core Numeric Inputs Grid */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="rounded-xl border border-white/10 bg-slate-900/75 p-4">
+          <div className="rounded-xl border border-white/10 bg-slate-50 dark:bg-slate-900/75 p-4">
             <label
               htmlFor="roi-budget"
               className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-blue-300"
             >
               <span>1. Monthly SEO Budget ($)</span>
-              <span className="font-mono text-white">
+              <span className="font-mono text-slate-900 dark:text-white">
                 ${monthlyBudget.toLocaleString()}/mo
               </span>
             </label>
@@ -524,18 +524,18 @@ export default function SeoRoiCalculatorClient() {
               onChange={(e) => setMonthlyBudget(Number(e.target.value) || 0)}
               className={field}
             />
-            <p className="mt-1.5 text-[11px] text-slate-400">
+            <p className="mt-1.5 text-[11px] text-slate-500 dark:text-slate-400">
               Annual investment: ${(monthlyBudget * 12).toLocaleString()}/yr
             </p>
           </div>
 
-          <div className="rounded-xl border border-white/10 bg-slate-900/75 p-4">
+          <div className="rounded-xl border border-white/10 bg-slate-50 dark:bg-slate-900/75 p-4">
             <label
               htmlFor="roi-volume"
               className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-blue-300"
             >
               <span>2. Target Monthly Search Volume</span>
-              <span className="font-mono text-white">
+              <span className="font-mono text-slate-900 dark:text-white">
                 {monthlyVolume.toLocaleString()} searches
               </span>
             </label>
@@ -549,18 +549,18 @@ export default function SeoRoiCalculatorClient() {
               onChange={(e) => setMonthlyVolume(Number(e.target.value) || 0)}
               className={field}
             />
-            <p className="mt-1.5 text-[11px] text-slate-400">
+            <p className="mt-1.5 text-[11px] text-slate-500 dark:text-slate-400">
               Combined monthly volume of your target keyword clusters
             </p>
           </div>
 
-          <div className="rounded-xl border border-white/10 bg-slate-900/75 p-4">
+          <div className="rounded-xl border border-white/10 bg-slate-50 dark:bg-slate-900/75 p-4">
             <label
               htmlFor="roi-ctr"
               className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-blue-300"
             >
               <span>3. Expected Organic CTR (%)</span>
-              <span className="font-mono text-white">{expectedCtr}%</span>
+              <span className="font-mono text-slate-900 dark:text-white">{expectedCtr}%</span>
             </label>
             <input
               id="roi-ctr"
@@ -586,13 +586,13 @@ export default function SeoRoiCalculatorClient() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-white/10 bg-slate-900/75 p-4">
+          <div className="rounded-xl border border-white/10 bg-slate-50 dark:bg-slate-900/75 p-4">
             <label
               htmlFor="roi-conv"
               className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-emerald-300"
             >
               <span>4. Visitor-to-Lead / Cart Rate (%)</span>
-              <span className="font-mono text-white">{conversionRate}%</span>
+              <span className="font-mono text-slate-900 dark:text-white">{conversionRate}%</span>
             </label>
             <input
               id="roi-conv"
@@ -604,18 +604,18 @@ export default function SeoRoiCalculatorClient() {
               onChange={(e) => setConversionRate(Number(e.target.value) || 0)}
               className={field}
             />
-            <p className="mt-1.5 text-[11px] text-slate-400">
+            <p className="mt-1.5 text-[11px] text-slate-500 dark:text-slate-400">
               % of organic visitors who sign up, inquire, or checkout
             </p>
           </div>
 
-          <div className="rounded-xl border border-white/10 bg-slate-900/75 p-4">
+          <div className="rounded-xl border border-white/10 bg-slate-50 dark:bg-slate-900/75 p-4">
             <label
               htmlFor="roi-close"
               className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-emerald-300"
             >
               <span>5. Lead-to-Customer Close Rate (%)</span>
-              <span className="font-mono text-white">{closeRate}%</span>
+              <span className="font-mono text-slate-900 dark:text-white">{closeRate}%</span>
             </label>
             <input
               id="roi-close"
@@ -627,18 +627,18 @@ export default function SeoRoiCalculatorClient() {
               onChange={(e) => setCloseRate(Number(e.target.value) || 0)}
               className={field}
             />
-            <p className="mt-1.5 text-[11px] text-slate-400">
+            <p className="mt-1.5 text-[11px] text-slate-500 dark:text-slate-400">
               Use 100% for direct e-commerce or 15–35% for B2B/service leads
             </p>
           </div>
 
-          <div className="rounded-xl border border-white/10 bg-slate-900/75 p-4">
+          <div className="rounded-xl border border-white/10 bg-slate-50 dark:bg-slate-900/75 p-4">
             <label
               htmlFor="roi-ltv"
               className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-amber-300"
             >
               <span>6. Customer Lifetime Value / AOV ($)</span>
-              <span className="font-mono text-white">
+              <span className="font-mono text-slate-900 dark:text-white">
                 ${customerLtv.toLocaleString()}
               </span>
             </label>
@@ -652,7 +652,7 @@ export default function SeoRoiCalculatorClient() {
               onChange={(e) => setCustomerLtv(Number(e.target.value) || 0)}
               className={field}
             />
-            <p className="mt-1.5 text-[11px] text-slate-400">
+            <p className="mt-1.5 text-[11px] text-slate-500 dark:text-slate-400">
               Average net revenue generated per acquired customer
             </p>
           </div>
@@ -663,7 +663,7 @@ export default function SeoRoiCalculatorClient() {
           <div>
             <label
               htmlFor="roi-pages"
-              className="text-xs font-bold uppercase tracking-wider text-slate-300"
+              className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300"
             >
               Monthly Content / Tool Velocity (Pages/mo)
             </label>
@@ -680,7 +680,7 @@ export default function SeoRoiCalculatorClient() {
           <div>
             <label
               htmlFor="roi-context"
-              className="text-xs font-bold uppercase tracking-wider text-slate-300"
+              className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300"
             >
               Business Model &amp; Niche Context (Optional for AI Executive Memo)
             </label>
@@ -741,7 +741,7 @@ export default function SeoRoiCalculatorClient() {
             <span className="inline-flex items-center rounded-full border border-emerald-400/35 bg-emerald-500/15 px-3 py-0.5 text-xs font-bold uppercase tracking-wider text-emerald-300">
               12-Month SEO Financial Forecast
             </span>
-            <h3 className="mt-1.5 text-xl font-black text-white">
+            <h3 className="mt-1.5 text-xl font-black text-slate-900 dark:text-white">
               Projected Organic ROI, Break-Even &amp; Budget Allocation
             </h3>
           </div>
@@ -774,7 +774,7 @@ export default function SeoRoiCalculatorClient() {
                 : "border-white/15 border-t-amber-400 bg-amber-950/20"
             }`}
           >
-            <div className="text-xs font-bold uppercase tracking-wider text-slate-400">
+            <div className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               12-Month Net SEO ROI
             </div>
             <div className="mt-2 flex items-baseline gap-2.5">
@@ -785,29 +785,29 @@ export default function SeoRoiCalculatorClient() {
               >
                 {report.roiPercentage >= 0 ? `+${report.roiPercentage}%` : `${report.roiPercentage}%`}
               </span>
-              <span className="rounded-lg bg-white/10 px-2 py-0.5 text-xs font-bold text-white">
+              <span className="rounded-lg bg-white/10 px-2 py-0.5 text-xs font-bold text-slate-900 dark:text-white">
                 {report.roiMultiple}x Return Multiple
               </span>
             </div>
-            <p className="mt-2 text-xs text-slate-300">
+            <p className="mt-2 text-xs text-slate-700 dark:text-slate-300">
               Compares 12-month net organic profit against total SEO investment.
             </p>
           </div>
 
           <div className="rounded-2xl border border-t-4 border-white/15 border-t-sky-400 bg-sky-950/20 p-5 shadow-lg">
-            <div className="text-xs font-bold uppercase tracking-wider text-slate-400">
+            <div className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               12-Month Cumulative Revenue
             </div>
-            <div className="mt-2 text-3xl font-black text-white">
+            <div className="mt-2 text-3xl font-black text-slate-900 dark:text-white">
               ${report.total12MonthRevenue.toLocaleString()}
             </div>
-            <p className="mt-2 text-xs text-slate-300">
+            <p className="mt-2 text-xs text-slate-700 dark:text-slate-300">
               Against <strong>${report.total12MonthCost.toLocaleString()}</strong> total 12-month SEO spend.
             </p>
           </div>
 
           <div className="rounded-2xl border border-t-4 border-white/15 border-t-indigo-400 bg-indigo-950/20 p-5 shadow-lg">
-            <div className="text-xs font-bold uppercase tracking-wider text-slate-400">
+            <div className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               Net Profit &amp; Break-Even Timeline
             </div>
             <div className="mt-2 flex items-baseline gap-2.5">
@@ -820,46 +820,46 @@ export default function SeoRoiCalculatorClient() {
                   : "Break-Even: Month 13+"}
               </span>
             </div>
-            <p className="mt-2 text-xs text-slate-300">
+            <p className="mt-2 text-xs text-slate-700 dark:text-slate-300">
               Month when cumulative organic revenue exceeds cumulative SEO spend.
             </p>
           </div>
 
-          <div className="rounded-2xl border border-white/15 bg-slate-950/80 p-5">
-            <div className="text-xs font-bold uppercase tracking-wider text-slate-400">
+          <div className="rounded-2xl border border-white/15 bg-white dark:bg-slate-950/80 p-5">
+            <div className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               Month-12 Monthly Traffic Run-Rate
             </div>
             <div className="mt-2 text-2xl font-black text-blue-300">
               {report.month12Traffic.toLocaleString()} visits/mo
             </div>
-            <p className="mt-1.5 text-xs text-slate-400">
+            <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
               Generating <strong>${report.month12Revenue.toLocaleString()}/mo</strong> in recurring organic revenue by Month 12.
             </p>
           </div>
 
-          <div className="rounded-2xl border border-white/15 bg-slate-950/80 p-5">
-            <div className="text-xs font-bold uppercase tracking-wider text-slate-400">
+          <div className="rounded-2xl border border-white/15 bg-white dark:bg-slate-950/80 p-5">
+            <div className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               Total Customers Acquired (Year 1)
             </div>
             <div className="mt-2 text-2xl font-black text-emerald-300">
               {report.totalCustomers12Mo.toLocaleString()} customers
             </div>
-            <p className="mt-1.5 text-xs text-slate-400">
+            <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
               At <strong>${customerLtv.toLocaleString()}</strong> average customer LTV / order value.
             </p>
           </div>
 
-          <div className="rounded-2xl border border-white/15 bg-slate-950/80 p-5">
-            <div className="text-xs font-bold uppercase tracking-wider text-slate-400">
+          <div className="rounded-2xl border border-white/15 bg-white dark:bg-slate-950/80 p-5">
+            <div className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               Effective Organic CAC
             </div>
             <div className="mt-2 flex items-baseline gap-2">
               <span className="text-2xl font-black text-amber-300">
                 ${report.organicCac.toLocaleString()}
               </span>
-              <span className="text-xs text-slate-400">per customer</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400">per customer</span>
             </div>
-            <p className="mt-1.5 text-xs text-slate-400">
+            <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
               LTV:CAC Ratio:{" "}
               <strong>
                 {report.organicCac > 0
@@ -878,15 +878,15 @@ export default function SeoRoiCalculatorClient() {
               <Sparkles className="h-4 w-4" />
               <span>AI CFO &amp; Executive Investment Memo</span>
             </div>
-            <h4 className="text-lg font-black text-white">{aiMemo.headline}</h4>
-            <p className="text-sm leading-7 text-slate-200">
+            <h4 className="text-lg font-black text-slate-900 dark:text-white">{aiMemo.headline}</h4>
+            <p className="text-sm leading-7 text-slate-800 dark:text-slate-200">
               {aiMemo.executiveSummary}
             </p>
             <div className="grid gap-3 sm:grid-cols-3">
               {aiMemo.keyRecommendations.map((rec, idx) => (
                 <div
                   key={idx}
-                  className="rounded-xl border border-white/10 bg-slate-950/80 p-3.5 text-xs leading-6 text-slate-200"
+                  className="rounded-xl border border-white/10 bg-white dark:bg-slate-950/80 p-3.5 text-xs leading-6 text-slate-800 dark:text-slate-200"
                 >
                   <div className="font-bold text-indigo-300 mb-1">
                     Action Pillar #{idx + 1}
@@ -902,13 +902,13 @@ export default function SeoRoiCalculatorClient() {
         )}
 
         {/* Recommended Monthly SEO Budget Allocation Card */}
-        <div className="rounded-2xl border border-white/15 bg-slate-950/80 p-6 space-y-4">
+        <div className="rounded-2xl border border-white/15 bg-white dark:bg-slate-950/80 p-6 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
-              <h4 className="text-base font-black text-white">
+              <h4 className="text-base font-black text-slate-900 dark:text-white">
                 Recommended Monthly SEO Budget Allocation (${report.monthlyBudget.toLocaleString()}/mo)
               </h4>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 How high-performing SEO teams divide monthly spend across Content, Technical/AEO, Authority, and Tooling.
               </p>
             </div>
@@ -918,19 +918,19 @@ export default function SeoRoiCalculatorClient() {
             {report.budgetSplit.map((b) => (
               <div
                 key={b.category}
-                className="rounded-xl border border-white/10 bg-slate-900/90 p-4 flex flex-col justify-between"
+                className="rounded-xl border border-white/10 bg-slate-50 dark:bg-slate-900/90 p-4 flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-center justify-between text-xs font-bold text-blue-300">
                     <span>{b.share}% Share</span>
-                    <span className="font-mono text-sm text-white">
+                    <span className="font-mono text-sm text-slate-900 dark:text-white">
                       ${b.amount.toLocaleString()}/mo
                     </span>
                   </div>
-                  <div className="mt-1.5 text-sm font-bold text-white">
+                  <div className="mt-1.5 text-sm font-bold text-slate-900 dark:text-white">
                     {b.category}
                   </div>
-                  <p className="mt-1 text-xs leading-5 text-slate-400">
+                  <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
                     {b.purpose}
                   </p>
                 </div>
@@ -946,13 +946,13 @@ export default function SeoRoiCalculatorClient() {
         </div>
 
         {/* 12-Month Month-by-Month Compounding Schedule Table */}
-        <div className="rounded-2xl border border-white/15 bg-slate-950/85 p-5 sm:p-6 space-y-4">
+        <div className="rounded-2xl border border-white/15 bg-white dark:bg-slate-950/85 p-5 sm:p-6 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
-              <h4 className="text-base font-black text-white">
+              <h4 className="text-base font-black text-slate-900 dark:text-white">
                 12-Month SEO Traffic, Revenue &amp; Break-Even Schedule
               </h4>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Models realistic Google indexing &amp; authority ramp-up from Month 1 (12% maturity) to Month 12 (118% compounding maturity).
               </p>
             </div>
@@ -960,7 +960,7 @@ export default function SeoRoiCalculatorClient() {
 
           <div className="overflow-x-auto rounded-xl border border-white/10">
             <table className="w-full text-left text-xs sm:text-sm">
-              <thead className="bg-slate-900 text-[11px] font-bold uppercase tracking-wider text-slate-300">
+              <thead className="bg-slate-50 dark:bg-slate-900 text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                 <tr>
                   <th className="px-3.5 py-3">Month</th>
                   <th className="px-3.5 py-3 text-right">Ramp %</th>
@@ -984,28 +984,28 @@ export default function SeoRoiCalculatorClient() {
                         : "hover:bg-white/[0.02]"
                     }
                   >
-                    <td className="px-3.5 py-2.5 font-bold text-white">
+                    <td className="px-3.5 py-2.5 font-bold text-slate-900 dark:text-white">
                       Month {m.month}
                     </td>
-                    <td className="px-3.5 py-2.5 text-right font-mono text-slate-400">
+                    <td className="px-3.5 py-2.5 text-right font-mono text-slate-500 dark:text-slate-400">
                       {m.rampFactor}%
                     </td>
                     <td className="px-3.5 py-2.5 text-right font-mono text-blue-200">
                       {m.traffic.toLocaleString()}
                     </td>
-                    <td className="px-3.5 py-2.5 text-right font-mono text-slate-300">
+                    <td className="px-3.5 py-2.5 text-right font-mono text-slate-700 dark:text-slate-300">
                       {m.leads.toLocaleString()}
                     </td>
                     <td className="px-3.5 py-2.5 text-right font-mono text-emerald-300">
                       {m.customers.toLocaleString()}
                     </td>
-                    <td className="px-3.5 py-2.5 text-right font-mono font-bold text-white">
+                    <td className="px-3.5 py-2.5 text-right font-mono font-bold text-slate-900 dark:text-white">
                       ${m.monthlyRevenue.toLocaleString()}
                     </td>
-                    <td className="px-3.5 py-2.5 text-right font-mono text-slate-400">
+                    <td className="px-3.5 py-2.5 text-right font-mono text-slate-500 dark:text-slate-400">
                       ${m.cumulativeCost.toLocaleString()}
                     </td>
-                    <td className="px-3.5 py-2.5 text-right font-mono text-slate-200">
+                    <td className="px-3.5 py-2.5 text-right font-mono text-slate-800 dark:text-slate-200">
                       ${m.cumulativeRevenue.toLocaleString()}
                     </td>
                     <td

@@ -1,13 +1,8 @@
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import type { Metadata } from "next";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
 import Link from "next/link";
 import { Suspense } from "react";
 import AudienceClient from "@/features/audience-research/Client";
-import {
-  ToolHeroBackground,
-  toolHeroHeading,
-  toolHeroSurface,
-} from "@/features/tool-ui/ToolHero";
 import ToolResources from "@/features/tool-catalog/ToolResources";
 const pageUrl = "https://doitwithai.tools/tools/target-audience-research-tool";
 const description =
@@ -133,72 +128,18 @@ export default function Page() {
           }).replace(/</g, "\\u003c"),
         }}
       />
-      <section className={`relative overflow-hidden ${toolHeroSurface} text-white`}
+      <ToolLandingHero
+        slug="target-audience-research-tool"
+        title="AI Target Audience & Buyer Persona Research Tool"
+        description="Turn a product brief, service description, or live website URL into actionable buyer personas, search triggers, objections, and content channel experiments."
+        categoryLabel="Audience Strategy"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
       >
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">Tools</Link>
-            <span>/</span>
-            <span aria-current="page">Target Audience Research Tool</span>
-          </nav>
-
-          <div className="mb-8 grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                Audience Strategy · Buyer Persona & Search Trigger Planner
-              </p>
-              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                AI Target Audience 
-                <span className={toolHeroHeading}>
-                  & Buyer Persona Research Tool
-                </span>
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-                Turn a product brief, service description, or live website URL into actionable buyer personas, search triggers, objections, and content channel experiments.
-              </p>
-              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Website URL or idea input
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Evidence-tagged personas
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Markdown & CSV report export
-                </span>
-              </div>
-              <PortableToolHeroBar />
-            </div>
-
-            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
-                4 Persona Dimensions Mapped
-              </p>
-              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
-                <li>
-                  <strong className="text-emerald-300">Jobs to Be Done:</strong> Identifies the concrete problem or goal driving the buyer&apos;s search.
-                </li>
-                <li>
-                  <strong className="text-indigo-300">Objections & Hesitations:</strong> Surfaces trust barriers, pricing questions, and switching costs.
-                </li>
-                <li>
-                  <strong className="text-sky-300">Search Triggers:</strong> Maps questions and keywords asked at each stage of awareness.
-                </li>
-                <li>
-                  <strong className="text-amber-300">Validation Questions:</strong> Provides interview prompts to verify assumptions with real users.
-                </li>
-              </ul>
-            </div>
-          </div>
+        <div className="p-4 sm:p-6">
           <AudienceClient />
         </div>
-      </section>
+      </ToolLandingHero>
       <div className="mx-auto max-w-6xl space-y-14 px-4 py-16 sm:px-6">
         <section>
           <h2 className="text-3xl font-bold">

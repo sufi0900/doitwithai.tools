@@ -1,0 +1,31 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "main": ".open-next/worker.js",
+  "name": "doitwithai-tools",
+  "compatibility_date": "2026-09-04",
+  "compatibility_flags": [
+    "nodejs_compat",
+    "global_fetch_strictly_public"
+  ],
+  "upload_source_maps": false,
+  "previews": {
+    "vars": {
+      "NEXT_PUBLIC_SUPABASE_URL": "https://xsxrriejjnxjkbffwdxh.supabase.co",
+      "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_pamlxeiKiGNjXxIk3KHt5Q__LbiT1l6",
+      "AGENCY_UNLIMITED_TESTING": "true"
+    }
+  },
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "kv_namespaces": [
+    {
+      "binding": "NEXT_INC_CACHE_KV",
+      "id": "2ce706a9a28c491f85944f44d58365e9"
+    }
+  ],
+  "observability": {
+    "enabled": true
+  }
+}

@@ -1,15 +1,14 @@
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import type { Metadata } from "next";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
 import Link from "next/link";
-import { Eye, Sparkles, Type } from "lucide-react";
+import {
+  Eye,
+  Sparkles,
+  Type,
+} from "lucide-react";
 import LinkedinPostFormatterClient from "@/features/linkedin-post-formatter/LinkedinPostFormatterClient";
 import ToolFaq from "@/features/tool-ui/ToolFaq";
 import ToolResources from "@/features/tool-catalog/ToolResources";
-import {
-  ToolHeroBackground,
-  toolHeroHeading,
-  toolHeroSurface,
-} from "@/features/tool-ui/ToolHero";
 import { PlatformBrandIcon } from "@/features/tool-ui/PlatformBrandIcon";
 
 const pageUrl = "https://doitwithai.tools/tools/linkedin-post-formatter";
@@ -105,74 +104,18 @@ export default function LinkedinPostFormatterPage() {
         }}
       />
 
-      <header
-        className={`relative overflow-hidden ${toolHeroSurface} text-white`}
+      <ToolLandingHero
+        slug="linkedin-post-formatter"
+        title="LinkedIn Post Formatter & &ldquo;…see more&rdquo; Fold Previewer"
+        description="Style your LinkedIn hooks and subheadings with Unicode 𝗕𝗼𝗹𝗱 , 𝘐𝘵𝘢𝘭𝘪𝘤 , and 𝙼𝚘𝚗𝚘 typography, preview the exact mobile and desktop &ldquo;…see more&rdquo; fold line, and score your post for feed engagement."
+        categoryLabel="Social Media Studio"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
       >
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">Tools</Link>
-            <span>/</span>
-            <span aria-current="page">LinkedIn Post Formatter</span>
-          </nav>
-
-          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
-            <div>
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-bold text-white backdrop-blur-xs">
-                <PlatformBrandIcon slugOrText="linkedin-post-formatter" size={18} />
-                <span>Official Platform Studio</span>
-              </div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                Social Media Studio · LinkedIn Typography &amp; Dwell Time
-              </p>
-              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                LinkedIn Post Formatter &amp;{" "}
-                <span className={toolHeroHeading}>
-                  &ldquo;…see more&rdquo; Fold Previewer
-                </span>
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-                Style your LinkedIn hooks and subheadings with Unicode{" "}
-                <strong>𝗕𝗼𝗹𝗱</strong>, <em>𝘐𝘵𝘢𝘭𝘪𝘤</em>, and <code>𝙼𝚘𝚗𝚘</code>{" "}
-                typography, preview the exact mobile and desktop{" "}
-                <strong>&ldquo;…see more&rdquo;</strong> fold line, and score
-                your post for feed engagement.
-              </p>
-              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  7 Unicode Text Styles
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Mobile &amp; Desktop Fold Preview
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  5-Point Hook Scorecard
-                </span>
-              </div>
-              <PortableToolHeroBar />
-            </div>
-
-            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
-                Built for LinkedIn Creators &amp; Founders
-              </p>
-              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
-                <li>1. Highlight any text to apply Unicode Bold or Italic</li>
-                <li>2. Exact 140-char Mobile &amp; 210-char Desktop fold check</li>
-                <li>3. Proven data-driven &amp; contrarian hook templates</li>
-                <li>4. Character, word, reading-time &amp; hashtag counters</li>
-              </ul>
-            </div>
-          </div>
+        <div className="p-4 sm:p-6">
+          <LinkedinPostFormatterClient />
         </div>
-      </header>
-
-      <LinkedinPostFormatterClient />
+      </ToolLandingHero>
 
       <section
         className={`${section} border-t border-slate-200 dark:border-slate-800`}

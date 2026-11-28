@@ -339,7 +339,7 @@ export default function HeadingAnalyzerClient() {
     <section
       id="heading-structure-analyzer"
       aria-label="Heading analysis workspace"
-      className="relative mx-auto max-w-6xl rounded-3xl border border-white/15 bg-white/[0.06] p-4 text-white sm:p-7"
+      className="relative mx-auto max-w-6xl rounded-3xl border border-white/15 bg-white/[0.06] p-4 text-slate-900 dark:text-white sm:p-7"
     >
       <ToolRunOverlay
         active={loading}
@@ -403,7 +403,7 @@ export default function HeadingAnalyzerClient() {
               className={input}
               placeholder="https://example.com/your-article"
             />
-            <p className="mt-2 text-xs leading-6 text-slate-300">
+            <p className="mt-2 text-xs leading-6 text-slate-700 dark:text-slate-300">
               Checks one public page at a time. No access to your website
               account is needed.
             </p>
@@ -484,7 +484,7 @@ export default function HeadingAnalyzerClient() {
               className="mb-2 block text-sm font-bold"
             >
               Target phrase{" "}
-              <span className="font-normal text-slate-400">(optional)</span>
+              <span className="font-normal text-slate-500 dark:text-slate-400">(optional)</span>
             </label>
             <input
               id="ha-keyword"
@@ -507,7 +507,7 @@ export default function HeadingAnalyzerClient() {
             />
             <span>
               Main content only
-              <span className="mt-1 block text-xs leading-5 text-slate-300">
+              <span className="mt-1 block text-xs leading-5 text-slate-700 dark:text-slate-300">
                 Uses main or article when available. Excludes navigation,
                 footer, and sidebar headings.
               </span>
@@ -584,7 +584,7 @@ export default function HeadingAnalyzerClient() {
           <p className="font-bold">
             Reading your page and mapping its headings
           </p>
-          <p className="mt-2 text-sm text-slate-300">
+          <p className="mt-2 text-sm text-slate-700 dark:text-slate-300">
             Checking the main heading, section order, and repeated labels.
           </p>
         </div>
@@ -602,11 +602,11 @@ export default function HeadingAnalyzerClient() {
                   : "Your content outline")}
             </h2>
             {result.finalUrl && (
-              <p className="mt-2 break-all text-xs text-slate-300">
+              <p className="mt-2 break-all text-xs text-slate-700 dark:text-slate-300">
                 {result.finalUrl}
               </p>
             )}
-            <p className="mt-2 text-xs leading-6 text-slate-300">
+            <p className="mt-2 text-xs leading-6 text-slate-700 dark:text-slate-300">
               Scope: {result.scope}. Change any heading&apos;s level (H1–H6) or wording below to test structure fixes and export your clean outline.
             </p>
           </div>
@@ -675,7 +675,7 @@ export default function HeadingAnalyzerClient() {
             <summary className="cursor-pointer text-sm font-bold">
               How the structure score works (6 automated checks)
             </summary>
-            <p className="mt-3 text-xs leading-6 text-slate-300">
+            <p className="mt-3 text-xs leading-6 text-slate-700 dark:text-slate-300">
               This tool checks six basic structure rules. Edit any heading level or text below to see these checks update immediately.
             </p>
             <ul className="mt-3 grid gap-2 sm:grid-cols-2">
@@ -699,7 +699,7 @@ export default function HeadingAnalyzerClient() {
               <h2 className="flex items-center gap-2 font-bold">
                 <Target size={18} /> Target phrase placement
               </h2>
-              <p className="mt-2 break-words text-sm text-slate-300">
+              <p className="mt-2 break-words text-sm text-slate-700 dark:text-slate-300">
                 “{analysis.keyword.term}” appears in {analysis.keyword.matching}{" "}
                 of {analysis.keyword.total} visible headings.
               </p>
@@ -754,7 +754,7 @@ export default function HeadingAnalyzerClient() {
                   </button>
                 </div>
               </div>
-              <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">
+              <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-700 dark:text-slate-300">
                 Edit any heading&apos;s level (`H1`–`H6`) or text directly in the outline below. If a level is skipped, click <strong>Apply H# Fix</strong> to repair the hierarchy in one click.
               </p>
               <div
@@ -850,7 +850,7 @@ export default function HeadingAnalyzerClient() {
                                 <option
                                   key={lv}
                                   value={lv}
-                                  className="bg-slate-900 text-white"
+                                  className="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white"
                                 >
                                   H{lv}
                                 </option>
@@ -874,7 +874,7 @@ export default function HeadingAnalyzerClient() {
                               }
                               aria-label={`Heading ${h.index + 1} text`}
                               placeholder="(Empty heading — type heading text)"
-                              className="w-full rounded-lg border border-white/15 bg-slate-950/50 px-3 py-1.5 text-sm font-semibold text-white focus:border-[#7890ff] focus:outline-none sm:text-base"
+                              className="w-full rounded-lg border border-white/15 bg-white dark:bg-slate-950/50 px-3 py-1.5 text-sm font-semibold text-slate-900 dark:text-white focus:border-[#7890ff] focus:outline-none sm:text-base"
                             />
                             {keyword &&
                               keywordMatches(h.text, keyword) &&
@@ -924,7 +924,7 @@ export default function HeadingAnalyzerClient() {
             <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.4fr)]">
               <div className={panel}>
                 <h2 className="font-bold">Your next steps</h2>
-                <p className="mt-2 text-xs leading-6 text-slate-300">
+                <p className="mt-2 text-xs leading-6 text-slate-700 dark:text-slate-300">
                   Review errors first, then warnings. Suggested changes need
                   your editorial judgment.
                 </p>
@@ -978,7 +978,7 @@ export default function HeadingAnalyzerClient() {
                 className="block rounded-2xl border border-blue-300/30 bg-[#5271ff]/20 p-5 transition hover:bg-[#5271ff]/30"
               >
                 <p className="font-bold">Need a clearer main heading?</p>
-                <p className="mt-2 text-sm leading-6 text-slate-300">
+                <p className="mt-2 text-sm leading-6 text-slate-700 dark:text-slate-300">
                   Create H1 options that describe your page topic.
                 </p>
                 <span className="mt-3 inline-flex items-center gap-2 text-sm font-semibold">

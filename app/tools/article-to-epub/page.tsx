@@ -1,6 +1,5 @@
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
-import { ToolHeroBackground, toolHeroHeading, toolHeroSurface } from "@/features/tool-ui/ToolHero";
 import type { Metadata } from "next";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
 import Link from "next/link";
 import ArticlePdfClient from "@/features/article-conversion/ArticlePdfClient";
 import ToolFaq from "@/features/tool-ui/ToolFaq";
@@ -91,49 +90,18 @@ export default function Page() {
           __html: JSON.stringify(schema).replace(/</g, "\\u003c"),
         }}
       />
-      <header className={`relative overflow-hidden ${toolHeroSurface} text-white`}>
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/tools">Tools</Link>
-            <span aria-hidden>/</span>
-            <Link href="/tools/categories/content-conversion">
-              Content conversion
-            </Link>
-            <span aria-hidden>/</span>
-            <span aria-current="page">Article to EPUB</span>
-          </nav>
-          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                Content conversion · E-reader format
-              </p>
-              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                Article to EPUB{" "}
-                <span className={toolHeroHeading}>for comfortable reading</span>
-              </h1>
-              <p className="mt-5 text-base leading-8 text-slate-300">
-                Package long web articles into a reflowable EPUB 3 e-book with
-                automatic chapter navigation, clean typography, and source
-                attribution.
-              </p>
-              <PortableToolHeroBar />
-            </div>
-            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 shadow-xl p-6">
-              <h2 className="text-lg font-bold">E-book workflow</h2>
-              <ol className="mt-4 space-y-3 text-sm leading-7 text-slate-300">
-                <li>1. Import a public article URL or paste content</li>
-                <li>2. Review title, attribution, and typography</li>
-                <li>3. Download your .epub e-book file</li>
-              </ol>
-            </div>
-          </div>
+      <ToolLandingHero
+        slug="article-to-epub"
+        title="Article to EPUB for comfortable reading"
+        description="Package long web articles into a reflowable EPUB 3 e-book with automatic chapter navigation, clean typography, and source attribution."
+        categoryLabel="Content conversion"
+        categoryHref="/tools/categories/content-conversion"
+        workspaceId="tool-studio-workspace"
+      >
+        <div className="p-4 sm:p-6">
+          <ArticlePdfClient format="epub" />
         </div>
-      </header>
-      <ArticlePdfClient format="epub" />
+      </ToolLandingHero>
       <section className={section}>
         <h2 className="text-2xl font-extrabold">
           Read long-form articles on any e-reader with reflowable text

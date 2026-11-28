@@ -6,6 +6,10 @@ import categories from "./linkedin-b2b-categories.json";
 import { fillPreview } from "./catalog";
 import { chatGPTLink } from "./meta-workflow";
 import KeywordGuideCard, { type KeywordGuide } from "./KeywordGuideCard";
+import {
+  PROMPT_COMPANION_LINK_CLASS,
+  PROMPT_COMPANION_LINK_TEXT_CLASS,
+} from "./promptLinkStyles";
 import { linkedinB2bPromoGuides } from "./LinkedinB2bPromoGuides";
 
 const button =
@@ -261,6 +265,41 @@ export default function LinkedinB2bPromptLibrary() {
         </label>
       </div>
 
+      {/* Quick Filter Pills */}
+      <div className="mb-6 flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={() => {
+            setCategory("all");
+            setQuery("");
+          }}
+          className={`rounded-full px-3 py-1 text-xs font-bold transition ${
+            category === "all"
+              ? "bg-[#5271FF] text-white"
+              : "border border-slate-300 bg-white text-slate-700 hover:border-[#5271FF] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+          }`}
+        >
+          All 83 Prompts
+        </button>
+        {categories.map((c) => (
+          <button
+            key={c.id}
+            type="button"
+            onClick={() => {
+              setCategory(c.id);
+              setQuery("");
+            }}
+            className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+              category === c.id
+                ? "bg-[#5271FF] text-white"
+                : "border border-slate-300 bg-white text-slate-700 hover:border-[#5271FF] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+            }`}
+          >
+            {c.name.split(" ")[0]} ({c.rangeLabel.replace("Prompts ", "")})
+          </button>
+        ))}
+      </div>
+
       <p
         role="status"
         aria-live="polite"
@@ -304,10 +343,12 @@ export default function LinkedinB2bPromptLibrary() {
                 </p>
                 {c.showToolLink && (
                   <Link
-                    className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-blue-700 underline dark:text-blue-200"
+                    className={PROMPT_COMPANION_LINK_CLASS}
                     href={`/tools/${c.tool}`}
                   >
-                    Open companion studio: {c.toolName} ↗
+                    <span className={PROMPT_COMPANION_LINK_TEXT_CLASS}>
+                      Open companion studio: {c.toolName} ↗
+                    </span>
                   </Link>
                 )}
               </div>

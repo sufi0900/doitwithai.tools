@@ -9,6 +9,7 @@ import menuData from "./menuData";
 import Avatar from "@mui/material/Avatar";
 import {
   ArrowRight,
+  ArrowUpRight,
   Bookmark,
   Bot,
   ChevronDown,
@@ -18,6 +19,7 @@ import {
   FileSearch,
   Globe,
   Layers,
+  LayoutDashboard,
   LayoutGrid,
   LogOut,
   RefreshCw,
@@ -30,6 +32,7 @@ import {
   type WorkspaceView,
 } from "@/features/tools-workspace/WorkspaceProvider";
 import { tools } from "@/features/tool-catalog/catalog";
+import { loadStudioState, subscribeStudioState } from "@/lib/studio/store";
 
 const GoogleIcon = () => (
   <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4 shrink-0">
@@ -338,6 +341,23 @@ const Header = () => {
     "Your account";
   const name = typeof rawName === "string" ? rawName : "Your account";
 
+  const [activeStudioSiteName, setActiveStudioSiteName] = useState<string | null>(
+    null,
+  );
+  const [studioSitesCount, setStudioSitesCount] = useState(0);
+
+  useEffect(() => {
+    const syncStudioSummary = () => {
+      const state = loadStudioState();
+      setStudioSitesCount(state.sites.length);
+      const active =
+        state.sites.find((s) => s.id === state.activeSiteId) || state.sites[0];
+      setActiveStudioSiteName(active ? active.name : null);
+    };
+    syncStudioSummary();
+    return subscribeStudioState(syncStudioSummary);
+  }, []);
+
   const handleWorkspaceJump = (targetView: WorkspaceView) => {
     setProfileOpen(false);
     setNavbarOpen(false);
@@ -355,12 +375,10 @@ const Header = () => {
 
   const isMenuActive = (path?: string) => {
     if (!path) return false;
-    if (path === "/agents") {
+    if (path === "/ai-content-writer") {
       return (
-        usePathName === "/agents" ||
-        usePathName.startsWith("/agents/") ||
-        usePathName === "/do-it-ai" ||
-        usePathName.startsWith("/do-it-ai/")
+        usePathName === "/ai-content-writer" ||
+        usePathName.startsWith("/ai-content-writer/")
       );
     }
     if (path === "/tools") {
@@ -376,6 +394,12 @@ const Header = () => {
         usePathName.startsWith("/ai-seo/") ||
         usePathName === "/blogs" ||
         usePathName.startsWith("/blogs/")
+      );
+    }
+    if (path === "/ai-website-builder") {
+      return (
+        usePathName === "/ai-website-builder" ||
+        usePathName.startsWith("/ai-website-builder/")
       );
     }
     if (path === "/prompts") {
@@ -439,13 +463,14 @@ const Header = () => {
                   {menuData.map((menuItem, index) => {
                     const active = isMenuActive(menuItem.path);
                     const isToolsItem = menuItem.id === 100;
-                    const isAgentsItem = menuItem.id === 107;
+                    const isWriterItem = menuItem.id === 108;
+                    const isWebsiteBuilderItem = menuItem.id === 112;
                     const isSeoHubItem = menuItem.id === 2;
                     const isPromptsItem = menuItem.id === 102;
                     const isDownloadToolsItem = menuItem.id === 106;
                     const isResourcesItem = menuItem.id === 6;
                     const hasMegaMenu =
-                      isToolsItem || isAgentsItem || isSeoHubItem || isPromptsItem || isResourcesItem;
+                      isToolsItem || isWriterItem || isSeoHubItem || isPromptsItem || isResourcesItem;
                     const hasDropdown =
                       hasMegaMenu || Boolean(menuItem.submenu);
 
@@ -459,27 +484,38 @@ const Header = () => {
                         {menuItem.path ? (
                           <Link
                             href={menuItem.path}
-                            prefetch={true}
+                            prefetch={false}
                             className={`
-                              relative mb-5 mt-5 flex items-center justify-center rounded-xl border border-transparent px-3 py-2.5 text-sm backdrop-blur-sm transition-all duration-300 ease-in-out lg:mr-0 lg:inline-flex xl:px-3.5
+                              relative mb-5 mt-5 flex items-center justify-center whitespace-nowrap rounded-xl border border-transparent px-3 py-2 text-[13px] backdrop-blur-sm transition-all duration-300 ease-in-out lg:mr-0 lg:inline-flex xl:px-3.5 xl:text-sm
                               ${
                                 active
-                                  ? "scale-105 transform bg-gradient-to-r from-[#5271FF] to-[#4361EE] text-white shadow-lg shadow-[#5271FF]/30"
+                                  ? "scale-[1.03] transform bg-gradient-to-r from-[#5271FF] to-[#4361EE] text-white shadow-lg shadow-[#5271FF]/30"
                                   : "text-gray-700 transition-colors duration-300 ease-in-out hover:bg-gray-100/80 hover:text-[#5271FF] dark:text-gray-200 dark:hover:bg-gray-800/80 dark:hover:text-[#5271FF]"
                               }
                             `}
                           >
                             <span className="relative z-10 flex items-center gap-1.5">
                               <span>{menuItem.title}</span>
-                              {isAgentsItem && (
+                              {isWriterItem && (
                                 <span
                                   className={`rounded-full px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider ${
                                     active
                                       ? "bg-white/20 text-white"
-                                      : "border border-[#5271FF]/30 bg-[#5271FF]/10 text-[#5271FF] dark:border-[#5271FF]/40 dark:bg-[#5271FF]/20 dark:text-[#b4c2ff]"
+                                      : "border border-purple-500/30 bg-purple-500/10 text-purple-600 dark:border-purple-400/40 dark:bg-purple-500/20 dark:text-purple-300"
                                   }`}
                                 >
-                                  AI
+                                  Studio
+                                </span>
+                              )}
+                              {isWebsiteBuilderItem && (
+                                <span
+                                  className={`rounded-full px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider ${
+                                    active
+                                      ? "bg-white/20 text-white"
+                                      : "border border-cyan-500/35 bg-cyan-500/10 text-cyan-700 dark:border-cyan-400/40 dark:bg-cyan-500/20 dark:text-cyan-300"
+                                  }`}
+                                >
+                                  New
                                 </span>
                               )}
                               {isDownloadToolsItem && (
@@ -510,7 +546,7 @@ const Header = () => {
                           <button
                             type="button"
                             onClick={() => handleSubmenu(index)}
-                            className="mb-5 mt-5 flex cursor-pointer items-center justify-between rounded-xl px-3 py-2.5 text-sm font-semibold text-gray-700 transition-all duration-300 ease-in-out hover:bg-gray-100 group-hover:text-[#5271FF] dark:text-gray-200 dark:hover:bg-gray-800/70 dark:group-hover:text-[#5271FF] lg:inline-flex xl:px-3.5"
+                            className="mb-5 mt-5 flex cursor-pointer items-center justify-between whitespace-nowrap rounded-xl px-3 py-2 text-[13px] font-semibold text-gray-700 transition-all duration-300 ease-in-out hover:bg-gray-100 group-hover:text-[#5271FF] dark:text-gray-200 dark:hover:bg-gray-800/70 dark:group-hover:text-[#5271FF] lg:inline-flex xl:px-3.5 xl:text-sm"
                           >
                             <span className="relative z-10">
                               {menuItem.title}
@@ -579,14 +615,14 @@ const Header = () => {
                                       {currentSuite.summary}
                                     </p>
                                     <div className="mt-4 flex flex-wrap gap-2">
-                                      <Link
+                                      <Link prefetch={false}
                                         href="/tools"
                                         className="inline-flex items-center gap-1.5 rounded-xl bg-[#5271FF] px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-[#4361EE]"
                                       >
                                         <span>Browse All 90+ Tools</span>
                                         <ArrowRight size={13} />
                                       </Link>
-                                      <Link
+                                      <Link prefetch={false}
                                         href="/tools/categories"
                                         className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 transition hover:border-[#5271FF] hover:text-[#5271FF] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
                                       >
@@ -596,7 +632,7 @@ const Header = () => {
                                   </div>
 
                                   <div className="mt-5 space-y-2.5 border-t border-slate-200/80 pt-4 dark:border-slate-700/80">
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/do-it-ai"
                                       className="flex items-center justify-between rounded-xl border border-slate-200/90 bg-white px-3.5 py-2.5 text-xs font-bold text-slate-900 transition hover:border-[#5271FF] hover:text-[#5271FF] dark:border-slate-700 dark:bg-slate-900/90 dark:text-white"
                                     >
@@ -609,7 +645,7 @@ const Header = () => {
                                       </span>
                                       <ArrowRight size={13} />
                                     </Link>
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/tools/downloadable-ai-tools"
                                       className="flex items-center justify-between rounded-xl border border-slate-200/90 bg-white px-3.5 py-2.5 text-xs font-bold text-slate-900 transition hover:border-[#5271FF] hover:text-[#5271FF] dark:border-slate-700 dark:bg-slate-900/90 dark:text-white"
                                     >
@@ -630,7 +666,7 @@ const Header = () => {
                                 {/* Right 2 Columns: 6 Verified Tools for Active Suite */}
                                 <div className="col-span-8 grid grid-cols-2 gap-3 content-start">
                                   {currentSuite.items.map((toolItem) => (
-                                    <Link
+                                    <Link prefetch={false}
                                       key={toolItem.href}
                                       href={toolItem.href}
                                       className="group/item flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-slate-50/70 p-3.5 transition-all hover:border-[#5271FF]/50 hover:bg-white hover:shadow-md dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-[#5271FF]/60 dark:hover:bg-slate-900"
@@ -657,211 +693,68 @@ const Header = () => {
                           </div>
                         )}
 
-                        {/* MEGA-MENU 2: AI Agents (Do It AI Workspace + 10 Autonomous Task Agents) */}
-                        {isAgentsItem && (
-                          <div className="invisible absolute left-4 right-4 top-full z-50 mx-auto max-w-[1040px] pt-2 opacity-0 transition-all duration-200 group-hover:visible group-hover:opacity-100">
+                        {/* MEGA-MENU 2B: Flagship DIY AI Content Writer Studio */}
+                        {isWriterItem && (
+                          <div className="invisible absolute left-4 right-4 top-full z-50 mx-auto max-w-[920px] pt-2 opacity-0 transition-all duration-200 group-hover:visible group-hover:opacity-100">
                             <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-[0_28px_70px_-15px_rgba(15,23,42,0.28)] dark:border-slate-700/90 dark:bg-[#0D1527] dark:shadow-[0_28px_70px_-15px_rgba(0,0,0,0.75)]">
-                              <div className="grid grid-cols-12 gap-6">
-                                {/* Left Column: Do It AI Flagship Conversational Agent Workspace */}
-                                <div className="col-span-5 flex flex-col justify-between rounded-2xl border border-[#5271FF]/25 bg-gradient-to-b from-[#5271FF]/10 to-slate-50 p-5 dark:border-[#5271FF]/35 dark:from-[#5271FF]/15 dark:to-[#111C33]">
+                              <div className="grid grid-cols-12 gap-5">
+                                <Link prefetch={false}
+                                  href="/ai-content-writer"
+                                  className="col-span-6 flex flex-col justify-between rounded-2xl border border-[#5271FF]/35 bg-gradient-to-br from-[#5271FF]/10 via-sky-500/10 to-transparent p-5 transition hover:border-[#5271FF] hover:shadow-md dark:border-[#5271FF]/40 dark:from-[#5271FF]/20 dark:to-slate-900"
+                                >
                                   <div>
-                                    <div className="inline-flex items-center gap-1.5 rounded-full bg-[#5271FF]/15 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-[#4361EE] dark:text-[#b4c2ff]">
-                                      <Bot size={12} className="text-[#5271FF]" />
-                                      <span>Flagship Conversational Agent</span>
-                                    </div>
-                                    <p className="mt-3 text-lg font-extrabold text-slate-900 dark:text-white">
-                                      Do It AI Workspace
+                                    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#5271FF]/15 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-[#4361EE] dark:text-[#b4c2ff]">
+                                      ✦ Flagship Manual SEO Writer · Infographic V5
+                                    </span>
+                                    <p className="mt-3 text-base font-extrabold text-slate-900 dark:text-white">
+                                      AI SEO Content Writer Studio
                                     </p>
                                     <p className="mt-1.5 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
-                                      Our flagship conversational AI agent wired directly to 90+ specialized SEO engines. Audit live URLs, verify SERP pixel limits, and execute complex workflows inside one unified chat workspace.
+                                      Draft article-by-article with full editorial control, real internal &amp; external links, pixel-checked meta tags, Infographic Studio V5 visuals, and a 1-Click Social Repurposing Pack.
                                     </p>
-                                    <div className="mt-4 flex flex-wrap gap-2">
-                                      <Link
-                                        href="/do-it-ai"
-                                        className="inline-flex items-center gap-1.5 rounded-xl bg-[#5271FF] px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-[#4361EE]"
-                                      >
-                                        <span>Launch Do It AI Workspace</span>
-                                        <ArrowRight size={13} />
-                                      </Link>
-                                      <Link
-                                        href="/what-our-ai-tool-can-do"
-                                        className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 transition hover:border-[#5271FF] hover:text-[#5271FF] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
-                                      >
-                                        Capabilities
-                                      </Link>
+                                  </div>
+                                  <span className="mt-4 inline-flex items-center gap-1.5 text-xs font-extrabold text-[#5271FF] dark:text-[#9aabff]">
+                                    Open AI Content Writer (/ai-content-writer)
+                                    <ArrowRight size={13} />
+                                  </span>
+                                </Link>
+
+                                <div className="col-span-6 flex flex-col justify-between space-y-2.5">
+                                  <Link prefetch={false}
+                                    href="/ai-website-builder"
+                                    className="block rounded-2xl border border-slate-200/80 bg-slate-50/70 p-3.5 transition hover:border-[#5271FF]/50 hover:bg-white dark:border-slate-800 dark:bg-slate-900/60 dark:hover:bg-slate-900"
+                                  >
+                                    <div className="flex items-center justify-between text-xs font-extrabold text-slate-900 dark:text-white">
+                                      <span>AI Tool &amp; Blog Website Builder</span>
+                                      <ArrowRight size={13} className="text-[#5271FF]" />
                                     </div>
-                                  </div>
-
-                                  <div className="mt-5 border-t border-slate-200/80 pt-3.5 dark:border-slate-700/80">
-                                    <Link
-                                      href="/agents"
-                                      className="flex items-center justify-between rounded-xl border border-slate-200/90 bg-white px-3.5 py-2 text-xs font-bold text-slate-900 transition hover:border-[#5271FF] hover:text-[#5271FF] dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-                                    >
-                                      <span className="flex items-center gap-2">
-                                        <Sparkles
-                                          size={14}
-                                          className="text-[#5271FF]"
-                                        />
-                                        <span>Browse All 10 AI Agents Hub</span>
-                                      </span>
-                                      <ArrowRight size={13} />
-                                    </Link>
-                                  </div>
-                                </div>
-
-                                {/* Right Column: Autonomous Task Agents */}
-                                <div className="col-span-7">
-                                  <div className="flex items-center justify-between border-b border-slate-200/80 pb-2.5 dark:border-slate-800">
-                                    <p className="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                                      Autonomous Task Agents
+                                    <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                                      Launch a fast niche blog or interactive tool website on an isolated subdomain + custom CNAME.
                                     </p>
-                                    <Link
-                                      href="/agents"
-                                      className="text-xs font-bold text-[#5271FF] hover:underline"
-                                    >
-                                      View All 10 Agents →
-                                    </Link>
-                                  </div>
+                                  </Link>
 
-                                  <div className="mt-3 grid grid-cols-2 gap-3">
-                                    <Link
-                                      href="/agents/seo-optimizer-ai-agent"
-                                      className="group/item flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-slate-50/70 p-3.5 transition hover:border-[#5271FF]/50 hover:bg-white hover:shadow-md dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-[#5271FF]/60 dark:hover:bg-slate-900"
-                                    >
-                                      <div>
-                                        <div className="flex items-center justify-between gap-1.5">
-                                          <span className="rounded bg-blue-500/10 px-2 py-0.5 text-[9px] font-bold text-blue-600 dark:text-blue-400">
-                                            5-Step Chain
-                                          </span>
-                                          <ArrowRight
-                                            size={12}
-                                            className="text-slate-400 opacity-0 transition group-hover/item:opacity-100 group-hover/item:text-[#5271FF]"
-                                          />
-                                        </div>
-                                        <span className="mt-2 text-xs font-extrabold text-slate-900 group-hover/item:text-[#5271FF] dark:text-white dark:group-hover/item:text-[#9aabff]">
-                                          SEO &amp; AEO Page Optimizer Agent
-                                        </span>
-                                        <p className="mt-1 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
-                                          Intent classification, &lt;580px titles, AI Overview power answers, entity audits &amp; JSON-LD.
-                                        </p>
-                                      </div>
-                                    </Link>
+                                  <Link prefetch={false}
+                                    href="/tools/blog-to-infographic-generator"
+                                    className="block rounded-2xl border border-slate-200/80 bg-slate-50/70 p-3.5 transition hover:border-[#5271FF]/50 hover:bg-white dark:border-slate-800 dark:bg-slate-900/60 dark:hover:bg-slate-900"
+                                  >
+                                    <div className="flex items-center justify-between text-xs font-extrabold text-slate-900 dark:text-white">
+                                      <span>Infographic Studio V5 &amp; Carousel Decks</span>
+                                      <ArrowRight size={13} className="text-[#5271FF]" />
+                                    </div>
+                                    <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                                      Turn H2 sections into branded SVG/PNG infographics and multi-slide LinkedIn carousels.
+                                    </p>
+                                  </Link>
 
-                                    <Link
-                                      href="/agents/on-page-ai-seo-repair-agent"
-                                      className="group/item flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-slate-50/70 p-3.5 transition hover:border-[#5271FF]/50 hover:bg-white hover:shadow-md dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-[#5271FF]/60 dark:hover:bg-slate-900"
-                                    >
-                                      <div>
-                                        <div className="flex items-center justify-between gap-1.5">
-                                          <span className="rounded bg-indigo-500/10 px-2 py-0.5 text-[9px] font-bold text-indigo-600 dark:text-indigo-400">
-                                            On-Page Technical
-                                          </span>
-                                          <ArrowRight
-                                            size={12}
-                                            className="text-slate-400 opacity-0 transition group-hover/item:opacity-100 group-hover/item:text-[#5271FF]"
-                                          />
-                                        </div>
-                                        <span className="mt-2 text-xs font-extrabold text-slate-900 group-hover/item:text-[#5271FF] dark:text-white dark:group-hover/item:text-[#9aabff]">
-                                          On-Page SEO Repair Agent
-                                        </span>
-                                        <p className="mt-1 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
-                                          Diagnoses pixel truncation, heading hierarchy, and compiles drop-in HTML &amp; JSON-LD patches.
-                                        </p>
-                                      </div>
-                                    </Link>
-
-                                    <Link
-                                      href="/agents/ai-citation-geo-agent"
-                                      className="group/item flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-slate-50/70 p-3.5 transition hover:border-[#5271FF]/50 hover:bg-white hover:shadow-md dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-[#5271FF]/60 dark:hover:bg-slate-900"
-                                    >
-                                      <div>
-                                        <div className="flex items-center justify-between gap-1.5">
-                                          <span className="rounded bg-purple-500/10 px-2 py-0.5 text-[9px] font-bold text-purple-600 dark:text-purple-400">
-                                            GEO &amp; AEO
-                                          </span>
-                                          <ArrowRight
-                                            size={12}
-                                            className="text-slate-400 opacity-0 transition group-hover/item:opacity-100 group-hover/item:text-[#5271FF]"
-                                          />
-                                        </div>
-                                        <span className="mt-2 text-xs font-extrabold text-slate-900 group-hover/item:text-[#5271FF] dark:text-white dark:group-hover/item:text-[#9aabff]">
-                                          AI Citation &amp; GEO Agent
-                                        </span>
-                                        <p className="mt-1 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
-                                          Structures 50-word RAG definition leads and fact comparison matrices for Perplexity citations.
-                                        </p>
-                                      </div>
-                                    </Link>
-
-                                    <Link
-                                      href="/agents/serp-content-gap-agent"
-                                      className="group/item flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-slate-50/70 p-3.5 transition hover:border-[#5271FF]/50 hover:bg-white hover:shadow-md dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-[#5271FF]/60 dark:hover:bg-slate-900"
-                                    >
-                                      <div>
-                                        <div className="flex items-center justify-between gap-1.5">
-                                          <span className="rounded bg-amber-500/10 px-2 py-0.5 text-[9px] font-bold text-amber-600 dark:text-amber-400">
-                                            Content Outranker
-                                          </span>
-                                          <ArrowRight
-                                            size={12}
-                                            className="text-slate-400 opacity-0 transition group-hover/item:opacity-100 group-hover/item:text-[#5271FF]"
-                                          />
-                                        </div>
-                                        <span className="mt-2 text-xs font-extrabold text-slate-900 group-hover/item:text-[#5271FF] dark:text-white dark:group-hover/item:text-[#9aabff]">
-                                          SERP Content Gap Agent
-                                        </span>
-                                        <p className="mt-1 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
-                                          Compares outlines against SERP rivals, extracts Information Gain gaps, and drafts H2/H3 sections.
-                                        </p>
-                                      </div>
-                                    </Link>
-
-                                    <Link
-                                      href="/agents/omnichannel-marketing-agent"
-                                      className="group/item flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-slate-50/70 p-3.5 transition hover:border-[#5271FF]/50 hover:bg-white hover:shadow-md dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-[#5271FF]/60 dark:hover:bg-slate-900"
-                                    >
-                                      <div>
-                                        <div className="flex items-center justify-between gap-1.5">
-                                          <span className="rounded bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold text-emerald-600 dark:text-emerald-400">
-                                            Safe Distribution
-                                          </span>
-                                          <ArrowRight
-                                            size={12}
-                                            className="text-slate-400 opacity-0 transition group-hover/item:opacity-100 group-hover/item:text-[#5271FF]"
-                                          />
-                                        </div>
-                                        <span className="mt-2 text-xs font-extrabold text-slate-900 group-hover/item:text-[#5271FF] dark:text-white dark:group-hover/item:text-[#9aabff]">
-                                          Omni-Channel Marketing Agent
-                                        </span>
-                                        <p className="mt-1 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
-                                          Repurposes any guide or tool into a LinkedIn carousel, 5-post X thread, Reddit reply &amp; newsletter.
-                                        </p>
-                                      </div>
-                                    </Link>
-
-                                    <Link
-                                      href="/agents/ai-support-agent-builder"
-                                      className="group/item flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-slate-50/70 p-3.5 transition hover:border-[#5271FF]/50 hover:bg-white hover:shadow-md dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-[#5271FF]/60 dark:hover:bg-slate-900"
-                                    >
-                                      <div>
-                                        <div className="flex items-center justify-between gap-1.5">
-                                          <span className="rounded bg-sky-500/10 px-2 py-0.5 text-[9px] font-bold text-sky-600 dark:text-sky-400">
-                                            Support Builder
-                                          </span>
-                                          <ArrowRight
-                                            size={12}
-                                            className="text-slate-400 opacity-0 transition group-hover/item:opacity-100 group-hover/item:text-[#5271FF]"
-                                          />
-                                        </div>
-                                        <span className="mt-2 text-xs font-extrabold text-slate-900 group-hover/item:text-[#5271FF] dark:text-white dark:group-hover/item:text-[#9aabff]">
-                                          AI Support Agent Builder
-                                        </span>
-                                        <p className="mt-1 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
-                                          Generates system prompts, fallback routing, and embeddable FAQ chat widget code.
-                                        </p>
-                                      </div>
-                                    </Link>
-                                  </div>
+                                  <Link prefetch={false}
+                                    href="/prompts/on-page-seo-content-writing-prompts"
+                                    className="block rounded-2xl border border-slate-200/80 bg-slate-50/70 p-3.5 transition hover:border-[#5271FF]/50 hover:bg-white dark:border-slate-800 dark:bg-slate-900/60 dark:hover:bg-slate-900"
+                                  >
+                                    <div className="flex items-center justify-between text-xs font-extrabold text-slate-900 dark:text-white">
+                                      <span>84 On-Page SEO &amp; E-E-A-T Writing Prompts</span>
+                                      <ArrowRight size={13} className="text-[#5271FF]" />
+                                    </div>
+                                  </Link>
                                 </div>
                               </div>
                             </div>
@@ -881,61 +774,67 @@ const Header = () => {
                                     </p>
                                   </div>
                                   <div className="mt-3 grid grid-cols-2 gap-x-2 gap-y-1.5">
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/ai-seo"
                                       className="rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
                                     >
                                       › AI SEO Strategy Hub
                                     </Link>
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/ai-seo/what-is-ai-seo"
                                       className="rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
                                     >
                                       › AEO &amp; GEO Guide
                                     </Link>
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/ai-seo/check-google-keyword-rankings"
                                       className="rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
                                     >
                                       › Keyword Rankings
                                     </Link>
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/ai-seo/what-to-do-after-keyword-research"
                                       className="rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
                                     >
                                       › Post-Research Plan
                                     </Link>
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/ai-seo/chatgpt-keyword-research"
                                       className="rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
                                     >
                                       › ChatGPT Keyword SEO
                                     </Link>
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/ai-seo/meta-title"
                                       className="rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
                                     >
                                       › Meta Title Guide
                                     </Link>
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/ai-seo/meta-description"
                                       className="rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
                                     >
                                       › Meta Descriptions
                                     </Link>
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/ai-seo/h1-heading"
                                       className="rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
                                     >
                                       › H1 Heading Rules
                                     </Link>
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/ai-tools/ai-keyword-research-tools"
                                       className="rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
                                     >
                                       › Keyword Tools Review
                                     </Link>
-                                    <Link
+                                    <Link prefetch={false}
+                                      href="/prompts"
+                                      className="rounded-xl px-3 py-2 text-xs font-bold text-amber-600 transition hover:bg-amber-500/10 dark:text-amber-300 dark:hover:bg-slate-800"
+                                    >
+                                      › 650+ AI SEO Prompts
+                                    </Link>
+                                    <Link prefetch={false}
                                       href="/blogs"
                                       className="rounded-xl px-3 py-2 text-xs font-bold text-[#5271FF] transition hover:bg-[#5271FF]/10 dark:text-[#9aabff] dark:hover:bg-slate-800"
                                     >
@@ -950,7 +849,7 @@ const Header = () => {
                                     <p className="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                                       Featured Content &amp; Practical Playbooks
                                     </p>
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/blogs"
                                       className="text-xs font-bold text-[#5271FF] hover:underline"
                                     >
@@ -959,7 +858,7 @@ const Header = () => {
                                   </div>
                                   <div className="mt-3 space-y-2.5">
                                     {FEATURED_SEO_ARTICLES.map((article) => (
-                                      <Link
+                                      <Link prefetch={false}
                                         key={article.href}
                                         href={article.href}
                                         className="group/card flex items-center gap-3.5 rounded-2xl border border-slate-200/80 bg-slate-50/70 p-2.5 transition hover:border-[#5271FF]/50 hover:bg-white hover:shadow-md dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-[#5271FF]/60 dark:hover:bg-slate-900"
@@ -1006,7 +905,7 @@ const Header = () => {
                                     </p>
                                   </div>
                                   <div className="mt-3 space-y-1">
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/prompts/ai-search-aeo-geo-visibility-prompts"
                                       className="flex items-center justify-between rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
                                     >
@@ -1015,7 +914,7 @@ const Header = () => {
                                         91 Prompts
                                       </span>
                                     </Link>
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/prompts/keyword-research-prompts"
                                       className="flex items-center justify-between rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
                                     >
@@ -1024,7 +923,7 @@ const Header = () => {
                                         100 Prompts
                                       </span>
                                     </Link>
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/prompts/on-page-seo-content-writing-prompts"
                                       className="flex items-center justify-between rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
                                     >
@@ -1033,7 +932,7 @@ const Header = () => {
                                         84 Prompts
                                       </span>
                                     </Link>
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/prompts/topic-clustering-topical-authority-prompts"
                                       className="flex items-center justify-between rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
                                     >
@@ -1042,7 +941,7 @@ const Header = () => {
                                         62 Prompts
                                       </span>
                                     </Link>
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/prompts/technical-seo-audit-schema-prompts"
                                       className="flex items-center justify-between rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
                                     >
@@ -1051,7 +950,7 @@ const Header = () => {
                                         72 Prompts
                                       </span>
                                     </Link>
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/prompts/local-seo-google-business-profile-prompts"
                                       className="flex items-center justify-between rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
                                     >
@@ -1060,7 +959,7 @@ const Header = () => {
                                         64 Prompts
                                       </span>
                                     </Link>
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/prompts/infographic-data-visualization-prompts"
                                       className="flex items-center justify-between rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
                                     >
@@ -1078,7 +977,7 @@ const Header = () => {
                                     <p className="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                                       Featured Prompt Libraries
                                     </p>
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/prompts"
                                       className="text-xs font-bold text-[#5271FF] hover:underline"
                                     >
@@ -1087,7 +986,7 @@ const Header = () => {
                                   </div>
                                   <div className="mt-3 space-y-2.5">
                                     {FEATURED_PROMPT_PACKS.map((pack) => (
-                                      <Link
+                                      <Link prefetch={false}
                                         key={pack.href}
                                         href={pack.href}
                                         className="group/card flex items-center gap-3.5 rounded-2xl border border-slate-200/80 bg-slate-50/70 p-2.5 transition hover:border-[#5271FF]/50 hover:bg-white hover:shadow-md dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-[#5271FF]/60 dark:hover:bg-slate-900"
@@ -1129,26 +1028,52 @@ const Header = () => {
                                 {/* Col 1: Platform Architecture & Portable Apps */}
                                 <div className="col-span-4 rounded-2xl border border-[#5271FF]/20 bg-gradient-to-b from-[#5271FF]/[0.08] to-slate-50 p-4.5 dark:border-[#5271FF]/30 dark:from-[#5271FF]/[0.12] dark:to-[#111C33]">
                                   <p className="text-[10px] font-black uppercase tracking-wider text-[#5271FF] dark:text-[#b4c2ff]">
-                                    Platform Architecture &amp; Apps
+                                    DIY Toolkit &amp; Flagship Studios
                                   </p>
                                   <div className="mt-3 space-y-2.5">
-                                    <Link
-                                      href="/what-our-ai-tool-can-do"
+                                    <Link prefetch={false}
+                                      href="/ai-content-writer"
+                                      className="block rounded-xl border border-sky-500/35 bg-sky-500/[0.08] p-3 transition hover:border-sky-400 hover:shadow-sm dark:border-sky-500/40 dark:bg-sky-950/25"
+                                    >
+                                      <div className="flex items-center justify-between text-xs font-bold text-sky-700 dark:text-sky-300">
+                                        <span>Flagship AI Content Writer</span>
+                                        <ArrowRight size={13} />
+                                      </div>
+                                      <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                                        Manual E-E-A-T articles, Infographic Studio V5 &amp; 1-Click Social Pack.
+                                      </p>
+                                    </Link>
+
+                                    <Link prefetch={false}
+                                      href="/ai-website-builder"
                                       className="block rounded-xl border border-slate-200/80 bg-white p-3 transition hover:border-[#5271FF]/50 hover:shadow-sm dark:border-slate-700/80 dark:bg-slate-900"
                                     >
                                       <div className="flex items-center justify-between text-xs font-bold text-slate-900 dark:text-white">
-                                        <span>What Our AI Tool Can Do</span>
+                                        <span>AI Tool &amp; Blog Website Builder</span>
                                         <ArrowRight
                                           size={13}
                                           className="text-[#5271FF]"
                                         />
                                       </div>
                                       <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
-                                        Detailed comparison: generic chatbots vs. our 90+ algorithmic SEO engines.
+                                        Pre-built tool widgets + isolated subdomain &amp; custom CNAME hosting.
                                       </p>
                                     </Link>
 
-                                    <Link
+                                    <Link prefetch={false}
+                                      href="/prompts"
+                                      className="block rounded-xl border border-amber-500/30 bg-amber-500/[0.06] p-3 transition hover:border-amber-400 hover:shadow-sm dark:border-amber-500/35 dark:bg-amber-950/20"
+                                    >
+                                      <div className="flex items-center justify-between text-xs font-bold text-amber-700 dark:text-amber-300">
+                                        <span>650+ Curated SEO Prompt Library</span>
+                                        <ArrowRight size={13} />
+                                      </div>
+                                      <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                                        Structured AEO, GEO, Keyword Research &amp; On-Page SEO prompts.
+                                      </p>
+                                    </Link>
+
+                                    <Link prefetch={false}
                                       href="/tools/downloadable-ai-tools"
                                       className="block rounded-xl border border-emerald-500/30 bg-emerald-500/[0.06] p-3 transition hover:border-emerald-500 hover:shadow-sm dark:border-emerald-500/40 dark:bg-emerald-950/20"
                                     >
@@ -1161,19 +1086,19 @@ const Header = () => {
                                       </p>
                                     </Link>
 
-                                    <Link
-                                      href="/chrome-extension"
+                                    <Link prefetch={false}
+                                      href="/do-it-ai"
                                       className="block rounded-xl border border-slate-200/80 bg-white p-3 transition hover:border-[#5271FF]/50 hover:shadow-sm dark:border-slate-700/80 dark:bg-slate-900"
                                     >
                                       <div className="flex items-center justify-between text-xs font-bold text-slate-900 dark:text-white">
-                                        <span>Chrome Extension</span>
+                                        <span>Do It AI Command Workspace</span>
                                         <ArrowRight
                                           size={13}
                                           className="text-[#5271FF]"
                                         />
                                       </div>
                                       <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
-                                        Audit on-page SEO, headings, and schema directly in your browser.
+                                        Unified manual tool launcher &amp; SEO workflow workspace.
                                       </p>
                                     </Link>
                                   </div>
@@ -1185,7 +1110,7 @@ const Header = () => {
                                     AI Ecosystem &amp; Learning
                                   </p>
                                   <div className="mt-2.5 space-y-1">
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/tools/categories"
                                       className="block rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
                                     >
@@ -1196,7 +1121,7 @@ const Header = () => {
                                         </span>
                                       </div>
                                     </Link>
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/ai-tools"
                                       className="block rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
                                     >
@@ -1207,7 +1132,7 @@ const Header = () => {
                                         </span>
                                       </div>
                                     </Link>
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/free-ai-resources"
                                       className="block rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
                                     >
@@ -1218,7 +1143,7 @@ const Header = () => {
                                         </span>
                                       </div>
                                     </Link>
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/ai-learn-earn"
                                       className="block rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
                                     >
@@ -1229,7 +1154,7 @@ const Header = () => {
                                         </span>
                                       </div>
                                     </Link>
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/blogs"
                                       className="block rounded-xl px-3 py-2 text-xs font-bold text-[#5271FF] transition hover:bg-[#5271FF]/10 dark:text-[#9aabff] dark:hover:bg-slate-800"
                                     >
@@ -1249,7 +1174,7 @@ const Header = () => {
                                     Company &amp; Trust
                                   </p>
                                   <div className="mt-2.5 space-y-1">
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/author/sufian-mustafa"
                                       className="block rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
                                     >
@@ -1260,7 +1185,7 @@ const Header = () => {
                                         </span>
                                       </div>
                                     </Link>
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/about"
                                       className="block rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
                                     >
@@ -1271,7 +1196,7 @@ const Header = () => {
                                         </span>
                                       </div>
                                     </Link>
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/faq"
                                       className="block rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
                                     >
@@ -1282,7 +1207,7 @@ const Header = () => {
                                         </span>
                                       </div>
                                     </Link>
-                                    <Link
+                                    <Link prefetch={false}
                                       href="/contact"
                                       className="block rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
                                     >
@@ -1427,6 +1352,55 @@ const Header = () => {
                                 : "bookmarks"}
                             </button>
                           )}
+
+                          <div className="mt-3 space-y-1.5 border-b border-slate-200/70 pb-3 dark:border-slate-700/70">
+                            <Link
+                              href="/studio"
+                              prefetch={false}
+                              onClick={() => setProfileOpen(false)}
+                              className="flex w-full items-center justify-between rounded-xl bg-[#5271FF] px-3.5 py-2.5 text-left text-xs font-bold text-white shadow-md shadow-[#5271FF]/25 transition hover:bg-[#4361EE]"
+                            >
+                              <span className="flex min-w-0 items-center gap-2.5">
+                                <LayoutDashboard size={15} className="shrink-0" />
+                                <span className="min-w-0">
+                                  <span className="block truncate">My Dashboard</span>
+                                  <span className="block truncate text-[10px] font-medium text-indigo-100/90">
+                                    {activeStudioSiteName
+                                      ? `${activeStudioSiteName} (${studioSitesCount} ${studioSitesCount === 1 ? "site" : "sites"})`
+                                      : "SEO, Content Writer & Websites"}
+                                  </span>
+                                </span>
+                              </span>
+                              <ArrowRight size={14} className="shrink-0 opacity-90" />
+                            </Link>
+
+                            {activeStudioSiteName && (
+                              <Link
+                                href="/studio/writer"
+                                prefetch={false}
+                                onClick={() => setProfileOpen(false)}
+                                className="flex w-full items-center justify-between rounded-xl border border-[#5271FF]/25 bg-[#5271FF]/[0.08] px-3 py-2 text-left text-xs font-semibold text-[#4A6CF7] transition hover:bg-[#5271FF]/[0.15] dark:text-[#b4c2ff]"
+                              >
+                                <span className="truncate">
+                                  Open {activeStudioSiteName} Studio
+                                </span>
+                                <ArrowRight size={13} className="shrink-0" />
+                              </Link>
+                            )}
+
+                            <Link
+                              href="/ai-website-builder"
+                              prefetch={false}
+                              onClick={() => setProfileOpen(false)}
+                              className="flex w-full items-center justify-between rounded-xl border border-slate-200/90 px-3 py-2 text-left text-xs font-semibold text-slate-700 transition hover:border-[#5271FF]/40 hover:bg-slate-50 dark:border-slate-700/90 dark:text-slate-200 dark:hover:bg-slate-800/70"
+                            >
+                              <span className="flex items-center gap-2.5">
+                                <Globe size={15} className="text-[#5271FF]" />
+                                AI Website Builder
+                              </span>
+                              <ArrowUpRight size={14} className="text-slate-400" />
+                            </Link>
+                          </div>
 
                           <div className="my-3 space-y-1">
                             <p className="px-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
@@ -1586,7 +1560,7 @@ const Header = () => {
                         {menuItem.path ? (
                           <Link
                             href={menuItem.path}
-                            prefetch={true}
+                            prefetch={false}
                             onClick={() => setNavbarOpen(false)}
                             className={`
                               relative flex items-center justify-between rounded-xl border border-transparent px-3.5 py-2.5 text-sm transition-all duration-300 ease-in-out
@@ -1599,6 +1573,16 @@ const Header = () => {
                           >
                             <span className="relative z-10 flex items-center gap-2">
                               {menuItem.title}
+                              {menuItem.id === 108 && (
+                                <span className="rounded-full bg-purple-500/15 px-1.5 py-0.5 text-[9px] font-extrabold uppercase text-purple-600 dark:text-purple-300">
+                                  Studio
+                                </span>
+                              )}
+                              {menuItem.id === 112 && (
+                                <span className="rounded-full bg-cyan-500/15 px-1.5 py-0.5 text-[9px] font-extrabold uppercase text-cyan-600 dark:text-cyan-300">
+                                  New
+                                </span>
+                              )}
                               {menuItem.id === 107 && (
                                 <span className="rounded-full bg-[#5271FF]/15 px-1.5 py-0.5 text-[9px] font-extrabold uppercase text-[#5271FF] dark:text-[#b4c2ff]">
                                   AI
@@ -1640,7 +1624,7 @@ const Header = () => {
                                   <Link
                                     href={submenuItem.path}
                                     key={submenuIndex}
-                                    prefetch={true}
+                                    prefetch={false}
                                     onClick={() => setNavbarOpen(false)}
                                     className="block border-l-2 border-transparent py-2 pl-5 pr-4 text-xs font-semibold text-gray-700 transition-all duration-200 ease-in-out hover:border-[#5271FF] hover:text-[#5271FF] dark:text-gray-300 dark:hover:text-[#9aabff]"
                                   >
@@ -1661,6 +1645,18 @@ const Header = () => {
 
                 {workspace && (
                   <div className="mt-4 border-t border-slate-200/70 pt-4 dark:border-slate-700/70">
+                    <Link
+                      href="/studio"
+                      prefetch={false}
+                      onClick={() => setNavbarOpen(false)}
+                      className="mb-3 flex w-full items-center justify-between rounded-xl bg-[#5271FF] px-3.5 py-2.5 text-xs font-bold text-white shadow-md shadow-[#5271FF]/25 transition hover:bg-[#4361EE]"
+                    >
+                      <span className="flex items-center gap-2">
+                        <LayoutDashboard size={15} />
+                        My Dashboard
+                      </span>
+                      <ArrowRight size={14} />
+                    </Link>
                     <p className="mb-2 px-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">
                       Quick Tool Views
                     </p>

@@ -4,6 +4,7 @@ import Link from "next/link";
 import OnPageWritingPromptLibrary from "./OnPageWritingPromptLibrary";
 import { onpageWritingPromoGuides } from "./OnPageWritingPromoGuides";
 import KeywordGuideCard from "./KeywordGuideCard";
+import { PROMPT_INLINE_LINK_CLASS } from "./promptLinkStyles";
 
 const body = "mt-4 text-lg leading-9 text-slate-600 dark:text-slate-300";
 const button =
@@ -162,23 +163,23 @@ export default function OnPageWritingPromptArticle({
           </p>
           <p className={body}>
             <strong>Fast Editorial Path:</strong> Start with{" "}
-            <a href="#onpage-prompt-001" className="underline font-semibold">
+            <a href="#onpage-prompt-001" className={PROMPT_INLINE_LINK_CLASS}>
               Prompt 1 (Question-Led H1–H3 Outline)
             </a>
             , write your opening with{" "}
-            <a href="#onpage-prompt-012" className="underline font-semibold">
+            <a href="#onpage-prompt-012" className={PROMPT_INLINE_LINK_CLASS}>
               Prompt 12 (65-Word Answer-First Intro)
             </a>
             , format key sections with{" "}
-            <a href="#onpage-prompt-022" className="underline font-semibold">
+            <a href="#onpage-prompt-022" className={PROMPT_INLINE_LINK_CLASS}>
               Prompt 22 (45-Word Featured Snippet)
             </a>{" "}
             and{" "}
-            <a href="#onpage-prompt-033" className="underline font-semibold">
+            <a href="#onpage-prompt-033" className={PROMPT_INLINE_LINK_CLASS}>
               Prompt 33 (Information Gain Audit)
             </a>
             , and polish your prose with{" "}
-            <a href="#onpage-prompt-044" className="underline font-semibold">
+            <a href="#onpage-prompt-044" className={PROMPT_INLINE_LINK_CLASS}>
               Prompt 44 (Grade 8 Readability Edit)
             </a>
             .

@@ -114,7 +114,7 @@ export default function ToolEducation() {
         className="grid gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-start"
         aria-labelledby="best-practices-built-in"
       >
-        <div className="rounded-[32px] bg-slate-950 p-7 text-white sm:p-9">
+        <div className="rounded-[32px] bg-white dark:bg-slate-950 p-7 text-slate-900 dark:text-white sm:p-9">
           <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[#5271ff]">
             <ShieldCheck className="h-6 w-6" />
           </div>
@@ -127,7 +127,7 @@ export default function ToolEducation() {
           >
             Editorial checks made visible
           </h2>
-          <p className="mt-4 text-sm leading-7 text-slate-300">
+          <p className="mt-4 text-sm leading-7 text-slate-700 dark:text-slate-300">
            The AI model generates the title ideas. Application code then calculates character counts, estimates rendered width, checks keyword placement, compares titles for similarity, and displays relevant warnings. You can review and edit the final title before using it.
           </p>
           <Link

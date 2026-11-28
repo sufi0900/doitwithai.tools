@@ -1,12 +1,6 @@
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
-import {
-  ToolHeroBackground,
-  toolHeroSurface,
-  toolHeroHeading,
-} from "@/features/tool-ui/ToolHero";
 import type { Metadata } from "next";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
 import Link from "next/link";
-import { ImagePlus, ScanEye, FileCheck2 } from "lucide-react";
 import AltTextClient from "@/features/alt-text/AltTextClient";
 import ToolResources from "@/features/tool-catalog/ToolResources";
 const pageUrl = "https://doitwithai.tools/tools/image-alt-text-generator";
@@ -136,72 +130,18 @@ export default function Page() {
           __html: JSON.stringify(schema).replace(/</g, "\\u003c"),
         }}
       />
-      <div className={`relative overflow-hidden ${toolHeroSurface} text-white`}
+      <ToolLandingHero
+        slug="image-alt-text-generator"
+        title="AI Image Alt Text & Accessibility Generator"
+        description="Upload an image or describe its visual role on your page to generate clear, screen-reader-friendly alt text variations aligned with WCAG guidelines and page context."
+        categoryLabel="On-Page SEO & Accessibility"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
       >
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">Tools</Link>
-            <span>/</span>
-            <span aria-current="page">Image Alt Text Generator</span>
-          </nav>
-
-          <div className="mb-8 grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                On-Page SEO & Accessibility · Descriptive Alt Text Studio
-              </p>
-              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                AI Image Alt Text 
-                <span className={toolHeroHeading}>
-                  & Accessibility Generator
-                </span>
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-                Upload an image or describe its visual role on your page to generate clear, screen-reader-friendly alt text variations aligned with WCAG guidelines and page context.
-              </p>
-              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Image upload or text brief
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Role-aware alt variations
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Character & keyword checks
-                </span>
-              </div>
-              <PortableToolHeroBar />
-            </div>
-
-            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
-                4 Accessibility & SEO Checks
-              </p>
-              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
-                <li>
-                  <strong className="text-emerald-300">Image Role:</strong> Adapts copy for informative, functional, chart, or product images.
-                </li>
-                <li>
-                  <strong className="text-indigo-300">Context Alignment:</strong> Connects visual details naturally to the surrounding topic.
-                </li>
-                <li>
-                  <strong className="text-sky-300">Anti-Stuffing:</strong> Avoids robotic keyword lists and redundant &apos;image of&apos; prefixes.
-                </li>
-                <li>
-                  <strong className="text-amber-300">Ready to Copy:</strong> Provides concise, medium, and detailed options with HTML code.
-                </li>
-              </ul>
-            </div>
-          </div>
+        <div className="p-4 sm:p-6">
           <AltTextClient />
         </div>
-      </div>
+      </ToolLandingHero>
       <div className="mx-auto max-w-6xl space-y-20 px-4 py-20 sm:px-6 lg:px-8">
         <section className="grid gap-8 lg:grid-cols-2">
           <div>

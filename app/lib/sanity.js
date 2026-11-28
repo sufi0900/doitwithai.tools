@@ -3,8 +3,7 @@ import { getAllStaticArticleSitemapEntries } from "@/features/articles/legacy/st
 import { createClient } from "next-sanity";
 import { groq } from 'next-sanity';
 
-export const revalidate = false;
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 export const client = createClient({
   projectId: 'qyshio4a',

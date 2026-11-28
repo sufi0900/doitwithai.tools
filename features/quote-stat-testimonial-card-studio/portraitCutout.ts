@@ -15,16 +15,33 @@ const VISION_BASE = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${VISI
 const MODEL_URL =
   "https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/latest/selfie_segmenter.tflite";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let segmenterPromise: Promise<any> | null = null;
+interface ImageSegmenterInstance {
+  segment(input: HTMLCanvasElement): {
+    confidenceMasks?: Array<{
+      width: number;
+      height: number;
+      getAsFloat32Array(): Float32Array;
+      close?: () => void;
+    }>;
+    close?: () => void;
+  };
+}
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getSegmenter(): Promise<any> {
+let segmenterPromise: Promise<ImageSegmenterInstance> | null = null;
+
+async function getSegmenter(): Promise<ImageSegmenterInstance> {
   if (!segmenterPromise) {
     segmenterPromise = (async () => {
       const url = `${VISION_BASE}/+esm`;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const mod: any = await import(/* webpackIgnore: true */ url);
+      const mod = (await import(/* webpackIgnore: true */ url)) as {
+        FilesetResolver: { forVisionTasks(wasmUrl: string): Promise<unknown> };
+        ImageSegmenter: {
+          createFromOptions(
+            fileset: unknown,
+            options: Record<string, unknown>,
+          ): Promise<ImageSegmenterInstance>;
+        };
+      };
       const fileset = await mod.FilesetResolver.forVisionTasks(
         `${VISION_BASE}/wasm`,
       );

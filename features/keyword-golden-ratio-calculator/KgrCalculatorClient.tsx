@@ -487,7 +487,7 @@ export default function KgrCalculatorClient() {
     <section
       id="kgr-calculator-workspace"
       aria-label="Keyword Golden Ratio and Affinity Calculator Workspace"
-      className="rounded-[28px] border border-white/10 bg-slate-900/85 p-5 shadow-2xl sm:p-8 space-y-8"
+      className="rounded-[28px] border border-white/10 bg-slate-50 dark:bg-slate-900/85 p-5 shadow-2xl sm:p-8 space-y-8"
     >
       <ToolRunOverlay
         active={busy}
@@ -506,7 +506,7 @@ export default function KgrCalculatorClient() {
       {/* TOP COMMAND PANEL */}
       <form
         onSubmit={(e) => void handleRunKgr(e)}
-        className="rounded-2xl border border-white/10 bg-slate-950/65 p-5 sm:p-6 space-y-6"
+        className="rounded-2xl border border-white/10 bg-white dark:bg-slate-950/65 p-5 sm:p-6 space-y-6"
       >
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-4">
           <div className="flex items-center gap-3">
@@ -514,17 +514,17 @@ export default function KgrCalculatorClient() {
               <Calculator aria-hidden className="h-5 w-5 text-emerald-300" />
             </div>
             <div>
-              <h2 className="text-lg sm:text-xl font-black text-white">
+              <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white">
                 Keyword Golden Ratio (KGR) &amp; Affinity Studio
               </h2>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Switch between Bulk KGR Calculation (Allintitle ÷ Volume) and LinkedIn / Page Keyword Affinity Scoring.
               </p>
             </div>
           </div>
 
           {/* Mode Switcher Tabs */}
-          <div className="flex rounded-xl border border-white/15 bg-slate-900 p-1">
+          <div className="flex rounded-xl border border-white/15 bg-slate-50 dark:bg-slate-900 p-1">
             <button
               type="button"
               onClick={() => setActiveTab("kgr")}
@@ -555,7 +555,7 @@ export default function KgrCalculatorClient() {
             {/* Presets + Bulk Import Toggle */}
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Sample Batches:
                 </span>
                 {KGR_PRESETS.map((preset) => (
@@ -583,7 +583,7 @@ export default function KgrCalculatorClient() {
             </div>
 
             {showBulkPaste && (
-              <div className="rounded-xl border border-blue-400/30 bg-slate-900/90 p-4 space-y-3">
+              <div className="rounded-xl border border-blue-400/30 bg-slate-50 dark:bg-slate-900/90 p-4 space-y-3">
                 <label className="block text-xs font-bold text-blue-200">
                   Paste up to 50 lines in format: <code>keyword, allintitle, search_volume</code>
                 </label>
@@ -606,7 +606,7 @@ export default function KgrCalculatorClient() {
 
             {/* Interactive Keyword + Allintitle + Volume Input Grid */}
             <div className="space-y-2.5">
-              <div className="hidden sm:grid sm:grid-cols-[1fr_150px_160px_130px_44px] gap-3 px-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              <div className="hidden sm:grid sm:grid-cols-[1fr_150px_160px_130px_44px] gap-3 px-2 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 <span>Keyword Phrase</span>
                 <span>Allintitle Count</span>
                 <span>Monthly Volume</span>
@@ -617,7 +617,7 @@ export default function KgrCalculatorClient() {
               {rows.map((row, idx) => (
                 <div
                   key={row.id}
-                  className="grid grid-cols-1 sm:grid-cols-[1fr_150px_160px_130px_44px] items-center gap-2.5 rounded-xl border border-white/10 bg-slate-900/75 p-2.5"
+                  className="grid grid-cols-1 sm:grid-cols-[1fr_150px_160px_130px_44px] items-center gap-2.5 rounded-xl border border-white/10 bg-slate-50 dark:bg-slate-900/75 p-2.5"
                 >
                   <input
                     type="text"
@@ -663,7 +663,7 @@ export default function KgrCalculatorClient() {
                     )}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center gap-1 rounded-xl border border-white/15 bg-slate-950 px-2.5 py-2 text-xs font-semibold text-blue-300 hover:border-blue-400 hover:text-white"
+                    className="inline-flex items-center justify-center gap-1 rounded-xl border border-white/15 bg-white dark:bg-slate-950 px-2.5 py-2 text-xs font-semibold text-blue-300 hover:border-blue-400 hover:text-white"
                   >
                     <span>allintitle:</span>
                     <ExternalLink className="h-3 w-3" />
@@ -672,7 +672,7 @@ export default function KgrCalculatorClient() {
                     type="button"
                     onClick={() => removeRow(row.id)}
                     aria-label={`Remove row ${idx + 1}`}
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 text-slate-400 hover:border-rose-400/40 hover:text-rose-300"
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 text-slate-500 dark:text-slate-400 hover:border-rose-400/40 hover:text-rose-300"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -683,7 +683,7 @@ export default function KgrCalculatorClient() {
                 <button
                   type="button"
                   onClick={addRow}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-white/15 bg-slate-900 px-3.5 py-2 text-xs font-bold text-slate-200 hover:border-blue-400 hover:text-white"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-white/15 bg-slate-50 dark:bg-slate-900 px-3.5 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 hover:border-blue-400 hover:text-white"
                 >
                   <Plus className="h-4 w-4 text-blue-400" />
                   Add Keyword Row ({rows.length}/50)
@@ -717,7 +717,7 @@ export default function KgrCalculatorClient() {
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
                   1. LinkedIn Headline or Page H1 (35% Weight)
                 </label>
                 <textarea
@@ -728,7 +728,7 @@ export default function KgrCalculatorClient() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
                   2. About / Opening Summary (25% Weight)
                 </label>
                 <textarea
@@ -739,7 +739,7 @@ export default function KgrCalculatorClient() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
                   3. Experience / Body Case Studies (25% Weight)
                 </label>
                 <textarea
@@ -750,7 +750,7 @@ export default function KgrCalculatorClient() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
                   4. Skills / Endorsements / Tags (15% Weight)
                 </label>
                 <textarea
@@ -816,7 +816,7 @@ export default function KgrCalculatorClient() {
                   <span className="inline-flex items-center rounded-full border border-emerald-400/35 bg-emerald-500/15 px-3 py-0.5 text-xs font-bold uppercase tracking-wider text-emerald-300">
                     KGR Formula: Allintitle ÷ Monthly Search Volume
                   </span>
-                  <h3 className="mt-1.5 text-xl font-black text-white">
+                  <h3 className="mt-1.5 text-xl font-black text-slate-900 dark:text-white">
                     Keyword Golden Ratio (KGR) Scorecard ({evaluated.length} Keywords)
                   </h3>
                 </div>
@@ -824,7 +824,7 @@ export default function KgrCalculatorClient() {
                   <button
                     type="button"
                     onClick={copyResults}
-                    className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-white/20 bg-slate-900 px-4 py-2 text-xs font-bold text-white hover:border-blue-400/50"
+                    className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-white/20 bg-slate-50 dark:bg-slate-900 px-4 py-2 text-xs font-bold text-slate-900 dark:text-white hover:border-blue-400/50"
                   >
                     <Copy className="h-4 w-4 text-blue-300" />
                     Copy Results
@@ -832,7 +832,7 @@ export default function KgrCalculatorClient() {
                   <button
                     type="button"
                     onClick={exportCsv}
-                    className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-white/20 bg-slate-900 px-4 py-2 text-xs font-bold text-white hover:border-emerald-400/50"
+                    className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-white/20 bg-slate-50 dark:bg-slate-900 px-4 py-2 text-xs font-bold text-slate-900 dark:text-white hover:border-emerald-400/50"
                   >
                     <Download className="h-4 w-4 text-emerald-300" />
                     Download CSV
@@ -845,7 +845,7 @@ export default function KgrCalculatorClient() {
                   <div className="text-xs font-bold uppercase text-emerald-200">
                     🟢 KGR Bargains (&lt; 0.25)
                   </div>
-                  <div className="mt-1 text-2xl font-black text-white">
+                  <div className="mt-1 text-2xl font-black text-slate-900 dark:text-white">
                     {bargainCount} Keywords
                   </div>
                   <p className="text-[11px] text-emerald-100/80">
@@ -856,7 +856,7 @@ export default function KgrCalculatorClient() {
                   <div className="text-xs font-bold uppercase text-amber-200">
                     🟡 Might Work (0.25 – 1.00)
                   </div>
-                  <div className="mt-1 text-2xl font-black text-white">
+                  <div className="mt-1 text-2xl font-black text-slate-900 dark:text-white">
                     {moderateCount} Keywords
                   </div>
                   <p className="text-[11px] text-amber-100/80">
@@ -867,7 +867,7 @@ export default function KgrCalculatorClient() {
                   <div className="text-xs font-bold uppercase text-rose-200">
                     🔴 Competitive (&gt; 1.00)
                   </div>
-                  <div className="mt-1 text-2xl font-black text-white">
+                  <div className="mt-1 text-2xl font-black text-slate-900 dark:text-white">
                     {competitiveCount} Keywords
                   </div>
                   <p className="text-[11px] text-rose-100/80">
@@ -884,25 +884,25 @@ export default function KgrCalculatorClient() {
                   <Sparkles className="h-4 w-4" />
                   <span>AI KGR Publishing &amp; Clustering Strategy</span>
                 </div>
-                <h4 className="text-lg font-black text-white">
+                <h4 className="text-lg font-black text-slate-900 dark:text-white">
                   {aiStrategy.headline}
                 </h4>
-                <p className="text-sm leading-7 text-slate-200">
+                <p className="text-sm leading-7 text-slate-800 dark:text-slate-200">
                   {aiStrategy.summary}
                 </p>
                 <div className="grid gap-3 sm:grid-cols-2">
                   {aiStrategy.clusterPlan.map((c, idx) => (
                     <div
                       key={idx}
-                      className="rounded-xl border border-white/10 bg-slate-950/85 p-4 space-y-1.5"
+                      className="rounded-xl border border-white/10 bg-white dark:bg-slate-950/85 p-4 space-y-1.5"
                     >
                       <div className="text-xs font-bold text-emerald-300">
                         {c.groupName} · {c.pageFormat}
                       </div>
-                      <div className="text-sm font-bold text-white">
+                      <div className="text-sm font-bold text-slate-900 dark:text-white">
                         Suggested Title: {c.suggestedTitle}
                       </div>
-                      <p className="text-xs text-slate-400">
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
                         Grouped Keywords: {c.keywords}
                       </p>
                     </div>
@@ -931,10 +931,10 @@ export default function KgrCalculatorClient() {
                     <div>
                       <div className="flex flex-wrap items-start justify-between gap-2">
                         <div>
-                          <span className="text-[11px] font-bold uppercase tracking-widest text-slate-400">
+                          <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
                             Keyword #{String(idx + 1).padStart(2, "0")}
                           </span>
-                          <h4 className="mt-0.5 text-lg font-black text-white">
+                          <h4 className="mt-0.5 text-lg font-black text-slate-900 dark:text-white">
                             {item.keyword}
                           </h4>
                         </div>
@@ -952,17 +952,17 @@ export default function KgrCalculatorClient() {
                         </span>
                       </div>
 
-                      <div className="mt-4 grid grid-cols-3 gap-2.5 rounded-xl border border-white/10 bg-slate-950/80 p-3 text-center">
+                      <div className="mt-4 grid grid-cols-3 gap-2.5 rounded-xl border border-white/10 bg-white dark:bg-slate-950/80 p-3 text-center">
                         <div>
-                          <div className="text-[10px] font-bold uppercase text-slate-400">
+                          <div className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400">
                             Allintitle
                           </div>
-                          <div className="mt-0.5 font-mono text-sm font-bold text-white">
+                          <div className="mt-0.5 font-mono text-sm font-bold text-slate-900 dark:text-white">
                             {item.allintitle.toLocaleString()}
                           </div>
                         </div>
                         <div>
-                          <div className="text-[10px] font-bold uppercase text-slate-400">
+                          <div className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400">
                             Monthly Volume
                           </div>
                           <div className="mt-0.5 font-mono text-sm font-bold text-blue-300">
@@ -970,7 +970,7 @@ export default function KgrCalculatorClient() {
                           </div>
                         </div>
                         <div>
-                          <div className="text-[10px] font-bold uppercase text-slate-400">
+                          <div className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400">
                             &lt;0.25 Ceiling
                           </div>
                           <div className="mt-0.5 font-mono text-sm font-bold text-emerald-300">
@@ -979,7 +979,7 @@ export default function KgrCalculatorClient() {
                         </div>
                       </div>
 
-                      <p className="mt-3.5 text-xs sm:text-sm leading-6 text-slate-200">
+                      <p className="mt-3.5 text-xs sm:text-sm leading-6 text-slate-800 dark:text-slate-200">
                         {item.recommendation}
                       </p>
                     </div>
@@ -1009,13 +1009,13 @@ export default function KgrCalculatorClient() {
           </>
         ) : (
           /* AFFINITY SCORE RESULTS DASHBOARD */
-          <div className="rounded-2xl border border-white/15 bg-slate-950/85 p-6 space-y-6">
+          <div className="rounded-2xl border border-white/15 bg-white dark:bg-slate-950/85 p-6 space-y-6">
             <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-4">
               <div>
                 <span className="inline-flex items-center rounded-full border border-blue-400/35 bg-blue-500/15 px-3 py-0.5 text-xs font-bold uppercase text-blue-300">
                   LinkedIn &amp; Profile Keyword Affinity Score
                 </span>
-                <h3 className="mt-1.5 text-2xl font-black text-white">
+                <h3 className="mt-1.5 text-2xl font-black text-slate-900 dark:text-white">
                   Overall Affinity: {affinityReport.overallScore}% ({affinityReport.grade})
                 </h3>
               </div>
@@ -1025,17 +1025,17 @@ export default function KgrCalculatorClient() {
               {affinityReport.sections.map((sec) => (
                 <div
                   key={sec.section}
-                  className="rounded-xl border border-white/10 bg-slate-900/90 p-4 space-y-2.5"
+                  className="rounded-xl border border-white/10 bg-slate-50 dark:bg-slate-900/90 p-4 space-y-2.5"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-bold text-white">
+                    <span className="text-sm font-bold text-slate-900 dark:text-white">
                       {sec.section}
                     </span>
                     <span className="rounded-lg bg-blue-500/20 px-2.5 py-0.5 font-mono text-xs font-bold text-blue-200">
                       {sec.score}% Match
                     </span>
                   </div>
-                  <p className="text-xs leading-6 text-slate-300">{sec.fix}</p>
+                  <p className="text-xs leading-6 text-slate-700 dark:text-slate-300">{sec.fix}</p>
                 </div>
               ))}
             </div>

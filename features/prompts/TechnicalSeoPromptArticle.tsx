@@ -4,6 +4,7 @@ import Link from "next/link";
 import TechnicalSeoPromptLibrary from "./TechnicalSeoPromptLibrary";
 import { technicalSeoPromoGuides } from "./TechnicalSeoPromoGuides";
 import KeywordGuideCard from "./KeywordGuideCard";
+import { PROMPT_INLINE_LINK_CLASS } from "./promptLinkStyles";
 
 const body = "mt-4 text-lg leading-9 text-slate-600 dark:text-slate-300";
 const button =
@@ -164,23 +165,23 @@ export default function TechnicalSeoPromptArticle({
           </p>
           <p className={body}>
             <strong>Fast Technical Audit Path:</strong> Start with{" "}
-            <a href="#techseo-prompt-001" className="underline font-semibold">
+            <a href="#techseo-prompt-001" className={PROMPT_INLINE_LINK_CLASS}>
               Prompt 1 (Robots.txt Audit)
             </a>
             , triage unindexed pages with{" "}
-            <a href="#techseo-prompt-011" className="underline font-semibold">
+            <a href="#techseo-prompt-011" className={PROMPT_INLINE_LINK_CLASS}>
               Prompt 11 (Crawled - Currently Not Indexed)
             </a>
             , flatten legacy hops with{" "}
-            <a href="#techseo-prompt-021" className="underline font-semibold">
+            <a href="#techseo-prompt-021" className={PROMPT_INLINE_LINK_CLASS}>
               Prompt 21 (Redirect Chain Flattener)
             </a>
             , generate connected schema with{" "}
-            <a href="#techseo-prompt-031" className="underline font-semibold">
+            <a href="#techseo-prompt-031" className={PROMPT_INLINE_LINK_CLASS}>
               Prompt 31 (@graph JSON-LD Template)
             </a>
             , and fix speed bottlenecks with{" "}
-            <a href="#techseo-prompt-041" className="underline font-semibold">
+            <a href="#techseo-prompt-041" className={PROMPT_INLINE_LINK_CLASS}>
               Prompt 41 (LCP Sub-Part Diagnostics)
             </a>
             .

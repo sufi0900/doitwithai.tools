@@ -12,10 +12,10 @@ const retiredToolURLs = new Set([
 // Resource documents are downloads, not editorial detail pages.
 const staticPaths = [
   "",
+  "/pricing",
   "/prompts",
   "/tools",
   "/tools/categories",
-  "/chrome-extension",
   "/ai-tools",
   "/ai-seo",
   "/ai-code",

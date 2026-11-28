@@ -1,15 +1,14 @@
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import type { Metadata } from "next";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
 import Link from "next/link";
-import { Image as ImageIcon, MessageCircle, Share2 } from "lucide-react";
+import {
+  Image as ImageIcon,
+  MessageCircle,
+  Share2,
+} from "lucide-react";
 import FacebookPostGeneratorClient from "@/features/facebook-post-generator/FacebookPostGeneratorClient";
 import ToolFaq from "@/features/tool-ui/ToolFaq";
 import ToolResources from "@/features/tool-catalog/ToolResources";
-import {
-  ToolHeroBackground,
-  toolHeroHeading,
-  toolHeroSurface,
-} from "@/features/tool-ui/ToolHero";
 import { PlatformBrandIcon } from "@/features/tool-ui/PlatformBrandIcon";
 
 const pageUrl = "https://doitwithai.tools/tools/facebook-post-generator";
@@ -100,61 +99,18 @@ export default function FacebookPostGeneratorPage() {
         }}
       />
 
-      <header
-        className={`relative overflow-hidden ${toolHeroSurface} text-white`}
+      <ToolLandingHero
+        slug="facebook-post-generator"
+        title="Facebook Post & Visual Card Studio"
+        description="Convert any article URL or topic into 3 organic Facebook post variations, a First-Comment Link snippet, and a downloadable 1080p visual card."
+        categoryLabel="Social Media Studio"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
       >
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">Tools</Link>
-            <span>/</span>
-            <span aria-current="page">Facebook Post Generator</span>
-          </nav>
-
-          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
-            <div>
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-bold text-white backdrop-blur-xs">
-                <PlatformBrandIcon slugOrText="facebook-post-generator" size={18} />
-                <span>Official Platform Studio</span>
-              </div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                Social Media Studio · Zero-Click Feed + Visual Graphic
-              </p>
-              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                Facebook Post &amp;{" "}
-                <span className={toolHeroHeading}>
-                  Visual Card Studio
-                </span>
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-                Convert any article URL or topic into 3 organic Facebook post
-                variations, a First-Comment Link snippet, and a downloadable
-                1080p visual card.
-              </p>
-              <PortableToolHeroBar />
-            </div>
-
-            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
-                Built for 2026 Facebook Reach
-              </p>
-              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
-                <li>1. Zero-click story &amp; listicle variations</li>
-                <li>2. Dedicated First-Comment URL copy box</li>
-                <li>3. 1080p Visual Card &amp; Article Image picker</li>
-                <li>4. 1-Click Share to Facebook, LinkedIn &amp; WhatsApp</li>
-              </ul>
-            </div>
-          </div>
+        <div className="p-4 sm:p-6">
+          <FacebookPostGeneratorClient />
         </div>
-      </header>
-
-      <FacebookPostGeneratorClient />
+      </ToolLandingHero>
 
       <section
         className={`${section} border-t border-slate-200 dark:border-slate-800`}

@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>DoItWithAI.tools — V3 Master Implementation Roadmap (Phases 6–10), 1-Circle Token Telemetry &amp; SEO.AI Reverse-Engineering</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Space+Grotesk:wght@600;700&amp;display=swap" rel="stylesheet" />
+  <style>
+    /* Tier 3 · Utilitarian (Precision Data Brief / Analytical Tear-Sheet) · split answer-first hero · section order: 5-Phase V3 Master Roadmap (Phases 6-10) -> Live UI Screenshot Audit & Full-Screen Graph Fix -> 1-Circle Free-Key Token Telemetry -> SEO.AI $149/mo Reverse-Engineering Matrix -> CMS Auto-Publish, Backlink Club & 24/7 Heartbeat Architecture · fonts: Space Grotesk + Plus Jakarta Sans + IBM Plex Mono · palette: crisp technical slate #F4F6F8 paper with deep cobalt/emerald accents · 0px image radius · emphasis: 5 Phases (6–10) / $0.0192 per circle · signature element: 1-Circle Token & Cost Breakdown SVG Chart · open canvas (0 cards) */
+    :root {
+      --paper: #F4F6F8;
+      --ink: #0D131A;
+      --ink2: #263240;
+      --mute: #4A5868;
+      --hair: #CBD4DF;
+      --accent: #0052CC;
+      --accent-text: #003E99;
+      --accent-2: #087F5B;
+      --accent-2-text: #066044;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--paper);
+      color: var(--ink);
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16.5px;
+      line-height: 1.65;
+      padding: 68px clamp(24px, 10.4vw, 112px) 92px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .grid-12 {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      column-gap: 24px;
+      row-gap: 24px;
+    }
+
+    .sec-s {
+      margin-top: 66px;
+      padding-top: 42px;
+      border-top: 1px solid var(--hair);
+    }
+
+    h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(36px, 4.2vw, 52px);
+      font-weight: 700;
+      line-height: 1.12;
+      letter-spacing: -0.025em;
+      color: var(--ink);
+      text-wrap: balance;
+    }
+
+    h2 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(24px, 2.4vw, 31px);
+      font-weight: 700;
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+      color: var(--ink);
+      margin-bottom: 16px;
+      text-wrap: balance;
+    }
+
+    h3 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 19px;
+      font-weight: 700;
+      line-height: 1.3;
+      color: var(--ink);
+      margin-bottom: 8px;
+    }
+
+    p {
+      color: var(--ink2);
+      margin-bottom: 16px;
+    }
+
+    .measure {
+      max-width: 68ch;
+    }
+
+    .deck {
+      font-size: 18.5px;
+      line-height: 1.55;
+      color: var(--ink2);
+      max-width: 66ch;
+      margin-top: 16px;
+    }
+
+    .hero-metric-num {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(46px, 4.8vw, 64px);
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: -0.03em;
+      color: var(--accent-text);
+      white-space: nowrap;
+    }
+
+    .hero-metric-caption {
+      font-size: 14px;
+      line-height: 1.45;
+      color: var(--mute);
+      margin-top: 8px;
+    }
+
+    .col-left-4 {
+      grid-column: 1 / span 4;
+    }
+
+    .col-right-8 {
+      grid-column: 5 / span 8;
+    }
+
+    .col-left-8 {
+      grid-column: 1 / span 8;
+    }
+
+    .col-right-4 {
+      grid-column: 9 / span 4;
+    }
+
+    .col-full {
+      grid-column: 1 / -1;
+    }
+
+    .col-half-a {
+      grid-column: 1 / span 6;
+    }
+
+    .col-half-b {
+      grid-column: 7 / span 6;
+    }
+
+    .col-third-1 {
+      grid-column: 1 / span 4;
+    }
+
+    .col-third-2 {
+      grid-column: 5 / span 4;
+    }
+
+    .col-third-3 {
+      grid-column: 9 / span 4;
+    }
+
+    .open-strip-item {
+      border-top: 1px solid var(--hair);
+      padding-top: 16px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+      margin-bottom: 16px;
+      font-size: 14.5px;
+    }
+
+    th {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12.5px;
+      font-weight: 600;
+      text-align: left;
+      color: var(--ink);
+      padding: 12px 12px 12px 0;
+      border-bottom: 2px solid var(--ink);
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 13px 12px 13px 0;
+      border-bottom: 1px solid var(--hair);
+      color: var(--ink2);
+      vertical-align: top;
+    }
+
+    .num {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 13.5px;
+      text-align: right;
+      white-space: nowrap;
+      color: var(--ink);
+    }
+
+    th.num {
+      text-align: right;
+    }
+
+    figure {
+      margin: 28px 0;
+      padding-top: 20px;
+      border-top: 1px solid var(--hair);
+    }
+
+    .fig-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: 6px;
+    }
+
+    figcaption {
+      font-size: 13px;
+      color: var(--mute);
+      margin-top: 10px;
+    }
+
+    .callout-quote {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(22px, 2.3vw, 29px);
+      font-weight: 600;
+      line-height: 1.32;
+      color: var(--accent-text);
+      padding: 24px 0;
+      border-top: 2px solid var(--ink);
+      border-bottom: 1px solid var(--hair);
+      margin: 28px 0;
+      text-wrap: balance;
+    }
+
+    ol.open-list, ul.open-list {
+      list-style: none;
+      margin-top: 12px;
+    }
+
+    ol.open-list li, ul.open-list li {
+      position: relative;
+      padding-left: 28px;
+      padding-top: 10px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--hair);
+      color: var(--ink2);
+    }
+
+    ol.open-list {
+      counter-reset: item;
+    }
+
+    ol.open-list li::before {
+      counter-increment: item;
+      content: counter(item) ".";
+      position: absolute;
+      left: 0;
+      top: 10px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--accent-text);
+    }
+
+    ul.open-list li::before {
+      content: "→";
+      position: absolute;
+      left: 0;
+      top: 10px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--accent-2-text);
+    }
+
+    a {
+      color: var(--accent-text);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      font-weight: 600;
+    }
+
+    .full-bleed-band {
+      margin-left: calc(-1 * clamp(24px, 10.4vw, 112px));
+      margin-right: calc(-1 * clamp(24px, 10.4vw, 112px));
+      padding: 48px clamp(24px, 10.4vw, 112px);
+      background-color: #E6ECF2;
+      border-top: 1px solid var(--hair);
+      border-bottom: 1px solid var(--hair);
+      margin-top: 66px;
+    }
+
+    @media (max-width: 900px) {
+      .col-left-4, .col-right-8, .col-left-8, .col-right-4,
+      .col-half-a, .col-half-b, .col-third-1, .col-third-2, .col-third-3 {
+        grid-column: 1 / -1;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HERO: SPLIT ANSWER-FIRST ARCHITECTURE -->
+  <header class="grid-12">
+    <div class="col-left-8">
+      <h1>Five Focused Implementation Phases (Phases 6–10) Transform Our First Draft into a Commercial SEO.AI ($149/mo) Challenger</h1>
+      <p class="deck">
+        Following a visual and architectural audit of our live Vercel deployment and a complete reverse-engineering of <a href="https://seo.ai/pricing" target="_blank" rel="noopener noreferrer">SEO.AI</a>, this master blueprint defines the 5-phase engineering sequence (Phases 6–10) covering our SVG icon &amp; full-screen canvas redesign, live 1-circle token telemetry ($0.0192/circle), 3-layer trainable agent memory, automatic customer backlink exchange, Google Ads builder, and 1-click WordPress/Shopify auto-publishing.
+      </p>
+    </div>
+    <div class="col-right-4" style="grid-row: 1; align-self: end;">
+      <div class="hero-metric-num">5 Phases</div>
+      <p class="hero-metric-caption">
+        <strong>Phases 6 to 10</strong> build directly on our completed V2 foundation (Phases 1–5) while keeping 90% of work on zero-cost deterministic code and 10% on high-value LLM API calls (<a href="https://creditforstartups.com/pricing/gemini-api-pricing" target="_blank" rel="noopener noreferrer">$0.0192 per full circle</a>).
+      </p>
+    </div>
+  </header>
+
+  <!-- SECTION 1: THE 5-PHASE V3 MASTER IMPLEMENTATION ROADMAP (PHASES 6 -> 10) -->
+  <section class="sec-s grid-12">
+    <div class="col-full">
+      <h2>Master Series of Implementation Phases (Phase 6 Through Phase 10)</h2>
+      <p class="measure">
+        Because Phases 1–5 established our routes (<code>/ai-employee-agency</code> and <code>/ai-employee-agency/dashboard</code>), 36-agent registry, and initial workspace shell, the complete production upgrade divides cleanly into <strong>5 sequential implementation phases</strong>:
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Phase</th>
+            <th>Core Engineering Scope &amp; Target Files</th>
+            <th>Key Visual, UX &amp; Functional Deliverables</th>
+            <th class="num">Est. API Cost</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Phase 6</strong><br />UI/UX Redesign, SVG Icons &amp; Full-Screen Canvas</td>
+            <td><code>AiAgencyDashboardShell.tsx</code><br /><code>InteractiveAgencyNodeCanvas.tsx</code><br /><code>AgencySvgIcons.tsx</code><br /><code>docs/ai-agency-llm-economics-and-workflow-plan.html</code></td>
+            <td>
+              1. Replace all emojis in Left Sidebar, Header &amp; Tabs with crisp geometric <strong>SVG Icons</strong>.<br />
+              2. Fix Node Graph header overlap by moving Zoom (<code>+</code> / <code>-</code> / <code>Fit</code>) into a <strong>Bottom-Right Floating Control Dock</strong>.<br />
+              3. Add a dedicated <strong>Expand Full Screen (100% Viewport)</strong> button so the Node Graph occupies the entire screen.<br />
+              4. Redesign all 9 Department Tabs to eliminate noisy/robotic text and fix bottom-right chat button overlap.
+            </td>
+            <td class="num">$0.0000</td>
+          </tr>
+          <tr>
+            <td><strong>Phase 7</strong><br />Live LLM Gateway &amp; 1-Circle Token Cost HUD</td>
+            <td><code>lib/ai-employee-agency/llm-gateway.ts</code><br /><code>lib/ai-employee-agency/token-telemetry-store.ts</code><br /><code>app/api/ai-employee-agency/orchestrate/route.ts</code></td>
+            <td>
+              1. Connect <strong>Google AI Studio Free/Paid Key</strong> (<code>gemini-2.5-flash</code>), <strong>Groq Free/Paid Key</strong> (<code>llama-3.3-70b</code>), and <strong>OpenAI</strong> in a secure server-only gateway.<br />
+              2. Capture exact <code>usageMetadata.promptTokenCount</code> &amp; <code>candidatesTokenCount</code> on every call.<br />
+              3. Render the <strong>Real-Time 1-Circle Token &amp; Cost Telemetry Meter</strong> in the dashboard so you see exact tokens (~16,300) and shadow cost ($0.0192/circle) live during free-key testing.
+            </td>
+            <td class="num">$0.0192 / circle</td>
+          </tr>
+          <tr>
+            <td><strong>Phase 8</strong><br />Trainable 3-Layer Memory &amp; Selective Interrupts</td>
+            <td><code>lib/ai-employee-agency/agent-memory-store.ts</code><br /><code>app/api/ai-employee-agency/agent-chat/route.ts</code><br /><code>FounderCommandChatDock.tsx</code></td>
+            <td>
+              1. Equip all 36 agents with deep domain <strong>System Prompts</strong> + <strong>User-Teachable Custom Skills</strong> (<code>userLearnedSkills[]</code> saved directly from chat instructions).<br />
+              2. Build the <strong>Shared Agency Memory Bus</strong> &amp; <strong>Selective Interrupt Router</strong>: uploading a custom Pinterest image or messaging 1 agent wakes <em>only</em> the required agents while keeping all other departments uninterrupted yet passively informed.
+            </td>
+            <td class="num">$0.0004 / chat</td>
+          </tr>
+          <tr>
+            <td><strong>Phase 9</strong><br />SEO.AI Challenger Suite: Backlink Club &amp; Google Ads</td>
+            <td><code>lib/ai-employee-agency/backlink-exchange-club.ts</code><br /><code>lib/ai-employee-agency/google-ads-agent.ts</code></td>
+            <td>
+              1. <strong>Automatic Customer Link-Exchange Network (“Backlink Club”):</strong> Automatically matches non-competing websites in related niches, weaves contextual backlinks between them, and tracks Domain Rating.<br />
+              2. <strong>Google Ads RSA Builder Sub-Agent:</strong> Generates 15 RSA headlines (&le;30 chars), 4 descriptions (&le;90 chars), target keywords, and Google Ads CSV export.<br />
+              3. <strong>Privacy-First 150-Pt QA Gate + Opt-In Human Expert Spot-Check Toggle</strong>.
+            </td>
+            <td class="num">$0.0003 / run</td>
+          </tr>
+          <tr>
+            <td><strong>Phase 10</strong><br />No-Code CMS Auto-Publish &amp; 24/7 Cron Heartbeats</td>
+            <td><code>lib/ai-employee-agency/cms-connectors.ts</code><br /><code>lib/ai-employee-agency/heartbeat-scheduler.ts</code><br /><code>app/api/ai-employee-agency/publish-cms/route.ts</code></td>
+            <td>
+              1. <strong>60-Second No-Code CMS Connectors:</strong> WordPress Application Passwords (<code>POST /wp-json/wp/v2/posts</code>), Shopify Blog API, Webflow CMS API, and Universal Webhooks.<br />
+              2. <strong>Staggered 24/7 Heartbeat Scheduler:</strong> Every 2h Off-Page PR Scout, Every 4h Social Drip, Every 6h Technical Zero-Token Check, Every 12h On-Page Refresh, Every 24h Full Article Circle + Gmail/Social OAuth hooks.
+            </td>
+            <td class="num">$0.0000</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- SECTION 2: LIVE VERCEL UI AUDIT & PHASE 6 REDESIGN SPECIFICATIONS -->
+  <div class="full-bleed-band">
+    <div class="grid-12">
+      <div class="col-half-a">
+        <h2>Visual Audit of Our Live Vercel Dashboard (What Phase 6 Fixes Immediately)</h2>
+        <p>
+          Inspecting our live deployment at <code>/ai-employee-agency/dashboard</code> revealed four specific UI/UX defects that make the interface feel crowded and robotic:
+        </p>
+        <ol class="open-list">
+          <li><strong>Node Graph Top Bar Collision:</strong> The top-left toolbar (<code>12 Core Desks</code>, <code>All 9 Departments</code>, <code>+ Zoom In</code>, <code>- Zoom Out</code>) collides with the top-right status pill, hiding the Zoom buttons underneath.</li>
+          <li><strong>Missing Full-Screen Canvas Mode:</strong> Users need a dedicated <strong>Expand Full Screen</strong> button inside the graph so the interactive node canvas fills 100% of the monitor (<code>100vw × 100vh</code>) with floating bottom-right Zoom/Pan/Fit controls.</li>
+          <li><strong>Emoji Clutter &amp; Truncated Sidebar Labels:</strong> The left sidebar uses cartoon emojis and truncates labels (<code>Content Writing S...</code>, <code>Graphic &amp; Visual ...</code>). Replacing emojis with crisp 16px SVG icons and widening the sidebar gives clean, single-line scannability.</li>
+          <li><strong>Bottom-Right Floating Widget Overlap:</strong> The global purple AI chat button covers the right edge of the <code>Send Command</code> button in the bottom dock (fixed by adding right clearance and a compact dock layout).</li>
+        </ol>
+      </div>
+      <div class="col-half-b">
+        <h2>How Real-Time Token Tracking Works on a $0 Free API Key (Phase 7)</h2>
+        <p>
+          Even when we test with a free API key from <a href="https://aistudio.google.com/docs/rate-limits" target="_blank" rel="noopener noreferrer">Google AI Studio</a> or <a href="https://localaimaster.com/blog/groq-api-free-guide" target="_blank" rel="noopener noreferrer">Groq Cloud</a>, the API response is never blind: every JSON payload includes exact token counters (<code>usageMetadata.promptTokenCount</code>, <code>candidatesTokenCount</code>, and <code>thoughtsTokenCount</code>).
+        </p>
+        <p>
+          In <strong>Phase 7</strong>, our <code>token-telemetry-store.ts</code> records the exact tokens used by each department during <strong>1 Full Agency Circle</strong> and multiplies them by official paid rates (<a href="https://creditforstartups.com/pricing/gemini-api-pricing" target="_blank" rel="noopener noreferrer">$0.30/1M input &amp; $2.50/1M output</a> on Gemini 2.5 Flash) so you see the exact token count, per-circle cost (<strong>$0.0192</strong>), and 30-day projected monthly cost (<strong>$0.58–$1.20/mo</strong>) live on the dashboard while paying $0 during testing.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 3: 1-CIRCLE TOKEN & COST TELEMETRY CHART -->
+  <section class="sec-s grid-12">
+    <div class="col-left-4">
+      <h2>90% Mechanical Execution + 10% LLM Reasoning Guarantees Profit</h2>
+      <p>
+        Customers see all 36 AI Employees actively crawling, designing 6-layer infographics, auditing SEO, and scripting social campaigns 24/7—justifying a $39–$49/month subscription (or $149/month agency tier).
+      </p>
+      <p>
+        Behind the scenes, 90% of that work (DOM crawling, 1080×1350 SVG rendering, SERP pixel math, and CMS REST publishing) runs on zero-cost TypeScript code, while the 10% LLM reasoning layer costs less than <strong>2 cents per complete circle</strong>.
+      </p>
+    </div>
+    <div class="col-right-8">
+      <figure style="margin-top: 0; border-top: none; padding-top: 0;">
+        <div class="fig-title">One Full Agency Circle Consumes 16,300 Tokens ($0.0192 on Gemini 2.5 Flash or $0.0054 on GPT-4o-mini)</div>
+        <svg viewBox="0 0 680 390" width="100%" role="img" aria-label="Horizontal bar chart showing exact token consumption per stage in 1 full agency circle">
+          <line x1="220" y1="30" x2="220" y2="320" stroke="#CBD4DF" stroke-width="1" />
+          <line x1="330" y1="30" x2="330" y2="320" stroke="#CBD4DF" stroke-width="1" />
+          <line x1="440" y1="30" x2="440" y2="320" stroke="#CBD4DF" stroke-width="1" />
+          <line x1="550" y1="30" x2="550" y2="320" stroke="#CBD4DF" stroke-width="1" />
+
+          <!-- Stage 1: Keyword Strategist -->
+          <text x="208" y="68" text-anchor="end" font-family="Plus Jakarta Sans, sans-serif" font-size="13.5" font-weight="600" fill="#0D131A">1. Keyword &amp; H1–H3 Brief</text>
+          <rect x="220" y="50" width="69" height="24" fill="#087F5B" />
+          <text x="299" y="68" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#0D131A">2,100 tok ($0.0019)</text>
+
+          <!-- Stage 2: Long-Form Article + Meta + Links -->
+          <text x="208" y="122" text-anchor="end" font-family="Plus Jakarta Sans, sans-serif" font-size="13.5" font-weight="600" fill="#0D131A">2. Article + AEO Lead + Links</text>
+          <rect x="220" y="104" width="247" height="24" fill="#003E99" />
+          <text x="477" y="122" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#0D131A">7,500 tok ($0.0099)</text>
+
+          <!-- Stage 3: Graphic & SVG Data Extractor -->
+          <text x="208" y="176" text-anchor="end" font-family="Plus Jakarta Sans, sans-serif" font-size="13.5" font-weight="600" fill="#0D131A">3. Hero + 4× SVG Data JSON</text>
+          <rect x="220" y="158" width="43" height="24" fill="#087F5B" />
+          <text x="273" y="176" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#0D131A">1,300 tok ($0.0015)</text>
+
+          <!-- Stage 4: On-Page, Off-Page & Tech SEO -->
+          <text x="208" y="230" text-anchor="end" font-family="Plus Jakarta Sans, sans-serif" font-size="13.5" font-weight="600" fill="#0D131A">4. On-Page/Off-Page/Tech SEO</text>
+          <rect x="220" y="212" width="79" height="24" fill="#0052CC" />
+          <text x="309" y="230" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#0D131A">2,400 tok ($0.0024)</text>
+
+          <!-- Stage 5: Social, TikTok & Google Ads -->
+          <text x="208" y="284" text-anchor="end" font-family="Plus Jakarta Sans, sans-serif" font-size="13.5" font-weight="600" fill="#0D131A">5. Social + TikTok + Ads Copy</text>
+          <rect x="220" y="266" width="99" height="24" fill="#0052CC" />
+          <text x="329" y="284" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#0D131A">3,000 tok ($0.0035)</text>
+
+          <!-- X Axis -->
+          <text x="220" y="348" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12.5" fill="#4A5868">0</text>
+          <text x="330" y="348" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12.5" fill="#4A5868">3,300</text>
+          <text x="440" y="348" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12.5" fill="#4A5868">6,600</text>
+          <text x="550" y="348" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12.5" fill="#4A5868">10,000</text>
+          <text x="400" y="374" text-anchor="middle" font-family="Plus Jakarta Sans, sans-serif" font-size="13" fill="#4A5868">Tokens consumed per department during 1 complete end-to-end circle</text>
+        </svg>
+        <figcaption>
+          Total for 1 Full Circle: 9,800 input tokens + 6,500 output tokens = 16,300 tokens ($0.0192 on <a href="https://costgoat.com/pricing/gemini-api" target="_blank" rel="noopener noreferrer">Gemini 2.5 Flash</a> or $0.0054 on <a href="https://www.aipricing.guru/models/gpt-4o-mini/" target="_blank" rel="noopener noreferrer">GPT-4o-mini</a>).
+        </figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- SECTION 4: COMPLETE REVERSE-ENGINEERING OF SEO.AI ($149/MO & $299/MO) -->
+  <section class="sec-s grid-12">
+    <div class="col-full">
+      <h2>Reverse-Engineering SEO.AI ($149/mo vs. $299/mo): How Every Feature Actually Works</h2>
+      <p class="measure">
+        Public technical documentation from <a href="https://seo.ai/" target="_blank" rel="noopener noreferrer">SEO.AI</a>, their <a href="https://seo.ai/blog/how-to-set-up-the-wordpress-integration" target="_blank" rel="noopener noreferrer">WordPress Integration Guide</a>, and independent 2026 teardowns (<a href="https://www.blogseo.io/blogseo-vs-autoseo" target="_blank" rel="noopener noreferrer">BlogSEO vs AutoSEO &amp; SEO.ai</a>, <a href="https://www.eesel.ai/blog/seo-ai-review" target="_blank" rel="noopener noreferrer">eesel AI Review</a>) reveal how each of their $149/month features works under the hood—and how our Phases 6–10 implementation beats them:
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>SEO.AI Pricing Card Claim ($149/mo)</th>
+            <th>How SEO.AI Actually Works Under the Hood (Reverse-Engineered)</th>
+            <th>How DoItWithAI.tools Competes &amp; Beats Them (Phases 6–10)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>“Targets Google and ChatGPT visibility”</strong></td>
+            <td>Formats articles with direct-answer paragraphs, FAQ headings, and schema markup, plus a <a href="https://seo.ai/chatgpt-shopping-optimization" target="_blank" rel="noopener noreferrer">product feed text enricher</a>.</td>
+            <td><strong>Already Built + Superior:</strong> 50-word AEO direct answer lead, connected <code>@graph</code> JSON-LD, and explicit <code>OAI-SearchBot</code> / <code>PerplexityBot</code> <code>robots.txt</code> rules.</td>
+          </tr>
+          <tr>
+            <td><strong>“Backlinks from real non-spammy websites”</strong></td>
+            <td><strong>“The Backlink Club” (<a href="https://www.blogseo.io/blogseo-vs-autoseo" target="_blank" rel="noopener noreferrer">BlogSEO Teardown</a> &amp; <a href="https://seo.ai/" target="_blank" rel="noopener noreferrer">SEO.AI</a>):</strong> Automatically swaps contextual links between non-competing customers who connected their CMS to SEO.AI.</td>
+            <td><strong>Phase 9 Deliverable:</strong> Opt-in <strong>DoItWithAI Verified Niche Link-Exchange Network</strong> ($0 marginal cost) + automated HARO/journalist pitches &amp; directory packs.</td>
+          </tr>
+          <tr>
+            <td><strong>“Builds and optimizes Google Ads”</strong></td>
+            <td>Generates Google Ads Responsive Search Ad (RSA) headlines (30 chars), descriptions (90 chars), and keyword lists per article (<a href="https://www.blogseo.io/blogseo-vs-autoseo" target="_blank" rel="noopener noreferrer">BlogSEO</a>).</td>
+            <td><strong>Phase 9 Deliverable:</strong> Dedicated <code>Google Ads RSA &amp; Keyword Sub-Agent</code> outputting 15 headlines, 4 descriptions, negative keywords &amp; Google Ads CSV export.</td>
+          </tr>
+          <tr>
+            <td><strong>“Our SEO specialists continuously review and make spot checks”</strong></td>
+            <td>Uses automated QA scores + random sample spot-checks by staff to tune prompts or review when a user requests support (<a href="https://seo.ai/pricing" target="_blank" rel="noopener noreferrer">SEO.AI FAQ</a>).</td>
+            <td><strong>Phase 9 Deliverable:</strong> 100% private 150-point automated E-E-A-T gate by default + <strong>Opt-In “Request Human Expert Spot-Check”</strong> button so user privacy is never compromised.</td>
+          </tr>
+          <tr>
+            <td><strong>“Connects to WordPress, Webflow, Wix, Shopify in minutes”</strong></td>
+            <td>Uses built-in <a href="https://seo.ai/blog/how-to-set-up-the-wordpress-integration" target="_blank" rel="noopener noreferrer">WordPress Application Passwords</a> (REST API), Shopify Admin API tokens, Webflow CMS API, or a generic Webhook URL.</td>
+            <td><strong>Phase 10 Deliverable:</strong> 1-click WordPress REST API (<code>/wp-json/wp/v2/posts</code>), Shopify Blog API, Webflow API, and Universal Webhook connectors inside our Publishing Controller.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- SOURCES -->
+  <section class="sec-s grid-12">
+    <div class="col-full">
+      <h2>Sources &amp; Competitive Intelligence References</h2>
+      <ol class="open-list">
+        <li><a href="https://seo.ai/" target="_blank" rel="noopener noreferrer">SEO.AI Official Homepage — Automatic Link Exchange Network &amp; 24/7 AI SEO Agent Overview</a></li>
+        <li><a href="https://seo.ai/pricing" target="_blank" rel="noopener noreferrer">SEO.AI Official Pricing &amp; FAQ ($149/mo Single Site, $299/mo Multi-Site, Spot-Checks &amp; CMS Support)</a></li>
+        <li><a href="https://seo.ai/blog/how-to-set-up-the-wordpress-integration" target="_blank" rel="noopener noreferrer">SEO.AI Help Guide — How to Set Up the WordPress Integration via WordPress Application Passwords</a></li>
+        <li><a href="https://www.blogseo.io/blogseo-vs-autoseo" target="_blank" rel="noopener noreferrer">BlogSEO 2026 Teardown — SEO.ai ($149/mo) Features, The Backlink Club, Google Ads Builder &amp; Webhook Architecture</a></li>
+        <li><a href="https://www.eesel.ai/blog/seo-ai-review" target="_blank" rel="noopener noreferrer">eesel AI — 2026 Review of SEO.AI Content Quality, Autopilot Calendar &amp; Editing Tradeoffs</a></li>
+        <li><a href="https://creditforstartups.com/pricing/gemini-api-pricing" target="_blank" rel="noopener noreferrer">CreditForStartups — Gemini 2.5 Flash API Pricing ($0.30/1M Input, $2.50/1M Output &amp; Free Tier)</a> &amp; <a href="https://www.aipricing.guru/models/gpt-4o-mini/" target="_blank" rel="noopener noreferrer">AI Pricing Guru — GPT-4o-mini Pricing</a></li>
+      </ol>
+    </div>
+  </section>
+
+</body>
+</html>

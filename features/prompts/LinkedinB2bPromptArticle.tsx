@@ -4,6 +4,7 @@ import Link from "next/link";
 import LinkedinB2bPromptLibrary from "./LinkedinB2bPromptLibrary";
 import { linkedinB2bPromoGuides } from "./LinkedinB2bPromoGuides";
 import KeywordGuideCard from "./KeywordGuideCard";
+import { PROMPT_INLINE_LINK_CLASS } from "./promptLinkStyles";
 
 const body = "mt-4 text-lg leading-9 text-slate-600 dark:text-slate-300";
 const button =
@@ -163,23 +164,23 @@ export default function LinkedinB2bPromptArticle({
           <p className={body}>
             <strong>Fast LinkedIn Workflow Path:</strong> Start by sharpening
             your profile with{" "}
-            <a href="#linkedin-prompt-001" className="underline font-semibold">
+            <a href="#linkedin-prompt-001" className={PROMPT_INLINE_LINK_CLASS}>
               Prompt 1 (220c Outcome Headline)
             </a>
             , write your opening hook with{" "}
-            <a href="#linkedin-prompt-011" className="underline font-semibold">
+            <a href="#linkedin-prompt-011" className={PROMPT_INLINE_LINK_CLASS}>
               Prompt 11 (140c Mobile Fold Hooks)
             </a>
             , draft a practitioner teardown with{" "}
-            <a href="#linkedin-prompt-022" className="underline font-semibold">
+            <a href="#linkedin-prompt-022" className={PROMPT_INLINE_LINK_CLASS}>
               Prompt 22 (Live Workflow Teardown)
             </a>
             , storyboard a carousel with{" "}
-            <a href="#linkedin-prompt-033" className="underline font-semibold">
+            <a href="#linkedin-prompt-033" className={PROMPT_INLINE_LINK_CLASS}>
               Prompt 33 (7-Slide PDF Carousel)
             </a>
             , and design a visual card with{" "}
-            <a href="#linkedin-prompt-044" className="underline font-semibold">
+            <a href="#linkedin-prompt-044" className={PROMPT_INLINE_LINK_CLASS}>
               Prompt 44 (Founder Memo Card)
             </a>
             .

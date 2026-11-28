@@ -1,5 +1,5 @@
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import type { Metadata } from "next";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
 import Link from "next/link";
 import {
   CheckCheck,
@@ -10,21 +10,28 @@ import {
 import JournalistPitchBuilderClient from "@/features/journalist-pitch-builder/JournalistPitchBuilderClient";
 import ToolFaq from "@/features/tool-ui/ToolFaq";
 import ToolResources from "@/features/tool-catalog/ToolResources";
-import {
-  ToolHeroBackground,
-  toolHeroHeading,
-  toolHeroSurface,
-} from "@/features/tool-ui/ToolHero";
 
 const pageUrl = "https://doitwithai.tools/tools/journalist-pitch-builder";
 const title =
-  "Free HARO & Journalist Pitch Response Builder | Digital PR Quote Generator";
+  "Free Connectively & HARO Journalist Pitch Builder | Digital PR Quote Generator";
 const description =
-  "Draft quote-ready responses for HARO, Connectively, Qwoted, Featured, and journalist queries. Build 3 editorial soundbite angles with scannability checks and DOCX/TXT exports.";
+  "Draft quote-ready responses for Connectively (HARO replacement), Qwoted, Featured.com, and top journalists. Build 3 editorial soundbite angles with scannability checks and DOCX/TXT pitch packets.";
 
 export const metadata: Metadata = {
   title,
   description,
+  keywords: [
+    "Connectively pitch generator",
+    "HARO pitch response builder",
+    "journalist pitch template",
+    "digital PR quote generator",
+    "Featured.com response writer",
+    "Qwoted expert pitch tool",
+    "HARO alternative pitch tool",
+    "media query response generator",
+    "editorial soundbite builder",
+    "Do It With AI Tools",
+  ],
   alternates: { canonical: pageUrl },
   openGraph: {
     title,
@@ -117,6 +124,34 @@ export default function JournalistPitchBuilderPage() {
           acceptedAnswer: { "@type": "Answer", text: f.answer },
         })),
       },
+      {
+        "@type": "HowTo",
+        name: "How to Draft a Winning Journalist Pitch for Connectively, HARO & Qwoted",
+        description:
+          "Follow this 4-step framework to write concise, quote-ready responses that reporters can drop straight into publication drafts.",
+        step: [
+          {
+            "@type": "HowToStep",
+            name: "Step 1: Extract Core Questions and Word Limits",
+            text: "Parse the journalist query to detect exact questions, deadline, and formatting constraints.",
+          },
+          {
+            "@type": "HowToStep",
+            name: "Step 2: Lead with a 1-Sentence Credential Hook",
+            text: "Establish instant domain authority with your real role and direct experience without introductory PR fluff.",
+          },
+          {
+            "@type": "HowToStep",
+            name: "Step 3: Deliver a 40–80 Word Quotable Soundbite",
+            text: "Provide a self-contained, punchy insight backed by a concrete metric or practitioner takeaway.",
+          },
+          {
+            "@type": "HowToStep",
+            name: "Step 4: Attach a Clean 4-Item Attribution Bio Block",
+            text: "Include your Full Name, Title, Company Website URL, LinkedIn Profile, and optional headshot link.",
+          },
+        ],
+      },
     ],
   };
 
@@ -129,81 +164,18 @@ export default function JournalistPitchBuilderPage() {
         }}
       />
 
-      <header
-        className={`relative overflow-hidden ${toolHeroSurface} text-white`}
+      <ToolLandingHero
+        slug="journalist-pitch-builder"
+        title="HARO & Journalist Pitch Response Builder"
+        description="Craft structured, quote-ready responses for HARO, Connectively, Qwoted, Featured.com, and proactive Digital PR outreach. Generate 3 distinct editorial angles with real-time scannability checks."
+        categoryLabel="Off-page SEO"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
       >
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">Tools</Link>
-            <span>/</span>
-            <span aria-current="page">Journalist pitch builder</span>
-          </nav>
-
-          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                Off-page SEO · Digital PR & Earned Media
-              </p>
-              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                HARO & Journalist Pitch{" "}
-                <span className={toolHeroHeading}>
-                  Response Builder
-                </span>
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-                Craft structured, quote-ready responses for HARO, Connectively,
-                Qwoted, Featured.com, and proactive Digital PR outreach.
-                Generate 3 distinct editorial angles with real-time scannability
-                checks.
-              </p>
-              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  4 platform formats
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  3 editorial soundbite angles
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  DOCX & TXT pitch exports
-                </span>
-              </div>
-              <PortableToolHeroBar />
-            </div>
-
-            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
-                Anatomy of a Winning Media Pitch
-              </p>
-              <ol className="mt-4 space-y-3 text-xs leading-6 text-slate-300">
-                <li>
-                  <strong className="text-white">1. Credential Hook:</strong> 1
-                  line proving why you are qualified to speak on the topic.
-                </li>
-                <li>
-                  <strong className="text-white">2. Copy-Paste Soundbite:</strong>{" "}
-                  40–85 words a journalist can drop straight into their article.
-                </li>
-                <li>
-                  <strong className="text-white">3. Proof Bullets:</strong>{" "}
-                  Specific metrics or steps that add depth.
-                </li>
-                <li>
-                  <strong className="text-white">4. Clean Bio Block:</strong>{" "}
-                  Name, Role, Brand URL, LinkedIn, and Headshot link.
-                </li>
-              </ol>
-            </div>
-          </div>
+        <div className="p-4 sm:p-6">
+          <JournalistPitchBuilderClient />
         </div>
-      </header>
-
-      <JournalistPitchBuilderClient />
+      </ToolLandingHero>
 
       <section
         className={`${section} border-t border-slate-200 dark:border-slate-800`}

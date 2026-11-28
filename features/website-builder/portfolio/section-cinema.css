@@ -1,0 +1,260 @@
+/*
+  Voxfolio — Section Cinema (V18.1)
+  Real CSS 3D (perspective + preserve-3d) for every homepage section below the hero on the three
+  orbital templates. No extra WebGL contexts. Driven by section-cinema-engine.ts, which only writes:
+    --cp / --cs   section scroll progress (0..1 and -1..1)      --cmx / --cmy  smoothed pointer (-1..1)
+    --tx/--ty/--gx/--gy  per-card tilt + glare                  data-inview / data-seen / data-cinema-ready
+  Everything is readable without JavaScript, with reduced motion, and with motion set to "still".
+*/
+
+/* ───────── Base ───────── */
+.cinema-on { overflow-x: clip; }
+.cinema-on .portfolio-section { container-type: inline-size; overflow: visible; clip-path: inset(0 -100vmax); }
+.cinema-on .portfolio-section::after { display: none; }
+/* The scene is 20cqw wider than the section on each side so objects can live in the page gutters on wide screens. */
+.cinema-on .portfolio-section > .cine-scene {
+  position: absolute; top: 0; bottom: 0; left: -20cqw; right: -20cqw; z-index: 0; overflow: hidden; pointer-events: none;
+  perspective: 1300px; perspective-origin: calc(20cqw + var(--po, 68cqw)) 40%;
+  --cs: 0; --cp: .5; --cmx: 0; --cmy: 0;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent), linear-gradient(180deg, transparent, #000 11%, #000 89%, transparent);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent), linear-gradient(180deg, transparent, #000 11%, #000 89%, transparent);
+  mask-composite: intersect;
+}
+.cine-stage { position: absolute; top: 0; bottom: 0; left: 20cqw; right: 20cqw; transform-style: preserve-3d; }
+.cine-glow {
+  position: absolute; left: 0; right: 0; top: -10%; bottom: -10%;
+  background: radial-gradient(ellipse 34cqw 46% at calc(20cqw + var(--gx0, 74cqw)) var(--gy0, 42%), rgba(var(--accent-rgb), .17), transparent 70%), radial-gradient(ellipse 26cqw 34% at calc(20cqw + var(--gx1, 12cqw)) var(--gy1, 86%), rgba(124, 58, 237, .09), transparent 72%);
+  transform: translate3d(calc(var(--cmx) * -22px), calc(var(--cmy) * -16px + var(--cs) * -34px), 0);
+}
+.cine-obj { position: absolute; transform-style: preserve-3d; }
+
+/* Off-screen scenes cost nothing: every animation is paused until the section is in view. */
+.cinema-on .portfolio-section:not([data-inview]) .cine-scene *,
+.cinema-on .portfolio-section:not([data-inview]) .cine-scene *::before,
+.cinema-on .portfolio-section:not([data-inview]) .cine-scene *::after { animation-play-state: paused !important; }
+.cinema-on .portfolio-section[data-inview] .cine-obj { will-change: transform; }
+
+/* Depth-of-field: heading sits on top of the scene with a soft contrast cushion. */
+.cinema-on .section-heading h2 { text-shadow: 0 2px 36px rgba(3, 5, 12, .85); }
+
+/* Light-leak sweep across each section's top rule the first time it is seen. */
+.cinema-on .portfolio-section::before {
+  content: ""; position: absolute; z-index: 3; top: -1px; left: 0; width: 100%; height: 1px; pointer-events: none; opacity: 0;
+  background: linear-gradient(90deg, transparent, rgba(var(--accent-rgb), .95), transparent) no-repeat; background-size: 38% 100%;
+}
+.cinema-on[data-cinema-ready] .portfolio-section[data-seen]::before { animation: cine-sweep 1.8s cubic-bezier(.4, 0, .2, 1) both; }
+
+/* ───────── Shared 3D primitives ───────── */
+.cine-ring {
+  position: absolute; left: calc(var(--r) / -2); top: calc(var(--r) / -2); width: var(--r); height: var(--r); border-radius: 50%;
+  border: 1px solid rgba(var(--accent-rgb), var(--ra, .42));
+  box-shadow: 0 0 26px rgba(var(--accent-rgb), .12), inset 0 0 26px rgba(var(--accent-rgb), .07);
+  transform: rotateX(var(--tilt)); animation: cine-orbit calc(var(--dur, 26s) * var(--cine-t)) linear infinite;
+}
+.cine-ring::after, .beacon-orbit > div::after {
+  content: ""; position: absolute; left: 50%; top: -4px; width: 8px; height: 8px; margin-left: -4px; border-radius: 50%;
+  background: #fff; box-shadow: 0 0 12px 3px rgba(var(--accent-rgb), .9);
+}
+.cine-plate {
+  width: 21cqw; height: 27cqw; border-radius: 18px; border: 1px solid rgba(var(--accent-rgb), .2);
+  background: linear-gradient(140deg, rgba(var(--accent-rgb), .09), rgba(255, 255, 255, .014) 55%, transparent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .07), 0 40px 90px rgba(0, 0, 0, .28);
+  transform: translate3d(calc(var(--cmx) * var(--pm, 14) * 1px), calc(var(--cs) * var(--par, -40) * 1px * var(--cine-i)), var(--z, -160px)) rotateY(var(--ry, -16deg)) rotateX(var(--rx, 4deg));
+  animation: cine-bob calc(11s * var(--cine-t)) ease-in-out infinite alternate;
+}
+.cine-cross { width: 20px; height: 20px; display: none; opacity: .6; background: linear-gradient(rgba(var(--accent-rgb), .9), rgba(var(--accent-rgb), .9)) center / 1px 100% no-repeat, linear-gradient(rgba(var(--accent-rgb), .9), rgba(var(--accent-rgb), .9)) center / 100% 1px no-repeat; }
+.cine-cross.c1 { left: 6%; top: 14%; } .cine-cross.c2 { right: 7%; bottom: 13%; }
+
+/* ───────── ABOUT — identity crystal ───────── */
+.cine-gem { --s: clamp(74px, 11.5cqw, 146px); left: 15%; top: 57%; width: 0; height: 0;
+  transform: translate3d(calc(var(--cmx) * -26px * var(--cine-i)), calc(var(--cmy) * -18px * var(--cine-i) + var(--cs) * -46px * var(--cine-i)), 60px) rotateX(calc(-14deg + var(--cmy) * 10deg)) rotateY(calc(var(--cs) * 70deg + var(--cmx) * 16deg)); }
+.about-section.has-headshot .cine-gem, .about-section.has-headshot .cine-cube { left: 89%; top: 24%; }
+.gem-spin { position: absolute; inset: 0; transform-style: preserve-3d; animation: cine-spin calc(34s * var(--cine-t)) linear infinite; }
+.gem-face { position: absolute; left: calc(var(--s) * -.5); width: var(--s); height: calc(var(--s) * .866); backface-visibility: visible;
+  background: linear-gradient(165deg, rgba(var(--accent-rgb), .62), rgba(var(--accent-rgb), .1) 62%, rgba(255, 255, 255, .14)); }
+.gem-face:nth-child(2n) { background: linear-gradient(200deg, rgba(255, 255, 255, .34), rgba(var(--accent-rgb), .26) 46%, rgba(var(--accent-rgb), .05)); }
+.gem-face:nth-child(3n) { background: linear-gradient(120deg, rgba(var(--accent-rgb), .3), rgba(255, 255, 255, .1) 50%, rgba(var(--accent-rgb), .5)); }
+.gem-face.top { top: calc(var(--s) * -.866); transform-origin: 50% 100%; clip-path: polygon(50% 0, 0 100%, 100% 100%);
+  transform: rotateY(calc(var(--k) * 90deg)) translateZ(calc(var(--s) * .5)) rotateX(35.264deg); }
+.gem-face.bottom { top: 0; transform-origin: 50% 0; clip-path: polygon(0 0, 100% 0, 50% 100%);
+  transform: rotateY(calc(var(--k) * 90deg)) translateZ(calc(var(--s) * .5)) rotateX(-35.264deg); }
+.cine-gem .cine-ring.r1 { --r: calc(var(--s) * 2.2); --tilt: 74deg; --dur: 24s; }
+.cine-gem .cine-ring.r2 { --r: calc(var(--s) * 2.9); --tilt: 60deg; --dur: 36s; --ra: .26; animation-direction: reverse; }
+.cine-gem .cine-ring.r3 { --r: calc(var(--s) * 3.7); --tilt: 82deg; --dur: 52s; --ra: .16; }
+.cine-about .cine-plate.p1 { left: 78%; top: -2%; --z: -240px; --ry: -26deg; --par: -50; --pm: 18; width: 20cqw; height: 15cqw; opacity: .8; }
+.cine-about .cine-plate.p2 { left: 97%; top: 52%; --z: -340px; --ry: -32deg; --par: 32; --pm: 26; width: 22cqw; height: 26cqw; opacity: .65; }
+.cine-about .cine-plate.p3 { left: -2%; top: 50%; --z: -300px; --ry: 24deg; --par: -22; --pm: 20; width: 14cqw; height: 19cqw; opacity: .8; }
+.cine-cube { --s: clamp(64px, 9.5cqw, 118px); display: none; left: 15%; top: 57%; width: 0; height: 0;
+  transform: translate3d(calc(var(--cmx) * -26px * var(--cine-i)), calc(var(--cmy) * -18px * var(--cine-i) + var(--cs) * -46px * var(--cine-i)), 60px) rotateX(calc(-18deg + var(--cmy) * 10deg)) rotateY(calc(var(--cs) * 80deg + var(--cmx) * 16deg)); }
+.cube-spin { position: absolute; inset: 0; transform-style: preserve-3d; animation: cine-spin calc(30s * var(--cine-t)) linear infinite; }
+.cube-face { position: absolute; left: calc(var(--s) / -2); top: calc(var(--s) / -2); width: var(--s); height: var(--s); border: 1px solid rgba(var(--accent-rgb), .6);
+  background: linear-gradient(135deg, rgba(var(--accent-rgb), .16), rgba(255, 255, 255, .02) 60%); box-shadow: inset 0 0 22px rgba(var(--accent-rgb), .12); }
+.cube-face.f0 { transform: translateZ(calc(var(--s) / 2)); } .cube-face.f1 { transform: rotateY(90deg) translateZ(calc(var(--s) / 2)); }
+.cube-face.f2 { transform: rotateY(180deg) translateZ(calc(var(--s) / 2)); } .cube-face.f3 { transform: rotateY(-90deg) translateZ(calc(var(--s) / 2)); }
+.cube-face.f4 { transform: rotateX(90deg) translateZ(calc(var(--s) / 2)); } .cube-face.f5 { transform: rotateX(-90deg) translateZ(calc(var(--s) / 2)); }
+.cube-core { position: absolute; left: calc(var(--s) * -.19); top: calc(var(--s) * -.19); width: calc(var(--s) * .38); height: calc(var(--s) * .38); border-radius: 50%;
+  background: radial-gradient(circle, #fff, rgba(var(--accent-rgb), .8) 40%, transparent 72%); box-shadow: 0 0 34px rgba(var(--accent-rgb), .8); }
+.cine-cube .cine-ring.r1 { --r: calc(var(--s) * 2.3); --tilt: 74deg; --dur: 24s; } .cine-cube .cine-ring.r2 { --r: calc(var(--s) * 3.1); --tilt: 60deg; --dur: 38s; --ra: .24; animation-direction: reverse; }
+
+/* ───────── EXPERIENCE — time tunnel ───────── */
+.cine-experience { --po: 70cqw; --gx0: 70cqw; --gy0: 44%; }
+.cine-floor { position: absolute; left: -30%; right: -30%; bottom: -10%; height: 78%; overflow: hidden; transform-origin: 50% 100%; transform: rotateX(72deg);
+  -webkit-mask-image: linear-gradient(to top, #000 4%, transparent 82%); mask-image: linear-gradient(to top, #000 4%, transparent 82%); }
+.floor-grid { position: absolute; left: 0; right: 0; top: -64px; bottom: 0; animation: cine-floor calc(5s * var(--cine-t)) linear infinite;
+  background-image: linear-gradient(rgba(var(--accent-rgb), .3) 1px, transparent 1px), linear-gradient(90deg, rgba(var(--accent-rgb), .3) 1px, transparent 1px); background-size: 64px 64px; }
+.cine-tunnel { position: absolute; left: 68%; top: 46%; width: 0; height: 0; transform-style: preserve-3d;
+  transform: translateZ(calc(var(--cs) * 150px * var(--cine-i))) rotateZ(calc(var(--cs) * 5deg)) rotateY(calc(var(--cmx) * -7deg)) rotateX(calc(var(--cmy) * 6deg)); }
+.tunnel-frame { position: absolute; width: 54cqw; height: 32cqw; left: -27cqw; top: -16cqw; border-radius: 20px; border: 1px solid rgba(var(--accent-rgb), .5);
+  box-shadow: 0 0 44px rgba(var(--accent-rgb), .1), inset 0 0 44px rgba(var(--accent-rgb), .07); opacity: 0;
+  animation: cine-tunnel calc(21s * var(--cine-t)) linear infinite; animation-delay: calc(var(--k) * -3s * var(--cine-t)); }
+.cine-pillar { width: clamp(12px, 2.1cqw, 26px); height: 13cqw; border-radius: 4px; background: linear-gradient(180deg, rgba(var(--accent-rgb), .62), rgba(var(--accent-rgb), .04));
+  box-shadow: 0 0 32px rgba(var(--accent-rgb), .3); animation: cine-bob calc(8s * var(--cine-t)) ease-in-out infinite alternate;
+  transform: translate3d(calc(var(--cmx) * var(--pm, 20) * 1px), calc(var(--cs) * var(--par, -60) * 1px * var(--cine-i)), var(--z, -200px)) rotateY(calc(var(--cs) * 40deg)); }
+.cine-pillar.a { left: -3%; top: 26%; --z: -240px; --par: -70; } .cine-pillar.b { left: 101%; top: 62%; --z: -110px; --par: 44; height: 9cqw; } .cine-pillar.c { left: 96%; top: 14%; --z: -480px; --par: -34; opacity: .7; }
+.cinema-on .experience-list article { position: relative; transition: background .5s; background: linear-gradient(90deg, transparent, rgba(5, 9, 20, .3) 30%, transparent); }
+.cinema-on .experience-list article:hover { background: linear-gradient(90deg, rgba(var(--accent-rgb), .09), rgba(5, 9, 20, .42) 38%, transparent 92%); }
+.cinema-on .experience-list article h3 { transition: transform .5s cubic-bezier(.2, .8, .2, 1); }
+.cinema-on .experience-list article:hover h3 { transform: translateX(5px); }
+.cinema-on .experience-list article > div:first-child i { animation: cine-node calc(3.4s * var(--cine-t)) ease-out infinite; }
+
+/* ───────── SKILLS — gyroscope ───────── */
+.cine-skills { --po: 78cqw; --gx0: 80cqw; --gy0: 22%; --gx1: 14cqw; --gy1: 70%; }
+.cine-gyro { --g: clamp(118px, 21cqw, 236px); left: 82%; top: 21%; width: 0; height: 0;
+  transform: translate3d(calc(var(--cmx) * -20px * var(--cine-i)), calc(var(--cmy) * -14px * var(--cine-i) + var(--cs) * -30px * var(--cine-i)), 40px) rotateX(calc(14deg + var(--cmy) * -12deg)) rotateY(calc(var(--cs) * 55deg + var(--cmx) * 16deg)) rotateZ(calc(var(--cs) * -28deg)); }
+.gyro-ring { position: absolute; left: calc(var(--d) / -2); top: calc(var(--d) / -2); width: var(--d); height: var(--d); border-radius: 50%; border: 1.5px solid rgba(var(--accent-rgb), .62);
+  box-shadow: 0 0 30px rgba(var(--accent-rgb), .16), inset 0 0 28px rgba(var(--accent-rgb), .1); }
+.gyro-ring::after { content: ""; position: absolute; left: 50%; top: -4.5px; width: 9px; height: 9px; margin-left: -4.5px; border-radius: 50%; background: #fff; box-shadow: 0 0 14px 3px rgba(var(--accent-rgb), .9); }
+.gyro-ring.g1 { --d: var(--g); animation: cine-gyro-y calc(15s * var(--cine-t)) linear infinite; }
+.gyro-ring.g2 { --d: calc(var(--g) * .76); border-color: rgba(167, 139, 250, .6); animation: cine-gyro-x calc(11s * var(--cine-t)) linear infinite; }
+.gyro-ring.g3 { --d: calc(var(--g) * .54); animation: cine-gyro-z calc(8s * var(--cine-t)) linear infinite reverse; }
+.gyro-core { position: absolute; left: calc(var(--g) * -.11); top: calc(var(--g) * -.11); width: calc(var(--g) * .22); height: calc(var(--g) * .22); border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff, rgba(var(--accent-rgb), .92) 32%, rgba(var(--accent-rgb), .22) 72%); box-shadow: 0 0 44px rgba(var(--accent-rgb), .75), 0 0 96px rgba(var(--accent-rgb), .35);
+  animation: cine-core calc(4.2s * var(--cine-t)) ease-in-out infinite alternate; }
+.cine-skills .cine-shard.s1 { left: 68%; top: 12%; --z: 110px; --par: -90; --pm: 34; } .cine-skills .cine-shard.s2 { left: 96%; top: 46%; --z: 60px; --par: 60; --pm: 28; width: 14px; height: 14px; }
+.cinema-on .capability-grid article > div i { position: relative; box-shadow: 0 0 14px rgba(var(--accent-rgb), .7); }
+.cinema-on .capability-grid article > div i::after { content: ""; position: absolute; right: -2px; top: -2px; width: 7px; height: 7px; border-radius: 50%; background: #fff; box-shadow: 0 0 12px 3px rgba(var(--accent-rgb), .9); }
+
+/* ───────── PROJECTS — floating display panels ───────── */
+.cine-projects { --po: 50cqw; --gx0: 50cqw; --gy0: 26%; --gx1: 84cqw; --gy1: 82%; }
+.cine-panel { --w: 22cqw; width: var(--w); height: calc(var(--w) * .64); left: calc(var(--cx) - var(--w) / 2); top: calc(var(--cy) - var(--w) * .32); border-radius: 12px; border: 1px solid rgba(var(--accent-rgb), .32);
+  background: linear-gradient(150deg, rgba(var(--accent-rgb), .13), rgba(255, 255, 255, .018)); box-shadow: 0 40px 90px rgba(0, 0, 0, .42), inset 0 1px 0 rgba(255, 255, 255, .09);
+  transform: translate3d(calc(var(--cmx) * var(--pm, 20) * 1px), calc(var(--cs) * var(--par, -60) * 1px * var(--cine-i)), var(--z, -100px)) rotateY(var(--ry, 0deg)) rotateX(var(--rx, 0deg));
+  animation: cine-bob calc(9s * var(--cine-t)) ease-in-out infinite alternate; animation-delay: calc(var(--d, 0) * -1s); }
+.cine-panel::before { content: ""; position: absolute; left: 12px; top: 11px; width: 42px; height: 7px;
+  background: radial-gradient(circle at 3.5px 3.5px, rgba(255, 255, 255, .42) 3px, transparent 3.6px) 0 0 / 14px 7px repeat-x; }
+.cine-panel::after { content: ""; position: absolute; inset: 32px 15px 15px; border-radius: 6px;
+  background: linear-gradient(rgba(255, 255, 255, .16), rgba(255, 255, 255, .16)) 0 0 / 44% 7px no-repeat, linear-gradient(135deg, rgba(var(--accent-rgb), .42), rgba(var(--accent-rgb), .08)) 0 20px / 100% 48% no-repeat,
+    linear-gradient(rgba(255, 255, 255, .1), rgba(255, 255, 255, .1)) 0 calc(20px + 48% + 12px) / 72% 5px no-repeat, linear-gradient(rgba(255, 255, 255, .07), rgba(255, 255, 255, .07)) 0 calc(20px + 48% + 24px) / 54% 5px no-repeat; }
+.cine-panel.p1 { --cx: -3%; --cy: 17%; --z: -70px; --ry: 44deg; --rx: 3deg; --par: -72; --pm: 30; --d: 0; }
+.cine-panel.p2 { --cx: 103%; --cy: 13%; --z: -150px; --ry: -46deg; --rx: 2deg; --par: 40; --pm: 24; --d: 3; }
+.cine-panel.p3 { --cx: -1%; --cy: 62%; --z: -330px; --ry: 50deg; --par: -30; --pm: 16; --d: 5; --w: 17cqw; opacity: .6; }
+.cine-panel.p4 { --cx: 101%; --cy: 57%; --z: -280px; --ry: -52deg; --par: 46; --pm: 18; --d: 2; --w: 18cqw; opacity: .6; }
+.cine-shard { width: 22px; height: 22px; border: 1px solid rgba(var(--accent-rgb), .6); background: linear-gradient(135deg, rgba(var(--accent-rgb), .3), rgba(255, 255, 255, .06)); box-shadow: 0 0 22px rgba(var(--accent-rgb), .3);
+  animation: cine-tumble calc(14s * var(--cine-t)) linear infinite; transform: translate3d(calc(var(--cmx) * var(--pm, 30) * 1px), calc(var(--cs) * var(--par, -90) * 1px * var(--cine-i)), var(--z, 0px)); }
+.cine-shard.s1 { left: 76%; top: 9%; --z: 90px; --par: -110; --pm: 40; } .cine-shard.s2 { left: 97%; top: 40%; --z: 40px; --par: 70; --pm: 30; width: 14px; height: 14px; } .cine-shard.s3 { left: 2%; top: 38%; --z: 130px; --par: -60; --pm: 36; width: 16px; height: 16px; animation-direction: reverse; }
+
+/* ───────── CONTACT — signal beacon ───────── */
+.cine-contact { --po: 50cqw; --gx0: 50cqw; --gy0: 62%; --gx1: 88cqw; --gy1: 20%; }
+.cine-floor.beacon-floor { left: 50%; right: auto; bottom: auto; top: 88%; width: 92cqw; height: 92cqw; margin: -46cqw 0 0 -46cqw; overflow: visible; transform-origin: 50% 50%; transform: rotateX(72deg);
+  -webkit-mask-image: radial-gradient(closest-side, #000 50%, transparent 100%); mask-image: radial-gradient(closest-side, #000 50%, transparent 100%); }
+.beacon-pulse { position: absolute; inset: 0; border-radius: 50%; border: 1.5px solid rgba(var(--accent-rgb), .75); box-shadow: 0 0 26px rgba(var(--accent-rgb), .2), inset 0 0 26px rgba(var(--accent-rgb), .12);
+  opacity: 0; animation: cine-pulse calc(7.2s * var(--cine-t)) cubic-bezier(.2, .6, .3, 1) infinite; animation-delay: calc(var(--k) * -1.8s * var(--cine-t)); }
+.cine-beacon { left: 50%; top: 88%; width: 0; height: 0; transform: translate3d(calc(var(--cmx) * -14px * var(--cine-i)), calc(var(--cmy) * -8px * var(--cine-i)), 0) rotateY(calc(var(--cmx) * 9deg)); }
+.beacon-beam { position: absolute; left: -64px; bottom: 0; width: 128px; height: 52cqw; opacity: calc(.4 + var(--cp) * .5);
+  background: linear-gradient(to top, rgba(var(--accent-rgb), .55), rgba(var(--accent-rgb), .14) 42%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 34%, #000 66%, transparent); mask-image: linear-gradient(90deg, transparent, #000 34%, #000 66%, transparent); }
+.beacon-orb { position: absolute; left: -22px; top: -22px; width: 44px; height: 44px; border-radius: 50%; animation: cine-core calc(4s * var(--cine-t)) ease-in-out infinite alternate;
+  background: radial-gradient(circle at 35% 30%, #fff, rgba(var(--accent-rgb), .95) 34%, rgba(var(--accent-rgb), .2) 74%); box-shadow: 0 0 46px rgba(var(--accent-rgb), .8), 0 0 110px rgba(var(--accent-rgb), .38); }
+.beacon-orbit { --o: 17cqw; position: absolute; left: calc(var(--o) / -2); top: calc(var(--o) / -2); width: var(--o); height: var(--o); border-radius: 50%; border: 1px solid rgba(var(--accent-rgb), .34); transform: rotateX(72deg); }
+.beacon-orbit > div { position: absolute; inset: 0; animation: cine-orbit-flat calc(9s * var(--cine-t)) linear infinite; }
+
+/* ───────── Card depth (pointer tilt + glare) and level meters ───────── */
+.cinema-on .work-grid article, .cinema-on .capability-grid article {
+  position: relative; transform-style: preserve-3d; transform: perspective(1100px) rotateX(calc(var(--ty, 0) * 1deg)) rotateY(calc(var(--tx, 0) * 1deg));
+  transition: transform .55s cubic-bezier(.2, .8, .2, 1), box-shadow .45s, border-color .3s;
+}
+.cinema-on .work-grid article { background: linear-gradient(145deg, rgba(var(--accent-rgb), .06), rgba(255, 255, 255, .018)), rgba(6, 10, 20, .68); }
+.cinema-on .capability-grid article { background: linear-gradient(145deg, rgba(var(--accent-rgb), .04), rgba(255, 255, 255, .02)), rgba(6, 10, 20, .6); }
+.cinema-on .work-grid article[data-tilting], .cinema-on .capability-grid article[data-tilting] { transition: transform .12s linear, box-shadow .45s, border-color .3s; }
+.cinema-on .work-grid article:hover, .cinema-on .capability-grid article:hover { border-color: rgba(var(--accent-rgb), .42); box-shadow: 0 34px 70px rgba(0, 0, 0, .45), 0 0 60px rgba(var(--accent-rgb), .12); }
+.cinema-on .work-grid article::after, .cinema-on .capability-grid article::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; transition: opacity .35s; transform: translateZ(1px);
+  background: radial-gradient(360px circle at calc(var(--gx, 50) * 1%) calc(var(--gy, 0) * 1%), rgba(255, 255, 255, .15), transparent 46%);
+}
+.cinema-on .work-grid article[data-tilting]::after, .cinema-on .capability-grid article[data-tilting]::after { opacity: 1; }
+.cinema-on .work-grid article :is(> span, h3, .technology-list, .project-links), .cinema-on .capability-grid article h3 { transition: transform .5s cubic-bezier(.2, .8, .2, 1); }
+.cinema-on .work-grid article[data-tilting] > span { transform: translateZ(44px); }
+.cinema-on .work-grid article[data-tilting] h3, .cinema-on .capability-grid article[data-tilting] h3 { transform: translateZ(30px); }
+.cinema-on .work-grid article[data-tilting] .technology-list { transform: translateZ(18px); }
+.cinema-on .work-grid article[data-tilting] .project-links { transform: translateZ(24px); }
+.cinema-on .about-headshot { transform: perspective(900px) rotateX(calc(var(--ty, 0) * 1deg)) rotateY(calc(var(--tx, 0) * 1deg)); transition: transform .55s cubic-bezier(.2, .8, .2, 1), box-shadow .4s; box-shadow: 0 30px 70px rgba(0, 0, 0, .4), 0 0 0 1px rgba(var(--accent-rgb), .2), 0 0 70px rgba(var(--accent-rgb), .12); }
+.cinema-on .about-headshot[data-tilting] { transition: transform .12s linear, box-shadow .4s; }
+
+/* ───────── Reveal choreography (only after the engine is ready, never for still/reduced motion) ───────── */
+.cinema-on[data-cinema-ready] .portfolio-section:not([data-seen]) :is(.section-heading, .about-layout > *, .experience-list article, .capability-grid article, .work-grid article, .section-detail-link, .contact-section > :not(.cine-scene)) { opacity: 0; }
+.cinema-on[data-cinema-ready] .portfolio-section:not([data-seen]) .capability-grid article > div i { width: 0 !important; }
+.cinema-on[data-cinema-ready] .portfolio-section[data-seen] .section-heading { animation: cine-heading 1.1s cubic-bezier(.16, 1, .3, 1) backwards; }
+.cinema-on[data-cinema-ready] .portfolio-section[data-seen] :is(.about-layout > *, .experience-list article, .capability-grid article, .work-grid article, .section-detail-link, .contact-section > :not(.cine-scene)) {
+  animation: cine-rise 1.05s cubic-bezier(.16, 1, .3, 1) backwards; animation-delay: calc(var(--i, 0) * 95ms + 140ms);
+}
+.cinema-on[data-cinema-ready] .portfolio-section[data-seen] .capability-grid article > div i { transition: width 1.3s cubic-bezier(.16, 1, .3, 1) calc(var(--i, 0) * 95ms + 420ms); }
+.cinema-on .portfolio-section :is(.experience-list, .capability-grid, .work-grid, .about-layout, .contact-section) > :nth-child(1) { --i: 0; }
+.cinema-on .portfolio-section :is(.experience-list, .capability-grid, .work-grid, .about-layout, .contact-section) > :nth-child(2) { --i: 1; }
+.cinema-on .portfolio-section :is(.experience-list, .capability-grid, .work-grid, .contact-section) > :nth-child(3) { --i: 2; }
+.cinema-on .portfolio-section :is(.experience-list, .capability-grid, .work-grid, .contact-section) > :nth-child(4) { --i: 3; }
+.cinema-on .portfolio-section :is(.experience-list, .capability-grid, .work-grid) > :nth-child(5) { --i: 4; }
+.cinema-on .portfolio-section :is(.experience-list, .capability-grid, .work-grid) > :nth-child(n + 6) { --i: 5; }
+
+/* ───────── Template art direction ───────── */
+/* Architectural Grid — angular, technical: cube instead of gem, square frames, crosshair markers. */
+[data-cinema-template="architectural-grid"] .cine-gem { display: none; }
+[data-cinema-template="architectural-grid"] .cine-cube, [data-cinema-template="architectural-grid"] .cine-cross { display: block; }
+[data-cinema-template="architectural-grid"] :is(.cine-ring, .cine-plate, .cine-panel, .tunnel-frame, .gyro-ring, .beacon-pulse, .beacon-orbit, .cine-pillar, .beacon-orb, .gyro-core) { border-radius: 0; }
+[data-cinema-template="architectural-grid"] .cine-ring::after, [data-cinema-template="architectural-grid"] .gyro-ring::after { border-radius: 0; }
+[data-cinema-template="architectural-grid"] .floor-grid { background-size: 40px 40px; }
+[data-cinema-template="architectural-grid"] .tunnel-frame { border-color: rgba(var(--accent-rgb), .6); }
+/* Editorial Depth — restrained: fewer objects, softer light, generous reading space. */
+[data-cinema-template="editorial-depth"] .cine-scene { opacity: .8; }
+[data-cinema-template="editorial-depth"] :is(.cine-ring.r2, .cine-ring.r3, .cine-pillar, .cine-shard, .gyro-ring.g3, .cine-panel.p3, .cine-panel.p4, .tunnel-frame:nth-child(n + 5), .cine-plate.p3) { display: none; }
+[data-cinema-template="editorial-depth"] .cine-glow { opacity: .8; }
+
+/* ───────── Responsive (container-based, so the Studio's narrow canvas behaves like a phone) ───────── */
+@container (max-width: 760px) {
+  .cine-gem, .cine-cube { --s: clamp(54px, 13cqw, 90px); left: 88%; top: 15%; }
+  .about-section:not(.has-headshot) .cine-gem, .about-section:not(.has-headshot) .cine-cube { left: 86%; top: 12%; }
+  .cine-gem .cine-ring.r3, .cine-plate.p2, .cine-plate.p3, .cine-pillar, .cine-pillar.b, .cine-pillar.c, .cine-shard.s2, .cine-shard.s3, .cine-panel.p3, .cine-panel.p4, .tunnel-frame:nth-child(n + 5), .cine-cross { display: none; }
+  .cine-gyro { --g: clamp(96px, 26cqw, 150px); left: 84%; top: 11%; }
+  .cine-panel { width: 34cqw; height: 22cqw; } .cine-panel.p1 { left: -14%; top: 4%; } .cine-panel.p2 { left: 74%; top: 2%; }
+  .cine-glow { opacity: .8; }
+  .tunnel-frame { width: 82cqw; height: 46cqw; left: -41cqw; top: -23cqw; }
+  .cine-tunnel { left: 56%; opacity: .6; }
+}
+
+/* ───────── Motion safety ───────── */
+.cinema-on[data-motion="still"] .cine-scene, .cinema-on[data-motion="still"] .cine-scene *, .cinema-on[data-motion="still"] .cine-scene *::before, .cinema-on[data-motion="still"] .cine-scene *::after,
+.cinema-on[data-motion="still"] .portfolio-section::before { animation: none !important; }
+.cinema-on[data-motion="still"] .tunnel-frame { opacity: calc(.5 - var(--k) * .06); transform: translateZ(calc(var(--k) * -190px)); }
+@media (prefers-reduced-motion: reduce) {
+  .cinema-on .cine-scene, .cinema-on .cine-scene *, .cinema-on .cine-scene *::before, .cinema-on .cine-scene *::after, .cinema-on .portfolio-section::before, .cinema-on .experience-list article > div:first-child i { animation: none !important; }
+  .cinema-on .tunnel-frame { opacity: calc(.5 - var(--k) * .06); transform: translateZ(calc(var(--k) * -190px)); }
+  .cinema-on .work-grid article, .cinema-on .capability-grid article, .cinema-on .about-headshot { transition: none; }
+}
+
+/* ───────── Keyframes ───────── */
+@keyframes cine-spin { from { transform: rotateY(25deg); } to { transform: rotateY(385deg); } }
+@keyframes cine-orbit { from { transform: rotateX(var(--tilt)) rotateZ(0deg); } to { transform: rotateX(var(--tilt)) rotateZ(360deg); } }
+@keyframes cine-orbit-flat { to { transform: rotate(360deg); } }
+@keyframes cine-bob { from { translate: 0 -9px; } to { translate: 0 11px; } }
+@keyframes cine-tumble { from { rotate: 1 1 .4 0deg; } to { rotate: 1 1 .4 360deg; } }
+@keyframes cine-floor { to { transform: translateY(64px); } }
+@keyframes cine-tunnel { 0% { transform: translateZ(-1330px); opacity: 0; } 14% { opacity: .85; } 78% { opacity: .42; } 100% { transform: translateZ(290px); opacity: 0; } }
+@keyframes cine-gyro-y { to { transform: rotateY(360deg); } }
+@keyframes cine-gyro-x { to { transform: rotateX(360deg); } }
+@keyframes cine-gyro-z { from { transform: rotateZ(50deg) rotateY(0deg); } to { transform: rotateZ(50deg) rotateY(360deg); } }
+@keyframes cine-core { from { transform: scale(.92); filter: brightness(.9); } to { transform: scale(1.1); filter: brightness(1.2); } }
+@keyframes cine-pulse { 0% { transform: scale(.05); opacity: .95; } 100% { transform: scale(1); opacity: 0; } }
+@keyframes cine-node { 0% { box-shadow: 0 0 0 0 rgba(var(--accent-rgb), .55), 0 0 12px rgba(var(--accent-rgb), .7); } 70%, 100% { box-shadow: 0 0 0 11px rgba(var(--accent-rgb), 0), 0 0 12px rgba(var(--accent-rgb), .7); } }
+@keyframes cine-rise { from { opacity: 0; transform: translate3d(0, 42px, -110px) rotateX(13deg); } }
+@keyframes cine-heading { from { opacity: 0; transform: translate3d(0, 28px, -70px); filter: blur(9px); } }
+@keyframes cine-sweep { 0% { opacity: 0; background-position: -45% 0; } 15% { opacity: 1; } 100% { opacity: 0; background-position: 145% 0; } }

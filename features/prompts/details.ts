@@ -93,9 +93,9 @@ export const promptDetails: Record<string, PromptDetail> = {
     ready: true,
     publishedAt: "2026-11-01",
     promptCount: 83,
-    title: "83 ChatGPT Prompts for LinkedIn Personal Branding, Carousels & B2B Growth",
+    title: "83 ChatGPT Prompts for LinkedIn Personal Branding, Carousels & B2B Growth (2026)",
     description:
-      "Use 83 copy-paste ChatGPT prompts for LinkedIn personal branding: 220c Headlines, 140-character mobile fold hooks, founder teardowns, 7-slide PDF carousels, founder memo cards, and B2B social selling.",
+      "83 copy-paste ChatGPT prompts for LinkedIn personal branding, B2B thought leadership, 140c mobile fold hooks, founder teardowns, 7-slide PDF carousels, founder memo cards, and social selling.",
     overview:
       "Position your LinkedIn Headline and Featured shelf, craft 140-character mobile fold hooks, storyboard 7-slide PDF carousels and founder memo cards, and turn comments into warm B2B DMs.",
     cover: {

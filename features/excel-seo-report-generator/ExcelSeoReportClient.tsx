@@ -411,13 +411,13 @@ export default function ExcelSeoReportClient() {
         } description="Analyzing data and compiling real-time report..." />
 
       {/* TOP INPUT DASHBOARD */}
-      <div className="rounded-3xl border border-slate-800 bg-slate-900/90 p-6 shadow-2xl sm:p-8">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-5">
+      <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/90 p-6 shadow-2xl sm:p-8">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-5">
           <div>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/15 px-3 py-1 text-xs font-bold uppercase tracking-wider text-blue-300">
               <FileSpreadsheet className="h-3.5 w-3.5" /> Excel SEO Tool · Looker Studio · Website Analysis Report PDF
             </span>
-            <h2 className="mt-2 text-xl font-black text-white sm:text-2xl">
+            <h2 className="mt-2 text-xl font-black text-slate-900 dark:text-white sm:text-2xl">
               Generate Excel SEO Formulas, Looker Fields &amp; Client Audit Reports
             </h2>
           </div>
@@ -428,7 +428,7 @@ export default function ExcelSeoReportClient() {
                 key={p.id}
                 type="button"
                 onClick={() => applyPreset(p)}
-                className="rounded-xl border border-slate-700 bg-slate-800/80 px-3 py-1.5 text-xs font-semibold text-slate-200 transition hover:border-blue-400 hover:bg-slate-800"
+                className="rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-800/80 px-3 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 transition hover:border-blue-400 hover:bg-slate-800"
               >
                 {p.label}
               </button>
@@ -438,7 +438,7 @@ export default function ExcelSeoReportClient() {
 
         <div className="mt-6 grid gap-5 md:grid-cols-3">
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
               1. Client / Website Domain
             </label>
             <input
@@ -446,12 +446,12 @@ export default function ExcelSeoReportClient() {
               value={clientOrDomain}
               onChange={(e) => setClientOrDomain(e.target.value)}
               placeholder="e.g., doitwithai.tools"
-              className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+              className="mt-2 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3.5 py-2.5 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
               2. Reporting Window / Audit Scope
             </label>
             <input
@@ -459,12 +459,12 @@ export default function ExcelSeoReportClient() {
               value={reportingPeriod}
               onChange={(e) => setReportingPeriod(e.target.value)}
               placeholder="e.g., Last 90 Days (GSC + Site Audit)"
-              className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+              className="mt-2 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3.5 py-2.5 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
               3. Primary 90-Day Growth Goal
             </label>
             <input
@@ -472,50 +472,50 @@ export default function ExcelSeoReportClient() {
               value={priorityGoal}
               onChange={(e) => setPriorityGoal(e.target.value)}
               placeholder="e.g., Lift page-1 CTR from 2.5% to 5.2%"
-              className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+              className="mt-2 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3.5 py-2.5 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
             />
           </div>
         </div>
 
         <div className="mt-5 grid gap-5 md:grid-cols-3">
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
               4. Search Console Performance Summary
             </label>
             <textarea
               rows={3}
               value={gscSummaryStats}
               onChange={(e) => setGscSummaryStats(e.target.value)}
-              className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 p-3 text-xs leading-5 text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+              className="mt-2 w-full rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 p-3 text-xs leading-5 text-slate-900 dark:text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
               5. Indexing &amp; Technical Snapshot
             </label>
             <textarea
               rows={3}
               value={indexingSnapshot}
               onChange={(e) => setIndexingSnapshot(e.target.value)}
-              className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 p-3 text-xs leading-5 text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+              className="mt-2 w-full rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 p-3 text-xs leading-5 text-slate-900 dark:text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
               6. Top Striking-Distance Keywords (Pos 4–20)
             </label>
             <textarea
               rows={3}
               value={topStrikingKeywords}
               onChange={(e) => setTopStrikingKeywords(e.target.value)}
-              className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 p-3 text-xs leading-5 text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+              className="mt-2 w-full rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 p-3 text-xs leading-5 text-slate-900 dark:text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
             />
           </div>
         </div>
 
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-slate-800 pt-5">
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-slate-200 dark:border-slate-800 pt-5">
           <div className="flex flex-wrap gap-3">
             <button
               type="button"
@@ -553,14 +553,14 @@ export default function ExcelSeoReportClient() {
             <button
               type="button"
               onClick={exportMarkdown}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800 px-3.5 py-2 text-xs font-bold text-slate-200 hover:bg-slate-700"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-800 px-3.5 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-700"
             >
               <Download className="h-3.5 w-3.5" /> Export Report .MD
             </button>
             <button
               type="button"
               onClick={exportCsv}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800 px-3.5 py-2 text-xs font-bold text-slate-200 hover:bg-slate-700"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-800 px-3.5 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-700"
             >
               <Download className="h-3.5 w-3.5" /> Export Formulas .CSV
             </button>
@@ -571,50 +571,50 @@ export default function ExcelSeoReportClient() {
       {/* BOTTOM RESULTS DASHBOARD */}
       <div ref={resultsRef} className="space-y-6">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-2xl border border-emerald-500/30 bg-slate-900/90 p-5">
+          <div className="rounded-2xl border border-emerald-500/30 bg-slate-50 dark:bg-slate-900/90 p-5">
             <p className="text-xs font-bold uppercase tracking-wider text-emerald-300">
               Report Readiness
             </p>
-            <p className="mt-2 text-3xl font-black text-white">
+            <p className="mt-2 text-3xl font-black text-slate-900 dark:text-white">
               {pack.reportHealthScore}/100
             </p>
-            <p className="mt-1 text-xs text-slate-400">
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
               Executive PDF &amp; CSV ready
             </p>
           </div>
 
-          <div className="rounded-2xl border border-sky-500/30 bg-slate-900/90 p-5">
+          <div className="rounded-2xl border border-sky-500/30 bg-slate-50 dark:bg-slate-900/90 p-5">
             <p className="text-xs font-bold uppercase tracking-wider text-sky-300">
               Excel &amp; Looker Formulas
             </p>
-            <p className="mt-2 text-3xl font-black text-white">
+            <p className="mt-2 text-3xl font-black text-slate-900 dark:text-white">
               {pack.formulaCount} Packs
             </p>
-            <p className="mt-1 text-xs text-slate-400">
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
               Intent, CTR, KGR &amp; Rank Buckets
             </p>
           </div>
 
-          <div className="rounded-2xl border border-amber-500/30 bg-slate-900/90 p-5">
+          <div className="rounded-2xl border border-amber-500/30 bg-slate-50 dark:bg-slate-900/90 p-5">
             <p className="text-xs font-bold uppercase tracking-wider text-amber-300">
               Indexation Health
             </p>
-            <p className="mt-2 text-3xl font-black text-white">
+            <p className="mt-2 text-3xl font-black text-slate-900 dark:text-white">
               {pack.indexationHealthScore}/100
             </p>
-            <p className="mt-1 text-xs text-slate-400">
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
               Coverage &amp; canonical hygiene
             </p>
           </div>
 
-          <div className="rounded-2xl border border-purple-500/30 bg-slate-900/90 p-5">
+          <div className="rounded-2xl border border-purple-500/30 bg-slate-50 dark:bg-slate-900/90 p-5">
             <p className="text-xs font-bold uppercase tracking-wider text-purple-300">
               CTR Expansion Score
             </p>
-            <p className="mt-2 text-3xl font-black text-white">
+            <p className="mt-2 text-3xl font-black text-slate-900 dark:text-white">
               {pack.ctrOpportunityScore}/100
             </p>
-            <p className="mt-1 text-xs text-slate-400">
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
               Pos 4–15 striking-distance upside
             </p>
           </div>
@@ -637,15 +637,15 @@ export default function ExcelSeoReportClient() {
                   </span>
                 </div>
 
-                <h3 className="mt-3 text-lg font-black text-white">
+                <h3 className="mt-3 text-lg font-black text-slate-900 dark:text-white">
                   {card.title}
                 </h3>
 
-                <pre className="mt-3 whitespace-pre-wrap rounded-2xl bg-slate-950/85 p-4 font-mono text-xs leading-6 text-slate-200">
+                <pre className="mt-3 whitespace-pre-wrap rounded-2xl bg-white dark:bg-slate-950/85 p-4 font-mono text-xs leading-6 text-slate-800 dark:text-slate-200">
                   {card.bodyText}
                 </pre>
 
-                <ul className="mt-4 space-y-2 text-xs text-slate-200">
+                <ul className="mt-4 space-y-2 text-xs text-slate-800 dark:text-slate-200">
                   {card.actionItems.map((item, idx) => (
                     <li key={idx} className="flex items-start gap-2">
                       <SearchCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-blue-300" />
@@ -664,7 +664,7 @@ export default function ExcelSeoReportClient() {
                       `${card.title} (${card.scoreLabel})\n${card.bodyText}`,
                     )
                   }
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-white/10 px-3.5 py-2 text-xs font-bold text-white hover:bg-white/20"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-white/10 px-3.5 py-2 text-xs font-bold text-slate-900 dark:text-white hover:bg-white/20"
                 >
                   <Copy className="h-3.5 w-3.5" />
                   {copiedId === card.id ? "Copied!" : "Copy Formulas / Report"}

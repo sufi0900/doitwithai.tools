@@ -1,15 +1,15 @@
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import type { Metadata } from "next";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
 import Link from "next/link";
-import { FileSpreadsheet, RefreshCw, Sparkles, TrendingDown } from "lucide-react";
+import {
+  FileSpreadsheet,
+  RefreshCw,
+  Sparkles,
+  TrendingDown,
+} from "lucide-react";
 import ContentDecayRefreshAnalyzerClient from "@/features/content-decay-refresh-analyzer/ContentDecayRefreshAnalyzerClient";
 import ToolFaq from "@/features/tool-ui/ToolFaq";
 import ToolResources from "@/features/tool-catalog/ToolResources";
-import {
-  ToolHeroBackground,
-  toolHeroHeading,
-  toolHeroSurface,
-} from "@/features/tool-ui/ToolHero";
 
 const pageUrl = "https://doitwithai.tools/tools/content-decay-refresh-analyzer";
 const title =
@@ -109,76 +109,18 @@ export default function ContentDecayRefreshAnalyzerPage() {
         }}
       />
 
-      <header
-        className={`relative overflow-hidden ${toolHeroSurface} text-white`}
+      <ToolLandingHero
+        slug="content-decay-refresh-analyzer"
+        title="Content Decay & GSC Refresh Priority Analyzer"
+        description="Diagnose why pages lost organic traffic. Separate true ranking decay from AI Overview CTR compression and seasonality, then export a prioritized content refresh queue."
+        categoryLabel="On-page SEO"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
       >
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">Tools</Link>
-            <span>/</span>
-            <span aria-current="page">Content decay analyzer</span>
-          </nav>
-
-          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                On-page SEO · Search Console Content Refresh
-              </p>
-              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                Content Decay & GSC{" "}
-                <span className={toolHeroHeading}>
-                  Refresh Priority Analyzer
-                </span>
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-                Diagnose why pages lost organic traffic. Separate true ranking
-                decay from AI Overview CTR compression and seasonality, then
-                export a prioritized content refresh queue.
-              </p>
-              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  4-category decay diagnosis
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  0–100 priority scoring
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  CSV & DOCX refresh briefs
-                </span>
-              </div>
-              <PortableToolHeroBar />
-            </div>
-
-            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
-                3 Root Causes of Traffic Drops
-              </p>
-              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
-                <li>
-                  <strong className="text-rose-300">1. Ranking Decay:</strong>{" "}
-                  Position dropped + clicks fell → Refresh content depth & E-E-A-T.
-                </li>
-                <li>
-                  <strong className="text-amber-300">2. CTR Compression:</strong>{" "}
-                  Rank held + clicks fell → Optimize Title & Snippet passage.
-                </li>
-                <li>
-                  <strong className="text-sky-300">3. Demand Shift:</strong>{" "}
-                  Impressions fell + rank held → Expand to adjacent queries.
-                </li>
-              </ul>
-            </div>
-          </div>
+        <div className="p-4 sm:p-6">
+          <ContentDecayRefreshAnalyzerClient />
         </div>
-      </header>
-
-      <ContentDecayRefreshAnalyzerClient />
+      </ToolLandingHero>
 
       <section
         className={`${section} border-t border-slate-200 dark:border-slate-800`}

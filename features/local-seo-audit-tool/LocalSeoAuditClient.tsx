@@ -456,13 +456,13 @@ export default function LocalSeoAuditClient() {
         } description="Analyzing data and compiling real-time report..." />
 
       {/* TOP INPUT DASHBOARD */}
-      <div className="rounded-3xl border border-slate-800 bg-slate-900/90 p-6 shadow-2xl sm:p-8">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-5">
+      <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/90 p-6 shadow-2xl sm:p-8">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-5">
           <div>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/15 px-3 py-1 text-xs font-bold uppercase tracking-wider text-blue-300">
               <MapPin className="h-3.5 w-3.5" /> Free Local SEO Audit · Near Me Keywords · SMB Map Pack
             </span>
-            <h2 className="mt-2 text-xl font-black text-white sm:text-2xl">
+            <h2 className="mt-2 text-xl font-black text-slate-900 dark:text-white sm:text-2xl">
               Configure Your SMB Local SEO &amp; &ldquo;Near Me&rdquo; Audit
             </h2>
           </div>
@@ -473,7 +473,7 @@ export default function LocalSeoAuditClient() {
                 key={p.id}
                 type="button"
                 onClick={() => applyPreset(p)}
-                className="rounded-xl border border-slate-700 bg-slate-800/80 px-3 py-1.5 text-xs font-semibold text-slate-200 transition hover:border-blue-400 hover:bg-slate-800"
+                className="rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-800/80 px-3 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 transition hover:border-blue-400 hover:bg-slate-800"
               >
                 {p.label}
               </button>
@@ -483,7 +483,7 @@ export default function LocalSeoAuditClient() {
 
         <div className="mt-6 grid gap-5 md:grid-cols-3">
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
               1. Business / Practice / Store Name
             </label>
             <input
@@ -491,12 +491,12 @@ export default function LocalSeoAuditClient() {
               value={businessName}
               onChange={(e) => setBusinessName(e.target.value)}
               placeholder="e.g., Apex Hydro Plumbing & Drain"
-              className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+              className="mt-2 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3.5 py-2.5 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
               2. Primary Service or Product Category
             </label>
             <input
@@ -504,12 +504,12 @@ export default function LocalSeoAuditClient() {
               value={primaryService}
               onChange={(e) => setPrimaryService(e.target.value)}
               placeholder="e.g., Emergency Plumber & Water Heater Repair"
-              className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+              className="mt-2 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3.5 py-2.5 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
               3. Target City, Neighborhoods &amp; State
             </label>
             <input
@@ -517,50 +517,50 @@ export default function LocalSeoAuditClient() {
               value={targetCityAreas}
               onChange={(e) => setTargetCityAreas(e.target.value)}
               placeholder="e.g., Austin, Round Rock & Cedar Park, TX"
-              className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+              className="mt-2 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3.5 py-2.5 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
             />
           </div>
         </div>
 
         <div className="mt-5 grid gap-5 md:grid-cols-3">
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
               4. NAP String (Phone, Street, ZIP &amp; URL)
             </label>
             <textarea
               rows={3}
               value={napDetails}
               onChange={(e) => setNapDetails(e.target.value)}
-              className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 p-3 text-xs leading-5 text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+              className="mt-2 w-full rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 p-3 text-xs leading-5 text-slate-900 dark:text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
               5. Google Business Profile (GBP) Signals
             </label>
             <textarea
               rows={3}
               value={gbpMetrics}
               onChange={(e) => setGbpMetrics(e.target.value)}
-              className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 p-3 text-xs leading-5 text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+              className="mt-2 w-full rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 p-3 text-xs leading-5 text-slate-900 dark:text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
               6. Current Landing Page Title, H1 &amp; Schema
             </label>
             <textarea
               rows={3}
               value={currentPageSignals}
               onChange={(e) => setCurrentPageSignals(e.target.value)}
-              className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 p-3 text-xs leading-5 text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+              className="mt-2 w-full rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 p-3 text-xs leading-5 text-slate-900 dark:text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
             />
           </div>
         </div>
 
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-slate-800 pt-5">
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-slate-200 dark:border-slate-800 pt-5">
           <div className="flex flex-wrap gap-3">
             <button
               type="button"
@@ -591,14 +591,14 @@ export default function LocalSeoAuditClient() {
             <button
               type="button"
               onClick={exportMarkdown}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800 px-3.5 py-2 text-xs font-bold text-slate-200 hover:bg-slate-700"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-800 px-3.5 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-700"
             >
               <Download className="h-3.5 w-3.5" /> Export .MD
             </button>
             <button
               type="button"
               onClick={exportCsv}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800 px-3.5 py-2 text-xs font-bold text-slate-200 hover:bg-slate-700"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-800 px-3.5 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-700"
             >
               <Download className="h-3.5 w-3.5" /> Export .CSV
             </button>
@@ -609,62 +609,62 @@ export default function LocalSeoAuditClient() {
       {/* BOTTOM RESULTS DASHBOARD */}
       <div ref={resultsRef} className="space-y-6">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-2xl border border-emerald-500/30 bg-slate-900/90 p-5">
+          <div className="rounded-2xl border border-emerald-500/30 bg-slate-50 dark:bg-slate-900/90 p-5">
             <p className="text-xs font-bold uppercase tracking-wider text-emerald-300">
               Overall Local SEO Score
             </p>
-            <p className="mt-2 text-3xl font-black text-white">
+            <p className="mt-2 text-3xl font-black text-slate-900 dark:text-white">
               {pack.overallLocalScore}/100
             </p>
-            <p className="mt-1 text-xs text-slate-400">
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
               Composite SMB &amp; Map Pack readiness
             </p>
           </div>
 
-          <div className="rounded-2xl border border-sky-500/30 bg-slate-900/90 p-5">
+          <div className="rounded-2xl border border-sky-500/30 bg-slate-50 dark:bg-slate-900/90 p-5">
             <p className="text-xs font-bold uppercase tracking-wider text-sky-300">
               GBP &amp; 3-Pack Readiness
             </p>
-            <p className="mt-2 text-3xl font-black text-white">
+            <p className="mt-2 text-3xl font-black text-slate-900 dark:text-white">
               {pack.gbpMapPackScore}/100
             </p>
-            <p className="mt-1 text-xs text-slate-400">
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
               Categories, reviews &amp; photo velocity
             </p>
           </div>
 
-          <div className="rounded-2xl border border-amber-500/30 bg-slate-900/90 p-5">
+          <div className="rounded-2xl border border-amber-500/30 bg-slate-50 dark:bg-slate-900/90 p-5">
             <p className="text-xs font-bold uppercase tracking-wider text-amber-300">
               &ldquo;Near Me&rdquo; &amp; On-Page
             </p>
-            <p className="mt-2 text-3xl font-black text-white">
+            <p className="mt-2 text-3xl font-black text-slate-900 dark:text-white">
               {pack.nearMeCoverageScore}/100
             </p>
-            <p className="mt-1 text-xs text-slate-400">
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
               City H1, landmarks &amp; proximity proof
             </p>
           </div>
 
-          <div className="rounded-2xl border border-purple-500/30 bg-slate-900/90 p-5">
+          <div className="rounded-2xl border border-purple-500/30 bg-slate-50 dark:bg-slate-900/90 p-5">
             <p className="text-xs font-bold uppercase tracking-wider text-purple-300">
               NAP &amp; Citation Consistency
             </p>
-            <p className="mt-2 text-3xl font-black text-white">
+            <p className="mt-2 text-3xl font-black text-slate-900 dark:text-white">
               {pack.napCitationScore}/100
             </p>
-            <p className="mt-1 text-xs text-slate-400">
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
               Phone, ZIP, URL &amp; directory match
             </p>
           </div>
         </div>
 
         {/* NEAR ME KEYWORD MATRIX */}
-        <div className="overflow-x-auto rounded-3xl border border-slate-800 bg-slate-900/90 p-5 shadow-xl">
+        <div className="overflow-x-auto rounded-3xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/90 p-5 shadow-xl">
           <h3 className="text-sm font-black uppercase tracking-wider text-blue-300">
             Generated &ldquo;Near Me&rdquo; &amp; Geo-Modified Keyword Placement Matrix
           </h3>
-          <table className="mt-4 w-full text-left text-xs text-slate-200">
-            <thead className="border-b border-slate-800 text-[11px] font-bold uppercase text-slate-400">
+          <table className="mt-4 w-full text-left text-xs text-slate-800 dark:text-slate-200">
+            <thead className="border-b border-slate-200 dark:border-slate-800 text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400">
               <tr>
                 <th className="pb-3 pr-4">Target Local Keyword</th>
                 <th className="pb-3 pr-4">Local Search Intent</th>
@@ -674,13 +674,13 @@ export default function LocalSeoAuditClient() {
             <tbody className="divide-y divide-slate-800/70">
               {pack.keywordMatrix.map((row, idx) => (
                 <tr key={idx}>
-                  <td className="py-3 pr-4 font-mono font-bold text-white">
+                  <td className="py-3 pr-4 font-mono font-bold text-slate-900 dark:text-white">
                     {row.keyword}
                   </td>
                   <td className="py-3 pr-4 text-emerald-300">
                     {row.intentType}
                   </td>
-                  <td className="py-3 pr-4 text-slate-300">
+                  <td className="py-3 pr-4 text-slate-700 dark:text-slate-300">
                     {row.recommendedPlacement}
                   </td>
                 </tr>
@@ -706,15 +706,15 @@ export default function LocalSeoAuditClient() {
                   </span>
                 </div>
 
-                <h3 className="mt-3 text-lg font-black text-white">
+                <h3 className="mt-3 text-lg font-black text-slate-900 dark:text-white">
                   {card.title}
                 </h3>
 
-                <pre className="mt-3 whitespace-pre-wrap rounded-2xl bg-slate-950/85 p-4 font-mono text-xs leading-6 text-slate-200">
+                <pre className="mt-3 whitespace-pre-wrap rounded-2xl bg-white dark:bg-slate-950/85 p-4 font-mono text-xs leading-6 text-slate-800 dark:text-slate-200">
                   {card.bodyText}
                 </pre>
 
-                <ul className="mt-4 space-y-2 text-xs text-slate-200">
+                <ul className="mt-4 space-y-2 text-xs text-slate-800 dark:text-slate-200">
                   {card.actionItems.map((item, idx) => (
                     <li key={idx} className="flex items-start gap-2">
                       <SearchCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-blue-300" />
@@ -733,7 +733,7 @@ export default function LocalSeoAuditClient() {
                       `${card.title} (${card.scoreLabel})\n${card.bodyText}`,
                     )
                   }
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-white/10 px-3.5 py-2 text-xs font-bold text-white hover:bg-white/20"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-white/10 px-3.5 py-2 text-xs font-bold text-slate-900 dark:text-white hover:bg-white/20"
                 >
                   <Copy className="h-3.5 w-3.5" />
                   {copiedId === card.id ? "Copied!" : "Copy Card"}

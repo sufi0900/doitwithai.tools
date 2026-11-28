@@ -292,7 +292,7 @@ export default function EntitySameAsClient() {
             <button
               type="button"
               onClick={loadSampleEntity}
-              className="inline-flex items-center gap-1 rounded-lg border border-white/15 bg-white/5 px-2.5 py-1 text-[11px] font-bold text-slate-200 hover:bg-white/10"
+              className="inline-flex items-center gap-1 rounded-lg border border-white/15 bg-white/5 px-2.5 py-1 text-[11px] font-bold text-slate-800 dark:text-slate-200 hover:bg-white/10"
             >
               <RotateCcw className="h-3 w-3" /> Load Sample Entity
             </button>
@@ -300,7 +300,7 @@ export default function EntitySameAsClient() {
           <div className="mt-2 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
             <div>
               <label
-                className="mb-1 block text-xs font-semibold text-slate-300"
+                className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300"
                 htmlFor="es-term"
               >
                 Brand, organization, person, product, or place
@@ -319,7 +319,7 @@ export default function EntitySameAsClient() {
             </div>
             <div>
               <label
-                className="mb-1 block text-xs font-semibold text-slate-300"
+                className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300"
                 htmlFor="es-language"
               >
                 Language
@@ -351,7 +351,7 @@ export default function EntitySameAsClient() {
             )}
             Search Wikidata
           </button>
-          <p className="mt-2 flex items-start gap-2 text-xs leading-6 text-slate-400">
+          <p className="mt-2 flex items-start gap-2 text-xs leading-6 text-slate-500 dark:text-slate-400">
             <Info
               className="mt-1 h-3.5 w-3.5 shrink-0 text-sky-300"
               aria-hidden="true"
@@ -371,7 +371,7 @@ export default function EntitySameAsClient() {
 
           {candidates && candidates.length > 0 && (
             <div className="mt-5" aria-live="polite">
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 Pick the correct match
               </p>
               <ul className="mt-2 space-y-2">
@@ -388,10 +388,10 @@ export default function EntitySameAsClient() {
                           : "border-white/10 bg-slate-900/50 hover:bg-white/10"
                       }`}
                     >
-                      <span className="block text-sm font-extrabold text-white">
+                      <span className="block text-sm font-extrabold text-slate-900 dark:text-white">
                         {candidate.label}
                       </span>
-                      <span className="mt-0.5 block text-xs text-slate-400">
+                      <span className="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">
                         {candidate.description || "No description"} ·{" "}
                         {candidate.id}
                       </span>
@@ -399,7 +399,7 @@ export default function EntitySameAsClient() {
                   </li>
                 ))}
               </ul>
-              <p className="mt-2 text-xs leading-6 text-slate-400">
+              <p className="mt-2 text-xs leading-6 text-slate-500 dark:text-slate-400">
                 Names are often shared. Check the description so you pick your
                 own entity, not a similarly named one.
               </p>
@@ -408,7 +408,7 @@ export default function EntitySameAsClient() {
 
           {candidates && candidates.length === 0 && (
             <p
-              className="mt-5 rounded-xl border border-white/10 bg-slate-900/60 p-4 text-xs leading-6 text-slate-300"
+              className="mt-5 rounded-xl border border-white/10 bg-slate-50 dark:bg-slate-900/60 p-4 text-xs leading-6 text-slate-700 dark:text-slate-300"
               aria-live="polite"
             >
               No Wikidata entry matched that search. That&apos;s common for
@@ -421,7 +421,7 @@ export default function EntitySameAsClient() {
 
           {loadingEntity && (
             <p
-              className="mt-4 flex items-center gap-2 text-xs text-slate-300"
+              className="mt-4 flex items-center gap-2 text-xs text-slate-700 dark:text-slate-300"
               role="status"
             >
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />{" "}
@@ -442,26 +442,26 @@ export default function EntitySameAsClient() {
         <div aria-live="polite">
           <p className={labelClass}>2. Choose links and copy your schema</p>
           {!showBuilder ? (
-            <p className="rounded-2xl border border-white/10 bg-slate-900/50 p-5 text-sm text-slate-400">
+            <p className="rounded-2xl border border-white/10 bg-slate-50 dark:bg-slate-900/50 p-5 text-sm text-slate-500 dark:text-slate-400">
               Search for your entity on the left. The profile links Wikidata
               knows about will appear here for you to check.
             </p>
           ) : (
             <div className="space-y-5">
               {profile && (
-                <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-4">
-                  <p className="text-sm font-extrabold text-white">
+                <div className="rounded-2xl border border-white/10 bg-slate-50 dark:bg-slate-900/60 p-4">
+                  <p className="text-sm font-extrabold text-slate-900 dark:text-white">
                     {profile.label}{" "}
-                    <span className="ml-1 text-xs font-normal text-slate-400">
+                    <span className="ml-1 text-xs font-normal text-slate-500 dark:text-slate-400">
                       {profile.id}
                     </span>
                   </p>
                   {profile.description && (
-                    <p className="mt-0.5 text-xs text-slate-400">
+                    <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
                       Wikidata says: {profile.description}
                     </p>
                   )}
-                  <p className="mt-3 text-xs leading-6 text-slate-400">
+                  <p className="mt-3 text-xs leading-6 text-slate-500 dark:text-slate-400">
                     Open each link to confirm it&apos;s really yours before
                     keeping it ticked. Wikidata can be out of date or wrong.
                   </p>
@@ -469,23 +469,23 @@ export default function EntitySameAsClient() {
                     {profile.links.map((link) => (
                       <li
                         key={link.key}
-                        className="flex items-start gap-3 rounded-xl border border-white/10 bg-slate-950/40 p-3"
+                        className="flex items-start gap-3 rounded-xl border border-white/10 bg-white dark:bg-slate-950/40 p-3"
                       >
                         <input
                           id={`es-${link.key}`}
                           type="checkbox"
                           checked={checked.has(link.key)}
                           onChange={() => toggle(link.key)}
-                          className="mt-1 h-4 w-4 rounded border-white/20 bg-slate-900"
+                          className="mt-1 h-4 w-4 rounded border-white/20 bg-slate-50 dark:bg-slate-900"
                         />
                         <label
                           htmlFor={`es-${link.key}`}
                           className="min-w-0 flex-1 text-xs"
                         >
-                          <span className="block font-bold text-slate-100">
+                          <span className="block font-bold text-slate-900 dark:text-slate-100">
                             {link.label}
                           </span>
-                          <span className="block break-all font-mono text-[11px] text-slate-400">
+                          <span className="block break-all font-mono text-[11px] text-slate-500 dark:text-slate-400">
                             {link.url}
                           </span>
                           {link.note && (
@@ -499,7 +499,7 @@ export default function EntitySameAsClient() {
                           target="_blank"
                           rel="noopener noreferrer"
                           aria-label={`Open ${link.label} in a new tab`}
-                          className="mt-0.5 shrink-0 text-slate-400 transition hover:text-white"
+                          className="mt-0.5 shrink-0 text-slate-500 dark:text-slate-400 transition hover:text-white"
                         >
                           <ExternalLink
                             className="h-4 w-4"
@@ -514,7 +514,7 @@ export default function EntitySameAsClient() {
 
               <div>
                 <label
-                  className="mb-1 block text-xs font-semibold text-slate-300"
+                  className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300"
                   htmlFor="es-manual"
                 >
                   Add your own profile URLs (one per line)
@@ -549,7 +549,7 @@ export default function EntitySameAsClient() {
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
                   <label
-                    className="mb-1 block text-xs font-semibold text-slate-300"
+                    className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300"
                     htmlFor="es-type"
                   >
                     Schema type
@@ -572,7 +572,7 @@ export default function EntitySameAsClient() {
                 </div>
                 <div>
                   <label
-                    className="mb-1 block text-xs font-semibold text-slate-300"
+                    className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300"
                     htmlFor="es-name"
                   >
                     Name
@@ -590,7 +590,7 @@ export default function EntitySameAsClient() {
                 </div>
                 <div className="sm:col-span-2">
                   <label
-                    className="mb-1 block text-xs font-semibold text-slate-300"
+                    className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300"
                     htmlFor="es-url"
                   >
                     Official website URL (the page where this markup will live)
@@ -609,7 +609,7 @@ export default function EntitySameAsClient() {
                 </div>
                 <div className="sm:col-span-2">
                   <label
-                    className="mb-1 block text-xs font-semibold text-slate-300"
+                    className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300"
                     htmlFor="es-desc"
                   >
                     Description (optional — use your own words)
@@ -639,14 +639,14 @@ export default function EntitySameAsClient() {
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-4">
+              <div className="rounded-2xl border border-white/10 bg-slate-50 dark:bg-slate-900/60 p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                  <p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                     JSON-LD · {sameAs.length} sameAs link
                     {sameAs.length === 1 ? "" : "s"}
                   </p>
                   <div className="flex flex-wrap items-center gap-3">
-                    <label className="flex items-center gap-2 text-xs font-semibold text-slate-300">
+                    <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
                       <input
                         type="checkbox"
                         checked={wrap}
@@ -654,7 +654,7 @@ export default function EntitySameAsClient() {
                           setRawOverride(null);
                           setWrap(event.target.checked);
                         }}
-                        className="h-4 w-4 rounded border-white/20 bg-slate-900"
+                        className="h-4 w-4 rounded border-white/20 bg-slate-50 dark:bg-slate-900"
                       />
                       Include &lt;script&gt; tag
                     </label>
@@ -666,7 +666,7 @@ export default function EntitySameAsClient() {
                         }
                         setIsEditingRaw((prev) => !prev);
                       }}
-                      className="inline-flex items-center gap-1 rounded-lg border border-white/15 bg-white/5 px-2.5 py-1 text-xs font-bold text-slate-200 hover:bg-white/10"
+                      className="inline-flex items-center gap-1 rounded-lg border border-white/15 bg-white/5 px-2.5 py-1 text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-white/10"
                     >
                       <Edit3 className="h-3 w-3" />
                       {isEditingRaw ? "Compiled View" : "Edit JSON-LD"}
@@ -680,10 +680,10 @@ export default function EntitySameAsClient() {
                     onChange={(e) => setRawOverride(e.target.value)}
                     spellCheck={false}
                     aria-label="Direct JSON-LD editor"
-                    className="mt-3 w-full rounded-xl border border-[#5271ff] bg-slate-950/90 p-3 font-mono text-[11px] leading-5 text-emerald-300 focus:outline-none"
+                    className="mt-3 w-full rounded-xl border border-[#5271ff] bg-white dark:bg-slate-950/90 p-3 font-mono text-[11px] leading-5 text-emerald-300 focus:outline-none"
                   />
                 ) : (
-                  <pre className="mt-3 max-h-72 overflow-auto rounded-xl bg-slate-950/80 p-3 text-[11px] leading-5 text-slate-300">
+                  <pre className="mt-3 max-h-72 overflow-auto rounded-xl bg-white dark:bg-slate-950/80 p-3 text-[11px] leading-5 text-slate-700 dark:text-slate-300">
                     {output}
                   </pre>
                 )}
@@ -711,7 +711,7 @@ export default function EntitySameAsClient() {
                     <Download className="h-4 w-4" aria-hidden="true" /> Download
                   </button>
                 </div>
-                <p className="mt-3 text-xs leading-6 text-slate-400">
+                <p className="mt-3 text-xs leading-6 text-slate-500 dark:text-slate-400">
                   Review the output, add it to the page it describes, then test
                   it with the Schema Markup Validator or Google&apos;s Rich
                   Results Test.

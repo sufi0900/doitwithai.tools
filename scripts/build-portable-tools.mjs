@@ -65,8 +65,9 @@ async function main() {
   const slugs = listSlugs();
   const ok = [];
   const failed = [];
+  const CONCURRENCY = 6;
 
-  for (const slug of slugs) {
+  async function buildSlug(slug) {
     const pagePath = rel(path.join(toolsDir, slug, "page.tsx"));
     const entryPath = path.join(tmpDir, `${slug}.entry.tsx`);
     const outJs = path.join(tmpDir, `${slug}.js`);
@@ -161,6 +162,17 @@ boot();
       console.warn(`[portable] ${slug}: FAILED - ${msg}`);
     }
   }
+
+  let nextIdx = 0;
+  async function worker() {
+    while (nextIdx < slugs.length) {
+      const slug = slugs[nextIdx++];
+      await buildSlug(slug);
+    }
+  }
+  await Promise.all(
+    Array.from({ length: Math.min(CONCURRENCY, slugs.length) }, () => worker()),
+  );
 
   fs.rmSync(tmpDir, { recursive: true, force: true });
   console.log(`[portable] built ${ok.length}/${slugs.length} real standalone tools`);

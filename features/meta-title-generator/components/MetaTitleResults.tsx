@@ -8,7 +8,7 @@ import {
   Lightbulb,
   RotateCw,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   LENS_CONFIG,
   LENS_ORDER,
@@ -30,16 +30,19 @@ type Props = {
 };
 
 export default function MetaTitleResults({ data, input, onRegenerate }: Props) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const evaluated = useMemo<EvaluatedCandidate[]>(() => {
     return data.result.groups.flatMap((group) =>
       group.candidates.map((candidate, index) => ({
         ...candidate,
         key: `${group.lens}-${index}-${candidate.title}`,
         lens: group.lens,
-        evaluation: evaluateTitle(candidate.title, input, group.lens),
+        evaluation: evaluateTitle(candidate.title, input, group.lens, mounted),
       })),
     );
-  }, [data, input]);
+  }, [data, input, mounted]);
 
   const recommendations = useMemo(() => {
     const ranked = [...evaluated].sort(
@@ -182,7 +185,7 @@ export default function MetaTitleResults({ data, input, onRegenerate }: Props) {
                   key={label}
                   className="rounded-xl border border-white/80 bg-white/70 p-3.5 dark:border-slate-700 dark:bg-slate-950/60"
                 >
-                  <p className="text-[10px] font-extrabold uppercase tracking-[0.13em] text-slate-400">
+                  <p className="text-[10px] font-extrabold uppercase tracking-[0.13em] text-slate-500 dark:text-slate-400">
                     {label}
                   </p>
                   <p className="mt-1.5 text-xs font-semibold leading-5 text-slate-700 dark:text-slate-200">
@@ -314,7 +317,7 @@ export default function MetaTitleResults({ data, input, onRegenerate }: Props) {
         })}
       </section>
 
-      <section className="rounded-[28px] border border-slate-200 bg-slate-950 p-6 text-white dark:border-slate-800 sm:p-8">
+      <section className="rounded-[28px] border border-slate-200 bg-white dark:bg-slate-950 p-6 text-slate-900 dark:text-white dark:border-slate-800 sm:p-8">
         <div className="flex items-start gap-3">
           <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#5271ff]">
             <Lightbulb className="h-5 w-5" />
@@ -328,7 +331,7 @@ export default function MetaTitleResults({ data, input, onRegenerate }: Props) {
                   className="flex gap-2 rounded-xl border border-white/10 bg-white/[0.04] p-4"
                 >
                   <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
-                  <p className="text-sm leading-6 text-slate-300">{note}</p>
+                  <p className="text-sm leading-6 text-slate-700 dark:text-slate-300">{note}</p>
                 </div>
               ))}
             </div>

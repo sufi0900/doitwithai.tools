@@ -56,7 +56,10 @@ export default function TitleCard({
           <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
             <span>{candidate.evaluation.characters} characters</span>
             <span className="h-1 w-1 rounded-full bg-slate-300" />
-            <span>{candidate.evaluation.pixels}px estimated</span>
+            <span>
+              <span suppressHydrationWarning>{candidate.evaluation.pixels}</span>
+              px estimated
+            </span>
             <span className="h-1 w-1 rounded-full bg-slate-300" />
             <span
               className={`inline-flex items-center gap-1 ${candidate.evaluation.mobileSafe ? "text-emerald-600" : "text-amber-600"}`}

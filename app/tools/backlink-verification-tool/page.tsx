@@ -1,8 +1,7 @@
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import type { Metadata } from "next";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
 import Link from "next/link";
 import {
-  CheckCheck,
   FileCheck2,
   GitCompareArrows,
   Link2,
@@ -11,11 +10,6 @@ import {
 import BacklinkClient from "@/features/backlink-verifier/BacklinkClient";
 import ToolFaq from "@/features/tool-ui/ToolFaq";
 import ToolResources from "@/features/tool-catalog/ToolResources";
-import {
-  ToolHeroBackground,
-  toolHeroHeading,
-  toolHeroSurface,
-} from "@/features/tool-ui/ToolHero";
 
 const pageUrl = "https://doitwithai.tools/tools/backlink-verification-tool";
 const title = "Free Backlink Verification Tool | Check Link Status & Anchors";
@@ -143,85 +137,18 @@ export default function Page() {
           __html: JSON.stringify(schema).replace(/</g, "\\u003c"),
         }}
       />
-      <header
-        className={`relative overflow-hidden ${toolHeroSurface} text-white`}
+      <ToolLandingHero
+        slug="backlink-verification-tool"
+        title="Verify live backlinks and review every placement"
+        description="Check whether known pages still link to you. Inspect anchors, link attributes, redirects, and source evidence in one clear report."
+        categoryLabel="Off-page SEO"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
       >
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">Tools</Link>
-            <span>/</span>
-            <span aria-current="page">Backlink verification</span>
-          </nav>
-          <div className="grid items-center gap-8 lg:grid-cols-[1.35fr_0.85fr]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                Off-page SEO · Backlink verification
-              </p>
-              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                Verify live backlinks and{" "}
-                <span className={toolHeroHeading}>review every placement</span>
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-                Check whether known pages still link to you. Inspect anchors,
-                link attributes, redirects, and source evidence in one clear
-                report.
-              </p>
-              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Bulk source checks
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  CSV import and export
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Saved manual comparisons
-                </span>
-              </div>
-              <PortableToolHeroBar />
-            </div>
-            <div
-              aria-label="Illustrative evidence preview"
-              className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl"
-            >
-              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
-                Example evidence
-              </p>
-              <div className="mt-5 flex gap-3">
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-emerald-400/10 text-emerald-300">
-                  <CheckCheck aria-hidden size={21} />
-                </span>
-                <div>
-                  <p className="text-base font-bold">Link found in HTML</p>
-                  <p className="mt-1 text-xs leading-6 text-slate-400">
-                    Review the exact placement before deciding.
-                  </p>
-                </div>
-              </div>
-              <dl className="mt-5 space-y-3 border-t border-slate-700 pt-4 text-xs">
-                <div className="flex justify-between gap-4">
-                  <dt className="text-slate-400">Anchor</dt>
-                  <dd>Example guide</dd>
-                </div>
-                <div className="flex justify-between gap-4">
-                  <dt className="text-slate-400">Link rel</dt>
-                  <dd>nofollow</dd>
-                </div>
-                <div className="flex justify-between gap-4">
-                  <dt className="text-slate-400">Google index status</dt>
-                  <dd>Not measured</dd>
-                </div>
-              </dl>
-            </div>
-          </div>
+        <div className="p-4 sm:p-6">
+          <BacklinkClient />
         </div>
-      </header>
-      <BacklinkClient />
+      </ToolLandingHero>
       <section
         className={`${section} border-t border-slate-200 dark:border-slate-800`}
       >

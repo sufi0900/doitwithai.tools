@@ -110,7 +110,7 @@ export default function SchemaToolEducation() {
         </div>
       </section>
 
-      <section className="overflow-hidden rounded-[30px] bg-slate-950 text-white">
+      <section className="overflow-hidden rounded-[30px] bg-white dark:bg-slate-950 text-slate-900 dark:text-white">
         <div className="grid lg:grid-cols-[0.9fr_1.1fr]">
           <div className="border-b border-white/10 p-7 sm:p-10 lg:border-b-0 lg:border-r">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-xs font-bold text-blue-200">
@@ -120,7 +120,7 @@ export default function SchemaToolEducation() {
             <h2 className="mt-5 text-3xl font-black tracking-tight">
               High-value schema types without one giant generic form
             </h2>
-            <p className="mt-4 text-sm leading-7 text-slate-300">
+            <p className="mt-4 text-sm leading-7 text-slate-700 dark:text-slate-300">
               Fields change with the selected page type. A remote job asks for
               applicant regions; a mixed event asks for both venue and virtual
               location; a recipe asks for ingredients and ordered steps.
@@ -151,7 +151,7 @@ export default function SchemaToolEducation() {
                           : "Limited"}
                   </span>
                 </div>
-                <p className="mt-1 text-[11px] text-slate-400">
+                <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
                   {definition.schemaType}
                 </p>
               </div>

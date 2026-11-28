@@ -17,6 +17,7 @@ import ToolRunOverlay, {
 } from "@/features/tool-ui/ToolRunOverlay";
 import {
   PLATFORM_META,
+  PITCH_SAMPLE_PRESETS,
   SAMPLE_PITCH_INPUT,
   buildDeterministicPitchVariations,
   buildJournalistPitchDocx,
@@ -25,6 +26,7 @@ import {
   type JournalistPitchInput,
   type PitchAngleId,
   type PitchPlatform,
+  type PitchSamplePreset,
   type PitchVariation,
 } from "./model";
 
@@ -87,16 +89,20 @@ export default function JournalistPitchBuilderClient() {
     setError("");
   }
 
-  function loadSample() {
-    setInput(SAMPLE_PITCH_INPUT);
-    const built = buildDeterministicPitchVariations(SAMPLE_PITCH_INPUT);
+  function applyPreset(preset: PitchSamplePreset) {
+    setInput(preset.input);
+    const built = buildDeterministicPitchVariations(preset.input);
     setVariations(built);
     setActiveAngle("direct-soundbite");
     setError("");
     setRevision((r) => r + 1);
     setFeedback(
-      "Loaded realistic HARO / Connectively journalist query and generated 3 quote-ready pitch angles.",
+      `Loaded real ${preset.outlet} media query and generated 3 quote-ready editorial angles.`,
     );
+  }
+
+  function loadSample() {
+    applyPreset(PITCH_SAMPLE_PRESETS[0]);
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -224,8 +230,43 @@ export default function JournalistPitchBuilderClient() {
           </div>
           <button type="button" onClick={loadSample} className={secondaryBtn}>
             <Sparkles size={16} className="text-[#5271ff]" />
-            Load Sample HARO Pitch
+            Reset to Default Sample
           </button>
+        </div>
+
+        {/* 1-Click Real-World Journalist Query Presets */}
+        <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 dark:border-slate-700/80 dark:bg-slate-800/40">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+              1-Click Journalist Queries:
+            </span>
+            {PITCH_SAMPLE_PRESETS.map((p) => {
+              const active = input.queryTopic === p.input.queryTopic;
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => applyPreset(p)}
+                  className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${
+                    active
+                      ? "border-[#3452d1] bg-[#3452d1] text-white shadow-sm dark:border-[#5271ff] dark:bg-[#5271ff]"
+                      : "border-slate-300 bg-white text-slate-700 hover:border-[#3452d1] hover:text-[#3452d1] dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-[#5271ff] dark:hover:text-[#5271ff]"
+                  }`}
+                >
+                  <span
+                    className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${
+                      active
+                        ? "bg-white/20 text-white"
+                        : "bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300"
+                    }`}
+                  >
+                    {p.badge.split(" ")[0]}
+                  </span>
+                  <span>{p.title}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Platform Format Selector */}
@@ -746,15 +787,44 @@ export default function JournalistPitchBuilderClient() {
             {/* Scannability & Journalist Readiness Scorecard */}
             <div className="space-y-6">
               <div className={panel}>
-                <h3 className="text-lg font-extrabold">
-                  Journalist Scannability Scorecard (
-                  {scannability.readinessScore}
-                  /100)
-                </h3>
-                <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
-                  Reporters scan 50–150 pitches per query. Pitches that pass
-                  these 4 checks get quoted first.
-                </p>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-lg font-extrabold">
+                        Journalist Scannability Scorecard
+                      </h3>
+                      <span
+                        className={`rounded-full px-2.5 py-0.5 text-xs font-black ${
+                          scannability.readinessScore >= 85
+                            ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
+                            : "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
+                        }`}
+                      >
+                        {scannability.readinessScore}/100 ·{" "}
+                        {scannability.readinessScore >= 85
+                          ? "Quote-Ready"
+                          : "Needs Review"}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
+                      Reporters scan 50–150 pitches per query. Pitches that pass
+                      these 4 checks get quoted first.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Quick Metric Pills */}
+                <div className="mt-3.5 flex flex-wrap gap-2 text-xs font-semibold">
+                  <span className="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                    Total: <strong>{scannability.wordCount}</strong> words
+                  </span>
+                  <span className="rounded-md border border-indigo-200 bg-indigo-50/70 px-2.5 py-1 text-indigo-800 dark:border-indigo-900/60 dark:bg-indigo-950/30 dark:text-indigo-300">
+                    Quote: <strong>{scannability.soundbiteWordCount}</strong> words
+                  </span>
+                  <span className="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                    Read Time: ~<strong>{scannability.readingSeconds}s</strong>
+                  </span>
+                </div>
 
                 <div className="mt-4 space-y-3">
                   {scannability.checks.map((chk) => (

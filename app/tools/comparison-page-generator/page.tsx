@@ -1,15 +1,14 @@
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import type { Metadata } from "next";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
 import Link from "next/link";
-import { Code2, Scale, Trophy } from "lucide-react";
+import {
+  Code2,
+  Scale,
+  Trophy,
+} from "lucide-react";
 import ComparisonPageGeneratorClient from "@/features/comparison-page-generator/ComparisonPageGeneratorClient";
 import ToolFaq from "@/features/tool-ui/ToolFaq";
 import ToolResources from "@/features/tool-catalog/ToolResources";
-import {
-  ToolHeroBackground,
-  toolHeroHeading,
-  toolHeroSurface,
-} from "@/features/tool-ui/ToolHero";
 
 const pageUrl = "https://doitwithai.tools/tools/comparison-page-generator";
 const title =
@@ -104,69 +103,18 @@ export default function ComparisonPageGeneratorPage() {
         }}
       />
 
-      <header
-        className={`relative overflow-hidden ${toolHeroSurface} text-white`}
+      <ToolLandingHero
+        slug="comparison-page-generator"
+        title="&ldquo;X vs. Y&rdquo; Comparison Page & Feature Matrix Builder"
+        description="Build high-converting, citation-ready comparison pages with a 50-word Featured Snippet verdict box, side-by-side HTML and Markdown feature tables, &ldquo;Choose X if&rdquo; buyer guides, and ItemList JSON-LD schema."
+        categoryLabel="Bottom-of-Funnel SEO"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
       >
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">Tools</Link>
-            <span>/</span>
-            <span aria-current="page">Comparison Page Generator</span>
-          </nav>
-
-          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                Bottom-of-Funnel SEO · Comparison Matrices &amp; AI Citations
-              </p>
-              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                &ldquo;X vs. Y&rdquo; Comparison Page{" "}
-                <span className={toolHeroHeading}>
-                  &amp; Feature Matrix Builder
-                </span>
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-                Build high-converting, citation-ready comparison pages with a
-                50-word Featured Snippet verdict box, side-by-side HTML and
-                Markdown feature tables, &ldquo;Choose X if&rdquo; buyer guides,
-                and <code>ItemList</code> JSON-LD schema.
-              </p>
-              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  50-Word Verdict Snippet
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  HTML &amp; Markdown Tables
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  ItemList + FAQPage Schema
-                </span>
-              </div>
-              <PortableToolHeroBar />
-            </div>
-
-            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
-                Win High-Intent Buyer Searches
-              </p>
-              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
-                <li>1. Balanced, credible criteria-by-criteria matrix</li>
-                <li>2. Extractable HTML <code>&lt;table&gt;</code> for SERP snippets</li>
-                <li>3. Clear &ldquo;When to Choose A vs. B&rdquo; decision blocks</li>
-                <li>4. Full Markdown article + JSON-LD export</li>
-              </ul>
-            </div>
-          </div>
+        <div className="p-4 sm:p-6">
+          <ComparisonPageGeneratorClient />
         </div>
-      </header>
-
-      <ComparisonPageGeneratorClient />
+      </ToolLandingHero>
 
       <section
         className={`${section} border-t border-slate-200 dark:border-slate-800`}

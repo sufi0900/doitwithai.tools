@@ -390,7 +390,7 @@ export default function HreflangClient() {
                 Live preview {rawOverride !== null ? "(Custom Edited)" : ""}
               </h2>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-slate-400">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                   {output.length.toLocaleString()} chars
                 </span>
                 <button
@@ -415,10 +415,10 @@ export default function HreflangClient() {
                 onChange={(e) => setRawOverride(e.target.value)}
                 spellCheck={false}
                 aria-label="Direct hreflang code editor"
-                className="mt-3 w-full rounded-2xl border border-[#5271ff] bg-slate-950 p-4 font-mono text-xs leading-6 text-slate-100 focus:outline-none"
+                className="mt-3 w-full rounded-2xl border border-[#5271ff] bg-white dark:bg-slate-950 p-4 font-mono text-xs leading-6 text-slate-900 dark:text-slate-100 focus:outline-none"
               />
             ) : (
-              <pre className="mt-3 max-h-[380px] overflow-auto whitespace-pre-wrap break-words rounded-2xl border border-slate-200 bg-slate-950 p-4 font-mono text-xs leading-6 text-slate-100 dark:border-slate-700">
+              <pre className="mt-3 max-h-[380px] overflow-auto whitespace-pre-wrap break-words rounded-2xl border border-slate-200 bg-white dark:bg-slate-950 p-4 font-mono text-xs leading-6 text-slate-900 dark:text-slate-100 dark:border-slate-700">
                 {output || "Add versions above to generate tags."}
               </pre>
             )}
@@ -481,7 +481,7 @@ export default function HreflangClient() {
                 })}
               </ul>
             )}
-            <p className="mt-3 text-[11px] leading-5 text-slate-400">
+            <p className="mt-3 text-[11px] leading-5 text-slate-500 dark:text-slate-400">
               {errorCount > 0
                 ? "Resolve the errors above before publishing."
                 : "Paste this exact same block onto every page listed above ; hreflang must be reciprocal across all versions."}

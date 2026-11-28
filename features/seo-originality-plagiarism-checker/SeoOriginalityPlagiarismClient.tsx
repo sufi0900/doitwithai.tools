@@ -349,12 +349,12 @@ export default function SeoOriginalityPlagiarismClient() {
         }}
       />
 
-      <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/70 p-4">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
           <span className="text-xs font-semibold uppercase tracking-wider text-indigo-400">
             Test with Real Content Scenarios (Writer.com & Originality Benchmark Presets)
           </span>
-          <span className="text-xs text-slate-400">
+          <span className="text-xs text-slate-500 dark:text-slate-400">
             Zero character cap · Instant sentence-level forensic heatmap + humanizer
           </span>
         </div>
@@ -385,18 +385,18 @@ export default function SeoOriginalityPlagiarismClient() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        <div className="lg:col-span-5 space-y-4 rounded-2xl border border-slate-800 bg-slate-900/80 p-5">
+        <div className="lg:col-span-5 space-y-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80 p-5">
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold text-white">
+            <h2 className="text-base font-bold text-slate-900 dark:text-white">
               1. Article Draft & First-Hand Proof Inputs
             </h2>
-            <span className="text-xs text-slate-400">
+            <span className="text-xs text-slate-500 dark:text-slate-400">
               {report.wordCount} words · {report.sentenceCount} sentences
             </span>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
               Article Paragraph or Full Draft (No 1,500-Word Cap)
             </label>
             <textarea
@@ -404,7 +404,7 @@ export default function SeoOriginalityPlagiarismClient() {
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               placeholder="Paste your AI-assisted or human-written article draft here..."
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 p-3.5 text-sm text-slate-100 placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
+              className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 p-3.5 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
             />
           </div>
 
@@ -417,12 +417,12 @@ export default function SeoOriginalityPlagiarismClient() {
               value={firstHandProof}
               onChange={(e) => setFirstHandProof(e.target.value)}
               placeholder="e.g., Tested across 42 URLs in Q1 2026: adding summary boxes increased CTR from 1.9% to 4.4%..."
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-xs text-slate-200 placeholder-slate-500 focus:border-emerald-500 focus:outline-none"
+              className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 p-3 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-500 focus:border-emerald-500 focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
               Competitor SERP Baseline Notes (Optional Information Gain Check)
             </label>
             <input
@@ -430,7 +430,7 @@ export default function SeoOriginalityPlagiarismClient() {
               value={competitorNotes}
               onChange={(e) => setCompetitorNotes(e.target.value)}
               placeholder="What do the top 3 ranking articles repeat?"
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-xs text-slate-200 placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
+              className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2.5 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
             />
           </div>
 
@@ -448,8 +448,8 @@ export default function SeoOriginalityPlagiarismClient() {
 
         <div className="lg:col-span-7 space-y-5">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-4">
-              <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/90 p-4">
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 Human Likelihood
               </div>
               <div
@@ -463,43 +463,43 @@ export default function SeoOriginalityPlagiarismClient() {
               >
                 {report.humanLikelihoodPct}%
               </div>
-              <div className="mt-1 text-[11px] text-slate-400">
+              <div className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
                 Writer.com benchmark
               </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-4">
-              <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/90 p-4">
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 Burstiness Score
               </div>
               <div className="mt-1 text-2xl font-extrabold text-indigo-400">
                 {report.burstinessScore}/100
               </div>
-              <div className="mt-1 text-[11px] text-slate-400">
+              <div className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
                 Avg {report.avgSentenceLength} words/sentence
               </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-4">
-              <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/90 p-4">
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 E-E-A-T Proof Score
               </div>
               <div className="mt-1 text-2xl font-extrabold text-cyan-400">
                 {report.eeatProofScore}/100
               </div>
-              <div className="mt-1 text-[11px] text-slate-400">
+              <div className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
                 Vocab Entropy: {report.vocabularyEntropyPct}%
               </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-4">
-              <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/90 p-4">
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 Index Readiness
               </div>
               <div className="mt-1 text-2xl font-extrabold text-emerald-400">
                 {report.indexReadinessScore}/100
               </div>
-              <div className="mt-1 text-[11px] text-slate-400">
+              <div className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
                 {report.flaggedCliches.length} clichés · {report.passiveVoiceCount} passive
               </div>
             </div>
@@ -510,7 +510,7 @@ export default function SeoOriginalityPlagiarismClient() {
               <div className="text-xs font-bold uppercase tracking-wider text-indigo-300">
                 Forensic Verdict · {aiSourceTier}
               </div>
-              <p className="text-sm font-medium text-white mt-0.5">{report.indexVerdict}</p>
+              <p className="text-sm font-medium text-slate-900 dark:text-white mt-0.5">{report.indexVerdict}</p>
             </div>
             <div className="flex items-center gap-2 text-xs">
               <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/20 px-2.5 py-1 text-rose-300">
@@ -525,8 +525,8 @@ export default function SeoOriginalityPlagiarismClient() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-5 space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/90 p-5 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
@@ -566,7 +566,7 @@ export default function SeoOriginalityPlagiarismClient() {
 
             {activeViewTab === "heatmap" && (
               <div className="space-y-4">
-                <div className="rounded-xl border border-slate-800 bg-slate-950/90 p-4 leading-relaxed text-sm space-x-1.5">
+                <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/90 p-4 leading-relaxed text-sm space-x-1.5">
                   {report.sentenceForensics.map((item, idx) => {
                     const bgClass =
                       item.aiRiskLevel === "high"
@@ -590,14 +590,14 @@ export default function SeoOriginalityPlagiarismClient() {
                   {report.sentenceForensics.map((item, idx) => (
                     <div
                       key={idx}
-                      className="rounded-xl border border-slate-800/80 bg-slate-950/60 p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"
+                      className="rounded-xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-950/60 p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"
                     >
-                      <div className="text-slate-300 line-clamp-2 flex-1">
-                        <span className="font-bold text-slate-400 mr-1.5">S{idx + 1}:</span>
+                      <div className="text-slate-700 dark:text-slate-300 line-clamp-2 flex-1">
+                        <span className="font-bold text-slate-500 dark:text-slate-400 mr-1.5">S{idx + 1}:</span>
                         {item.sentence}
                       </div>
                       <div className="flex flex-wrap items-center gap-1.5 shrink-0">
-                        <span className="rounded bg-slate-800 px-2 py-0.5 text-slate-300">
+                        <span className="rounded bg-slate-800 px-2 py-0.5 text-slate-700 dark:text-slate-300">
                           {item.wordCount}w
                         </span>
                         {item.clichesFound.length > 0 && (
@@ -629,7 +629,7 @@ export default function SeoOriginalityPlagiarismClient() {
                     <div className="text-xs font-bold uppercase tracking-wider text-rose-300 mb-2">
                       Original Draft ({report.flaggedCliches.length} AI Clichés Flagged)
                     </div>
-                    <p className="text-xs text-slate-300 leading-relaxed whitespace-pre-wrap">
+                    <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
                       {draft}
                     </p>
                   </div>
@@ -646,13 +646,13 @@ export default function SeoOriginalityPlagiarismClient() {
                         {copiedKey === "humanized" ? "✓ Copied" : "Copy Humanized Text"}
                       </button>
                     </div>
-                    <p className="text-xs text-slate-100 leading-relaxed whitespace-pre-wrap">
+                    <p className="text-xs text-slate-900 dark:text-slate-100 leading-relaxed whitespace-pre-wrap">
                       {displayedHumanizedDraft}
                     </p>
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-indigo-500/30 bg-slate-950/80 p-4">
+                <div className="rounded-xl border border-indigo-500/30 bg-white dark:bg-slate-950/80 p-4">
                   <div className="flex items-center justify-between mb-1.5">
                     <span className="text-xs font-bold uppercase tracking-wider text-indigo-300">
                       Ready-to-Drop Information Gain Callout Box (For H2 Injection)
@@ -665,11 +665,11 @@ export default function SeoOriginalityPlagiarismClient() {
                       {copiedKey === "excerpt" ? "✓ Copied" : "Copy Callout Box"}
                     </button>
                   </div>
-                  <p className="text-xs text-slate-200 leading-relaxed">{report.rewrittenExcerpt}</p>
+                  <p className="text-xs text-slate-800 dark:text-slate-200 leading-relaxed">{report.rewrittenExcerpt}</p>
                 </div>
 
                 {aiAuditSummary && (
-                  <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3.5 text-xs text-slate-300">
+                  <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/60 p-3.5 text-xs text-slate-700 dark:text-slate-300">
                     <span className="font-semibold text-indigo-400">Editorial Notes: </span>
                     {aiAuditSummary}
                   </div>
@@ -705,7 +705,7 @@ export default function SeoOriginalityPlagiarismClient() {
                   <h3 className="text-xs font-bold uppercase tracking-wider text-amber-400 mb-2">
                     Missing Information-Gain & E-E-A-T Signals
                   </h3>
-                  <ul className="space-y-1.5 text-xs text-slate-300 list-disc pl-4">
+                  <ul className="space-y-1.5 text-xs text-slate-700 dark:text-slate-300 list-disc pl-4">
                     {report.missingProofSignals.map((sig, i) => (
                       <li key={i}>{sig}</li>
                     ))}
@@ -716,7 +716,7 @@ export default function SeoOriginalityPlagiarismClient() {
                   <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">
                     3-Step Action Plan Before Publishing
                   </h3>
-                  <ul className="space-y-1.5 text-xs text-slate-200 list-decimal pl-4">
+                  <ul className="space-y-1.5 text-xs text-slate-800 dark:text-slate-200 list-decimal pl-4">
                     {report.actionChecklist.map((step, i) => (
                       <li key={i}>{step}</li>
                     ))}

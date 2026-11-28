@@ -408,7 +408,7 @@ export default function NoCodeWorkflowAgentPlannerClient() {
                         Copy
                       </button>
                     </div>
-                    <pre className="mt-2 overflow-x-auto rounded-xl bg-slate-900 p-3 text-xs text-emerald-300">
+                    <pre className="mt-2 overflow-x-auto rounded-xl bg-slate-50 dark:bg-slate-900 p-3 text-xs text-emerald-300">
                       {f.formulaCode}
                     </pre>
                   </div>
@@ -436,7 +436,7 @@ export default function NoCodeWorkflowAgentPlannerClient() {
                   Copy Prompt
                 </button>
               </div>
-              <pre className="whitespace-pre-wrap rounded-2xl border border-slate-200 bg-slate-950 p-4 text-xs text-emerald-300 dark:border-slate-800">
+              <pre className="whitespace-pre-wrap rounded-2xl border border-slate-200 bg-white dark:bg-slate-950 p-4 text-xs text-emerald-300 dark:border-slate-800">
                 {pack.agentSystemPrompts.orchestratorSystemPrompt}
               </pre>
 
@@ -498,7 +498,7 @@ export default function NoCodeWorkflowAgentPlannerClient() {
                   Copy JSON
                 </button>
               </div>
-              <pre className="max-h-96 overflow-auto rounded-2xl border border-slate-200 bg-slate-950 p-4 text-xs text-sky-300 dark:border-slate-800">
+              <pre className="max-h-96 overflow-auto rounded-2xl border border-slate-200 bg-white dark:bg-slate-950 p-4 text-xs text-sky-300 dark:border-slate-800">
                 {pack.downloadableN8nBlueprintJson}
               </pre>
             </div>

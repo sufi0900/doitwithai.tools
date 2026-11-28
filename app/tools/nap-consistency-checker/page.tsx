@@ -1,15 +1,14 @@
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import type { Metadata } from "next";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
 import Link from "next/link";
-import { CheckCircle2, FileSpreadsheet, MapPin } from "lucide-react";
+import {
+  CheckCircle2,
+  FileSpreadsheet,
+  MapPin,
+} from "lucide-react";
 import NapConsistencyCheckerClient from "@/features/nap-consistency-checker/NapConsistencyCheckerClient";
 import ToolFaq from "@/features/tool-ui/ToolFaq";
 import ToolResources from "@/features/tool-catalog/ToolResources";
-import {
-  ToolHeroBackground,
-  toolHeroHeading,
-  toolHeroSurface,
-} from "@/features/tool-ui/ToolHero";
 
 const pageUrl = "https://doitwithai.tools/tools/nap-consistency-checker";
 const title =
@@ -104,69 +103,18 @@ export default function NapConsistencyCheckerPage() {
         }}
       />
 
-      <header
-        className={`relative overflow-hidden ${toolHeroSurface} text-white`}
+      <ToolLandingHero
+        slug="nap-consistency-checker"
+        title="NAP Consistency Checker & Local Citation Formatter"
+        description="Compare your canonical Business Name, Address, and Phone (NAP) against directory listings, distinguish harmless USPS abbreviation differences from ranking-killing phone/address conflicts, and export a Master Citation CSV."
+        categoryLabel="Local SEO"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
       >
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">Tools</Link>
-            <span>/</span>
-            <span aria-current="page">NAP Consistency Checker</span>
-          </nav>
-
-          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                Local SEO · Citations &amp; Directory Accuracy
-              </p>
-              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                NAP Consistency Checker &amp;{" "}
-                <span className={toolHeroHeading}>
-                  Local Citation Formatter
-                </span>
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-                Compare your canonical Business Name, Address, and Phone (NAP)
-                against directory listings, distinguish harmless USPS
-                abbreviation differences from ranking-killing phone/address
-                conflicts, and export a Master Citation CSV.
-              </p>
-              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  USPS Address Normalization
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Exact vs. Normalized vs. Conflict
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Master Citation CSV Export
-                </span>
-              </div>
-              <PortableToolHeroBar />
-            </div>
-
-            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
-                What This Citation Auditor Checks
-              </p>
-              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
-                <li>1. Brand name &amp; legal suffix variations (LLC/Inc)</li>
-                <li>2. USPS street &amp; suite standardization (St/Ste/#)</li>
-                <li>3. Tracking phone vs. primary phone conflicts</li>
-                <li>4. Pre-built Tier 1–3 citation submission sheet</li>
-              </ul>
-            </div>
-          </div>
+        <div className="p-4 sm:p-6">
+          <NapConsistencyCheckerClient />
         </div>
-      </header>
-
-      <NapConsistencyCheckerClient />
+      </ToolLandingHero>
 
       <section
         className={`${section} border-t border-slate-200 dark:border-slate-800`}

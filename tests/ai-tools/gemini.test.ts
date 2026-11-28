@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { z } from "zod";
 import {
+  DEFAULT_GEMINI_MODEL,
   geminiTextFormat,
   getGeminiClient,
   getGeminiModel,
@@ -48,7 +49,7 @@ test("shared Gemini model and overrides do not read old OpenAI settings", () => 
     delete process.env.GEMINI_MODEL;
     delete process.env.GEMINI_ALT_TEXT_MODEL;
     process.env.OPENAI_META_TITLE_MODEL = "old-model";
-    assert.equal(getGeminiModel("META_TITLE"), "");
+    assert.equal(getGeminiModel("META_TITLE"), DEFAULT_GEMINI_MODEL);
     process.env.GEMINI_MODEL = "gemini-3.5-flash-lite";
     assert.equal(getGeminiModel("ALT_TEXT"), "gemini-3.5-flash-lite");
     process.env.GEMINI_ALT_TEXT_MODEL = "test-vision";
@@ -407,10 +408,7 @@ test("schema-specific JSON mode recovery is bounded and still rejects invalid dr
         );
       assert.equal(calls, 2);
     }
-    for (const [name, message] of [
-      ["article_outline", "Invalid maxOutputTokens"],
-      ["example", "response_json_schema unsupported"],
-    ]) {
+    for (const [name, message] of [["article_outline", "Invalid maxOutputTokens"]]) {
       let calls = 0;
       globalThis.fetch = (async () => {
         calls++;
@@ -425,6 +423,26 @@ test("schema-specific JSON mode recovery is bounded and still rejects invalid dr
       );
       assert.equal(calls, 1);
     }
+    let audienceCalls = 0;
+    globalThis.fetch = (async () => {
+      audienceCalls++;
+      if (audienceCalls === 1)
+        return Response.json(
+          { error: { message: "response_json_schema unsupported" } },
+          { status: 400 },
+        );
+      return envelope('{"answer":"Audience JSON recovery"}');
+    }) as typeof fetch;
+    assert.deepEqual(
+      (
+        await getGeminiClient().generate({
+          ...recoveryParams,
+          text: { format: { ...format, name: "audience_research" } },
+        })
+      ).output_parsed,
+      { answer: "Audience JSON recovery" },
+    );
+    assert.equal(audienceCalls, 2);
     let calls = 0;
     globalThis.fetch = (async (_url: unknown, options: any) => {
       if (++calls === 1)

@@ -313,7 +313,7 @@ export default function UgcVideoPromptClient() {
     <section
       id="ugc-video-prompt-workspace"
       aria-label="UGC Ad, Sora Video and Text-to-Video Prompt Studio"
-      className="rounded-[28px] border border-white/10 bg-slate-900/85 p-5 shadow-2xl sm:p-8 space-y-8"
+      className="rounded-[28px] border border-white/10 bg-slate-50 dark:bg-slate-900/85 p-5 shadow-2xl sm:p-8 space-y-8"
     >
       <ToolRunOverlay
         active={busy}
@@ -332,7 +332,7 @@ export default function UgcVideoPromptClient() {
       {/* TOP COMMAND PANEL */}
       <form
         onSubmit={(e) => void handleGenerate(e)}
-        className="rounded-2xl border border-white/10 bg-slate-950/65 p-5 sm:p-6 space-y-6"
+        className="rounded-2xl border border-white/10 bg-white dark:bg-slate-950/65 p-5 sm:p-6 space-y-6"
       >
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-4">
           <div className="flex items-center gap-3">
@@ -340,10 +340,10 @@ export default function UgcVideoPromptClient() {
               <Video aria-hidden className="h-5 w-5 text-violet-300" />
             </div>
             <div>
-              <h2 className="text-lg sm:text-xl font-black text-white">
+              <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white">
                 UGC Ad, Sora Text-to-Video &amp; Suno Audio Prompt Builder
               </h2>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Configure your product offer, camera movement, lighting, and audio vibe to generate a complete 4-scene production pack.
               </p>
             </div>
@@ -406,7 +406,7 @@ export default function UgcVideoPromptClient() {
           <div>
             <label
               htmlFor="vp-engine"
-              className="block text-xs font-bold uppercase tracking-wider text-slate-300"
+              className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300"
             >
               3. Target AI Video Engine
             </label>
@@ -434,7 +434,7 @@ export default function UgcVideoPromptClient() {
           <div>
             <label
               htmlFor="vp-ratio"
-              className="block text-xs font-bold uppercase tracking-wider text-slate-300"
+              className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300"
             >
               4. Aspect Ratio
             </label>
@@ -459,7 +459,7 @@ export default function UgcVideoPromptClient() {
           <div>
             <label
               htmlFor="vp-camera"
-              className="block text-xs font-bold uppercase tracking-wider text-slate-300"
+              className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300"
             >
               5. Camera &amp; Lens Movement
             </label>
@@ -475,7 +475,7 @@ export default function UgcVideoPromptClient() {
           <div>
             <label
               htmlFor="vp-lighting"
-              className="block text-xs font-bold uppercase tracking-wider text-slate-300"
+              className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300"
             >
               6. Lighting &amp; Color Grade
             </label>
@@ -548,7 +548,7 @@ export default function UgcVideoPromptClient() {
             <span className="inline-flex items-center rounded-full border border-violet-400/35 bg-violet-500/15 px-3 py-0.5 text-xs font-bold uppercase tracking-wider text-violet-300">
               {engine} · {aspectRatio}
             </span>
-            <h3 className="mt-1.5 text-xl font-black text-white">
+            <h3 className="mt-1.5 text-xl font-black text-slate-900 dark:text-white">
               Master Text-to-Video Prompt, 4-Scene UGC Script &amp; Suno Audio Pack
             </h3>
           </div>
@@ -556,7 +556,7 @@ export default function UgcVideoPromptClient() {
             <button
               type="button"
               onClick={copyAll}
-              className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-white/20 bg-slate-900 px-4 py-2 text-xs font-bold text-white hover:border-blue-400/50"
+              className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-white/20 bg-slate-50 dark:bg-slate-900 px-4 py-2 text-xs font-bold text-slate-900 dark:text-white hover:border-blue-400/50"
             >
               <Copy className="h-4 w-4 text-blue-300" />
               Copy Full Prompt Pack
@@ -564,7 +564,7 @@ export default function UgcVideoPromptClient() {
             <button
               type="button"
               onClick={exportMarkdown}
-              className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-white/20 bg-slate-900 px-4 py-2 text-xs font-bold text-white hover:border-emerald-400/50"
+              className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-white/20 bg-slate-50 dark:bg-slate-900 px-4 py-2 text-xs font-bold text-slate-900 dark:text-white hover:border-emerald-400/50"
             >
               <Download className="h-4 w-4 text-emerald-300" />
               Download .MD Storyboard
@@ -574,7 +574,7 @@ export default function UgcVideoPromptClient() {
 
         {/* Master Video Prompt + Suno Audio Prompt Row */}
         <div className="grid gap-5 lg:grid-cols-2">
-          <div className="rounded-2xl border border-t-4 border-white/15 border-t-violet-400 bg-slate-950/90 p-5 space-y-3">
+          <div className="rounded-2xl border border-t-4 border-white/15 border-t-violet-400 bg-white dark:bg-slate-950/90 p-5 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wider text-violet-300">
                 🎬 Master Text-to-Video Prompt (Sora / Runway / Veo / Kling)
@@ -590,7 +590,7 @@ export default function UgcVideoPromptClient() {
                 Copy Prompt
               </button>
             </div>
-            <p className="rounded-xl bg-slate-900 p-3.5 font-mono text-xs leading-6 text-slate-100 border border-white/10">
+            <p className="rounded-xl bg-slate-50 dark:bg-slate-900 p-3.5 font-mono text-xs leading-6 text-slate-900 dark:text-slate-100 border border-white/10">
               {pack.masterVideoPrompt}
             </p>
             <div className="text-[11px] text-rose-300">
@@ -598,7 +598,7 @@ export default function UgcVideoPromptClient() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-t-4 border-white/15 border-t-emerald-400 bg-slate-950/90 p-5 space-y-3">
+          <div className="rounded-2xl border border-t-4 border-white/15 border-t-emerald-400 bg-white dark:bg-slate-950/90 p-5 space-y-3">
             <div className="flex items-center justify-between">
               <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-300">
                 <Music className="h-4 w-4" />
@@ -615,10 +615,10 @@ export default function UgcVideoPromptClient() {
                 Copy Audio Prompt
               </button>
             </div>
-            <p className="rounded-xl bg-slate-900 p-3.5 font-mono text-xs leading-6 text-slate-100 border border-white/10">
+            <p className="rounded-xl bg-slate-50 dark:bg-slate-900 p-3.5 font-mono text-xs leading-6 text-slate-900 dark:text-slate-100 border border-white/10">
               {pack.sunoAudioPrompt}
             </p>
-            <p className="text-[11px] text-slate-400">
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">
               Engineered to leave a clean midrange vocal pocket so spoken UGC dialogue stays crisp.
             </p>
           </div>
@@ -629,10 +629,10 @@ export default function UgcVideoPromptClient() {
           {pack.scenes.map((scene) => (
             <article
               key={scene.sceneNumber}
-              className="rounded-2xl border border-t-4 border-white/15 border-t-sky-400 bg-slate-950/85 p-5 shadow-xl space-y-3"
+              className="rounded-2xl border border-t-4 border-white/15 border-t-sky-400 bg-white dark:bg-slate-950/85 p-5 shadow-xl space-y-3"
             >
               <div className="flex items-center justify-between">
-                <h4 className="text-base font-black text-white">
+                <h4 className="text-base font-black text-slate-900 dark:text-white">
                   {scene.stageLabel}
                 </h4>
                 <span className="rounded-lg bg-sky-500/20 border border-sky-400/40 px-2.5 py-0.5 font-mono text-xs font-bold text-sky-200">
@@ -640,16 +640,16 @@ export default function UgcVideoPromptClient() {
                 </span>
               </div>
 
-              <div className="rounded-xl border border-white/10 bg-slate-900/90 p-3.5">
+              <div className="rounded-xl border border-white/10 bg-slate-50 dark:bg-slate-900/90 p-3.5">
                 <div className="text-[11px] font-bold uppercase text-amber-300 mb-1">
                   Spoken UGC Hook / Voiceover Line:
                 </div>
-                <p className="text-sm font-medium leading-6 text-white">
+                <p className="text-sm font-medium leading-6 text-slate-900 dark:text-white">
                   {scene.spokenScript}
                 </p>
               </div>
 
-              <div className="rounded-xl border border-white/10 bg-slate-950 p-3.5 space-y-2">
+              <div className="rounded-xl border border-white/10 bg-white dark:bg-slate-950 p-3.5 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-bold uppercase text-sky-300">
                     AI Video B-Roll Generation Prompt:
@@ -665,7 +665,7 @@ export default function UgcVideoPromptClient() {
                     Copy B-Roll
                   </button>
                 </div>
-                <p className="font-mono text-xs leading-5 text-slate-300">
+                <p className="font-mono text-xs leading-5 text-slate-700 dark:text-slate-300">
                   {scene.bRollPrompt}
                 </p>
               </div>
@@ -673,7 +673,7 @@ export default function UgcVideoPromptClient() {
           ))}
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-white/10 bg-slate-950/70 p-4">
+        <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-white/10 bg-white dark:bg-slate-950/70 p-4">
           <Link
             href="/tools/short-form-video-script-generator"
             className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-blue-400/35 bg-blue-500/15 px-4 py-2 text-xs font-bold text-blue-200 hover:bg-blue-500/25"

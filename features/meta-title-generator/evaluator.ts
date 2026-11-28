@@ -113,8 +113,10 @@ function fallbackPixelEstimate(title: string) {
   return Math.ceil(width);
 }
 
-export function measureTitlePixels(title: string) {
-  if (typeof document === "undefined") return fallbackPixelEstimate(title);
+export function measureTitlePixels(title: string, useCanvas = true) {
+  if (!useCanvas || typeof document === "undefined") {
+    return fallbackPixelEstimate(title);
+  }
 
   const canvas = document.createElement("canvas");
   const context = canvas.getContext("2d");
@@ -155,11 +157,12 @@ export function evaluateTitle(
   title: string,
   input: MetaTitleInput,
   lens?: MetaTitleLens,
+  useCanvas = true,
 ): TitleEvaluation {
   const normalizedTitle = normalizeTitle(title);
   const normalizedKeyword = normalizeTitle(input.primaryKeyword);
   const characters = [...title].length;
-  const pixels = measureTitlePixels(title);
+  const pixels = measureTitlePixels(title, useCanvas);
   const keywordIndex = normalizedTitle.indexOf(normalizedKeyword);
   const firstEightWords = normalizedTitle.split(" ").slice(0, 8).join(" ");
   const primaryKeywordFound = keywordIndex >= 0;

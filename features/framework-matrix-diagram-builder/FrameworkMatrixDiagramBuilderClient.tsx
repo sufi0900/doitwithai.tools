@@ -954,7 +954,7 @@ export default function FrameworkMatrixDiagramBuilderClient() {
                           backgroundColor: "#e11d48",
                           cursor: canRemoveNode ? "pointer" : "not-allowed",
                         }}
-                        className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-extrabold text-white disabled:opacity-45"
+                        className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-extrabold text-slate-900 dark:text-white disabled:opacity-45"
                         title={
                           canRemoveNode
                             ? "Remove this stage"
@@ -1008,9 +1008,9 @@ export default function FrameworkMatrixDiagramBuilderClient() {
               {/* Persistent Top Export Bar */}
               <div
                 data-export-toolbar
-                className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 bg-slate-900 px-4 py-2.5"
+                className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-4 py-2.5"
               >
-                <span className="text-[11px] font-extrabold uppercase tracking-wider text-white">
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
                   1200×1200 Diagram Export
                 </span>
                 <div className="flex flex-wrap items-center gap-1.5">
@@ -1064,7 +1064,7 @@ export default function FrameworkMatrixDiagramBuilderClient() {
                         notify("Copied Diagram Image to Clipboard!"),
                       )
                     }
-                    className="inline-flex items-center gap-1 rounded-xl border border-white/20 bg-white/10 px-2.5 py-1.5 text-xs font-bold text-white hover:bg-white/20"
+                    className="inline-flex items-center gap-1 rounded-xl border border-white/20 bg-white/10 px-2.5 py-1.5 text-xs font-bold text-slate-900 dark:text-white hover:bg-white/20"
                   >
                     <Copy size={12} />
                     Copy
@@ -1073,7 +1073,7 @@ export default function FrameworkMatrixDiagramBuilderClient() {
               </div>
 
               {/* Direct In-Canvas Headline Editor Bar */}
-              <div className="flex items-center gap-2 border-b border-slate-800 bg-[#0d1424] px-4 py-2 text-xs text-white">
+              <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 bg-[#0d1424] px-4 py-2 text-xs text-slate-900 dark:text-white">
                 <span className="inline-flex shrink-0 items-center gap-1 font-extrabold text-[#9aabff]">
                   <Type size={13} /> Diagram Title:
                 </span>
@@ -1086,7 +1086,7 @@ export default function FrameworkMatrixDiagramBuilderClient() {
                       diagramTitle: e.target.value,
                     }))
                   }
-                  className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-1 text-xs font-semibold text-white focus:border-[#5271ff] focus:outline-none"
+                  className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-3 py-1 text-xs font-semibold text-slate-900 dark:text-white focus:border-[#5271ff] focus:outline-none"
                 />
               </div>
 
@@ -1127,8 +1127,8 @@ export default function FrameworkMatrixDiagramBuilderClient() {
               </div>
 
               {/* Bottom Zoom Toolbar */}
-              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-800 bg-[#0d1424] px-4 py-2 text-xs text-slate-300">
-                <span className="text-[11px] text-slate-400">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 dark:border-slate-800 bg-[#0d1424] px-4 py-2 text-xs text-slate-700 dark:text-slate-300">
+                <span className="text-[11px] text-slate-500 dark:text-slate-400">
                   Ctrl + Scroll to zoom
                 </span>
                 <div className="flex items-center gap-1.5">
@@ -1137,7 +1137,7 @@ export default function FrameworkMatrixDiagramBuilderClient() {
                     onClick={() =>
                       setZoomLevel((z) => Math.max(0.6, +(z - 0.15).toFixed(2)))
                     }
-                    className="rounded-lg bg-slate-800 px-2 py-1 text-[11px] font-bold text-white hover:bg-slate-700"
+                    className="rounded-lg bg-slate-800 px-2 py-1 text-[11px] font-bold text-slate-900 dark:text-white hover:bg-slate-700"
                   >
                     <ZoomOut size={12} />
                   </button>
@@ -1159,7 +1159,7 @@ export default function FrameworkMatrixDiagramBuilderClient() {
                         Math.min(2.25, +(z + 0.15).toFixed(2)),
                       )
                     }
-                    className="rounded-lg bg-slate-800 px-2 py-1 text-[11px] font-bold text-white hover:bg-slate-700"
+                    className="rounded-lg bg-slate-800 px-2 py-1 text-[11px] font-bold text-slate-900 dark:text-white hover:bg-slate-700"
                   >
                     <ZoomIn size={12} />
                   </button>
@@ -1181,7 +1181,7 @@ export default function FrameworkMatrixDiagramBuilderClient() {
                     <button
                       type="button"
                       onClick={() => setZoomLevel(1)}
-                      className="rounded-lg border border-slate-700 px-2 py-1 text-[11px] font-bold text-slate-300"
+                      className="rounded-lg border border-slate-300 dark:border-slate-700 px-2 py-1 text-[11px] font-bold text-slate-700 dark:text-slate-300"
                     >
                       <RotateCcw size={11} />
                     </button>

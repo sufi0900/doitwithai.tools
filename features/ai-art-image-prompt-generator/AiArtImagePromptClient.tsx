@@ -31,6 +31,17 @@ export type ArtPreset = {
 
 export const ART_PRESETS: ArtPreset[] = [
   {
+    id: "8k-photo-prompt-generator",
+    label: "8K Photo Prompt Generator (Photorealistic)",
+    subject: "Ultra-detailed editorial portrait and natural environment captured in native 8K UHD with authentic skin micro-textures, subtle film grain, and razor-sharp eye catchlights",
+    mediumStyle: "8K Raw Full-Frame DSLR Editorial Photography (Zero AI Gloss)",
+    lighting: "Golden hour directional window light with soft bounce fill and full shadow dynamic range",
+    cameraLens: "85mm f/1.4 Sony GM prime lens, ISO 100, 1/500s, natural bokeh",
+    colorPalette: "True-to-life neutral skin tones, warm sunlit highlights, and deep organic shadows",
+    aspectRatio: "4:5",
+    exactTextOverlay: "",
+  },
+  {
     id: "grok-blog-hero",
     label: "Grok & Flux Blog Hero Visual",
     subject: "Futuristic isometric AI command center connecting search intent nodes and glowing content clusters above a sleek glass desk",
@@ -376,7 +387,7 @@ export default function AiArtImagePromptClient() {
     <section
       id="ai-art-prompt-workspace"
       aria-label="AI Art, Grok and 8K Image Restoration Prompt Studio"
-      className="rounded-[28px] border border-white/10 bg-slate-900/85 p-5 shadow-2xl sm:p-8 space-y-8"
+      className="rounded-[28px] border border-white/10 bg-slate-50 dark:bg-slate-900/85 p-5 shadow-2xl sm:p-8 space-y-8"
     >
       <ToolRunOverlay
         active={busy}
@@ -395,7 +406,7 @@ export default function AiArtImagePromptClient() {
       {/* TOP COMMAND PANEL */}
       <form
         onSubmit={(e) => void handleGenerate(e)}
-        className="rounded-2xl border border-white/10 bg-slate-950/65 p-5 sm:p-6 space-y-6"
+        className="rounded-2xl border border-white/10 bg-white dark:bg-slate-950/65 p-5 sm:p-6 space-y-6"
       >
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-4">
           <div className="flex items-center gap-3">
@@ -403,10 +414,10 @@ export default function AiArtImagePromptClient() {
               <Palette aria-hidden className="h-5 w-5 text-pink-300" />
             </div>
             <div>
-              <h2 className="text-lg sm:text-xl font-black text-white">
+              <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white">
                 AI Art, Grok Aurora &amp; 8K Image Restoration Prompt Studio
               </h2>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Describe your scene or click Randomize Art Concept to generate Midjourney, Flux, Grok, and 8K upscaling prompts.
               </p>
             </div>
@@ -459,7 +470,7 @@ export default function AiArtImagePromptClient() {
           <div>
             <label
               htmlFor="art-medium"
-              className="block text-xs font-bold uppercase tracking-wider text-slate-300"
+              className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300"
             >
               2. Artistic Medium / Style
             </label>
@@ -475,7 +486,7 @@ export default function AiArtImagePromptClient() {
           <div>
             <label
               htmlFor="art-lighting"
-              className="block text-xs font-bold uppercase tracking-wider text-slate-300"
+              className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300"
             >
               3. Lighting &amp; Atmosphere
             </label>
@@ -491,7 +502,7 @@ export default function AiArtImagePromptClient() {
           <div>
             <label
               htmlFor="art-lens"
-              className="block text-xs font-bold uppercase tracking-wider text-slate-300"
+              className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300"
             >
               4. Camera Lens &amp; Framing
             </label>
@@ -507,7 +518,7 @@ export default function AiArtImagePromptClient() {
           <div>
             <label
               htmlFor="art-palette"
-              className="block text-xs font-bold uppercase tracking-wider text-slate-300"
+              className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300"
             >
               5. Color Palette &amp; Mood
             </label>
@@ -523,7 +534,7 @@ export default function AiArtImagePromptClient() {
           <div>
             <label
               htmlFor="art-ar"
-              className="block text-xs font-bold uppercase tracking-wider text-slate-300"
+              className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300"
             >
               6. Aspect Ratio
             </label>
@@ -543,7 +554,7 @@ export default function AiArtImagePromptClient() {
           <div>
             <label
               htmlFor="art-text"
-              className="block text-xs font-bold uppercase tracking-wider text-slate-300"
+              className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300"
             >
               7. Exact Text Overlay (Optional for Grok / Ideogram)
             </label>
@@ -601,7 +612,7 @@ export default function AiArtImagePromptClient() {
             <span className="inline-flex items-center rounded-full border border-pink-400/35 bg-pink-500/15 px-3 py-0.5 text-xs font-bold uppercase tracking-wider text-pink-300">
               Midjourney v6.1 · Grok Aurora · Flux.1 · 8K Upscaling
             </span>
-            <h3 className="mt-1.5 text-xl font-black text-white">
+            <h3 className="mt-1.5 text-xl font-black text-slate-900 dark:text-white">
               4 Copy-Ready Art, Grok &amp; 8K Restoration Prompts
             </h3>
           </div>
@@ -609,7 +620,7 @@ export default function AiArtImagePromptClient() {
             <button
               type="button"
               onClick={copyAll}
-              className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-white/20 bg-slate-900 px-4 py-2 text-xs font-bold text-white hover:border-blue-400/50"
+              className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-white/20 bg-slate-50 dark:bg-slate-900 px-4 py-2 text-xs font-bold text-slate-900 dark:text-white hover:border-blue-400/50"
             >
               <Copy className="h-4 w-4 text-blue-300" />
               Copy All 4 Prompts
@@ -617,7 +628,7 @@ export default function AiArtImagePromptClient() {
             <button
               type="button"
               onClick={exportMarkdown}
-              className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-white/20 bg-slate-900 px-4 py-2 text-xs font-bold text-white hover:border-emerald-400/50"
+              className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-white/20 bg-slate-50 dark:bg-slate-900 px-4 py-2 text-xs font-bold text-slate-900 dark:text-white hover:border-emerald-400/50"
             >
               <Download className="h-4 w-4 text-emerald-300" />
               Download .MD Pack
@@ -639,7 +650,7 @@ export default function AiArtImagePromptClient() {
                     >
                       {card.engineBadge}
                     </span>
-                    <h4 className="mt-1.5 text-base sm:text-lg font-black text-white">
+                    <h4 className="mt-1.5 text-base sm:text-lg font-black text-slate-900 dark:text-white">
                       {card.title}
                     </h4>
                   </div>
@@ -655,12 +666,12 @@ export default function AiArtImagePromptClient() {
                   </button>
                 </div>
 
-                <p className="rounded-xl border border-white/10 bg-slate-900 p-3.5 font-mono text-xs leading-6 text-slate-100">
+                <p className="rounded-xl border border-white/10 bg-slate-50 dark:bg-slate-900 p-3.5 font-mono text-xs leading-6 text-slate-900 dark:text-slate-100">
                   {card.promptText}
                 </p>
 
-                <p className="text-xs leading-5 text-slate-400">
-                  <strong className="text-slate-200">Pro Tip:</strong>{" "}
+                <p className="text-xs leading-5 text-slate-500 dark:text-slate-400">
+                  <strong className="text-slate-800 dark:text-slate-200">Pro Tip:</strong>{" "}
                   {card.usageTip}
                 </p>
               </div>
@@ -668,7 +679,7 @@ export default function AiArtImagePromptClient() {
           ))}
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-white/10 bg-slate-950/70 p-4">
+        <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-white/10 bg-white dark:bg-slate-950/70 p-4">
           <Link
             href="/tools/image-alt-text-generator"
             className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-blue-400/35 bg-blue-500/15 px-4 py-2 text-xs font-bold text-blue-200 hover:bg-blue-500/25"

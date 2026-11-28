@@ -379,7 +379,7 @@ export function LinkedinCommentGeneratorClient() {
                           backgroundColor: "#e11d48",
                           cursor: canRemoveIncoming ? "pointer" : "not-allowed",
                         }}
-                        className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-extrabold text-white disabled:opacity-45"
+                        className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-extrabold text-slate-900 dark:text-white disabled:opacity-45"
                       >
                         <Trash2 size={11} /> Remove
                       </button>
@@ -538,19 +538,19 @@ export function LinkedinCommentGeneratorClient() {
             </div>
           )}
 
-          <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-slate-200 bg-slate-900 p-4 text-white">
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-slate-200 bg-slate-50 dark:bg-slate-900 p-4 text-slate-900 dark:text-white">
             <div className="min-w-0 flex-1">
               <span className="text-[11px] font-bold uppercase tracking-wider text-[#8094ff]">
                 Detected Post Context · Click Any Response Below to Edit Live
               </span>
-              <p className="mt-1 text-xs font-medium text-slate-100 sm:text-sm">
+              <p className="mt-1 text-xs font-medium text-slate-900 dark:text-slate-100 sm:text-sm">
                 {result.postCoreThesis}
               </p>
             </div>
             <button
               type="button"
               onClick={downloadCommentsTxt}
-              className="inline-flex shrink-0 items-center gap-1 rounded-xl border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-bold text-white hover:bg-white/20"
+              className="inline-flex shrink-0 items-center gap-1 rounded-xl border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-bold text-slate-900 dark:text-white hover:bg-white/20"
             >
               <Download size={13} /> Download .TXT
             </button>
@@ -600,7 +600,7 @@ export function LinkedinCommentGeneratorClient() {
                           </div>
 
                           <div className="flex items-center justify-between border-t border-slate-200/70 pt-1 dark:border-slate-800">
-                            <span className="text-[10px] text-slate-400">
+                            <span className="text-[10px] text-slate-500 dark:text-slate-400">
                               {reply.charCount} chars
                             </span>
                             <button
@@ -647,7 +647,7 @@ export function LinkedinCommentGeneratorClient() {
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <span className="text-[11px] text-slate-400">
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400">
                           {comment.charCount} chars
                         </span>
                         <button

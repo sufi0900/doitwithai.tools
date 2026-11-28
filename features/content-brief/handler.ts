@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { readBoundedJson, BodyError } from "@/lib/ai-tools/request-body";
+import { readBoundedJson, BodyError, safeStderrLog } from "@/lib/ai-tools/request-body";
 import {
   checkAiToolRateLimit,
   rateLimitFailure,
@@ -125,9 +125,7 @@ export async function POST(request: NextRequest) {
       try {
         await limit.release();
       } catch {
-        process.stderr.write(
-          JSON.stringify({ event: "content_brief_refund_failed" }) + "\n",
-        );
+        safeStderrLog({ event: "content_brief_refund_failed" });
       }
   }
 }

@@ -618,19 +618,24 @@ export default function AnalyzerClient() {
         description="Inspecting metadata, headings, internal/external links, schema, and editorial signals."
       />
       <section className={styles.inputCard} aria-label="Start a page audit">
-        <div className={styles.panelTitle}>
-          <div className="flex items-center gap-3">
-            <PlatformBrandIcon
-              brand="onpage-writer"
-              slug="on-page-ai-seo-analyzer"
-              size={42}
-            />
-            <div>
-              <span className={styles.eyebrow}>
-                36+ Factor SEO, AEO/GEO &amp; Visual Engagement Audit
-              </span>
-              <h2>Audit &amp; Improve Any Webpage in Real Time.</h2>
-            </div>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className={styles.segment}>
+            <button
+              type="button"
+              aria-pressed={source === "url"}
+              onClick={() => setSource("url")}
+            >
+              <Globe2 size={16} />
+              Page URL
+            </button>
+            <button
+              type="button"
+              aria-pressed={source === "paste"}
+              onClick={() => setSource("paste")}
+            >
+              <FileCode2 size={16} />
+              Paste HTML
+            </button>
           </div>
           <button
             className={styles.quiet}
@@ -640,24 +645,6 @@ export default function AnalyzerClient() {
           >
             <Play size={15} />
             Try example
-          </button>
-        </div>
-        <div className={styles.segment}>
-          <button
-            type="button"
-            aria-pressed={source === "url"}
-            onClick={() => setSource("url")}
-          >
-            <Globe2 size={16} />
-            Page URL
-          </button>
-          <button
-            type="button"
-            aria-pressed={source === "paste"}
-            onClick={() => setSource("paste")}
-          >
-            <FileCode2 size={16} />
-            Paste HTML
           </button>
         </div>
         {!page && section !== "overview" && (

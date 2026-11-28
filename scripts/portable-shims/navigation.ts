@@ -30,3 +30,9 @@ export function notFound(): never {
 export function redirect(): never {
   throw new Error("redirect");
 }
+export function permanentRedirect(url?: string): never {
+  if (typeof window !== "undefined" && url) {
+    window.location.href = url.startsWith("/") ? ORIGIN + url : url;
+  }
+  throw new Error("permanentRedirect: " + url);
+}

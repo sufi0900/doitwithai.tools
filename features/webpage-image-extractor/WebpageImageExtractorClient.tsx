@@ -250,7 +250,7 @@ export default function WebpageImageExtractorClient() {
           <div className="relative flex min-w-0 flex-1 items-center">
             <Globe
               size={15}
-              className="pointer-events-none absolute left-3.5 text-slate-400"
+              className="pointer-events-none absolute left-3.5 text-slate-500 dark:text-slate-400"
             />
             <input
               type="url"
@@ -302,8 +302,8 @@ export default function WebpageImageExtractorClient() {
 
       {/* ZOOMABLE HD IMAGE INSPECTOR STAGE */}
       {inspectedImg && (
-        <div className="overflow-hidden rounded-2xl border-2 border-[#4058d0] bg-[#070b14] text-white shadow-2xl">
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 bg-slate-900 px-4 py-2.5">
+        <div className="overflow-hidden rounded-2xl border-2 border-[#4058d0] bg-[#070b14] text-slate-900 dark:text-white shadow-2xl">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-4 py-2.5">
             <span className="text-xs font-extrabold text-[#9aabff]">
               HD Asset Zoom Inspector · {inspectedImg.filename} (
               {inspectedImg.width}×{inspectedImg.height}px · {inspectedImg.role})
@@ -314,7 +314,7 @@ export default function WebpageImageExtractorClient() {
                 onClick={() =>
                   setZoomLevel((z) => Math.max(0.6, +(z - 0.2).toFixed(2)))
                 }
-                className="rounded-lg bg-slate-800 px-2 py-1 text-xs font-bold text-white hover:bg-slate-700"
+                className="rounded-lg bg-slate-800 px-2 py-1 text-xs font-bold text-slate-900 dark:text-white hover:bg-slate-700"
               >
                 <ZoomOut size={13} />
               </button>
@@ -337,7 +337,7 @@ export default function WebpageImageExtractorClient() {
                 onClick={() =>
                   setZoomLevel((z) => Math.min(2.5, +(z + 0.2).toFixed(2)))
                 }
-                className="rounded-lg bg-slate-800 px-2 py-1 text-xs font-bold text-white hover:bg-slate-700"
+                className="rounded-lg bg-slate-800 px-2 py-1 text-xs font-bold text-slate-900 dark:text-white hover:bg-slate-700"
               >
                 <ZoomIn size={13} />
               </button>
@@ -464,7 +464,7 @@ export default function WebpageImageExtractorClient() {
                     setZoomLevel(1.25);
                   }}
                   title="Click to zoom and inspect image"
-                  className="mt-3 flex h-40 cursor-zoom-in items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-900/90 p-2 dark:border-slate-800"
+                  className="mt-3 flex h-40 cursor-zoom-in items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 dark:bg-slate-900/90 p-2 dark:border-slate-800"
                 >
                   <div
                     role="img"

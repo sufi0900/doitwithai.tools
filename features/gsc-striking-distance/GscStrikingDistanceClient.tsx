@@ -157,7 +157,7 @@ export default function GscStrikingDistanceClient() {
             placeholder="…or paste CSV text here (header row first: Top queries, Clicks, Impressions, CTR, Position)"
             className={`${inputClass} mt-3 font-mono text-xs`}
           />
-          <p className="mt-2 flex items-start gap-2 text-xs leading-6 text-slate-400">
+          <p className="mt-2 flex items-start gap-2 text-xs leading-6 text-slate-500 dark:text-slate-400">
             <Lock
               className="mt-1 h-3.5 w-3.5 shrink-0 text-emerald-300"
               aria-hidden="true"
@@ -172,7 +172,7 @@ export default function GscStrikingDistanceClient() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label
-                className="mb-1 block text-xs font-semibold text-slate-300"
+                className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300"
                 htmlFor="gsc-min-pos"
               >
                 Position from
@@ -189,7 +189,7 @@ export default function GscStrikingDistanceClient() {
             </div>
             <div>
               <label
-                className="mb-1 block text-xs font-semibold text-slate-300"
+                className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300"
                 htmlFor="gsc-max-pos"
               >
                 Position to
@@ -206,7 +206,7 @@ export default function GscStrikingDistanceClient() {
             </div>
             <div>
               <label
-                className="mb-1 block text-xs font-semibold text-slate-300"
+                className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300"
                 htmlFor="gsc-min-impr"
               >
                 Minimum impressions
@@ -223,7 +223,7 @@ export default function GscStrikingDistanceClient() {
             </div>
             <div>
               <label
-                className="mb-1 block text-xs font-semibold text-slate-300"
+                className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300"
                 htmlFor="gsc-target-ctr"
               >
                 Target CTR % (assumption)
@@ -242,7 +242,7 @@ export default function GscStrikingDistanceClient() {
           </div>
           <div className="mt-3">
             <label
-              className="mb-1 block text-xs font-semibold text-slate-300"
+              className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300"
               htmlFor="gsc-exclude"
             >
               Exclude terms (comma-separated, e.g. your brand name)
@@ -258,7 +258,7 @@ export default function GscStrikingDistanceClient() {
           </div>
           <div className="mt-3">
             <label
-              className="mb-1 block text-xs font-semibold text-slate-300"
+              className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300"
               htmlFor="gsc-sort"
             >
               Sort by
@@ -276,7 +276,7 @@ export default function GscStrikingDistanceClient() {
               ))}
             </select>
           </div>
-          <p className="mt-3 text-xs leading-6 text-slate-400">
+          <p className="mt-3 text-xs leading-6 text-slate-500 dark:text-slate-400">
             The target CTR is an editable scenario, not a prediction. Estimated
             extra clicks = impressions × (target CTR − current CTR), never below
             zero.
@@ -313,12 +313,12 @@ export default function GscStrikingDistanceClient() {
             ].map(([label, value]) => (
               <div
                 key={label}
-                className="rounded-2xl border border-white/10 bg-slate-900/60 p-4"
+                className="rounded-2xl border border-white/10 bg-slate-50 dark:bg-slate-900/60 p-4"
               >
-                <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   {label}
                 </p>
-                <p className="mt-1 text-2xl font-black text-white">{value}</p>
+                <p className="mt-1 text-2xl font-black text-slate-900 dark:text-white">{value}</p>
               </div>
             ))}
           </div>
@@ -350,7 +350,7 @@ export default function GscStrikingDistanceClient() {
               <div className="relative">
                 <Search
                   size={14}
-                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400"
                 />
                 <input
                   type="search"
@@ -358,7 +358,7 @@ export default function GscStrikingDistanceClient() {
                   onChange={(e) => setSearchFilter(e.target.value)}
                   placeholder="Search query or URL..."
                   aria-label="Search query or URL"
-                  className="rounded-xl border border-white/15 bg-slate-900/70 py-2 pl-8 pr-3 text-xs text-white focus:border-[#5271ff] focus:outline-none"
+                  className="rounded-xl border border-white/15 bg-slate-50 dark:bg-slate-900/70 py-2 pl-8 pr-3 text-xs text-slate-900 dark:text-white focus:border-[#5271ff] focus:outline-none"
                 />
               </div>
               <button
@@ -373,7 +373,7 @@ export default function GscStrikingDistanceClient() {
           </div>
 
           {opportunities.length === 0 ? (
-            <p className="mt-6 rounded-xl border border-white/10 bg-slate-900/60 p-5 text-sm text-slate-300">
+            <p className="mt-6 rounded-xl border border-white/10 bg-slate-50 dark:bg-slate-900/60 p-5 text-sm text-slate-700 dark:text-slate-300">
               No rows match these filters. Try a wider position range or clear
               the search filter.
               <button
@@ -394,7 +394,7 @@ export default function GscStrikingDistanceClient() {
             <>
               <div className="mt-3 overflow-x-auto rounded-2xl border border-white/10">
                 <table className="w-full min-w-[860px] text-left text-sm">
-                  <thead className="bg-slate-900/80 text-xs uppercase tracking-wider text-slate-400">
+                  <thead className="bg-slate-50 dark:bg-slate-900/80 text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">
                     <tr>
                       <th className="px-4 py-3">
                         {parsed.hasQuery ? "Query" : "Page"}
@@ -415,14 +415,14 @@ export default function GscStrikingDistanceClient() {
                       return (
                         <tr
                           key={`${rowKey}-${index}`}
-                          className="align-top text-slate-200"
+                          className="align-top text-slate-800 dark:text-slate-200"
                         >
-                          <td className="max-w-[260px] px-4 py-3 font-semibold text-white">
+                          <td className="max-w-[260px] px-4 py-3 font-semibold text-slate-900 dark:text-white">
                             <span className="break-words">{item.label}</span>
                             {parsed.hasQuery &&
                               parsed.hasPage &&
                               item.page && (
-                                <span className="mt-0.5 block break-all text-xs font-normal text-slate-400">
+                                <span className="mt-0.5 block break-all text-xs font-normal text-slate-500 dark:text-slate-400">
                                   {item.page}
                                 </span>
                               )}
@@ -462,7 +462,7 @@ export default function GscStrikingDistanceClient() {
                                   }))
                                 }
                                 aria-label={`Action plan for ${item.label}`}
-                                className="w-full rounded-lg border border-white/15 bg-slate-900/80 px-2.5 py-1.5 text-xs text-slate-200 focus:border-[#5271ff] focus:outline-none"
+                                className="w-full rounded-lg border border-white/15 bg-slate-50 dark:bg-slate-900/80 px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 focus:border-[#5271ff] focus:outline-none"
                               />
                               <button
                                 type="button"
@@ -475,7 +475,7 @@ export default function GscStrikingDistanceClient() {
                                   );
                                 }}
                                 title="Copy action brief"
-                                className="shrink-0 rounded-lg border border-white/15 p-1.5 text-slate-300 hover:bg-white/10"
+                                className="shrink-0 rounded-lg border border-white/15 p-1.5 text-slate-700 dark:text-slate-300 hover:bg-white/10"
                               >
                                 <Copy size={13} />
                               </button>
@@ -490,25 +490,25 @@ export default function GscStrikingDistanceClient() {
 
               {pageGroups.length > 0 && (
                 <div className="mt-8">
-                  <h3 className="text-sm font-black text-white">
+                  <h3 className="text-sm font-black text-slate-900 dark:text-white">
                     Pages with the most striking-distance potential
                   </h3>
                   <ul className="mt-3 grid gap-3 md:grid-cols-2">
                     {pageGroups.map((group) => (
                       <li
                         key={group.page}
-                        className="rounded-2xl border border-white/10 bg-slate-900/60 p-4"
+                        className="rounded-2xl border border-white/10 bg-slate-50 dark:bg-slate-900/60 p-4"
                       >
                         <p className="break-all text-xs font-semibold text-blue-200">
                           {group.page}
                         </p>
-                        <p className="mt-2 text-xs leading-6 text-slate-300">
+                        <p className="mt-2 text-xs leading-6 text-slate-700 dark:text-slate-300">
                           {group.queries} queries ·{" "}
                           {group.impressions.toLocaleString()} impressions · ~
                           {Math.round(group.estExtraClicks).toLocaleString()}{" "}
                           est. extra clicks
                         </p>
-                        <p className="mt-1 text-xs text-slate-400">
+                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                           Strongest query: {group.topQuery}
                         </p>
                       </li>

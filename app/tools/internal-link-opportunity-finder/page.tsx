@@ -1,12 +1,6 @@
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
-import {
-  ToolHeroBackground,
-  toolHeroSurface,
-  toolHeroHeading,
-} from "@/features/tool-ui/ToolHero";
 import type { Metadata } from "next";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
 import Link from "next/link";
-import { Link2, Search, FileCheck2 } from "lucide-react";
 import InternalLinkingClient from "@/features/internal-linking/Client";
 import ToolResources from "@/features/tool-catalog/ToolResources";
 const pageUrl =
@@ -64,72 +58,18 @@ export default function Page() {
           __html: JSON.stringify(schema).replace(/</g, "\\u003c"),
         }}
       />
-      <div className={`relative overflow-hidden ${toolHeroSurface} text-white`}
+      <ToolLandingHero
+        slug="internal-link-opportunity-finder"
+        title="Internal Link Opportunity & Contextual Anchor Finder"
+        description="Scan your article URL or draft alongside your sitemap to discover natural in-sentence anchor text opportunities that connect related pages for readers and crawlers."
+        categoryLabel="On-Page SEO"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
       >
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">Tools</Link>
-            <span>/</span>
-            <span aria-current="page">Internal Link Opportunity Finder</span>
-          </nav>
-
-          <div className="mb-8 grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                On-Page SEO · Contextual Anchor & Sitemap Matcher
-              </p>
-              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                Internal Link Opportunity 
-                <span className={toolHeroHeading}>
-                  & Contextual Anchor Finder
-                </span>
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-                Scan your article URL or draft alongside your sitemap to discover natural in-sentence anchor text opportunities that connect related pages for readers and crawlers.
-              </p>
-              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Article URL or pasted draft
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Sitemap & URL list import
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Exact passage & anchor export
-                </span>
-              </div>
-              <PortableToolHeroBar />
-            </div>
-
-            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
-                4 Internal Linking Checks
-              </p>
-              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
-                <li>
-                  <strong className="text-emerald-300">Passage Matching:</strong> Finds sentences in your draft that naturally mention target topics.
-                </li>
-                <li>
-                  <strong className="text-indigo-300">Anchor Clarity:</strong> Suggests descriptive multi-word anchors instead of &apos;click here&apos;.
-                </li>
-                <li>
-                  <strong className="text-sky-300">Sitemap Discovery:</strong> Pulls candidate destination URLs straight from your sitemap.
-                </li>
-                <li>
-                  <strong className="text-amber-300">Editorial Review:</strong> Approve, edit, and export your chosen internal link placements.
-                </li>
-              </ul>
-            </div>
-          </div>
+        <div className="p-4 sm:p-6">
           <InternalLinkingClient />
         </div>
-      </div>
+      </ToolLandingHero>
       <div className="mx-auto max-w-6xl space-y-20 px-4 py-20 sm:px-6 lg:px-8">
         <section className="grid gap-8 lg:grid-cols-2">
           <div>

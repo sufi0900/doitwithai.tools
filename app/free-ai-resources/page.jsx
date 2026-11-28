@@ -1,11 +1,9 @@
 import React from 'react';
 import Script from "next/script";
-import { NextSeo } from "next-seo";
 import { redisHelpers } from '@/app/lib/redis';
 import { client } from "@/sanity/lib/client";
 import StaticFreeResourcePageShell from "./StaticFreeResourcePageShell";
 import AllBlogs from "./AllBlogs";
-import Head from 'next/head';
 
 export const revalidate = 3600; // Revalidate every 1 hour
 
@@ -685,41 +683,6 @@ export default async function Page() {
 
   return (
     <>
-      <Head>
-        <NextSeo
-          title={metadata.title}
-          description={metadata.description}
-          canonical={metadata.alternates.canonical}
-          openGraph={{
-            type: 'website',
-            locale: 'en_US',
-            url: metadata.openGraph.url,
-            siteName: metadata.openGraph.siteName,
-            title: metadata.openGraph.title,
-            description: metadata.openGraph.description,
-            images: metadata.openGraph.images,
-          }}
-          twitter={{
-            card: metadata.twitter.card,
-            site: metadata.twitter.creator,
-            creator: metadata.twitter.creator,
-            title: metadata.twitter.title,
-            description: metadata.twitter.description,
-            image: metadata.twitter.image,
-          }}
-          additionalMetaTags={[
-            { name: 'keywords', content: metadata.keywords },
-            { name: 'author', content: metadata.author },
-            { name: 'robots', content: 'index,follow' },
-            { name: 'googlebot', content: 'index,follow,max-snippet:-1,max-image-preview:large,max-video-preview:-1' },
-            { name: 'theme-color', content: '#2563eb' },
-            { name: 'application-name', content: 'doitwithai.tools' },
-            { name: 'msapplication-TileColor', content: '#2563eb' },
-            { name: 'apple-mobile-web-app-capable', content: 'yes' },
-            { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' }
-          ]}
-        />
-      </Head>
 
       {/* Enhanced Schema Markup with individual resource schemas */}
       <Script

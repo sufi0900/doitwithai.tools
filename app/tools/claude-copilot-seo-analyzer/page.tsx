@@ -1,10 +1,5 @@
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
-import {
-  ToolHeroBackground,
-  toolHeroSurface,
-  toolHeroHeading,
-} from "@/features/tool-ui/ToolHero";
 import type { Metadata } from "next";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
 import Link from "next/link";
 import ClaudeCopilotSeoClient from "@/features/claude-copilot-seo-analyzer/ClaudeCopilotSeoClient";
 import ToolResources from "@/features/tool-catalog/ToolResources";
@@ -160,90 +155,18 @@ export default function ClaudeCopilotSeoAnalyzerPage() {
           __html: JSON.stringify(schema).replace(/</g, "\\u003c"),
         }}
       />
-      <div className={`relative overflow-hidden ${toolHeroSurface} text-white`}>
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">Tools</Link>
-            <span>/</span>
-            <span aria-current="page">
-              Claude, Copilot &amp; Gemini SEO Analyzer
-            </span>
-          </nav>
-
-          <div className="mb-8 grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                AI SEO · CLAUDE, COPILOT, GEMINI &amp; CHATGPT WORKFLOWS
-              </p>
-              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                Claude, Copilot &amp; Gemini{" "}
-                <span className={toolHeroHeading}>
-                  SEO Analysis Studio
-                </span>
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-                Audit your draft content across <strong>Claude</strong>,{" "}
-                <strong>Microsoft Copilot</strong>,{" "}
-                <strong>Google Gemini</strong>, and <strong>ChatGPT</strong>—and
-                generate pre-filled XML and Markdown SEO prompts plus pixel-safe
-                metadata upgrades.
-              </p>
-              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Claude XML SEO Prompts
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Copilot &amp; Bing Entity Checks
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Gemini AI Overview Rewriter
-                </span>
-              </div>
-              <PortableToolHeroBar />
-            </div>
-
-            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
-                How Each Model Strengthens Your SEO
-              </p>
-              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
-                <li>
-                  <strong className="text-amber-300">
-                    Claude 3.7 / 4 Lens:
-                  </strong>{" "}
-                  Deep E-E-A-T editorial auditing and XML-tagged semantic rewrites.
-                </li>
-                <li>
-                  <strong className="text-sky-300">
-                    Microsoft Copilot Lens:
-                  </strong>{" "}
-                  Bing index alignment, exact question H2s, and comparison tables.
-                </li>
-                <li>
-                  <strong className="text-blue-300">
-                    Google Gemini Lens:
-                  </strong>{" "}
-                  50-word Power Answers, Knowledge Graph entities, and JSON-LD.
-                </li>
-                <li>
-                  <strong className="text-emerald-300">
-                    ChatGPT Search Lens:
-                  </strong>{" "}
-                  Commercial shortlist positioning and use-case summaries.
-                </li>
-              </ul>
-            </div>
-          </div>
-
+      <ToolLandingHero
+        slug="claude-copilot-seo-analyzer"
+        title="Claude, Copilot & Gemini SEO Analysis Studio"
+        description="Audit your draft content across Claude , Microsoft Copilot , Google Gemini , and ChatGPT —and generate pre-filled XML and Markdown SEO prompts plus pixel-safe metadata upgrades."
+        categoryLabel="AI SEO"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
+      >
+        <div className="p-4 sm:p-6">
           <ClaudeCopilotSeoClient />
         </div>
-      </div>
+      </ToolLandingHero>
 
       <div className="mx-auto max-w-6xl space-y-20 px-4 py-16 sm:px-6 lg:px-8">
         {/* 50-WORD QUICK ANSWER */}

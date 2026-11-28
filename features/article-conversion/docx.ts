@@ -1,5 +1,11 @@
 import { zipStored } from "../outreach-email/docx";
-import { safeLink, validate, type Article, type Settings } from "./model";
+import {
+  safeLink,
+  validate,
+  type Article,
+  type BlockLink,
+  type Settings,
+} from "./model";
 const xml = (s: string) =>
   s
     .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\ufffe\uffff]/g, "")
@@ -74,6 +80,8 @@ export async function articleDocx(
   settings: Settings,
   options: {
     images?: Record<string, string>;
+    /** Bounded opt-in for multi-section writer documents; standalone converters keep six. */
+    maxImages?: number;
     signal?: AbortSignal;
     yield?: () => Promise<unknown>;
   } = {},
@@ -107,9 +115,40 @@ export async function articleDocx(
           (i ? "<w:br/>" : "") + `<w:t xml:space="preserve">${xml(line)}</w:t>`,
       )
       .join("")}</w:r>`;
-  const paragraph = (text: string, style = "Normal", pr = "") =>
-    `<w:p><w:pPr><w:pStyle w:val="${style}"/><w:widowControl/>${pr}${rtl(text) ? '<w:bidi/><w:jc w:val="start"/>' : ""}</w:pPr>${run(text)}</w:p>`;
+  const paragraph = (
+    text: string,
+    style = "Normal",
+    pr = "",
+    links: BlockLink[] = [],
+  ) =>
+    `<w:p><w:pPr><w:pStyle w:val="${style}"/><w:widowControl/>${pr}${rtl(text) ? '<w:bidi/><w:jc w:val="start"/>' : ""}</w:pPr>${linkedRuns(text, links)}</w:p>`;
   let relationshipId = 0;
+  const hyperlinkRun = (label: string, url: string) => {
+    const safe = safeLink(url);
+    if (!safe) return run(label);
+    const id = `rLink${++relationshipId}`;
+    relationships.push(
+      `<Relationship Id="${id}" Type="${rel}/hyperlink" Target="${xml(safe)}" TargetMode="External"/>`,
+    );
+    return `<w:hyperlink r:id="${id}">${run(label, '<w:color w:val="3452D1"/><w:u w:val="single"/>')}</w:hyperlink>`;
+  };
+  /** Renders paragraph text with clickable inline hyperlinks (plain runs in between). */
+  function linkedRuns(text: string, links: BlockLink[]) {
+    const valid = [...links]
+      .filter((l) => l.end > l.start && l.start >= 0 && l.end <= text.length)
+      .sort((a, b) => a.start - b.start);
+    if (!valid.length) return run(text);
+    let out = "",
+      pos = 0;
+    for (const l of valid) {
+      if (l.start < pos) continue;
+      if (l.start > pos) out += run(text.slice(pos, l.start));
+      out += hyperlinkRun(text.slice(l.start, l.end), l.url);
+      pos = l.end;
+    }
+    if (pos < text.length) out += run(text.slice(pos));
+    return out;
+  }
   const link = (label: string, url: string) => {
     const safe = safeLink(url);
     if (!safe) return paragraph(label);
@@ -140,7 +179,13 @@ export async function articleDocx(
     if (block.kind === "image") {
       if (!block.included) continue;
       try {
-        if (++imageCount > 6) throw Error("Image limit");
+        if (
+          ++imageCount >
+          (Number.isFinite(options.maxImages)
+            ? Math.min(12, Math.max(1, Math.floor(options.maxImages!)))
+            : 6)
+        )
+          throw Error("Image limit");
         const img = imageBytes(options.images?.[block.id] || "");
         const id = `rImage${imageCount}`,
           path = `media/image${imageCount}.${img.extension}`;
@@ -178,7 +223,9 @@ export async function articleDocx(
     } else if (block.kind === "list") {
       const match = block.text.match(/^(\d+)\.\s+/);
       let numId = 1,
+        stripped = block.text.length,
         text = block.text.replace(/^•\s*/, "");
+      stripped -= text.length;
       if (match) {
         const number = Math.min(999999, Math.max(1, Number(match[1])));
         if (wasOrdered && number === lastNumber + 1) numId = lastNumId;
@@ -192,12 +239,18 @@ export async function articleDocx(
         lastNumId = numId;
         wasOrdered = true;
         text = block.text.slice(match[0].length);
+        stripped = match[0].length;
       } else wasOrdered = false;
       body.push(
         paragraph(
           text,
           "Normal",
           `<w:numPr><w:ilvl w:val="0"/><w:numId w:val="${numId}"/></w:numPr>${rtl(text) ? '<w:ind w:right="360" w:hanging="240"/>' : ""}`,
+          (block.links || []).map((l) => ({
+            ...l,
+            start: l.start - stripped,
+            end: l.end - stripped,
+          })),
         ),
       );
     } else
@@ -211,6 +264,8 @@ export async function articleDocx(
               : block.kind === "quote"
                 ? "Quote"
                 : "Normal",
+          "",
+          block.links,
         ),
       );
   }

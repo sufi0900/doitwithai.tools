@@ -1,15 +1,14 @@
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import type { Metadata } from "next";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
 import Link from "next/link";
-import { Download, Film, Image as ImageIcon } from "lucide-react";
+import {
+  Download,
+  Film,
+  Image as ImageIcon,
+} from "lucide-react";
 import SocialMediaVideoThumbnailGrabberClient from "@/features/social-media-video-thumbnail-grabber/SocialMediaVideoThumbnailGrabberClient";
 import ToolFaq from "@/features/tool-ui/ToolFaq";
 import ToolResources from "@/features/tool-catalog/ToolResources";
-import {
-  ToolHeroBackground,
-  toolHeroHeading,
-  toolHeroSurface,
-} from "@/features/tool-ui/ToolHero";
 import { PlatformBrandIcon } from "@/features/tool-ui/PlatformBrandIcon";
 
 const pageUrl =
@@ -101,62 +100,18 @@ export default function SocialMediaVideoThumbnailGrabberPage() {
         }}
       />
 
-      <header
-        className={`relative overflow-hidden ${toolHeroSurface} text-white`}
+      <ToolLandingHero
+        slug="social-media-video-thumbnail-grabber"
+        title="YouTube, Shorts & Social 4K Thumbnail & Frame Grabber"
+        description="Extract every thumbnail resolution (`maxresdefault`, `sddefault`, `hqdefault`), 3 in-video storyboard frames (`25%`, `50%`, `75%`), and privacy-enhanced embed code—or download all covers in a single 1-click .ZIP bundle."
+        categoryLabel="Video & Social Media Studio"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
       >
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">Tools</Link>
-            <span>/</span>
-            <span aria-current="page">Video Thumbnail &amp; Frame Grabber</span>
-          </nav>
-
-          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
-            <div>
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-bold text-white backdrop-blur-xs">
-                <PlatformBrandIcon slugOrText="social-media-video-thumbnail-grabber" size={18} />
-                <span>Official Platform Studio</span>
-              </div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                Video &amp; Social Media Studio · 4K Covers, Frames &amp; .ZIP Export
-              </p>
-              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                YouTube, Shorts &amp; Social{" "}
-                <span className={toolHeroHeading}>
-                  4K Thumbnail &amp; Frame Grabber
-                </span>
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-                Extract every thumbnail resolution (`maxresdefault`, `sddefault`,
-                `hqdefault`), 3 in-video storyboard frames (`25%`, `50%`, `75%`),
-                and privacy-enhanced embed code—or download all covers in a
-                single 1-click <code>.ZIP</code> bundle.
-              </p>
-              <PortableToolHeroBar />
-            </div>
-
-            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
-                All 7 Video Assets in 1 Click
-              </p>
-              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
-                <li>1. 1280×720 HD Widescreen Cover (maxresdefault)</li>
-                <li>2. SD, HQ &amp; Medium 16:9 Fallback Covers</li>
-                <li>3. 3 Auto-Captured Storyboard Video Stills</li>
-                <li>4. 1-Click Server-Side .ZIP Bundle + CSV Manifest</li>
-              </ul>
-            </div>
-          </div>
+        <div className="p-4 sm:p-6">
+          <SocialMediaVideoThumbnailGrabberClient />
         </div>
-      </header>
-
-      <SocialMediaVideoThumbnailGrabberClient />
+      </ToolLandingHero>
 
       <section
         className={`${section} border-t border-slate-200 dark:border-slate-800`}

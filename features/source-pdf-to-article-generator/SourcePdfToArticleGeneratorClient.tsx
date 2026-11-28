@@ -212,12 +212,12 @@ export default function SourcePdfToArticleGeneratorClient() {
       />
 
       {/* Presets */}
-      <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/70 p-4">
         <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
           <span className="text-xs font-semibold uppercase tracking-wider text-indigo-400">
             Load Multi-Source Synthesis Workflows (NotebookLM · PDF · SME Interview)
           </span>
-          <span className="text-xs text-slate-400">
+          <span className="text-xs text-slate-500 dark:text-slate-400">
             100% free & unlimited · Automatic [S1]/[S2]/[S3] footnote traceability
           </span>
         </div>
@@ -250,20 +250,20 @@ export default function SourcePdfToArticleGeneratorClient() {
       {/* Main Two-Column Studio */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left Inputs */}
-        <div className="lg:col-span-5 space-y-4 rounded-2xl border border-slate-800 bg-slate-900/85 p-5">
-          <h2 className="text-base font-bold text-white">
+        <div className="lg:col-span-5 space-y-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/85 p-5">
+          <h2 className="text-base font-bold text-slate-900 dark:text-white">
             1. Multi-Source Research Inputs ([S1] + [S2] + [S3])
           </h2>
 
           <div>
-            <label className="block text-xs font-semibold uppercase text-slate-300 mb-1">
+            <label className="block text-xs font-semibold uppercase text-slate-700 dark:text-slate-300 mb-1">
               Target Article Headline (H1)
             </label>
             <input
               type="text"
               value={articleHeadline}
               onChange={(e) => setArticleHeadline(e.target.value)}
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-white"
+              className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-xs text-slate-900 dark:text-white"
             />
           </div>
 
@@ -275,7 +275,7 @@ export default function SourcePdfToArticleGeneratorClient() {
               type="text"
               value={targetKeyword}
               onChange={(e) => setTargetKeyword(e.target.value)}
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-white"
+              className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-xs text-slate-900 dark:text-white"
             />
           </div>
 
@@ -290,7 +290,7 @@ export default function SourcePdfToArticleGeneratorClient() {
                 setSource1(e.target.value);
                 setAiArticleMarkdown(null);
               }}
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-xs text-slate-100"
+              className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 p-3 text-xs text-slate-900 dark:text-slate-100"
             />
           </div>
 
@@ -305,7 +305,7 @@ export default function SourcePdfToArticleGeneratorClient() {
                 setSource2(e.target.value);
                 setAiArticleMarkdown(null);
               }}
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-xs text-slate-100"
+              className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 p-3 text-xs text-slate-900 dark:text-slate-100"
             />
           </div>
 
@@ -320,7 +320,7 @@ export default function SourcePdfToArticleGeneratorClient() {
                 setSource3(e.target.value);
                 setAiArticleMarkdown(null);
               }}
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-xs text-slate-100"
+              className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 p-3 text-xs text-slate-900 dark:text-slate-100"
             />
           </div>
 
@@ -338,8 +338,8 @@ export default function SourcePdfToArticleGeneratorClient() {
 
         {/* Right Output */}
         <div className="lg:col-span-7 space-y-4">
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-5 space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/90 p-5 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
@@ -375,7 +375,7 @@ export default function SourcePdfToArticleGeneratorClient() {
                   3. 50-Word AEO Box & Markdown Export
                 </button>
               </div>
-              <span className="text-[11px] text-slate-400">{aiSourceTier}</span>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400">{aiSourceTier}</span>
             </div>
 
             {activeTab === "article" && (
@@ -392,7 +392,7 @@ export default function SourcePdfToArticleGeneratorClient() {
                     {copiedKey === "article" ? "✓ Copied Article" : "Copy Full Markdown Article"}
                   </button>
                 </div>
-                <pre className="rounded-xl border border-slate-800 bg-slate-950 p-4 text-xs text-slate-100 whitespace-pre-wrap font-sans leading-relaxed max-h-[500px] overflow-y-auto">
+                <pre className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-4 text-xs text-slate-900 dark:text-slate-100 whitespace-pre-wrap font-sans leading-relaxed max-h-[500px] overflow-y-auto">
                   {displayedMarkdown}
                 </pre>
               </div>
@@ -403,7 +403,7 @@ export default function SourcePdfToArticleGeneratorClient() {
                 {synthesized.citationMatrix.map((row) => (
                   <div
                     key={row.tag}
-                    className="rounded-xl border border-slate-800 bg-slate-950 p-4 space-y-1.5 text-xs"
+                    className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-4 space-y-1.5 text-xs"
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-indigo-300">
@@ -413,7 +413,7 @@ export default function SourcePdfToArticleGeneratorClient() {
                         {row.verificationStatus}
                       </span>
                     </div>
-                    <p className="text-slate-300">{row.extractedClaim}</p>
+                    <p className="text-slate-700 dark:text-slate-300">{row.extractedClaim}</p>
                   </div>
                 ))}
               </div>
@@ -434,7 +434,7 @@ export default function SourcePdfToArticleGeneratorClient() {
                       {copiedKey === "aeo" ? "✓ Copied" : "Copy 50-Word Box"}
                     </button>
                   </div>
-                  <p className="text-xs text-slate-200 leading-relaxed">
+                  <p className="text-xs text-slate-800 dark:text-slate-200 leading-relaxed">
                     {synthesized.executiveSummary50Words}
                   </p>
                 </div>

@@ -1,14 +1,8 @@
-import { ToolHeroBackground, toolHeroHeading, toolHeroSurface } from "@/features/tool-ui/ToolHero";
 import ToolResources from "@/features/tool-catalog/ToolResources";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
 import type { Metadata } from "next";
 import Link from "next/link";
-import {
-  ArrowRight,
-  CheckCircle2,
-  ListTree,
-  ShieldCheck,
-  Sparkles,
-} from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import HeadingAnalyzerClient from "@/features/heading-analyzer/HeadingAnalyzerClient";
 import HeadingAnalyzerTutorial from "@/features/heading-analyzer/HeadingAnalyzerTutorial";
 import HeadingAnalyzerEducation from "@/features/heading-analyzer/HeadingAnalyzerEducation";
@@ -164,70 +158,18 @@ export default function HeadingStructureAnalyzerPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }}
       />
 
-      <div className={`relative overflow-hidden ${toolHeroSurface} pb-20 pt-10 text-white sm:pt-16 lg:pb-28`}>
-        <ToolHeroBackground />
-
-        <div className="relative mx-auto max-w-[1500px] px-4 sm:px-6 lg:px-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-10 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-400"
-          >
-            <Link href="/" className="transition hover:text-white">
-              Home
-            </Link>
-            <span>/</span>
-            <Link href="/tools" className="transition hover:text-white">
-              Tools
-            </Link>
-            <span>/</span>
-            <span className="text-blue-200">Heading Structure Analyzer</span>
-          </nav>
-
-          <div className="mx-auto max-w-5xl text-center">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.16em] text-blue-100 backdrop-blur">
-              <Sparkles className="h-4 w-4 text-cyan-300" /> On-page SEO
-            </div>
-            <h1 className="mt-7 text-4xl font-black leading-[1.06] tracking-[-0.045em] sm:text-6xl lg:text-7xl">
-              Heading Structure Analyzer
-              <span className={`block ${toolHeroHeading}`}>
-                Check Your H1–H6 Hierarchy
-              </span>
-            </h1>
-            <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-slate-300 sm:text-lg">
-              Enter a website or article URL to explore its heading hierarchy. Find missing H1s,
-              skipped levels, and repeated headings. See practical fixes and target phrase placement
-              in one visual dashboard.
-            </p>
-            <div className="mt-7 flex flex-wrap justify-center gap-3 text-xs font-bold text-slate-300">
-              {[
-                [ListTree, "URL, HTML, and Markdown"],
-                [ShieldCheck, "No login required"],
-              ].map(([Icon, label]) => {
-                const FeatureIcon = Icon as typeof ListTree;
-                return (
-                  <span
-                    key={label as string}
-                    className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-2"
-                  >
-                    <FeatureIcon className="h-3.5 w-3.5 text-blue-300" />
-                    {label as string}
-                  </span>
-                );
-              })}
-            </div>
-            <a
-              href="#heading-structure-analyzer"
-              className="mt-8 inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3.5 text-sm font-extrabold text-slate-950 shadow-xl transition hover:-translate-y-0.5 hover:bg-blue-50"
-            >
-              Analyze your headings <ArrowRight className="h-4 w-4" />
-            </a>
-          </div>
-
-          <div className="mt-14">
-            <HeadingAnalyzerClient />
-          </div>
+      <ToolLandingHero
+        slug="heading-structure-analyzer"
+        title="Heading Structure Analyzer Check Your H1–H6 Hierarchy"
+        description="Enter a website or article URL to explore its heading hierarchy. Find missing H1s, skipped levels, and repeated headings. See practical fixes and target phrase placement in one visual dashboard."
+        categoryLabel="AI SEO Tools"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
+      >
+        <div className="p-4 sm:p-6">
+          <HeadingAnalyzerClient />
         </div>
-      </div>
+      </ToolLandingHero>
 
       <HeadingAnalyzerTutorial />
       <HeadingAnalyzerEducation />

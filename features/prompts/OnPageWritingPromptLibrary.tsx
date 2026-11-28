@@ -6,6 +6,11 @@ import categories from "./onpage-writing-categories.json";
 import { fillPreview } from "./catalog";
 import { chatGPTLink } from "./meta-workflow";
 import KeywordGuideCard, { type KeywordGuide } from "./KeywordGuideCard";
+import {
+  PROMPT_COMPANION_LINK_CLASS,
+  PROMPT_COMPANION_LINK_TEXT_CLASS,
+  PROMPT_INLINE_LINK_CLASS,
+} from "./promptLinkStyles";
 import { onpageWritingPromoGuides } from "./OnPageWritingPromoGuides";
 
 const button =
@@ -303,10 +308,12 @@ export default function OnPageWritingPromptLibrary() {
                 </p>
                 {c.showToolLink && (
                   <Link
-                    className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-blue-700 underline dark:text-blue-200"
+                    className={PROMPT_COMPANION_LINK_CLASS}
                     href={`/tools/${c.tool}`}
                   >
-                    Open companion studio: {c.toolName} ↗
+                    <span className={PROMPT_COMPANION_LINK_TEXT_CLASS}>
+                      Open companion studio: {c.toolName} ↗
+                    </span>
                   </Link>
                 )}
               </div>
@@ -405,6 +412,22 @@ export default function OnPageWritingPromptLibrary() {
                   );
                 })}
               </div>
+
+              {c.id === "internal-links-media" && (
+                <p className="mt-5 text-base leading-8 text-slate-600 dark:text-slate-300">
+                  Once your internal links are mapped,{" "}
+                  <a
+                    href="https://getspike.ai/blog/chatgpt-prompts-for-seo/"
+                    target="_blank"
+                    rel="noopener"
+                    className={PROMPT_INLINE_LINK_CLASS}
+                  >
+                    Spike AI&apos;s guide to ChatGPT prompts for SEO
+                  </a>{" "}
+                  shows how to chain this step into the rest of your workflow,
+                  from keyword research to technical fixes.
+                </p>
+              )}
             </section>
 
             {category === "all" && !query.trim() && c.id === "snippets-tables" && (

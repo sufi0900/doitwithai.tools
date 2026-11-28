@@ -1,9 +1,8 @@
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import type { Metadata } from "next";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
 import Link from "next/link";
 import {
   BarChart3,
-  CheckCheck,
   FileSpreadsheet,
   ShieldAlert,
   Sparkles,
@@ -11,11 +10,6 @@ import {
 import AnchorTextAnalyzerClient from "@/features/anchor-text-analyzer/AnchorTextAnalyzerClient";
 import ToolFaq from "@/features/tool-ui/ToolFaq";
 import ToolResources from "@/features/tool-catalog/ToolResources";
-import {
-  ToolHeroBackground,
-  toolHeroHeading,
-  toolHeroSurface,
-} from "@/features/tool-ui/ToolHero";
 
 const pageUrl = "https://doitwithai.tools/tools/anchor-text-analyzer";
 const title =
@@ -130,81 +124,18 @@ export default function AnchorTextAnalyzerPage() {
         }}
       />
 
-      <header
-        className={`relative overflow-hidden ${toolHeroSurface} text-white`}
+      <ToolLandingHero
+        slug="anchor-text-analyzer"
+        title="Anchor Text Analyzer & Over-Optimization Ratio Calculator"
+        description="Audit your backlink anchor distribution across 8 semantic categories. Spot exact-match keyword footprints, compare against page-type benchmarks, and generate a safe anchor diversification plan."
+        categoryLabel="Off-page SEO"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
       >
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">Tools</Link>
-            <span>/</span>
-            <span aria-current="page">Anchor text analyzer</span>
-          </nav>
-
-          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                Off-page SEO · Link Profile Audit
-              </p>
-              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                Anchor Text Analyzer &{" "}
-                <span className={toolHeroHeading}>
-                  Over-Optimization Ratio Calculator
-                </span>
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-                Audit your backlink anchor distribution across 8 semantic
-                categories. Spot exact-match keyword footprints, compare against
-                page-type benchmarks, and generate a safe anchor diversification
-                plan.
-              </p>
-              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  8-category classification
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  CSV import + live URL scan
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  CSV & DOCX audit exports
-                </span>
-              </div>
-              <PortableToolHeroBar />
-            </div>
-
-            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
-                Healthy Commercial Page Target
-              </p>
-              <div className="mt-4 space-y-3 text-xs">
-                <div className="flex justify-between border-b border-slate-800 pb-2">
-                  <span className="text-slate-300">Branded + Naked URL</span>
-                  <span className="font-bold text-emerald-300">30% – 55%</span>
-                </div>
-                <div className="flex justify-between border-b border-slate-800 pb-2">
-                  <span className="text-slate-300">Brand + Keyword Hybrid</span>
-                  <span className="font-bold text-indigo-300">10% – 22%</span>
-                </div>
-                <div className="flex justify-between border-b border-slate-800 pb-2">
-                  <span className="text-slate-300">Natural Topical & Partial</span>
-                  <span className="font-bold text-sky-300">25% – 50%</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-300">Exact Match Keyword</span>
-                  <span className="font-bold text-amber-300">Keep ≤ 10%</span>
-                </div>
-              </div>
-            </div>
-          </div>
+        <div className="p-4 sm:p-6">
+          <AnchorTextAnalyzerClient />
         </div>
-      </header>
-
-      <AnchorTextAnalyzerClient />
+      </ToolLandingHero>
 
       <section
         className={`${section} border-t border-slate-200 dark:border-slate-800`}

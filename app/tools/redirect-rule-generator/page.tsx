@@ -1,16 +1,8 @@
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import ToolFaq from "@/features/tool-ui/ToolFaq";
-import { ToolHeroBackground, toolHeroSurface, toolHeroHeading } from "@/features/tool-ui/ToolHero";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
 import ToolResources from "@/features/tool-catalog/ToolResources";
 import type { Metadata } from "next";
 import Link from "next/link";
-import {
-  ArrowRight,
-  CheckCircle2,
-  Route,
-  ShieldCheck,
-  Sparkles,
-} from "lucide-react";
 import RedirectRuleClient from "@/features/redirect-rules/RedirectRuleClient";
 import RedirectRuleTutorial from "@/features/redirect-rules/RedirectRuleTutorial";
 import RedirectRuleEducation from "@/features/redirect-rules/RedirectRuleEducation";
@@ -165,75 +157,18 @@ export default function RedirectRuleGeneratorPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
 
-      <div className={`relative overflow-hidden ${toolHeroSurface} text-white`}>
-        <ToolHeroBackground />
-
-        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">Tools</Link>
-            <span>/</span>
-            <span aria-current="page">Redirect Rule Generator</span>
-          </nav>
-
-          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                Technical SEO · Multi-Platform 301/308 Migration Compiler
-              </p>
-              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                301 Redirect Rule 
-                <span className={toolHeroHeading}>
-                  Generator & Chain Checker
-                </span>
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-                Convert a list of old and new URLs into production-ready redirect rules for Next.js, Apache (.htaccess), Nginx, Cloudflare, and Vercel—while automatically flattening chains.
-              </p>
-              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Next.js, Nginx, Apache & Vercel
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Automatic chain & loop detection
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  CSV bulk import & config export
-                </span>
-              </div>
-              <PortableToolHeroBar />
-            </div>
-
-            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
-                4 Migration Safety Checks
-              </p>
-              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
-                <li>
-                  <strong className="text-emerald-300">Chain Flattening:</strong> Resolves A → B → C multi-hop redirects into a single direct hop.
-                </li>
-                <li>
-                  <strong className="text-indigo-300">Loop Prevention:</strong> Flags self-redirects and circular paths before deployment.
-                </li>
-                <li>
-                  <strong className="text-sky-300">Duplicate Rules:</strong> Detects conflicting source paths mapped to different targets.
-                </li>
-                <li>
-                  <strong className="text-amber-300">5 Server Formats:</strong> Compiles exact syntax for Next.js, Apache, Nginx, Vercel, and CF.
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="mt-8">
-            <RedirectRuleClient />
-          </div>
+      <ToolLandingHero
+        slug="redirect-rule-generator"
+        title="301 Redirect Rule Generator & Chain Checker"
+        description="Convert a list of old and new URLs into production-ready redirect rules for Next.js, Apache (.htaccess), Nginx, Cloudflare, and Vercel—while automatically flattening chains."
+        categoryLabel="Technical SEO"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
+      >
+        <div className="p-4 sm:p-6">
+          <RedirectRuleClient />
         </div>
-      </div>
+      </ToolLandingHero>
 
       <RedirectRuleTutorial />
       <RedirectRuleEducation />

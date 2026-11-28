@@ -511,7 +511,7 @@ export default function RobotsClient() {
                 </div>
               ))}
               {!state.sitemapUrls.length && (
-                <p className="text-xs text-slate-400">No sitemap added yet.</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">No sitemap added yet.</p>
               )}
             </div>
           </section>
@@ -600,7 +600,7 @@ export default function RobotsClient() {
                 Live preview {rawOverride !== null ? "(Custom Edited)" : ""}
               </h2>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-slate-400">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                   {output.length.toLocaleString()} chars
                 </span>
                 <button
@@ -625,10 +625,10 @@ export default function RobotsClient() {
                 onChange={(e) => setRawOverride(e.target.value)}
                 spellCheck={false}
                 aria-label="Direct robots.txt editor"
-                className="mt-3 w-full rounded-2xl border border-[#5271ff] bg-slate-950 p-4 font-mono text-xs leading-6 text-slate-100 focus:outline-none"
+                className="mt-3 w-full rounded-2xl border border-[#5271ff] bg-white dark:bg-slate-950 p-4 font-mono text-xs leading-6 text-slate-900 dark:text-slate-100 focus:outline-none"
               />
             ) : (
-              <pre className="mt-3 max-h-[420px] overflow-auto whitespace-pre-wrap break-words rounded-2xl border border-slate-200 bg-slate-950 p-4 font-mono text-xs leading-6 text-slate-100 dark:border-slate-700">
+              <pre className="mt-3 max-h-[420px] overflow-auto whitespace-pre-wrap break-words rounded-2xl border border-slate-200 bg-white dark:bg-slate-950 p-4 font-mono text-xs leading-6 text-slate-900 dark:text-slate-100 dark:border-slate-700">
                 {output}
               </pre>
             )}
@@ -690,7 +690,7 @@ export default function RobotsClient() {
                 })}
               </ul>
             )}
-            <p className="mt-3 text-[11px] leading-5 text-slate-400">
+            <p className="mt-3 text-[11px] leading-5 text-slate-500 dark:text-slate-400">
               {errorCount > 0
                 ? "Resolve the errors above before publishing; warnings and notes are judgment calls."
                 : "robots.txt only asks well-behaved crawlers to stay out; it is not an access control or security boundary."}

@@ -1,6 +1,5 @@
 import { articleSlug } from "@/features/prompts/meta-workflow";
 import Link from "next/link";
-import { getRelatedGuides } from "@/features/guides/data";
 import { tools, toolPath } from "./catalog";
 
 const TOPIC_PROMPT_GUIDES: Record<
@@ -99,16 +98,15 @@ const TOPIC_PROMPT_GUIDES: Record<
   ],
 };
 
-export default async function ToolResources({ slug }: { slug: string }) {
+export default function ToolResources({ slug }: { slug: string }) {
+  // On main-site /tools/<slug> routes, ToolResources runs as a Server Component (typeof window === "undefined").
+  // When a tool page is natively mounted client-side inside a user's transferred website, suppress main-site links.
+  if (typeof window !== "undefined") return null;
+
   const tool = tools.find((item) => item.slug === slug);
   if (!tool) return null;
-  // The executable tool remains available if optional CMS recommendations fail.
-  let guides: Array<{ _id: string; slug: string; title: string }> = [];
-  try {
-    guides = await getRelatedGuides(slug);
-  } catch {
-    console.error("Unable to load supporting guides");
-  }
+  // Client-safe static resource rendering so tool pages can be natively transferred into standalone user sites.
+  const guides: Array<{ _id: string; slug: string; title: string }> = [];
   const related = tools.filter((item) =>
     tool.relatedToolSlugs.includes(item.slug),
   );

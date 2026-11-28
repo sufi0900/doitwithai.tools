@@ -445,7 +445,7 @@ export default function FaqGeneratorClient() {
             </label>
             <button
               type="submit"
-              className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#5271FF] px-5 py-3 text-sm font-extrabold text-white hover:bg-[#4664E8] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-300 disabled:opacity-60"
+              className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#5271FF] px-5 py-3 text-sm font-extrabold text-slate-900 dark:text-white hover:bg-[#4664E8] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-300 disabled:opacity-60"
             >
               <Sparkles className="h-4 w-4" aria-hidden />
               {busy ? "Preparing source-backed FAQs…" : "Generate FAQs"}
@@ -484,12 +484,12 @@ export default function FaqGeneratorClient() {
       </div>
       <div className="min-w-0 space-y-5">
         {!snapshot ? (
-          <div className="rounded-[28px] border border-white/15 bg-white/[0.05] p-6 text-slate-200 sm:p-8">
+          <div className="rounded-[28px] border border-white/15 bg-white/[0.05] p-6 text-slate-800 dark:text-slate-200 sm:p-8">
             <FileCheck2 className="h-9 w-9 text-[#9AABFF]" aria-hidden />
-            <h2 className="mt-5 text-2xl font-black text-white">
+            <h2 className="mt-5 text-2xl font-black text-slate-900 dark:text-white">
               An answer you can trace
             </h2>
-            <p className="mt-4 text-sm leading-8 text-slate-300">
+            <p className="mt-4 text-sm leading-8 text-slate-700 dark:text-slate-300">
               Every answer draft includes matched source quotes. Missing
               evidence becomes a research task, so you can improve the page
               before publishing.
@@ -507,17 +507,17 @@ export default function FaqGeneratorClient() {
           </div>
         ) : (
           <>
-            <div className="rounded-2xl border border-white/15 bg-slate-950/40 p-5 text-white">
+            <div className="rounded-2xl border border-white/15 bg-white dark:bg-slate-950/40 p-5 text-slate-900 dark:text-white">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <h2 className="text-xl font-black">Review your FAQs</h2>
                 <span className="rounded-full bg-[#5271FF]/20 px-3 py-2 text-xs font-bold text-blue-100">
                   {selected} selected
                 </span>
               </div>
-              <p className="mt-3 text-xs leading-7 text-slate-300">
+              <p className="mt-3 text-xs leading-7 text-slate-700 dark:text-slate-300">
                 {snapshot.report.notice}
               </p>
-              <p className="mt-2 text-xs leading-7 text-slate-400">
+              <p className="mt-2 text-xs leading-7 text-slate-500 dark:text-slate-400">
                 {snapshot.report.coverage.partial
                   ? "Partial source review"
                   : "Full supplied text selected"}{" "}

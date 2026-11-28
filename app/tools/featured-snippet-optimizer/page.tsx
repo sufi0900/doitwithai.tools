@@ -1,15 +1,15 @@
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import type { Metadata } from "next";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
 import Link from "next/link";
-import { Code2, ListOrdered, Sparkles, Target } from "lucide-react";
+import {
+  Code2,
+  ListOrdered,
+  Sparkles,
+  Target,
+} from "lucide-react";
 import FeaturedSnippetOptimizerClient from "@/features/featured-snippet-optimizer/FeaturedSnippetOptimizerClient";
 import ToolFaq from "@/features/tool-ui/ToolFaq";
 import ToolResources from "@/features/tool-catalog/ToolResources";
-import {
-  ToolHeroBackground,
-  toolHeroHeading,
-  toolHeroSurface,
-} from "@/features/tool-ui/ToolHero";
 
 const pageUrl = "https://doitwithai.tools/tools/featured-snippet-optimizer";
 const title =
@@ -114,73 +114,18 @@ export default function FeaturedSnippetOptimizerPage() {
         }}
       />
 
-      <header
-        className={`relative overflow-hidden ${toolHeroSurface} text-white`}
+      <ToolLandingHero
+        slug="featured-snippet-optimizer"
+        title="Featured Snippet & AI Overview Passage Optimizer"
+        description="Audit your H2/H3 answer passages and generate 45–58 word ontological definitions, chronological step lists, and comparison tables built for Google Position Zero and AI Overviews."
+        categoryLabel="On-page SEO"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
       >
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">Tools</Link>
-            <span>/</span>
-            <span aria-current="page">Featured snippet optimizer</span>
-          </nav>
-
-          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                On-page SEO · Position Zero & GEO Passage Engineering
-              </p>
-              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                Featured Snippet & AI Overview{" "}
-                <span className={toolHeroHeading}>
-                  Passage Optimizer
-                </span>
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-                Audit your H2/H3 answer passages and generate 45–58 word
-                ontological definitions, chronological step lists, and
-                comparison tables built for Google Position Zero and AI
-                Overviews.
-              </p>
-              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  45–58 word answer calibration
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Paragraph + List + Table blocks
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  DOCX, HTML & Markdown exports
-                </span>
-              </div>
-              <PortableToolHeroBar />
-            </div>
-
-            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
-                Position Zero Passage Anatomy
-              </p>
-              <div className="mt-4 space-y-2.5 font-mono text-xs text-slate-300">
-                <p className="text-indigo-300">
-                  &lt;h2&gt;What Is [Target Topic]?&lt;/h2&gt;
-                </p>
-                <p className="rounded-lg bg-slate-950/80 p-3 text-emerald-300">
-                  &lt;p&gt;&lt;strong&gt;[Target Topic]&lt;/strong&gt; is a
-                  [category] that [core mechanism + metric in 45–58 words with
-                  zero fluff].&lt;/p&gt;
-                </p>
-              </div>
-            </div>
-          </div>
+        <div className="p-4 sm:p-6">
+          <FeaturedSnippetOptimizerClient />
         </div>
-      </header>
-
-      <FeaturedSnippetOptimizerClient />
+      </ToolLandingHero>
 
       <section
         className={`${section} border-t border-slate-200 dark:border-slate-800`}

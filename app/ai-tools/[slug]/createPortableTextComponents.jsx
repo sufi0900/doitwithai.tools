@@ -9,6 +9,7 @@ import { CopyBlock, dracula } from "react-code-blocks";
 import { Clipboard, Check } from "lucide-react";
 import { getFileUrl } from "./sanityFileUrl"; // path as you saved it
 import Link from 'next/link';
+import { normalizeSafeHref, isExternalSafeHref } from '@/lib/shared/safe-href';
 // import Image from 'next/image';
 
 
@@ -158,11 +159,8 @@ const RichTableComponent = ({ value }) => {
                                 </code>
                               ),
                               link: ({ value, children }) => {
-                                const href = value?.href || "#";
-                                const isInternal = href.startsWith("/") || href.startsWith("https://doitwithai.tools");
-                                const normalizedHref = href.startsWith("https://doitwithai.tools")
-                                  ? href.replace("https://doitwithai.tools", "") || "/"
-                                  : href;
+                                const normalizedHref = normalizeSafeHref(value?.href, "#");
+                                const isInternal = !isExternalSafeHref(normalizedHref);
                                 return (
                                   <Link
                                     href={normalizedHref}
@@ -199,12 +197,14 @@ const RichTableComponent = ({ value }) => {
                                 </code>
                               ),
                               link: ({ value, children }) => {
-                                const target = value?.blank ? '_blank' : '_self';
-                                const rel = value?.blank ? 'noopener noreferrer' : undefined;
+                                const safeHref = normalizeSafeHref(value?.href, '#');
+                                const external = isExternalSafeHref(safeHref) || Boolean(value?.blank);
+                                const target = external ? '_blank' : '_self';
+                                const rel = external ? 'noopener noreferrer' : undefined;
                                 
                                 return (
                                   <Link
-                                    href={value?.href || '#'}
+                                    href={safeHref}
                                     target={target}
                                     rel={rel}
                                     className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline hover:no-underline transition-colors duration-200 font-semibold"
@@ -244,10 +244,11 @@ const RichTableComponent = ({ value }) => {
   },
   marks: {
     link: ({ children, value }) => {
-      const isExternal = value.href && !value.href.startsWith('/');
+      const safeHref = normalizeSafeHref(value?.href, '#');
+      const isExternal = isExternalSafeHref(safeHref);
       return (
         <a
-          href={value.href}
+          href={safeHref}
           rel={isExternal ? 'noreferrer noopener' : undefined}
           target={isExternal ? '_blank' : undefined}
           className="text-blue-600 dark:text-blue-400 font-semibold transition-all duration-300 ease-in-out hover:text-blue-700 dark:hover:text-blue-300 bg-gradient-to-r from-current to-current bg-[length:100%_1.5px] bg-no-repeat bg-[position:0_100%] hover:bg-[length:0_1.5px] break-words"
@@ -527,7 +528,7 @@ image: ({ value, index }) => {
               <div className="flex flex-wrap items-center gap-3">
                 {value.link && (
                   <Link
-                    href={value.link}
+                    href={normalizeSafeHref(value.link, '#')}
                     className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs sm:text-sm font-bold text-white shadow-sm transition hover:bg-blue-700"
                   >
                     <span>{value.ctaText || "Open Free Tool"}</span>
@@ -536,7 +537,7 @@ image: ({ value, index }) => {
                 )}
                 {value.secondaryLink && value.secondaryText && (
                   <Link
-                    href={value.secondaryLink}
+                    href={normalizeSafeHref(value.secondaryLink, '#')}
                     className="inline-flex items-center gap-1.5 rounded-xl border border-blue-300 bg-white px-4 py-2.5 text-xs sm:text-sm font-semibold text-blue-700 transition hover:bg-blue-50 dark:border-blue-800 dark:bg-slate-800 dark:text-blue-200 dark:hover:bg-slate-700"
                   >
                     <span>{value.secondaryText}</span>
@@ -825,11 +826,13 @@ strong: ({ children }) => (
       em: ({ children }) => <em>{children}</em>,
 
     link: ({ children, value }) => {
+  const safeHref = normalizeSafeHref(value?.href, '#');
+  const isExternal = isExternalSafeHref(safeHref);
   return (
     <a
-      href={value.href}
-      target="_blank"
-      rel="noreferrer noopener" // ✅ Apply this to all links with target="_blank"
+      href={safeHref}
+      target={isExternal ? "_blank" : undefined}
+      rel={isExternal ? "noreferrer noopener" : undefined}
       className="text-blue-600 dark:text-blue-400 font-medium transition-all duration-300 ease-in-out hover:text-blue-700 dark:hover:text-blue-300 bg-gradient-to-r from-current to-current bg-[length:100%_1.5px] bg-no-repeat bg-[position:0_100%] hover:bg-[length:0_1.5px] break-words"
     >
       {children}
@@ -840,11 +843,12 @@ strong: ({ children }) => (
 
     button: ({ value }) => {
       const { text, link } = value;
+      const safeHref = normalizeSafeHref(link, '#');
 
       return (
         <div className="flex justify-center mb-4 sm:mb-6 mt-4 sm:mt-6 px-2 sm:px-0">
           <a
-            href={link}
+            href={safeHref}
             className="press-button w-full sm:w-auto inline-flex items-center justify-center min-h-[48px] sm:min-h-[52px] px-6 sm:px-8 py-3 sm:py-4 bg-blue-600 hover:bg-blue-700 text-white text-base sm:text-lg md:text-xl font-semibold tracking-wide rounded-lg shadow-md transition-all duration-300 ease-in-out transform hover:scale-[1.02] no-shift"
             aria-label={text}
             itemProp="url"

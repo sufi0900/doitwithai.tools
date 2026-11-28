@@ -1,20 +1,7 @@
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
-import {
-  ToolHeroBackground,
-  toolHeroSurface,
-  toolHeroHeading,
-} from "@/features/tool-ui/ToolHero";
 import ToolResources from "@/features/tool-catalog/ToolResources";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
 import type { Metadata } from "next";
 import Link from "next/link";
-import {
-  ArrowRight,
-  BrainCircuit,
-  Link2,
-  Scissors,
-  Search,
-  Sparkles,
-} from "lucide-react";
 import SlugGeneratorClient from "@/features/slug-generator/components/SlugGeneratorClient";
 import SlugToolEducation from "@/features/slug-generator/components/SlugToolEducation";
 
@@ -176,75 +163,18 @@ export default function SlugUrlGeneratorPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
 
-      <div className={`relative overflow-hidden ${toolHeroSurface} text-white`}
+      <ToolLandingHero
+        slug="slug-generator"
+        title="AI SEO Slug Generator for Clean, Durable URLs"
+        description="Transform long article titles or page briefs into concise, hyphenated, lowercase URL slugs stripped of stop-words and date clutter—with redirect safety checks."
+        categoryLabel="On-Page SEO"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
       >
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">Tools</Link>
-            <span>/</span>
-            <span aria-current="page">SEO Slug Generator</span>
-          </nav>
-
-          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                On-Page SEO · Evergreen URL Slug & Redirect Planner
-              </p>
-              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                AI SEO Slug Generator 
-                <span className={toolHeroHeading}>
-                  for Clean, Durable URLs
-                </span>
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-                Transform long article titles or page briefs into concise, hyphenated, lowercase URL slugs stripped of stop-words and date clutter—with redirect safety checks.
-              </p>
-              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  5 ranked slug strategies
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Stop-word & length scoring
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Full URL path preview
-                </span>
-              </div>
-              <PortableToolHeroBar />
-            </div>
-
-            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
-                4 Qualities of an Evergreen Slug
-              </p>
-              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
-                <li>
-                  <strong className="text-emerald-300">Primary Topic Focus:</strong> Retains the core 3–5 keyword tokens that define the page&apos;s topic.
-                </li>
-                <li>
-                  <strong className="text-indigo-300">Zero Date Clutter:</strong> Strips years and numbers (&apos;2026&apos;, &apos;10-tips&apos;) so updates stay clean.
-                </li>
-                <li>
-                  <strong className="text-sky-300">Hyphen & Case Rules:</strong> Enforces lowercase ASCII words separated by single hyphens.
-                </li>
-                <li>
-                  <strong className="text-amber-300">Migration Safety:</strong> Flags when changing an existing URL requires a 301 redirect.
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="mt-8">
-            <SlugGeneratorClient />
-          </div>
+        <div className="p-4 sm:p-6">
+          <SlugGeneratorClient />
         </div>
-      </div>
+      </ToolLandingHero>
 
       <SlugToolEducation />
 

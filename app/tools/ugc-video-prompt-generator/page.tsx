@@ -1,10 +1,5 @@
-import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
-import {
-  ToolHeroBackground,
-  toolHeroSurface,
-  toolHeroHeading,
-} from "@/features/tool-ui/ToolHero";
 import type { Metadata } from "next";
+import ToolLandingHero from "@/features/tool-ui/ToolLandingHero";
 import Link from "next/link";
 import UgcVideoPromptClient from "@/features/ugc-video-prompt-generator/UgcVideoPromptClient";
 import ToolResources from "@/features/tool-catalog/ToolResources";
@@ -163,90 +158,18 @@ export default function UgcVideoPromptGeneratorPage() {
           __html: JSON.stringify(schema).replace(/</g, "\\u003c"),
         }}
       />
-      <div className={`relative overflow-hidden ${toolHeroSurface} text-white`}>
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">Tools</Link>
-            <span>/</span>
-            <span aria-current="page">
-              UGC Ad &amp; Sora Video Prompt Generator
-            </span>
-          </nav>
-
-          <div className="mb-8 grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                CONTENT &amp; VIDEO STUDIO · UGC ADS, SORA, RUNWAY &amp; SUNO
-              </p>
-              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                UGC Ad, Sora Video &amp;{" "}
-                <span className={toolHeroHeading}>
-                  Text-to-Video Prompt Studio
-                </span>
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-                Build high-converting <strong>4-scene UGC ad scripts</strong>,
-                cinematic <strong>OpenAI Sora</strong>,{" "}
-                <strong>Google Veo 2</strong>, and <strong>Runway Gen-3</strong>{" "}
-                text-to-video prompts, plus synchronized{" "}
-                <strong>Suno v4 background music prompts</strong> in seconds.
-              </p>
-              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  4-Scene Timed UGC Storyboard
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Sora, Veo, Runway &amp; Kling Camera Tokens
-                </span>
-                <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Suno v4 Audio Prompt Builder
-                </span>
-              </div>
-              <PortableToolHeroBar />
-            </div>
-
-            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
-                What Every Prompt Pack Includes
-              </p>
-              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
-                <li>
-                  <strong className="text-violet-300">
-                    Master Text-to-Video Prompt:
-                  </strong>{" "}
-                  Calibrated lens, camera motion, lighting, and physics tokens.
-                </li>
-                <li>
-                  <strong className="text-sky-300">
-                    4-Scene UGC Script + B-Roll:
-                  </strong>{" "}
-                  0–3s Hook, 3–10s Problem, 10–22s Proof, and 22–30s CTA.
-                </li>
-                <li>
-                  <strong className="text-emerald-300">
-                    Suno v4 Audio Prompt:
-                  </strong>{" "}
-                  Custom BPM, instrumentation, and voiceover-safe EQ structure.
-                </li>
-                <li>
-                  <strong className="text-amber-300">
-                    Negative Guardrails:
-                  </strong>{" "}
-                  Prevents hand warping, text distortion, and motion flicker.
-                </li>
-              </ul>
-            </div>
-          </div>
-
+      <ToolLandingHero
+        slug="ugc-video-prompt-generator"
+        title="UGC Ad, Sora Video & Text-to-Video Prompt Studio"
+        description="Build high-converting 4-scene UGC ad scripts , cinematic OpenAI Sora , Google Veo 2 , and Runway Gen-3 text-to-video prompts, plus synchronized Suno v4 background music prompts in seconds."
+        categoryLabel="CONTENT & VIDEO STUDIO"
+        categoryHref="/tools"
+        workspaceId="tool-studio-workspace"
+      >
+        <div className="p-4 sm:p-6">
           <UgcVideoPromptClient />
         </div>
-      </div>
+      </ToolLandingHero>
 
       <div className="mx-auto max-w-6xl space-y-20 px-4 py-16 sm:px-6 lg:px-8">
         {/* 50-WORD QUICK ANSWER */}

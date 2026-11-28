@@ -6,6 +6,10 @@ import categories from "./infographic-viz-categories.json";
 import { fillPreview } from "./catalog";
 import { chatGPTLink } from "./meta-workflow";
 import KeywordGuideCard, { type KeywordGuide } from "./KeywordGuideCard";
+import {
+  PROMPT_COMPANION_LINK_CLASS,
+  PROMPT_COMPANION_LINK_TEXT_CLASS,
+} from "./promptLinkStyles";
 import { infographicVizPromoGuides } from "./InfographicVizPromoGuides";
 
 const button =
@@ -304,10 +308,12 @@ export default function InfographicVizPromptLibrary() {
                 </p>
                 {c.showToolLink && (
                   <Link
-                    className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-blue-700 underline dark:text-blue-200"
+                    className={PROMPT_COMPANION_LINK_CLASS}
                     href={`/tools/${c.tool}`}
                   >
-                    Open companion studio: {c.toolName} ↗
+                    <span className={PROMPT_COMPANION_LINK_TEXT_CLASS}>
+                      Open companion studio: {c.toolName} ↗
+                    </span>
                   </Link>
                 )}
               </div>
