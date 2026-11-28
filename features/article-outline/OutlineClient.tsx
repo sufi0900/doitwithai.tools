@@ -392,9 +392,9 @@ export default function OutlineClient() {
           aria-busy={busy}
         >
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-2xl font-black">
-              Start with your article brief
-            </h2>
+            <span className="text-sm font-bold text-slate-700 dark:text-slate-200">
+              Article brief &amp; outline inputs
+            </span>
             <button
               type="button"
               disabled={busy}
@@ -409,11 +409,7 @@ export default function OutlineClient() {
               Try an example
             </button>
           </div>
-          <p className="mt-3 text-sm leading-7 text-slate-500 dark:text-slate-400">
-            Explain the reader&apos;s task and your angle. Relevant details make
-            the plan more useful than a title alone.
-          </p>
-          <label className="mt-5 block text-sm font-bold">
+          <label className="mt-4 block text-sm font-bold">
             Working title{" "}
             <span className="font-normal text-slate-500">(required)</span>
             <input

@@ -335,7 +335,7 @@ export default function ClaudeCopilotSeoClient() {
     <section
       id="claude-copilot-seo-workspace"
       aria-label="Claude, Copilot and Gemini SEO Analyzer Workspace"
-      className="rounded-[28px] border border-white/10 bg-slate-900/85 p-5 shadow-2xl sm:p-8 space-y-8"
+      className="rounded-[28px] border border-white/10 bg-slate-50 dark:bg-slate-900/85 p-5 shadow-2xl sm:p-8 space-y-8"
     >
       <ToolRunOverlay
         active={busy}
@@ -354,7 +354,7 @@ export default function ClaudeCopilotSeoClient() {
       {/* TOP COMMAND PANEL */}
       <form
         onSubmit={(e) => void handleRunAudit(e)}
-        className="rounded-2xl border border-white/10 bg-slate-950/65 p-5 sm:p-6 space-y-6"
+        className="rounded-2xl border border-white/10 bg-white dark:bg-slate-950/65 p-5 sm:p-6 space-y-6"
       >
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-4">
           <div className="flex items-center gap-3">
@@ -362,10 +362,10 @@ export default function ClaudeCopilotSeoClient() {
               <Cpu aria-hidden className="h-5 w-5 text-amber-300" />
             </div>
             <div>
-              <h2 className="text-lg sm:text-xl font-black text-white">
+              <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white">
                 Claude, Microsoft Copilot, Gemini &amp; ChatGPT SEO Studio
               </h2>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Audit your page across all 4 AI models and generate tailored XML &amp; Markdown SEO prompts.
               </p>
             </div>
@@ -443,7 +443,7 @@ export default function ClaudeCopilotSeoClient() {
         <div>
           <label
             htmlFor="cc-draft"
-            className="block text-xs font-bold uppercase tracking-wider text-slate-300"
+            className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300"
           >
             Draft Paragraph, Page Summary, or Content Outline
           </label>
@@ -502,7 +502,7 @@ export default function ClaudeCopilotSeoClient() {
               <span className="inline-flex items-center rounded-full border border-amber-400/35 bg-amber-500/15 px-3 py-0.5 text-xs font-bold uppercase tracking-wider text-amber-300">
                 Multi-Assistant SEO Score: {report.overallScore} / 100
               </span>
-              <h3 className="mt-1.5 text-xl font-black text-white">
+              <h3 className="mt-1.5 text-xl font-black text-slate-900 dark:text-white">
                 Claude, Copilot, Gemini &amp; ChatGPT Audit + Custom System Prompts
               </h3>
             </div>
@@ -510,7 +510,7 @@ export default function ClaudeCopilotSeoClient() {
               <button
                 type="button"
                 onClick={copyAllPrompts}
-                className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-white/20 bg-slate-900 px-4 py-2 text-xs font-bold text-white hover:border-blue-400/50"
+                className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-white/20 bg-slate-50 dark:bg-slate-900 px-4 py-2 text-xs font-bold text-slate-900 dark:text-white hover:border-blue-400/50"
               >
                 <Copy className="h-4 w-4 text-blue-300" />
                 Copy All 4 Prompts
@@ -518,7 +518,7 @@ export default function ClaudeCopilotSeoClient() {
               <button
                 type="button"
                 onClick={exportMarkdown}
-                className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-white/20 bg-slate-900 px-4 py-2 text-xs font-bold text-white hover:border-emerald-400/50"
+                className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-white/20 bg-slate-50 dark:bg-slate-900 px-4 py-2 text-xs font-bold text-slate-900 dark:text-white hover:border-emerald-400/50"
               >
                 <Download className="h-4 w-4 text-emerald-300" />
                 Download .MD Report
@@ -535,28 +535,28 @@ export default function ClaudeCopilotSeoClient() {
               <span>AI-Upgraded Metadata, Power Answer &amp; H2 Blueprint</span>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="rounded-xl border border-white/10 bg-slate-950/90 p-4">
+              <div className="rounded-xl border border-white/10 bg-white dark:bg-slate-950/90 p-4">
                 <div className="text-xs font-bold uppercase text-blue-300">
                   Optimized Meta Title (&le; 580px)
                 </div>
-                <p className="mt-1 text-sm font-bold text-white">
+                <p className="mt-1 text-sm font-bold text-slate-900 dark:text-white">
                   {aiUpgrade.optimizedTitle}
                 </p>
               </div>
-              <div className="rounded-xl border border-white/10 bg-slate-950/90 p-4">
+              <div className="rounded-xl border border-white/10 bg-white dark:bg-slate-950/90 p-4">
                 <div className="text-xs font-bold uppercase text-emerald-300">
                   Single-Sentence Meta Description
                 </div>
-                <p className="mt-1 text-xs leading-6 text-slate-200">
+                <p className="mt-1 text-xs leading-6 text-slate-800 dark:text-slate-200">
                   {aiUpgrade.optimizedMetaDescription}
                 </p>
               </div>
             </div>
-            <div className="rounded-xl border border-amber-400/30 bg-slate-950/90 p-4">
+            <div className="rounded-xl border border-amber-400/30 bg-white dark:bg-slate-950/90 p-4">
               <div className="text-xs font-bold uppercase text-amber-300">
                 50-Word Opening Power Answer Block
               </div>
-              <p className="mt-1 text-sm leading-7 text-white">
+              <p className="mt-1 text-sm leading-7 text-slate-900 dark:text-white">
                 {aiUpgrade.powerAnswerBlock}
               </p>
             </div>
@@ -564,7 +564,7 @@ export default function ClaudeCopilotSeoClient() {
               {aiUpgrade.recommendedH2s.map((h2, idx) => (
                 <div
                   key={idx}
-                  className="rounded-lg border border-white/10 bg-slate-900/80 px-3.5 py-2 text-xs font-bold text-slate-200"
+                  className="rounded-lg border border-white/10 bg-slate-50 dark:bg-slate-900/80 px-3.5 py-2 text-xs font-bold text-slate-800 dark:text-slate-200"
                 >
                   H2 #{idx + 1}: {h2}
                 </div>
@@ -583,10 +583,10 @@ export default function ClaudeCopilotSeoClient() {
               <div className="space-y-3">
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div>
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                       {m.specialty}
                     </span>
-                    <h4 className="mt-0.5 text-lg font-black text-white">
+                    <h4 className="mt-0.5 text-lg font-black text-slate-900 dark:text-white">
                       {m.modelName}
                     </h4>
                   </div>
@@ -602,7 +602,7 @@ export default function ClaudeCopilotSeoClient() {
                   {m.findings.map((f, idx) => (
                     <div
                       key={idx}
-                      className="flex items-start gap-2 text-xs text-slate-300"
+                      className="flex items-start gap-2 text-xs text-slate-700 dark:text-slate-300"
                     >
                       <span className="text-emerald-400">✓</span>
                       <span>{f}</span>
@@ -616,7 +616,7 @@ export default function ClaudeCopilotSeoClient() {
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-white/10 bg-slate-900/95 p-3.5 space-y-2">
+                <div className="rounded-xl border border-white/10 bg-slate-50 dark:bg-slate-900/95 p-3.5 space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-blue-300">
                       Copy-Paste System Prompt for {m.modelName.split(" ")[0]}
@@ -632,7 +632,7 @@ export default function ClaudeCopilotSeoClient() {
                       Copy Prompt
                     </button>
                   </div>
-                  <pre className="max-h-36 overflow-y-auto whitespace-pre-wrap font-mono text-[11px] leading-5 text-slate-200">
+                  <pre className="max-h-36 overflow-y-auto whitespace-pre-wrap font-mono text-[11px] leading-5 text-slate-800 dark:text-slate-200">
                     {m.tailoredPrompt}
                   </pre>
                 </div>
@@ -642,7 +642,7 @@ export default function ClaudeCopilotSeoClient() {
         </div>
 
         {/* Connected SEO Tools Strip */}
-        <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-white/10 bg-slate-950/70 p-4">
+        <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-white/10 bg-white dark:bg-slate-950/70 p-4">
           <Link
             href="/tools/ai-mode-llm-seo-tracker"
             className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-sky-400/35 bg-sky-500/15 px-4 py-2 text-xs font-bold text-sky-200 hover:bg-sky-500/25"

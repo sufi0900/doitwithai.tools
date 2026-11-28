@@ -683,7 +683,7 @@ export function InstagramCaptionGeneratorClient() {
                       backgroundColor: "#e11d48",
                       cursor: canRemoveSlide ? "pointer" : "not-allowed",
                     }}
-                    className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-extrabold text-white transition hover:opacity-90 disabled:opacity-45"
+                    className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-extrabold text-slate-900 dark:text-white transition hover:opacity-90 disabled:opacity-45"
                     title={
                       canRemoveSlide
                         ? `Remove Slide 0${activeEditingSlide.slideNumber}`
@@ -1096,7 +1096,7 @@ export function InstagramCaptionGeneratorClient() {
 
             {/* DIRECT IN-CANVAS KEYBOARD BAR + ZOOM CONTROLS FOR CAROUSEL DECK */}
             {activeEditingSlide && (
-              <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-slate-800 bg-[#0d1424] px-4 py-2.5 text-xs text-slate-200">
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-slate-200 dark:border-slate-800 bg-[#0d1424] px-4 py-2.5 text-xs text-slate-800 dark:text-slate-200">
                 <div className="flex min-w-[240px] flex-1 items-center gap-2">
                   <span className="inline-flex shrink-0 items-center gap-1 font-extrabold text-[#9aabff]">
                     <Type size={13} /> Slide 0{activeEditingSlide.slideNumber}{" "}
@@ -1112,7 +1112,7 @@ export function InstagramCaptionGeneratorClient() {
                         e.target.value,
                       )
                     }
-                    className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-1 text-xs font-semibold text-white focus:border-[#5271ff] focus:outline-none"
+                    className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-3 py-1 text-xs font-semibold text-slate-900 dark:text-white focus:border-[#5271ff] focus:outline-none"
                   />
                 </div>
                 <div className="flex flex-wrap items-center gap-1.5">
@@ -1123,7 +1123,7 @@ export function InstagramCaptionGeneratorClient() {
                         Math.max(0.75, +(z - 0.15).toFixed(2)),
                       )
                     }
-                    className="inline-flex items-center gap-1 rounded-lg bg-slate-800 px-2 py-1 text-[11px] font-bold text-white hover:bg-slate-700"
+                    className="inline-flex items-center gap-1 rounded-lg bg-slate-800 px-2 py-1 text-[11px] font-bold text-slate-900 dark:text-white hover:bg-slate-700"
                   >
                     <ZoomOut size={12} /> -
                   </button>
@@ -1143,7 +1143,7 @@ export function InstagramCaptionGeneratorClient() {
                     onClick={() =>
                       setZoomLevel((z) => Math.min(2, +(z + 0.25).toFixed(2)))
                     }
-                    className="inline-flex items-center gap-1 rounded-lg bg-slate-800 px-2 py-1 text-[11px] font-bold text-white hover:bg-slate-700"
+                    className="inline-flex items-center gap-1 rounded-lg bg-slate-800 px-2 py-1 text-[11px] font-bold text-slate-900 dark:text-white hover:bg-slate-700"
                   >
                     <ZoomIn size={12} /> +
                   </button>
@@ -1231,7 +1231,7 @@ export function InstagramCaptionGeneratorClient() {
                               downloadSingleSlideSvg(slide.slideNumber),
                             );
                           }}
-                          className="inline-flex items-center gap-0.5 rounded bg-slate-800 px-1.5 py-0.5 text-[10px] font-bold text-white hover:bg-slate-700"
+                          className="inline-flex items-center gap-0.5 rounded bg-slate-800 px-1.5 py-0.5 text-[10px] font-bold text-slate-900 dark:text-white hover:bg-slate-700"
                           title="Download Editable Vector SVG"
                         >
                           SVG
@@ -1251,7 +1251,7 @@ export function InstagramCaptionGeneratorClient() {
                     </div>
 
                     {/* VECTOR SVG SLIDE */}
-                    <div className="relative overflow-hidden rounded-xl border border-slate-300 bg-slate-950 shadow-sm dark:border-slate-700">
+                    <div className="relative overflow-hidden rounded-xl border border-slate-300 bg-white dark:bg-slate-950 shadow-sm dark:border-slate-700">
                       {renderCarouselSlideSvg(
                         slide,
                         result.carouselSlides.length,
@@ -1290,7 +1290,7 @@ export function InstagramCaptionGeneratorClient() {
                   </span>
                   <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                     {activeCaption.aboveTheFoldHook}{" "}
-                    <span className="text-slate-400">...more</span>
+                    <span className="text-slate-500 dark:text-slate-400">...more</span>
                   </p>
                 </div>
                 <button

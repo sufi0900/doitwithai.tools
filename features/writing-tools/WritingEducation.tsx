@@ -162,19 +162,19 @@ export default function WritingEducation({ kind }: { kind: WritingKind }) {
             {data.sourceLabel}
           </a>
         </div>
-        <aside className="rounded-[28px] bg-slate-950 p-7 text-white sm:p-8">
+        <aside className="rounded-[28px] bg-white dark:bg-slate-950 p-7 text-slate-900 dark:text-white sm:p-8">
           <Layers3 aria-hidden className="h-7 w-7 text-blue-300" />
           <h3 className="mt-5 text-xl font-extrabold">
             From the workspace to your website
           </h3>
-          <p className="mt-4 text-sm leading-7 text-slate-300">
+          <p className="mt-4 text-sm leading-7 text-slate-700 dark:text-slate-300">
             {data.placement}
           </p>
-          <p className="mt-4 text-sm leading-7 text-slate-300">
+          <p className="mt-4 text-sm leading-7 text-slate-700 dark:text-slate-300">
             Copy HTML exports an escaped element. Paste it into an appropriate
             code field, rather than a rich text editor that displays markup.
           </p>
-          <p className="mt-4 text-sm leading-7 text-slate-300">
+          <p className="mt-4 text-sm leading-7 text-slate-700 dark:text-slate-300">
             Check existing templates before adding another element. A saved
             draft still needs a publishing review against the real page.
           </p>

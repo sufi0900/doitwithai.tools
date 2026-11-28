@@ -242,12 +242,12 @@ export default function ArticleToQuizTestGeneratorClient() {
       />
 
       {/* Presets */}
-      <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/70 p-4">
         <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
           <span className="text-xs font-semibold uppercase tracking-wider text-indigo-400">
             Try Instant Article-to-Quiz Scenarios
           </span>
-          <span className="text-xs text-slate-400">
+          <span className="text-xs text-slate-500 dark:text-slate-400">
             Generates live playable quiz + rationale key + copy-paste HTML embed widget
           </span>
         </div>
@@ -280,23 +280,23 @@ export default function ArticleToQuizTestGeneratorClient() {
       {/* Main Studio Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left Column: Source Article & Quiz Settings */}
-        <div className="lg:col-span-5 space-y-4 rounded-2xl border border-slate-800 bg-slate-900/85 p-5">
-          <h2 className="text-base font-bold text-white">1. Article Input & Assessment Settings</h2>
+        <div className="lg:col-span-5 space-y-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/85 p-5">
+          <h2 className="text-base font-bold text-slate-900 dark:text-white">1. Article Input & Assessment Settings</h2>
 
           <div>
-            <label className="block text-xs font-semibold uppercase text-slate-300 mb-1">
+            <label className="block text-xs font-semibold uppercase text-slate-700 dark:text-slate-300 mb-1">
               Article or Quiz Title
             </label>
             <input
               type="text"
               value={articleTitle}
               onChange={(e) => setArticleTitle(e.target.value)}
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-white"
+              className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-xs text-slate-900 dark:text-white"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase text-slate-300 mb-1">
+            <label className="block text-xs font-semibold uppercase text-slate-700 dark:text-slate-300 mb-1">
               Source Article Text or Study Notes
             </label>
             <textarea
@@ -306,13 +306,13 @@ export default function ArticleToQuizTestGeneratorClient() {
                 setArticleText(e.target.value);
                 setAiQuestions(null);
               }}
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-xs text-slate-100"
+              className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 p-3 text-xs text-slate-900 dark:text-slate-100"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold uppercase text-slate-300 mb-1">
+              <label className="block text-xs font-semibold uppercase text-slate-700 dark:text-slate-300 mb-1">
                 Questions ({questionCount})
               </label>
               <input
@@ -329,7 +329,7 @@ export default function ArticleToQuizTestGeneratorClient() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase text-slate-300 mb-1">
+              <label className="block text-xs font-semibold uppercase text-slate-700 dark:text-slate-300 mb-1">
                 Difficulty Level
               </label>
               <select
@@ -338,7 +338,7 @@ export default function ArticleToQuizTestGeneratorClient() {
                   setDifficulty(e.target.value as "Easy" | "Medium" | "Hard");
                   setAiQuestions(null);
                 }}
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-white"
+                className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-xs text-slate-900 dark:text-white"
               >
                 <option value="Easy">Easy (Recall)</option>
                 <option value="Medium">Medium (Analytical)</option>
@@ -355,7 +355,7 @@ export default function ArticleToQuizTestGeneratorClient() {
               type="text"
               value={leadMagnetCta}
               onChange={(e) => setLeadMagnetCta(e.target.value)}
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-white"
+              className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-xs text-slate-900 dark:text-white"
             />
           </div>
 
@@ -373,8 +373,8 @@ export default function ArticleToQuizTestGeneratorClient() {
 
         {/* Right Column: Interactive Quiz Player, Answer Bank & Embed Code */}
         <div className="lg:col-span-7 space-y-4">
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-5 space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/90 p-5 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
@@ -410,7 +410,7 @@ export default function ArticleToQuizTestGeneratorClient() {
                   3. HTML Blog Embed Widget
                 </button>
               </div>
-              <span className="text-[11px] text-slate-400">{aiSourceTier}</span>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400">{aiSourceTier}</span>
             </div>
 
             {activeTab === "player" && (
@@ -418,7 +418,7 @@ export default function ArticleToQuizTestGeneratorClient() {
                 {questions.map((q, idx) => (
                   <div
                     key={q.id}
-                    className="rounded-xl border border-slate-800 bg-slate-950/80 p-4 space-y-2.5"
+                    className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/80 p-4 space-y-2.5"
                   >
                     <div className="flex items-center justify-between text-[11px] text-indigo-300">
                       <span>
@@ -426,7 +426,7 @@ export default function ArticleToQuizTestGeneratorClient() {
                       </span>
                       <span className="rounded bg-indigo-500/20 px-2 py-0.5">{q.difficulty}</span>
                     </div>
-                    <p className="text-sm font-semibold text-white">{q.question}</p>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-white">{q.question}</p>
                     <div className="space-y-1.5">
                       {q.options.map((opt, oi) => {
                         const isPicked = selectedAnswers[q.id] === oi;
@@ -457,7 +457,7 @@ export default function ArticleToQuizTestGeneratorClient() {
                       })}
                     </div>
                     {showResults && (
-                      <div className="rounded-lg bg-slate-900 p-2.5 text-xs text-emerald-300">
+                      <div className="rounded-lg bg-slate-50 dark:bg-slate-900 p-2.5 text-xs text-emerald-300">
                         <strong>Rationale:</strong> {q.rationale}
                       </div>
                     )}
@@ -469,7 +469,7 @@ export default function ArticleToQuizTestGeneratorClient() {
                     <div className="text-xs font-bold uppercase text-indigo-300">
                       Live Assessment Grader
                     </div>
-                    <div className="text-sm font-bold text-white">
+                    <div className="text-sm font-bold text-slate-900 dark:text-white">
                       {showResults
                         ? `You scored ${scoreCount} / ${questions.length} (${Math.round(
                             (scoreCount / Math.max(1, questions.length)) * 100
@@ -493,15 +493,15 @@ export default function ArticleToQuizTestGeneratorClient() {
                 {questions.map((q, i) => (
                   <div
                     key={q.id}
-                    className="rounded-xl border border-slate-800 bg-slate-950 p-4 space-y-1.5 text-xs"
+                    className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-4 space-y-1.5 text-xs"
                   >
-                    <div className="font-bold text-white">
+                    <div className="font-bold text-slate-900 dark:text-white">
                       Q{i + 1}: {q.question}
                     </div>
                     <div className="text-emerald-400">
                       <strong>Correct Answer:</strong> {q.options[q.correctIndex]}
                     </div>
-                    <div className="text-slate-400">
+                    <div className="text-slate-500 dark:text-slate-400">
                       <strong>Source Evidence:</strong> {q.rationale}
                     </div>
                   </div>
@@ -523,7 +523,7 @@ export default function ArticleToQuizTestGeneratorClient() {
                     {copiedKey === "embed" ? "✓ Copied Embed HTML" : "Copy Embed Code"}
                   </button>
                 </div>
-                <pre className="rounded-xl border border-slate-800 bg-slate-950 p-4 text-xs text-slate-200 whitespace-pre-wrap font-mono max-h-80 overflow-y-auto">
+                <pre className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-4 text-xs text-slate-800 dark:text-slate-200 whitespace-pre-wrap font-mono max-h-80 overflow-y-auto">
                   {embedHtmlSnippet}
                 </pre>
               </div>

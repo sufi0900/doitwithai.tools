@@ -502,13 +502,13 @@ export default function FaqSchemaValidatorClient() {
         } description="Analyzing data and compiling real-time report..." />
 
       {/* TOP INPUT DASHBOARD */}
-      <div className="rounded-3xl border border-slate-800 bg-slate-900/90 p-6 shadow-2xl sm:p-8">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-5">
+      <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/90 p-6 shadow-2xl sm:p-8">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-5">
           <div>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/15 px-3 py-1 text-xs font-bold uppercase tracking-wider text-blue-300">
               <Code2 className="h-3.5 w-3.5" /> FAQ Schema Validator · Product @graph · AI Overview Optimizer
             </span>
-            <h2 className="mt-2 text-xl font-black text-white sm:text-2xl">
+            <h2 className="mt-2 text-xl font-black text-slate-900 dark:text-white sm:text-2xl">
               Validate &amp; Optimize FAQPage + Product Schema for AI Search
             </h2>
           </div>
@@ -519,7 +519,7 @@ export default function FaqSchemaValidatorClient() {
                 key={p.id}
                 type="button"
                 onClick={() => applyPreset(p)}
-                className="rounded-xl border border-slate-700 bg-slate-800/80 px-3 py-1.5 text-xs font-semibold text-slate-200 transition hover:border-blue-400 hover:bg-slate-800"
+                className="rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-800/80 px-3 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 transition hover:border-blue-400 hover:bg-slate-800"
               >
                 {p.label}
               </button>
@@ -529,7 +529,7 @@ export default function FaqSchemaValidatorClient() {
 
         <div className="mt-6 grid gap-5 md:grid-cols-3">
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
               1. Primary Target Keyword / Product Name
             </label>
             <input
@@ -537,12 +537,12 @@ export default function FaqSchemaValidatorClient() {
               value={targetKeyword}
               onChange={(e) => setTargetKeyword(e.target.value)}
               placeholder="e.g., best faq generator for seo and ai visibility"
-              className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+              className="mt-2 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3.5 py-2.5 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
               2. Target Canonical Page URL
             </label>
             <input
@@ -550,18 +550,18 @@ export default function FaqSchemaValidatorClient() {
               value={pageUrl}
               onChange={(e) => setPageUrl(e.target.value)}
               placeholder="https://doitwithai.tools/tools/..."
-              className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+              className="mt-2 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3.5 py-2.5 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
               3. Schema @graph Combination Mode
             </label>
             <select
               value={schemaComboType}
               onChange={(e) => setSchemaComboType(e.target.value)}
-              className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-sm text-white focus:border-blue-500 focus:outline-none"
+              className="mt-2 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3.5 py-2.5 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none"
             >
               <option value="FAQPage + WebApplication (@graph)">
                 FAQPage + WebApplication (@graph)
@@ -575,7 +575,7 @@ export default function FaqSchemaValidatorClient() {
         </div>
 
         <div className="mt-5">
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">
+          <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
             4. Paste Existing JSON-LD Schema OR Plain Text Q: / A: Pairs
           </label>
           <textarea
@@ -583,11 +583,11 @@ export default function FaqSchemaValidatorClient() {
             value={rawFaqOrJsonInput}
             onChange={(e) => setRawFaqOrJsonInput(e.target.value)}
             placeholder="Paste raw JSON-LD or Q: ... A: ... pairs here..."
-            className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 p-3.5 font-mono text-xs leading-6 text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+            className="mt-2 w-full rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 p-3.5 font-mono text-xs leading-6 text-slate-900 dark:text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
           />
         </div>
 
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-slate-800 pt-5">
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-slate-200 dark:border-slate-800 pt-5">
           <div className="flex flex-wrap gap-3">
             <button
               type="button"
@@ -618,14 +618,14 @@ export default function FaqSchemaValidatorClient() {
             <button
               type="button"
               onClick={exportMarkdown}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800 px-3.5 py-2 text-xs font-bold text-slate-200 hover:bg-slate-700"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-800 px-3.5 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-700"
             >
               <Download className="h-3.5 w-3.5" /> Export .MD
             </button>
             <button
               type="button"
               onClick={exportCsv}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800 px-3.5 py-2 text-xs font-bold text-slate-200 hover:bg-slate-700"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-800 px-3.5 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-700"
             >
               <Download className="h-3.5 w-3.5" /> Export .CSV
             </button>
@@ -636,50 +636,50 @@ export default function FaqSchemaValidatorClient() {
       {/* BOTTOM RESULTS DASHBOARD */}
       <div ref={resultsRef} className="space-y-6">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-2xl border border-emerald-500/30 bg-slate-900/90 p-5">
+          <div className="rounded-2xl border border-emerald-500/30 bg-slate-50 dark:bg-slate-900/90 p-5">
             <p className="text-xs font-bold uppercase tracking-wider text-emerald-300">
               JSON-LD Syntax Score
             </p>
-            <p className="mt-2 text-3xl font-black text-white">
+            <p className="mt-2 text-3xl font-black text-slate-900 dark:text-white">
               {pack.syntaxScore}/100
             </p>
-            <p className="mt-1 text-xs text-slate-400">
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
               Schema.org HTTPS &amp; @graph valid
             </p>
           </div>
 
-          <div className="rounded-2xl border border-sky-500/30 bg-slate-900/90 p-5">
+          <div className="rounded-2xl border border-sky-500/30 bg-slate-50 dark:bg-slate-900/90 p-5">
             <p className="text-xs font-bold uppercase tracking-wider text-sky-300">
               AI Overview Readiness
             </p>
-            <p className="mt-2 text-3xl font-black text-white">
+            <p className="mt-2 text-3xl font-black text-slate-900 dark:text-white">
               {pack.aiVisibilityScore}/100
             </p>
-            <p className="mt-1 text-xs text-slate-400">
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
               40–55w answer extraction sweet spot
             </p>
           </div>
 
-          <div className="rounded-2xl border border-amber-500/30 bg-slate-900/90 p-5">
+          <div className="rounded-2xl border border-amber-500/30 bg-slate-50 dark:bg-slate-900/90 p-5">
             <p className="text-xs font-bold uppercase tracking-wider text-amber-300">
               Answer Fact Density
             </p>
-            <p className="mt-2 text-3xl font-black text-white">
+            <p className="mt-2 text-3xl font-black text-slate-900 dark:text-white">
               {pack.answerDepthScore}/100
             </p>
-            <p className="mt-1 text-xs text-slate-400">
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
               Direct lead + numeric specificity
             </p>
           </div>
 
-          <div className="rounded-2xl border border-purple-500/30 bg-slate-900/90 p-5">
+          <div className="rounded-2xl border border-purple-500/30 bg-slate-50 dark:bg-slate-900/90 p-5">
             <p className="text-xs font-bold uppercase tracking-wider text-purple-300">
               Validated Q&amp;A Entities
             </p>
-            <p className="mt-2 text-3xl font-black text-white">
+            <p className="mt-2 text-3xl font-black text-slate-900 dark:text-white">
               {pack.questionCount} Q&amp;As
             </p>
-            <p className="mt-1 text-xs text-slate-400">
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
               Ready for HTML + JSON-LD parity
             </p>
           </div>
@@ -702,15 +702,15 @@ export default function FaqSchemaValidatorClient() {
                   </span>
                 </div>
 
-                <h3 className="mt-3 text-lg font-black text-white">
+                <h3 className="mt-3 text-lg font-black text-slate-900 dark:text-white">
                   {card.title}
                 </h3>
 
-                <pre className="mt-3 whitespace-pre-wrap rounded-2xl bg-slate-950/85 p-4 font-mono text-xs leading-6 text-slate-200">
+                <pre className="mt-3 whitespace-pre-wrap rounded-2xl bg-white dark:bg-slate-950/85 p-4 font-mono text-xs leading-6 text-slate-800 dark:text-slate-200">
                   {card.bodyText}
                 </pre>
 
-                <ul className="mt-4 space-y-2 text-xs text-slate-200">
+                <ul className="mt-4 space-y-2 text-xs text-slate-800 dark:text-slate-200">
                   {card.actionItems.map((item, idx) => (
                     <li key={idx} className="flex items-start gap-2">
                       <SearchCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-blue-300" />
@@ -724,7 +724,7 @@ export default function FaqSchemaValidatorClient() {
                 <button
                   type="button"
                   onClick={() => copyText(card.id, card.bodyText)}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-white/10 px-3.5 py-2 text-xs font-bold text-white hover:bg-white/20"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-white/10 px-3.5 py-2 text-xs font-bold text-slate-900 dark:text-white hover:bg-white/20"
                 >
                   <Copy className="h-3.5 w-3.5" />
                   {copiedId === card.id ? "Copied!" : "Copy Schema / Audit"}

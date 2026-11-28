@@ -257,7 +257,7 @@ export function InfographicProceduralStyleControls({
                       : "border-slate-200 bg-slate-50 hover:border-indigo-400 dark:border-slate-700 dark:bg-slate-800/70"
                   }`}
                 >
-                  <div className="flex h-16 items-center justify-center bg-slate-900/90 p-1.5">
+                  <div className="flex h-16 items-center justify-center bg-slate-50 dark:bg-slate-900/90 p-1.5">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(previewSvg)}`}

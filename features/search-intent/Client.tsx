@@ -210,7 +210,7 @@ export default function SearchIntentClient() {
     <section
       id="intent-checker"
       aria-label="Search intent analysis workspace"
-      className="rounded-[28px] border border-white/10 bg-slate-900/85 p-5 shadow-2xl sm:p-8 space-y-8"
+      className="rounded-[28px] border border-white/10 bg-slate-50 dark:bg-slate-900/85 p-5 shadow-2xl sm:p-8 space-y-8"
     >
       <ToolRunOverlay
         active={busy}
@@ -238,7 +238,7 @@ export default function SearchIntentClient() {
       {/* TOP COMMAND PANEL: Full-Width Keyword Input Bar & Controls */}
       <form
         onSubmit={(e) => void quick(e)}
-        className="rounded-2xl border border-white/10 bg-slate-950/60 p-5 sm:p-6 shadow-inner"
+        className="rounded-2xl border border-white/10 bg-white dark:bg-slate-950/60 p-5 sm:p-6 shadow-inner"
       >
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
           <div className="flex items-center gap-3">
@@ -246,10 +246,10 @@ export default function SearchIntentClient() {
               <Search aria-hidden className="h-5 w-5 text-blue-300" />
             </div>
             <div>
-              <h2 className="text-lg sm:text-xl font-black text-white">
+              <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white">
                 Check Your Keyword’s Search Intent
               </h2>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Enter 1–10 keywords below (one per line) to classify intent and jump straight to your visual SERP format cards.
               </p>
             </div>
@@ -267,11 +267,11 @@ export default function SearchIntentClient() {
             <div className="flex flex-wrap items-center justify-between gap-2">
               <label
                 htmlFor="intent-keywords"
-                className="text-sm font-bold text-white"
+                className="text-sm font-bold text-slate-900 dark:text-white"
               >
                 Keywords or search queries (one per line, up to 10)
               </label>
-              <span className="text-xs text-slate-400">
+              <span className="text-xs text-slate-500 dark:text-slate-400">
                 Supports Informational, Commercial, Local (&quot;near me&quot;), Tool &amp; Navigational queries
               </span>
             </div>
@@ -292,13 +292,13 @@ export default function SearchIntentClient() {
             {/* Live Entered Keyword Pills Preview */}
             {parsedList.length > 0 && (
               <div className="mt-3 flex flex-wrap items-center gap-2">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Queued Queries:
                 </span>
                 {parsedList.slice(0, 10).map((kw, idx) => (
                   <span
                     key={idx}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 bg-slate-900 px-2.5 py-1 text-xs font-medium text-slate-200"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 bg-slate-50 dark:bg-slate-900 px-2.5 py-1 text-xs font-medium text-slate-800 dark:text-slate-200"
                   >
                     <span className="font-mono text-[10px] text-blue-400">
                       #{idx + 1}
@@ -311,19 +311,19 @@ export default function SearchIntentClient() {
 
             <p
               id="intent-keyword-help"
-              className="mt-2 text-xs leading-6 text-slate-400"
+              className="mt-2 text-xs leading-6 text-slate-500 dark:text-slate-400"
             >
               One per line. Up to 10 distinct queries, 120 characters each.
               Quick checks analyze English wording cues, local modifiers, and tool terms immediately.
             </p>
           </div>
 
-          <details className="rounded-xl border border-white/10 bg-slate-900/50 p-4">
-            <summary className="min-h-11 cursor-pointer py-1.5 text-sm font-semibold text-white">
+          <details className="rounded-xl border border-white/10 bg-slate-50 dark:bg-slate-900/50 p-4">
+            <summary className="min-h-11 cursor-pointer py-1.5 text-sm font-semibold text-slate-900 dark:text-white">
               Add context for an AI review{" "}
-              <span className="font-normal text-slate-400">optional</span>
+              <span className="font-normal text-slate-500 dark:text-slate-400">optional</span>
             </summary>
-            <p className="mb-4 mt-2 text-xs leading-6 text-slate-400">
+            <p className="mb-4 mt-2 text-xs leading-6 text-slate-500 dark:text-slate-400">
               Audience, market, and result notes are used when you click Review
               with AI.
             </p>
@@ -331,10 +331,10 @@ export default function SearchIntentClient() {
               <div>
                 <label
                   htmlFor="intent-audience"
-                  className="text-sm font-semibold text-white"
+                  className="text-sm font-semibold text-slate-900 dark:text-white"
                 >
                   Intended audience{" "}
-                  <span className="font-normal text-slate-400">optional</span>
+                  <span className="font-normal text-slate-500 dark:text-slate-400">optional</span>
                 </label>
                 <input
                   id="intent-audience"
@@ -348,10 +348,10 @@ export default function SearchIntentClient() {
               <div>
                 <label
                   htmlFor="intent-market"
-                  className="text-sm font-semibold text-white"
+                  className="text-sm font-semibold text-slate-900 dark:text-white"
                 >
                   Market and language{" "}
-                  <span className="font-normal text-slate-400">optional</span>
+                  <span className="font-normal text-slate-500 dark:text-slate-400">optional</span>
                 </label>
                 <input
                   id="intent-market"
@@ -364,12 +364,12 @@ export default function SearchIntentClient() {
               </div>
             </div>
             <details className="mt-4 rounded-xl border border-white/10 p-4">
-              <summary className="cursor-pointer text-sm font-semibold text-white">
+              <summary className="cursor-pointer text-sm font-semibold text-slate-900 dark:text-white">
                 Add search-result notes for one query
               </summary>
               <label
                 htmlFor="intent-notes"
-                className="mt-3 block text-xs leading-6 text-slate-300"
+                className="mt-3 block text-xs leading-6 text-slate-700 dark:text-slate-300"
               >
                 Paste titles, snippets, and page types you observed. Use one
                 keyword. AI reviews these notes without opening any URLs.
@@ -383,7 +383,7 @@ export default function SearchIntentClient() {
                 placeholder="Example notes: several local agency landing pages, Google Map Pack listings, and two comparison directories."
                 className={field}
               />
-              <p className="mt-2 text-xs text-slate-400">
+              <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
                 {notes.length.toLocaleString()} / 4,000 characters. Remove
                 private information before submitting.
               </p>
@@ -430,7 +430,7 @@ export default function SearchIntentClient() {
               </button>
             </div>
 
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               AI allowance: 15 deep reviews/day · Instant wording check is unlimited
             </p>
           </div>
@@ -444,7 +444,7 @@ export default function SearchIntentClient() {
               active.current = null;
               setBusy(false);
             }}
-            className="mt-3 min-h-11 text-sm text-slate-300 underline"
+            className="mt-3 min-h-11 text-sm text-slate-700 dark:text-slate-300 underline"
           >
             Stop waiting
           </button>
@@ -486,10 +486,10 @@ export default function SearchIntentClient() {
         {!report ? (
           <div className="rounded-2xl border border-dashed border-blue-300/30 bg-blue-400/5 p-6 sm:p-8 text-center">
             <Search aria-hidden className="mx-auto h-8 w-8 text-blue-300" />
-            <h3 className="mt-4 text-2xl font-bold text-white">
+            <h3 className="mt-4 text-2xl font-bold text-slate-900 dark:text-white">
               What does your reader want?
             </h3>
-            <p className="mt-2 max-w-xl mx-auto text-sm leading-7 text-slate-300">
+            <p className="mt-2 max-w-xl mx-auto text-sm leading-7 text-slate-700 dark:text-slate-300">
               Enter your keywords in the command bar above and click{" "}
               <strong>Check keyword intent</strong> to see color-coded intent
               badges, reader tasks, and winning Google SERP page formats below.
@@ -504,7 +504,7 @@ export default function SearchIntentClient() {
         )}
         {status && !busy && (
           <p
-            className="mt-4 text-xs leading-6 text-slate-400"
+            className="mt-4 text-xs leading-6 text-slate-500 dark:text-slate-400"
             aria-hidden="true"
           >
             {status}

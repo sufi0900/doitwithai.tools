@@ -193,7 +193,7 @@ export default function SitemapXmlClient() {
       <div
         role="tablist"
         aria-label="Sitemap tool mode"
-        className="mb-6 inline-flex rounded-xl border border-white/10 bg-slate-900/60 p-1"
+        className="mb-6 inline-flex rounded-xl border border-white/10 bg-slate-50 dark:bg-slate-900/60 p-1"
       >
         {(
           [
@@ -264,12 +264,12 @@ export default function SitemapXmlClient() {
                   Clear
                 </button>
               )}
-              <span className="text-xs text-slate-400">
+              <span className="text-xs text-slate-500 dark:text-slate-400">
                 Add a date after a comma (YYYY-MM-DD) to set that page&apos;s
                 last-modified date.
               </span>
             </div>
-            <p className="mt-2 flex items-start gap-2 text-xs leading-6 text-slate-400">
+            <p className="mt-2 flex items-start gap-2 text-xs leading-6 text-slate-500 dark:text-slate-400">
               <Lock
                 className="mt-1 h-3.5 w-3.5 shrink-0 text-emerald-300"
                 aria-hidden="true"
@@ -279,9 +279,9 @@ export default function SitemapXmlClient() {
             </p>
 
             <p className={`${labelClass} mt-6`}>2. Optional fields</p>
-            <div className="space-y-3 rounded-2xl border border-white/10 bg-slate-900/50 p-4">
+            <div className="space-y-3 rounded-2xl border border-white/10 bg-slate-50 dark:bg-slate-900/50 p-4">
               <div>
-                <label className="flex items-center gap-2 text-xs font-semibold text-slate-200">
+                <label className="flex items-center gap-2 text-xs font-semibold text-slate-800 dark:text-slate-200">
                   <input
                     type="checkbox"
                     checked={includeLastmod}
@@ -289,14 +289,14 @@ export default function SitemapXmlClient() {
                       setIncludeLastmod(e.target.checked);
                       setRawXmlOverride(null);
                     }}
-                    className="h-4 w-4 rounded border-white/20 bg-slate-900"
+                    className="h-4 w-4 rounded border-white/20 bg-slate-50 dark:bg-slate-900"
                   />
                   Include &lt;lastmod&gt; (only if the dates are accurate)
                 </label>
                 {includeLastmod && (
                   <div className="mt-2 flex flex-wrap items-center gap-2">
                     <label
-                      className="text-xs text-slate-400"
+                      className="text-xs text-slate-500 dark:text-slate-400"
                       htmlFor="sm-global-lastmod"
                     >
                       Default date for lines without one:
@@ -316,7 +316,7 @@ export default function SitemapXmlClient() {
                 )}
               </div>
               <div>
-                <label className="flex items-center gap-2 text-xs font-semibold text-slate-200">
+                <label className="flex items-center gap-2 text-xs font-semibold text-slate-800 dark:text-slate-200">
                   <input
                     type="checkbox"
                     checked={includeChangefreq}
@@ -324,7 +324,7 @@ export default function SitemapXmlClient() {
                       setIncludeChangefreq(e.target.checked);
                       setRawXmlOverride(null);
                     }}
-                    className="h-4 w-4 rounded border-white/20 bg-slate-900"
+                    className="h-4 w-4 rounded border-white/20 bg-slate-50 dark:bg-slate-900"
                   />
                   Include &lt;changefreq&gt;
                 </label>
@@ -347,7 +347,7 @@ export default function SitemapXmlClient() {
                 )}
               </div>
               <div>
-                <label className="flex items-center gap-2 text-xs font-semibold text-slate-200">
+                <label className="flex items-center gap-2 text-xs font-semibold text-slate-800 dark:text-slate-200">
                   <input
                     type="checkbox"
                     checked={includePriority}
@@ -355,7 +355,7 @@ export default function SitemapXmlClient() {
                       setIncludePriority(e.target.checked);
                       setRawXmlOverride(null);
                     }}
-                    className="h-4 w-4 rounded border-white/20 bg-slate-900"
+                    className="h-4 w-4 rounded border-white/20 bg-slate-50 dark:bg-slate-900"
                   />
                   Include &lt;priority&gt;
                 </label>
@@ -375,7 +375,7 @@ export default function SitemapXmlClient() {
                   />
                 )}
               </div>
-              <p className="flex items-start gap-2 text-xs leading-6 text-slate-400">
+              <p className="flex items-start gap-2 text-xs leading-6 text-slate-500 dark:text-slate-400">
                 <Info
                   className="mt-1 h-3.5 w-3.5 shrink-0 text-sky-300"
                   aria-hidden="true"
@@ -390,7 +390,7 @@ export default function SitemapXmlClient() {
           <div aria-live="polite">
             <p className={labelClass}>3. Your sitemap</p>
             {urlsText.trim() === "" ? (
-              <p className="rounded-2xl border border-white/10 bg-slate-900/50 p-5 text-sm text-slate-400">
+              <p className="rounded-2xl border border-white/10 bg-slate-50 dark:bg-slate-900/50 p-5 text-sm text-slate-500 dark:text-slate-400">
                 Paste some URLs on the left and your sitemap.xml will appear
                 here.
               </p>
@@ -416,12 +416,12 @@ export default function SitemapXmlClient() {
                     </li>
                   )}
                   {analysis.duplicates > 0 && (
-                    <li className="text-slate-300">
+                    <li className="text-slate-700 dark:text-slate-300">
                       {analysis.duplicates} duplicate URL(s) removed.
                     </li>
                   )}
                   {analysis.fragmentsStripped > 0 && (
-                    <li className="text-slate-300">
+                    <li className="text-slate-700 dark:text-slate-300">
                       #fragments removed from {analysis.fragmentsStripped}{" "}
                       URL(s).
                     </li>
@@ -471,7 +471,7 @@ export default function SitemapXmlClient() {
                 </ul>
 
                 {files.length > 0 && current && (
-                  <div className="mt-4 rounded-2xl border border-white/10 bg-slate-900/60 p-4">
+                  <div className="mt-4 rounded-2xl border border-white/10 bg-slate-50 dark:bg-slate-900/60 p-4">
                     {files.length > 1 && (
                       <div
                         className="mb-3 flex flex-wrap gap-1.5"
@@ -503,7 +503,7 @@ export default function SitemapXmlClient() {
                       <p className="flex items-center gap-2 text-xs font-bold text-blue-200">
                         <FileCode2 className="h-4 w-4" aria-hidden="true" />{" "}
                         {current.name}
-                        <span className="font-normal text-slate-400">
+                        <span className="font-normal text-slate-500 dark:text-slate-400">
                           · {current.count.toLocaleString()}{" "}
                           {current.name.includes("index") ? "sitemaps" : "URLs"}{" "}
                           · {(current.bytes / 1024).toFixed(1)} KB
@@ -517,7 +517,7 @@ export default function SitemapXmlClient() {
                           }
                           setIsEditingRaw((prev) => !prev);
                         }}
-                        className="inline-flex items-center gap-1 rounded-lg border border-white/15 bg-white/5 px-2.5 py-1 text-xs font-bold text-slate-200 hover:bg-white/10"
+                        className="inline-flex items-center gap-1 rounded-lg border border-white/15 bg-white/5 px-2.5 py-1 text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-white/10"
                       >
                         <Edit3 className="h-3 w-3" />
                         {isEditingRaw ? "Compiled View" : "Edit XML"}
@@ -530,10 +530,10 @@ export default function SitemapXmlClient() {
                         onChange={(e) => setRawXmlOverride(e.target.value)}
                         spellCheck={false}
                         aria-label="Direct sitemap.xml editor"
-                        className="mt-3 w-full rounded-xl border border-[#5271ff] bg-slate-950/90 p-3 font-mono text-[11px] leading-5 text-emerald-300 focus:outline-none"
+                        className="mt-3 w-full rounded-xl border border-[#5271ff] bg-white dark:bg-slate-950/90 p-3 font-mono text-[11px] leading-5 text-emerald-300 focus:outline-none"
                       />
                     ) : (
-                      <pre className="mt-3 max-h-72 overflow-auto rounded-xl bg-slate-950/80 p-3 text-[11px] leading-5 text-slate-300">
+                      <pre className="mt-3 max-h-72 overflow-auto rounded-xl bg-white dark:bg-slate-950/80 p-3 text-[11px] leading-5 text-slate-700 dark:text-slate-300">
                         {activeXml.slice(0, PREVIEW_CHARS)}
                         {activeXml.length > PREVIEW_CHARS
                           ? "\n… (preview truncated ; download or copy for the full file)"
@@ -558,7 +558,7 @@ export default function SitemapXmlClient() {
                       </button>
                     </div>
                     {files.length > 2 && (
-                      <p className="mt-2 text-xs text-slate-400">
+                      <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
                         Download each file, upload them all to your site root,
                         and submit the index file.
                       </p>
@@ -567,8 +567,8 @@ export default function SitemapXmlClient() {
                 )}
 
                 {robotsLine && (
-                  <div className="mt-4 rounded-2xl border border-white/10 bg-slate-900/60 p-4">
-                    <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                  <div className="mt-4 rounded-2xl border border-white/10 bg-slate-50 dark:bg-slate-900/60 p-4">
+                    <p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                       Add this line to robots.txt
                     </p>
                     <p className="mt-2 break-all font-mono text-xs text-blue-200">
@@ -647,7 +647,7 @@ export default function SitemapXmlClient() {
                 {fileError}
               </p>
             )}
-            <p className="mt-2 flex items-start gap-2 text-xs leading-6 text-slate-400">
+            <p className="mt-2 flex items-start gap-2 text-xs leading-6 text-slate-500 dark:text-slate-400">
               <Lock
                 className="mt-1 h-3.5 w-3.5 shrink-0 text-emerald-300"
                 aria-hidden="true"
@@ -661,7 +661,7 @@ export default function SitemapXmlClient() {
           <div aria-live="polite">
             <p className={labelClass}>Results</p>
             {!validation ? (
-              <p className="rounded-2xl border border-white/10 bg-slate-900/50 p-5 text-sm text-slate-400">
+              <p className="rounded-2xl border border-white/10 bg-slate-50 dark:bg-slate-900/50 p-5 text-sm text-slate-500 dark:text-slate-400">
                 Paste or load a sitemap and the checks will appear here.
               </p>
             ) : (
@@ -686,12 +686,12 @@ export default function SitemapXmlClient() {
                   ].map(([label, value]) => (
                     <div
                       key={label}
-                      className="rounded-2xl border border-white/10 bg-slate-900/60 p-3"
+                      className="rounded-2xl border border-white/10 bg-slate-50 dark:bg-slate-900/60 p-3"
                     >
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                         {label}
                       </p>
-                      <p className="mt-1 text-sm font-black text-white">
+                      <p className="mt-1 text-sm font-black text-slate-900 dark:text-white">
                         {value}
                       </p>
                     </div>

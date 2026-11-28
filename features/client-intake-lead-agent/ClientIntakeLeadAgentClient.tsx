@@ -506,7 +506,7 @@ export default function ClientIntakeLeadAgentClient() {
                   Copy Widget Code
                 </button>
               </div>
-              <pre className="max-h-96 overflow-auto rounded-2xl border border-slate-200 bg-slate-950 p-4 text-xs text-sky-300 dark:border-slate-800">
+              <pre className="max-h-96 overflow-auto rounded-2xl border border-slate-200 bg-white dark:bg-slate-950 p-4 text-xs text-sky-300 dark:border-slate-800">
                 {pack.downloadableIntakeWidgetHtml}
               </pre>
             </div>

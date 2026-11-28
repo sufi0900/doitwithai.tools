@@ -309,12 +309,12 @@ export default function SeoContentPricingCalculatorClient() {
   return (
     <div id="seo-pricing-calculator-workspace" className="space-y-6">
       {/* Presets Bar */}
-      <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/70 p-4">
         <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
           <span className="text-xs font-semibold uppercase tracking-wider text-indigo-400">
             Load Verified 2025–2026 Content Production Benchmarks
           </span>
-          <span className="text-xs text-slate-400">
+          <span className="text-xs text-slate-500 dark:text-slate-400">
             Real-time per-article, per-word, and 12-month compounding ROI modeling
           </span>
         </div>
@@ -347,16 +347,16 @@ export default function SeoContentPricingCalculatorClient() {
       {/* Main Studio Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left Controls */}
-        <div className="lg:col-span-5 space-y-5 rounded-2xl border border-slate-800 bg-slate-900/85 p-5">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-            <h2 className="text-base font-bold text-white">1. Content Volume & Complexity Controls</h2>
+        <div className="lg:col-span-5 space-y-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/85 p-5">
+          <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+            <h2 className="text-base font-bold text-slate-900 dark:text-white">1. Content Volume & Complexity Controls</h2>
             <span className="text-xs font-semibold text-indigo-400">
               {calc.totalMonthlyWords.toLocaleString()} words/mo
             </span>
           </div>
 
           <div>
-            <div className="flex justify-between text-xs font-semibold text-slate-300 mb-1.5">
+            <div className="flex justify-between text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
               <span>Monthly Publishing Velocity</span>
               <span className="text-indigo-400">{articlesPerMonth} articles / month</span>
             </div>
@@ -371,7 +371,7 @@ export default function SeoContentPricingCalculatorClient() {
           </div>
 
           <div>
-            <div className="flex justify-between text-xs font-semibold text-slate-300 mb-1.5">
+            <div className="flex justify-between text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
               <span>Average Word Count per Article</span>
               <span className="text-indigo-400">{wordsPerArticle.toLocaleString()} words</span>
             </div>
@@ -387,7 +387,7 @@ export default function SeoContentPricingCalculatorClient() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-2">
               Subject-Matter & Technical Depth Tier
             </label>
             <div className="grid grid-cols-3 gap-2">
@@ -407,13 +407,13 @@ export default function SeoContentPricingCalculatorClient() {
                   }`}
                 >
                   <div className="text-xs font-bold">{item.label}</div>
-                  <div className="text-[10px] text-slate-400 mt-0.5">{item.sub}</div>
+                  <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">{item.sub}</div>
                 </button>
               ))}
             </div>
           </div>
 
-          <div className="rounded-xl border border-slate-800 bg-slate-950/80 p-3.5">
+          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/80 p-3.5">
             <label className="flex items-start gap-2.5 cursor-pointer">
               <input
                 type="checkbox"
@@ -422,10 +422,10 @@ export default function SeoContentPricingCalculatorClient() {
                 className="mt-1 accent-indigo-500"
               />
               <div>
-                <div className="text-xs font-semibold text-white">
+                <div className="text-xs font-semibold text-slate-900 dark:text-white">
                   Include Custom Comparison Tables, 50-Word AEO Box & FAQPage Schema
                 </div>
-                <div className="text-[11px] text-slate-400">
+                <div className="text-[11px] text-slate-500 dark:text-slate-400">
                   Adds $140/article at traditional agencies vs. $12/article in automated AI + SME workflows.
                 </div>
               </div>
@@ -434,18 +434,18 @@ export default function SeoContentPricingCalculatorClient() {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-[11px] font-semibold uppercase text-slate-400 mb-1">
+              <label className="block text-[11px] font-semibold uppercase text-slate-500 dark:text-slate-400 mb-1">
                 Customer LTV ($ USD)
               </label>
               <input
                 type="number"
                 value={avgCustomerLtvUsd}
                 onChange={(e) => setAvgCustomerLtvUsd(Math.max(50, Number(e.target.value) || 0))}
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-white"
+                className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-xs text-slate-900 dark:text-white"
               />
             </div>
             <div>
-              <label className="block text-[11px] font-semibold uppercase text-slate-400 mb-1">
+              <label className="block text-[11px] font-semibold uppercase text-slate-500 dark:text-slate-400 mb-1">
                 Organic Lead-to-Sale (%)
               </label>
               <input
@@ -453,20 +453,20 @@ export default function SeoContentPricingCalculatorClient() {
                 step="0.1"
                 value={conversionRatePct}
                 onChange={(e) => setConversionRatePct(Math.max(0.1, Number(e.target.value) || 0.5))}
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-white"
+                className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-xs text-slate-900 dark:text-white"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-[11px] font-semibold uppercase text-slate-400 mb-1">
+            <label className="block text-[11px] font-semibold uppercase text-slate-500 dark:text-slate-400 mb-1">
               Your Industry / Niche (For Custom AI Budget Proposal)
             </label>
             <input
               type="text"
               value={nicheTopic}
               onChange={(e) => setNicheTopic(e.target.value)}
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-white"
+              className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-xs text-slate-900 dark:text-white"
             />
           </div>
 
@@ -486,22 +486,22 @@ export default function SeoContentPricingCalculatorClient() {
         <div className="lg:col-span-7 space-y-5">
           {/* Top KPI Callout Row */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-4">
-              <div className="text-[11px] font-semibold uppercase text-slate-400">Agency / Article</div>
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/90 p-4">
+              <div className="text-[11px] font-semibold uppercase text-slate-500 dark:text-slate-400">Agency / Article</div>
               <div className="mt-1 text-2xl font-extrabold text-rose-400">
                 ${calc.providers[0].perArticleCostUsd.toLocaleString()}
               </div>
-              <div className="mt-1 text-[11px] text-slate-400">
+              <div className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
                 ${calc.providers[0].perWordRateUsd}/word avg
               </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-4">
-              <div className="text-[11px] font-semibold uppercase text-slate-400">Freelancer / Art</div>
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/90 p-4">
+              <div className="text-[11px] font-semibold uppercase text-slate-500 dark:text-slate-400">Freelancer / Art</div>
               <div className="mt-1 text-2xl font-extrabold text-amber-400">
                 ${calc.providers[1].perArticleCostUsd.toLocaleString()}
               </div>
-              <div className="mt-1 text-[11px] text-slate-400">
+              <div className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
                 ${calc.providers[1].perWordRateUsd}/word avg
               </div>
             </div>
@@ -528,8 +528,8 @@ export default function SeoContentPricingCalculatorClient() {
           </div>
 
           {/* Studio View Switcher */}
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-5 space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/90 p-5 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
@@ -568,7 +568,7 @@ export default function SeoContentPricingCalculatorClient() {
               <button
                 type="button"
                 onClick={handleDownloadCsv}
-                className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:border-indigo-500"
+                className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 hover:border-indigo-500"
               >
                 ⬇ Export CSV
               </button>
@@ -589,8 +589,8 @@ export default function SeoContentPricingCalculatorClient() {
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div>
-                          <h3 className="text-sm font-bold text-white">{p.name}</h3>
-                          <p className="text-[11px] text-slate-400">{p.subtitle}</p>
+                          <h3 className="text-sm font-bold text-slate-900 dark:text-white">{p.name}</h3>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400">{p.subtitle}</p>
                         </div>
                         {isHybrid && (
                           <span className="rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-[10px] font-bold text-emerald-300">
@@ -599,39 +599,39 @@ export default function SeoContentPricingCalculatorClient() {
                         )}
                       </div>
 
-                      <div className="grid grid-cols-3 gap-2 rounded-lg bg-slate-900/90 p-2.5 text-center">
+                      <div className="grid grid-cols-3 gap-2 rounded-lg bg-slate-50 dark:bg-slate-900/90 p-2.5 text-center">
                         <div>
-                          <div className="text-[10px] text-slate-400">Per Article</div>
-                          <div className="text-sm font-extrabold text-white">
+                          <div className="text-[10px] text-slate-500 dark:text-slate-400">Per Article</div>
+                          <div className="text-sm font-extrabold text-slate-900 dark:text-white">
                             ${p.perArticleCostUsd.toLocaleString()}
                           </div>
                         </div>
                         <div>
-                          <div className="text-[10px] text-slate-400">Monthly</div>
+                          <div className="text-[10px] text-slate-500 dark:text-slate-400">Monthly</div>
                           <div className="text-sm font-extrabold text-indigo-300">
                             ${p.monthlyTotalUsd.toLocaleString()}
                           </div>
                         </div>
                         <div>
-                          <div className="text-[10px] text-slate-400">Annual</div>
-                          <div className="text-sm font-extrabold text-slate-200">
+                          <div className="text-[10px] text-slate-500 dark:text-slate-400">Annual</div>
+                          <div className="text-sm font-extrabold text-slate-800 dark:text-slate-200">
                             ${p.annualTotalUsd.toLocaleString()}
                           </div>
                         </div>
                       </div>
 
-                      <div className="text-xs text-slate-300 space-y-1">
+                      <div className="text-xs text-slate-700 dark:text-slate-300 space-y-1">
                         <div>
-                          <span className="text-slate-400">Turnaround: </span>
-                          <span className="font-medium text-white">{p.turnaroundDays}</span>
+                          <span className="text-slate-500 dark:text-slate-400">Turnaround: </span>
+                          <span className="font-medium text-slate-900 dark:text-white">{p.turnaroundDays}</span>
                         </div>
                         <div>
-                          <span className="text-slate-400">E-E-A-T & Schema: </span>
+                          <span className="text-slate-500 dark:text-slate-400">E-E-A-T & Schema: </span>
                           <span className="font-medium text-emerald-300">{p.eeatAndSchemaQuality}</span>
                         </div>
                       </div>
 
-                      <ul className="space-y-1 text-[11px] text-slate-300 list-disc pl-4">
+                      <ul className="space-y-1 text-[11px] text-slate-700 dark:text-slate-300 list-disc pl-4">
                         {p.includedDeliverables.map((d, i) => (
                           <li key={i}>{d}</li>
                         ))}
@@ -644,9 +644,9 @@ export default function SeoContentPricingCalculatorClient() {
 
             {activeTab === "roi" && (
               <div className="space-y-4">
-                <div className="overflow-x-auto rounded-xl border border-slate-800">
-                  <table className="w-full text-left text-xs text-slate-300">
-                    <thead className="bg-slate-950 text-slate-200 uppercase text-[11px]">
+                <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+                  <table className="w-full text-left text-xs text-slate-700 dark:text-slate-300">
+                    <thead className="bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200 uppercase text-[11px]">
                       <tr>
                         <th className="p-3">Timeline</th>
                         <th className="p-3">Published URLs</th>
@@ -656,10 +656,10 @@ export default function SeoContentPricingCalculatorClient() {
                         <th className="p-3 text-indigo-300">Est. Monthly Pipeline</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800 bg-slate-950/50">
+                    <tbody className="divide-y divide-slate-800 bg-white dark:bg-slate-950/50">
                       {calc.forecastRows.map((row) => (
                         <tr key={row.month}>
-                          <td className="p-3 font-bold text-white">Month {row.month}</td>
+                          <td className="p-3 font-bold text-slate-900 dark:text-white">Month {row.month}</td>
                           <td className="p-3">{row.cumulativeArticles} articles</td>
                           <td className="p-3 font-semibold text-cyan-300">
                             {row.estMonthlyOrganicClicks.toLocaleString()} clicks/mo
@@ -678,7 +678,7 @@ export default function SeoContentPricingCalculatorClient() {
                     </tbody>
                   </table>
                 </div>
-                <p className="text-[11px] text-slate-400">
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
                   * Traffic model assumes indexation curve across {articlesPerMonth} monthly long-tail articles with 50-word AEO summary boxes and internal cluster linking.
                 </p>
               </div>
@@ -700,7 +700,7 @@ export default function SeoContentPricingCalculatorClient() {
                     {copiedKey === "proposal" ? "✓ Copied Proposal" : "Copy Markdown Proposal"}
                   </button>
                 </div>
-                <pre className="rounded-xl border border-slate-800 bg-slate-950 p-4 text-xs text-slate-200 whitespace-pre-wrap font-mono leading-relaxed max-h-80 overflow-y-auto">
+                <pre className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-4 text-xs text-slate-800 dark:text-slate-200 whitespace-pre-wrap font-mono leading-relaxed max-h-80 overflow-y-auto">
                   {aiAdvisorMemo || calc.proposalMarkdown}
                 </pre>
               </div>

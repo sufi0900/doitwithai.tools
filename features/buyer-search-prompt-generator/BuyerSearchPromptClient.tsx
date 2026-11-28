@@ -390,13 +390,13 @@ export default function BuyerSearchPromptClient() {
         } description="Analyzing data and compiling real-time report..." />
 
       {/* TOP INPUT DASHBOARD */}
-      <div className="rounded-3xl border border-slate-800 bg-slate-900/90 p-6 shadow-2xl sm:p-8">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-5">
+      <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/90 p-6 shadow-2xl sm:p-8">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-5">
           <div>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/15 px-3 py-1 text-xs font-bold uppercase tracking-wider text-blue-300">
               <ShoppingBag className="h-3.5 w-3.5" /> 4-Stage Buyer Search · Commercial SEO · Product AI Visibility
             </span>
-            <h2 className="mt-2 text-xl font-black text-white sm:text-2xl">
+            <h2 className="mt-2 text-xl font-black text-slate-900 dark:text-white sm:text-2xl">
               Generate 4 Buyer Search Prompts Across Your Purchase Funnel
             </h2>
           </div>
@@ -407,7 +407,7 @@ export default function BuyerSearchPromptClient() {
                 key={p.id}
                 type="button"
                 onClick={() => applyPreset(p)}
-                className="rounded-xl border border-slate-700 bg-slate-800/80 px-3 py-1.5 text-xs font-semibold text-slate-200 transition hover:border-blue-400 hover:bg-slate-800"
+                className="rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-800/80 px-3 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 transition hover:border-blue-400 hover:bg-slate-800"
               >
                 {p.label}
               </button>
@@ -424,7 +424,7 @@ export default function BuyerSearchPromptClient() {
 
         <div className="mt-6 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
               1. Product, SaaS, or Service Name
             </label>
             <input
@@ -432,12 +432,12 @@ export default function BuyerSearchPromptClient() {
               value={productOrService}
               onChange={(e) => setProductOrService(e.target.value)}
               placeholder="e.g., Modular Acoustic Wood Slat Panels"
-              className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+              className="mt-2 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3.5 py-2.5 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
               2. Ideal Buyer Persona / Role
             </label>
             <input
@@ -445,12 +445,12 @@ export default function BuyerSearchPromptClient() {
               value={idealBuyerPersona}
               onChange={(e) => setIdealBuyerPersona(e.target.value)}
               placeholder="e.g., Home studio creators & remote executives"
-              className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+              className="mt-2 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3.5 py-2.5 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
               3. Price Tier &amp; Offer Structure
             </label>
             <input
@@ -458,12 +458,12 @@ export default function BuyerSearchPromptClient() {
               value={priceTier}
               onChange={(e) => setPriceTier(e.target.value)}
               placeholder="e.g., $189 per 2-panel kit with free shipping"
-              className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+              className="mt-2 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3.5 py-2.5 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
               4. Primary Buyer Pain Point / Trigger
             </label>
             <input
@@ -471,12 +471,12 @@ export default function BuyerSearchPromptClient() {
               value={primaryPainPoint}
               onChange={(e) => setPrimaryPainPoint(e.target.value)}
               placeholder="e.g., Thin foam tiles look cheap and fail to block echo"
-              className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+              className="mt-2 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3.5 py-2.5 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
               5. Top Competitors / Alternatives
             </label>
             <input
@@ -484,12 +484,12 @@ export default function BuyerSearchPromptClient() {
               value={topCompetitors}
               onChange={(e) => setTopCompetitors(e.target.value)}
               placeholder="e.g., GIK Acoustics, Felt Right, Amazon panels"
-              className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+              className="mt-2 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3.5 py-2.5 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
               6. Verified Proof &amp; Differentiator
             </label>
             <input
@@ -497,12 +497,12 @@ export default function BuyerSearchPromptClient() {
               value={keyDifferentiator}
               onChange={(e) => setKeyDifferentiator(e.target.value)}
               placeholder="e.g., NRC 0.85 lab-certified walnut + 15-min DIY install"
-              className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+              className="mt-2 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3.5 py-2.5 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
             />
           </div>
         </div>
 
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-slate-800 pt-5">
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-slate-200 dark:border-slate-800 pt-5">
           <div className="flex flex-wrap gap-3">
             <button
               type="button"
@@ -533,14 +533,14 @@ export default function BuyerSearchPromptClient() {
             <button
               type="button"
               onClick={exportMarkdown}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800 px-3.5 py-2 text-xs font-bold text-slate-200 hover:bg-slate-700"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-800 px-3.5 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-700"
             >
               <Download className="h-3.5 w-3.5" /> Export .MD
             </button>
             <button
               type="button"
               onClick={exportCsv}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800 px-3.5 py-2 text-xs font-bold text-slate-200 hover:bg-slate-700"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-800 px-3.5 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-700"
             >
               <Download className="h-3.5 w-3.5" /> Export .CSV
             </button>
@@ -551,50 +551,50 @@ export default function BuyerSearchPromptClient() {
       {/* BOTTOM RESULTS DASHBOARD */}
       <div ref={resultsRef} className="space-y-6">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-2xl border border-emerald-500/30 bg-slate-900/90 p-5">
+          <div className="rounded-2xl border border-emerald-500/30 bg-slate-50 dark:bg-slate-900/90 p-5">
             <p className="text-xs font-bold uppercase tracking-wider text-emerald-300">
               Buyer Funnel Coverage
             </p>
-            <p className="mt-2 text-3xl font-black text-white">
+            <p className="mt-2 text-3xl font-black text-slate-900 dark:text-white">
               {pack.funnelCoverageCount} Stages
             </p>
-            <p className="mt-1 text-xs text-slate-400">
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
               Problem · Shortlist · Vs · Purchase
             </p>
           </div>
 
-          <div className="rounded-2xl border border-sky-500/30 bg-slate-900/90 p-5">
+          <div className="rounded-2xl border border-sky-500/30 bg-slate-50 dark:bg-slate-900/90 p-5">
             <p className="text-xs font-bold uppercase tracking-wider text-sky-300">
               Commercial Intent Match
             </p>
-            <p className="mt-2 text-3xl font-black text-white">
+            <p className="mt-2 text-3xl font-black text-slate-900 dark:text-white">
               {pack.commercialIntentScore}/100
             </p>
-            <p className="mt-1 text-xs text-slate-400">
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
               Aligned with ChatGPT &amp; Perplexity shopping queries
             </p>
           </div>
 
-          <div className="rounded-2xl border border-amber-500/30 bg-slate-900/90 p-5">
+          <div className="rounded-2xl border border-amber-500/30 bg-slate-50 dark:bg-slate-900/90 p-5">
             <p className="text-xs font-bold uppercase tracking-wider text-amber-300">
               Product Schema Readiness
             </p>
-            <p className="mt-2 text-3xl font-black text-white">
+            <p className="mt-2 text-3xl font-black text-slate-900 dark:text-white">
               {pack.productSchemaReadiness}/100
             </p>
-            <p className="mt-1 text-xs text-slate-400">
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
               Offer, Price &amp; Differentiator grounded
             </p>
           </div>
 
-          <div className="rounded-2xl border border-purple-500/30 bg-slate-900/90 p-5">
+          <div className="rounded-2xl border border-purple-500/30 bg-slate-50 dark:bg-slate-900/90 p-5">
             <p className="text-xs font-bold uppercase tracking-wider text-purple-300">
               Review &amp; Citation Signal
             </p>
-            <p className="mt-2 text-3xl font-black text-white">
+            <p className="mt-2 text-3xl font-black text-slate-900 dark:text-white">
               {pack.reviewVisibilityScore}/100
             </p>
-            <p className="mt-1 text-xs text-slate-400">
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
               Persona + pain-point proof density
             </p>
           </div>
@@ -616,29 +616,29 @@ export default function BuyerSearchPromptClient() {
                   </span>
                 </div>
 
-                <h3 className="mt-3 text-lg font-black text-white">
+                <h3 className="mt-3 text-lg font-black text-slate-900 dark:text-white">
                   {card.title}
                 </h3>
 
-                <div className="mt-3 rounded-2xl border border-white/10 bg-slate-950/70 p-3.5">
+                <div className="mt-3 rounded-2xl border border-white/10 bg-white dark:bg-slate-950/70 p-3.5">
                   <p className="text-[11px] font-bold uppercase tracking-wider text-blue-300">
                     Simulated Buyer Search Query:
                   </p>
-                  <p className="mt-1 font-mono text-xs text-white">
+                  <p className="mt-1 font-mono text-xs text-slate-900 dark:text-white">
                     {card.buyerSearchQuery}
                   </p>
                 </div>
 
-                <div className="mt-3 rounded-2xl bg-slate-950/90 p-4">
+                <div className="mt-3 rounded-2xl bg-white dark:bg-slate-950/90 p-4">
                   <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-300">
                     Copy-Paste LLM Content &amp; Audit Prompt:
                   </p>
-                  <p className="mt-1.5 text-xs leading-6 text-slate-200">
+                  <p className="mt-1.5 text-xs leading-6 text-slate-800 dark:text-slate-200">
                     {card.llmSystemPrompt}
                   </p>
                 </div>
 
-                <ul className="mt-4 space-y-2 text-xs text-slate-200">
+                <ul className="mt-4 space-y-2 text-xs text-slate-800 dark:text-slate-200">
                   {card.pageOptimizationChecklist.map((item, idx) => (
                     <li key={idx} className="flex items-start gap-2">
                       <SearchCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-blue-300" />
@@ -657,7 +657,7 @@ export default function BuyerSearchPromptClient() {
                       `${card.title}\nBuyer Search Query: ${card.buyerSearchQuery}\n\nLLM Prompt:\n${card.llmSystemPrompt}`,
                     )
                   }
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-white/10 px-3.5 py-2 text-xs font-bold text-white hover:bg-white/20"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-white/10 px-3.5 py-2 text-xs font-bold text-slate-900 dark:text-white hover:bg-white/20"
                 >
                   <Copy className="h-3.5 w-3.5" />
                   {copiedId === card.id ? "Copied Prompt!" : "Copy Buyer Prompt"}

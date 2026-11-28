@@ -77,7 +77,7 @@ export default function TopRecommendations({
                 <div className="flex gap-2">
                   <Scale className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
                   <div>
-                    <p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-slate-400">
+                    <p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
                       Trade-off
                     </p>
                     <p className="mt-1 text-xs leading-5 text-slate-600 dark:text-slate-300">
@@ -89,8 +89,10 @@ export default function TopRecommendations({
 
               <div className="mt-4 flex items-center gap-2 text-xs font-semibold text-slate-500">
                 <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                {candidate.evaluation.characters} chars ·{" "}
-                {candidate.evaluation.pixels}px
+                <span>
+                  {candidate.evaluation.characters} chars ·{" "}
+                  <span suppressHydrationWarning>{candidate.evaluation.pixels}</span>px
+                </span>
               </div>
 
               <div className="mt-5 flex flex-wrap gap-2">

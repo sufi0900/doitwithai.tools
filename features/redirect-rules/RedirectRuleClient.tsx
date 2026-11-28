@@ -235,14 +235,14 @@ export default function RedirectRuleClient() {
               {fileError}
             </p>
           )}
-          <p className="mt-2 flex items-start gap-2 text-xs leading-6 text-slate-400">
+          <p className="mt-2 flex items-start gap-2 text-xs leading-6 text-slate-500 dark:text-slate-400">
             <Lock
               className="mt-1 h-3.5 w-3.5 shrink-0 text-emerald-300"
               aria-hidden="true"
             />
             Runs in your browser. Your URLs are not uploaded or stored.
           </p>
-          <p className="mt-2 text-xs leading-6 text-slate-400">
+          <p className="mt-2 text-xs leading-6 text-slate-500 dark:text-slate-400">
             One rule per line, separated by a comma, tab, or{" "}
             <span className="font-mono">-&gt;</span>. Use a trailing{" "}
             <span className="font-mono">{"/*"}</span> on both sides to move a whole
@@ -251,10 +251,10 @@ export default function RedirectRuleClient() {
           </p>
 
           <p className={`${labelClass} mt-6`}>2. Options</p>
-          <div className="space-y-3 rounded-2xl border border-white/10 bg-slate-900/50 p-4">
+          <div className="space-y-3 rounded-2xl border border-white/10 bg-slate-50 dark:bg-slate-900/50 p-4">
             <div>
               <label
-                className="mb-1 block text-xs font-semibold text-slate-300"
+                className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300"
                 htmlFor="rr-status"
               >
                 Default status for rules without one
@@ -275,7 +275,7 @@ export default function RedirectRuleClient() {
                 ))}
               </select>
             </div>
-            <label className="flex items-start gap-2 text-xs font-semibold leading-5 text-slate-200">
+            <label className="flex items-start gap-2 text-xs font-semibold leading-5 text-slate-800 dark:text-slate-200">
               <input
                 type="checkbox"
                 checked={flattenChains}
@@ -283,11 +283,11 @@ export default function RedirectRuleClient() {
                   setRawRulesOverride(null);
                   setFlattenChains(e.target.checked);
                 }}
-                className="mt-0.5 h-4 w-4 rounded border-white/20 bg-slate-900"
+                className="mt-0.5 h-4 w-4 rounded border-white/20 bg-slate-50 dark:bg-slate-900"
               />
               Flatten redirect chains (send A → B → C straight to C)
             </label>
-            <label className="flex items-start gap-2 text-xs font-semibold leading-5 text-slate-200">
+            <label className="flex items-start gap-2 text-xs font-semibold leading-5 text-slate-800 dark:text-slate-200">
               <input
                 type="checkbox"
                 checked={optionalSlash}
@@ -295,7 +295,7 @@ export default function RedirectRuleClient() {
                   setRawRulesOverride(null);
                   setOptionalSlash(e.target.checked);
                 }}
-                className="mt-0.5 h-4 w-4 rounded border-white/20 bg-slate-900"
+                className="mt-0.5 h-4 w-4 rounded border-white/20 bg-slate-50 dark:bg-slate-900"
               />
               Also match a trailing slash (Apache and Nginx rules)
             </label>
@@ -316,7 +316,7 @@ export default function RedirectRuleClient() {
                   }
                   setIsEditingRaw((prev) => !prev);
                 }}
-                className="mb-1.5 inline-flex items-center gap-1 rounded-lg border border-white/15 bg-white/5 px-2.5 py-1 text-xs font-bold text-slate-200 hover:bg-white/10"
+                className="mb-1.5 inline-flex items-center gap-1 rounded-lg border border-white/15 bg-white/5 px-2.5 py-1 text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-white/10"
               >
                 <Edit3 className="h-3 w-3" />
                 {isEditingRaw ? "Compiled View" : "Edit Rules"}
@@ -350,7 +350,7 @@ export default function RedirectRuleClient() {
           </div>
 
           {!hasInput ? (
-            <p className="mt-4 rounded-2xl border border-white/10 bg-slate-900/50 p-5 text-sm text-slate-400">
+            <p className="mt-4 rounded-2xl border border-white/10 bg-slate-50 dark:bg-slate-900/50 p-5 text-sm text-slate-500 dark:text-slate-400">
               Paste your redirects on the left and the rules will appear here.
             </p>
           ) : (
@@ -363,12 +363,12 @@ export default function RedirectRuleClient() {
                 ].map(([label, value]) => (
                   <div
                     key={label}
-                    className="rounded-2xl border border-white/10 bg-slate-900/60 p-3"
+                    className="rounded-2xl border border-white/10 bg-slate-50 dark:bg-slate-900/60 p-3"
                   >
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                       {label}
                     </p>
-                    <p className="mt-1 text-xl font-black text-white">
+                    <p className="mt-1 text-xl font-black text-slate-900 dark:text-white">
                       {value}
                     </p>
                   </div>
@@ -376,7 +376,7 @@ export default function RedirectRuleClient() {
               </div>
 
               {output.content ? (
-                <div className="mt-4 rounded-2xl border border-white/10 bg-slate-900/60 p-4">
+                <div className="mt-4 rounded-2xl border border-white/10 bg-slate-50 dark:bg-slate-900/60 p-4">
                   {isEditingRaw ? (
                     <textarea
                       rows={12}
@@ -384,14 +384,14 @@ export default function RedirectRuleClient() {
                       onChange={(e) => setRawRulesOverride(e.target.value)}
                       spellCheck={false}
                       aria-label="Direct redirect rules editor"
-                      className="w-full rounded-xl border border-[#5271ff] bg-slate-950/90 p-3 font-mono text-[11px] leading-5 text-emerald-300 focus:outline-none"
+                      className="w-full rounded-xl border border-[#5271ff] bg-white dark:bg-slate-950/90 p-3 font-mono text-[11px] leading-5 text-emerald-300 focus:outline-none"
                     />
                   ) : (
-                    <pre className="max-h-80 overflow-auto rounded-xl bg-slate-950/80 p-3 text-[11px] leading-5 text-slate-300">
+                    <pre className="max-h-80 overflow-auto rounded-xl bg-white dark:bg-slate-950/80 p-3 text-[11px] leading-5 text-slate-700 dark:text-slate-300">
                       {activeContent}
                     </pre>
                   )}
-                  <p className="mt-3 flex items-start gap-2 text-xs leading-6 text-slate-300">
+                  <p className="mt-3 flex items-start gap-2 text-xs leading-6 text-slate-700 dark:text-slate-300">
                     <Info
                       className="mt-1 h-3.5 w-3.5 shrink-0 text-sky-300"
                       aria-hidden="true"
@@ -429,13 +429,13 @@ export default function RedirectRuleClient() {
                       Cleaned map (CSV)
                     </button>
                   </div>
-                  <p className="mt-3 text-xs leading-6 text-slate-400">
+                  <p className="mt-3 text-xs leading-6 text-slate-500 dark:text-slate-400">
                     After deploying, test a few URLs with{" "}
-                    <span className="font-mono text-slate-300">
+                    <span className="font-mono text-slate-700 dark:text-slate-300">
                       curl -I https://your-domain.com/old-page
                     </span>{" "}
                     and check for the status code and a{" "}
-                    <span className="font-mono text-slate-300">location</span>{" "}
+                    <span className="font-mono text-slate-700 dark:text-slate-300">location</span>{" "}
                     header.
                   </p>
                 </div>

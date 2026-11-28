@@ -477,7 +477,7 @@ export default function WhatsappInstagramAgentStudioClient() {
                   Copy ManyChat JSON
                 </button>
               </div>
-              <pre className="max-h-64 overflow-auto rounded-2xl border border-slate-200 bg-slate-950 p-4 text-xs text-emerald-300 dark:border-slate-800">
+              <pre className="max-h-64 overflow-auto rounded-2xl border border-slate-200 bg-white dark:bg-slate-950 p-4 text-xs text-emerald-300 dark:border-slate-800">
                 {pack.manychatJsonTemplate}
               </pre>
 
@@ -499,7 +499,7 @@ export default function WhatsappInstagramAgentStudioClient() {
                   Copy n8n JSON
                 </button>
               </div>
-              <pre className="max-h-64 overflow-auto rounded-2xl border border-slate-200 bg-slate-950 p-4 text-xs text-sky-300 dark:border-slate-800">
+              <pre className="max-h-64 overflow-auto rounded-2xl border border-slate-200 bg-white dark:bg-slate-950 p-4 text-xs text-sky-300 dark:border-slate-800">
                 {pack.n8nWebhookRouterJsonTemplate}
               </pre>
             </div>

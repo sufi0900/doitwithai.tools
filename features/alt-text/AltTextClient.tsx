@@ -745,8 +745,8 @@ export default function AltTextClient() {
                   </p>
                 </div>
               )}
-              <div className="mt-5 rounded-xl bg-slate-950 p-4 text-white">
-                <p className="mb-2 text-xs font-bold text-slate-400">
+              <div className="mt-5 rounded-xl bg-white dark:bg-slate-950 p-4 text-slate-900 dark:text-white">
+                <p className="mb-2 text-xs font-bold text-slate-500 dark:text-slate-400">
                   HTML attribute
                 </p>
                 <pre

@@ -863,7 +863,7 @@ export default function PinterestPinVisualGeneratorClient() {
               type="button"
               onClick={() => void runGenerateAiPins()}
               disabled={loading}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-[#E60023] px-4 py-2.5 text-xs font-extrabold text-white shadow-sm hover:bg-[#c8001e]"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-[#E60023] px-4 py-2.5 text-xs font-extrabold text-slate-900 dark:text-white shadow-sm hover:bg-[#c8001e]"
             >
               <Sparkles size={14} />
               Generate 3 AI Pin Variations
@@ -920,7 +920,7 @@ export default function PinterestPinVisualGeneratorClient() {
               10 Pin Color Palettes, Custom Brand Pickers &amp; Photo Framing
             </span>
             <div className="flex flex-wrap items-center gap-2">
-              <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-[#E60023] px-3 py-1 text-xs font-extrabold text-white hover:bg-[#c8001e]">
+              <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-[#E60023] px-3 py-1 text-xs font-extrabold text-slate-900 dark:text-white hover:bg-[#c8001e]">
                 <Upload size={13} />
                 Upload Custom Pin Photo
                 <input
@@ -1215,7 +1215,7 @@ export default function PinterestPinVisualGeneratorClient() {
                     );
                     notify("Copied Pin Title + SEO Description!");
                   }}
-                  className="inline-flex items-center gap-1 rounded-lg bg-slate-900 px-3 py-1 text-xs font-bold text-white"
+                  className="inline-flex items-center gap-1 rounded-lg bg-slate-50 dark:bg-slate-900 px-3 py-1 text-xs font-bold text-slate-900 dark:text-white"
                 >
                   <Copy size={12} /> Copy Pin SEO
                 </button>
@@ -1248,15 +1248,15 @@ export default function PinterestPinVisualGeneratorClient() {
           <div className="space-y-3">
             <div className="overflow-hidden rounded-2xl border-2 border-slate-300 bg-[#070b14] shadow-lg dark:border-slate-700">
               {/* Persistent Top Export Bar */}
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 bg-slate-900 px-4 py-2.5">
-                <span className="text-[11px] font-extrabold uppercase tracking-wider text-white">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-4 py-2.5">
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
                   1000×1500 Tall Pin Studio
                 </span>
                 <div className="flex flex-wrap items-center gap-1.5">
                   <button
                     type="button"
                     onClick={downloadTallPinPng}
-                    className="inline-flex items-center gap-1 rounded-lg bg-[#E60023] px-2.5 py-1.5 text-[11px] font-extrabold text-white hover:bg-[#c8001e]"
+                    className="inline-flex items-center gap-1 rounded-lg bg-[#E60023] px-2.5 py-1.5 text-[11px] font-extrabold text-slate-900 dark:text-white hover:bg-[#c8001e]"
                   >
                     <Download size={12} /> PNG
                   </button>
@@ -1269,7 +1269,7 @@ export default function PinterestPinVisualGeneratorClient() {
                       );
                       notify("Downloaded Scalable Vector Pin (.SVG)!");
                     }}
-                    className="inline-flex items-center gap-1 rounded-lg bg-white/15 px-2.5 py-1.5 text-[11px] font-extrabold text-white hover:bg-white/25"
+                    className="inline-flex items-center gap-1 rounded-lg bg-white/15 px-2.5 py-1.5 text-[11px] font-extrabold text-slate-900 dark:text-white hover:bg-white/25"
                   >
                     <FileCode2 size={12} /> SVG
                   </button>
@@ -1283,7 +1283,7 @@ export default function PinterestPinVisualGeneratorClient() {
                       );
                       notify("Opened Print-Ready PDF Poster View!");
                     }}
-                    className="inline-flex items-center gap-1 rounded-lg bg-white/15 px-2.5 py-1.5 text-[11px] font-extrabold text-white hover:bg-white/25"
+                    className="inline-flex items-center gap-1 rounded-lg bg-white/15 px-2.5 py-1.5 text-[11px] font-extrabold text-slate-900 dark:text-white hover:bg-white/25"
                   >
                     <FileText size={12} /> PDF
                   </button>
@@ -1307,7 +1307,7 @@ export default function PinterestPinVisualGeneratorClient() {
               </div>
 
               {/* Direct In-Canvas Headline Bar */}
-              <div className="flex items-center gap-2 border-b border-slate-800 bg-[#0d1424] px-3.5 py-2 text-xs text-white">
+              <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 bg-[#0d1424] px-3.5 py-2 text-xs text-slate-900 dark:text-white">
                 <span className="inline-flex shrink-0 items-center gap-1 font-extrabold text-rose-400">
                   <Type size={13} /> Pin Hook:
                 </span>
@@ -1315,7 +1315,7 @@ export default function PinterestPinVisualGeneratorClient() {
                   type="text"
                   value={customHeadline}
                   onChange={(e) => setCustomHeadline(e.target.value)}
-                  className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1 text-xs font-semibold text-white focus:border-[#E60023] focus:outline-none"
+                  className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-2.5 py-1 text-xs font-semibold text-slate-900 dark:text-white focus:border-[#E60023] focus:outline-none"
                 />
               </div>
 
@@ -1356,8 +1356,8 @@ export default function PinterestPinVisualGeneratorClient() {
               </div>
 
               {/* Bottom Zoom Bar */}
-              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-800 bg-[#0d1424] px-3.5 py-2 text-xs text-slate-300">
-                <span className="text-[11px] text-slate-400">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 dark:border-slate-800 bg-[#0d1424] px-3.5 py-2 text-xs text-slate-700 dark:text-slate-300">
+                <span className="text-[11px] text-slate-500 dark:text-slate-400">
                   Ctrl + Scroll to zoom
                 </span>
                 <div className="flex items-center gap-1">
@@ -1366,7 +1366,7 @@ export default function PinterestPinVisualGeneratorClient() {
                     onClick={() =>
                       setZoomLevel((z) => Math.max(0.6, +(z - 0.15).toFixed(2)))
                     }
-                    className="rounded-lg bg-slate-800 px-2 py-1 text-[11px] font-bold text-white hover:bg-slate-700"
+                    className="rounded-lg bg-slate-800 px-2 py-1 text-[11px] font-bold text-slate-900 dark:text-white hover:bg-slate-700"
                   >
                     <ZoomOut size={12} />
                   </button>
@@ -1388,7 +1388,7 @@ export default function PinterestPinVisualGeneratorClient() {
                         Math.min(2.25, +(z + 0.15).toFixed(2)),
                       )
                     }
-                    className="rounded-lg bg-slate-800 px-2 py-1 text-[11px] font-bold text-white hover:bg-slate-700"
+                    className="rounded-lg bg-slate-800 px-2 py-1 text-[11px] font-bold text-slate-900 dark:text-white hover:bg-slate-700"
                   >
                     <ZoomIn size={12} />
                   </button>
@@ -1410,7 +1410,7 @@ export default function PinterestPinVisualGeneratorClient() {
                     <button
                       type="button"
                       onClick={() => setZoomLevel(1)}
-                      className="rounded-lg border border-slate-700 px-2 py-1 text-[11px] font-bold text-slate-300"
+                      className="rounded-lg border border-slate-300 dark:border-slate-700 px-2 py-1 text-[11px] font-bold text-slate-700 dark:text-slate-300"
                     >
                       <RotateCcw size={11} />
                     </button>
@@ -1423,7 +1423,7 @@ export default function PinterestPinVisualGeneratorClient() {
               <button
                 type="button"
                 onClick={downloadTallPinPng}
-                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-[#E60023] px-4 py-3 text-xs font-extrabold text-white shadow-sm hover:bg-[#c8001e]"
+                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-[#E60023] px-4 py-3 text-xs font-extrabold text-slate-900 dark:text-white shadow-sm hover:bg-[#c8001e]"
               >
                 <Download size={15} />
                 Download 1000×1500 Tall Pin (.PNG)

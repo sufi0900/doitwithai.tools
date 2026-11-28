@@ -182,8 +182,8 @@ export function UrlArticleExtractorBar({
           )}
         </div>
 
-        <form
-          onSubmit={handleFetchUrl}
+        <div
+          role="search"
           className="mt-3 flex flex-col gap-2.5 sm:flex-row"
         >
           <div className="relative flex min-w-0 flex-1 items-center">
@@ -195,19 +195,26 @@ export function UrlArticleExtractorBar({
               type="url"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  void handleFetchUrl();
+                }
+              }}
               placeholder={placeholder}
               className="w-full min-w-0 rounded-xl border border-slate-300 bg-white py-2.5 pl-9 pr-3.5 text-xs sm:text-sm font-medium text-slate-900 placeholder-slate-400 focus:border-[#3452d1] focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
             />
           </div>
           <button
-            type="submit"
+            type="button"
             disabled={loading}
+            onClick={() => void handleFetchUrl()}
             className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#4058d0] px-5 py-2.5 text-xs sm:text-sm font-extrabold text-white shadow-sm transition hover:bg-[#3452d1] disabled:opacity-60"
           >
             <Sparkles size={15} />
             {loading ? "Extracting & Generating…" : buttonLabel}
           </button>
-        </form>
+        </div>
 
         {errorMsg && (
           <div className="mt-2.5 flex items-center gap-2 text-xs font-semibold text-amber-700 dark:text-amber-300">

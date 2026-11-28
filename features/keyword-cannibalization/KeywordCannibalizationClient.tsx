@@ -158,7 +158,7 @@ export default function KeywordCannibalizationClient() {
             placeholder="…or paste CSV text here (header row first: Query, Page, Clicks, Impressions, Position)"
             className={`${inputClass} mt-3 font-mono text-xs`}
           />
-          <p className="mt-2 flex items-start gap-2 text-xs leading-6 text-slate-400">
+          <p className="mt-2 flex items-start gap-2 text-xs leading-6 text-slate-500 dark:text-slate-400">
             <Lock
               className="mt-1 h-3.5 w-3.5 shrink-0 text-emerald-300"
               aria-hidden="true"
@@ -173,7 +173,7 @@ export default function KeywordCannibalizationClient() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label
-                className="mb-1 block text-xs font-semibold text-slate-300"
+                className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300"
                 htmlFor="kc-min-total"
               >
                 Min. impressions per query
@@ -190,7 +190,7 @@ export default function KeywordCannibalizationClient() {
             </div>
             <div>
               <label
-                className="mb-1 block text-xs font-semibold text-slate-300"
+                className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300"
                 htmlFor="kc-min-page"
               >
                 Min. impressions per page
@@ -207,7 +207,7 @@ export default function KeywordCannibalizationClient() {
             </div>
             <div className="col-span-2">
               <label
-                className="mb-1 block text-xs font-semibold text-slate-300"
+                className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300"
                 htmlFor="kc-min-share"
               >
                 Min. impression share for a page to count (%)
@@ -224,19 +224,19 @@ export default function KeywordCannibalizationClient() {
               />
             </div>
           </div>
-          <label className="mt-3 flex items-center gap-2 text-xs font-semibold text-slate-300">
+          <label className="mt-3 flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
             <input
               type="checkbox"
               checked={ignoreParams}
               onChange={(event) => setIgnoreParams(event.target.checked)}
-              className="h-4 w-4 rounded border-white/20 bg-slate-900"
+              className="h-4 w-4 rounded border-white/20 bg-slate-50 dark:bg-slate-900"
             />
             Treat URLs that differ only by ?parameters, #fragments, or a
             trailing slash as one page
           </label>
           <div className="mt-3">
             <label
-              className="mb-1 block text-xs font-semibold text-slate-300"
+              className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300"
               htmlFor="kc-exclude"
             >
               Exclude queries containing (comma-separated, e.g. your brand)
@@ -252,7 +252,7 @@ export default function KeywordCannibalizationClient() {
           </div>
           <div className="mt-3">
             <label
-              className="mb-1 block text-xs font-semibold text-slate-300"
+              className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300"
               htmlFor="kc-sort"
             >
               Sort by
@@ -270,7 +270,7 @@ export default function KeywordCannibalizationClient() {
               ))}
             </select>
           </div>
-          <p className="mt-3 text-xs leading-6 text-slate-400">
+          <p className="mt-3 text-xs leading-6 text-slate-500 dark:text-slate-400">
             A query is flagged when two or more of your pages each meet the
             thresholds above. Edit any consolidation note inline before
             exporting your CSV report.
@@ -306,12 +306,12 @@ export default function KeywordCannibalizationClient() {
             ].map(([label, value]) => (
               <div
                 key={label}
-                className="rounded-2xl border border-white/10 bg-slate-900/60 p-4"
+                className="rounded-2xl border border-white/10 bg-slate-50 dark:bg-slate-900/60 p-4"
               >
-                <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   {label}
                 </p>
-                <p className="mt-1 text-2xl font-black text-white">{value}</p>
+                <p className="mt-1 text-2xl font-black text-slate-900 dark:text-white">{value}</p>
               </div>
             ))}
           </div>
@@ -344,7 +344,7 @@ export default function KeywordCannibalizationClient() {
               <div className="relative">
                 <Search
                   size={14}
-                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400"
                 />
                 <input
                   type="search"
@@ -352,7 +352,7 @@ export default function KeywordCannibalizationClient() {
                   onChange={(e) => setSearchFilter(e.target.value)}
                   placeholder="Filter query or URL..."
                   aria-label="Filter query or URL"
-                  className="rounded-xl border border-white/15 bg-slate-900/70 py-2 pl-8 pr-3 text-xs text-white focus:border-[#5271ff] focus:outline-none"
+                  className="rounded-xl border border-white/15 bg-slate-50 dark:bg-slate-900/70 py-2 pl-8 pr-3 text-xs text-slate-900 dark:text-white focus:border-[#5271ff] focus:outline-none"
                 />
               </div>
               <button
@@ -367,7 +367,7 @@ export default function KeywordCannibalizationClient() {
           </div>
 
           {findings.length === 0 ? (
-            <p className="mt-6 rounded-xl border border-white/10 bg-slate-900/60 p-5 text-sm text-slate-300">
+            <p className="mt-6 rounded-xl border border-white/10 bg-slate-50 dark:bg-slate-900/60 p-5 text-sm text-slate-700 dark:text-slate-300">
               No competing pages found with these settings. Try lowering the
               minimum impressions or clearing the search filter.
             </p>
@@ -378,13 +378,13 @@ export default function KeywordCannibalizationClient() {
                   <details
                     key={`${finding.query}-${index}`}
                     open
-                    className="group rounded-2xl border border-white/10 bg-slate-900/60 p-4 open:bg-slate-900/80"
+                    className="group rounded-2xl border border-white/10 bg-slate-50 dark:bg-slate-900/60 p-4 open:bg-slate-900/80"
                   >
                     <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-3">
-                      <span className="text-sm font-extrabold text-white">
+                      <span className="text-sm font-extrabold text-slate-900 dark:text-white">
                         {finding.query}
                       </span>
-                      <span className="flex flex-wrap items-center gap-2 text-xs text-slate-400">
+                      <span className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
                         <span
                           className={`rounded-full px-2 py-0.5 font-bold ${SEVERITY_CLASS[finding.severity]}`}
                         >
@@ -397,7 +397,7 @@ export default function KeywordCannibalizationClient() {
 
                     <div className="mt-3 overflow-x-auto rounded-xl border border-white/10">
                       <table className="w-full min-w-[620px] text-left text-xs">
-                        <thead className="bg-slate-950/60 uppercase tracking-wider text-slate-400">
+                        <thead className="bg-white dark:bg-slate-950/60 uppercase tracking-wider text-slate-500 dark:text-slate-400">
                           <tr>
                             <th className="px-3 py-2">Page</th>
                             <th className="px-3 py-2 text-right">Pos.</th>
@@ -406,7 +406,7 @@ export default function KeywordCannibalizationClient() {
                             <th className="px-3 py-2 text-right">Share</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-white/5 text-slate-200">
+                        <tbody className="divide-y divide-white/5 text-slate-800 dark:text-slate-200">
                           {finding.competing.map((page, pageIndex) => (
                             <tr key={page.page}>
                               <td className="max-w-[340px] break-all px-3 py-2">
@@ -436,7 +436,7 @@ export default function KeywordCannibalizationClient() {
                     </div>
 
                     <div className="mt-3 flex flex-wrap items-center gap-2">
-                      <span className="text-xs font-bold text-slate-300">
+                      <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
                         Editable Consolidation Plan:
                       </span>
                       <input
@@ -449,7 +449,7 @@ export default function KeywordCannibalizationClient() {
                           }))
                         }
                         aria-label={`Consolidation plan for ${finding.query}`}
-                        className="min-w-0 flex-1 rounded-lg border border-white/15 bg-slate-950/70 px-3 py-1.5 text-xs text-slate-200 focus:border-[#5271ff] focus:outline-none"
+                        className="min-w-0 flex-1 rounded-lg border border-white/15 bg-white dark:bg-slate-950/70 px-3 py-1.5 text-xs text-slate-800 dark:text-slate-200 focus:border-[#5271ff] focus:outline-none"
                       />
                       <button
                         type="button"
@@ -467,7 +467,7 @@ export default function KeywordCannibalizationClient() {
                             `Copied cannibalization brief for "${finding.query}".`,
                           );
                         }}
-                        className="inline-flex items-center gap-1 rounded-lg border border-white/15 px-2.5 py-1.5 text-xs font-bold text-slate-200 hover:bg-white/10"
+                        className="inline-flex items-center gap-1 rounded-lg border border-white/15 px-2.5 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-white/10"
                       >
                         <Copy size={12} />
                         Copy Brief
@@ -479,14 +479,14 @@ export default function KeywordCannibalizationClient() {
 
               {pairs.length > 0 && (
                 <div className="mt-8">
-                  <h3 className="text-sm font-black text-white">
+                  <h3 className="text-sm font-black text-slate-900 dark:text-white">
                     Page pairs that compete most often
                   </h3>
                   <ul className="mt-3 grid gap-3 md:grid-cols-2">
                     {pairs.map((pair) => (
                       <li
                         key={`${pair.pageA}|${pair.pageB}`}
-                        className="rounded-2xl border border-white/10 bg-slate-900/60 p-4"
+                        className="rounded-2xl border border-white/10 bg-slate-50 dark:bg-slate-900/60 p-4"
                       >
                         <p className="break-all text-xs font-semibold text-blue-200">
                           {pair.pageA}
@@ -497,7 +497,7 @@ export default function KeywordCannibalizationClient() {
                         <p className="break-all text-xs font-semibold text-blue-200">
                           {pair.pageB}
                         </p>
-                        <p className="mt-2 text-xs text-slate-300">
+                        <p className="mt-2 text-xs text-slate-700 dark:text-slate-300">
                           {pair.sharedQueries} shared quer
                           {pair.sharedQueries === 1 ? "y" : "ies"} ·{" "}
                           {pair.impressions.toLocaleString()} combined

@@ -120,17 +120,17 @@ export default function ConsoleImportPanel({
         event.preventDefault();
         if (!busy) void load(event.dataTransfer.files);
       }}
-      className="rounded-2xl border border-dashed border-blue-300/40 bg-slate-950/40 p-5"
+      className="rounded-2xl border border-dashed border-blue-300/40 bg-white dark:bg-slate-950/40 p-5"
     >
       <ToolRunOverlay
         active={busy}
         title="Importing Google Search Console export"
         description="Parsing queries, pages, clicks, impressions, CTR, and average position rows."
       />
-      <p className="font-bold text-white">
+      <p className="font-bold text-slate-900 dark:text-white">
         Upload CSV files or the original Search Console ZIP
       </p>
-      <p className="mt-2 text-xs leading-6 text-slate-300">
+      <p className="mt-2 text-xs leading-6 text-slate-700 dark:text-slate-300">
         Queries and Pages exports are supported. ZIP files show a report
         selector. Files stay in this browser.
       </p>
@@ -150,7 +150,7 @@ export default function ConsoleImportPanel({
             setError("");
             onChange(sample);
           }}
-          className="rounded-xl border border-white/20 px-4 py-3 text-sm font-semibold text-white hover:bg-white/10"
+          className="rounded-xl border border-white/20 px-4 py-3 text-sm font-semibold text-slate-900 dark:text-white hover:bg-white/10"
         >
           Try sample data
         </button>
@@ -162,7 +162,7 @@ export default function ConsoleImportPanel({
             setError("");
             onChange("");
           }}
-          className="rounded-xl border border-white/20 px-4 py-3 text-sm font-semibold text-white hover:bg-white/10"
+          className="rounded-xl border border-white/20 px-4 py-3 text-sm font-semibold text-slate-900 dark:text-white hover:bg-white/10"
         >
           Clear
         </button>
@@ -177,7 +177,7 @@ export default function ConsoleImportPanel({
         onChange={(e) => void load(e.target.files)}
       />
       {datasets.length > 0 && (
-        <label className="mt-4 block text-xs text-slate-300">
+        <label className="mt-4 block text-xs text-slate-700 dark:text-slate-300">
           Report to review
           <select
             className={control + " mt-2"}
@@ -201,7 +201,7 @@ export default function ConsoleImportPanel({
           <summary className="cursor-pointer text-sm font-bold text-blue-200">
             Compare query exports filtered to individual pages
           </summary>
-          <p className="mt-2 text-xs leading-6 text-slate-300">
+          <p className="mt-2 text-xs leading-6 text-slate-700 dark:text-slate-300">
             Export Queries after applying an exact Page filter in Search
             Console. Upload at least two exports from the same date range.
             Assign each its filtered page URL. Unfiltered query exports cannot
@@ -211,7 +211,7 @@ export default function ConsoleImportPanel({
             reports[i].kind === "queries" ? (
               <label
                 key={i}
-                className="mt-3 block break-words text-xs text-slate-300"
+                className="mt-3 block break-words text-xs text-slate-700 dark:text-slate-300"
               >
                 {d.name}
                 <ToolUrlInput

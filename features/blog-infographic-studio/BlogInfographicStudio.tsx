@@ -1410,7 +1410,7 @@ export function BlogInfographicStudio({
                   <div className="mb-3 flex items-center justify-between">
                     <h3 className="text-sm font-bold text-slate-900 dark:text-white">
                       Your points{" "}
-                      <span className="text-slate-400">
+                      <span className="text-slate-500 dark:text-slate-400">
                         {active.nodes.length}/{active.visualEngine ? 6 : 8}
                       </span>
                     </h3>

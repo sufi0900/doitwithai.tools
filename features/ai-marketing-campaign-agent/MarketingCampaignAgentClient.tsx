@@ -519,7 +519,7 @@ export default function MarketingCampaignAgentClient() {
                       Copy UTM URL
                     </button>
                   </div>
-                  <code className="mt-2 block break-all rounded-xl bg-slate-900 p-2.5 text-[11px] text-emerald-300">
+                  <code className="mt-2 block break-all rounded-xl bg-slate-50 dark:bg-slate-900 p-2.5 text-[11px] text-emerald-300">
                     {u.fullTrackedUrl}
                   </code>
                 </div>

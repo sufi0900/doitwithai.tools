@@ -112,7 +112,7 @@ export default function SlugToolEducation() {
         className="grid gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-start"
         aria-labelledby="slug-practices-built-in"
       >
-        <div className="rounded-[32px] bg-slate-950 p-7 text-white sm:p-9">
+        <div className="rounded-[32px] bg-white dark:bg-slate-950 p-7 text-slate-900 dark:text-white sm:p-9">
           <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[#5271ff]">
             <Link2 className="h-6 w-6" />
           </div>
@@ -125,7 +125,7 @@ export default function SlugToolEducation() {
           >
             Concise by design, not by blind deletion
           </h2>
-          <p className="mt-4 text-sm leading-7 text-slate-300">
+          <p className="mt-4 text-sm leading-7 text-slate-700 dark:text-slate-300">
             AI handles meaning, alternatives, and editorial explanation.
             Application code handles formatting, counts, topic-token coverage,
             repetition, filler, date risk, and the editable final review.

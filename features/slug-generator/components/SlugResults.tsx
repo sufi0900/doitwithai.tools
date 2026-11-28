@@ -103,11 +103,11 @@ export default function SlugResults({ data, input, onRegenerate }: Props) {
       </div>
 
       <section className="mt-8 grid gap-5 lg:grid-cols-[0.95fr_1.05fr]">
-        <div className="rounded-3xl bg-slate-950 p-6 text-white sm:p-7">
+        <div className="rounded-3xl bg-white dark:bg-slate-950 p-6 text-slate-900 dark:text-white sm:p-7">
           <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-blue-300">
             <BrainCircuit className="h-4 w-4" /> What the tool understood
           </div>
-          <p className="mt-5 text-sm leading-7 text-slate-300">
+          <p className="mt-5 text-sm leading-7 text-slate-700 dark:text-slate-300">
             {data.result.analysis.summary}
           </p>
           <dl className="mt-6 grid gap-3 sm:grid-cols-2">
@@ -118,15 +118,15 @@ export default function SlugResults({ data, input, onRegenerate }: Props) {
               ["Primary entity", data.result.analysis.primaryEntity],
             ].map(([label, value]) => (
               <div key={label} className="rounded-xl bg-white/[0.07] p-3">
-                <dt className="text-[10px] font-extrabold uppercase tracking-[0.13em] text-slate-400">
+                <dt className="text-[10px] font-extrabold uppercase tracking-[0.13em] text-slate-500 dark:text-slate-400">
                   {label}
                 </dt>
-                <dd className="mt-1 text-sm font-bold text-white">{value}</dd>
+                <dd className="mt-1 text-sm font-bold text-slate-900 dark:text-white">{value}</dd>
               </div>
             ))}
           </dl>
           <div className="mt-5">
-            <p className="text-[10px] font-extrabold uppercase tracking-[0.13em] text-slate-400">
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.13em] text-slate-500 dark:text-slate-400">
               Stable concepts worth preserving
             </p>
             <div className="mt-2 flex flex-wrap gap-2">
@@ -280,7 +280,7 @@ export default function SlugResults({ data, input, onRegenerate }: Props) {
             result pages. The visible counts and checks are calculated by the
             application, not estimated by the language model.
           </p>
-          <p className="mt-3 text-[11px] font-semibold text-slate-400">
+          <p className="mt-3 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
             Remaining requests in the current limit window:{" "}
             {data.meta.remaining}
           </p>

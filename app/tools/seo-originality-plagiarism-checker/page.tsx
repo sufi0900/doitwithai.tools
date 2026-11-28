@@ -89,7 +89,7 @@ const jsonLd = {
 
 export default function SeoOriginalityPlagiarismPage() {
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-100 pb-20">
+    <div className="min-h-screen bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100 pb-20">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -168,6 +168,6 @@ export default function SeoOriginalityPlagiarismPage() {
           faqs={faqs}
         />
       </section>
-    </main>
+    </div>
   );
 }

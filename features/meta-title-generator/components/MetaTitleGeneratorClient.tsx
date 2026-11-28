@@ -338,10 +338,10 @@ export default function MetaTitleGeneratorClient() {
         ].map(([value, label]) => (
           <div
             key={label}
-            className="rounded-xl border border-white/15 bg-white/10 px-3.5 py-2.5 text-white backdrop-blur-md"
+            className="rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-slate-900 dark:border-white/15 dark:bg-white/10 dark:text-white"
           >
             <p className="text-2xl font-black">{value}</p>
-            <p className="mt-1 text-xs font-semibold text-blue-100/80">
+            <p className="mt-1 text-xs font-semibold text-slate-600 dark:text-blue-100/80">
               {label}
             </p>
           </div>

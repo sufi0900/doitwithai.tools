@@ -507,7 +507,7 @@ export default function LlmsTxtClient() {
                 Live preview {rawOverride !== null ? "(Custom Edited)" : ""}
               </h2>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-slate-400">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                   {output.length.toLocaleString()} chars
                 </span>
                 <button
@@ -532,10 +532,10 @@ export default function LlmsTxtClient() {
                 onChange={(e) => setRawOverride(e.target.value)}
                 spellCheck={false}
                 aria-label="Direct llms.txt Markdown editor"
-                className="mt-3 w-full rounded-2xl border border-[#5271ff] bg-slate-950 p-4 font-mono text-xs leading-6 text-slate-100 focus:outline-none"
+                className="mt-3 w-full rounded-2xl border border-[#5271ff] bg-white dark:bg-slate-950 p-4 font-mono text-xs leading-6 text-slate-900 dark:text-slate-100 focus:outline-none"
               />
             ) : (
-              <pre className="mt-3 max-h-[420px] overflow-auto whitespace-pre-wrap break-words rounded-2xl border border-slate-200 bg-slate-950 p-4 font-mono text-xs leading-6 text-slate-100 dark:border-slate-700">
+              <pre className="mt-3 max-h-[420px] overflow-auto whitespace-pre-wrap break-words rounded-2xl border border-slate-200 bg-white dark:bg-slate-950 p-4 font-mono text-xs leading-6 text-slate-900 dark:text-slate-100 dark:border-slate-700">
                 {output}
               </pre>
             )}
@@ -588,7 +588,7 @@ export default function LlmsTxtClient() {
                 ))}
               </ul>
             )}
-            <p className="mt-3 text-[11px] leading-5 text-slate-400">
+            <p className="mt-3 text-[11px] leading-5 text-slate-500 dark:text-slate-400">
               {errorCount > 0
                 ? "Resolve the errors above before publishing; warnings are judgment calls."
                 : "This is a reviewable starting point, not a guarantee any AI engine will read or cite it."}

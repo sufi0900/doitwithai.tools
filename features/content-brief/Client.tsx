@@ -164,15 +164,15 @@ export default function ContentBriefClient() {
         title="Building SEO content brief & writer outline"
         description="Structuring search intent, heading outline, reader questions, and internal link targets."
       />
-      <div className="min-w-0 rounded-[28px] border border-white/10 bg-slate-900/80 p-5 sm:p-8">
+      <div className="min-w-0 rounded-[28px] border border-white/10 bg-slate-50 dark:bg-slate-900/80 p-5 sm:p-8">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-xl font-bold text-white">
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white">
             Plan the writer handoff
           </h2>
           <button
             type="button"
             disabled={busy}
-            className="rounded-lg border border-slate-600 px-3 py-1.5 text-xs font-bold text-slate-300 hover:bg-slate-800"
+            className="rounded-lg border border-slate-600 px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-800"
             onClick={() => {
               setInput(emptyBriefInput);
               setLinks("");
@@ -183,7 +183,7 @@ export default function ContentBriefClient() {
             Clear inputs
           </button>
         </div>
-        <p className="mt-3 text-sm leading-7 text-slate-400">
+        <p className="mt-3 text-sm leading-7 text-slate-500 dark:text-slate-400">
           One focused page, one reader task. No websites, images, or videos are
           downloaded.
         </p>
@@ -197,7 +197,7 @@ export default function ContentBriefClient() {
           ).map(([key, label, max]) => (
             <label
               key={key}
-              className="block text-sm font-semibold text-slate-200"
+              className="block text-sm font-semibold text-slate-800 dark:text-slate-200"
             >
               {label}
               <input
@@ -208,7 +208,7 @@ export default function ContentBriefClient() {
               />
             </label>
           ))}
-          <label className="block text-sm font-semibold text-slate-200">
+          <label className="block text-sm font-semibold text-slate-800 dark:text-slate-200">
             Intended search intent
             <select
               className={field}
@@ -230,7 +230,7 @@ export default function ContentBriefClient() {
               ))}
             </select>
           </label>
-          <label className="block text-sm font-semibold text-slate-200">
+          <label className="block text-sm font-semibold text-slate-800 dark:text-slate-200">
             Your insights and constraints, optional
             <textarea
               className={field}
@@ -239,12 +239,12 @@ export default function ContentBriefClient() {
               value={input.notes}
               onChange={(e) => setInput({ ...input, notes: e.target.value })}
             />
-            <span className="mt-1 block text-xs font-normal text-slate-400">
+            <span className="mt-1 block text-xs font-normal text-slate-500 dark:text-slate-400">
               {input.notes.length}/6,000 characters. Paste relevant text only.
               Remove confidential information.
             </span>
           </label>
-          <label className="block text-sm font-semibold text-slate-200">
+          <label className="block text-sm font-semibold text-slate-800 dark:text-slate-200">
             Candidate internal links, optional
             <textarea
               className={field}
@@ -254,7 +254,7 @@ export default function ContentBriefClient() {
               value={links}
               onChange={(e) => setLinks(e.target.value)}
             />
-            <span className="mt-1 block text-xs font-normal text-slate-400">
+            <span className="mt-1 block text-xs font-normal text-slate-500 dark:text-slate-400">
               Up to eight. Titles guide relevance. Destinations are not fetched
               or verified.
             </span>
@@ -290,7 +290,7 @@ export default function ContentBriefClient() {
             </button>
           </div>
         </fieldset>
-        <p className="mt-4 text-xs leading-6 text-slate-400">
+        <p className="mt-4 text-xs leading-6 text-slate-500 dark:text-slate-400">
           AI uses your supplied text. Up to 15 successful briefs daily, with
           five starts per ten minutes. Failed runs are refunded.
         </p>
@@ -322,11 +322,11 @@ export default function ContentBriefClient() {
           {status}
         </p>
       </div>
-      <div className="min-w-0 rounded-[28px] border border-white/10 bg-slate-900/80 p-5 sm:p-8">
-        <h2 className="text-xl font-bold text-white">
+      <div className="min-w-0 rounded-[28px] border border-white/10 bg-slate-50 dark:bg-slate-900/80 p-5 sm:p-8">
+        <h2 className="text-xl font-bold text-slate-900 dark:text-white">
           Your editable content brief
         </h2>
-        <p className="mt-3 text-sm leading-7 text-slate-400">
+        <p className="mt-3 text-sm leading-7 text-slate-500 dark:text-slate-400">
           Review the scope, section instructions, evidence gaps, and link
           placements. Export the handoff as Markdown.
         </p>
@@ -335,7 +335,7 @@ export default function ContentBriefClient() {
             <span className="mt-5 inline-block rounded-full bg-blue-400/10 px-3 py-2 text-xs text-blue-200">
               {result.method} · Unverified planning draft
             </span>
-            <label className="mt-5 block text-sm font-semibold text-slate-200">
+            <label className="mt-5 block text-sm font-semibold text-slate-800 dark:text-slate-200">
               Edit your brief
               <textarea
                 className={`${field} font-mono leading-7`}
@@ -366,8 +366,8 @@ export default function ContentBriefClient() {
             </div>
           </>
         ) : (
-          <div className="mt-8 rounded-2xl border border-dashed border-slate-600 p-6 text-sm leading-8 text-slate-400">
-            <h3 className="font-bold text-slate-200">More than an outline</h3>
+          <div className="mt-8 rounded-2xl border border-dashed border-slate-600 p-6 text-sm leading-8 text-slate-500 dark:text-slate-400">
+            <h3 className="font-bold text-slate-800 dark:text-slate-200">More than an outline</h3>
             <ul className="mt-3 list-disc pl-5">
               <li>Reader task and content angle</li>
               <li>Scope boundaries and writer instructions</li>

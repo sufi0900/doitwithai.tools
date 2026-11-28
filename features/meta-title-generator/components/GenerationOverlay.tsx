@@ -69,9 +69,9 @@ export default function GenerationOverlay({ active }: Props) {
       role="status"
       aria-live="polite"
       aria-label="Generating meta title options"
-      className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-md"
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-white dark:bg-slate-950/55 p-4 backdrop-blur-md"
     >
-      <div className="w-full max-w-md overflow-hidden rounded-[28px] border border-white/10 bg-slate-950 p-7 text-center text-white shadow-[0_40px_120px_-40px_rgba(0,0,0,0.7)] sm:p-9">
+      <div className="w-full max-w-md overflow-hidden rounded-[28px] border border-white/10 bg-white dark:bg-slate-950 p-7 text-center text-slate-900 dark:text-white shadow-[0_40px_120px_-40px_rgba(0,0,0,0.7)] sm:p-9">
         <div className="relative mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-[#5271ff]/15 text-[#5271ff]">
           <ScanSearch className="h-7 w-7" />
           <span className="animate-ping absolute inset-0 rounded-2xl border border-[#5271ff]/40" />
@@ -96,11 +96,11 @@ export default function GenerationOverlay({ active }: Props) {
         </div>
 
         <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-          <div className="flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
+          <div className="flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">
             <Quote className="h-3 w-3" />
             While you wait
           </div>
-          <p key={quoteIndex} className="mt-2 text-sm leading-6 text-slate-200">
+          <p key={quoteIndex} className="mt-2 text-sm leading-6 text-slate-800 dark:text-slate-200">
             {quotesRef.current[quoteIndex]}
           </p>
         </div>

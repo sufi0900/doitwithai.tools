@@ -31,7 +31,7 @@ const faqs = [
 
 export default function AiWorkflowBlueprintGeneratorPage() {
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-100 pb-20">
+    <div className="min-h-screen bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100 pb-20">
       <ToolLandingHero
         slug="ai-workflow-blueprint-generator"
         title="Free AI Workflow Blueprint Generator for Make, Zapier & n8n"
@@ -49,6 +49,6 @@ export default function AiWorkflowBlueprintGeneratorPage() {
         <ToolResources slug="ai-workflow-blueprint-generator" />
         <ToolFaq title="AI Workflow Blueprint Generator FAQs" faqs={faqs} />
       </section>
-    </main>
+    </div>
   );
 }

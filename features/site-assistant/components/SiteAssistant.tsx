@@ -188,7 +188,7 @@ export default function SiteAssistant() {
               AI
             </span>
             <MessageCircle className="h-7 w-7 transition group-hover:scale-110" />
-            <span className="pointer-events-none absolute right-[76px] hidden whitespace-nowrap rounded-xl bg-slate-950 px-3 py-2 text-xs font-bold text-white opacity-0 shadow-xl transition group-hover:opacity-100 sm:block">
+            <span className="pointer-events-none absolute right-[76px] hidden whitespace-nowrap rounded-xl bg-white dark:bg-slate-950 px-3 py-2 text-xs font-bold text-slate-900 dark:text-white opacity-0 shadow-xl transition group-hover:opacity-100 sm:block">
               Ask Do It With AI Tools
             </span>
           </button>
@@ -223,7 +223,7 @@ export default function SiteAssistant() {
                 <button
                   type="button"
                   onClick={resetChat}
-                  className="rounded-xl p-2 text-white/75 transition hover:bg-white/15 hover:text-white"
+                  className="rounded-xl p-2 text-slate-900 dark:text-white/75 transition hover:bg-white/15 hover:text-white"
                   aria-label="Start a new chat"
                   title="Start a new chat"
                 >
@@ -232,7 +232,7 @@ export default function SiteAssistant() {
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="rounded-xl p-2 text-white/75 transition hover:bg-white/15 hover:text-white"
+                  className="rounded-xl p-2 text-slate-900 dark:text-white/75 transition hover:bg-white/15 hover:text-white"
                   aria-label="Minimize assistant"
                 >
                   <ChevronDown className="h-5 w-5" />
@@ -240,7 +240,7 @@ export default function SiteAssistant() {
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="rounded-xl p-2 text-white/75 transition hover:bg-white/15 hover:text-white"
+                  className="rounded-xl p-2 text-slate-900 dark:text-white/75 transition hover:bg-white/15 hover:text-white"
                   aria-label="Close assistant"
                 >
                   <X className="h-4 w-4" />
@@ -332,7 +332,7 @@ export default function SiteAssistant() {
                 )}
               </button>
             </div>
-            <p className="mt-2 text-center text-[9.5px] font-medium text-slate-400">
+            <p className="mt-2 text-center text-[9.5px] font-medium text-slate-500 dark:text-slate-400">
               Answers from published site content · Verify important details
             </p>
           </footer>

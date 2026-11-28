@@ -687,10 +687,10 @@ export default function YoutubeTitleThumbnailOptimizerClient() {
             </div>
 
             {/* Simulated YouTube Video Card with Persistent Export Bar + Direct Hook Bar + Bottom Zoom */}
-            <div className="mt-4 overflow-hidden rounded-2xl border border-slate-800 bg-[#070b14] text-white shadow-xl">
+            <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-[#070b14] text-slate-900 dark:text-white shadow-xl">
               {/* Persistent Top Export Bar */}
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 bg-slate-900 px-4 py-2.5">
-                <span className="text-[11px] font-extrabold uppercase tracking-wider text-white">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-4 py-2.5">
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
                   1280×720 HD Thumbnail Export
                 </span>
                 <div className="flex flex-wrap items-center gap-1.5">
@@ -716,7 +716,7 @@ export default function YoutubeTitleThumbnailOptimizerClient() {
                       );
                       notify("Downloaded Vector Thumbnail (.SVG)!");
                     }}
-                    className="inline-flex items-center gap-1 rounded-lg bg-white/15 px-2.5 py-1 text-[11px] font-extrabold text-white hover:bg-white/25"
+                    className="inline-flex items-center gap-1 rounded-lg bg-white/15 px-2.5 py-1 text-[11px] font-extrabold text-slate-900 dark:text-white hover:bg-white/25"
                   >
                     <FileCode2 size={12} /> SVG
                   </button>
@@ -729,7 +729,7 @@ export default function YoutubeTitleThumbnailOptimizerClient() {
                         `Thumbnail Overlay: ${input.thumbnailOverlayText}`,
                       );
                     }}
-                    className="inline-flex items-center gap-1 rounded-lg bg-white/15 px-2.5 py-1 text-[11px] font-extrabold text-white hover:bg-white/25"
+                    className="inline-flex items-center gap-1 rounded-lg bg-white/15 px-2.5 py-1 text-[11px] font-extrabold text-slate-900 dark:text-white hover:bg-white/25"
                   >
                     <FileText size={12} /> PDF
                   </button>
@@ -753,7 +753,7 @@ export default function YoutubeTitleThumbnailOptimizerClient() {
               </div>
 
               {/* Direct In-Canvas Overlay Hook Editor */}
-              <div className="flex items-center gap-2 border-b border-slate-800 bg-[#0d1424] px-3.5 py-2 text-xs text-white">
+              <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 bg-[#0d1424] px-3.5 py-2 text-xs text-slate-900 dark:text-white">
                 <span className="inline-flex shrink-0 items-center gap-1 font-extrabold text-amber-400">
                   <Type size={13} /> Overlay Hook:
                 </span>
@@ -763,7 +763,7 @@ export default function YoutubeTitleThumbnailOptimizerClient() {
                   onChange={(e) =>
                     updateField("thumbnailOverlayText", e.target.value)
                   }
-                  className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1 text-xs font-extrabold uppercase text-white focus:border-[#5271ff] focus:outline-none"
+                  className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-2.5 py-1 text-xs font-extrabold uppercase text-slate-900 dark:text-white focus:border-[#5271ff] focus:outline-none"
                 />
               </div>
 
@@ -803,25 +803,25 @@ export default function YoutubeTitleThumbnailOptimizerClient() {
               </div>
 
               {/* Simulated YouTube Feed Title Row */}
-              <div className="flex items-start gap-3 border-t border-slate-800/80 bg-[#0F0F0F] px-4 py-3.5">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#4058d0] text-xs font-black text-white">
+              <div className="flex items-start gap-3 border-t border-slate-200 dark:border-slate-800/80 bg-[#0F0F0F] px-4 py-3.5">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#4058d0] text-xs font-black text-slate-900 dark:text-white">
                   AI
                 </div>
                 <div className="min-w-0 flex-1">
-                  <strong className="block text-sm font-bold leading-5 text-white">
+                  <strong className="block text-sm font-bold leading-5 text-slate-900 dark:text-white">
                     {feedMode === "mobile"
                       ? result.mobilePreviewTitle
                       : result.desktopPreviewTitle}
                   </strong>
-                  <span className="mt-1 block text-xs text-slate-400">
+                  <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">
                     {input.channelName} · 48K views · 2 days ago
                   </span>
                 </div>
               </div>
 
               {/* Bottom Zoom Bar */}
-              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-800 bg-[#0d1424] px-3.5 py-2 text-xs text-slate-300">
-                <span className="text-[11px] text-slate-400">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 dark:border-slate-800 bg-[#0d1424] px-3.5 py-2 text-xs text-slate-700 dark:text-slate-300">
+                <span className="text-[11px] text-slate-500 dark:text-slate-400">
                   Ctrl + Scroll to zoom thumbnail
                 </span>
                 <div className="flex items-center gap-1">
@@ -830,7 +830,7 @@ export default function YoutubeTitleThumbnailOptimizerClient() {
                     onClick={() =>
                       setZoomLevel((z) => Math.max(0.6, +(z - 0.15).toFixed(2)))
                     }
-                    className="rounded-lg bg-slate-800 px-2 py-1 text-[11px] font-bold text-white hover:bg-slate-700"
+                    className="rounded-lg bg-slate-800 px-2 py-1 text-[11px] font-bold text-slate-900 dark:text-white hover:bg-slate-700"
                   >
                     <ZoomOut size={12} />
                   </button>
@@ -852,7 +852,7 @@ export default function YoutubeTitleThumbnailOptimizerClient() {
                         Math.min(2.25, +(z + 0.15).toFixed(2)),
                       )
                     }
-                    className="rounded-lg bg-slate-800 px-2 py-1 text-[11px] font-bold text-white hover:bg-slate-700"
+                    className="rounded-lg bg-slate-800 px-2 py-1 text-[11px] font-bold text-slate-900 dark:text-white hover:bg-slate-700"
                   >
                     <ZoomIn size={12} />
                   </button>
@@ -874,7 +874,7 @@ export default function YoutubeTitleThumbnailOptimizerClient() {
                     <button
                       type="button"
                       onClick={() => setZoomLevel(1)}
-                      className="rounded-lg border border-slate-700 px-2 py-1 text-[11px] font-bold text-slate-300"
+                      className="rounded-lg border border-slate-300 dark:border-slate-700 px-2 py-1 text-[11px] font-bold text-slate-700 dark:text-slate-300"
                     >
                       <RotateCcw size={11} />
                     </button>

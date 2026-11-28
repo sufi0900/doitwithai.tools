@@ -216,7 +216,7 @@ export function InteractiveInfographicCanvas({
                   height: hoverBox.height + 6,
                 }}
               >
-                <span className="absolute -top-5 left-0 whitespace-nowrap rounded bg-slate-950/90 px-1.5 py-0.5 text-[10px] font-semibold text-sky-200 shadow-sm">
+                <span className="absolute -top-5 left-0 whitespace-nowrap rounded bg-white dark:bg-slate-950/90 px-1.5 py-0.5 text-[10px] font-semibold text-sky-200 shadow-sm">
                   {hoverBox.label}
                 </span>
               </div>

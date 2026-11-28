@@ -481,7 +481,7 @@ export default function AiModeLlmTrackerClient() {
     <section
       id="ai-mode-llm-tracker-workspace"
       aria-label="AI Mode and LLM SEO Rank Tracker Workspace"
-      className="rounded-[28px] border border-white/10 bg-slate-900/85 p-5 shadow-2xl sm:p-8 space-y-8"
+      className="rounded-[28px] border border-white/10 bg-slate-50 dark:bg-slate-900/85 p-5 shadow-2xl sm:p-8 space-y-8"
     >
       <ToolRunOverlay
         active={busy}
@@ -500,7 +500,7 @@ export default function AiModeLlmTrackerClient() {
       {/* TOP COMMAND PANEL */}
       <form
         onSubmit={(e) => void handleRunQuickAudit(e)}
-        className="rounded-2xl border border-white/10 bg-slate-950/65 p-5 sm:p-6 space-y-6"
+        className="rounded-2xl border border-white/10 bg-white dark:bg-slate-950/65 p-5 sm:p-6 space-y-6"
       >
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-4">
           <div className="flex items-center gap-3">
@@ -508,10 +508,10 @@ export default function AiModeLlmTrackerClient() {
               <Radar aria-hidden className="h-5 w-5 text-sky-300" />
             </div>
             <div>
-              <h2 className="text-lg sm:text-xl font-black text-white">
+              <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white">
                 AI Mode, Perplexity, Claude, Copilot &amp; ChatGPT SEO Tracker
               </h2>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Audit your citation readiness across 6 AI search engines and launch 1-click verification prompts.
               </p>
             </div>
@@ -590,7 +590,7 @@ export default function AiModeLlmTrackerClient() {
           <div>
             <label
               htmlFor="llm-keywords"
-              className="block text-xs font-bold uppercase tracking-wider text-slate-300"
+              className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300"
             >
               Target Queries to Track in AI Mode &amp; LLMs (1 per line)
             </label>
@@ -606,7 +606,7 @@ export default function AiModeLlmTrackerClient() {
           <div>
             <label
               htmlFor="llm-snippet"
-              className="block text-xs font-bold uppercase tracking-wider text-slate-300"
+              className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300"
             >
               Current Page Intro / Power Answer Snippet (To Audit Citation Readiness)
             </label>
@@ -666,7 +666,7 @@ export default function AiModeLlmTrackerClient() {
               <span className="inline-flex items-center rounded-full border border-sky-400/35 bg-sky-500/15 px-3 py-0.5 text-xs font-bold uppercase tracking-wider text-sky-300">
                 Multi-LLM Citation Readiness Score: {report.overallScore} / 100
               </span>
-              <h3 className="mt-1.5 text-xl font-black text-white">
+              <h3 className="mt-1.5 text-xl font-black text-slate-900 dark:text-white">
                 AI Mode, Perplexity, ChatGPT, Claude &amp; Copilot Visibility Matrix
               </h3>
             </div>
@@ -674,7 +674,7 @@ export default function AiModeLlmTrackerClient() {
               <button
                 type="button"
                 onClick={copyReportText}
-                className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-white/20 bg-slate-900 px-4 py-2 text-xs font-bold text-white hover:border-blue-400/50"
+                className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-white/20 bg-slate-50 dark:bg-slate-900 px-4 py-2 text-xs font-bold text-slate-900 dark:text-white hover:border-blue-400/50"
               >
                 <Copy className="h-4 w-4 text-blue-300" />
                 Copy Audit Report
@@ -682,7 +682,7 @@ export default function AiModeLlmTrackerClient() {
               <button
                 type="button"
                 onClick={exportCsv}
-                className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-white/20 bg-slate-900 px-4 py-2 text-xs font-bold text-white hover:border-emerald-400/50"
+                className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-white/20 bg-slate-50 dark:bg-slate-900 px-4 py-2 text-xs font-bold text-slate-900 dark:text-white hover:border-emerald-400/50"
               >
                 <Download className="h-4 w-4 text-emerald-300" />
                 Download CSV
@@ -698,12 +698,12 @@ export default function AiModeLlmTrackerClient() {
               <Sparkles className="h-4 w-4" />
               <span>AI-Optimized 50-Word Citation Block &amp; Entity Fixes</span>
             </div>
-            <h4 className="text-lg font-black text-white">{aiAudit.headline}</h4>
-            <div className="rounded-xl border border-emerald-400/35 bg-slate-950/90 p-4">
+            <h4 className="text-lg font-black text-slate-900 dark:text-white">{aiAudit.headline}</h4>
+            <div className="rounded-xl border border-emerald-400/35 bg-white dark:bg-slate-950/90 p-4">
               <div className="text-xs font-bold uppercase text-emerald-300 mb-1">
                 Copy-Paste 50-Word Power Answer (Place Directly Under Your H1):
               </div>
-              <p className="text-sm leading-7 text-white font-medium">
+              <p className="text-sm leading-7 text-slate-900 dark:text-white font-medium">
                 {aiAudit.powerAnswerRewrite}
               </p>
             </div>
@@ -711,7 +711,7 @@ export default function AiModeLlmTrackerClient() {
               {aiAudit.entityGapFixes.map((fix, idx) => (
                 <div
                   key={idx}
-                  className="rounded-xl border border-white/10 bg-slate-950/80 p-3.5 text-xs leading-6 text-slate-200"
+                  className="rounded-xl border border-white/10 bg-white dark:bg-slate-950/80 p-3.5 text-xs leading-6 text-slate-800 dark:text-slate-200"
                 >
                   <strong className="block text-indigo-300 mb-1">
                     Entity Fix #{idx + 1}
@@ -733,10 +733,10 @@ export default function AiModeLlmTrackerClient() {
               <div>
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div>
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                       {engine.badge}
                     </span>
-                    <h4 className="mt-0.5 text-lg font-black text-white">
+                    <h4 className="mt-0.5 text-lg font-black text-slate-900 dark:text-white">
                       {engine.engineName}
                     </h4>
                   </div>
@@ -748,8 +748,8 @@ export default function AiModeLlmTrackerClient() {
                   </span>
                 </div>
 
-                <p className="mt-3 rounded-xl border border-white/10 bg-slate-900/90 px-3.5 py-2.5 text-xs leading-5 text-slate-300">
-                  <strong className="text-white">Core Ranking Signal:</strong>{" "}
+                <p className="mt-3 rounded-xl border border-white/10 bg-slate-50 dark:bg-slate-900/90 px-3.5 py-2.5 text-xs leading-5 text-slate-700 dark:text-slate-300">
+                  <strong className="text-slate-900 dark:text-white">Core Ranking Signal:</strong>{" "}
                   {engine.primarySignal}
                 </p>
 
@@ -781,12 +781,12 @@ export default function AiModeLlmTrackerClient() {
         </div>
 
         {/* 1-Click Live AI Verification Prompt Matrix */}
-        <div className="rounded-2xl border border-white/15 bg-slate-950/85 p-5 sm:p-6 space-y-4">
+        <div className="rounded-2xl border border-white/15 bg-white dark:bg-slate-950/85 p-5 sm:p-6 space-y-4">
           <div>
-            <h4 className="text-base sm:text-lg font-black text-white">
+            <h4 className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
               Live AI Rank &amp; Citation Verification Prompts (1-Click Test)
             </h4>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               Run these exact prompts in Perplexity, Google AI Mode, ChatGPT, or Claude to check whether your brand is cited in top positions.
             </p>
           </div>
@@ -795,18 +795,18 @@ export default function AiModeLlmTrackerClient() {
             {report.verificationPrompts.map((vp) => (
               <div
                 key={vp.id}
-                className="rounded-xl border border-white/10 bg-slate-900/90 p-4 flex flex-col justify-between space-y-3"
+                className="rounded-xl border border-white/10 bg-slate-50 dark:bg-slate-900/90 p-4 flex flex-col justify-between space-y-3"
               >
                 <div>
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-xs font-bold text-sky-300">
                       {vp.angle}
                     </span>
-                    <span className="rounded bg-white/5 px-2 py-0.5 text-[10px] text-slate-300">
+                    <span className="rounded bg-white/5 px-2 py-0.5 text-[10px] text-slate-700 dark:text-slate-300">
                       {vp.targetEngine}
                     </span>
                   </div>
-                  <p className="mt-2 rounded-lg bg-slate-950 p-3 font-mono text-xs leading-6 text-slate-200 border border-white/10">
+                  <p className="mt-2 rounded-lg bg-white dark:bg-slate-950 p-3 font-mono text-xs leading-6 text-slate-800 dark:text-slate-200 border border-white/10">
                     {vp.promptText}
                   </p>
                 </div>

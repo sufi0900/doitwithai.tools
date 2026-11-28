@@ -149,8 +149,8 @@ export default function SeoOptimizerAgentClient() {
       </div>
 
       {loading && (
-        <div className="mb-6 rounded-3xl border border-[#3452d1]/40 bg-slate-900 p-5 text-white shadow-2xl">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div className="mb-6 rounded-3xl border border-[#3452d1]/40 bg-slate-50 dark:bg-slate-900 p-5 text-slate-900 dark:text-white shadow-2xl">
+          <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
             <div className="flex items-center gap-2">
               <span className="relative flex h-2.5 w-2.5">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
@@ -160,7 +160,7 @@ export default function SeoOptimizerAgentClient() {
                 Agent Live Reasoning Stream
               </span>
             </div>
-            <span className="text-[11px] font-bold text-slate-400">
+            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
               Autonomous 5-Step Pipeline Active...
             </span>
           </div>
@@ -178,11 +178,11 @@ export default function SeoOptimizerAgentClient() {
               <Sparkles size={14} className="shrink-0" />
               <span>Step 3: Drafting 50-word RAG definition snippet for Google AI Overviews &amp; Perplexity...</span>
             </div>
-            <div className="flex items-center gap-2 text-slate-400">
+            <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
               <span className="h-3 w-3 rounded-full border border-slate-600"></span>
               <span>Step 4: Auditing E-E-A-T entity gaps against high-ranking competitors</span>
             </div>
-            <div className="flex items-center gap-2 text-slate-400">
+            <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
               <span className="h-3 w-3 rounded-full border border-slate-600"></span>
               <span>Step 5: Compiling interconnected @graph JSON-LD schema (WebPage + Article + FAQPage)</span>
             </div>
@@ -426,7 +426,7 @@ export default function SeoOptimizerAgentClient() {
               </span>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
-                  <span className="text-[11px] font-bold uppercase text-slate-400">
+                  <span className="text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400">
                     Classified Primary Intent
                   </span>
                   <p className="mt-1 text-sm font-black text-slate-900 dark:text-white">
@@ -434,7 +434,7 @@ export default function SeoOptimizerAgentClient() {
                   </p>
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
-                  <span className="text-[11px] font-bold uppercase text-slate-400">
+                  <span className="text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400">
                     Buyer / Reader Stage
                   </span>
                   <p className="mt-1 text-sm font-black text-slate-900 dark:text-white">
@@ -443,7 +443,7 @@ export default function SeoOptimizerAgentClient() {
                 </div>
               </div>
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
-                <span className="text-[11px] font-bold uppercase text-slate-400">
+                <span className="text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400">
                   AEO &amp; AI Overview Citation Strategy
                 </span>
                 <p className="mt-1 text-xs leading-relaxed text-slate-700 dark:text-slate-200">
@@ -451,7 +451,7 @@ export default function SeoOptimizerAgentClient() {
                 </p>
               </div>
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
-                <span className="text-[11px] font-bold uppercase text-slate-400">
+                <span className="text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400">
                   Target Query &amp; Keyword Cluster
                 </span>
                 <div className="mt-2 flex flex-wrap gap-2">
@@ -552,7 +552,7 @@ export default function SeoOptimizerAgentClient() {
                 {pack.step3AeoPowerAnswer.powerAnswerText}
               </p>
 
-              <pre className="overflow-x-auto rounded-2xl border border-slate-200 bg-slate-950 p-4 text-xs text-emerald-300 dark:border-slate-800">
+              <pre className="overflow-x-auto rounded-2xl border border-slate-200 bg-white dark:bg-slate-950 p-4 text-xs text-emerald-300 dark:border-slate-800">
                 {pack.step3AeoPowerAnswer.htmlSnippetBlock}
               </pre>
             </div>
@@ -610,7 +610,7 @@ export default function SeoOptimizerAgentClient() {
                   Copy JSON-LD
                 </button>
               </div>
-              <pre className="max-h-96 overflow-auto rounded-2xl border border-slate-200 bg-slate-950 p-4 text-xs text-sky-300 dark:border-slate-800">
+              <pre className="max-h-96 overflow-auto rounded-2xl border border-slate-200 bg-white dark:bg-slate-950 p-4 text-xs text-sky-300 dark:border-slate-800">
                 {pack.step5JsonLdGraph}
               </pre>
             </div>

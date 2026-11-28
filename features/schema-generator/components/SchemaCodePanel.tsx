@@ -136,7 +136,7 @@ export default function SchemaCodePanel({ state, evaluation }: Props) {
 
   return (
     <aside className="space-y-5 lg:sticky lg:top-24 lg:self-start">
-      <section className="overflow-hidden rounded-[26px] border border-slate-800 bg-slate-950 text-white shadow-[0_28px_80px_-36px_rgba(15,23,42,0.85)]">
+      <section className="overflow-hidden rounded-[26px] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-white shadow-[0_28px_80px_-36px_rgba(15,23,42,0.85)]">
         <div className="border-b border-white/10 p-5 sm:p-6">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -146,7 +146,7 @@ export default function SchemaCodePanel({ state, evaluation }: Props) {
               <h2 className="mt-3 text-xl font-black">
                 Publish-ready workspace
               </h2>
-              <p className="mt-1 text-xs leading-5 text-slate-400">
+              <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
                 Empty optional properties are omitted. Connected nodes reuse
                 stable @id references.
               </p>
@@ -170,8 +170,8 @@ export default function SchemaCodePanel({ state, evaluation }: Props) {
                 key={label}
                 className="rounded-xl border border-white/10 bg-white/[0.05] p-3 text-center"
               >
-                <p className="text-sm font-black text-white">{value}</p>
-                <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                <p className="text-sm font-black text-slate-900 dark:text-white">{value}</p>
+                <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   {label}
                 </p>
               </div>
@@ -251,7 +251,7 @@ export default function SchemaCodePanel({ state, evaluation }: Props) {
                   setEditMode(false);
                 }}
                 title="Reset to form-compiled output"
-                className="inline-flex items-center gap-1 rounded-lg border border-white/15 px-2 py-1.5 text-[11px] font-bold text-slate-300 hover:text-white"
+                className="inline-flex items-center gap-1 rounded-lg border border-white/15 px-2 py-1.5 text-[11px] font-bold text-slate-700 dark:text-slate-300 hover:text-white"
               >
                 <RotateCcw className="h-3 w-3" />
                 Reset
@@ -260,7 +260,7 @@ export default function SchemaCodePanel({ state, evaluation }: Props) {
           </div>
           <div className="flex items-center gap-2">
             <div className="hidden items-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] p-0.5 sm:flex">
-              <ZoomIn className="ml-1 h-3 w-3 text-slate-400" />
+              <ZoomIn className="ml-1 h-3 w-3 text-slate-500 dark:text-slate-400" />
               {([100, 115, 130] as const).map((z) => (
                 <button
                   key={z}
@@ -295,7 +295,7 @@ export default function SchemaCodePanel({ state, evaluation }: Props) {
               spellCheck={false}
               aria-label="Editable JSON-LD code"
               style={{ fontSize: `${Math.round(12 * (codeZoom / 100))}px` }}
-              className="w-full rounded-xl border border-blue-400/30 bg-slate-950 p-3 font-mono leading-5 text-emerald-200 focus:border-[#5271ff] focus:outline-none"
+              className="w-full rounded-xl border border-blue-400/30 bg-white dark:bg-slate-950 p-3 font-mono leading-5 text-emerald-200 focus:border-[#5271ff] focus:outline-none"
             />
           </div>
         ) : (
@@ -325,7 +325,7 @@ export default function SchemaCodePanel({ state, evaluation }: Props) {
             onClick={() =>
               download(editMode ? activeCode : jsonCode, "jsonld")
             }
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2.5 text-xs font-bold text-slate-200 transition hover:bg-white/10"
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2.5 text-xs font-bold text-slate-800 dark:text-slate-200 transition hover:bg-white/10"
           >
             <Download className="h-4 w-4" /> Download .jsonld
           </button>
@@ -334,7 +334,7 @@ export default function SchemaCodePanel({ state, evaluation }: Props) {
             onClick={() =>
               download(editMode ? activeCode : scriptCode, "html")
             }
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2.5 text-xs font-bold text-slate-200 transition hover:bg-white/10"
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2.5 text-xs font-bold text-slate-800 dark:text-slate-200 transition hover:bg-white/10"
           >
             <FileCode2 className="h-4 w-4" /> Download .html
           </button>

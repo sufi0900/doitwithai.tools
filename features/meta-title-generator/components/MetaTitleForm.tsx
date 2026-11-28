@@ -151,20 +151,10 @@ export default function MetaTitleForm({
     <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_24px_70px_-34px_rgba(15,23,42,0.4)] dark:border-slate-800 dark:bg-slate-900">
       <div className="grid lg:grid-cols-[minmax(0,1fr)_280px]">
         <form onSubmit={submit} className="space-y-6 p-5 sm:p-7 lg:p-9">
-          <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-100 pb-6 dark:border-slate-800">
-            <div>
-              <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-[#5271ff]/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-[#4662df]">
-                <WandSparkles className="h-3.5 w-3.5" />
-                Page brief
-              </div>
-              <h2 className="text-2xl font-extrabold tracking-tight text-slate-950 dark:text-white">
-                Tell the tool what the page actually delivers
-              </h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">
-                Better context produces titles that are specific, accurate, and
-                easier to refine.
-              </p>
-            </div>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4 dark:border-slate-800">
+            <span className="text-sm font-bold text-slate-700 dark:text-slate-200">
+              Page brief &amp; title context
+            </span>
             <div className="flex gap-2">
               <button
                 type="button"
@@ -221,7 +211,7 @@ export default function MetaTitleForm({
               placeholder="Example: A step-by-step guide that helps local businesses..."
               className={`${inputClass} resize-y`}
             />
-            <div className="mt-1 text-right text-[11px] font-medium text-slate-400">
+            <div className="mt-1 text-right text-[11px] font-medium text-slate-500 dark:text-slate-400">
               {form.topicSummary.length.toLocaleString()} / 5,000
             </div>
           </FormField>
@@ -499,12 +489,12 @@ export default function MetaTitleForm({
           </button>
         </form>
 
-        <aside className="border-t border-slate-200 bg-slate-950 p-6 text-white lg:border-l lg:border-t-0 lg:p-7">
+        <aside className="border-t border-slate-200 bg-white dark:bg-slate-950 p-6 text-slate-900 dark:text-white lg:border-l lg:border-t-0 lg:p-7">
           <div className="sticky top-28 space-y-7">
             <div>
-              <div className="flex items-center justify-between text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
+              <div className="flex items-center justify-between text-xs font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">
                 <span>Brief readiness</span>
-                <span className="text-white">{readiness}%</span>
+                <span className="text-slate-900 dark:text-white">{readiness}%</span>
               </div>
               <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
                 <div
@@ -512,14 +502,14 @@ export default function MetaTitleForm({
                   style={{ width: `${readiness}%` }}
                 />
               </div>
-              <p className="mt-3 text-xs leading-5 text-slate-400">
+              <p className="mt-3 text-xs leading-5 text-slate-500 dark:text-slate-400">
                 Add the page promise and secondary context to improve
                 differentiation.
               </p>
             </div>
 
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">
                 M.E.T.A. method
               </p>
               <div className="mt-4 space-y-3">
@@ -538,7 +528,7 @@ export default function MetaTitleForm({
                     </div>
                     <div>
                       <p className="text-sm font-bold">{label}</p>
-                      <p className="mt-0.5 text-[11px] leading-4 text-slate-400">
+                      <p className="mt-0.5 text-[11px] leading-4 text-slate-500 dark:text-slate-400">
                         {description}
                       </p>
                     </div>

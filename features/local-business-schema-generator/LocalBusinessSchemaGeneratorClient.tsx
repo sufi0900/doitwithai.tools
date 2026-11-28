@@ -461,8 +461,8 @@ export default function LocalBusinessSchemaGeneratorClient() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-[#0D1322] p-5 text-white shadow-xl sm:p-6">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3.5">
+          <div className="rounded-2xl border border-slate-200 bg-[#0D1322] p-5 text-slate-900 dark:text-white shadow-xl sm:p-6">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-3.5">
               <div className="flex gap-1.5">
                 <button
                   type="button"
@@ -504,7 +504,7 @@ export default function LocalBusinessSchemaGeneratorClient() {
                     }
                     setIsEditingRaw((prev) => !prev);
                   }}
-                  className="inline-flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-800 px-2.5 py-1.5 text-xs font-bold text-slate-200 hover:border-[#5271ff]"
+                  className="inline-flex items-center gap-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-800 px-2.5 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 hover:border-[#5271ff]"
                 >
                   <Edit3 size={12} />
                   {isEditingRaw ? "Compiled View" : "Edit Code"}
@@ -515,7 +515,7 @@ export default function LocalBusinessSchemaGeneratorClient() {
                     await navigator.clipboard.writeText(activeOutput);
                     notify("Copied LocalBusiness JSON-LD markup!");
                   }}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-[#3b63fb] px-3.5 py-1.5 text-xs font-bold text-white hover:bg-[#294fe0]"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-[#3b63fb] px-3.5 py-1.5 text-xs font-bold text-slate-900 dark:text-white hover:bg-[#294fe0]"
                 >
                   <Copy size={13} />
                   Copy Schema
@@ -523,7 +523,7 @@ export default function LocalBusinessSchemaGeneratorClient() {
                 <button
                   type="button"
                   onClick={downloadJsonFile}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-200 hover:border-[#5271ff]"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 hover:border-[#5271ff]"
                 >
                   <Download size={13} />
                   .JSON
@@ -538,7 +538,7 @@ export default function LocalBusinessSchemaGeneratorClient() {
                 onChange={(e) => setRawOverride(e.target.value)}
                 spellCheck={false}
                 aria-label="Direct LocalBusiness JSON-LD editor"
-                className="mt-4 w-full rounded-xl border border-[#5271ff] bg-slate-950 p-3 font-mono text-xs leading-6 text-emerald-300 focus:outline-none"
+                className="mt-4 w-full rounded-xl border border-[#5271ff] bg-white dark:bg-slate-950 p-3 font-mono text-xs leading-6 text-emerald-300 focus:outline-none"
               />
             ) : (
               <pre className="mt-4 max-h-[420px] overflow-auto whitespace-pre-wrap break-words font-mono text-xs leading-6 text-emerald-300">
@@ -546,7 +546,7 @@ export default function LocalBusinessSchemaGeneratorClient() {
               </pre>
             )}
 
-            <div className="mt-4 flex items-center justify-between border-t border-slate-800 pt-3 text-xs text-slate-400">
+            <div className="mt-4 flex items-center justify-between border-t border-slate-200 dark:border-slate-800 pt-3 text-xs text-slate-500 dark:text-slate-400">
               <span className="flex items-center gap-1.5">
                 <Code2 size={14} className="text-sky-400" />
                 Paste inside your page <code>&lt;head&gt;</code> or footer

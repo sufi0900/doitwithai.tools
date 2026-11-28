@@ -28,8 +28,8 @@ export default function AiWorkflowBlueprintGeneratorClient() {
 
   return (
     <div id="ai-workflow-blueprint-workspace" className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-      <div className="lg:col-span-5 space-y-4 rounded-2xl border border-slate-800 bg-slate-900/85 p-5">
-        <h2 className="text-base font-bold text-white">1. Make, Zapier & n8n Workflow Inputs</h2>
+      <div className="lg:col-span-5 space-y-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/85 p-5">
+        <h2 className="text-base font-bold text-slate-900 dark:text-white">1. Make, Zapier & n8n Workflow Inputs</h2>
         <div className="grid grid-cols-3 gap-2">
           {(["n8n", "Make.com", "Zapier"] as const).map((p) => (
             <button
@@ -47,14 +47,14 @@ export default function AiWorkflowBlueprintGeneratorClient() {
           ))}
         </div>
         <div>
-          <label className="block text-xs font-semibold uppercase text-slate-300 mb-1">
+          <label className="block text-xs font-semibold uppercase text-slate-700 dark:text-slate-300 mb-1">
             1. Trigger App / Event
           </label>
           <input
             type="text"
             value={triggerApp}
             onChange={(e) => setTriggerApp(e.target.value)}
-            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-white"
+            className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-xs text-slate-900 dark:text-white"
           />
         </div>
         <div>
@@ -65,7 +65,7 @@ export default function AiWorkflowBlueprintGeneratorClient() {
             rows={3}
             value={aiAction}
             onChange={(e) => setAiAction(e.target.value)}
-            className="w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-xs text-white"
+            className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 p-3 text-xs text-slate-900 dark:text-white"
           />
         </div>
         <div>
@@ -76,13 +76,13 @@ export default function AiWorkflowBlueprintGeneratorClient() {
             type="text"
             value={destinationApp}
             onChange={(e) => setDestinationApp(e.target.value)}
-            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-white"
+            className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-xs text-slate-900 dark:text-white"
           />
         </div>
       </div>
 
       <div className="lg:col-span-7 space-y-4">
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-5 space-y-3">
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/90 p-5 space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase text-indigo-300">
               {platform} Importable Workflow Architecture JSON
@@ -99,7 +99,7 @@ export default function AiWorkflowBlueprintGeneratorClient() {
               {copied ? "✓ Copied JSON" : "Copy Blueprint JSON"}
             </button>
           </div>
-          <pre className="rounded-xl border border-slate-800 bg-slate-950 p-4 text-xs text-emerald-300 whitespace-pre-wrap font-mono">
+          <pre className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-4 text-xs text-emerald-300 whitespace-pre-wrap font-mono">
             {blueprint.jsonBlueprint}
           </pre>
         </div>

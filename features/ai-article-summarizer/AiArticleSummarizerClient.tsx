@@ -173,12 +173,12 @@ export default function AiArticleSummarizerClient() {
       />
 
       {/* Presets */}
-      <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/70 p-4">
         <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
           <span className="text-xs font-semibold uppercase tracking-wider text-indigo-400">
             Test with High-Citation Editorial Presets
           </span>
-          <span className="text-xs text-slate-400">
+          <span className="text-xs text-slate-500 dark:text-slate-400">
             Calibrated for the 45–55 word Google AI Overview & Perplexity citation window
           </span>
         </div>
@@ -211,18 +211,18 @@ export default function AiArticleSummarizerClient() {
       {/* Main Studio Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left Inputs */}
-        <div className="lg:col-span-5 space-y-4 rounded-2xl border border-slate-800 bg-slate-900/85 p-5">
-          <h2 className="text-base font-bold text-white">1. Article Text & Summary Box Target</h2>
+        <div className="lg:col-span-5 space-y-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/85 p-5">
+          <h2 className="text-base font-bold text-slate-900 dark:text-white">1. Article Text & Summary Box Target</h2>
 
           <div>
-            <label className="block text-xs font-semibold uppercase text-slate-300 mb-1">
+            <label className="block text-xs font-semibold uppercase text-slate-700 dark:text-slate-300 mb-1">
               Article Title (H1)
             </label>
             <input
               type="text"
               value={articleTitle}
               onChange={(e) => setArticleTitle(e.target.value)}
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-white"
+              className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-xs text-slate-900 dark:text-white"
             />
           </div>
 
@@ -234,12 +234,12 @@ export default function AiArticleSummarizerClient() {
               type="text"
               value={primaryKeyword}
               onChange={(e) => setPrimaryKeyword(e.target.value)}
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-white"
+              className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-xs text-slate-900 dark:text-white"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase text-slate-300 mb-1">
+            <label className="block text-xs font-semibold uppercase text-slate-700 dark:text-slate-300 mb-1">
               Full Article Draft or Long-Form Passage
             </label>
             <textarea
@@ -249,12 +249,12 @@ export default function AiArticleSummarizerClient() {
                 setArticleBody(e.target.value);
                 setAiBoxOverride(null);
               }}
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-xs text-slate-100"
+              className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 p-3 text-xs text-slate-900 dark:text-slate-100"
             />
           </div>
 
           <div>
-            <div className="flex justify-between text-xs font-semibold text-slate-300 mb-1">
+            <div className="flex justify-between text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
               <span>Target Summary Box Length</span>
               <span className="text-emerald-400">{targetWordCount} words (AEO Sweet Spot: 45–55w)</span>
             </div>
@@ -285,8 +285,8 @@ export default function AiArticleSummarizerClient() {
 
         {/* Right Output */}
         <div className="lg:col-span-7 space-y-4">
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-5 space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/90 p-5 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
@@ -333,7 +333,7 @@ export default function AiArticleSummarizerClient() {
                   4. HTML / Tailwind Callout Box
                 </button>
               </div>
-              <span className="text-[11px] text-slate-400">{aiSourceTier}</span>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400">{aiSourceTier}</span>
             </div>
 
             {activeTab === "box" && (
@@ -351,7 +351,7 @@ export default function AiArticleSummarizerClient() {
                       {copiedKey === "box" ? "✓ Copied Summary Box" : "Copy 50-Word Box"}
                     </button>
                   </div>
-                  <p className="text-sm text-white leading-relaxed font-medium">
+                  <p className="text-sm text-slate-900 dark:text-white leading-relaxed font-medium">
                     {displayedFiftyWordBox}
                   </p>
                 </div>
@@ -360,7 +360,7 @@ export default function AiArticleSummarizerClient() {
 
             {activeTab === "tldr" && (
               <div className="space-y-3">
-                <ul className="space-y-2 text-xs text-slate-200 list-disc pl-5">
+                <ul className="space-y-2 text-xs text-slate-800 dark:text-slate-200 list-disc pl-5">
                   {summaryData.tldrBullets.map((b, i) => (
                     <li key={i} className="leading-relaxed">
                       {b}
@@ -402,7 +402,7 @@ export default function AiArticleSummarizerClient() {
                     {copiedKey === "html" ? "✓ Copied HTML" : "Copy HTML Box"}
                   </button>
                 </div>
-                <pre className="rounded-xl border border-slate-800 bg-slate-950 p-4 text-xs text-slate-200 whitespace-pre-wrap font-mono max-h-72 overflow-y-auto">
+                <pre className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-4 text-xs text-slate-800 dark:text-slate-200 whitespace-pre-wrap font-mono max-h-72 overflow-y-auto">
                   {summaryData.htmlCalloutSnippet}
                 </pre>
               </div>

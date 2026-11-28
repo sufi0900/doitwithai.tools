@@ -710,7 +710,7 @@ export default function DisavowFileGeneratorClient() {
                 <div className="relative">
                   <Search
                     size={14}
-                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400"
                   />
                   <input
                     type="search"
@@ -844,10 +844,10 @@ export default function DisavowFileGeneratorClient() {
                   onChange={(e) => setCustomDisavowText(e.target.value)}
                   spellCheck={false}
                   aria-label="Editable disavow.txt content"
-                  className="mt-4 w-full rounded-xl border border-[#4058D0] bg-slate-950 p-4 font-mono text-xs leading-6 text-emerald-300 focus:outline-none"
+                  className="mt-4 w-full rounded-xl border border-[#4058D0] bg-white dark:bg-slate-950 p-4 font-mono text-xs leading-6 text-emerald-300 focus:outline-none"
                 />
               ) : (
-                <pre className="mt-4 max-h-[500px] w-full max-w-full overflow-auto whitespace-pre-wrap break-words rounded-xl border border-slate-200 bg-slate-950 p-4 font-mono text-xs leading-6 text-emerald-300 dark:border-slate-700">
+                <pre className="mt-4 max-h-[500px] w-full max-w-full overflow-auto whitespace-pre-wrap break-words rounded-xl border border-slate-200 bg-white dark:bg-slate-950 p-4 font-mono text-xs leading-6 text-emerald-300 dark:border-slate-700">
                   {report.disavowTxtContent}
                 </pre>
               )}

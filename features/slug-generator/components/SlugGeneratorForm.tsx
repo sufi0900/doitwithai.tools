@@ -126,7 +126,7 @@ export default function SlugGeneratorForm({ busy, onSubmit }: Props) {
               placeholder="Example: A review page for an AI browser extension that explains its features, pricing, use cases, benefits, and limitations..."
               className={`${inputClass} resize-y`}
             />
-            <div className="mt-1 text-right text-[11px] font-medium text-slate-400">
+            <div className="mt-1 text-right text-[11px] font-medium text-slate-500 dark:text-slate-400">
               {form.pageContext.length.toLocaleString()} / 4,000
             </div>
           </FormField>
@@ -229,7 +229,7 @@ export default function SlugGeneratorForm({ busy, onSubmit }: Props) {
           </div>
         </form>
 
-        <aside className="border-t border-slate-200 bg-slate-950 p-6 text-white dark:border-slate-800 lg:border-l lg:border-t-0 lg:p-7">
+        <aside className="border-t border-slate-200 bg-white dark:bg-slate-950 p-6 text-slate-900 dark:text-white dark:border-slate-800 lg:border-l lg:border-t-0 lg:p-7">
           <p className="text-xs font-extrabold uppercase tracking-[0.17em] text-blue-300">
             What happens next
           </p>
@@ -257,7 +257,7 @@ export default function SlugGeneratorForm({ busy, onSubmit }: Props) {
                 </span>
                 <div>
                   <p className="text-sm font-extrabold">{title}</p>
-                  <p className="mt-1 text-xs leading-5 text-slate-400">
+                  <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
                     {text}
                   </p>
                 </div>
@@ -268,7 +268,7 @@ export default function SlugGeneratorForm({ busy, onSubmit }: Props) {
             <p className="text-xs font-bold text-cyan-200">
               Not a text converter
             </p>
-            <p className="mt-2 text-xs leading-5 text-slate-300">
+            <p className="mt-2 text-xs leading-5 text-slate-700 dark:text-slate-300">
               Your sentence is context. The output is a new, compact page
               identifier—not the same sentence with hyphens inserted.
             </p>
