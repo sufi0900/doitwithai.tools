@@ -1,19 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import ToolCatalog from "@/features/tool-catalog/ToolCatalog";
-import {
-  categories,
-  categoryPath,
-  collectionSchema,
-  tools,
-} from "@/features/tool-catalog/catalog";
+import { collectionSchema, tools } from "@/features/tool-catalog/catalog";
 import { topics, getTopicMeta } from "@/features/tool-catalog/discovery";
 
 export const metadata: Metadata = {
   title:
     "Free AI SEO, Content Writing & Digital Marketing Tools | Do It With AI Tools",
-  description:
-    "Explore 84+ free AI tools for SEO, keyword research, content writing, technical schema, and social media marketing. Built for practical workflows and human review.",
+  description: `Explore ${tools.length}+ free AI tools for SEO, keyword research, content writing, technical schema, and social media marketing. Built for practical workflows and human review.`,
   alternates: { canonical: "https://doitwithai.tools/tools" },
   openGraph: {
     title: "Free AI SEO, Content Writing & Digital Marketing Tools",
@@ -60,111 +54,40 @@ export default function ToolsPage() {
     ],
   };
   return (
-    <div className="bg-slate-50 pb-20 pt-6 text-slate-900 dark:bg-[#0F1523] dark:text-white sm:pt-8">
+    <div className="bg-slate-50 pb-20 text-slate-900 dark:bg-[#0F1523] dark:text-white">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(fullSchema).replace(/</g, "\\u003c"),
         }}
       />
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Compact Breadcrumb + Workspace Stats */}
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
-          <nav aria-label="Breadcrumb" className="flex items-center gap-1.5">
-            <Link
-              href="/"
-              className="font-medium transition hover:text-[#5271FF]"
-            >
+      <header className="border-b border-white/10 bg-[#14171D] text-white">
+        <div className="mx-auto max-w-7xl px-4 pb-7 pt-5 sm:px-6 sm:pb-8 sm:pt-6 lg:px-8">
+          <nav
+            aria-label="Breadcrumb"
+            className="flex items-center gap-1.5 text-xs text-slate-400"
+          >
+            <Link href="/" className="font-medium transition hover:text-white">
               Home
             </Link>
             <span aria-hidden="true">/</span>
-            <span
-              aria-current="page"
-              className="font-bold text-slate-800 dark:text-slate-200"
-            >
-              Tools Workspace
+            <span aria-current="page" className="font-medium text-slate-200">
+              Tools
             </span>
           </nav>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full border border-[#5271FF]/30 bg-[#5271FF]/10 px-3 py-1 text-[11px] font-bold text-[#4A6CF7] dark:text-[#AEBBFF]">
-              {tools.length} Live Tools
-            </span>
-            <Link
-              href="/ai-content-writer"
-              className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-[11px] font-extrabold text-emerald-700 transition hover:bg-emerald-500/20 dark:text-emerald-300"
-            >
-              ✦ Flagship AI Content Writer
-            </Link>
-            <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-600 dark:border-slate-800 dark:bg-[#161F30] dark:text-slate-300">
-              {topics.length} Marketing Disciplines
-            </span>
-          </div>
+
+          <h1 className="mt-2.5 text-2xl font-extrabold tracking-[-0.02em] text-white sm:text-3xl">
+            Free AI SEO &amp; Content Writing Tools
+          </h1>
+          <p className="mt-1.5 max-w-2xl text-sm leading-6 text-slate-300">
+            Run free on-page SEO audits, keyword research, technical schema
+            checks, AI search (GEO) checks, and content conversion tools — built
+            for fast human review.
+          </p>
         </div>
+      </header>
 
-        {/* Streamlined, High-Impact Hero Header (keeps Tool Finder above the fold) */}
-        <header className="relative overflow-hidden rounded-3xl border border-[#5271FF]/25 bg-gradient-to-br from-[#131C31] via-[#18233C] to-[#1E2C4F] p-6 text-white shadow-xl sm:p-8">
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-[#5271FF]/20 blur-3xl"
-          />
-          <div className="relative z-10 flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
-            <div className="max-w-2xl">
-              <p className="inline-flex items-center gap-2 rounded-full border border-[#AEBBFF]/25 bg-white/5 px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-[#AEBBFF]">
-                Digital Marketing & SEO Workspace
-              </p>
-              <h1 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">
-                Less busywork.{" "}
-                <span className="bg-gradient-to-r from-[#AEBBFF] via-blue-200 to-cyan-200 bg-clip-text text-transparent">
-                  More useful work.
-                </span>
-              </h1>
-              <p className="mt-2.5 text-sm leading-6 text-slate-300 sm:text-base">
-                Practical utilities for On-Page SEO, Technical SEO, Off-Page
-                SEO, Content Writing, Keyword Research, AI Search (GEO), and
-                Social Media workflows. Built for fast human review before
-                publishing.
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-2.5 lg:items-end">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-[#AEBBFF]">
-                Browse Hub Collections
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {categories
-                  .filter(
-                    (c) =>
-                      c.slug === "content-conversion" ||
-                      tools.some((t) => t.categories.includes(c.slug)),
-                  )
-                  .map((category) => (
-                    <Link
-                      key={category.slug}
-                      href={categoryPath(category.slug)}
-                      className={`rounded-xl border px-3.5 py-2 text-xs font-bold backdrop-blur-sm transition ${category.slug === "content-conversion" ? "border-orange-200/30 bg-orange-300/10 text-orange-100 hover:bg-orange-300/20" : "border-white/[0.15] bg-white/10 text-white hover:border-[#AEBBFF]/50 hover:bg-white/20"}`}
-                    >
-                      {category.name}{" "}
-                      {category.slug === "content-conversion" &&
-                      !tools.some((t) => t.categories.includes(category.slug))
-                        ? "· Planned"
-                        : `(${
-                            tools.filter((t) =>
-                              t.categories.includes(category.slug),
-                            ).length
-                          })`}
-                    </Link>
-                  ))}
-                <Link
-                  href="/tools/categories"
-                  className="rounded-xl border border-[#AEBBFF]/30 bg-[#5271FF]/25 px-3.5 py-2 text-xs font-bold text-[#AEBBFF] transition hover:bg-[#5271FF]/40 hover:text-white"
-                >
-                  All Categories →
-                </Link>
-              </div>
-            </div>
-          </div>
-        </header>
-
+      <div className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 lg:px-8">
         {/* Main Interactive Tool Catalog */}
         <ToolCatalog />
 
