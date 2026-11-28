@@ -17,7 +17,7 @@ export type ResearchMode = "auto" | "web" | "off";
 
 export function requestsResearch(question: string) {
   if (/\b(?:do not|don't|without|no need to)\s+(?:use the web|research|search|browse)\b/i.test(question)) return false;
-  return /https?:\/\/|\b(?:web research|web search|search (?:the web|online|for)|look up|browse|research (?:online|this|a|the|for)|competitor analysis|(?:find|add|include|verify).{0,55}(?:stats|statistics?|research|current data|sources|competitors)|latest|up-to-date)\b/i.test(question);
+  return requestsEmpiricalEvidence(question) || /https?:\/\/|\b(?:web research|web search|search (?:the web|online|for)|look up|browse|research (?:online|this|a|the|for)|competitor analysis|(?:find|add|include|verify).{0,55}(?:stats|statistics?|research|current data|sources|competitors)|latest|up-to-date)\b/i.test(question);
 }
 
 export type AssistantReply = {
@@ -29,6 +29,7 @@ export type AssistantReply = {
   change?: DraftChange;
   researchNote?: string;
   focusSectionId?: string;
+  turnContext?: { topic: string; linkScope: "none" | "internal" | "external" | "both"; referent?: "continue" | "switch" };
   sources?: Array<{ title: string; url: string }>;
 };
 
@@ -89,7 +90,9 @@ export type AssistantTurn = {
 export type AssistantThread = { id: string; passage?: Passage; turns: AssistantTurn[]; savedAt?: number };
 
 export function assistantContinuity(previous: AssistantTurn[]) {
-  const completed = previous.filter((turn) => turn.answer);
+  const allCompleted = previous.filter((turn) => turn.answer);
+  const switchIndex = allCompleted.findLastIndex((turn) => turn.answer?.turnContext?.referent === "switch");
+  const completed = switchIndex < 0 ? allCompleted : allCompleted.slice(switchIndex);
   const recent = completed.at(-1);
   const activeProposal = completed.slice().reverse().find((item) => item.proposal?.status === "pending" || item.proposal?.status === "applied");
   const sectionTurn = completed.slice().reverse().find((turn) => turn.answer?.focusSectionId || turn.proposal?.sectionId);
@@ -99,8 +102,22 @@ export function assistantContinuity(previous: AssistantTurn[]) {
   const proposal = original && (!sectionId || sectionId === original.sectionId || recent?.id === activeProposal?.id)
     ? { kind: original.kind, markdown: original.markdown.slice(0, 24000), sectionId: original.sectionId, status: original.status === "applied" ? "applied" : "pending" }
     : undefined;
+  const topicTurn = completed.findLast((turn) => Boolean(turn.answer?.turnContext?.topic));
+  const linkTurn = completed.findLast((turn) => turn.answer?.turnContext?.linkScope && turn.answer.turnContext.linkScope !== "none");
+  const constraints = completed.map((turn) => turn.question)
+    .filter((question) => /\b(?:keep|preserve|only|without|do not|don.t|instead|actually|must)\b/i.test(question))
+    .slice(-5).map((question) => question.slice(0, 300));
+  const claims = [proposal?.markdown || "", ...completed.slice(-8).reverse().map((turn) => turn.answer?.reply || "")]
+    .flatMap((value) => value.split(/(?<=[.!?])\s+|\n/))
+    .filter((sentence) => /\d\s*%|\b(?:study|benchmark|report|found that)\b/i.test(sentence))
+    .slice(0, 4).map((sentence) => sentence.trim().slice(0, 400));
   return {
-    focus: { sectionId: latestFocus, proposal, request: activeProposal?.question.slice(0, 1500) || "" },
+    focus: {
+      sectionId: latestFocus, proposal, request: activeProposal?.question.slice(0, 1500) || "",
+      topic: topicTurn?.answer?.turnContext?.topic,
+      linkScope: linkTurn?.answer?.turnContext?.linkScope,
+      constraints, claims,
+    },
     history: completed.slice(-8).map((turn) => ({
       question: turn.question.slice(0, 3000),
       reply: turn.answer!.reply.slice(0, 4000),
@@ -110,10 +127,21 @@ export function assistantContinuity(previous: AssistantTurn[]) {
 
 export function assistantLinkIntent(question: string, recentQuestion = ""): { internal: boolean; authority: boolean } {
   const internal = /\b(?:internal (?:link(?:ing|s)?|source)|link to (?:my|our|the same) (?:site|website|blog))\b/i.test(question);
-  const authority = /\b(?:external (?:link(?:ing|s)?|sources?)|first[- ]party|authority (?:sites?|sources?|links?|websites?)|authoritative (?:links?|sources?|websites?)|official (?:links?|sources?|documentation|reference))\b/i.test(question);
+  const authority = /\b(?:external (?:link(?:ing|s)?|sources?)|first[- ]party|authority (?:sites?|sources?|links?|websites?)|authoritative (?:links?|sources?|websites?)|web sources?|hyperl?i?n?k|cite|citations?|study link|official (?:links?|sources?|documentation|reference))\b/i.test(question);
+  if (internal && !/\b(?:external|first[- ]party|authority|web sources?)\b/i.test(question)) return { internal: true, authority: false };
   if (!internal && !authority && /\b(?:another|different|one more|same|that|it)\b/i.test(question) &&
       /\b(?:links?|sources?|citations?|find|add|insert|replace)\b/i.test(question)) {
     return recentQuestion ? assistantLinkIntent(recentQuestion) : { internal, authority };
   }
   return { internal, authority };
+}
+
+export function disablesResearch(question: string) {
+  return /\b(?:do not|don.t|without|no need to|never)\s+(?:use the web|research|search|browse)\b/i.test(question);
+}
+
+export function requestsEmpiricalEvidence(question: string) {
+  return !/\b(?:hypothetical|fictional|made[- ]up|illustrative numbers)\b/i.test(question) &&
+    /\b(?:stats|statist(?:ic(?:al|s)?|ical data)|statstical|percentages?|percent|benchmarks?|benchmrk|stud(?:y|ies)|surveys?|research data|current data)\b|%age\b/i.test(question) &&
+    /\b(?:find|add|include|verify|compare|give|show|cite|link|latest|real|look up|source|do|karo)\b|%age\b/i.test(question);
 }

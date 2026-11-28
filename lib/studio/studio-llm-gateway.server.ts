@@ -317,6 +317,8 @@ export type StudioGenerationOptions = {
   temperature?: number;
   profile?: "editorial" | "fast";
   allowThinking?: boolean;
+  deadline?: AbortSignal;
+  compact?: boolean;
 };
 
 async function executeStudioGeneration<T>(
@@ -353,7 +355,7 @@ async function executeStudioGeneration<T>(
   // Ensure thinking/JSON formatting never starves output tokens
   const effectiveMaxTokens = Math.min(
     8192,
-    Math.max(params.max_output_tokens || 2600, isEditorial ? 5200 : 4096),
+    Math.max(params.max_output_tokens || 2600, options.compact ? 256 : isEditorial ? 5200 : 4096),
   );
   const timeoutMs = Math.min(Math.max(options.timeout ?? 42_000, 12_000), 55_000);
   const temperature = options.temperature ?? (isEditorial ? 0.58 : 0.35);
@@ -364,6 +366,7 @@ async function executeStudioGeneration<T>(
   for (let keyIdx = 0; keyIdx < geminiKeys.length; keyIdx++) {
     const activeKey = geminiKeys[keyIdx]!;
     for (let modelIdx = 0; modelIdx < candidateModels.length; modelIdx++) {
+      options.deadline?.throwIfAborted();
       const targetModel = candidateModels[modelIdx]!;
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -427,7 +430,7 @@ async function executeStudioGeneration<T>(
               "x-goog-api-key": activeKey,
             },
             cache: "no-store",
-            signal: controller.signal,
+            signal: options.deadline ? AbortSignal.any([options.deadline, controller.signal]) : controller.signal,
             body: buildRequestBody(useResponseJsonSchema, includeZeroThinking),
           },
         );
@@ -504,6 +507,7 @@ async function executeStudioGeneration<T>(
 
   // 2. Optional Dedicated Groq LPU Fallback (if configured via AUTONOMOUS_AUTOMATION_GROQ_KEY)
   for (let keyIdx = 0; keyIdx < groqKeys.length; keyIdx++) {
+    options.deadline?.throwIfAborted();
     const activeKey = groqKeys[keyIdx]!;
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -538,7 +542,7 @@ async function executeStudioGeneration<T>(
             Authorization: `Bearer ${activeKey}`,
           },
           cache: "no-store",
-          signal: controller.signal,
+          signal: options.deadline ? AbortSignal.any([options.deadline, controller.signal]) : controller.signal,
           body: JSON.stringify({
             model: STUDIO_GROQ_DEFAULT_MODEL,
             messages: [
@@ -932,6 +936,8 @@ export async function generateStudioStructured<T extends z.ZodType>(options: {
   maxOutputTokens?: number;
   temperature?: number;
   timeoutMs?: number;
+  deadline?: AbortSignal;
+  compact?: boolean;
 }): Promise<{ data: z.infer<T>; provider: string; model: string }> {
   const res = await executeStudioGeneration(
     {
@@ -949,6 +955,9 @@ export async function generateStudioStructured<T extends z.ZodType>(options: {
     {
       timeout: options.timeoutMs ?? 38_000,
       temperature: options.temperature ?? 0.35,
+      deadline: options.deadline,
+      compact: options.compact,
+      allowThinking: options.compact ? false : undefined,
     },
   );
   return {

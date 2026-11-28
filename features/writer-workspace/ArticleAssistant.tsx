@@ -365,7 +365,7 @@ function Conversation({ projectId, title, launch, dark, expanded, onExpand, onCl
                 {applyError[turn.id] && <small role="alert">{applyError[turn.id]}</small>}
               </div>}
               {actions && (actions.cards.length > 0 || actions.headingId || actions.visualId) && renderActions({ ...turn.answer, ...actions })}
-              {!!turn.answer.sources?.length && <details className={s.sources}><summary>Web sources</summary>
+              {!!turn.answer.sources?.length && <details className={s.sources}><summary>{turn.answer.turnContext?.linkScope === "external" ? "External sources" : turn.answer.turnContext?.linkScope === "internal" ? "Internal site sources" : "Web sources"}</summary>
                 {turn.answer.sources.map((source, j) => safeUrl(source.url) && <a href={safeUrl(source.url)} key={j} target="_blank" rel="noreferrer">{source.title || source.url}</a>)}
               </details>}
             </div>}
