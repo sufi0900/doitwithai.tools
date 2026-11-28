@@ -647,6 +647,7 @@ export async function executeStudioGroundedSearch(params: {
   brief: string;
   language?: string;
   timeoutMs?: number;
+  requireUsableSources?: boolean;
   signal?: AbortSignal;
 }): Promise<StudioGroundedSearchResult> {
   const query = params.query.trim();
@@ -708,7 +709,7 @@ export async function executeStudioGroundedSearch(params: {
           .filter(Boolean)
           .join("\n")
           .slice(0, 3500);
-        if (sources.length > 0) {
+        if (sources.length > 0 && (!params.requireUsableSources || sources.some((source) => source.snippet.trim()))) {
           return {
             groundedSummary: summary,
             searchQueries: [query],
@@ -763,7 +764,7 @@ export async function executeStudioGroundedSearch(params: {
           .filter(Boolean)
           .join("\n")
           .slice(0, 3500);
-        if (sources.length > 0) {
+        if (sources.length > 0 && (!params.requireUsableSources || sources.some((source) => source.snippet.trim()))) {
           return {
             groundedSummary: summary,
             searchQueries: [query],
@@ -893,7 +894,9 @@ Cite the exact web findings accurately without inventing numbers or fake URLs.`;
           sources.push(item);
         }
 
-        if (summary || sources.length > 0) {
+        if (params.requireUsableSources
+          ? sources.some((source) => source.snippet.trim() && !source.snippet.startsWith("Live grounded search reference"))
+          : summary || sources.length > 0) {
           return {
             groundedSummary: summary.slice(0, 4800),
             searchQueries: queriesUsed.length ? queriesUsed : [query],

@@ -76,3 +76,39 @@
 @media (prefers-reduced-motion: reduce) {
   .progress[data-stage] svg { animation: none; }
 }
+
+.drawer[data-expanded="true"] {
+  position: relative; inset: auto; width: 100%; max-width: 100%;
+  height: calc(100dvh - var(--writer-sticky-top, 80px)); min-height: 390px;
+  border: 1px solid var(--line); border-radius: 12px; box-shadow: none;
+}
+.headerActions { display: flex; gap: 6px; flex: none; }
+.transcript, .turn, .reply, .card, .proposal, .user, .composer { min-width: 0; max-width: 100%; box-sizing: border-box; }
+.transcript { overflow-x: hidden; }
+.turn { grid-template-columns: minmax(0, 1fr); }
+.reply { overflow: hidden; }
+.reply pre, .reply code { white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; }
+.reply pre { max-width: 100%; overflow: auto; }
+.reply table { width: 100%; table-layout: fixed; }
+.reply td, .reply th { overflow-wrap: anywhere; }
+.reply a, .card button, .attachment { overflow-wrap: anywhere; }
+.card button { text-align: start; max-width: 100%; }
+.proposal { padding: 8px; background: var(--surface); border-radius: 6px; }
+.researchNote { font-size: 12px; color: var(--muted); padding-inline-start: 8px; border-inline-start: 2px solid var(--accent); }
+.composer > .attachment { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 10px; align-items: start;
+  width: min(100%, 340px); background: var(--data); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; margin-bottom: 8px; }
+.attachment .context { grid-column: 1; margin: 0; }
+.attachment summary { cursor: pointer; color: var(--ink); font-weight: 600; }
+.attachment button { grid-column: 2; grid-row: 1 / span 2; padding: 3px; }
+.excerpt { grid-column: 1; font-size: 12px; color: var(--muted); line-height: 1.4; overflow: hidden;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.attachment:has(details[open]) .excerpt { display: none; }
+.researchMode { display: inline-flex; gap: 6px; align-items: center; padding-inline-start: 8px; border: 1px solid var(--line); border-radius: 8px; }
+.researchMode select { min-height: 36px; font: inherit; font-size: 13px; color: var(--ink); background: var(--surface); border: 0; border-radius: 8px; }
+.drawer[data-expanded="true"] .turn, .drawer[data-expanded="true"] .empty { width: min(100%, 850px); margin-inline: auto; }
+.progress[data-stage="reading"] svg { animation: pulse 1.15s ease-in-out infinite alternate; }
+@media (prefers-reduced-motion: reduce) { .progress[data-stage] svg { animation: none; } }
+@media (max-width: 600px) {
+  .drawer[data-expanded="true"] { height: min(85dvh, 740px); min-height: 0; }
+  .drawer .headerActions button:first-child { display: none; }
+}

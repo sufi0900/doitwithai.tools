@@ -36,7 +36,6 @@ import {
   computeContentScorecard,
   auditContextualLinkOpportunities,
   auditSerpPixelAndCtrReadiness,
-  articleRevision,
   applyContentRefreshUpgrade,
   auditQuickAnswerBoxReadiness,
   autoWeaveContextualInternalLinks,
@@ -64,7 +63,7 @@ import {
   workspace,
 } from "./model";
 import type { Project, ResearchPacket, RichNode } from "./types";
-import ArticleEditor, { RichPreview, type EditorHandle } from "./ArticleEditor";
+import ArticleEditor, { type EditorHandle } from "./ArticleEditor";
 import AssetDeck from "./AssetDeck";
 import { ConnectedWebsitePublishBar } from "./ConnectedWebsitePublishBar";
 import { authorizedWebsiteFetch } from "@/features/website-builder/lib/supabase/browser";
@@ -87,7 +86,7 @@ import { downloadArticle, saveBlob } from "./assets";
 import styles from "./workspace.module.css";
 import assistantStyles from "./article-assistant.module.css";
 import { ArticleAssistant, type AssistantLaunch } from "./ArticleAssistant";
-import { articleDownloads, type AssistantReply, type Passage } from "./article-assistant";
+import { articleDownloads, type AssistantReply, type SavedProposal } from "./article-assistant";
 
 const InfographicStudio = dynamic(
   () => import("@/features/blog-infographic-studio/BlogInfographicStudio"),
@@ -96,6 +95,10 @@ const InfographicStudio = dynamic(
     loading: () => <p className={styles.loading}>Opening image studio…</p>,
   },
 );
+
+function assistantRevision(project: Project) {
+  return hash(JSON.stringify(projectDocument(project)));
+}
 
 function errorText(e: unknown) {
   return e instanceof Error
@@ -136,18 +139,6 @@ export default function WriterWorkspace() {
     [studioUnlocked, setStudioUnlocked] = useState(Boolean(w.studioUnlocked)),
     [darkStudio, setDarkStudio] = useState(true),
     [focus, setFocus] = useState(false),
-    [selection, setSelection] = useState(""),
-    [rewrite, setRewrite] = useState<{
-      original: string;
-      proposed: string;
-      from: number;
-      to: number;
-      scope: "selection" | "article";
-      revision: string;
-      sectionId?: string;
-    } | null>(null),
-    [rewriteBusy, setRewriteBusy] = useState(false),
-    [rewriteError, setRewriteError] = useState(""),
     [exportBusy, setExportBusy] = useState(""),
     [message, setMessage] = useState(""),
     [sourceUrl, setSourceUrl] = useState(""),
@@ -254,15 +245,16 @@ export default function WriterWorkspace() {
   }, []);
 
   const [assistant, setAssistant] = useState<AssistantLaunch | null>(null);
+  const [assistantExpanded, setAssistantExpanded] = useState(false);
   const dialog = useRef<HTMLDivElement>(null);
   const editor = useRef<EditorHandle>(null),
     importInput = useRef<HTMLInputElement>(null),
-    logoInput = useRef<HTMLInputElement>(null),
-    rewriteAbort = useRef<AbortController | null>(null);
+    logoInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setVisualId(null);
     setAssistant(null);
+    setAssistantExpanded(false);
     setFocus(false);
     setBriefModalOpen(false);
     setWorkspaceMode("editor");
@@ -276,12 +268,7 @@ export default function WriterWorkspace() {
       Boolean(workspace(p).document && readiness(p).words > 0);
     setStudioUnlocked(hasDraft);
     setLeftTab("readability");
-    setRewrite(null);
-    setRewriteError("");
-    setSelection("");
     setMessage("");
-    rewriteAbort.current?.abort();
-    setRewriteBusy(false);
   }, [p.projectId]);
 
   useEffect(() => {
@@ -302,7 +289,6 @@ export default function WriterWorkspace() {
     window.addEventListener("keydown", key);
     return () => {
       window.removeEventListener("keydown", key);
-      rewriteAbort.current?.abort();
     };
   }, []);
 
@@ -502,142 +488,51 @@ export default function WriterWorkspace() {
     }
   };
 
-  const requestRewrite = async (
-    customInstruction: string,
-    scope: "selection" | "article",
-    explicitRange?: { from: number; to: number; text: string },
-  ) => {
-    const picked = explicitRange || editor.current?.selection();
-    if (rewriteAbort.current) rewriteAbort.current.abort();
-    const targetText =
-      scope === "selection" && picked?.text.trim()
-        ? picked.text
-        : articleMarkdown(current.current);
-    if ((scope === "selection" && !picked?.text.trim()) || !targetText.trim()) {
-      setRewriteError("Add or select text in the article first.");
+  const applyAssistantProposal = (proposal: SavedProposal): string | undefined => {
+    const now = current.current;
+    if (assistantRevision(now) !== proposal.revision)
+      return "The draft has changed since this proposal was created. Ask Article AI to update it using the current draft.";
+    const body = markdownNodes(proposal.markdown);
+    if (!body.length) return "There is no text to apply.";
+    const isHeading = (node: RichNode, level: number) => node.type === "heading" && Number(node.attrs?.level) === level;
+    const changesTitle = (node: RichNode) => isHeading(node, 1) || isHeading(node, 2);
+    if (proposal.kind === "passage") {
+      if (body.some(changesTitle)) return "Ask for a passage revision that preserves the article headings.";
+      const selected = proposal.passage;
+      if (!selected || !editor.current || workspaceMode !== "editor") return "Open the article editor to apply this passage revision.";
+      try {
+        if (!editor.current.replace(selected.from, selected.to, proposal.markdown)) return "The selection is no longer available. Select the passage again.";
+      } catch { return "The selected passage could not be replaced. Select it again to retry."; }
       return;
     }
-    if (targetText.length > 18000) {
-      setRewriteError("This article is too long for one revision. Select a section to revise without truncating your draft.");
+    const doc = projectDocument(now);
+    const content = doc.content || [];
+    const start = proposal.sectionId ? content.findIndex((node) => isHeading(node, 2) && node.attrs?.sectionId === proposal.sectionId) : -1;
+    if (proposal.sectionId && start < 0) return "The target section could not be found in the current draft.";
+    const next = start < 0 ? -1 : content.findIndex((node, index) => index > start && isHeading(node, 2));
+    const end = next < 0 ? content.length : next;
+    if (proposal.kind === "insert-section") {
+      if (!isHeading(body[0], 2) || !body.slice(1).length || body.slice(1).some(changesTitle))
+        return "A new section needs one H2 heading followed by content. Ask Article AI to update the proposal.";
+      update((project) => syncDocument(project, { ...doc, content: [...content.slice(0, end), ...body, ...content.slice(end)] }));
       return;
     }
-    if (!customInstruction.trim()) {
-      setLeftTab("readability");
-      return;
-    }
-    const revision = articleRevision(current.current),
-      pid = p.projectId,
-      c = new AbortController();
-    rewriteAbort.current = c;
-    setRewriteBusy(true);
-    setRewrite(null);
-    setRewriteError("");
-    try {
-      const res = await gen.rewrite(
-        targetText,
-        customInstruction,
-        c.signal,
-      );
-      if (c.signal.aborted || current.current.projectId !== pid) return;
-      setRewrite({
-        original: targetText,
-        proposed: res.data.text,
-        from: scope === "selection" && picked ? picked.from : 0,
-        to: scope === "selection" && picked ? picked.to : 0,
-        scope,
-        revision,
-      });
-    } catch (e) {
-      if (!c.signal.aborted) setRewriteError(errorText(e));
-    } finally {
-      if (rewriteAbort.current === c) setRewriteBusy(false);
-    }
-  };
-
-  const requestSectionRevision = async (sectionId: string, instruction: string) => {
-    const section = current.current.sections.find((item) => item.id === sectionId);
-    if (!section || !bodyOf(section).trim()) {
-      setRewriteError("This section has no text to revise.");
-      return;
-    }
-    rewriteAbort.current?.abort();
-    const rev = articleRevision(current.current);
-    const ctrl = new AbortController();
-    rewriteAbort.current = ctrl;
-    setRewriteBusy(true);
-    setRewriteError("");
-    try {
-      const original = bodyOf(section);
-      const result = await gen.rewrite(original, instruction + " Preserve the existing H3 headings and their order.", ctrl.signal);
-      if (ctrl.signal.aborted) return;
-      setRewrite({ original, proposed: result.data.text, from: 0, to: 0, scope: "selection", revision: rev, sectionId });
-    } catch (error) {
-      if (!ctrl.signal.aborted) setRewriteError(errorText(error));
-    } finally {
-      if (rewriteAbort.current === ctrl) setRewriteBusy(false);
-    }
-  };
-
-  const applyRewriteProposal = () => {
-    if (!rewrite) return;
-    if (articleRevision(current.current) !== rewrite.revision) {
-      setRewriteError(
-        "The article changed after this revision was generated. Run the helper again.",
-      );
-      return;
-    }
-    if (rewrite.sectionId) {
-      const sectionId = rewrite.sectionId;
-      const doc = projectDocument(current.current);
-      const content = doc.content || [];
-      const start = content.findIndex((node) => node.type === "heading" && node.attrs?.level === 2 && node.attrs?.sectionId === sectionId);
-      if (start < 0) {
-        setRewriteError("Open the section and select the text you want to replace.");
-        return;
-      }
-      const next = content.findIndex((node, index) => index > start && node.type === "heading" && node.attrs?.level === 2);
-      const end = next < 0 ? content.length : next;
-      const body = markdownNodes(rewrite.proposed);
-      if (body.some((node) => node.type === "heading" && Number(node.attrs?.level) <= 2)) {
-        setRewriteError("The proposed edit changes section boundaries. Request a body-only revision.");
-        return;
-      }
-      const retained = content.slice(start + 1, end).filter((node) =>
-        node.type === "sectionVisual" || node.type === "image",
-      );
-      update((now) => syncDocument(now, {
-        ...doc, content: [...content.slice(0, start + 1), ...body, ...retained, ...content.slice(end)],
+    if (proposal.kind === "section") {
+      if (start < 0 || body.some(changesTitle)) return "This proposal needs a specific section and a body-only revision.";
+      const existing = content.slice(start + 1, end);
+      const visual = (node: RichNode) => node.type === "sectionVisual" || node.type === "image";
+      const hasNestedVisual = (node: RichNode): boolean => Boolean(node.content?.some((child) => visual(child) || hasNestedVisual(child)));
+      if (existing.some(hasNestedVisual)) return "This section contains embedded images. Select the paragraphs you want to revise.";
+      update((project) => syncDocument(project, {
+        ...doc, content: [...content.slice(0, start + 1), ...body, ...existing.filter(visual), ...content.slice(end)],
       }));
-    } else if (rewrite.scope === "selection" && rewrite.to > rewrite.from) {
-      if (!editor.current) {
-        setRewriteError("Open the editor and select the passage again.");
-        return;
-      }
-      editor.current.replace(rewrite.from, rewrite.to, rewrite.proposed);
-    } else {
-      if (computeContentScorecard(current.current).structure.images.actual > 0) {
-        setRewriteError("To preserve existing visuals, apply edits to individual sections or selected passages.");
-        return;
-      }
-      update((now) => {
-        const synced = syncDocument(now, {
-          type: "doc",
-          content: markdownNodes(rewrite.proposed),
-        });
-        const refreshedSections = synced.sections.map((sec) => {
-          try {
-            return refreshVisual(sec, synced);
-          } catch {
-            return sec;
-          }
-        });
-        return patchWorkspace(
-          { ...synced, sections: refreshedSections },
-          { document: undefined },
-        );
-      });
+      return;
     }
-    setRewrite(null);
+    if (articleMarkdown(now).length > 48000 || computeContentScorecard(now).structure.images.actual > 0)
+      return "To safely revise this draft and preserve its content, choose a section or passage.";
+    if (!isHeading(body[0], 1) || body.slice(1).some((node) => isHeading(node, 1)))
+      return "Ask Article AI for a replacement draft that keeps the article title and section structure.";
+    update((project) => syncDocument(project, { ...doc, content: body }));
   };
 
   const refreshResearchPacket = async () => {
@@ -782,12 +677,15 @@ export default function WriterWorkspace() {
     }
   };
 
-  const openAssistant = (range?: { from: number; to: number; text: string }) => {
-    rewriteAbort.current?.abort();
-    setRewriteBusy(false);
-    setRewrite(null);
-    setRewriteError("");
-    setAssistant({ id: id(), ...(range ? { passage: { ...range, revision: articleRevision(current.current) } } : {}) });
+  const closeAssistant = () => {
+    setAssistant(null);
+    setAssistantExpanded(false);
+  };
+
+  const openAssistant = (range?: { from: number; to: number; text: string }, prompt?: string) => {
+    setAssistantExpanded(false);
+    setAssistant({ id: id(), prompt, ...(range?.text.trim() && range.to > range.from
+      ? { passage: { ...range, revision: assistantRevision(current.current) } } : {}) });
   };
 
   const assistantScore = useMemo(() => assistant ? computeContentScorecard(p) : null, [assistant, p]);
@@ -796,10 +694,28 @@ export default function WriterWorkspace() {
     const article = articleMarkdown(p);
     const score = assistantScore || computeContentScorecard(p);
 
+    const site = parseBriefDirectives(p.rawUserBriefOrSourceText).websiteUrl || p.brandSiteUrl || w.research?.siteScanned || "";
+    const hostname = (value: string) => {
+      try { return new URL(value).hostname.toLowerCase().replace(/^www\./, ""); } catch { return ""; }
+    };
+    const brandHost = hostname(site);
+    const sitePages = [
+      ...(w.research?.internalLinks || []).map((link) => ({ url: link.url, title: link.title, anchor: link.anchorText })),
+      ...(p.internalLinks || []).map((link) => ({ url: link.targetUrl, title: link.targetTitle, anchor: link.anchorText })),
+    ].filter((link, index, links) => brandHost && hostname(link.url) === brandHost &&
+      links.findIndex((candidate) => candidate.url === link.url) === index).slice(0, 16);
     return {
+      title: (p.metaPack.h1Title || p.projectTitle || "Article draft").slice(0, 250),
+      site: site.slice(0, 700),
+      revision: assistantRevision(p),
       article: article.slice(0, 48000),
       diagnostics: JSON.stringify({
         truncated: article.length > 48000,
+        site, brand: w.brand.name,
+        brandVoice: { ...w.research?.brandVoice, ...w.brandVoiceOverride },
+        sitePages,
+        audience: p.keywordCluster.targetAudience,
+        language: w.language,
         words: report.words, readingMinutes: report.minutes,
         score: score.overallScore, targetScore: score.targetBenchmark,
         structure: score.structure, terms: score.terms, issues: score.issues.slice(0, 12),
@@ -812,7 +728,8 @@ export default function WriterWorkspace() {
         includedImages: score.structure.images.actual,
         featuredBanner: w.featuredBanner?.headline || null,
         headings: p.sections.map((section) => ({ id: section.id, heading: section.h2Text,
-          visual: Boolean(section.infographicConfig.nodes.length || w.sectionVisualOverrides?.[section.id]?.dataUrl) })),
+          visual: Boolean(section.infographicConfig.nodes.length || w.sectionVisualOverrides?.[section.id]?.dataUrl),
+          subheadings: section.subHeadings.map((heading) => heading.h3Text) })),
         contextualLinkOpportunities: auditContextualLinkOpportunities(p).slice(0, 6),
         downloads: articleDownloads.map(({ label }) => label),
       }, (_key, value) => Array.isArray(value) ? value.slice(0, 30) : typeof value === "string" ? value.slice(0, 650) : value).slice(0, 24000),
@@ -840,8 +757,6 @@ export default function WriterWorkspace() {
 
   const openEditorDestination = (target: "meta" | "faqs" | "visuals" | "score" | "readability" | "seo" | "headings", headingId?: string) => {
     setAssistant(null);
-    rewriteAbort.current?.abort();
-    setRewriteBusy(false);
     setFocus(false);
     if (target === "meta" || target === "faqs" || target === "visuals") {
       setWorkspaceMode(target);
@@ -858,7 +773,7 @@ export default function WriterWorkspace() {
     }
   };
 
-  const assistantActions = (answer: AssistantReply, passage?: Passage) => {
+  const assistantActions = (answer: AssistantReply) => {
     const score = assistantScore;
     const selectedHeading = p.sections.find((section) => section.id === answer.headingId);
     const selectedVisual = p.sections.find((section) => section.id === answer.visualId);
@@ -901,17 +816,6 @@ export default function WriterWorkspace() {
       </React.Fragment>)}
       {selectedHeading && <button type="button" onClick={() => openEditorDestination("headings", selectedHeading.id)}>Go to {selectedHeading.h2Text}</button>}
       {selectedVisual && <button type="button" onClick={() => { openEditorDestination("visuals"); openVisual(selectedVisual.id); }}>Open visual for {selectedVisual.h2Text}</button>}
-      {answer.editInstruction && <button type="button" disabled={rewriteBusy} onClick={() => {
-        if (passage && (workspaceMode !== "editor" || passage.revision !== articleRevision(current.current))) {
-          setRewriteError("Select the passage again in the current draft before requesting an edit.");
-          return;
-        }
-        if (selectedHeading && !passage) {
-          void requestSectionRevision(selectedHeading.id, answer.editInstruction!);
-          return;
-        }
-        void requestRewrite(answer.editInstruction!, passage ? "selection" : "article", passage);
-      }}>Preview {passage ? "passage" : selectedHeading ? "section" : "article"} edit</button>}
     </div>;
   };
 
@@ -1346,6 +1250,7 @@ export default function WriterWorkspace() {
 
           {/* ARTICLE-FIRST STUDIO WORKSPACE WITH COLLAPSIBLE TOOLS & RIGHT SCORE GAUGE */}
           <div
+            style={assistantExpanded ? { display: "none" } : undefined}
             className={[
               styles.workspaceLayout,
               !focus && leftOpen ? styles.workspaceHasLeft : "",
@@ -1364,30 +1269,17 @@ export default function WriterWorkspace() {
               activeTab={leftTab}
               highlightToggles={highlightToggles}
               targetGrade={targetGrade}
-              aiRevisionState={{
-                busy: rewriteBusy,
-                original: rewrite?.original || "",
-                proposed: rewrite?.proposed || "",
-                scope: rewrite?.scope || "selection",
-                error: rewriteError,
-              }}
+              aiRevisionState={{ busy: false, original: "", proposed: "", scope: "article" }}
               onChangeTab={setLeftTab}
               onToggleHighlight={(k) =>
                 setHighlightToggles((prev) => ({ ...prev, [k]: !prev[k] }))
               }
               onChangeTargetGrade={setTargetGrade}
               onOpenBriefModal={() => setBriefModalOpen(true)}
-              onRunAiHelper={(inst, scope) => {
-                openAssistant(scope === "selection" ? editor.current?.selection() : undefined);
-                void requestRewrite(inst, scope);
-              }}
-              onQuickReadabilityPolish={() => {
-                openAssistant();
-                void requestRewrite(
-                  "Improve clarity and remove repetitive keyword-led openings and filler. Preserve all facts, qualifications, Markdown links, code and headings. Do not add claims or sources. Return the complete revised text for review.",
-                  selection.trim() ? "selection" : "article",
-                );
-              }}
+              onRunAiHelper={(instruction, scope) => openAssistant(scope === "selection" ? editor.current?.selection() : undefined, instruction)}
+              onQuickReadabilityPolish={() => openAssistant(editor.current?.selection(),
+                "Improve readability. Remove filler and repetitive openings while preserving facts, Markdown links and headings.",
+              )}
               onInsertLink={(anchor, url) =>
                 editor.current?.insertLink(anchor, url)
               }
@@ -1762,14 +1654,13 @@ export default function WriterWorkspace() {
                     }
                     onUpdateProject={update}
                     onEditVisual={openVisual}
-                    onSelection={setSelection}
+                    onSelection={() => {}}
                     onInlineAiRewrite={async (inst, range, signal, ctx) => {
                       const res = await gen.rewrite(range.text, inst, signal, ctx);
                       return res.data.text;
                     }}
                     onTellAi={(inst, range) => {
-                      openAssistant(range);
-                      if (inst.trim()) void requestRewrite(inst, "selection", range);
+                      openAssistant(range, inst.trim() || undefined);
                     }}
                   />
                 </>
@@ -2042,18 +1933,9 @@ export default function WriterWorkspace() {
 
       {assistant && <ArticleAssistant key={p.projectId} projectId={p.projectId}
         title={p.metaPack.h1Title || p.projectTitle} launch={assistant} dark={darkStudio}
-        onSwitchThread={() => { rewriteAbort.current?.abort(); setRewriteBusy(false); setRewrite(null); setRewriteError(""); }}
-        onClose={() => { setAssistant(null); rewriteAbort.current?.abort(); setRewriteBusy(false); }}
-        getContext={assistantContext} getDirectReply={directAssistantReply} renderActions={assistantActions}
-        revision={(rewrite || rewriteBusy || rewriteError) && <div className={assistantStyles.card}>
-          {rewriteBusy && <span role="status">Preparing an edit preview…</span>}
-          {rewriteError && <span role="alert">{rewriteError}</span>}
-          {rewrite && !rewriteBusy && <>
-            <strong>Proposed edit</strong><RichPreview md={rewrite.proposed} />
-            <nav><button type="button" onClick={applyRewriteProposal}>Apply edit</button>
-              <button type="button" onClick={() => setRewrite(null)}>Discard</button></nav>
-          </>}
-        </div>}
+        expanded={assistantExpanded} onExpand={() => setAssistantExpanded((expanded) => !expanded)}
+        onClose={closeAssistant} getContext={assistantContext} getDirectReply={directAssistantReply}
+        renderActions={assistantActions} applyProposal={applyAssistantProposal}
       />}
 
       <BriefSettingsModal

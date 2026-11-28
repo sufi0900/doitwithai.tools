@@ -73,7 +73,7 @@ import styles from "./workspace.module.css";
 
 export type EditorHandle = {
   selection: () => { from: number; to: number; text: string };
-  replace: (from: number, to: number, text: string) => void;
+  replace: (from: number, to: number, text: string) => boolean;
   insertLink: (anchor: string, url: string) => void;
   section: (id: string) => void;
   insertVisual: (id: string) => void;
@@ -1303,12 +1303,14 @@ const ArticleEditor = forwardRef<EditorHandle, Props>(
           };
         },
         replace: (from, to, text) => {
-          if (!editor) return;
-          editor
-            .chain()
-            .focus()
-            .insertContentAt({ from, to }, buildContentNodesFromText(text))
-            .run();
+          if (!editor || !Number.isInteger(from) || !Number.isInteger(to) || from < 1 || to <= from || to > editor.state.doc.content.size) return false;
+          let protectedNode = false;
+          editor.state.doc.nodesBetween(from, to, (node) => {
+            if (["image", "sectionVisual"].includes(node.type.name) ||
+                (node.type.name === "heading" && Number(node.attrs.level) <= 2)) protectedNode = true;
+          });
+          if (protectedNode) return false;
+          return editor.commands.insertContentAt({ from, to }, buildContentNodesFromText(text));
         },
         insertLink: (anchor, url) => {
           if (!editor) return;
